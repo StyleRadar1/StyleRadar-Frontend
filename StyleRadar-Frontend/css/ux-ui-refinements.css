@@ -1,0 +1,1062 @@
+/* =====================================================================
+   STYLERADAR · SISTEMA DE BOTONES Y AJUSTES DE INTERFAZ
+   Elimina la estética genérica de IA (halos neón, sombras radioactivas,
+   cápsulas plásticas artificiales) y aplica diseño editorial, humano,
+   táctil y fiel al Manual de Identidad de StyleRadar (Bogotá, 2026).
+   Colores de marca:
+     --v: #48119A (Violeta radar)
+     --l: #B9B9CA (Lila claro)
+     --a: #E8DCCB (Arena cálido)
+     --w: #FFFFFF (Blanco puro)
+     --g: #262626 (Grafito oscuro)
+   ===================================================================== */
+
+/* =====================================================================
+   1. SISTEMA MAESTRO DE BOTONES (ANTI-IA · TÁCTIL · INTUITIVO)
+   ===================================================================== */
+
+/* Reset de brillos y auras artificiales */
+.as-btn,
+.btn,
+a.btn,
+button.btn,
+.btn-acc,
+.btn-line,
+.btn-light,
+.pl2-b,
+.plx-btn,
+.cx-btn,
+.nav-join,
+.nav-auth,
+.lbl.pill,
+.pill,
+#authSubmit,
+#suSubmit {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Botón Base: tipografía humana, balanceada, sin mayúsculas comprimidas */
+.btn,
+a.btn,
+button.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  padding: 12px 24px !important;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  font-stretch: 100% !important;
+  text-decoration: none !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
+  cursor: pointer !important;
+  position: relative !important;
+  user-select: none !important;
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn:hover,
+a.btn:hover,
+button.btn:hover {
+  transform: translateY(-1.5px) !important;
+}
+
+.btn:active,
+a.btn:active,
+button.btn:active {
+  transform: translateY(0.5px) scale(0.985) !important;
+}
+
+.btn:focus-visible,
+a.btn:focus-visible,
+button.btn:focus-visible {
+  outline: 2px solid #B9B9CA !important;
+  outline-offset: 3px !important;
+}
+
+/* 1.1 Botón Principal (Acento / Violeta Radar) */
+.btn-acc,
+.as-btn:not(.as-btn-ghost),
+#authSubmit,
+#suSubmit {
+  background: linear-gradient(180deg, #5317ad 0%, #48119a 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25),
+              0 4px 14px rgba(72, 17, 154, 0.35) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.btn-acc:hover,
+.as-btn:not(.as-btn-ghost):hover,
+#authSubmit:hover,
+#suSubmit:hover {
+  background: linear-gradient(180deg, #5e1bc4 0%, #5013ac 100%) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
+              0 6px 20px rgba(72, 17, 154, 0.45) !important;
+}
+
+/* 1.2 Botón Secundario / Vidrio Editorial (Sin aspecto genérico) */
+.btn-line,
+.as-btn-ghost {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+              0 2px 8px rgba(0, 0, 0, 0.18) !important;
+}
+
+.btn-line:hover,
+.as-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18),
+              0 6px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 1.3 Botón Arena Cálido / Moda (Identidad Manual v2 - #E8DCCB) */
+.btn-light {
+  background: #E8DCCB !important;
+  color: #48119A !important;
+  border: 1px solid rgba(72, 17, 154, 0.15) !important;
+  font-weight: 600 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6),
+              0 3px 10px rgba(0, 0, 0, 0.16) !important;
+}
+
+.btn-light:hover {
+  background: #FFFFFF !important;
+  color: #380C7A !important;
+  border-color: #FFFFFF !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 1.4 Sección "Arma. Pruébate. Sal." sin brillos IA desmedidos */
+.as-btn {
+  text-transform: none !important;
+  letter-spacing: 0.02em !important;
+  font-size: 14px !important;
+  padding: 13px 26px !important;
+  border-radius: 12px !important;
+}
+.as-btn:hover {
+  box-shadow: 0 4px 16px rgba(72, 17, 154, 0.4) !important;
+}
+.as-btn:focus-visible {
+  outline: 2px solid #B9B9CA !important;
+}
+
+/* 1.5 Botones de Navegación (Header) */
+.nav-join {
+  height: 38px !important;
+  padding: 0 18px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(180deg, #5317ad 0%, #48119a 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  font: 600 12.5px/1 'Poppins', sans-serif !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+              0 3px 10px rgba(72, 17, 154, 0.3) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.nav-join:hover {
+  background: linear-gradient(180deg, #5f1ac4 0%, #5113ac 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3),
+              0 5px 14px rgba(72, 17, 154, 0.4) !important;
+}
+
+.nav-auth {
+  height: 38px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  font: 500 12.5px/1 'Poppins', sans-serif !important;
+  letter-spacing: 0.01em !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.nav-auth:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.38) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 1.6 Botones circulares de carrusel (Categorías & Playlists) */
+.cx-btn,
+.plx-btn {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: rgba(38, 38, 38, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  font-size: 16px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cx-btn:hover:not([disabled]),
+.plx-btn:hover:not(:disabled) {
+  background: #FFFFFF !important;
+  color: #262626 !important;
+  border-color: #FFFFFF !important;
+  transform: scale(1.06) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.cx-btn[disabled],
+.plx-btn:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* 1.7 Botones tipo píldora informativa / acción secundaria */
+.lbl.pill,
+.pill,
+.found-cta a,
+.stores-map {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  border-radius: 10px !important;
+  padding: 8px 16px !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.lbl.pill:hover,
+.pill:hover,
+.found-cta a:hover,
+.stores-map:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px) !important;
+}
+
+/* =====================================================================
+   2. MEJORA DE LA SECCIÓN DE PLANES (#planes / #como-funciona)
+   ===================================================================== */
+
+/* Selector de roles (Personas / Tiendas / Fundaciones) */
+.pl2-seg {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 14px !important;
+  padding: 4px !important;
+  display: inline-flex !important;
+  gap: 4px !important;
+}
+
+.pl2-seg button {
+  padding: 8px 18px !important;
+  border-radius: 10px !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  background: transparent !important;
+  border: 0 !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pl2-seg button[aria-selected="true"] {
+  background: #48119A !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+.pl2-seg button:hover:not([aria-selected="true"]) {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Tarjetas de planes */
+.pl2 {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, rgba(38, 38, 38, 0.5) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 20px !important;
+  padding: 32px 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  position: relative !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+
+.pl2.hot {
+  background: linear-gradient(165deg, rgba(72, 17, 154, 0.45) 0%, rgba(38, 38, 38, 0.6) 100%) !important;
+  border: 1px solid rgba(185, 185, 202, 0.45) !important;
+  box-shadow: 0 16px 40px rgba(72, 17, 154, 0.25) !important;
+}
+
+.pl2.hot::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #B9B9CA, transparent);
+  border-radius: 20px 20px 0 0;
+}
+
+/* Botones en tarjetas de suscripción */
+.pl2-b {
+  width: 100% !important;
+  padding: 13px 20px !important;
+  border-radius: 12px !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+  margin-top: 24px !important;
+}
+
+.pl2-b:hover {
+  background: #FFFFFF !important;
+  color: #262626 !important;
+  border-color: #FFFFFF !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+.pl2.hot .pl2-b {
+  background: #E8DCCB !important;
+  color: #48119A !important;
+  border-color: #E8DCCB !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
+}
+
+.pl2.hot .pl2-b:hover {
+  background: #FFFFFF !important;
+  color: #380C7A !important;
+  border-color: #FFFFFF !important;
+  box-shadow: 0 6px 20px rgba(232, 220, 203, 0.35) !important;
+}
+
+/* Barra de llamada a la acción en #como-funciona */
+.pi-cta {
+  margin-top: 40px !important;
+  padding: 24px 28px !important;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(38, 38, 38, 0.45) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+  flex-wrap: wrap !important;
+}
+
+.pi-cta .pi-join {
+  background: linear-gradient(180deg, #5317ad 0%, #48119a 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  padding: 12px 26px !important;
+  font-weight: 600 !important;
+  font-size: 13.5px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(72, 17, 154, 0.35) !important;
+}
+
+.pi-cta .pi-join:hover {
+  background: linear-gradient(180deg, #5f1ac4 0%, #5113ac 100%) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+/* =====================================================================
+   3. FOOTER EDITORIAL (.foot)
+   ===================================================================== */
+.foot {
+  background: #141416 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: clamp(60px, 7vw, 90px) var(--gut) calc(env(safe-area-inset-bottom, 0px) + 28px) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* 3.1 Columnas de Navegación */
+.foot-cols.v2 {
+  max-width: 1240px !important;
+  margin: 0 auto clamp(40px, 6vw, 80px) !important;
+  display: grid !important;
+  grid-template-columns: 1.8fr 1fr 1fr 1fr 1.1fr !important;
+  gap: clamp(24px, 3.5vw, 44px) !important;
+}
+
+@media (max-width: 1040px) {
+  .foot-cols.v2 {
+    grid-template-columns: 1fr 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .foot-cols.v2 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .foot-cols.v2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Columna de Marca (Col 1) */
+.foot-brand-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.foot-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.foot-brand-logo svg {
+  width: 26px;
+  height: auto;
+}
+
+.foot-lead {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  color: #B9B9CA !important;
+  margin: 0 !important;
+  max-width: 32ch !important;
+}
+
+/* Encabezados y Enlaces de Columnas */
+.foot-cols h4 {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #E8DCCB !important;
+  margin: 0 0 16px !important;
+}
+
+.foot-cols ul {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 11px !important;
+}
+
+.foot-cols a,
+.foot-cols button.linkish {
+  color: rgba(255, 255, 255, 0.72) !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  background: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.foot-cols a:hover,
+.foot-cols button.linkish:hover {
+  color: #FFFFFF !important;
+  transform: translateX(3px) !important;
+}
+
+/* 3.2 Wordmark Animado StyleRadar */
+.wordmark {
+  max-width: 1240px !important;
+  margin: 0 auto !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 900 !important;
+  color: rgba(255, 255, 255, 0.06) !important;
+  letter-spacing: -0.04em !important;
+  user-select: none !important;
+  transition: color 0.4s ease !important;
+}
+
+.wordmark:hover {
+  color: rgba(185, 185, 202, 0.12) !important;
+}
+
+/* 3.3 Barra Inferior (.foot-base) */
+.foot-base {
+  max-width: 1240px !important;
+  margin: 28px auto 0 !important;
+  padding-top: 22px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  color: rgba(185, 185, 202, 0.7) !important;
+  font-size: 12.5px !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+}
+
+.foot-base span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Botón "Volver arriba ↑" con microinteracción táctil */
+#toTop {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 16px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #FFFFFF !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+#toTop svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+#toTop:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  transform: translateY(-2px) !important;
+}
+
+#toTop:hover svg {
+  transform: translateY(-2px);
+}
+
+#toTop:active {
+  transform: translateY(0.5px) !important;
+}
+
+/* =====================================================================
+   4. AJUSTE ANATÓMICO Y REALISTA DEL PROBADOR VIRTUAL (#czStage & .lay)
+   Soluciona el calce de prendas sobre el maniquí:
+   - Erradicación del corte recto y el hueco blanco en clavícula/cuello.
+   - Profundidad, sombras de caída y volumen tridimensional de tejidos.
+   - Adaptación anatómica perfecta para Maniquí de Hombre y Maniquí de Mujer.
+   - Eliminación de desbordes de piel (ghosting) debajo de pantalones y sacos.
+   ===================================================================== */
+
+.cz-stage-wrap {
+  background: radial-gradient(ellipse at 50% 40%, rgba(72, 17, 154, 0.22) 0%, rgba(35, 35, 42, 0.9) 65%, #151518 100%) !important;
+  border: 1px solid rgba(185, 185, 202, 0.22) !important;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.6), 0 20px 50px rgba(0, 0, 0, 0.45) !important;
+}
+
+.cz-stage {
+  aspect-ratio: 360 / 1181 !important;
+  height: 90% !important;
+  position: relative !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+/* Maniquí base: iluminación de estudio más sutil y menos plástico plano */
+#czMann {
+  filter: brightness(0.96) contrast(1.06) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.55)) !important;
+  transition: opacity 0.35s ease, filter 0.35s ease, transform 0.35s ease, clip-path 0.35s ease !important;
+  transform-origin: center top !important;
+}
+
+/* Pedestal iluminado estilo pasarela */
+.cz-floor {
+  width: 58% !important;
+  height: 28px !important;
+  bottom: 3.8% !important;
+  background: radial-gradient(ellipse at center, rgba(232, 220, 203, 0.4) 0%, rgba(72, 17, 154, 0.25) 45%, transparent 75%) !important;
+  box-shadow: 0 0 30px rgba(72, 17, 154, 0.35) !important;
+}
+
+/* Capas de ropa: sombras y profundidad física entre prendas */
+.cz-stage img.lay {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Orden de apilamiento (Z-INDEX) y sombras de contacto realistas */
+.cz-stage img.lay[data-layer="zapatos"],
+.cz-stage img.lay[data-layer="tenis"] {
+  z-index: 2 !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45)) !important;
+}
+
+.cz-stage img.lay[data-layer="camisa"] {
+  z-index: 3 !important;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.32)) !important;
+}
+
+.cz-stage img.lay[data-layer="pantalon"] {
+  z-index: 4 !important;
+  filter: drop-shadow(0 5px 14px rgba(0, 0, 0, 0.4)) !important;
+}
+
+.cz-stage img.lay[data-layer="cinturon"] {
+  z-index: 5 !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
+}
+
+.cz-stage img.lay[data-layer="saco"],
+.cz-stage img.lay[data-layer="abrigo"],
+.cz-stage img.lay[data-layer="cuero"] {
+  z-index: 6 !important;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.52)) drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35)) !important;
+}
+
+.cz-stage img.lay[data-layer="corbata"] {
+  z-index: 7 !important;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6)) !important;
+}
+
+.cz-stage img.lay[data-layer="bufanda"] {
+  z-index: 8 !important;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55)) !important;
+}
+
+.cz-stage img.lay[data-layer="guantes"] {
+  z-index: 9 !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4)) !important;
+}
+
+.cz-stage .bag {
+  z-index: 10 !important;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.6)) !important;
+}
+
+/* =====================================================================
+   ADAPTACIÓN ANATÓMICA Y CALCE NATURAL (#czStage & .lay)
+   Alineación directa sin parches artificiales ni cortes bruscos.
+   ===================================================================== */
+.cz-stage #czMann {
+  transform: none !important;
+  clip-path: none !important;
+}
+
+.cz-stage img.lay {
+  transform: none !important;
+}
+
+/* =====================================================================
+   AJUSTES EDITORIALES DE IDENTIDAD (Consolidado de humano.css)
+   ===================================================================== */
+/* Cursor normal del sistema */
+.cursor { display: none !important; }
+
+/* Menos brillo ambiental animado: halos quietos y sobrios */
+.chat-aura i { animation: none !important; }
+[class*="blink"] { animation: none !important; }
+
+/* Horario comercial realista en lugar de estado robótico */
+.tr-open,
+.sg-open {
+  font-weight: 500 !important;
+  letter-spacing: .02em !important;
+  text-transform: none !important;
+}
+
+/* Cierre de la portada editorial */
+.sr-cierre {
+  background: #262626;
+  color: #fff;
+  padding: clamp(72px, 10vw, 140px) var(--gut, 24px) clamp(56px, 8vw, 110px);
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
+.sr-cierre-in {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.sr-cierre-kicker {
+  margin: 0 0 28px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #B9B9CA;
+}
+.sr-cierre h2 {
+  margin: 0;
+  font-weight: 800;
+  font-size: clamp(40px, 7vw, 96px);
+  line-height: .98;
+  letter-spacing: -.035em;
+  color: #fff;
+  max-width: none;
+}
+.sr-cierre-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 32px 64px;
+  align-items: end;
+  margin-top: clamp(36px, 5vw, 64px);
+  padding-top: 28px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+}
+.sr-cierre-cols p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 17px;
+  line-height: 1.55;
+  color: #E8DCCB;
+}
+.sr-cierre-acc {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+.sr-cierre-acc .btn {
+  background: #48119A !important;
+  color: #fff !important;
+  border-color: #48119A !important;
+  box-shadow: none !important;
+}
+.sr-cierre-acc .btn:hover { background: #3a0e7d !important; }
+.sr-cierre-link {
+  color: #fff;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(255, 255, 255, .35);
+}
+.sr-cierre-link:hover { text-decoration-color: #fff; }
+.sr-cierre-store {
+  margin: 40px 0 0;
+  font-size: 14px;
+  color: #B9B9CA;
+}
+.sr-cierre-store .linkish {
+  font: inherit;
+  color: #fff;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .sr-cierre-cols { grid-template-columns: 1fr; }
+  .sr-cierre-acc { flex-direction: column; align-items: flex-start; gap: 14px; }
+}
+
+/* Pie de página: texto de marca más sobrio */
+.foot .foot-lead { line-height: 1.5; }
+
+/* =====================================================================
+   LANDING DE BIENVENIDA · BASE (portal, header y botones; el resto está en landing.css)
+   Fondo: Grafito (#262626) | Secundarios: Arena (#E8DCCB), Lavanda (#B9B9CA)
+   Acento: Violeta (#48119A) | Texto: Blanco (#FFFFFF)
+   ===================================================================== */
+
+/* ── Base del portal ─────────────────────────────────────────────── */
+.sr-portal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: #262626;
+  font-family: 'Poppins', sans-serif;
+  color: #ffffff;
+  perspective: 1200px;
+}
+
+/* ">" para no ocultar el <main> y el <footer> del propio portal */
+body.in-portal > main,
+body.in-portal > .nav,
+body.in-portal > footer,
+body.in-portal > .grain,
+body.in-portal [data-view] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.sr-portal.is-exiting {
+  animation: pe-fade-out 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+}
+
+@keyframes pe-fade-out {
+  0%   { opacity: 1; transform: scale(1); filter: blur(0px); }
+  100% { opacity: 0; transform: scale(1.03); filter: blur(8px); }
+}
+
+/* ── Header ───────────────────────────────────────────────────────── */
+.pe-header {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 48px;
+  animation: pe-fade-down 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pe-fade-down {
+  0%   { opacity: 0; transform: translateY(-24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.pe-header-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.pe-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.pe-brand-text {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.pe-nav-capsules {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pe-capsule-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(185, 185, 202, 0.2);
+  color: #E8DCCB;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  border-radius: 100px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.pe-capsule-btn:hover {
+  color: #ffffff;
+  border-color: rgba(185, 185, 202, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pe-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pe-login-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 9px 20px;
+  border-radius: 100px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.pe-login-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: #fff;
+}
+
+.pe-explore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #48119A;
+  border: 1px solid rgba(185, 185, 202, 0.3);
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 24px;
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(72, 17, 154, 0.55);
+  transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
+}
+
+.pe-explore-btn:hover {
+  transform: scale(1.03);
+  background: #5815bd;
+  box-shadow: 0 0 32px rgba(72, 17, 154, 0.8);
+}
+
+.pe-explore-btn svg {
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.pe-explore-btn:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.pe-mobile-menu-btn {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.pe-mobile-menu-btn span {
+  width: 16px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.pe-mobile-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 24px;
+  background: rgba(38, 38, 38, 0.98);
+  border-bottom: 1px solid rgba(185, 185, 202, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.pe-m-link {
+  background: none;
+  border: none;
+  color: #E8DCCB;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: left;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.pe-m-login {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+  color: #fff;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .pe-header { padding: 18px 24px; }
+  .pe-nav-capsules { display: none; }
+  .pe-login-btn { display: none; }
+  .pe-mobile-menu-btn { display: flex; }
+}
+
+@media (max-width: 560px) {
+  .pe-header { padding: 14px 18px; }
+  .pe-explore-btn { padding: 8px 16px; font-size: 0.68rem; }
+}
+
+/* ── Accesibilidad: prefers-reduced-motion ─────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pe-header {
+    animation: none !important;
+    transition: none !important;
+  }
+}

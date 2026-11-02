@@ -1,0 +1,202 @@
+
+
+/* =====================================================================
+   VERSIÓN 3 · revisión UX/UI parte 2
+   ===================================================================== */
+/* iconos de «Cómo funciona» en blanco */
+.pi-grid svg{stroke:#FFFFFF!important;background:rgba(72,17,154,.55)!important;border-color:rgba(185,185,202,.3)!important}
+
+/* botones armonizados: todos con esquinas de 12 px (los chips y filtros siguen en píldora) */
+.btn,a.btn,button.btn,.pill,.lbl.pill,.btn-light,.pl2-b,.nav-auth,.nav-join,.nav-bell,#authSubmit,#suSubmit,.auth-demo-row button,.role-pick button,.auth-close,.plx-btn,.mdl-x,.upload,.cz-item,.seg-toggle,.seg-mini,.menu-btn,.sheet .auth-link,.auth-tabs,.auth-tabs button{border-radius:12px!important}
+.seg-toggle{overflow:hidden}
+.auth-demo-row{gap:6px!important}
+.auth-demo-row button{border:1px solid rgba(255,255,255,.28)!important}
+
+/* «Mostrar» ya no se monta sobre la contraseña */
+.pw{position:relative}
+.pw input{padding-right:92px!important;text-overflow:ellipsis}
+.pw button{position:absolute!important;right:6px;top:50%;transform:translateY(-50%);padding:6px 10px!important;border-radius:8px!important;background:rgba(38,38,38,.6)!important;white-space:nowrap}
+
+/* «Volver» en cada pantalla */
+.v-backrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.v-backrow .crumbs{margin:0}
+.v-back{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.22);color:#fff;cursor:pointer;
+  background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.03)),rgba(38,38,38,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;transition:background .2s}
+.v-back:hover{background:#fff;color:#262626}
+.st-crumbs .v-backrow,.st-hero ~ .v-backrow{margin-top:8px}
+
+/* menús desplegables en vidrio */
+.gsel{position:relative;display:inline-flex;width:100%;min-width:0}
+.field .gsel,.fsel .gsel{display:flex}
+.sel .gsel{width:auto}
+.gsel > select{position:absolute!important;inset:0;opacity:0!important;pointer-events:none!important;width:100%!important;height:100%!important}
+.gsel-b{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:0 14px;border-radius:12px;cursor:pointer;
+  font:400 14px/1.2 var(--sans);color:#fff;text-align:left;border:1px solid rgba(255,255,255,.18);
+  background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.025)),rgba(38,38,38,.4);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:border-color .2s,background .2s}
+.gsel-b span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gsel-b svg{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;transition:transform .25s}
+.gsel.open .gsel-b svg{transform:rotate(180deg)}
+.gsel-b:hover,.gsel.open .gsel-b{border-color:rgba(185,185,202,.6);background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.04)),rgba(38,38,38,.5)}
+.gsel-b:focus-visible{outline:2px solid #B9B9CA;outline-offset:2px}
+.gsel-b:disabled{opacity:.5;cursor:default}
+.sel .gsel-b,.lbl .gsel-b,.t-tools .gsel-b{min-height:34px;padding:0 10px;font:600 10.5px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase}
+.field.invalid .gsel-b{border-color:var(--bad)!important;box-shadow:0 0 0 1px var(--bad)}
+.gsel-p{position:fixed;z-index:400;max-height:300px;overflow:auto;padding:6px;border-radius:14px;display:flex;flex-direction:column;gap:2px;
+  background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02) 55%),rgba(38,38,38,.78);backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 30px 70px rgba(0,0,0,.5);animation:gIn .18s cubic-bezier(.2,.7,.1,1);scrollbar-width:thin}
+@keyframes gIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.gsel-p button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-radius:10px;background:none;color:#fff;font:400 14px/1.2 var(--sans);text-align:left;cursor:pointer}
+.gsel-p button i{width:14px;font-style:normal;font-weight:700;color:#B9B9CA;flex:none}
+.gsel-p button:hover,.gsel-p button:focus-visible{background:rgba(255,255,255,.1);outline:0}
+.gsel-p button[aria-selected="true"]{background:rgba(72,17,154,.55)}
+.gsel-p button:disabled{opacity:.4}
+
+/* mensajes en la barra (tienda y fundación) */
+.nav-msg{display:grid;place-items:center;width:38px;height:38px;position:relative;color:#fff;border:1px solid rgba(255,255,255,.4)!important;background:rgba(255,255,255,.06)}
+.nav-msg svg{width:17px;height:17px}
+.nav-msg i{position:absolute;right:-6px;top:-6px;min-width:18px;height:18px;border-radius:9px;background:#48119A;color:#fff;font:700 10px/18px var(--sans);font-style:normal;text-align:center;padding:0 4px;border:1px solid rgba(255,255,255,.4)}
+.nav-msg i[hidden]{display:none}
+
+/* tiendas por categoría */
+.st-filter{margin:0 0 16px;display:flex;flex-wrap:wrap;gap:8px}
+.sg-card[hidden]{display:none!important}
+
+/* el radar en el mapa (inicio) */
+.lm-sec{padding:clamp(70px,9vw,130px) var(--gut) clamp(40px,6vw,80px)}
+.lm-sec .sec-head h2 span{color:#B9B9CA}
+.lm-wrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.lm-box{position:relative;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.14);aspect-ratio:640/560;background:#1f1f1f}
+.lm-box .map-svg{width:100%;height:100%;display:block}
+.lm-pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:none;cursor:pointer;color:#fff;text-decoration:none;z-index:2}
+.lm-pin i{width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#48119A;border:2px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.5);transition:transform .25s}
+.lm-pin.found i{background:#E8DCCB;border-color:#262626}
+.lm-pin span{font:600 10.5px/1 var(--sans);padding:4px 7px;border-radius:8px;background:rgba(38,38,38,.8);white-space:nowrap;backdrop-filter:blur(6px)}
+.lm-pin.on i{transform:rotate(-45deg) scale(1.35)}
+.lm-pin.on span{background:#48119A}
+.lm-pane{padding:20px;border-radius:22px;display:flex;flex-direction:column;gap:10px;background:var(--v2-gl);border:1px solid var(--v2-glb);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.lm-pane > .lbl{color:#B9B9CA}
+.lm-pane h3{margin:0;font:800 28px/1 var(--sans);letter-spacing:-.03em}
+.lm-pane p{margin:0;color:#E8DCCB;font-size:14px}
+.lm-items{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0}
+.lm-items button{display:flex;flex-direction:column;gap:4px;text-align:left;border:0;background:none;color:#fff;cursor:pointer;padding:0}
+.lm-items span{aspect-ratio:1;border-radius:12px;background:#E8DCCB;overflow:hidden;display:block}
+.lm-items img{width:100%;height:100%;object-fit:contain}
+.lm-items b{font:600 13px/1.2 var(--sans)}.lm-items em{font-style:normal;font-size:12px;color:#B9B9CA}
+.lm-a{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+@media (max-width:860px){.lm-wrap{grid-template-columns:1fr}}
+
+/* vendedores de la comunidad */
+.sv-sellers{margin-top:clamp(40px,6vw,70px)}
+.svs-h{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.svs-h .lbl{color:#B9B9CA}.svs-h h3{margin:6px 0;font:800 clamp(26px,3vw,40px)/1 var(--sans);letter-spacing:-.03em;color:#fff}.svs-h p{margin:0;color:#E8DCCB}
+.svs-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.svs-c{display:flex;align-items:center;gap:12px;padding:14px;border-radius:18px;text-decoration:none;color:#fff;background:var(--v2-gl);border:1px solid var(--v2-glb);transition:border-color .25s,transform .3s}
+.svs-c:hover{border-color:rgba(185,185,202,.55);transform:translateY(-3px)}
+.svs-av{width:44px;height:44px;border-radius:50%;background:#E8DCCB;color:#262626;display:grid;place-items:center;font:700 14px/1 var(--sans);flex:none}
+.svs-c > div{display:flex;flex-direction:column;gap:3px;min-width:0}.svs-c b{font:600 15px/1.2 var(--sans)}.svs-c span{font-size:12.5px;color:#E8DCCB}
+.svs-th{margin-left:auto;display:flex}
+.svs-th img{width:40px;height:40px;border-radius:10px;object-fit:contain;background:#E8DCCB;border:2px solid #2d0d63;margin-left:-10px}
+
+/* similares en la ficha de la prenda */
+.pd-sim{margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.12)}
+.pd-sim h4{margin:0 0 12px;font:700 15px/1 var(--sans);letter-spacing:-.01em}
+.pd-sim-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pd-sim-i{display:flex;flex-direction:column;gap:5px;text-align:left;border:0;background:none;color:#fff;cursor:pointer;padding:0}
+.pd-sim-i > span{aspect-ratio:3/4;border-radius:12px;background:#E8DCCB;overflow:hidden;display:block;position:relative}
+.pd-sim-i > span img,.pd-sim-i > span .ph{width:100%!important;height:100%!important;object-fit:contain;position:static!important}
+.pd-sim-i b{font:600 12.5px/1.2 var(--sans)}.pd-sim-i em{font-style:normal;font-size:11.5px;color:#B9B9CA}
+.pd-sim-i:hover > span{outline:2px solid #48119A}
+@media (max-width:600px){.pd-sim-g{grid-template-columns:1fr 1fr}}
+
+/* cómo funciona */
+.how-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px}
+.how{margin:0 0 22px;padding:clamp(18px,3vw,30px);border-radius:24px;background:var(--gl,var(--v2-gl));border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.how-h .lbl{color:#B9B9CA}.how-h h2{margin:8px 0 18px;font:800 clamp(26px,3.2vw,44px)/1 var(--sans);letter-spacing:-.03em}
+.how-steps{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.how-steps li{display:flex;gap:14px;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.how-steps b{width:32px;height:32px;flex:none;border-radius:50%;background:#48119A;display:grid;place-items:center;font:700 14px/1 var(--sans)}
+.how-steps h3{margin:0 0 4px;font:700 16px/1.2 var(--sans)}.how-steps p{margin:0;font-size:14px;line-height:1.5;color:#E8DCCB}
+.how-go{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:760px){.how-steps{grid-template-columns:1fr}}
+
+/* manual de identidad */
+.mk-sec{margin:0 0 30px}
+.mk-logos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.mk-l{margin:0;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.14);display:flex;flex-direction:column}
+.mk-l > div{min-height:190px;display:grid;place-items:center;padding:20px}
+.mk-l.dark > div{background:#262626}
+.mk-l figcaption{padding:14px 16px;display:flex;flex-direction:column;gap:4px;background:rgba(255,255,255,.05)}
+.mk-l figcaption b{font:700 14px/1.2 var(--sans)}.mk-l figcaption span{font-size:13px;color:#E8DCCB}
+.mk-sym .srlogo{height:110px;color:#fff}
+.mk-lock{display:flex!important;align-items:center;gap:12px;color:#fff;font:700 30px/1 var(--sans);letter-spacing:-.03em}
+.mk-lock .srlogo{height:64px}
+.mk-bw{display:grid!important;grid-template-rows:1fr 1fr;padding:0!important}
+.mk-bw > span{display:flex;align-items:center;justify-content:center;gap:10px;font:700 24px/1 var(--sans);letter-spacing:-.03em;padding:18px}
+.mk-bw .on-w{background:#fff;color:#000}.mk-bw .on-b{background:#000;color:#fff}
+.mk-bw .srlogo{height:46px;color:currentColor}
+.mk-bw .srlogo .srl-w{fill:currentColor!important}
+.mk-pal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.mk-pal article{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
+.mk-pal .sw{height:80px;border-radius:12px;border:1px solid rgba(255,255,255,.2)}
+.mk-pal b{font:700 15px/1 var(--sans)}.mk-pal code{font-size:12px;color:#B9B9CA}.mk-pal em{font-style:normal;font:600 11px/1.2 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#E8DCCB}.mk-pal p{margin:0;font-size:12.5px;line-height:1.45;color:#fff}
+.mk-type{display:flex;flex-direction:column;gap:10px}
+.mk-t{display:grid;grid-template-columns:230px 1fr auto;gap:16px;align-items:center;padding:12px 16px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+.mk-t .lbl{color:#B9B9CA}.mk-t em{font-style:normal;font-size:12.5px;color:#E8DCCB}
+.mk-ex{color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk-display{font:900 64px/1 var(--sans);letter-spacing:-.05em}.mk-h1{font:900 46px/1 var(--sans);letter-spacing:-.035em}.mk-h2{font:800 36px/1 var(--sans);letter-spacing:-.035em}
+.mk-h3{font:700 22px/1.2 var(--sans)}.mk-cuerpo{font:400 15px/1.5 var(--sans)}.mk-etiqueta{font:500 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.mk-comp{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+@media (max-width:980px){.mk-logos{grid-template-columns:1fr}.mk-pal{grid-template-columns:repeat(2,minmax(0,1fr))}.mk-t{grid-template-columns:1fr}}
+
+/* tarjetas de catálogo de la tienda: sin bloques vacíos y sin recortar la prenda */
+.p-card .badge:empty{display:none!important}
+.p-card .badge.st-b{background:#E8DCCB!important;color:#262626!important;border:0!important}
+.p-card.own .p-img img,.p-card .p-img img{object-fit:contain!important}
+
+/* donación: punto y franja elegidos por quien dona */
+.don-when{padding:14px 16px;border-radius:14px;border:1px solid rgba(185,185,202,.3);background:rgba(72,17,154,.12)}
+.don-when .form-grid{margin-top:8px}
+
+/* administrador: sin casillas, botón «Editar» y sin desplazamiento raro */
+.adm-t th.t-act,.adm-t td.t-act{width:1%;text-align:right;white-space:nowrap}
+.t-edit{padding:7px 12px!important}
+.adm-t tbody tr{cursor:default}
+.v-admin.view.on,.view.on.v-admin{animation:admIn .35s ease!important}
+@keyframes admIn{from{opacity:0}to{opacity:1}}
+.t-wrap{overflow-x:auto;scroll-behavior:auto}
+.adm-t{min-width:0}
+.chip,.st-filter .chip,.how-nav .chip,.cz-tabs button,.pl2-seg button{border-radius:999px!important}
+.svs-c span.svs-av{color:#262626!important;font-size:14px}
+.svs-c span.svs-th{color:inherit}
+.lm-empty{grid-column:1/-1;color:#B9B9CA;font-size:13.5px;margin:0}
+.nav-links a.nl-search{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.28);margin-right:4px}
+.nav-links a.nl-search svg{width:14px;height:14px}
+
+/* ---------- v3.1 · fondo «foto blur clara» en todas las pantallas internas */
+body[data-glass] .sr-bg{display:none!important}
+body[data-glass]{background:#262626 var(--sr-photo-bg) center/cover fixed no-repeat!important}
+body[data-glass] .sr-bg-veil{background:radial-gradient(130% 100% at 50% 0%,transparent 55%,rgba(0,0,0,.28))}
+/* fotos reales de producto: llenan la tarjeta */
+img[src*="/productos/"],.p-card .p-img img[src*="/productos/"],.p-card.own .p-img img[src*="/productos/"]{object-fit:cover!important;object-position:50% 35%}
+.p-card .badge.alt,.pd-img .badge.alt{background:#fff!important;color:#262626!important}
+/* mapa real de Bogotá */
+.map-svg .map-zone text{fill:rgba(255,255,255,.3);font:600 8px/1 var(--sans);letter-spacing:.14em;paint-order:stroke;stroke:#18171c;stroke-width:3px}
+.map-svg .map-attr{fill:rgba(255,255,255,.45);font:500 9px/1 var(--sans)}
+/* menú lateral del perfil: textos dentro del marco */
+body[data-view] .pf-nav{box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden}
+body[data-view] .pf-nav a{font-size:15.5px;line-height:1.3;padding:9px 0;overflow-wrap:break-word;letter-spacing:-.01em}
+body[data-view] .pf-nav .lbl{white-space:normal}
+/* login / registro: la tarjeta nunca se sale de la foto */
+.auth-stack > .auth-card,.auth-stack #signCard{max-height:calc(100% - 28px)!important;overflow-y:auto;overscroll-behavior:contain}
+#signCard{gap:7px!important;padding-top:18px!important;padding-bottom:16px!important}
+#signCard h2{font-size:26px!important}
+#signCard .role-pick button{padding:7px 9px 6px!important}
+#signCard .role-pick b{font-size:15px!important}
+#signCard .field input,#signCard .gsel-b{padding-top:8px!important;padding-bottom:8px!important}
+@media (max-height:700px){#signCard .role-pick button span{display:none}}
+/* tienda y fundación: la foto se disuelve en el fondo en vez de cortarse */
+.view .st-hero,.view .fd-hero{background:transparent!important;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 52%,rgba(0,0,0,.85) 66%,rgba(0,0,0,.45) 82%,transparent 100%);
+          mask-image:linear-gradient(180deg,#000 0%,#000 52%,rgba(0,0,0,.85) 66%,rgba(0,0,0,.45) 82%,transparent 100%)}
+.view .st-hero::after,.view .fd-hero::after{background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,transparent 26%,transparent 48%,rgba(20,18,26,.55) 100%)!important}
+
