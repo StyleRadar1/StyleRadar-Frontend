@@ -1,0 +1,55 @@
+/* =====================================================================
+   StyleRadar · requerimientos de front pendientes (RF-76/82, 87, 92, 96-99, 102, 103)
+   ===================================================================== */
+
+/* RF-76/82: filas de 3 indicadores ocupan todo el ancho */
+.kpis:has(> :nth-child(3):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+@media (max-width:900px) { .kpis:has(> :nth-child(3):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)) } .kpis:has(> :nth-child(3):last-child) > :last-child { grid-column: 1 / -1 } }
+
+/* botón con aspecto de enlace */
+.btn-link { background: none; border: 0; padding: 0; color: var(--acc-tx, #B9B9CA); font: 500 13px/1.3 var(--sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer }
+.btn-link:hover { color: #FFFFFF }
+.btn-link:disabled { color: var(--fog, #8a8a98); text-decoration: none; cursor: default }
+
+/* RF-92: código de verificación */
+.otp-card { text-align: left }
+.otp-ico { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(185, 185, 202, .16); border: 1px solid rgba(255, 255, 255, .22); color: #FFFFFF }
+.otp-card .sub b { color: #FFFFFF; font-weight: 600 }
+.otp-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px }
+.otp-grid input { width: 100%; aspect-ratio: 1 / 1.15; text-align: center; font: 600 22px/1 var(--sans); color: #FFFFFF; background: rgba(38, 38, 38, .35); border: 1px solid rgba(255, 255, 255, .28); border-radius: 8px; outline: none; transition: border-color .2s, background-color .2s; font-variant-numeric: tabular-nums; padding: 0 }
+.otp-grid input:focus { border-color: var(--acc); background: rgba(38, 38, 38, .6) }
+.otp-grid input:disabled { opacity: .45 }
+.otp-grid.invalid input { border-color: var(--bad) }
+.otp-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px }
+.otp-row a { color: rgba(255, 255, 255, .78); text-underline-offset: 3px }
+.otp-card .btn-link { color: rgba(255, 255, 255, .78) }
+
+/* RF-96/97/99: aviso de pago, historial y comprobante */
+.pay-alert { margin: 0 0 16px }
+.pay-alert b + span b { display: inline; font-weight: 600 }
+.pay-hist { overflow-x: auto; border: 1px solid rgba(185, 185, 202, .16) }
+.pay-hist .tbl td { font-size: 13px }
+.pay-hist .ph-ref { display: block; color: var(--fog); font-size: 11px; margin-top: 2px }
+.pay-hist .tbl td:last-child { text-align: right; white-space: nowrap }
+.pf-sec b.warn { color: var(--warn) }
+.receipt { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0 }
+.receipt dt { color: var(--fog); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; align-self: center }
+.receipt dd { margin: 0 }
+
+/* RF-102: funciones de Radar+ */
+.plus-tag { display: inline-block; margin-left: 4px; padding: 2px 6px; border-radius: 999px; background: var(--acc); color: #FFFFFF; font: 600 9.5px/1 var(--sans); letter-spacing: .04em; vertical-align: middle }
+.cz-lock { display: grid; place-items: center; min-height: 100%; padding: 24px }
+.upsell { display: flex; flex-direction: column; gap: 10px }
+.up-ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--acc); color: #FFFFFF }
+.up-ico svg { width: 20px; height: 20px }
+.up-list { margin: 0; padding-left: 18px; display: grid; gap: 4px }
+
+/* RF-87: moderación agrupada por publicador */
+.mo-view { margin-left: auto }
+.mo-hint { color: var(--fog); margin: -4px 0 14px }
+.mo-group { border: 1px solid rgba(185, 185, 202, .16); padding: 14px; margin: 0 0 14px }
+.mo-gh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px }
+.mo-gh b { font-size: 16px }
+.mo-gh .lbl { color: var(--fog) }
+.mo-ga { margin-left: auto; display: flex; gap: 8px }
+@media (max-width:640px) { .mo-ga { margin-left: 0; width: 100% } .mo-ga .btn { flex: 1 } .mo-view { margin-left: 0 } }

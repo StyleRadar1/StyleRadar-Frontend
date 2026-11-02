@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Paleta y tipografía del manual de identidad de StyleRadar */
+@theme {
+  --font-sans: "Poppins", system-ui, sans-serif;
+  --color-grafito: #262626;
+  --color-blanco: #ffffff;
+  --color-arena: #e8dccb;
+  --color-lavanda: #b9b9ca;
+  --color-violeta: #48119a;
+  --color-violeta-claro: #7b4dd8;
+  --color-fondo: #1d1d1d;
+}
+
+html { background: var(--color-fondo); }
+body { @apply font-sans text-blanco antialiased; }

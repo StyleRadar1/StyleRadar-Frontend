@@ -1,0 +1,32 @@
+/* Personajes del carrusel: los que no están activos se ven atenuados pero con su color,
+   para que cada uno se reconozca por su look. */
+.cx-item:not(.is-active) .cx-fig img {
+  filter: saturate(.75) brightness(.97) !important;
+  opacity: .8 !important;
+}
+
+/* Aura en "Arma, pruébate y sal": figura recortada sobre un brillo violeta,
+   para que se integre con el fondo de la sección. */
+.as-collage {
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.as-collage::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 52%;
+  width: min(115%, 760px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(72, 17, 154, .55), rgba(72, 17, 154, .18) 55%, rgba(72, 17, 154, 0) 75%);
+  pointer-events: none;
+}
+
+.as-collage .as-img {
+  filter: drop-shadow(0 28px 34px rgba(0, 0, 0, .5));
+}
