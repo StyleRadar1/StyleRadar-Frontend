@@ -16,10 +16,11 @@ const ItemDetail = lazy(() => import('@/modules/catalogo/pages/ItemDetailPage'))
 const MapPage = lazy(() => import('@/modules/catalogo/pages/MapPage'))
 const Store = lazy(() => import('@/modules/catalogo/pages/StorePage'))
 const Inventory = lazy(() => import('@/modules/catalogo/pages/InventoryPage'))
-const SecondHand = lazy(() => import('@/modules/catalogo/pages/SecondHandPage'))
 const Playlists = lazy(() => import('@/modules/catalogo/pages/PlaylistsPage'))
 const Moderation = lazy(() => import('@/modules/catalogo/pages/ModerationPage'))
 const TryOn = lazy(() => import('@/modules/experiencia/pages/TryOnPage'))
+const SecondHand = lazy(() => import('@/modules/experiencia/pages/SecondHandPage'))
+const PublishListing = lazy(() => import('@/modules/experiencia/pages/PublishListingPage'))
 const Donate = lazy(() => import('@/modules/experiencia/pages/DonatePage'))
 const Foundation = lazy(() => import('@/modules/experiencia/pages/FoundationPage'))
 const Plans = lazy(() => import('@/modules/transacciones/pages/PlansPage'))
@@ -56,6 +57,8 @@ export const router = createBrowserRouter([
       { path: '/perfil', element: only(USER, <Profile />) },
       { path: '/probador', element: only(USER, <TryOn />) },
       { path: '/segunda-mano', element: only(USER, <SecondHand />) },
+      { path: '/segunda-mano/publicar', element: only(USER, <PublishListing />) },
+      { path: '/segunda-mano/:id/editar', element: only(USER, <PublishListing />) },
       { path: '/donar', element: only(USER, <Donate />) },
       { path: '/alertas', element: only(USER, <Alerts />) },
       { path: '/mensajes', element: only(ANY, <Messages />) },
