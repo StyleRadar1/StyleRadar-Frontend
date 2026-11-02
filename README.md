@@ -18,7 +18,9 @@ Proyecto del curso DOSW, Escuela Colombiana de Ingeniería Julio Garavito, 2026-
 
 El proyecto en React tiene la base común lista (rutas por rol, inicio de sesión, acceso para jurados, cliente HTTP y design system) y el catálogo funcionando con datos de prueba. Las demás vistas están creadas como pantallas pendientes, cada una con su squad y sus requerimientos, y se van migrando desde el prototipo.
 
-El prototipo navegable completo, en HTML, está en `public/prototipo/` y se abre en `/prototipo/index.html`. Es la referencia de diseño para todas las vistas.
+El prototipo navegable completo, en HTML, está en `public/prototipo/`. Es la referencia de diseño para todas las vistas. Se abre con doble clic en `public/prototipo/index.html`, sin instalar nada, o en `/prototipo/index.html` con el servidor de desarrollo.
+
+Los cambios pendientes del prototipo (accesibilidad, registro, probador, consistencia y limpieza) están en el [plan de cambios](docs/gestion/StyleRadar_Plan_de_Cambios_Prototipo_v2_0.docx).
 
 ## Tecnologías
 
@@ -50,6 +52,8 @@ Otros comandos: `npm run build` (compila), `npm run preview` (sirve lo compilado
 ### Cuentas de prueba
 
 La contraseña de todas es `1234`: usuario@styleradar.co, luna@styleradar.co (tienda), abrigo@styleradar.co (fundación) y admin@styleradar.co. En `/login?jurado` aparecen como botones de un clic, para el kit de los jurados.
+
+En el prototipo, después de la contraseña se pide un código de verificación: es `123456`, o se toca «Usar código de prueba».
 
 ## Estructura
 
@@ -99,6 +103,7 @@ El ejemplo completo está en el catálogo: `CatalogPage.tsx` → `useItems.ts` �
 
 - `main` tiene la versión entregable y `develop` la de integración.
 - Cada tarea va en una rama `feature/<modulo>-<tarea>` (por ejemplo `feature/catalogo-filtro-talla`) que sale de `develop`.
+- Los cambios del plan de cambios del prototipo van en ramas `fix/ux-<grupo>` (por ejemplo `fix/ux-accesibilidad`), también desde `develop`.
 - Los cambios entran a `develop` por pull request revisado por otra persona; a `main` solo desde `develop`.
 - Los commits van en español: `feat(catalogo): agregar filtro por talla`, `fix(identidad): validar correo`.
 - El CI compila y revisa el código en cada pull request.
@@ -114,7 +119,7 @@ Toda la documentación del front está en `docs/`. El índice con la descripció
 | `docs/requerimientos/` | Requerimientos funcionales y su recorrido en el prototipo |
 | `docs/identidad/` | Manual de identidad, logo, colores y personajes |
 | `docs/marketing/` | Propuesta de marketing y cronograma |
-| `docs/gestion/` | Reparto del front por squad, registro de cambios, sprints y presentación |
+| `docs/gestion/` | Reparto del front por squad, registro de cambios, plan de cambios del prototipo, sprints y presentación |
 | `docs/plantillas/` | Plantilla institucional para los documentos del proyecto |
 | `docs/diseno/` | Capturas actuales del prototipo y mockups anteriores |
 

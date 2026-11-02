@@ -40,6 +40,7 @@ Actualizada el 2 de noviembre de 2026 con el landing, el inicio de sesión por r
 |---|---|
 | `gestion/StyleRadar_Propuesta_Reparto_Front.docx` | Repositorio, estructura y reparto de vistas y requerimientos por squad |
 | `gestion/StyleRadar_Registro_de_Cambios_Front.docx` | Cambios del prototipo y de la documentación, con su motivo y autor, respaldos y cambios opcionales |
+| `gestion/StyleRadar_Plan_de_Cambios_Prototipo_v2_0.docx` | Plan de cambios del prototipo: lo ya hecho, accesibilidad, registro, probador, consistencia, limpieza, fallos, acabados, orden de trabajo y decisiones abiertas. La v1.0 está en `historico/` |
 | `gestion/StyleRadar_Presentacion.pdf` | Presentación del Sprint 2 |
 | `gestion/sprints/` | Notas de los sprints, matriz de cambios y validaciones (registro histórico) |
 
