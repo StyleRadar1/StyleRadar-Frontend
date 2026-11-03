@@ -40,14 +40,14 @@ En Windows, el segundo comando es `copy .env.example .env`.
 
 Abrir http://localhost:5173.
 
-Otros comandos: `npm run build` (compila), `npm run preview` (sirve lo compilado) y `npm run lint` (revisa el código).
+Otros comandos: `npm run build` (compila), `npm run preview` (sirve lo compilado), `npm run lint` (revisa el código) y `npm test` (corre las pruebas).
 
 ### Variables de entorno
 
 | Variable | Para qué sirve |
 |---|---|
 | `VITE_API_URL` | URL del API Gateway (sr-api-gateway). El front solo habla con el gateway. |
-| `VITE_USE_MOCKS` | `true` mientras el backend no esté listo: los servicios responden con datos de prueba. |
+| `VITE_USE_MOCKS` | `true` mientras el backend no esté listo: los servicios responden con datos de prueba y la app muestra el aviso «Modo demostración». Los casos de error se simulan con `?mock=<escenario>` (ver el README de `experiencia`). |
 
 ### Cuentas de prueba
 
@@ -84,8 +84,8 @@ Dentro de cada módulo: `components/`, `hooks/`, `services/`, `states/`, `types/
 | Módulo | Squad | Microservicios | Requerimientos |
 |---|---|---|---|
 | identidad | 1 · Identidad (CADCHE) | Authentication, Usuarios, Tiendas | RF 1–6, 62–66, 92 |
-| catalogo | 2 · Catálogo (RST) | ItemCatalog, Inventory, Geolocation, Playlist | RF 7–22, 28, 33–39, 50–61, 69–72, 74 |
-| experiencia | 3 · Experiencia (PT8080) | VirtualTryOn, Donations | RF 23–27, 42–49 |
+| catalogo | 2 · Catálogo (RST) | ItemCatalog, Inventory, Geolocation, Playlist | RF 7–22, 28, 50–61, 69–72, 74 |
+| experiencia | 3 · Experiencia (PT8080) | ms-probador-virtual (8092), ms-segunda-vida-donaciones (8093) | RF 23–27, 33–39, 42–49 |
 | transacciones | 4 · Transacciones | Pagos y suscripciones | RF 67, 68, 75, 93–103 |
 | soporte | 5 · Soporte (GJ) | Notification, Chat, Estadísticas | RF 29–32, 40, 41, 73, 76–91 |
 | core, landing | Base común | API Gateway | Router, roles, design system, landing y acceso para jurados |
@@ -106,7 +106,7 @@ El ejemplo completo está en el catálogo: `CatalogPage.tsx` → `useItems.ts` �
 - Los cambios del plan de cambios del prototipo van en ramas `fix/ux-<grupo>` (por ejemplo `fix/ux-accesibilidad`), también desde `develop`.
 - Los cambios entran a `develop` por pull request revisado por otra persona; a `main` solo desde `develop`.
 - Los commits van en español: `feat(catalogo): agregar filtro por talla`, `fix(identidad): validar correo`.
-- El CI compila y revisa el código en cada pull request.
+- El CI revisa el código, corre las pruebas y compila en cada pull request.
 
 ## Documentación
 
