@@ -251,9 +251,6 @@
       <div class="cat-head"><div><span class="lbl" style="color:var(--acc-tx)">${cat ? 'Categoría · ' + base.filter(avail).length + ' prendas disponibles' : 'Catálogo completo'}</span><h1 class="v-title">${cat ? CATS[cat][0] : 'Todas las<br>prendas'}</h1>
         ${cat ? `<p class="v-lead">${CATS[cat][1]}</p>` : ''}</div></div>
       <div class="cat-tabs">${[['', 'Todas'], ...Object.entries(CATS).map(([k, v]) => [k, v[0]])].map(([k, t]) => `<a href="${k ? '#/categoria/' + k : '#/catalogo'}" class="${(cat || '') === k ? 'on' : ''}" ${(cat || '') === k ? 'aria-current="page"' : ''}>${t}</a>`).join('')}</div>
-      ${recs.length ? `<section class="recs" aria-labelledby="recT"><div class="recs-h"><div><span class="lbl" style="color:var(--acc-tx)">Para ti</span><h2 id="recT" class="sub-h">Recomendado según tu perfil</h2></div>
-          <p class="d">Porque te gusta ${esc((u.styles || []).slice(0, 3).join(', ') || 'StyleRadar')} y usas talla ${esc(u.sizes.top)} · ${esc(u.sizes.bottom)} · ${esc(u.sizes.shoe)}. <a class="linkish" href="#/perfil/info">Cambiar preferencias</a></p></div>
-        <div class="p-grid">${recs.map(o => X.pCard(o.p, {meta:esc(o.why.slice(0, 2).join(' · '))})).join('')}</div></section>` : ''}
       <form class="search" id="cSearch" role="search">
         <span class="s-ic">${ICON.search}</span>
         <input id="cQ" type="search" value="${esc(query)}" placeholder="Busca «camisa blanca manga larga talla M»…" aria-label="Buscar prendas con tus palabras" autocomplete="off">
@@ -273,10 +270,16 @@
       </div>
       <div class="toolbar"><div class="chips" id="cActive"></div>
         <div class="tb-r"><span class="count lbl" id="cCount" aria-live="polite"></span>
+          <button class="chip near" id="cNear" type="button" aria-pressed="false">${ICON.pin.replace('<svg', '<svg width="12" height="12"')} Más cerca</button>
           <button class="btn btn-line sm" id="cSave" type="button">${ICON.bell} Guardar búsqueda</button>
           <label class="sel lbl">Ordenar <select id="cSort"><option value="rel">Recomendados</option><option value="new">Más recientes</option><option value="cerca">Más cerca de ${esc(loc)}</option><option value="rep">Mejor calificadas</option><option value="asc">Precio: menor a mayor</option><option value="desc">Precio: mayor a menor</option></select></label></div></div>
+      ${recs.length ? `<section class="recs" aria-labelledby="recT"><div class="recs-h"><div><span class="lbl" style="color:var(--acc-tx)">Para ti</span><h2 id="recT" class="sub-h">Recomendado según tu perfil</h2></div>
+          <p class="d">Porque te gusta ${esc((u.styles || []).slice(0, 3).join(', ') || 'StyleRadar')} y usas talla ${esc(u.sizes.top)} · ${esc(u.sizes.bottom)} · ${esc(u.sizes.shoe)}. <a class="linkish" href="#/perfil/info">Cambiar preferencias</a></p></div>
+        <div class="p-grid">${recs.map(o => X.pCard(o.p, {meta:esc(o.why.slice(0, 2).join(' · '))})).join('')}</div></section>` : ''}
       <div id="cRes" aria-busy="false"></div>${vfoot()}`;
     $('#cSort', el).value = order;
+    const syncNear = () => { const b = $('#cNear', el); b.setAttribute('aria-pressed', String(order === 'cerca')); b.title = 'Ordenar por distancia desde ' + loc; };
+    syncNear();
     const meta = p => order === 'rep' ? `★ ${ratingOf(p).toFixed(1).replace('.', ',')}${STORES[p.store] ? ' · ' + STORES[p.store].reviews + ' reseñas' : ''}`
       : `${STORES[p.store] ? esc(STORES[p.store].barrio) : 'Segunda mano'} · ${geo.fmt(p.km || 1)}`;
     const drawActive = () => {
@@ -292,6 +295,8 @@
     let tmr;
     const run = instant => {
       const res = $('#cRes', el); res.setAttribute('aria-busy', 'true'); res.classList.add('loading'); clearTimeout(tmr);
+      // Con búsqueda o filtros, las recomendaciones se esconden para que los resultados queden justo debajo.
+      const rc = $('.recs', el); if (rc) rc.hidden = !!(query.trim() || ARR.some(k => f[k].length) || f.talla || f.min || f.max);
       const t0 = performance.now();
       tmr = setTimeout(() => {
         const r = searchAll(query, f, base, {order});
@@ -301,10 +306,10 @@
         $('#cCount', el).textContent = `${r.items.length} ${r.items.length === 1 ? 'prenda' : 'prendas'} · ${secs} s`;
         const hid = '';
         res.innerHTML = r.items.length ? `<div class="p-grid">${r.items.map(p => X.pCard(p, {meta:meta(p)})).join('')}</div>${hid}`
-          : `${emptyState({icon:'search', title:query ? `No encontramos «${esc(query)}»` : 'Ninguna prenda cumple estos filtros',
-              text:'Revisa cómo está escrito, usa una palabra más general o quita algún filtro. También puedes guardar la búsqueda y te avisamos cuando llegue algo así.',
-              actions:[{label:'Quitar filtros', attr:'data-reset', kind:'btn-acc'}, {label:`${ICON.bell} Avisarme cuando llegue`, attr:'data-savesearch'}]})}${hid}
-            <div class="similar"><h3>Prendas similares</h3><p class="lbl" style="color:var(--fog)">Comparamos tipo, color, talla, estilo y precio con lo que buscaste</p><div class="p-grid">${similar(r.pq, r.f, base).map(p => X.pCard(p, {meta:meta(p)})).join('')}</div></div>`;
+          : `<div class="empty-mini" role="status"><span class="em-ic" aria-hidden="true">${ICON.search}</span><div><b>${query ? `No encontramos «${esc(query)}»` : 'Ninguna prenda cumple estos filtros'}</b>
+              <p>Prueba una palabra más general o quita algún filtro. Mientras tanto, mira estas parecidas.</p></div>
+              <div class="em-acts"><button class="btn btn-line sm" type="button" data-reset>Quitar filtros</button><button class="btn btn-line sm" type="button" data-savesearch>${ICON.bell} Avisarme cuando llegue</button></div></div>${hid}
+            <div class="similar"><h3>Prendas similares</h3><p class="lbl" style="color:var(--fog)">Primero el mismo tipo de prenda; después color, talla, estilo y precio</p><div class="p-grid">${similar(r.pq, r.f, base).map(p => X.pCard(p, {meta:meta(p)})).join('')}</div></div>`;
         res.classList.remove('loading'); res.setAttribute('aria-busy', 'false');
         const qs = X.searchQS({q:query, f, loc:loc !== geo.loc() ? loc : '', orden:order});
         history.replaceState(null, '', (cat ? '#/categoria/' + cat : '#/catalogo') + (qs ? '?' + qs : ''));
@@ -316,9 +321,11 @@
     qi.addEventListener('input', () => { query = qi.value; $('#cClear', el).hidden = !query; run(); });
     $('#cSearch', el).addEventListener('submit', e => { e.preventDefault(); query = qi.value; run(true); qi.blur(); });
     $('#cClear', el).addEventListener('click', () => { qi.value = query = ''; $('#cClear', el).hidden = true; run(true); qi.focus(); });
-    $('#cSort', el).addEventListener('change', e => { order = e.target.value; run(true); });
+    $('#cSort', el).addEventListener('change', e => { order = e.target.value; syncNear(); run(true); });
+    $('#cNear', el).addEventListener('click', () => { order = order === 'cerca' ? 'rel' : 'cerca'; $('#cSort', el).value = order; syncNear(); run(true);
+      toast(order === 'cerca' ? `Ordenado por distancia desde <b>${esc(loc)}</b>` : 'Orden: recomendados'); });
     $('#cTalla', el).addEventListener('change', e => { f.talla = e.target.value; run(true); });
-    $('#cLoc', el).addEventListener('change', e => { loc = e.target.value; geo.set(loc); $('#cSort option[value="cerca"]', el).textContent = 'Más cerca de ' + loc; run(true); toast(`Distancias calculadas desde <b>${esc(loc)}</b>`); });
+    $('#cLoc', el).addEventListener('change', e => { loc = e.target.value; geo.set(loc); $('#cSort option[value="cerca"]', el).textContent = 'Más cerca de ' + loc; syncNear(); run(true); toast(`Distancias calculadas desde <b>${esc(loc)}</b>`); });
     const money2 = i => { const v = i.value.replace(/\D/g, ''); i.value = v ? (+v).toLocaleString('es-CO') : ''; return v; };
     ['cMin','cMax'].forEach(id => $('#' + id, el).addEventListener('change', () => {
       const mn = money2($('#cMin', el)), mx = money2($('#cMax', el));
@@ -350,10 +357,14 @@
     const talla = f.talla || pq.talla, max = +(f.max || pq.max || 0), min = +(f.min || pq.min || 0);
     const score = p => { let s = 0; const hay = norm(p.name);
       pq.text.forEach(t => { if (hay.includes(t.slice(0, 4))) s += 3; });
-      if (tipos.includes(typeOf(p))) s += 3; if (colors.includes(p.color)) s += 2; if (est.includes(p.style)) s += 2;
+      if (tipos.includes(typeOf(p))) s += 6; if (colors.includes(p.color)) s += 2; if (est.includes(p.style)) s += 2;
       if (talla && (p.sizes || []).includes(talla)) s += 1.5;
       if (max && p.price <= max * 1.3) s += 1; if (min && p.price >= min * .7) s += 1; return s; };
-    return base.filter(avail).map(p => [score(p), p]).sort((a, b) => b[0] - a[0]).slice(0, n).map(x => x[1]);
+    const ranked = base.filter(avail).map(p => [score(p), p]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
+    if (!tipos.length) return ranked.slice(0, n);
+    // Si se sabe el tipo (por ejemplo «vestido»), primero van las prendas de ese tipo; otras solo completan si faltan.
+    const same = ranked.filter(p => tipos.includes(typeOf(p)));
+    return [...same, ...ranked.filter(p => !tipos.includes(typeOf(p)))].slice(0, n);
   }
   view('catalogo', {fn:vCatalogo, roles:['user','guest'], acc:'#48119A', title:'Todas las prendas'});
   view('categoria', {fn:(el, a, q) => vCatalogo(el, [], q, a[0]), roles:['user','guest'], acc:'#48119A', title:a => (CATS[a[0]] || ['Categoría'])[0]});
@@ -406,10 +417,8 @@
   view('mapa', {fn:vMapa, roles:['user','guest'], acc:'#48119A', title:'Mapa'});
 
   /* ================= INICIO: feed personal y destacados ================= */
-  X.markFeatured = () => {
-    const feat = DB().featured || (DB().featured = ['p3']); const C = window.SR_COLLS || [];
-    $$('#stage .c-item').forEach((b, i) => { const c = C[i]; const go = b.querySelector('.go'); if (!c || !go) return; const on = c.pid && feat.includes('p' + c.pid); go.textContent = on ? '★ Destacada · Ver' : 'Ver colección'; b.classList.toggle('feat', !!on); });
-  };
+  /* El carrusel animado de playlists ya no existe; 13-v2.js reemplaza esto por drawPlaylists. */
+  X.markFeatured = () => {};
   function feed(){
     const host = $('#paraTi'); if (!host) return;
     const recs = member() && X.U().feed !== false ? X.recommend(8) : [];

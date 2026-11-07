@@ -111,7 +111,7 @@
     ['maletin','Maletín de cuero','Nómada Studio',310000,'Única']];
   function drawTry(){
     const host = $('#pvShow'); if (!host) return;
-    const F = (window.SR || {}).FIT_IMG || {}; const dressed = ($('#fitDressed') || {}).src || '';
+    const F = (window.SR || {}).FIT_IMG || {}; const dressed = (window.SR || {}).FIT_DRESSED || '';
     const total = PIECES.reduce((a, p) => a + p[3], 0);
     const m = member(), guest = !X.me();
     host.innerHTML = `

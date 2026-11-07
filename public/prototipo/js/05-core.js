@@ -396,7 +396,7 @@
   function authChanged(){ dispatchEvent(new Event('sr:authchange')); }
   let GUEST = null;
   const U = () => { const s = me(); if (!s) return GUEST || (GUEST = seedUser('invitado', false)); if (!DB.users[s.email]) DB.users[s.email] = seedUser(s.email, false); return DB.users[s.email]; };
-  const HOME = {user:'#inicio', store:'#/mi-tienda', found:'#/mi-fundacion', admin:'#/admin/resumen'};
+  const HOME = {user:'#/inicio', store:'#/mi-tienda', found:'#/mi-fundacion', admin:'#/admin/resumen'};
 
   /* =====================================================================
      COMPONENTES DE INTERFAZ
@@ -523,7 +523,8 @@
      BARRA SUPERIOR POR ROL
      ===================================================================== */
   const NAVS = {
-    user:[['#/catalogo','Buscar'],['#categorias','Categorías'],['#colecciones','Playlists'],['#tiendas','Tiendas'],['#/mapa','Mapa'],['#fundaciones','Fundaciones'],['#/probador','Probador'],['#segunda-vida','Segunda vida']],
+    /* P16: con sesión ya no se usa la página larga; categorías, tiendas y fundaciones pasan al landing */
+    user:[['#/inicio','Inicio'],['#/catalogo','Buscar'],['#/probador','Probador'],['#/perfil/playlists','Playlists'],['#/mapa','Mapa'],['#/catalogo?origen=Segunda%20mano','Segunda vida']],
     store:[['#/mi-tienda','Mi tienda'],['#/mi-tienda/catalogo','Catálogo'],['#/mi-tienda/colecciones','Colecciones'],['#/mensajes','Mensajes'],['#/cuenta/estadisticas','Estadísticas']],
     found:[['#/mi-fundacion','Mi fundación'],['#/donaciones','Donaciones'],['#/mensajes','Mensajes'],['#/cuenta/estadisticas','Estadísticas']],
     admin:[]
@@ -827,13 +828,15 @@
     GUEST = null;
     authChanged();
     const a = DB.accounts[email];
-    const wel = welcome(a, isNew);
-    await wel.shown; resetAuth();
+    /* P16: la persona usuaria no ve la pantalla de bienvenida aparte; el saludo queda arriba de su inicio */
+    const wel = a.role === 'user' ? null : welcome(a, isNew);
+    if (a.role === 'user' && isNew) mem.set('ini-new', true);
+    if (wel) await wel.shown; resetAuth();
     renderNav();
-    /* la persona usuaria se queda donde estaba; tienda, fundación y admin van a su panel */
-    if (a.role === 'user'){ const y = scrollY; route(); if (!location.hash.startsWith('#/')) requestAnimationFrame(() => scrollTo(0, y)); dispatchEvent(new Event('scroll')); }
+    /* la persona usuaria va a su inicio (o sigue en la pantalla interna donde estaba); tienda, fundación y admin van a su panel */
+    if (a.role === 'user'){ if (location.hash.startsWith('#/')) route(); else location.hash = HOME.user; }
     else { const target = HOME[a.role]; if (location.hash === target) route(); else location.hash = target; }
-    wel.done();
+    if (wel) wel.done();
     if (pendingAfterLogin && a.role === 'user'){ const f = pendingAfterLogin; pendingAfterLogin = null; setTimeout(f, 250); } else pendingAfterLogin = null;
   }
 
@@ -860,7 +863,7 @@
     ['a[href^="#/vender"], [data-sell]', 'Inicia sesión para publicar o donar una prenda'],
     ['a[href^="#/mensajes"]', 'Inicia sesión para ver tus mensajes'],
     ['a[href^="#/perfil"]', 'Inicia sesión para ver tu cuenta'],
-    ['a[href^="#/probador"], #fitGo, [data-tryon]', 'Inicia sesión para usar el probador virtual']
+    ['a[href^="#/probador"], [data-tryon]', 'Inicia sesión para usar el probador virtual']
   ];
   document.addEventListener('click', e => {
     if (me() || !e.target.closest) return;
@@ -884,7 +887,8 @@
     const r = role() || 'guest';
     document.body.dataset.role = r;
     if (!path.startsWith('#/')){
-      if (r !== 'user' && r !== 'guest'){ location.replace(HOME[r]); return; }
+      /* P16: la página larga queda solo para invitados; con sesión cada rol va a su inicio */
+      if (r !== 'guest'){ location.replace(HOME[r]); return; }
       const was = !!document.body.dataset.view; delete document.body.dataset.view;
       $$('.view').forEach(x => x.classList.remove('on'));
       document.title = baseTitle; lastView = '';

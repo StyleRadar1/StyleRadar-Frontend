@@ -53,3 +53,40 @@
 .mo-gh .lbl { color: var(--fog) }
 .mo-ga { margin-left: auto; display: flex; gap: 8px }
 @media (max-width:640px) { .mo-ga { margin-left: 0; width: 100% } .mo-ga .btn { flex: 1 } .mo-view { margin-left: 0 } }
+
+
+/* =====================================================================
+   Plan de cambios · Grupo 3 · Probador (RF-23 a RF-27, RNF-05)
+   Progreso por etapas sin porcentaje y error claro a los 30 segundos.
+   ===================================================================== */
+.proc-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; text-align: left; font: 500 13px/1.35 var(--sans) }
+.proc-steps li { display: flex; align-items: center; gap: 8px; color: var(--fog, #8a8a98) }
+.proc-steps li::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; flex: none }
+.proc-steps li.on { color: #FFFFFF }
+.proc-steps li.on::before { border-color: var(--acc-tx, #B9B9CA); background: var(--acc-tx, #B9B9CA) }
+.proc-steps li.done { color: var(--silver, #B9B9CA) }
+.proc-steps li.done::before { border-color: var(--ok, #6CC08F); background: var(--ok, #6CC08F) }
+.pbar.ind i { width: 35%; border-radius: 4px; animation: pbar-ind 1.4s ease-in-out infinite }
+@keyframes pbar-ind { 0% { left: -35% } 100% { left: 100% } }
+.proc-fail .proc-ico { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(240, 138, 141, .16); color: var(--bad, #F08A8D) }
+.proc-fail .proc-ico svg { width: 24px; height: 24px }
+.proc-msg { margin: 0; max-width: 34ch; font: 400 14px/1.5 var(--sans); color: var(--silver, #B9B9CA) }
+.proc-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center }
+@media (prefers-reduced-motion: reduce) { .pbar.ind i { animation: none; left: 0; width: 100%; opacity: .5 } }
+
+/* RF-14: acceso directo «Más cerca» junto al orden */
+.chip.near { display: inline-flex; align-items: center; gap: 6px }
+.chip.near svg { flex: none }
+
+/* RF-16: mensaje de búsqueda vacía compacto, para que las prendas similares se vean de una vez */
+.empty-mini { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 16px; margin: 0 0 18px; border: 1px solid rgba(185, 185, 202, .2); border-radius: 12px; background: rgba(38, 38, 38, .35) }
+.empty-mini .em-ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(185, 185, 202, .14); flex: none }
+.empty-mini .em-ic svg { width: 18px; height: 18px }
+.empty-mini > div:not(.em-acts) { flex: 1 1 260px; min-width: 0 }
+.empty-mini b { display: block; font: 600 15px/1.3 var(--sans) }
+.empty-mini p { margin: 2px 0 0; font: 400 13px/1.45 var(--sans); color: var(--fog, #8a8a98) }
+.empty-mini .em-acts { display: flex; gap: 8px; flex-wrap: wrap }
+
+/* Íconos del selector Pública/Privada (y demás .seg-toggle): sin tamaño se veían gigantes en el modal de playlist */
+.seg-toggle button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.seg-toggle button svg { width: 15px; height: 15px; flex: none; }

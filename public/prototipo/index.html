@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="css/sesion.css">
 <link rel="stylesheet" href="css/personajes.css">
   <link rel="stylesheet" href="css/requerimientos.css">
+  <link rel="stylesheet" href="css/inicio.css">
 
 <div class="grain" id="grain" aria-hidden="true"></div>
 <div class="cursor" id="cursor" aria-hidden="true" hidden><b id="cursorLabel"></b></div>
@@ -444,31 +445,6 @@
         class="lbl pill" href="#/funciones" data-cursor="Ver">Ver cómo funciona en detalle →</a></div>
   </section>
   <section class="stores para-ti" id="paraTi" hidden aria-label="Para ti"></section>
-  <!-- COLLECTIONS -->
-  <section class="coll" id="colecciones-anim" hidden aria-hidden="true" aria-label="Playlists (animación anterior)"
-    data-acc="#48119A">
-    <div class="coll-sticky">
-      <div class="coll-head">
-        <div>
-          <h2 id="collTitle">Playlists de estilo</h2>
-          <p>Las más guardadas de la semana van primero. Colecciones armadas por la comunidad, mezclando prendas de
-            almacenes locales con piezas de segunda mano.</p>
-        </div>
-        <div class="coll-count" aria-live="polite"><span id="collNow">01</span><small>/ <span
-              id="collTotal">08</span></small></div>
-      </div>
-      <div class="stage" id="stage"></div>
-      <div class="coll-foot">
-        <div class="coll-detail lbl" id="collDetail">
-          <div><span class="k">Curada por</span><span class="v" id="dCur">Valentina R.</span></div>
-          <div><span class="k">Prendas</span><span class="v" id="dItems">6</span></div>
-          <div><span class="k">Precio estimado</span><span class="v" id="dPrice">$650.000</span></div>
-        </div>
-        <div class="bar" aria-hidden="true"><i id="collBar"></i></div>
-        <div class="coll-hint lbl">Desplázate para recorrer</div>
-      </div>
-    </div>
-  </section>
 
   <!-- TIENDAS · versión landing (solo visitantes) -->
   <section class="stores tr-sec" id="tiendas-landing" aria-labelledby="storesTitleL" data-acc="#48119A">
@@ -555,44 +531,6 @@
     <div class="found-grid" id="foundGrid"></div>
   </section>
 
-  <section class="fitting" id="probador-anim" hidden aria-hidden="true" aria-label="Probador (animación anterior)"
-    data-acc="#48119A">
-    <div class="fit-sticky">
-      <div class="fit-head">
-        <div>
-          <h2 id="fitTitle">El look,<br><span>pieza por pieza</span></h2>
-          <p>Baja y el conjunto se desarma solo: cada prenda se suelta del maniquí y te dice de qué tienda viene, en qué
-            talla y cuánto cuesta.</p>
-        </div>
-        <div class="fit-count"><span id="fitNow">00</span><small>/ 08</small></div>
-      </div>
-      <div class="fit-grid">
-        <div class="fit-col" id="fitColL"></div>
-        <div class="fit-stage" id="fitStage">
-          <img class="dressed" id="fitDressed" src="assets/img/paginas/imagen.webp"
-            alt="Maniquí vestido con abrigo de lana, traje, bufanda, guantes y maletín">
-          <img class="mannequin" id="fitMann" src="assets/img/general/maniqui.png" alt="" aria-hidden="true">
-        </div>
-        <div class="fit-col" id="fitColR"></div>
-      </div>
-      <div class="fit-active" id="fitActive" aria-hidden="true"></div>
-      <div class="fit-lock" id="fitLock">
-        <canvas id="flCanvas" aria-hidden="true"></canvas><span class="fl-scan" aria-hidden="true"></span>
-        <div class="fl-center"><button class="fl-btn" id="fitGo" type="button" data-cursor="Entrar"><span>Iniciar
-              sesión</span></button>
-          <p class="lbl fl-note">Inicia sesión para probarte los looks</p>
-        </div>
-        <div class="fl-bot lbl"><span>Probador virtual</span><span id="flIdx">01 / 03</span><span>Solo con tu
-            cuenta</span></div>
-      </div>
-      <div class="fit-foot">
-        <div><span class="lbl k">Total en el radar</span><span class="fit-total" id="fitTotal">$0</span></div>
-        <div class="fit-note"><span class="lbl" id="fitStores">0 tiendas · 0 de segunda mano</span><span
-            class="lbl hint">Desplázate para desvestir</span><a class="lbl pill fit-go" href="#/probador"
-            data-cursor="Vestir">Arma tu look →</a></div>
-      </div>
-    </div>
-  </section>
 
   <!-- SECOND LIFE -->
   <section class="second" id="segunda-vida" aria-labelledby="secondTitle" data-acc="#48119A">
@@ -976,12 +914,12 @@
 <script src="js/07-pro.js"></script>
 <script src="js/08-admin.js"></script>
 <script src="js/09-charts.js"></script>
-<script src="js/10-lock.js"></script>
 <script src="js/11-bg.js"></script>
 <script src="js/12-req.js"></script>
 <script src="js/13-v2.js"></script>
 <script src="js/13b-v3.js"></script>
 <script src="js/14-segunda-vida-foto.js"></script>
+<script src="js/21-inicio.js"></script>
 <script src="js/15-arranque.js"></script>
 <script src="js/16-acento-marca.js"></script>
 <script src="js/17-portada-v4.js"></script>
