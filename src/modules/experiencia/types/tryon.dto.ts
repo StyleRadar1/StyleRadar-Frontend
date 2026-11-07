@@ -1,5 +1,5 @@
 /**
- * DTOs de ms-probador-virtual (8092), vía API Gateway (8080).
+ * DTOs de ms-probador-virtual (8500), vía API Gateway (8080).
  * Provisionales: se ajustan al Swagger del backend cuando esté publicado.
  */
 

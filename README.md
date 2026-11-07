@@ -46,8 +46,44 @@ Otros comandos: `npm run build` (compila), `npm run preview` (sirve lo compilado
 
 | Variable | Para qué sirve |
 |---|---|
-| `VITE_API_URL` | URL del API Gateway (sr-api-gateway). El front solo habla con el gateway. |
+| `VITE_API_URL` | URL del API Gateway del ambiente. El front solo habla con el Gateway, nunca con un microservicio. En QA y PROD es obligatoria: si falta, la consola lo avisa en vez de llamar a `localhost`. |
+| `VITE_APP_ENV` | `local`, `qa` o `prod`. En QA la app muestra una etiqueta «QA» abajo a la izquierda. |
 | `VITE_USE_MOCKS` | `true` mientras el backend no esté listo: los servicios responden con datos de prueba y la app muestra el aviso «Modo demostración». Los casos de error se simulan con `?mock=<escenario>` (ver el README de `experiencia`). |
+
+### Ambientes
+
+Cada ambiente del front consume solo el Gateway de su mismo ambiente. Las variables se configuran en Vercel (Settings → Environment Variables), no en el repositorio.
+
+| Ambiente | Rama | Entorno en Vercel | `VITE_APP_ENV` | `VITE_API_URL` | `VITE_USE_MOCKS` |
+|---|---|---|---|---|---|
+| Local | la tuya | — (archivo `.env`) | `local` | `http://localhost:8080` | `true` o `false` |
+| QA | `develop` | Preview, solo para la rama `develop` | `qa` | URL del Gateway de QA | `false` |
+| PROD | `main` | Production | `prod` | URL del Gateway de PROD | `false` |
+
+Las URL de los Gateway de QA y PROD las publica el equipo Estación Portal 8080; cuando estén, se anotan en esta tabla.
+
+### Rutas del API Gateway
+
+El front solo conoce los prefijos de `src/modules/core/api/routes.ts`; el Gateway decide a qué microservicio y puerto va cada uno. Si un equipo cambia una ruta, se cambia en ese archivo y en esta tabla, y se avisa en el canal.
+
+| Microservicio | Puerto | Equipo | Prefijo en el Gateway | Estado |
+|---|---|---|---|---|
+| ms-auth | 8100 | Estación CADche | `/api/auth` | Usado por el front |
+| ms-usuarios | 8120 | Estación CADche | Por confirmar | Pendiente |
+| ms-tiendas | 8140 | Estación CADche | Por confirmar | Pendiente |
+| ms-inventario | 8200 | Estación RESTrepo | Por confirmar | Pendiente |
+| ms-item-catalogo | 8220 | Estación RESTrepo | `/api/items` | Usado por el front |
+| ms-geolocalizacion | 8240 | Estación RESTrepo | Por confirmar | Pendiente |
+| ms-playlist | 8260 | Estación RESTrepo | Por confirmar | Pendiente |
+| ms-notificaciones | 8300 | Estación Guatoque Jiraguas | Por confirmar | Pendiente |
+| ms-chat | 8320 | Estación Guatoque Jiraguas | Por confirmar | Pendiente |
+| ms-pagos-suscripciones | 8400 | NQS | Por confirmar | Pendiente |
+| ms-estadisticas | 8420 | NQS | Por confirmar | Pendiente |
+| ms-probador-virtual | 8500 | Estación Portal 8080 | `/api/tryon` | Usado por el front |
+| ms-segunda-vida-donaciones | 8520 | Estación Portal 8080 | `/api/second-hand` y `/api/donations` | Usado por el front |
+| api-gateway | 8080 | Estación Portal 8080 | — | — |
+
+Los prefijos marcados «Usado por el front» son los que ya llaman los servicios del front; hay que confirmarlos con cada equipo contra su Swagger. RabbitMQ (5672) lo usan los servicios entre sí y el front no se conecta a él.
 
 ### Cuentas de prueba
 
@@ -85,7 +121,7 @@ Dentro de cada módulo: `components/`, `hooks/`, `services/`, `states/`, `types/
 |---|---|---|---|
 | identidad | 1 · Identidad (CADCHE) | Authentication, Usuarios, Tiendas | RF 1–6, 62–66, 92 |
 | catalogo | 2 · Catálogo (RST) | ItemCatalog, Inventory, Geolocation, Playlist | RF 7–22, 28, 50–61, 69–72, 74 |
-| experiencia | 3 · Experiencia (PT8080) | ms-probador-virtual (8092), ms-segunda-vida-donaciones (8093) | RF 23–27, 33–39, 42–49 |
+| experiencia | 3 · Experiencia (PT8080) | ms-probador-virtual (8500), ms-segunda-vida-donaciones (8520) | RF 23–27, 33–39, 42–49 |
 | transacciones | 4 · Transacciones | Pagos y suscripciones | RF 67, 68, 75, 93–103 |
 | soporte | 5 · Soporte (GJ) | Notification, Chat, Estadísticas | RF 29–32, 40, 41, 73, 76–91 |
 | core, landing | Base común | API Gateway | Router, roles, design system, landing y acceso para jurados |

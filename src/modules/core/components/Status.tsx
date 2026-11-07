@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { errorKind, errorMessage } from '@/modules/core/api/errors'
+import { env } from '@/configs/env'
 
 /** Estado de carga accesible: los lectores de pantalla lo anuncian. */
 export function Loading({ label = 'Cargando…' }: { label?: string }) {
@@ -45,6 +46,20 @@ export function MockBanner() {
   return (
     <div className="border-b border-arena/30 bg-arena/10 px-4 py-2 text-center text-xs text-arena">
       Modo demostración: los datos son simulados (VITE_USE_MOCKS=true). Nada se envía al API Gateway.
+    </div>
+  )
+}
+
+/** Etiqueta del ambiente: solo aparece en QA, para no confundirlo con producción en demos y evidencias. */
+export function EnvBadge() {
+  if (env.appEnv !== 'qa') return null
+  return (
+    <div
+      role="note"
+      aria-label="Ambiente de pruebas QA"
+      className="pointer-events-none fixed bottom-3 left-3 z-50 rounded-full bg-arena px-3 py-1 text-xs font-semibold tracking-wide text-grafito shadow-lg"
+    >
+      QA
     </div>
   )
 }

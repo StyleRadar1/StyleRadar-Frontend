@@ -1,6 +1,6 @@
 # Módulo experiencia · Squad 3 (Portal8080 / PT8080)
 
-Probador virtual, Segunda vida (C2C) y donaciones. Microservicios: `ms-probador-virtual` (8092) y `ms-segunda-vida-donaciones` (8093), siempre a través del API Gateway (8080).
+Probador virtual, Segunda vida (C2C) y donaciones. Microservicios: `ms-probador-virtual` (8500) y `ms-segunda-vida-donaciones` (8520), siempre a través del API Gateway (8080).
 
 Requerimientos: RF-23 a RF-27 (probador), RF-33 a RF-39 (segunda mano), RF-42 y RF-44 a RF-49 (donaciones). RNF de front: RNF-06, RNF-07 y RNF-10.
 

@@ -1,5 +1,5 @@
 /**
- * DTOs de ms-segunda-vida-donaciones (8093), parte C2C, vía API Gateway (8080).
+ * DTOs de ms-segunda-vida-donaciones (8520), parte C2C, vía API Gateway (8080).
  * Provisionales: se ajustan al Swagger del backend cuando esté publicado.
  */
 

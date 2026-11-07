@@ -1,6 +1,6 @@
 import type { Conservacion } from './secondhand.dto'
 
-/** DTOs de ms-segunda-vida-donaciones (8093), parte de donaciones. Provisionales hasta el Swagger. */
+/** DTOs de ms-segunda-vida-donaciones (8520), parte de donaciones. Provisionales hasta el Swagger. */
 
 export interface PuntoAcopioDto { id: string; nombre: string; direccion: string }
 

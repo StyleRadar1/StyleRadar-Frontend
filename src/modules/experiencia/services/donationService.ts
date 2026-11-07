@@ -5,6 +5,7 @@ import { env } from '@/configs/env'
 import { FOUNDATIONS, seedDonations } from '../mocks/secondHand'
 import { isoDay } from '../utils/dates'
 import { SIGUIENTE, type DonationDto, type DonationRequestDto, type DonationStatusRequestDto, type EstadoDonacion, type FoundationDto } from '../types/donation.dto'
+import { API } from '@/modules/core/api/routes'
 
 let store: DonationDto[] | null = null
 const db = () => (store ??= seedDonations())
@@ -17,7 +18,7 @@ export const donationService = {
   /** RF-44: fundaciones ordenadas por cercanía, con las categorías que reciben. */
   async foundations(): Promise<FoundationDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...FOUNDATIONS].sort((a, b) => a.distanciaKm - b.distanciaKm)) }
-    return apiClient.get<FoundationDto[]>('/api/donations/foundations').then((r) => r.data)
+    return apiClient.get<FoundationDto[]>(`${API.donations}/foundations`).then((r) => r.data)
   },
 
   /** RF-42, RF-45 y RF-48: solicitud con fotos y logística desde el primer formulario. */
@@ -40,7 +41,7 @@ export const donationService = {
     const form = new FormData()
     form.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }))
     files.forEach((f) => form.append('files', f))
-    return apiClient.post<DonationDto>('/api/donations', form).then((r) => r.data)
+    return apiClient.post<DonationDto>(`${API.donations}`, form).then((r) => r.data)
   },
 
   /** RF-46: solicitudes de la fundación del representante (el backend filtra por token). */
@@ -51,7 +52,7 @@ export const donationService = {
       if (!fid) throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
       return mockDelay(db().filter((d) => d.fundacion.id === fid))
     }
-    return apiClient.get<DonationDto[]>('/api/donations/foundation/requests').then((r) => r.data)
+    return apiClient.get<DonationDto[]>(`${API.donations}/foundation/requests`).then((r) => r.data)
   },
 
   /** RF-47 y RF-49: aprobar, rechazar, iniciar recogida o confirmar recepción. */
@@ -69,7 +70,7 @@ export const donationService = {
       if (body.estado === 'ENTREGADA') d.comprobante = { codigo: `SR-DON-${id.replace(/\W/g, '').slice(-4).toUpperCase().padStart(4, '0')}`, emitidoEn: isoDay() }
       return mockDelay({ ...d }, 500)
     }
-    return apiClient.patch<DonationDto>(`/api/donations/${encodeURIComponent(id)}/status`, body).then((r) => r.data)
+    return apiClient.patch<DonationDto>(`${API.donations}/${encodeURIComponent(id)}/status`, body).then((r) => r.data)
   },
 }
 

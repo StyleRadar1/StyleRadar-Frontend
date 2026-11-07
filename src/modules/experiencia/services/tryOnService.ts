@@ -4,6 +4,7 @@ import { failIfScenario, hasScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { MOCK_JOB_TIMES, TRYON_GARMENTS } from '../mocks/tryon'
 import type { PhotoUploadResponseDto, TryOnGarmentDto, TryOnJobCreatedDto, TryOnJobRequestDto, TryOnJobStatusDto } from '../types/tryon.dto'
+import { API } from '@/modules/core/api/routes'
 
 /* ---- estado del backend simulado (solo en memoria; nunca guarda la imagen) ---- */
 const mock = {
@@ -21,7 +22,7 @@ export const tryOnService = {
       failIfScenario()
       return mockDelay(hasScenario('catalogo-vacio') ? [] : TRYON_GARMENTS)
     }
-    return apiClient.get<TryOnGarmentDto[]>('/api/tryon/garments').then((r) => r.data)
+    return apiClient.get<TryOnGarmentDto[]>(`${API.tryOn}/garments`).then((r) => r.data)
   },
 
   /** RF-23: sube la foto frontal con progreso real de subida. */
@@ -39,7 +40,7 @@ export const tryOnService = {
     }
     const form = new FormData()
     form.append('file', file)
-    return apiClient.post<PhotoUploadResponseDto>('/api/tryon/photos', form, {
+    return apiClient.post<PhotoUploadResponseDto>(`${API.tryOn}/photos`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
       signal,
@@ -64,7 +65,7 @@ export const tryOnService = {
       mock.jobs.set(jobId, { created: Date.now(), req })
       return mockDelay({ jobId, status: 'PENDING' as const }, 250)
     }
-    return apiClient.post<TryOnJobCreatedDto>('/api/tryon/jobs', req, { headers: { 'Idempotency-Key': idempotencyKey } }).then((r) => r.data)
+    return apiClient.post<TryOnJobCreatedDto>(`${API.tryOn}/jobs`, req, { headers: { 'Idempotency-Key': idempotencyKey } }).then((r) => r.data)
   },
 
   /** RF-25/26: estado del job. Solo el dueño lo puede consultar (403 si no). */
@@ -82,7 +83,7 @@ export const tryOnService = {
       const expires = hasScenario('resultado-expirado') ? Date.now() - 1000 : Date.now() + 10 * 60 * 1000
       return mockDelay({ jobId, status: 'COMPLETED' as const, progress: 100, resultUrl: g.imagen, expiresAt: new Date(expires).toISOString() }, 120)
     }
-    return apiClient.get<TryOnJobStatusDto>(`/api/tryon/jobs/${encodeURIComponent(jobId)}`).then((r) => r.data)
+    return apiClient.get<TryOnJobStatusDto>(`${API.tryOn}/jobs/${encodeURIComponent(jobId)}`).then((r) => r.data)
   },
 
   /** RF-27: borrado físico de la foto y de los resultados generados con ella. */
@@ -94,6 +95,6 @@ export const tryOnService = {
       for (const [k, j] of mock.jobs) if (j.req.photoId === photoId) mock.jobs.delete(k)
       return
     }
-    await apiClient.delete(`/api/tryon/photos/${encodeURIComponent(photoId)}`)
+    await apiClient.delete(`${API.tryOn}/photos/${encodeURIComponent(photoId)}`)
   },
 }

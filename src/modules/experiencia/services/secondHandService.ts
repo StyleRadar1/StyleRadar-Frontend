@@ -5,6 +5,7 @@ import { env } from '@/configs/env'
 import { seedListings } from '../mocks/secondHand'
 import { isoDay } from '../utils/dates'
 import type { ListingDto, ListingFiltersDto, ListingRequestDto, ListingStatusRequestDto } from '../types/secondhand.dto'
+import { API } from '@/modules/core/api/routes'
 
 let store: ListingDto[] | null = null
 const db = () => (store ??= seedListings())
@@ -43,7 +44,7 @@ export const secondHandService = {
         && (!f.precioMin || l.precio >= f.precioMin)
         && (!f.precioMax || l.precio <= f.precioMax)))
     }
-    return apiClient.get<ListingDto[]>('/api/second-hand/listings', {
+    return apiClient.get<ListingDto[]>(`${API.secondHand}/listings`, {
       params: { ...f, conservacion: f.conservacion?.join(',') || undefined },
     }).then((r) => r.data)
   },
@@ -51,7 +52,7 @@ export const secondHandService = {
   /** RF-37 a RF-39: publicaciones propias en cualquier estado. */
   async mine(): Promise<ListingDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay(db().filter((l) => l.vendedor.id === me().id)) }
-    return apiClient.get<ListingDto[]>('/api/second-hand/listings/mine').then((r) => r.data)
+    return apiClient.get<ListingDto[]>(`${API.secondHand}/listings/mine`).then((r) => r.data)
   },
 
   async get(id: string): Promise<ListingDto> {
@@ -61,7 +62,7 @@ export const secondHandService = {
       if (!l) throw new ApiError(404, 'Esa publicación ya no existe.')
       return mockDelay(l)
     }
-    return apiClient.get<ListingDto>(`/api/second-hand/listings/${encodeURIComponent(id)}`).then((r) => r.data)
+    return apiClient.get<ListingDto>(`${API.secondHand}/listings/${encodeURIComponent(id)}`).then((r) => r.data)
   },
 
   /** RF-33 a RF-35: crea la publicación con hasta 4 fotos. */
@@ -74,7 +75,7 @@ export const secondHandService = {
       db().unshift(l)
       return mockDelay(l, 700)
     }
-    return apiClient.post<ListingDto>('/api/second-hand/listings', multipart(data, files)).then((r) => r.data)
+    return apiClient.post<ListingDto>(`${API.secondHand}/listings`, multipart(data, files)).then((r) => r.data)
   },
 
   /** RF-37: editar. Solo publicaciones DISPONIBLES (409 si no). */
@@ -86,7 +87,7 @@ export const secondHandService = {
       Object.assign(l, data, { fotos: [...(data.fotosConservadas ?? []), ...files.map((f) => URL.createObjectURL(f))] })
       return mockDelay(l, 600)
     }
-    return apiClient.put<ListingDto>(`/api/second-hand/listings/${encodeURIComponent(id)}`, multipart(data, files)).then((r) => r.data)
+    return apiClient.put<ListingDto>(`${API.secondHand}/listings/${encodeURIComponent(id)}`, multipart(data, files)).then((r) => r.data)
   },
 
   /** RF-38 (VENDIDA) y RF-39 (RETIRADA). */
@@ -98,6 +99,6 @@ export const secondHandService = {
       l.estado = body.estado
       return mockDelay(l, 500)
     }
-    return apiClient.patch<ListingDto>(`/api/second-hand/listings/${encodeURIComponent(id)}/status`, body).then((r) => r.data)
+    return apiClient.patch<ListingDto>(`${API.secondHand}/listings/${encodeURIComponent(id)}/status`, body).then((r) => r.data)
   },
 }

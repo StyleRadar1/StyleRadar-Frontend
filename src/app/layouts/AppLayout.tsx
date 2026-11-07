@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { Navbar } from '@/modules/core/components/Navbar'
 import { Footer } from '@/modules/core/components/Footer'
-import { MockBanner } from '@/modules/core/components/Status'
+import { EnvBadge, MockBanner } from '@/modules/core/components/Status'
 import { env } from '@/configs/env'
 
 export function AppLayout() {
@@ -11,6 +11,7 @@ export function AppLayout() {
       <Navbar />
       <main className="flex-1"><Outlet /></main>
       <Footer />
+      <EnvBadge />
     </div>
   )
 }

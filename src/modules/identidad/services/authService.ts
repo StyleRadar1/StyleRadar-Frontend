@@ -3,6 +3,7 @@ import { mockDelay } from '@/modules/core/api/mock'
 import { env } from '@/configs/env'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../mocks/demoAccounts'
 import type { LoginRequestDto, LoginResponseDto } from '../types/auth.dto'
+import { API } from '@/modules/core/api/routes'
 
 export const authService = {
   async login(payload: LoginRequestDto): Promise<LoginResponseDto> {
@@ -12,6 +13,6 @@ export const authService = {
       if (payload.password !== DEMO_PASSWORD) throw new ApiError(401, 'La contraseña no coincide.')
       return mockDelay({ token: `demo-${user.id}`, user })
     }
-    return apiClient.post<LoginResponseDto>('/api/auth/login', payload).then((res) => res.data)
+    return apiClient.post<LoginResponseDto>(`${API.auth}/login`, payload).then((res) => res.data)
   },
 }
