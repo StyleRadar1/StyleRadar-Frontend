@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/personajes.css">
   <link rel="stylesheet" href="css/requerimientos.css">
   <link rel="stylesheet" href="css/inicio.css">
+  <link rel="stylesheet" href="css/videos.css">
 
 <div class="grain" id="grain" aria-hidden="true"></div>
 <div class="cursor" id="cursor" aria-hidden="true" hidden><b id="cursorLabel"></b></div>
@@ -33,7 +34,8 @@
       </a>
       <nav class="pe-nav-capsules" aria-label="Secciones">
         <button type="button" class="pe-capsule-btn" data-scroll="pe-que-es">Qué es</button>
-        <button type="button" class="pe-capsule-btn" data-scroll="pe-como-funciona">Cómo funciona</button>
+        <button type="button" class="pe-capsule-btn" data-scroll="pe-videos">Videos</button>
+    <button type="button" class="pe-capsule-btn" data-scroll="pe-como-funciona">Cómo funciona</button>
         <button type="button" class="pe-capsule-btn" data-scroll="pe-para-quien">Para quién</button>
       </nav>
     </div>
@@ -45,6 +47,7 @@
   </header>
   <div class="pe-mobile-menu" id="peMobileMenu" hidden>
     <button type="button" class="pe-m-link" data-scroll="pe-que-es">Qué es</button>
+    <button type="button" class="pe-m-link" data-scroll="pe-videos">Videos</button>
     <button type="button" class="pe-m-link" data-scroll="pe-como-funciona">Cómo funciona</button>
     <button type="button" class="pe-m-link" data-scroll="pe-para-quien">Para quién</button>
     <button type="button" class="pe-m-link pe-m-login" id="peMobileLogin" data-login>Iniciar sesión</button>
@@ -93,6 +96,15 @@
         <li><span class="pe-num">04</span><h3>Ropa usada sin salida</h3><p>La ropa en buen estado se acumula sin un canal simple para venderla o donarla.</p></li>
       </ol>
       <p class="pe-answer"><b>StyleRadar</b> junta el inventario de las tiendas locales en un solo mapa: lo que hay hoy, en tu talla y cerca de ti.</p>
+    </div>
+  </section>
+
+  <!-- VIDEOS: carrusel con el video al centro y pasos que se marcan (P5) -->
+  <section class="pe-sec pe-videos" id="pe-videos" aria-labelledby="peVidTitle">
+    <div class="pe-in">
+      <p class="pe-kicker">Videos · míralo en un minuto</p>
+      <h2 class="pe-h2" id="peVidTitle">Así se usa StyleRadar.</h2>
+      <div class="vc" id="vidCarousel" data-videos></div>
     </div>
   </section>
 
@@ -926,3 +938,4 @@
 <script src="js/18-categorias.js"></script>
 <script src="js/19-tiendas-landing.js"></script>
 <script src="js/20-landing-radar.js"></script>
+<script src="js/22-videos.js"></script>
