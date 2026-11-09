@@ -53,6 +53,7 @@ export const router = createBrowserRouter([
       { path: '/tiendas/:id', element: page(<Store />) },
       { path: '/playlists', element: page(<Playlists />) },
       { path: '/planes', element: page(<Plans />) },
+      { path: '/pago/resultado', element: page(<Plans />) },
       // Usuario (comprador)
       { path: '/perfil', element: only(USER, <Profile />) },
       { path: '/probador', element: only(USER, <TryOn />) },
