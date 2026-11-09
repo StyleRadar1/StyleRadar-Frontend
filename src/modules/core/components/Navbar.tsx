@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { Logo } from '@/modules/core/design-system'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { NotificationBell } from '@/modules/soporte/components/NotificationBell'
 
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists']],
@@ -30,6 +31,7 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2 md:ml-2">
           {user ? (
             <>
+              {user.role === 'COMPRADOR' && <NotificationBell />}
               <span className="hidden items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold uppercase tracking-wider sm:inline-flex">
                 <i className={`h-2 w-2 rounded-full ${DOT[user.role]}`} />{ROLE_LABEL[user.role]}
               </span>
