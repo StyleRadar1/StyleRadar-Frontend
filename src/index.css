@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-/* Paleta y tipografía del manual de identidad de StyleRadar */
+/* Paleta y tipografía del manual de identidad de StyleRadar.
+   Estos valores son los del tema oscuro (el de siempre). Los temas claro y daltónico
+   los cambian más abajo, así que las clases de siempre (bg-grafito, text-blanco,
+   text-white/70, border-white/10, bg-arena…) siguen funcionando en los tres temas. */
 @theme {
   --font-sans: "Poppins", system-ui, sans-serif;
   --color-grafito: #262626;
@@ -12,5 +15,119 @@
   --color-fondo: #1d1d1d;
 }
 
+/* =====================================================================
+   P13 · Temas: oscuro (por defecto), claro y daltónico.
+   El tema se guarda en localStorage («sr:tema», la misma clave del prototipo)
+   y se aplica con <html data-tema="…"> (ver src/modules/core/theme).
+
+   Variables para pantallas nuevas (úsenlas en vez de colores fijos):
+     --sr-tx      texto principal          --sr-tx-2   texto secundario
+     --sr-bg      fondo de la página        --sr-bg-2   superficies (tarjetas, menú)
+     --sr-acc-tx  violeta para texto        --sr-foco   borde de foco
+     --sr-ok      bien / disponible         --sr-bad    error / bloqueado
+     --sr-warn    aviso
+   Con Tailwind: text-[var(--sr-ok)], bg-[var(--sr-bad)]/10, etc.
+   Para fondos con foto, agreguen la clase .zona-oscura (siempre oscura).
+   ===================================================================== */
+:root {
+  --sr-bg: #1d1d1d;
+  --sr-bg-2: #262626;
+  --sr-tx: #ffffff;
+  --sr-tx-2: #b9b9ca;
+  --sr-acc-tx: #b9b9ca;
+  --sr-foco: #e8dccb;
+  --sr-ok: #9be3b4;
+  --sr-bad: #ffb4b4;
+  --sr-warn: #f3d27a;
+  color-scheme: dark;
+}
+
+/* ---------- Claro ----------
+   Se invierten las clases de siempre: «blanco» y «white» pasan a ser el texto
+   oscuro, «grafito» la superficie clara y «arena» un arena oscuro legible. */
+html[data-tema="claro"] {
+  --sr-bg: #f6f3ee;
+  --sr-bg-2: #ece7df;
+  --sr-tx: #262626;
+  --sr-tx-2: #4f4f63;
+  --sr-acc-tx: #48119a;
+  --sr-foco: #48119a;
+  --sr-ok: #1e6b3a;
+  --sr-bad: #a3231a;
+  --sr-warn: #7a5300;
+  color-scheme: light;
+
+  --color-fondo: #f6f3ee;
+  --color-grafito: #ece7df;
+  --color-blanco: #262626;
+  --color-white: #262626;
+  --color-black: #ffffff;
+  --color-arena: #6a4f2a;
+  --color-lavanda: #4f4f63;
+  --color-violeta-claro: #5a2bb0;
+}
+
+/* ---------- Daltónico ----------
+   Oscuro con estados de la paleta Okabe-Ito (azul, naranja, amarillo), que se
+   distinguen con cualquier tipo de daltonismo. Nunca solo rojo y verde. */
+html[data-tema="daltonico"] {
+  --sr-tx-2: #d6d6e2;
+  --sr-acc-tx: #d6d6e2;
+  --sr-foco: #f0e442;
+  --sr-ok: #56b4e9;
+  --sr-bad: #e69f00;
+  --sr-warn: #f0e442;
+  --color-lavanda: #d6d6e2;
+}
+html[data-tema="daltonico"] main a:not([class*="rounded"]) { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- Zonas siempre oscuras ----------
+   Texto sobre fotos (hero del landing, inicio de sesión, registro) y botones
+   violeta: conservan el texto blanco en el tema claro. */
+html[data-tema="claro"] :is(.zona-oscura, section:has(> img.absolute)) {
+  --sr-tx: #ffffff;
+  --sr-tx-2: #b9b9ca;
+  --sr-acc-tx: #b9b9ca;
+  --sr-foco: #e8dccb;
+  --sr-ok: #9be3b4;
+  --sr-bad: #ffb4b4;
+  --color-grafito: #262626;
+  --color-blanco: #ffffff;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-arena: #e8dccb;
+  --color-lavanda: #b9b9ca;
+  --color-violeta-claro: #7b4dd8;
+  color: #ffffff;
+}
+html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-[#c0392b]"]) {
+  --color-blanco: #ffffff;
+  --color-white: #ffffff;
+  color: #ffffff;
+}
+
+/* ---------- Colores fijos que ya usan algunas pantallas ----------
+   Mientras cada módulo pasa a las variables, los verdes y rojos fijos siguen
+   el tema (en claro se oscurecen para tener contraste 4.5:1; en daltónico
+   pasan a azul y naranja). */
+html:is([data-tema="claro"], [data-tema="daltonico"]) :is(.text-\[\#ffb4b4\], .text-\[\#ff8a8a\]) { color: var(--sr-bad); }
+html:is([data-tema="claro"], [data-tema="daltonico"]) .text-\[\#9be3b4\] { color: var(--sr-ok); }
+html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="bg-[#ff8a8a]"] { background-color: color-mix(in srgb, var(--sr-bad) 12%, transparent); }
+html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="bg-[#9be3b4]"] { background-color: color-mix(in srgb, var(--sr-ok) 12%, transparent); }
+html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="border-[#ff8a8a]"] { border-color: color-mix(in srgb, var(--sr-bad) 45%, transparent); }
+html[data-tema="claro"] .text-\[\#B9B9CA\] { color: var(--sr-tx-2); }
+/* Texto tenue (text-white/40 a /80): sobre fondo claro la transparencia baja el contraste,
+   así que en el tema claro todo pasa al gris de texto secundario (7:1). */
+html[data-tema="claro"] [class*="text-white/"]:not(:is(.zona-oscura, section:has(> img.absolute), .bg-violeta) *) { color: var(--sr-tx-2); }
+
 html { background: var(--color-fondo); }
 body { @apply font-sans text-blanco antialiased; }
+
+@layer base {
+  /* S2 · Foco visible de 2 px en todo lo que se alcanza con Tab. */
+  :focus-visible { outline: 2px solid var(--sr-foco); outline-offset: 2px; }
+  select option { background: var(--sr-bg-2); color: var(--sr-tx); }
+}
+
+/* El logo tiene la figura en blanco: en el menú del tema claro pasa a grafito. */
+html[data-tema="claro"] header svg path[fill="#fff"] { fill: #262626; }

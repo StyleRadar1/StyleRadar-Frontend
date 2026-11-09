@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { Logo } from '@/modules/core/design-system'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { ThemeSelect } from '@/modules/core/theme/ThemeSelect'
 
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists']],
@@ -28,6 +29,7 @@ export function Navbar() {
           {links.map(([to, label]) => <NavLink key={to} to={to} className={linkCls}>{label}</NavLink>)}
         </div>
         <div className="ml-auto flex items-center gap-2 md:ml-2">
+          <ThemeSelect className="max-md:hidden" />
           {user ? (
             <>
               <span className="hidden items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold uppercase tracking-wider sm:inline-flex">
@@ -44,6 +46,7 @@ export function Navbar() {
       {open && (
         <div className="flex flex-col gap-1 border-t border-white/10 px-4 py-3 md:hidden">
           {links.map(([to, label]) => <NavLink key={to} to={to} className={linkCls} onClick={() => setOpen(false)}>{label}</NavLink>)}
+          <ThemeSelect className="px-3 py-2" />
         </div>
       )}
     </header>
