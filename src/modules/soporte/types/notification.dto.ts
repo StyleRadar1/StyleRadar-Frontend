@@ -3,10 +3,10 @@
  * Provisionales: ajustar a los del Swagger cuando esté publicado.
  */
 
-/** Plan de la persona: Radar (gratis) tiene límite de alertas activas; Radar+ no. */
-export type PlanUsuario = 'RADAR' | 'RADAR_PLUS'
+import type { PlanUsuario } from '@/modules/transacciones/types/plan.dto'
 
-export const PLAN_LABEL: Record<PlanUsuario, string> = { RADAR: 'Radar', RADAR_PLUS: 'Radar+' }
+/** Plan de la persona: Radar (gratis) tiene límite de alertas activas; Radar+ no. */
+export { PLAN_LABEL, type PlanUsuario } from '@/modules/transacciones/types/plan.dto'
 
 /** RF-29: alerta de disponibilidad de una prenda agotada. */
 export interface AlertaPrendaDto {

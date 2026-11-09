@@ -2,6 +2,8 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { mockPlanOf } from '@/modules/transacciones/services/userPlanService'
+import { LIMITES_RADAR } from '@/modules/transacciones/types/plan.dto'
 import { seedAlerts } from '../mocks/notifications'
 import { alertasActivas, type AlertaPrendaDto, type AlertasResumenDto, type BusquedaGuardadaDto } from '../types/notification.dto'
 
@@ -13,10 +15,14 @@ const db = () => (store ??= seedAlerts())
 /** Solo para pruebas: vuelve a los datos iniciales. */
 export const resetAlertsMock = () => { store = null }
 
+/** El límite sale del plan de la persona (ms-pagos), para que cambie apenas se cambia de plan. */
 const mine = (): AlertasResumenDto => {
   const u = mockSessionUser()
   if (!u) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
-  return (db()[u.id] ??= { plan: 'RADAR', limiteAlertas: 3, alertas: [], busquedas: [] })
+  const r = (db()[u.id] ??= { plan: 'RADAR', limiteAlertas: LIMITES_RADAR.alertas, alertas: [], busquedas: [] })
+  r.plan = mockPlanOf(u.id)
+  r.limiteAlertas = r.plan === 'RADAR' ? LIMITES_RADAR.alertas : null
+  return r
 }
 
 /** P8: en el plan Radar no se puede activar una alerta más allá del límite. */

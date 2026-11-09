@@ -3,6 +3,7 @@ import { useResource } from '@/modules/core/hooks/useResource'
 import { errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { ErrorState } from '@/modules/core/components/Status'
+import { PlanGate } from '@/modules/transacciones/components/PlanGate'
 import { GarmentSelector } from '../components/GarmentSelector'
 import { garmentProblem } from '../utils/garments'
 import { PhotoPicker, type UploadedPhoto } from '../components/PhotoPicker'
@@ -57,7 +58,11 @@ export default function TryOnPage() {
         <div className="space-y-8">
           <section aria-labelledby="t-foto" className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
             <h2 id="t-foto" className="text-lg font-bold">1. Tu foto</h2>
-            <div className="mt-4"><PhotoPicker photo={photo} onUploaded={(p) => { setDelMsg(null); job.reset(); setPhoto(p) }} /></div>
+            <div className="mt-4">
+              <PlanGate title="Pruébate la ropa sobre tu foto con Radar+" text="Con el plan Radar usas el maniquí. Radar+ te deja subir tu foto de cuerpo entero y ver las prendas sobre ti.">
+                <PhotoPicker photo={photo} onUploaded={(p) => { setDelMsg(null); job.reset(); setPhoto(p) }} />
+              </PlanGate>
+            </div>
             {photo && (
               <button type="button" onClick={() => setConfirmDel(true)} className="mt-4 text-sm text-[#ffb4b4] underline underline-offset-4">Eliminar mi foto y resultados</button>
             )}

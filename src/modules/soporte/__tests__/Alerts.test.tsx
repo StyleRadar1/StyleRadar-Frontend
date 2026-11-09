@@ -5,6 +5,7 @@ import { NotificationBell } from '../components/NotificationBell'
 import AlertsPage from '../pages/AlertsPage'
 import { resetAlertsMock } from '../services/alertService'
 import { resetNotificationsMock } from '../services/notificationService'
+import { setMockPlan } from '@/modules/transacciones/services/userPlanService'
 import { loginAs, renderAt } from './helpers'
 
 const routes = [
@@ -14,7 +15,7 @@ const routes = [
   { path: '/catalogo', element: <p>Catálogo</p> },
 ]
 
-beforeEach(() => { resetAlertsMock(); resetNotificationsMock(); loginAs('u-1', 'Valentina Rojas') })
+beforeEach(() => { resetAlertsMock(); resetNotificationsMock(); loginAs('u-1', 'Valentina Rojas'); setMockPlan('u-1', 'RADAR') })
 
 describe('búsquedas y alertas (RF-28 a RF-32)', () => {
   it('muestra el uso del plan Radar y deja activar hasta 3 alertas', async () => {
@@ -58,6 +59,17 @@ describe('búsquedas y alertas (RF-28 a RF-32)', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Eliminar' }))
     expect(await screen.findByText('Eliminaste «Chaqueta de cuero M».')).toBeInTheDocument()
     expect(screen.queryByRole('switch', { name: /Chaqueta de cuero M/ })).not.toBeInTheDocument()
+  })
+
+  it('con Radar+ no hay límite ni candado', async () => {
+    const user = userEvent.setup()
+    setMockPlan('u-1', 'RADAR_PLUS')
+    renderAt('/alertas', routes)
+    await user.click(await screen.findByRole('switch', { name: 'Alerta para Botella térmica 1 L' }, { timeout: 3000 }))
+    await screen.findByText('Te avisaremos sobre «Botella térmica 1 L».')
+    await user.click(screen.getByRole('switch', { name: 'Alerta para Chaqueta de cuero M' }))
+    expect(await screen.findByText('Te avisaremos sobre «Chaqueta de cuero M».')).toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Uso del plan' })).not.toBeInTheDocument()
   })
 
   it('una cuenta nueva ve los estados vacíos', async () => {
