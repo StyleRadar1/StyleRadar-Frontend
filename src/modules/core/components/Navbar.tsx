@@ -6,8 +6,8 @@ import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { NotificationBell } from '@/modules/soporte/components/NotificationBell'
 
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
-  GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists']],
-  COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/playlists', 'Playlists'], ['/segunda-mano', 'Segunda mano'], ['/mensajes', 'Mensajes']],
+  GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
+  COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/playlists', 'Playlists'], ['/segunda-mano', 'Segunda mano'], ['/mensajes', 'Mensajes'], ['/planes', 'Planes']],
   ADMIN_ALMACEN: [['/tienda/inventario', 'Inventario'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción'], ['/mensajes', 'Mensajes']],
   REPRESENTANTE_FUNDACION: [['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas'], ['/mensajes', 'Mensajes']],
   ADMIN_STYLERADAR: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
