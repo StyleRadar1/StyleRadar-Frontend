@@ -59,7 +59,7 @@
     "figure-41": "assets/img/portada/portada-12.jpg"
   };
 
-  window.SR = Object.assign(window.SR||{}, {PHOTOS, FIT_IMG});
+  window.SR = Object.assign(window.SR||{}, {PHOTOS, FIT_IMG, FIT_DRESSED: 'assets/img/paginas/imagen.webp'});
   /* ---------- placeholder painter (monochrome, editorial) ---------- */
   function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
   const cache = {};
@@ -212,19 +212,6 @@
     });
   })(man);
 
-  const stage = $('#stage');
-  const citems = COLLS.map((c, i) => {
-    const b = document.createElement('button');
-    b.className='c-item'; b.dataset.cursor='Ver'; b.setAttribute('aria-label', `${c.name}, colección de ${c.cur}`);
-    b.innerHTML = `<span class="c-cap lbl"><span class="name">${c.name}</span><span class="go">${i === 0 ? '★ Más popular · Ver' : 'Ver colección'}</span></span><span class="c-frame"><img alt="" data-ph="${c.ph}" data-seed="${c.seed}"></span>`;
-    fill(b.querySelector('img'));
-    b.addEventListener('click', () => { if (i === lastIdx && c.pid) location.hash = '#/playlist/' + c.pid; else if (i === lastIdx) (window.SRX && SRX.toast('Esta playlist llega <b>próximamente</b>')); else goToColl(i); });
-    stage.appendChild(b);
-    const rr = rng(i*31+7);
-    return {el:b, cap:b.querySelector('.c-cap'), img:b.querySelector('img'), jy:(rr()-.5), js:.82+rr()*.36};
-  });
-  $('#collTotal').textContent = String(COLLS.length).padStart(2,'0');
-
   const grid = $('#storeGrid');
   const storeCols = STORES.map(col => {
     const d = document.createElement('div'); d.className='store-col';
@@ -250,12 +237,6 @@
   sheet.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
   $('#toTop').addEventListener('click', () => scrollTo({top:0, behavior: reduce?'auto':'smooth'}));
 
-  const collSec = $('#colecciones-anim');
-  function goToColl(i){
-    const top = collSec.offsetTop + (i/(COLLS.length-1)) * (collSec.offsetHeight - innerHeight);
-    scrollTo({top, behavior: reduce?'auto':'smooth'});
-  }
-
   /* ---------- cursor ---------- */
   const cur = $('#cursor'), curLbl = $('#cursorLabel');
   let mx = innerWidth/2, my = innerHeight/2, cxp = mx, cyp = my;
@@ -275,38 +256,7 @@
   const heroImgs = [...document.querySelectorAll('.hero-media img')];
   const heroWords = [...document.querySelectorAll('#heroWords .lbl')];
   const band = $('#band'), bandImg = band ? band.querySelector('img') : null;
-  /* --- probador: prendas, precios y fichas --- */
-  const fitSec = $('#probador-anim'), fitStage = $('#fitStage'), fitDressed = $('#fitDressed'), fitMann = $('#fitMann');
-  const fitNow = $('#fitNow'), fitTotal = $('#fitTotal'), fitStores = $('#fitStores'), fitActive = $('#fitActive');
-  const money = v => '$' + v.toLocaleString('es-CO');
-  const PIECES = [
-    {k:'maletin',  n:'Maletín de cuero',        b:'Nómada Studio',  v:310000, sz:'Única',     side:'R', cx:71.53, cy:68.03, w:21.78, sx:60, sy:62, r:9},
-    {k:'guantes',  n:'Guantes de cuero',        b:'Segunda mano',   v:55000,  sz:'Talla M',   side:'R', cx:87.50, cy:58.85, w:16.41, sx:59, sy:57, r:12, second:true},
-    {k:'bufanda',  n:'Bufanda de espiga',       b:'Segunda mano',   v:38000,  sz:'Única',     side:'R', cx:70.31, cy:18.46, w:33.98, sx:52, sy:36, r:-8, second:true},
-    {k:'abrigo',   n:'Abrigo largo de lana',    b:'Nómada Studio',  v:420000, sz:'Talla M',   side:'L', cx:16.65, cy:34.90, w:30.96, sx:50, sy:50, r:-6},
-    {k:'saco',     n:'Saco y chaleco',          b:'Nómada Studio',  v:395000, sz:'Talla M',   side:'R', cx:81.25, cy:40.07, w:34.18, sx:52, sy:47, r:7},
-    {k:'camisa',   n:'Camisa y corbata',        b:'The Local Lab',  v:165000, sz:'Talla M',   side:'L', cx:38.77, cy:20.15, w:26.95, sx:51, sy:44, r:-5},
-    {k:'pantalon', n:'Pantalón de lana',        b:'Nómada Studio',  v:210000, sz:'Talla 32',  side:'L', cx:23.68, cy:71.52, w:32.52, sx:51, sy:70, r:-4},
-    {k:'zapatos',  n:'Zapatos Oxford',          b:'Kicks Local',    v:290000, sz:'Talla 41',  side:'R', cx:84.03, cy:82.58, w:18.85, sx:52, sy:88, r:6},
-  ];
-  let lastDone = -1, lastOut = null;
-  PIECES.forEach((pc, i) => {
-    const el = document.createElement('div');
-    el.className = 'piece';
-    el.style.left = pc.cx + '%'; el.style.top = pc.cy + '%'; el.style.width = pc.w + '%';
-    el.innerHTML = `<img src="${FIT_IMG[pc.k]}" alt="${pc.n}"><b>${String(i+1).padStart(2,'0')}</b>`;
-    fitStage.appendChild(el);
-    const card = document.createElement('article');
-    card.className = 'fcard';
-    card.innerHTML = `<span class="num lbl">${String(i+1).padStart(2,'0')}</span>`
-      + `<div><h3>${pc.n}</h3><span class="brand lbl${pc.second ? ' reuse' : ''}">${pc.b}</span></div>`
-      + `<div><span class="price">${money(pc.v)}</span><span class="size lbl">${pc.sz}</span></div>`;
-    (pc.side === 'L' ? $('#fitColL') : $('#fitColR')).appendChild(card);
-    pc.el = el; pc.card = card; pc.badge = el.querySelector('b');
-  });
   const stores = $('#tiendas'), second = $('#segunda-vida'), object = $('#object'), foot = $('.foot');
-  const collNow = $('#collNow'), collBar = $('#collBar'), dCur = $('#dCur'), dItems = $('#dItems'), dPrice = $('#dPrice');
-  let lastIdx = -1;
 
   function frame(){
     const vw = innerWidth, vh = innerHeight;
@@ -332,68 +282,10 @@
     const bp = bandImg ? sm('band', through(band)) : 0;
     if (bandImg) bandImg.style.transform = `translateY(${(bp-.5)*-16}%) scale(${1.08 - bp*.06})`;
 
-    /* COLLECTIONS: scroll drives a depth carousel */
-    const cp = sm('coll', pinned(collSec));
-    const n = COLLS.length, pos = cp*(n-1);
-    const cw = vw < 620 ? Math.min(vw*.56, vh*.3) : Math.min(vw*.26, vh*.34);
-    stage.style.setProperty('--cw', cw+'px');
-    const sideScale = vw < 620 ? .34 : .3, sideW = cw*sideScale;
-    const firstX = cw/2 + (vw < 620 ? 14 : 40) + sideW/2, stepX = sideW*1.25 + (vw < 620 ? 10 : 28);
-    citems.forEach((it, i) => {
-      const d = i - pos, a = Math.abs(d), sg = Math.sign(d);
-      let sx, sc, y;
-      if (a <= 1){ sx = d*firstX; sc = lerp(1, sideScale*it.js, a); y = it.jy*cw*.55*a; }
-      else { sx = sg*(firstX + (a-1)*stepX); sc = sideScale*it.js*(1 - Math.min(a-1,4)*.06); y = it.jy*cw*.55 + Math.sin(i*1.7)*cw*.08*(a-1); }
-      const op = clamp(1 - (a - 3.2)/1.2);
-      it.el.style.transform = `translate(-50%,-50%) translate3d(${sx}px, ${y}px, 0) scale(${sc})`;
-      it.el.style.zIndex = String(100 - Math.round(a*10));
-      it.el.style.opacity = op;
-      it.el.style.pointerEvents = op < .1 ? 'none' : 'auto';
-      it.el.tabIndex = op < .1 ? -1 : 0;
-      it.img.style.transform = `translateX(${clamp(d,-2,2)*-4}%)`;
-      it.cap.style.opacity = clamp(1 - a*2.2);
-    });
-    const idx = Math.round(pos);
-    if (idx !== lastIdx){
-      lastIdx = idx; const c = COLLS[idx];
-      collNow.textContent = String(idx+1).padStart(2,'0'); dCur.textContent = c.cur; dItems.textContent = c.items; dPrice.textContent = c.price;
-    }
-    collBar.style.transform = `scaleX(${cp})`;
-
     /* stores: columns at different speeds */
     const sp = sm('stores', through(stores)) - .5;
     const speeds = vw < 860 ? [40, -60, 0] : [70, -110, 30];
     storeCols.forEach((c, i) => { c.style.transform = `translateY(${sp*speeds[i]}px)`; });
-
-    /* PROBADOR: las prendas se sueltan del maniquí, una por una */
-    const fitp = sm('fit', pinned(fitSec));
-    const intro = clamp(fitp/.09);
-    fitDressed.style.opacity = 1 - intro;
-    fitMann.style.opacity = clamp((fitp - .03)/.09);
-    const fst = fitStage.getBoundingClientRect(), SW = fst.width, SH = fst.height;
-    let done = 0, sum = 0;
-    PIECES.forEach((pc, i) => {
-      const t = clamp((fitp - (.11 + i*.082)) / .3);
-      const e = 1 - Math.pow(1 - t, 3);
-      const dx = (pc.sx - pc.cx)/100 * SW * (1 - e), dy = (pc.sy - pc.cy)/100 * SH * (1 - e);
-      pc.el.style.transform = `translate(-50%,-50%) translate(${dx}px, ${dy}px) scale(${.6 + .4*e}) rotate(${pc.r*(1-e)}deg)`;
-      pc.el.style.opacity = intro * clamp(.18 + t*5);
-      pc.badge.style.opacity = clamp((t - .5)/.25);
-      const out = t > .5;
-      pc.card.classList.toggle('on', out);
-      if (out){ done++; sum += pc.v; if (pc.el.dataset.last !== '1') lastOut = pc; }
-      pc.el.dataset.last = out ? '1' : '0';
-    });
-    if (done !== lastDone){
-      lastDone = done;
-      fitNow.textContent = String(done).padStart(2, '0');
-      fitTotal.textContent = money(sum);
-      const list = PIECES.slice(0, done);
-      const tiendas = new Set(list.filter(p => !p.second).map(p => p.b)).size;
-      const seg = list.filter(p => p.second).length;
-      fitStores.textContent = `${tiendas} ${tiendas === 1 ? 'tienda' : 'tiendas'} · ${seg} de segunda mano`;
-      fitActive.innerHTML = done ? PIECES[done-1].card.outerHTML.replace('fcard', 'fcard on') : '';
-    }
 
     /* second life: marquees ride the scroll, object floats */
     const sdp = sm('second', through(second));

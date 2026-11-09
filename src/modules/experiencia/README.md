@@ -38,6 +38,8 @@ Están en `types/`. Son provisionales: se ajustan cuando cada microservicio publ
 
 **Errores.** El front muestra el `message` que envíe el backend para los 4xx; para 0 (sin conexión), 401, 403, 409 y 5xx usa los mensajes de `core/api/errors.ts`. Un 401 cierra la sesión y ofrece volver a entrar.
 
+Las tres pantallas (`/probador`, `/segunda-mano` y `/donar`) ya usan estos servicios. Para probar el Gateway real se configura `VITE_APP_ENV=qa` o `production`, `VITE_API_URL` con la URL de ese Gateway y `VITE_USE_MOCKS=false`. El cliente HTTP adjunta el token; las subidas multipart dejan que el navegador agregue el límite MIME (`boundary`) automáticamente.
+
 ## Por acordar con el backend
 
 - **RF-34:** los estados de conservación. Hoy son Como nuevo, Muy bueno y Bueno (`types/secondhand.dto.ts`).

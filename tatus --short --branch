@@ -1,0 +1,108 @@
+ .env.example                                       |     4 [32m+[m[31m-[m
+ .env.production.example                            |     3 [32m+[m
+ .env.qa.example                                    |     3 [32m+[m
+ .github/workflows/ci.yml                           |     4 [32m+[m
+ .gitignore                                         |     2 [32m+[m
+ README.md                                          |     7 [32m+[m[31m-[m
+ README_CAMBIOS_KEVIN.md                            |    32 [32m+[m
+ entregas/archivo-unificado/README.md               |    70 [32m+[m
+ .../StyleRadar_Prototipo_Unificado.html            | 30165 [32m+++++++++++++++++++[m
+ package.json                                       |     1 [32m+[m
+ public/img/landing/slide-1.jpg                     |   Bin [31m0[m -> [32m587540[m bytes
+ public/img/landing/slide-2.jpg                     |   Bin [31m0[m -> [32m147961[m bytes
+ public/img/landing/slide-3.jpg                     |   Bin [31m0[m -> [32m299333[m bytes
+ public/img/landing/slide-4.jpg                     |   Bin [31m0[m -> [32m234673[m bytes
+ public/img/landing/slide-5.jpg                     |   Bin [31m0[m -> [32m121857[m bytes
+ public/img/representantes/C1.jpeg                  |   Bin [31m0[m -> [32m2609511[m bytes
+ public/img/representantes/C2.jpeg                  |   Bin [31m0[m -> [32m2943411[m bytes
+ public/img/representantes/H1.png                   |   Bin [31m0[m -> [32m2257306[m bytes
+ public/img/representantes/Q1.png                   |   Bin [31m0[m -> [32m2194616[m bytes
+ public/img/representantes/Q2.png                   |   Bin [31m0[m -> [32m2336689[m bytes
+ public/img/representantes/Q3.png                   |   Bin [31m0[m -> [32m2324071[m bytes
+ public/img/representantes/R1.png                   |   Bin [31m0[m -> [32m2067044[m bytes
+ public/img/representantes/R2.png                   |   Bin [31m0[m -> [32m2440758[m bytes
+ public/img/representantes/R3.png                   |   Bin [31m0[m -> [32m2176164[m bytes
+ public/img/representantes/R4.png                   |   Bin [31m0[m -> [32m2134981[m bytes
+ public/img/representantes/S1.png                   |   Bin [31m0[m -> [32m1974667[m bytes
+ public/img/representantes/S2.png                   |   Bin [31m0[m -> [32m2630294[m bytes
+ public/prototipo/assets/img/representantes/C1.jpeg |   Bin [31m0[m -> [32m2609511[m bytes
+ public/prototipo/assets/img/representantes/C2.jpeg |   Bin [31m0[m -> [32m2943411[m bytes
+ public/prototipo/assets/img/representantes/H1.png  |   Bin [31m0[m -> [32m2257306[m bytes
+ public/prototipo/assets/img/representantes/Q1.png  |   Bin [31m0[m -> [32m2194616[m bytes
+ public/prototipo/assets/img/representantes/Q2.png  |   Bin [31m0[m -> [32m2336689[m bytes
+ public/prototipo/assets/img/representantes/Q3.png  |   Bin [31m0[m -> [32m2324071[m bytes
+ public/prototipo/assets/img/representantes/R1.png  |   Bin [31m0[m -> [32m2067044[m bytes
+ public/prototipo/assets/img/representantes/R2.png  |   Bin [31m0[m -> [32m2440758[m bytes
+ public/prototipo/assets/img/representantes/R3.png  |   Bin [31m0[m -> [32m2176164[m bytes
+ public/prototipo/assets/img/representantes/R4.png  |   Bin [31m0[m -> [32m2134981[m bytes
+ public/prototipo/assets/img/representantes/S1.png  |   Bin [31m0[m -> [32m1974667[m bytes
+ public/prototipo/assets/img/representantes/S2.png  |   Bin [31m0[m -> [32m2630294[m bytes
+ public/prototipo/css/base.css                      |     3 [32m+[m[31m-[m
+ public/prototipo/css/inicio.css                    |    58 [32m+[m
+ public/prototipo/css/requerimientos.css            |    76 [32m+[m
+ public/prototipo/index.html                        |    66 [32m+[m[31m-[m
+ public/prototipo/js/02-portada.js                  |   110 [32m+[m[31m-[m
+ public/prototipo/js/05-core.js                     |    22 [32m+[m[31m-[m
+ public/prototipo/js/06-user.js                     |    69 [32m+[m[31m-[m
+ public/prototipo/js/10-lock.js                     |    99 [31m-[m
+ public/prototipo/js/12-req.js                      |    39 [32m+[m[31m-[m
+ public/prototipo/js/13-v2.js                       |     2 [32m+[m[31m-[m
+ public/prototipo/js/13b-v3.js                      |     1 [32m+[m
+ public/prototipo/js/21-inicio.js                   |    91 [32m+[m
+ public/video/landing/video-1.mp4                   |   Bin [31m0[m -> [32m9494437[m bytes
+ public/video/landing/video-2.mp4                   |   Bin [31m0[m -> [32m6817258[m bytes
+ public/video/landing/video-3.mp4                   |   Bin [31m0[m -> [32m10816556[m bytes
+ scratch_equipo.txt                                 |    59 [32m+[m
+ scratch_final.txt                                  |    93 [32m+[m
+ scratch_find_names.cjs                             |    40 [32m+[m
+ scratch_find_p10.cjs                               |    29 [32m+[m
+ scratch_find_reps.cjs                              |    33 [32m+[m
+ scratch_find_team.cjs                              |    37 [32m+[m
+ scratch_footer_section.txt                         |   377 [32m+[m
+ scratch_list_photos.cjs                            |    11 [32m+[m
+ scratch_member.txt                                 |    80 [32m+[m
+ scratch_p10.txt                                    |     1 [32m+[m
+ scratch_p10_section.txt                            |    33 [32m+[m
+ scratch_pdf_inflate.cjs                            |    37 [32m+[m
+ scratch_pdf_text.cjs                               |    54 [32m+[m
+ scratch_pe_que_css.txt                             |    33 [32m+[m
+ scratch_pe_slot.txt                                |   113 [32m+[m
+ scratch_quienes.txt                                |    28 [32m+[m
+ scratch_read_pdf.cjs                               |    45 [32m+[m
+ scratch_team_section.txt                           |    98 [32m+[m
+ src/app/layouts/AppLayout.tsx                      |    13 [32m+[m[31m-[m
+ src/app/router.tsx                                 |     4 [32m+[m[31m-[m
+ src/components/landing/CategoriesGrid.tsx          |   108 [32m+[m
+ src/components/landing/ClothingCycle.tsx           |   142 [32m+[m
+ src/components/landing/Hero.tsx                    |   137 [32m+[m
+ src/components/landing/HowItWorks.tsx              |   105 [32m+[m
+ src/components/landing/MapPreview.css              |   516 [32m+[m
+ src/components/landing/MapPreview.tsx              |   364 [32m+[m
+ src/components/landing/PricingPlans.tsx            |   156 [32m+[m
+ src/components/landing/ProblemSection.tsx          |    87 [32m+[m
+ src/components/landing/VideoReels.css              |   557 [32m+[m
+ src/components/landing/VideoReels.tsx              |   487 [32m+[m
+ src/components/landing/index.ts                    |     8 [32m+[m
+ src/components/layout/LandingFooter.tsx            |   116 [32m+[m
+ src/components/layout/LandingHeader.tsx            |   158 [32m+[m
+ src/components/layout/LandingMobileMenu.tsx        |    74 [32m+[m
+ src/components/layout/index.ts                     |     4 [32m+[m
+ src/components/modals/AuthModal.tsx                |   498 [32m+[m
+ src/components/modals/QuickTryOnModal.css          |   743 [32m+[m
+ src/components/modals/QuickTryOnModal.tsx          |   716 [32m+[m
+ src/components/modals/index.ts                     |     2 [32m+[m
+ src/components/ui/CustomCursor.tsx                 |    83 [32m+[m
+ src/components/ui/NoiseGrain.tsx                   |    13 [32m+[m
+ src/components/ui/index.ts                         |     3 [32m+[m
+ src/configs/env.ts                                 |    32 [32m+[m[31m-[m
+ src/data/landingData.ts                            |   343 [32m+[m
+ src/modules/catalogo/pages/MapPage.tsx             |    41 [32m+[m[31m-[m
+ src/modules/catalogo/pages/PlaylistsPage.css       |   327 [32m+[m
+ src/modules/catalogo/pages/PlaylistsPage.tsx       |   322 [32m+[m[31m-[m
+ src/modules/core/components/Status.tsx             |    10 [32m+[m
+ src/modules/experiencia/README.md                  |     2 [32m+[m
+ src/modules/experiencia/services/tryOnService.ts   |     1 [31m-[m
+ src/modules/landing/pages/LandingPage.css          |   204 [32m+[m
+ src/modules/landing/pages/LandingPage.tsx          |   127 [32m+[m[31m-[m
+ src/vite-env.d.ts                                  |     2 [32m+[m
+ 107 files changed, 38254 insertions(+), 379 deletions(-)

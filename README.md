@@ -46,8 +46,11 @@ Otros comandos: `npm run build` (compila), `npm run preview` (sirve lo compilado
 
 | Variable | Para qué sirve |
 |---|---|
-| `VITE_API_URL` | URL del API Gateway (sr-api-gateway). El front solo habla con el gateway. |
-| `VITE_USE_MOCKS` | `true` mientras el backend no esté listo: los servicios responden con datos de prueba y la app muestra el aviso «Modo demostración». Los casos de error se simulan con `?mock=<escenario>` (ver el README de `experiencia`). |
+| `VITE_APP_ENV` | `local`, `qa` o `production`. El build de QA muestra una banda para distinguirlo de producción. |
+| `VITE_API_URL` | URL del API Gateway del ambiente. El front solo habla con el gateway. Es obligatoria con mocks desactivados en QA/producción. |
+| `VITE_USE_MOCKS` | Por defecto `true` solo en local y `false` en QA/producción. Cuando está activo, la app muestra «Modo demostración». Los casos de error se simulan con `?mock=<escenario>` (ver el README de `experiencia`). |
+
+Para desplegar, configura `VITE_APP_ENV`, `VITE_API_URL` y `VITE_USE_MOCKS` como variables de build en Vercel: `develop` usa `qa` y la URL del Gateway de QA; `main` usa `production` y la URL del Gateway de producción. No uses los puertos de los microservicios como `VITE_API_URL`. Las plantillas `.env.qa.example` y `.env.production.example` muestran las variables requeridas; `npm run build:qa` compila usando `.env.qa`.
 
 ### Cuentas de prueba
 

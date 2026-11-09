@@ -1,0 +1,377 @@
+ 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.pe-card h3 { margin: 0 0 8px; font-size: 20px; font-weight: 700; color: var(--tx); }
+.pe-card p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--tx-2); }
+.pe-card .pe-price { margin-top: auto; padding-top: 22px; font-size: 18px; font-weight: 700; color: var(--tx-sand); }
+.pe-card .pe-price span { font-size: 13px; font-weight: 400; color: var(--tx-2); }
+
+/* Cierre: foto de calle con difuminado suave superior */
+.pe-final { overflow: hidden; padding-top: clamp(110px, 14vw, 180px); padding-bottom: 48px; }
+.pe-final-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; }
+.pe-final::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg,
+    #1b1625 0%,
+    rgba(27, 22, 37, 0.72) 20%,
+    rgb(var(--bg-rgb) / 0.52) 45%,
+    rgba(46, 17, 89, 0.85) 100%
+  );
+}
+.pe-final .pe-in { z-index: 2; }
+.pe-final .pe-h2 { max-width: none; font-size: clamp(40px, 7vw, 100px); }
+.pe-legal { margin: 110px 0 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: rgb(var(--tx-rgb) / .6); }
+
+/* ── Responsive ─────────────────────────────── */
+@media (max-width: 1000px) {
+  .pe-retos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pe-cards { grid-template-columns: 1fr; }
+  .pe-track { grid-template-columns: 32px minmax(0, 1fr) 100px; }
+  .pe-tr-d { display: none; }
+}
+@media (max-width: 900px) {
+  .sr-portal .pe-header, .sr-portal .pe-header.is-scrolled { padding: 12px 18px; }
+  .pe-hero-foot { left: 18px; right: 18px; }
+}
+@media (max-width: 560px) {
+  .pe-hero { height: 160vh; }
+  .pe-mark { flex-direction: column; gap: 8px; font-size: clamp(54px, 17vw, 80px); }
+  .pe-mark-logo { height: 1.5em; }
+  .pe-pill { letter-spacing: .12em; padding: 9px 16px; }
+  .pe-hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
+  .pe-hero-actions .pe-explore-btn, .pe-hero-actions .pe-ghost-btn { justify-content: center; }
+  .pe-retos { grid-template-columns: 1fr; }
+  .pe-pl-head { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .pe-track { grid-template-columns: 26px minmax(0, 1fr); padding: 10px 6px; }
+  .pe-tr-g, .pe-track-head .pe-tr-d { display: none; }
+  .sr-portal .pe-header .pe-explore-btn { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pe-slide, .pe-ch, .pe-hint i { animation: none !important; transition: none !important; }
+}
+
+/* ---- Mapa en el landing ---- */
+.pe-mapa {
+  background: #1c1c1c;
+  padding: clamp(26px, 4.5vh, 40px) 24px clamp(30px, 5vh, 44px);
+}
+.pe-mapa-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.pe-mapa-head-main {
+  flex: 0 0 auto;
+}
+.pe-mapa .pe-kicker {
+  margin: 0 0 4px;
+}
+.pe-mapa .pe-h2 {
+  margin: 0;
+  line-height: 1.1;
+  font-size: clamp(26px, 3.8vw, 36px);
+}
+.pe-mapa .pe-h2 span {
+  color: #B9B9CA;
+}
+.pe-mapa .pe-lead {
+  margin: 0;
+  max-width: 460px;
+  font-size: 13.5px;
+  color: #B9B9CA;
+  line-height: 1.45;
+}
+.pe-mapa .pe-mapa-link {
+  margin: 0;
+  flex: 0 0 auto;
+}
+.pe-mapa .pe-mapa-link a {
+  padding: 8px 14px 7px;
+  font-size: 12px;
+}
+
+#lmPins { position: absolute; inset: 0; pointer-events: none; }
+.lm-pin { pointer-events: auto; }
+
+/* El landing es lo único que se desplaza: evita una segunda barra en la ventana */
+html.in-portal,
+body.in-portal,
+html:has(body.in-portal) {
+  overflow: hidden !important;
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+/* ============================================================
+   MAPBOX GL JS v3 · Contenedor adaptable y vista completa en pantalla
+   ============================================================ */
+.pe-mapa .lm-wrap {
+  position: relative;
+  margin-top: 0;
+  border-radius: 22px;
+  overflow: hidden;
+  display: block;
+}
+
+.pe-mapa .lm-box {
+  width: 100%;
+  height: calc(100dvh - 195px);
+  min-height: 420px;
+  max-height: 700px;
+  background: #121214;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .55);
+}
+
+.pe-mapa .lm-box .mapboxgl-canvas-container,
+.pe-mapa .lm-box .mapboxgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
+}
+
+/* Barra de controles superior izquierda (Vista 3D y Ver toda Bogotá) */
+.sr-map-top-bar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sr-map-ctrl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 100px;
+  background: rgba(38, 38, 38, .88);
+  border: 1px solid rgba(255, 255, 255, .2);
+  color: #FFFFFF;
+  font: 600 12px/1 'Poppins', sans-serif;
+  letter-spacing: .02em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .45);
+  transition: all .2s ease;
+  user-select: none;
+}
+.sr-map-ctrl-pill:hover {
+  background: #48119A;
+  border-color: #E8DCCB;
+  transform: translateY(-1px);
+}
+.sr-map-ctrl-pill.is-3d {
+  background: #48119A;
+  border-color: #E8DCCB;
+  box-shadow: 0 0 16px rgba(72, 17, 154, .7);
+}
+.sr-map-ctrl-pill svg {
+  flex-shrink: 0;
+  transition: transform .3s ease;
+}
+.sr-map-ctrl-pill.is-3d svg {
+  transform: rotate(180deg);
+}
+
+/* ============================================================
+   LEYENDA Y FILTRO (Esquina inferior izquierda, arriba del logo)
+   ============================================================ */
+.sr-map-legend {
+  position: absolute;
+  bottom: 42px;
+  left: 14px;
+  z-index: 15;
+  background: rgba(30, 30, 34, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  padding: 9px 13px 10px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  font-family: 'Poppins', sans-serif;
+  color: #FFFFFF;
+  max-width: calc(100% - 28px);
+}
+
+.sr-leg-toggle-btn {
+  display: none;
+}
+
+.sr-leg-caption {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #B9B9CA;
+  margin-bottom: 6px;
+}
+
+.sr-leg-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sr-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 8px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+  font: 600 11.5px/1.2 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all .2s ease;
+  user-select: none;
+}
+
+.sr-leg-item:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.sr-leg-item.is-active {
+  background: rgba(72, 17, 154, 0.35);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.sr-leg-item:not(.is-active) {
+  opacity: 0.42;
+  border-style: dashed;
+}
+
+.sr-leg-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sr-leg-icon.store {
+  background: #48119A;
+  border: 1.5px solid #FFFFFF;
+}
+.sr-leg-icon.found {
+  background: #E8DCCB;
+  border: 1.5px solid #FFFFFF;
+  outline: 1.5px dashed rgba(255, 255, 255, 0.85);
+  outline-offset: 1px;
+}
+
+.sr-leg-check {
+  font-size: 11px;
+  font-weight: 800;
+  color: #E8DCCB;
+  margin-left: 2px;
+}
+.sr-leg-item:not(.is-active) .sr-leg-check {
+  display: none;
+}
+
+/* ============================================================
+   PINES PERSONALIZADOS: TIENDA vs FUNDACIÓN (SIN NOMBRES FIJOS)
+   ============================================================ */
+.sr-mb-pin {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  pointer-events: auto;
+  transition: transform .25s cubic-bezier(.2, 1, .3, 1), opacity .22s ease;
+  will-change: transform, opacity;
+  z-index: 10;
+}
+
+.sr-mb-pin.is-hidden {
+  opacity: 0 !important;
+  transform: scale(0.4) !important;
+  pointer-events: none !important;
+  visibility: hidden;
+}
+
+/* Forma del pin de Tienda: GOTA clásica con icono de bolsa */
+.sr-mb-pin i.sr-pin-shape.store {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #48119A; /* Violeta StyleRadar */
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .55);
+  transition: transform .25s cubic-bezier(.2, 1, .3, 1), background .25s ease, box-shadow .25s ease;
+}
+.sr-mb-pin i.sr-pin-shape.store .sr-pin-ico {
+  transform: rotate(45deg); /* Vertical */
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Forma del pin de Fundación: CÍRCULO con borde punteado e icono de corazón */
+.sr-mb-pin.found i.sr-pin-shape.found {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%; /* Círculo en lugar de gota */
+  transform: none;
+  background: #E8DCCB; /* Arena StyleRadar */
+  border: 2.5px solid #FFFFFF;
+  outline: 2px dashed rgba(255, 255, 255, 0.85); /* Distinguible en escala de grises */
+  outline-offset: 1.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .55);
+  transition: transform .25s cubic-bezier(.2, 1, .3, 1), background .25s ease, box-shadow .25s ease;
+}
+.sr-mb-pin.found i.sr-pin-shape.found .sr-pin-ico {
+  transform: none;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Reacción al Hover y Foco por teclado: el pin sube de z-index y se agranda */
+.sr-mb-pin:hover,
+.sr-mb-pin.is-hovered,
+.sr-mb-pin:focus-visible {
+  transform: translateY(-3px) scale(1.22);
+  z-index: 100 !important;
+  outline: none;
+}
+
+/* Anillo pulsante suave para Tienda */
+.sr-mb-pin i.sr-pin-shape.store::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50% 50% 50% 0;
+  border: 2px solid rgba(72, 17, 154, .75);
+  opacity: 0;
+  pointer-events: none;
+}
+.sr-mb-pin:hover i.sr-pin-shape.store::after,
+.sr-mb-pin.is-hovered i.sr-pin-shape.store

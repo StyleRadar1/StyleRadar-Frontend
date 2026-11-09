@@ -1,0 +1,516 @@
+/* StyleRadar · Mapa Interactivo de Bogotá
+   Marcado y clases exactas del prototipo unificado (.pe-mapa, .lm-wrap, .lm-box, .lm-pane) */
+
+.pe-mapa {
+  background: #1c1c1c;
+  padding: clamp(60px, 8vw, 100px) 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.pe-mapa .pe-in {
+  position: relative;
+  max-width: 1160px;
+  margin: 0 auto;
+}
+
+.pe-mapa-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.pe-mapa-head-main {
+  flex: 0 0 auto;
+}
+
+.pe-mapa .pe-kicker {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #E8DCCB;
+}
+
+.pe-mapa .pe-h2 {
+  margin: 0;
+  font-weight: 800;
+  font-size: clamp(34px, 4.8vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: #FFFFFF;
+}
+
+.pe-mapa .pe-h2 span {
+  color: #B9B9CA;
+}
+
+.pe-mapa .pe-lead {
+  margin: 0;
+  max-width: 480px;
+  font-size: 14.5px;
+  color: #B9B9CA;
+  line-height: 1.5;
+}
+
+.pe-mapa .pe-mapa-link {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.pe-mapa .pe-mapa-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  font: 700 12px/1 'Poppins', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.pe-mapa .pe-mapa-link a:hover {
+  background: #48119A;
+  border-color: #E8DCCB;
+  transform: translateY(-2px);
+}
+
+/* ── Envoltura del Mapa y Panel ── */
+.lm-wrap {
+  position: relative;
+  margin-top: 20px;
+  border-radius: 24px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 380px);
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* ── Caja del Mapa ── */
+.lm-box {
+  position: relative;
+  width: 100%;
+  height: clamp(480px, 65vh, 640px);
+  background: #121214;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  perspective: 1000px;
+}
+
+.lm-canvas-stage {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.lm-canvas-stage.is-3d {
+  transform: perspective(900px) rotateX(24deg) scale(1.04);
+}
+
+.lm-map-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  opacity: .94;
+}
+
+.lm-map-zones {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lm-map-zones span {
+  position: absolute;
+  transform: translate(9px, -9px);
+  color: rgba(255, 255, 255, .56);
+  font: 600 8px/1 'Poppins', sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px #18171c;
+  white-space: nowrap;
+}
+
+.lm-map-attribution {
+  position: absolute;
+  bottom: 5px;
+  left: 8px;
+  color: rgba(255, 255, 255, .48);
+  font: 500 9px/1 'Poppins', sans-serif;
+  pointer-events: none;
+}
+
+/* ── Controles flotantes superiores ── */
+.sr-map-top-bar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sr-map-ctrl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 100px;
+  background: rgba(30, 27, 36, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  font: 600 12px/1 'Poppins', sans-serif;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.sr-map-ctrl-pill:hover {
+  background: #48119A;
+  border-color: #E8DCCB;
+  transform: translateY(-1px);
+}
+
+.sr-map-ctrl-pill.is-active {
+  background: #48119A;
+  border-color: #E8DCCB;
+  box-shadow: 0 0 16px rgba(72, 17, 154, 0.7);
+}
+
+/* ── Leyenda y Filtros flotantes ── */
+.sr-map-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 25;
+  background: rgba(24, 21, 30, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  padding: 10px 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.sr-map-legend span.lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #B9B9CA;
+}
+
+.sr-map-legend-items {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.sr-map-legend-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  color: #FFFFFF;
+  font: 600 11px/1 'Poppins', sans-serif;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: opacity 0.2s ease;
+}
+
+.sr-map-legend-btn.is-off {
+  opacity: 0.35;
+}
+
+.sr-dot-tienda {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #7B4DD8;
+  box-shadow: 0 0 8px #7B4DD8;
+}
+
+.sr-dot-fundacion {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #E8DCCB;
+  box-shadow: 0 0 8px #E8DCCB;
+}
+
+/* ── Pines interactivos en el Mapa ── */
+.lm-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+  background: none;
+  border: 0;
+  padding: 0;
+  touch-action: manipulation;
+}
+
+.lm-pin:hover {
+  transform: translate(-50%, calc(-100% - 3px)) scale(1.12);
+  z-index: 20;
+}
+
+.lm-pin.is-selected {
+  transform: translate(-50%, -100%);
+  z-index: 30;
+}
+
+.sr-pin-shape {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 2.5px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .55);
+  transition: transform .25s cubic-bezier(.2, 1, .3, 1), background .25s ease, box-shadow .25s ease;
+}
+
+.sr-pin-shape.store {
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #48119a;
+}
+
+.sr-pin-shape.store .sr-pin-ico {
+  transform: rotate(45deg);
+}
+
+.sr-pin-shape.found {
+  border-radius: 50%;
+  outline: 2px dashed rgba(255, 255, 255, .85);
+  outline-offset: 1.5px;
+  background: #e8dccb;
+}
+
+.sr-pin-ico {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.lm-pin:hover .sr-pin-shape,
+.lm-pin:focus-visible .sr-pin-shape {
+  box-shadow: 0 6px 22px rgba(72, 17, 154, .95), 0 0 14px rgba(255, 255, 255, .7);
+}
+
+.lm-pin.is-selected .sr-pin-shape.store {
+  transform: rotate(-45deg) scale(1.45);
+  box-shadow: 0 6px 22px rgba(72, 17, 154, .95), 0 0 14px rgba(255, 255, 255, .7);
+}
+
+.lm-pin.is-selected .sr-pin-shape.found {
+  transform: scale(1.45);
+  box-shadow: 0 6px 22px rgba(232, 220, 203, .95), 0 0 14px rgba(255, 255, 255, .7);
+}
+
+.lm-pin:focus-visible { outline: 2px solid #e8dccb; outline-offset: 6px; border-radius: 4px; }
+
+/* ── Panel lateral derecho (.lm-pane) ── */
+.lm-pane {
+  padding: 24px;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(28, 24, 36, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: #FFFFFF;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+}
+
+.lm-pane > .lbl {
+  color: #A98BE0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.lm-pane h3 {
+  margin: 0;
+  font: 800 28px/1.05 'Poppins', sans-serif;
+  letter-spacing: -0.03em;
+  color: #FFFFFF;
+}
+
+.lm-pane p {
+  margin: 0;
+  color: #D1CED7;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.lm-meta-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  color: #B9B9CA;
+}
+
+.lm-meta-details b {
+  color: #FFFFFF;
+}
+
+/* Cuadrícula de 4 prendas destacadas de la tienda */
+.lm-items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+.lm-items-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+  border: 0;
+  background: none;
+  color: #FFFFFF;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+.lm-items-item:hover b {
+  color: #E8DCCB;
+}
+
+.lm-items-item span {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: #24202c;
+  overflow: hidden;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lm-items-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.lm-items-item:hover img {
+  transform: scale(1.08);
+}
+
+.lm-items-item b {
+  font: 600 12px/1.2 'Poppins', sans-serif;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lm-items-item em {
+  font-style: normal;
+  font-size: 11px;
+  color: #E8DCCB;
+  font-weight: 700;
+}
+
+.lm-a {
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.lm-btn-main {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 999px;
+  background: #48119A;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font: 700 11px/1 'Poppins', sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(72, 17, 154, 0.5);
+  transition: all 0.2s ease;
+}
+
+.lm-btn-main:hover {
+  background: #5e18c8;
+  transform: translateY(-1px);
+}
+
+.lm-btn-sub {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font: 600 11px/1 'Poppins', sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.lm-btn-sub:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #E8DCCB;
+}
+
+@media (max-width: 900px) {
+  .lm-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+

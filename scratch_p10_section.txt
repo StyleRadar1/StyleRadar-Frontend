@@ -1,0 +1,33 @@
+o fundación para ver sus detalles sin salir del mapa. Puedes filtrar por tipo o ver la ciudad completa.</p>
+        <p class="pe-mapa-link"><a class="lbl pill" href="#/mapa">Abrir el mapa completo →</a></p>
+      </div>
+      <div class="lm-wrap">
+        <div class="map-box lm-box" id="lmBox"></div>
+        <aside class="lm-pane" id="lmPane" aria-live="polite"></aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · QUIÉNES SOMOS Y PIE DE PÁGINA · P10 (Kevin) cambia las fotos por personas del curso.
+       Se deja aquí «El problema», que explica por qué existe StyleRadar. -->
+  <section class="pe-sec pe-que pe-anchor" id="pe-quienes-somos" data-seccion="quienes-somos" aria-labelledby="peQueTitle">
+    <div class="pe-in">
+      <p class="pe-kicker">Quiénes somos · por qué existimos</p>
+      <h2 class="pe-h2" id="peQueTitle">Comprar moda local todavía implica <span>adivinar.</span></h2>
+      <p class="pe-lead">La prenda que buscas probablemente ya está en alguna tienda de la ciudad. Lo difícil es saber en cuál, si tiene tu talla y cómo te queda, antes de cruzar Bogotá.</p>
+      <ol class="pe-retos">
+        <li><span class="pe-num">01</span><h3>Disponibilidad incierta</h3><p>No sabes qué almacén tiene la prenda ni si todavía queda tu talla.</p></li>
+        <li><span class="pe-num">02</span><h3>Comercio local invisible</h3><p>Las tiendas pequeñas casi no tienen presencia digital propia.</p></li>
+        <li><span class="pe-num">03</span><h3>Comprar sin probar</h3><p>Comprar sin probarse aumenta las devoluciones y las compras por impulso.</p></li>
+        <li><span class="pe-num">04</span><h3>Ropa usada sin salida</h3><p>La ropa en buen estado se acumula sin un canal simple para venderla o donarla.</p></li>
+      </ol>
+      <p class="pe-answer"><b>StyleRadar</b> junta el inventario de las tiendas locales en un solo mapa: lo que hay hoy, en tu talla y cerca de ti.</p>
+      <div class="pe-slot" role="note">
+        <span class="pe-slot-k">P10 · Representantes · Kevin</span>
+        <p>Fotos de las personas del curso, con su permiso, recortadas igual y en formato liviano.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pe-sec pe-final" id="pe-pie" aria-labelledby="peFinalTitle">
+    <img class="pe-final-bg" src="[BASE64_IMG]

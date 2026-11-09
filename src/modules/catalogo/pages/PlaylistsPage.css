@@ -1,0 +1,327 @@
+/* ===================================================================
+   PlaylistsPage.css — Estilos fieles al prototipo original (.plx-*)
+   Carrusel horizontal de playlists, tarjetas con grid 2×2, glassmorphism
+   =================================================================== */
+
+/* ---- Variables de color (heredadas del prototipo) ---- */
+.plx-page {
+  --h: 270;
+  --bg-rgb: 21, 18, 27;
+  --bg-inv-rgb: 232, 220, 203;
+  --tx: #e8e4ef;
+  --tx-2: #9d97a8;
+  --tx-inv: #1c1c1c;
+  --tx-sand: #E8DCCB;
+  --sand: #E8DCCB;
+  --lav: #B9B9CA;
+  --bg-inv: #E8DCCB;
+}
+
+/* ---- Sección principal ---- */
+.plx-sec {
+  padding: clamp(70px, 9vw, 130px) clamp(18px, 4vw, 56px) clamp(40px, 6vw, 80px);
+  position: relative;
+  min-height: 100vh;
+  background: rgb(var(--bg-rgb));
+}
+
+.plx-sec .sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 40px;
+  margin-bottom: clamp(28px, 4vw, 48px);
+}
+
+.plx-sec .sec-head h2 {
+  font-weight: 800 !important;
+  letter-spacing: -0.035em !important;
+  line-height: 0.95 !important;
+  font-size: clamp(36px, 5.5vw, 72px);
+  color: var(--tx);
+  margin: 0;
+}
+
+.plx-sec .sec-head h2 span {
+  color: var(--tx-2);
+}
+
+.plx-sec .sec-head p {
+  max-width: 440px;
+  color: var(--tx-2);
+  font-size: clamp(14px, 1.1vw, 16px);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ---- Wrapper del carrusel ---- */
+.plx-wrap {
+  margin-top: clamp(28px, 4vw, 48px);
+}
+
+/* ---- Track: grid horizontal scrollable ---- */
+.plx-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(250px, 24vw, 330px);
+  gap: 18px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding: 4px 2px 18px;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(232 220 203 / 0.3) transparent;
+}
+
+.plx-track:focus-visible {
+  outline: 2px solid var(--lav);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+/* ---- Cada playlist (enlace) ---- */
+.plx-track .plx {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-snap-align: start;
+  text-decoration: none;
+  color: var(--tx);
+  cursor: pointer;
+}
+
+/* ---- Cover: grid 2×2 de imágenes ---- */
+.plx-cover {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 3px;
+  background: linear-gradient(135deg, hsl(var(--h) 55% 32%), #48119A);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.1, 1);
+  transform: translateY(-5px) rotate(-0.6deg);
+}
+
+.plx:hover .plx-cover {
+  transform: translateY(-8px) rotate(-0.2deg) scale(1.02);
+}
+
+.plx.feat .plx-cover {
+  outline: 2px solid var(--sand);
+  outline-offset: 3px;
+}
+
+.plx-cover > span {
+  background: var(--sand);
+  overflow: hidden;
+}
+
+.plx-cover > span img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ---- Veil: gradiente oscuro encima ---- */
+.plx-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgb(var(--bg-rgb) / 0) 35%,
+    rgb(var(--bg-rgb) / 0.25) 55%,
+    rgb(var(--bg-rgb) / 0.92));
+  pointer-events: none;
+}
+
+/* ---- Título sobre cover ---- */
+.plx-title {
+  position: absolute;
+  left: 16px;
+  right: 66px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plx-title .lbl {
+  color: var(--tx-sand);
+  font-size: 12px;
+}
+
+.plx-title b {
+  font: 900 clamp(24px, 2.1vw, 32px)/0.95 var(--font-sans, system-ui);
+  letter-spacing: -0.035em;
+  color: var(--tx);
+}
+
+/* ---- Badges: Featured y Rank ---- */
+.plx-feat-badge,
+.plx-rank {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font: 700 12px/1 var(--font-sans, system-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.plx-feat-badge {
+  background: var(--sand);
+  color: #262626;
+}
+
+.plx-rank {
+  background: rgba(38, 38, 38, 0.78);
+  color: #FFFFFF;
+  border: 1px solid rgb(232 220 203 / 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ---- Botón Play ---- */
+.plx-play {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #48119A;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.35s;
+}
+
+.plx-play svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--tx);
+  stroke: none;
+}
+
+.plx:hover .plx-play {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- Meta: avatar, nombre, prendas, likes ---- */
+.plx-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.plx-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--lav);
+  color: #262626;
+  display: grid;
+  place-items: center;
+  font: 700 12px/1 var(--font-sans, system-ui);
+  flex: none;
+}
+
+.plx-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.plx-meta b {
+  font: 600 14px/1.1 var(--font-sans, system-ui);
+  color: var(--tx);
+}
+
+.plx-meta span.plx-info {
+  font-size: 12.5px;
+  color: var(--tx-2);
+}
+
+.plx-meta em {
+  margin-left: auto;
+  font-style: normal;
+  font: 600 12.5px/1 var(--font-sans, system-ui);
+  color: var(--tx-sand);
+  white-space: nowrap;
+}
+
+/* ---- Navegación del carrusel ---- */
+.plx-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 0 4px;
+}
+
+.plx-nav .lbl {
+  margin-right: auto;
+  color: var(--tx-2);
+  font-size: 14px;
+}
+
+.plx-nav .plx-counter {
+  font: 700 14px/1 var(--font-sans, system-ui);
+  letter-spacing: 0.08em;
+  color: var(--tx-2);
+}
+
+.plx-btn {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: rgb(var(--bg-rgb) / 0.7) !important;
+  border: 1px solid rgb(var(--bg-inv-rgb) / 0.2) !important;
+  color: var(--tx) !important;
+  font-size: 16px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.plx-btn:hover:not(:disabled) {
+  background: var(--bg-inv) !important;
+  color: var(--tx-inv) !important;
+  border-color: var(--bg-inv) !important;
+  transform: scale(1.06) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.plx-btn:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .plx-track {
+    grid-auto-columns: 82vw;
+    gap: 14px;
+  }
+
+  .plx-sec .sec-head h2 {
+    font-size: clamp(28px, 8vw, 44px);
+  }
+}
+

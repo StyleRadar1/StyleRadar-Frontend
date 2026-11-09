@@ -1,0 +1,28 @@
+pe-quienes-somos">Quiénes somos</button>
+      </nav>
+    </div>
+    <div class="pe-header-right">
+      <label data-nog class="tema-sel pe-tema"><svg class="tema-sel-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg><span class="sr-only">Tema de color</span><select data-tema-select><option value="oscuro">Oscuro</option><option value="claro">Claro</option><option value="daltonico">Daltónico</option></select></label>
+      <button type="button" class="pe-login-btn" id="portalLoginBtn" data-login>Iniciar sesión</button>
+      <button type="button" class="pe-explore-btn" id="portalEnterBtn" data-enter><span>Entrar a StyleRadar</span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg></button>
+      <button type="button" class="pe-mobile-menu-btn" id="peMobileToggle" aria-label="Menú de secciones" aria-expanded="false" aria-controls="peMobileMenu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <nav class="pe-mobile-menu" id="peMobileMenu" aria-label="Secciones del landing" hidden>
+    <button type="button" class="pe-m-link" data-scroll="pe-como-funciona">Cómo funciona</button>
+    <button type="button" class="pe-m-link" data-scroll="pe-categorias">Categorías</button>
+    <button type="button" class="pe-m-link" data-scroll="pe-videos">Videos</button>
+    <button type="button" class="pe-m-link" data-scroll="pe-ciclo">Ciclo de la ropa</button>
+    <button type="button" class="pe-m-link" data-scroll="pe-planes">Planes</button>
+    <button type="button" class="pe-m-link" data-scroll="pe-mapa">Mapa</button>
+    <button type="button" class="pe-m-link" data-scroll="pe-quienes-somos">Quiénes somos</button>
+    <label data-nog class="tema-sel"><svg class="tema-sel-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg><span class="sr-only">Tema de color</span><select data-tema-select><option value="oscuro">Oscuro</option><option value="claro">Claro</option><option value="daltonico">Daltónico</option></select></label>
+    <button type="button" class="pe-m-link pe-m-login" id="peMobileLogin" data-login>Iniciar sesión</button>
+    <button type="button" class="pe-m-link pe-m-enter" data-enter>Entrar a StyleRadar</button>
+  </nav>
+
+  <!-- 1 · INICIO (hero) · se queda como está, con «Entrar a StyleRadar» y «Ver planes» -->
+  <section class="pe-hero pe-anchor" id="pe-inicio" data-seccion="inicio" aria-labelledby="peHeroTitle">
+    <div class="pe-hero-sticky">
+      <div class="pe-slides" id="peSlides">
+        <img class="pe-slide is-on" src="[BASE64_IMG]

@@ -808,7 +808,7 @@
   let wearing = {};
   let photo = null;    // foto propia (solo en memoria de la sesión)
   function vProbador(el){
-    const mannM = (A.img || {}).maniqui || ($('#fitMann') || {}).src || '', mannF = (A.v2 || {}).maniqui_f || mannM;
+    const mannM = (A.img || {}).maniqui || 'assets/img/general/maniqui.png', mannF = (A.v2 || {}).maniqui_f || mannM;
     const sex = () => U().sex === 'mujer' ? 'mujer' : 'hombre';
     const mannSrc = sex() === 'mujer' ? mannF : mannM;
     const bagSrc = (SR.FIT_IMG || {}).maletin || '';
@@ -832,7 +832,7 @@
           ${seen ? '' : `<div class="coach" id="czCoach"><b>¿Primera vez aquí?</b><ol><li>Elige una pestaña: camisas, pantalones, zapatos…</li><li>Toca una prenda para ponérsela; tócala otra vez para quitarla.</li><li>Guarda el look o súbelo todo a tu wishlist.</li></ol><button class="linkish lbl" id="czCoachX">Entendido</button></div>`}
           <div class="upload-row"><button class="upload" id="czUpload" data-cursor="Foto">${ICON.cam}<div><b>Cargar foto</b><span>Foto de cuerpo entero, de frente. JPG, PNG o WEBP hasta 8 MB.</span></div></button>
             <button class="upload alt" id="czSample" type="button"><img src="${(A.v2 || {}).ref || ''}" alt=""><div><b>Usar foto de ejemplo</b><span>Mira cómo funciona con una foto de referencia.</span></div></button>
-            <input type="file" id="czFile" accept="image/*" hidden></div>
+            <input type="file" id="czFile" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" hidden></div>
           <div class="cz-err" id="czErr" role="alert" hidden></div>
           <div class="cz-tabs" role="tablist" id="czTabs">${CZ.map((t, i) => `<button role="tab" aria-selected="${i === 0}" data-tab="${t.tab}">${t.tab}<sup></sup></button>`).join('')}</div>
           <div class="cz-list" id="czList" role="tabpanel"></div>
@@ -875,16 +875,36 @@
       if (photo && photo.ready) drawPhoto();
     };
     // ----- foto propia -----
+    const PROC_STAGES = ['Analizando tu foto', 'Detectando hombros y cadera', 'Ajustando las prendas'];
+    const PROC_LIMIT = 30000;
     const drawPhoto = () => {
       const box = $('#czPhoto', el);
       if (isFree()){ box.innerHTML = `<div class="cz-lock">${emptyState({icon:'cam', title:'Pruébate la ropa sobre tu foto con Radar+', text:'Con el plan Radar usas el maniquí. Radar+ te deja subir tu foto de cuerpo entero y ver las prendas sobre ti.', actions:[{label:'Ver Radar+', href:'#/perfil/suscripcion', kind:'btn-acc'}]})}</div>`; return; }
       if (!photo){ box.innerHTML = emptyState({icon:'cam', title:'Aún no has subido una foto', text:'Súbela de cuerpo entero y de frente. La procesamos solo para esta visualización y puedes borrarla cuando quieras.', actions:[{label:`${ICON.up} Cargar foto`, attr:'data-upload', kind:'btn-acc'}, {label:'Usar foto de ejemplo', attr:'data-sample'}]}); return; }
-      if (!photo.ready){ box.innerHTML = `<div class="cz-proc"><img src="${photo.src}" alt="Tu foto"><div class="proc-ov"><span class="spin lg" aria-hidden="true"></span><b id="procT">Analizando tu foto…</b><div class="pbar"><i id="procB" style="width:0%"></i></div><span class="lbl" id="procS">Esto tarda menos de 30 segundos</span><button class="btn btn-line sm" id="procX">Cancelar</button></div></div>`; return; }
+      if (photo.failed){ box.innerHTML = `<div class="cz-proc"><img src="${photo.src}" alt="Tu foto"><div class="proc-ov proc-fail" role="alert"><span class="proc-ico" aria-hidden="true">${ICON.alert}</span><b>No pudimos terminar la prueba</b><p class="proc-msg">Pasaron más de 30 segundos y el probador no respondió. Tu foto no se guardó.</p><div class="proc-acts"><button class="btn btn-acc sm" id="procRetry">Reintentar</button><button class="btn btn-line sm" data-sample>Usar foto de ejemplo</button></div></div></div>`; return; }
+      if (!photo.ready){ box.innerHTML = `<div class="cz-proc"><img src="${photo.src}" alt="Tu foto"><div class="proc-ov" role="status" aria-live="polite"><span class="spin lg" aria-hidden="true"></span><b id="procT">${PROC_STAGES[0]}…</b><ol class="proc-steps" id="procSteps">${PROC_STAGES.map((t, k) => `<li class="${k === 0 ? 'on' : ''}">${t}</li>`).join('')}</ol><div class="pbar ind" aria-hidden="true"><i></i></div><span class="lbl" id="procS">Suele tardar unos segundos; como máximo 30.</span><button class="btn btn-line sm" id="procX">Cancelar</button></div></div>`; return; }
       const on = {}; Object.values(wearing).forEach(id => { const it = CZI[id]; if (it) on[it.layer] = it; });
-      box.innerHTML = `<div class="cz-pv"><img class="pv-base" src="${photo.src}" alt="Tu foto"><div class="pv-fit" style="left:${photo.box.x}%;top:${photo.box.y}%;height:${photo.box.h}%">${ORDER.filter(k => on[k]).map(k => `<img src="${A.layers[k]}" alt="" style="filter:${F[on[k].color]}">`).join('')}</div>
-        <span class="pv-tag lbl">Visualización aproximada${Object.keys(on).length ? ' · ' + Object.keys(on).length + ' prenda' + (Object.keys(on).length === 1 ? '' : 's') : ''}</span><div class="pv-acts"><button class="btn btn-line sm" id="pvOther">${ICON.shuffle} Probar otra prenda</button><button class="btn btn-line sm pv-del" id="pvDel">${ICON.trash} Eliminar foto</button></div>
+      box.innerHTML = `<div class="cz-pv"><img class="pv-base" src="${photo.src}" alt="Tu foto"><div class="pv-fit" id="pvFit" title="Arrastra para mover la prenda" style="${fitStyle(photo.box)}">${ORDER.filter(k => on[k]).map(k => `<img src="${A.layers[k]}" alt="" style="filter:${F[on[k].color]}">`).join('')}</div>
+        <span class="pv-tag lbl">Visualización aproximada${Object.keys(on).length ? ' · ' + Object.keys(on).length + ' prenda' + (Object.keys(on).length === 1 ? '' : 's') : ''}</span><div class="pv-adj" id="pvAdj" ${photo.adj ? '' : 'hidden'}><b class="lbl">Ajusta la prenda a tu cuerpo</b>
+          <label>Tamaño<input type="range" data-k="h" min="60" max="125" step="1" value="${photo.box.h}"></label>
+          <label>Ancho<input type="range" data-k="sx" min="0.8" max="1.7" step="0.01" value="${photo.box.sx}"></label>
+          <label>Altura<input type="range" data-k="top" min="-20" max="30" step="0.5" value="${photo.box.top}"></label>
+          <span class="lbl">También puedes arrastrar la prenda.</span></div>
+        <div class="pv-acts"><button class="btn btn-line sm" id="pvAdjBtn" aria-pressed="${!!photo.adj}">${ICON.edit} Ajustar</button><button class="btn btn-line sm" id="pvOther">${ICON.shuffle} Probar otra prenda</button><button class="btn btn-line sm pv-del" id="pvDel">${ICON.trash} Eliminar foto</button></div>
         ${Object.keys(on).length ? '' : `<div class="pv-empty lbl">${ICON.arrow || ''}Elige una prenda en la lista para verla sobre tu foto</div>`}</div>`;
     };
+    const fitStyle = b => `left:${b.cx}%;top:${b.top}%;height:${b.h}%;transform:translateX(-50%) scaleX(${b.sx})`;
+    const refit = () => { const f = $('#pvFit', el); if (f && photo) f.setAttribute('style', fitStyle(photo.box)); };
+    // ajustar con los controles
+    el.addEventListener('input', e => { const r = e.target.closest('#pvAdj input'); if (!r || !photo) return; photo.box[r.dataset.k] = +r.value; refit(); });
+    // ajustar arrastrando la prenda sobre la foto
+    let drag = null;
+    el.addEventListener('pointerdown', e => { const f = e.target.closest('#pvFit'); if (!f || !photo) return; const pv = f.parentElement.getBoundingClientRect();
+      drag = {x:e.clientX, y:e.clientY, cx:photo.box.cx, top:photo.box.top, w:pv.width, h:pv.height}; f.setPointerCapture(e.pointerId); e.preventDefault(); });
+    el.addEventListener('pointermove', e => { if (!drag) return; photo.box.cx = Math.max(10, Math.min(90, drag.cx + (e.clientX - drag.x) / drag.w * 100)); photo.box.top = Math.max(-20, Math.min(30, drag.top + (e.clientY - drag.y) / drag.h * 100)); refit();
+      const t = $('#pvAdj [data-k="top"]', el); if (t) t.value = photo.box.top; });
+    el.addEventListener('pointerup', () => { drag = null; });
+    el.addEventListener('pointercancel', () => { drag = null; });
     const setSrc = s => {
       $$('#czSrc button', el).forEach(b => b.setAttribute('aria-selected', b.dataset.s === s));
       $('#czStage', el).hidden = s === 'p'; $('#czPhoto', el).hidden = s !== 'p'; $('.cz-floor', el).hidden = s === 'p';
@@ -892,33 +912,50 @@
       if (s === 'p') drawPhoto();
     };
     const showErr = t => { const e = $('#czErr', el); e.hidden = !t; e.innerHTML = t ? `${ICON.alert}<span>${t}</span>` : ''; };
-    let procTimer = null;
-    const process = (src, w, h) => {
+    // Proceso de la foto: etapas sin porcentaje (no se inventa un avance) y límite de 30 s.
+    // Para ver el error en una demo: #/probador?foto=1&demora=1 (la primera prueba no termina).
+    let procTimer = null, limitTimer = null, slowTimer = null;
+    let stuckOnce = /demora=1/.test(location.hash);
+    const stopProc = () => { clearTimeout(procTimer); clearTimeout(limitTimer); clearTimeout(slowTimer); };
+    // caja de la prenda sobre la foto (en %): cx = centro, top = arriba, h = alto, sx = ancho extra.
+    // Las capas están hechas para el maniquí, que es más delgado que una persona; por eso sx > 1.
+    const process = (src, w, h, retry, fitBox) => {
+      stopProc();
       const land = w > h * 1.05;
-      photo = {src, ready:false, box:land ? {x:38, y:4, h:92} : {x:30, y:6, h:88}}; setSrc('p');
-      if (land) toast('Tu foto es horizontal: la ajustamos, pero una vertical se ve mejor');
-      const steps = [['Analizando tu foto…', 30], ['Detectando hombros y cadera…', 62], ['Ajustando las prendas…', 90], ['Listo', 100]];
-      let i = 0;
-      const tick = () => { if (!photo || photo.ready) return; const [t, p] = steps[i]; const T = $('#procT', el), B = $('#procB', el); if (T) T.textContent = t; if (B) B.style.width = p + '%';
-        i++; if (i < steps.length) procTimer = setTimeout(tick, 900); else procTimer = setTimeout(() => { if (!photo) return; photo.ready = true; drawPhoto(); toast('Tu foto está lista · agrega prendas para verlas'); }, 500); };
+      photo = {src, w, h, ready:false, failed:false, box:Object.assign({}, fitBox || (land ? {cx:50, top:8, h:84, sx:1.15} : {cx:50, top:2, h:100, sx:1.25}))}; setSrc('p');
+      if (land && !retry) toast('Tu foto es horizontal: la ajustamos, pero una vertical se ve mejor');
+      const me = photo, stuck = !retry && stuckOnce; stuckOnce = false;
+      let stage = 0;
+      const paint = () => {
+        const T = $('#procT', el); if (T) T.textContent = PROC_STAGES[stage] + '…';
+        $$('#procSteps li', el).forEach((li, k) => { li.className = k < stage ? 'done' : (k === stage ? 'on' : ''); });
+      };
+      const finish = () => { if (photo !== me || me.failed) return; stopProc(); me.ready = true; drawPhoto(); toast('Tu foto está lista · agrega prendas para verlas'); };
+      const tick = () => { if (photo !== me || me.ready || me.failed) return; paint(); if (stuck) return;
+        if (stage < PROC_STAGES.length - 1){ stage++; procTimer = setTimeout(tick, 900); } else procTimer = setTimeout(finish, 900); };
+      slowTimer = setTimeout(() => { const S = $('#procS', el); if (photo === me && !me.ready && S) S.textContent = 'Está tardando más de lo normal. Puedes esperar o cancelar.'; }, 15000);
+      limitTimer = setTimeout(() => { if (photo !== me || me.ready) return; clearTimeout(procTimer); me.failed = true; drawPhoto(); }, PROC_LIMIT);
       tick();
     };
     const upload = async file => {
       showErr('');
-      if (!/^image\//.test(file.type) || /heic|heif/i.test(file.type + file.name)) return showErr(`El formato ${esc((file.name.split('.').pop() || 'del archivo').toUpperCase())} no sirve para el probador. Sube una foto JPG, PNG o WEBP, o toca «Usar foto de ejemplo».`);
+      const okType = /^image\/(jpeg|png|webp)$/.test(file.type) || (!file.type && /\.(jpe?g|png|webp)$/i.test(file.name));
+      if (!okType) return showErr(`El formato ${esc((file.name.split('.').pop() || 'del archivo').toUpperCase())} no sirve para el probador. Sube una foto JPG, PNG o WEBP, o toca «Usar foto de ejemplo».`);
       if (file.size > 8 * 1024 * 1024) return showErr('La foto pesa más de 8 MB. Súbela en menor calidad o recórtala.');
       let r; try { r = await X.downscale(file, 1100); } catch(e){ return showErr('No pudimos abrir esa imagen. Prueba con otra foto o toca «Usar foto de ejemplo».'); }
       if (r.w < 160 || r.h < 160) return showErr('La foto es muy pequeña. Usa una de al menos 400 píxeles de alto.');
       process(r.src, r.w, r.h);
     };
-    const sample = () => { showErr(''); const src = (A.v2 || {}).ref; if (!src) return; process(src, 2, 3); };
+    const sample = () => { showErr(''); const src = (A.v2 || {}).ref; if (!src) return; process(src, 2, 3, false, {cx:50.5, top:1.5, h:105, sx:1.3}); };
     el.onclick = async e => {
       if (e.target.closest('#czUpload,[data-upload]')) $('#czFile', el).click();
       if (e.target.closest('#czSample,[data-sample]')) sample();
       const sxb = e.target.closest('#czSex [data-sx]'); if (sxb){ U().sex = sxb.dataset.sx; save(); $$('#czSex [data-sx]', el).forEach(b => { b.setAttribute('aria-checked', b === sxb); b.setAttribute('aria-selected', b === sxb); });
         const mi = $('#czMann', el); mi.src = sex() === 'mujer' ? mannF : mannM; mi.alt = 'Maniquí blanco de ' + sex(); $('#czStage', el).dataset.sex = sex(); const mod = $('#czMode', el); if (mod) mod.textContent = 'Maniquí de ' + sex() + ' · talla M'; apply(); setSrc('m'); toast(`Maniquí de ${sex()}`); }
+      if (e.target.closest('#pvAdjBtn') && photo){ photo.adj = !photo.adj; drawPhoto(); }
       if (e.target.closest('#pvOther')){ const lst = $('#czList', el); lst.scrollIntoView({behavior: X.reduce ? 'auto' : 'smooth', block:'center'}); lst.classList.remove('pulse'); void lst.offsetWidth; lst.classList.add('pulse'); toast('Toca otra prenda de la lista para una nueva prueba'); }
-      if (e.target.closest('#procX')){ clearTimeout(procTimer); photo = null; drawPhoto(); toast('Carga cancelada'); }
+      if (e.target.closest('#procX')){ stopProc(); photo = null; drawPhoto(); toast('Carga cancelada'); }
+      if (e.target.closest('#procRetry') && photo){ process(photo.src, photo.w, photo.h, true, photo.box); }
       if (e.target.closest('#pvDel')){ const ok = await confirmDlg({title:'¿Eliminar tu foto?', text:'Se borra de StyleRadar y de este probador. Puedes subir otra cuando quieras.', ok:'Eliminar foto', danger:true, kicker:'Privacidad'});
         if (ok){ photo = null; drawPhoto(); toast('Foto eliminada de StyleRadar'); } }
       const s = e.target.closest('#czSrc button'); if (s) setSrc(s.dataset.s);

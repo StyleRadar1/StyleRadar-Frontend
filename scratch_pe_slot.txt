@@ -1,0 +1,113 @@
+: column;
+  justify-content: center;
+  gap: 8px;
+  border: 2px dashed rgb(var(--lav-rgb) / .45);
+  border-radius: 16px;
+  background: rgb(var(--bg-inv-rgb) / .03);
+  color: var(--tx-sand);
+}
+.pe-slot-k { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--tx); }
+.pe-slot p { margin: 0; max-width: 60ch; font-size: 15px; line-height: 1.55; }
+.pe-como .pe-slot { margin-top: 0; }
+
+/* Pie del landing con enlaces a todas las secciones */
+.pe-foot-nav { margin-top: 64px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.pe-foot-link {
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font: 600 13px/1.2 var(--sans);
+  color: var(--tx-sand);
+  cursor: pointer;
+}
+.pe-foot-link:hover { color: var(--tx); text-decoration: underline; text-underline-offset: 4px; }
+.pe-final .pe-legal { margin-top: 32px; }
+
+</style>
+<style data-src="css/sesion.css">
+/* =====================================================================
+   SESIÓN
+   Imagen distinta para iniciar sesión y crear cuenta, imagen y color
+   según el rol, y pantalla de bienvenida al entrar.
+   ===================================================================== */
+
+/* Color de cada rol (paleta del manual) */
+#auth,
+.sr-welcome {
+  --sr-role: #48119A;
+  --sr-role-ink: #FFFFFF;
+  --sr-role-line: #7B4DD8;
+}
+
+#auth[data-pic="sign"],
+#auth[data-pic="store"],
+.sr-welcome[data-role="store"] {
+  --sr-role: #E8DCCB;
+  --sr-role-ink: #262626;
+  --sr-role-line: #E8DCCB;
+}
+
+#auth[data-pic="found"],
+.sr-welcome[data-role="found"] {
+  --sr-role: #B9B9CA;
+  --sr-role-ink: #262626;
+  --sr-role-line: #B9B9CA;
+}
+
+#auth[data-pic="admin"],
+.sr-welcome[data-role="admin"] {
+  --sr-role: #262626;
+  --sr-role-ink: #FFFFFF;
+  --sr-role-line: #7B4DD8;
+}
+
+/* ---------- Foto del modal ---------- */
+.auth-photo img,
+.auth-ghost {
+  object-position: 50% 42%;
+}
+
+.auth-ghost {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+#auth[data-pic="login"] .auth-photo img { object-position: 50% 48%; }
+#auth[data-pic="sign"] .auth-photo img { object-position: 50% 30%; }
+#auth[data-pic="user"] .auth-photo img { object-position: 50% 32%; }
+#auth[data-pic="found"] .auth-photo img { object-position: 50% 55%; }
+#auth[data-pic="admin"] .auth-photo img { object-position: 50% 45%; }
+
+/* oscurece la izquierda para que se lea el texto de la foto */
+.auth-photo::after {
+  background:
+    linear-gradient(90deg, rgba(20, 14, 32, .62) 0%, rgba(20, 14, 32, .18) 48%, rgba(20, 14, 32, .32) 100%),
+    linear-gradient(180deg, rgba(20, 14, 32, .25) 0%, rgba(20, 14, 32, 0) 30%, rgba(20, 14, 32, .55) 100%);
+}
+
+/* texto sobre la foto */
+.auth-cap {
+  position: absolute;
+  left: 30px;
+  bottom: 28px;
+  z-index: 1;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--tx);
+}
+
+.auth-cap .ac-k {
+  padding: 8px 14px;
+  border-radius: 99px;
+  font: 700 12px/1 'Poppins', sans-serif;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  background: var(--sr-role);
+  color: var(--sr-

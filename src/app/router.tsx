@@ -6,7 +6,7 @@ import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
-const Landing = lazy(() => import('@/modules/landing/pages/LandingPage'))
+import LandingPage from '@/modules/landing/pages/LandingPage'
 const Login = lazy(() => import('@/modules/identidad/pages/LoginPage'))
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
@@ -44,7 +44,7 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       // Públicas
-      { path: '/', element: page(<Landing />) },
+      { path: '/', element: <LandingPage /> },
       { path: '/login', element: page(<Login />) },
       { path: '/registro', element: page(<Register />) },
       { path: '/catalogo', element: page(<Catalog />) },

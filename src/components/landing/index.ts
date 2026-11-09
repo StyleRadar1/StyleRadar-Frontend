@@ -1,0 +1,8 @@
+export { Hero } from './Hero'
+export { ProblemSection } from './ProblemSection'
+export { HowItWorks } from './HowItWorks'
+export { CategoriesGrid } from './CategoriesGrid'
+export { VideoReels } from './VideoReels'
+export { ClothingCycle } from './ClothingCycle'
+export { PricingPlans } from './PricingPlans'
+export { MapPreview } from './MapPreview'

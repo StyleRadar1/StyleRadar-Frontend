@@ -174,8 +174,7 @@ a {
 
 /* HERO */
 .hero {
-  position: relative;
-  height: 230svh
+  position: relative
 }
 
 .hero-sticky {

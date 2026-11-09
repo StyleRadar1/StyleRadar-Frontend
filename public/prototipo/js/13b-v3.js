@@ -15,6 +15,7 @@
   const goBack = () => { if (steps > 0){ steps -= 2; history.back(); } else location.hash = X.HOME[X.role() || 'user'] || '#inicio'; };
   window.SR_afterView = (el, name) => {
     if (name === 'admin') return;                       /* el panel ya tiene menú lateral y «Volver a …» en cada detalle */
+    if (name === 'inicio') return;                      /* P16: el inicio es la primera pantalla, no hay a dónde volver */
     if (el.querySelector(':scope .v-back')) return;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'v-back'; b.innerHTML = '<span aria-hidden="true">←</span> Volver';
     b.addEventListener('click', goBack);

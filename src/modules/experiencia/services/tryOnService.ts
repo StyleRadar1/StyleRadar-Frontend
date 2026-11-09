@@ -40,7 +40,6 @@ export const tryOnService = {
     const form = new FormData()
     form.append('file', file)
     return apiClient.post<PhotoUploadResponseDto>('/api/tryon/photos', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
       signal,
       onUploadProgress: (e) => { if (e.total) onProgress?.(Math.round((e.loaded / e.total) * 100)) },

@@ -1,0 +1,59 @@
+uRecvL">Qué reciben</span>
+          <div class="chips" id="suRecv" role="group" aria-labelledby="suRecvL"><button type="button" class="chip"
+              aria-pressed="false">Chaquetas y abrigos</button><button type="button" class="chip"
+              aria-pressed="false">Suéteres</button><button type="button" class="chip"
+              aria-pressed="false">Pantalones</button><button type="button" class="chip"
+              aria-pressed="false">Calzado</button><button type="button" class="chip" aria-pressed="false">Ropa
+              infantil</button><button type="button" class="chip" aria-pressed="false">Ropa formal</button><button
+              type="button" class="chip" aria-pressed="false">Cobijas</button></div>
+          <span class="f-err" id="suRecvErr" role="alert"></span>
+        </div>
+        <div class="field full" data-for="admin" id="fsCode">
+          <label for="suCode">Código de invitación <span class="tip" tabindex="0"
+              data-tip="Lo entrega el equipo de StyleRadar. Para la demo usa SR-ADMIN-2026.">?</span></label>
+          <input id="suCode" placeholder="SR-ADMIN-0000" maxlength="20" autocomplete="off">
+          <span class="f-err" id="suCodeErr" role="alert"></span>
+        </div>
+        <div class="field" data-for="user store found admin" id="fsEmail">
+          <label for="suEmail">Correo</label>
+          <input id="suEmail" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com">
+          <span class="f-err" id="suEmailErr" role="alert"></span>
+        </div>
+        <div class="field" data-for="user store found admin" id="fsPass">
+          <label for="suPass">Contraseña</label>
+          <div class="pw"><input id="suPass" type="password" autocomplete="new-password"
+              placeholder="Mín. 6 caracteres"><button type="button" data-show="suPass">Mostrar</button></div>
+          <span class="f-err" id="suPassErr" role="alert"></span>
+        </div>
+      </div>
+      <div class="field" id="fsTerms"><label class="check sm"><input type="checkbox" id="suTerms"> Acepto los términos y
+          la política de datos</label></div>
+      <button class="btn btn-acc" type="submit" id="suSubmit">Crear cuenta</button>
+      <p class="auth-foot">¿Ya tienes cuenta? <a href="#" id="authBack">Inicia sesión</a></p>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span class="t-msg"></span><button type="button"
+    class="t-undo" hidden>Deshacer</button></div>
+<div class="modal-root" id="modalRoot"></div>
+
+<!-- panel de notificaciones -->
+<div class="notif" id="notif" hidden role="dialog" aria-label="Notificaciones">
+  <div class="notif-head"><b>Notificaciones</b><button type="button" class="lbl" id="notifAll">Marcar todo como
+      leído</button></div>
+  <ul id="notifList"></ul>
+  <a class="lbl notif-foot" href="#/perfil/alertas">Configurar alertas →</a>
+</div>
+
+<!-- ================= VISTAS ================= -->
+<div class="views" id="views"></div>
+
+<script data-src="js/00-config.js">
+window.MAPBOX_TOKEN = "pk.eyJ1IjoicGlwZS1tb3JhbGVzejA3IiwiYSI6ImNtdzZreG8weDBsNGsyem9vMzR6ZmF5NHUifQ.V-DQc6fG9xtSM4XBOL93-A";
+
+</script>
+<script data-src="js/03-assets-data.js">
+window.SR_ASSETS = {
+ "thumbs": {
+  "casual-retro-blancos": "[BASE64_IMG]

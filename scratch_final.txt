@@ -1,0 +1,93 @@
+pe-final { overflow: hidden; padding-top: clamp(110px, 14vw, 180px); padding-bottom: 48px; }
+.pe-final-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; }
+.pe-final::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg,
+    #1b1625 0%,
+    rgba(27, 22, 37, 0.72) 20%,
+    rgb(var(--bg-rgb) / 0.52) 45%,
+    rgba(46, 17, 89, 0.85) 100%
+  );
+}
+.pe-final .pe-in { z-index: 2; }
+.pe-final .pe-h2 { max-width: none; font-size: clamp(40px, 7vw, 100px); }
+.pe-legal { margin: 110px 0 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: rgb(var(--tx-rgb) / .6); }
+
+/* ── Responsive ─────────────────────────────── */
+@media (max-width: 1000px) {
+  .pe-retos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pe-cards { grid-template-columns: 1fr; }
+  .pe-track { grid-template-columns: 32px minmax(0, 1fr) 100px; }
+  .pe-tr-d { display: none; }
+}
+@media (max-width: 900px) {
+  .sr-portal .pe-header, .sr-portal .pe-header.is-scrolled { padding: 12px 18px; }
+  .pe-hero-foot { left: 18px; right: 18px; }
+}
+@media (max-width: 560px) {
+  .pe-hero { height: 160vh; }
+  .pe-mark { flex-direction: column; gap: 8px; font-size: clamp(54px, 17vw, 80px); }
+  .pe-mark-logo { height: 1.5em; }
+  .pe-pill { letter-spacing: .12em; padding: 9px 16px; }
+  .pe-hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
+  .pe-hero-actions .pe-explore-btn, .pe-hero-actions .pe-ghost-btn { justify-content: center; }
+  .pe-retos { grid-template-columns: 1fr; }
+  .pe-pl-head { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .pe-track { grid-template-columns: 26px minmax(0, 1fr); padding: 10px 6px; }
+  .pe-tr-g, .pe-track-head .pe-tr-d { display: none; }
+  .sr-portal .pe-header .pe-explore-btn { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pe-slide, .pe-ch, .pe-hint i { animation: none !important; transition: none !important; }
+}
+
+/* ---- Mapa en el landing ---- */
+.pe-mapa {
+  background: #1c1c1c;
+  padding: clamp(26px, 4.5vh, 40px) 24px clamp(30px, 5vh, 44px);
+}
+.pe-mapa-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.pe-mapa-head-main {
+  flex: 0 0 auto;
+}
+.pe-mapa .pe-kicker {
+  margin: 0 0 4px;
+}
+.pe-mapa .pe-h2 {
+  margin: 0;
+  line-height: 1.1;
+  font-size: clamp(26px, 3.8vw, 36px);
+}
+.pe-mapa .pe-h2 span {
+  color: #B9B9CA;
+}
+.pe-mapa .pe-lead {
+  margin: 0;
+  max-width: 460px;
+  font-size: 13.5px;
+  color: #B9B9CA;
+  line-height: 1.45;
+}
+.pe-mapa .pe-mapa-link {
+  margin: 0;
+  flex: 0 0 auto;
+}
+.pe-mapa .pe-mapa-link a {
+  padding: 8px 14px 7px;
+  font-size: 12px;
+}
+
+#lmPins { position: absolute; inset: 0; pointer-events: none; }
+.lm-pin { pointer-events: auto; }
+
+/* El landing es lo único que 
