@@ -29,6 +29,30 @@ export interface PlanInfo {
   destacado?: boolean
 }
 
+/** Comparación de los planes de personas: [qué, Radar, Radar+]. */
+export const COMPARATIVA: [string, string, string][] = [
+  ['Precio', '$0', '$14.900 al mes'],
+  ['Tiendas, mapa y playlists', 'Sin límite', 'Sin límite'],
+  ['Wishlist', `Hasta ${LIMITES_RADAR.wishlist} prendas`, 'Sin límite'],
+  ['Alertas de disponibilidad activas', `Hasta ${LIMITES_RADAR.alertas}`, 'Sin límite'],
+  ['Probador', 'Con el maniquí', 'Con el maniquí y con tu propia foto'],
+  ['Vender y donar en Segunda vida', 'Sí', 'Sí'],
+  ['Chat con tiendas y vendedores', 'Sí', 'Sí'],
+]
+
+/** Reglas de negocio de los planes (README de la rama feature/planes-acceso-DanielBarrera). Provisionales. */
+export const REGLAS: [string, string][] = [
+  ['Límites del plan gratis', 'Las alertas activas suman las de prendas y las de búsquedas guardadas. Al llegar al límite, la acción se bloquea y se ofrece «Ver planes». Quitar una prenda o apagar una alerta libera el cupo de inmediato.'],
+  ['Candado antes del límite', 'Lo que es de pago se marca con candado mientras la persona no tenga Radar+, para que sepa qué está bloqueado antes de intentarlo.'],
+  ['Alertas gratis', `El plan Radar conserva ${LIMITES_RADAR.alertas} alertas sin costo; Radar+ no tiene límite.`],
+  ['Cambio de plan', 'Se cambia desde esta página. El cambio aplica en el siguiente ciclo; en la demostración se aplica al confirmar.'],
+  ['Pago rechazado', 'Si un cobro es rechazado hay 3 días de gracia para pagar con otro medio (tarjeta, PSE o Nequi).'],
+  ['Bajada automática', 'Si termina la gracia sin pago, la cuenta Radar+ pasa a Radar. Sus playlists y su wishlist se conservan; solo se pausan los beneficios.'],
+  ['Tiendas', 'El periodo gratuito dura 30 días desde el registro. Una tienda solo aparece con la verificación aprobada; si la suscripción vence o no existe, su catálogo deja de verse en el radar y en el mapa. Si se cancela, sigue visible hasta la fecha de corte.'],
+  ['Cancelación', 'Tiendas y Radar+ pueden cancelar la renovación cuando quieran; el plan sigue activo hasta el final del ciclo pagado.'],
+  ['Fundaciones', 'No pagan. Una fundación inactiva no puede iniciar sesión.'],
+]
+
 /** Tabla de precios provisional (la misma del prototipo y del README de la rama de planes). */
 export const PLANES: PlanInfo[] = [
   { id: 'RADAR', para: 'Personas', nombre: 'Radar', precio: 0, periodo: 'gratis', nota: 'Para descubrir tu estilo en la ciudad.',

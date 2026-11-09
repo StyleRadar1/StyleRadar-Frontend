@@ -6,7 +6,7 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { userPlanService } from '../services/userPlanService'
-import { PLAN_LABEL, PLANES, type PlanInfo, type PlanUsuario } from '../types/plan.dto'
+import { COMPARATIVA, PLAN_LABEL, PLANES, REGLAS, type PlanInfo, type PlanUsuario } from '../types/plan.dto'
 
 const REGISTRO: Record<string, [string, string]> = {
   RADAR: ['/registro', 'Crear cuenta gratis'],
@@ -78,6 +78,36 @@ export default function PlansPage() {
         ))}
       </ul>
       <p className="mt-6 text-sm text-white/55">Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar.</p>
+
+      <h2 className="mt-14 text-2xl font-bold">Radar y Radar+, lado a lado</h2>
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
+        <table className="w-full min-w-[520px] text-left text-sm">
+          <caption className="sr-only">Comparación de los planes Radar y Radar+</caption>
+          <thead className="bg-white/[.04] text-[11px] uppercase tracking-[.14em] text-lavanda">
+            <tr><th scope="col" className="p-4 font-bold">Qué incluye</th><th scope="col" className="p-4 font-bold">Radar</th><th scope="col" className="p-4 font-bold text-arena">Radar+</th></tr>
+          </thead>
+          <tbody>
+            {COMPARATIVA.map(([que, radar, plus]) => (
+              <tr key={que} className="border-t border-white/10">
+                <th scope="row" className="p-4 font-semibold">{que}</th>
+                <td className="p-4 text-white/75">{radar}</td>
+                <td className="p-4">{plus}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 className="mt-14 text-2xl font-bold">Reglas de los planes</h2>
+      <p className="mt-2 text-sm text-white/60">Provisionales: falta validarlas con el squad de Transacciones (ms-pagos-suscripciones).</p>
+      <ol className="mt-5 grid gap-3 md:grid-cols-2" aria-label="Reglas de los planes">
+        {REGLAS.map(([titulo, texto], i) => (
+          <li key={titulo} className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+            <p className="font-semibold"><span className="mr-2 text-arena">{i + 1}.</span>{titulo}</p>
+            <p className="mt-1 text-sm text-white/70">{texto}</p>
+          </li>
+        ))}
+      </ol>
 
       <ConfirmDialog open={!!cambio} busy={busy} onCancel={() => setCambio(null)} onConfirm={cambiar}
         title={`¿Cambiar a ${cambio ? PLAN_LABEL[cambio] : ''}?`} confirmLabel="Cambiar plan">

@@ -32,6 +32,18 @@ describe('planes (P7)', () => {
     expect(screen.getByRole('link', { name: 'Registrar mi tienda' })).toHaveAttribute('href', '/registro?tipo=tienda')
   })
 
+  it('muestra la tabla comparativa y las reglas de los planes', () => {
+    renderAt('/planes')
+    const tabla = screen.getByRole('table', { name: 'Comparación de los planes Radar y Radar+' })
+    const alertas = within(tabla).getByRole('row', { name: /Alertas de disponibilidad activas/ })
+    expect(alertas).toHaveTextContent('Hasta 3')
+    expect(alertas).toHaveTextContent('Sin límite')
+    expect(within(tabla).getByRole('row', { name: /Precio/ })).toHaveTextContent('$14.900 al mes')
+    const reglas = screen.getByRole('list', { name: 'Reglas de los planes' })
+    expect(within(reglas).getAllByRole('listitem')).toHaveLength(9)
+    expect(within(reglas).getByText(/3 días de gracia/)).toBeInTheDocument()
+  })
+
   it('el comprador ve su plan y lo cambia con confirmación', async () => {
     const user = userEvent.setup()
     loginAs('u-1')
