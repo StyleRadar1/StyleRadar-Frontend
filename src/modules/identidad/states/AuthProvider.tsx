@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import { authService } from '../services/authService'
-import type { LoginRequestDto, UserSessionDto } from '../types/auth.dto'
+import type { LoginRequestDto, LoginResponseDto, RegisterRequestDto, UserSessionDto } from '../types/auth.dto'
 import { AuthContext } from './authContext'
 
 const USER_KEY = 'sr_user'
 
 const readUser = (): UserSessionDto | null => {
   try { return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null') } catch { return null }
+}
+const saveUser = (user: UserSessionDto) => {
+  try { localStorage.setItem(USER_KEY, JSON.stringify(user)) } catch { /* sin almacenamiento */ }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -19,12 +22,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
-  const login = useCallback(async (payload: LoginRequestDto) => {
-    const res = await authService.login(payload)
+  const start = useCallback((res: LoginResponseDto) => {
     tokenStorage.set(res.token)
-    try { localStorage.setItem(USER_KEY, JSON.stringify(res.user)) } catch { /* sin almacenamiento */ }
+    saveUser(res.user)
     setUser(res.user)
     return res.user
+  }, [])
+
+  const login = useCallback(async (payload: LoginRequestDto) => start(await authService.login(payload)), [start])
+  const register = useCallback(async (payload: RegisterRequestDto) => start(await authService.register(payload)), [start])
+
+  const updateUser = useCallback((changes: Partial<Pick<UserSessionDto, 'name'>>) => {
+    setUser((u) => {
+      if (!u) return u
+      const next = { ...u, ...changes }
+      saveUser(next)
+      return next
+    })
   }, [])
 
   useEffect(() => {
@@ -32,6 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('sr:sesion-expirada', logout)
   }, [logout])
 
-  const value = useMemo(() => ({ user, login, logout }), [user, login, logout])
+  const value = useMemo(() => ({ user, login, register, updateUser, logout }), [user, login, register, updateUser, logout])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
