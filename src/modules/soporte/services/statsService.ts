@@ -4,12 +4,12 @@ import { env } from '@/configs/env'
 import {
   MOCK_STORE_STATS, MOCK_STORE_INVENTORY,
   MOCK_FOUNDATION_STATS, MOCK_FOUNDATION_MONTHS,
-  MOCK_ADMIN_INDICATORS, MOCK_ADMIN_INCOME, MOCK_ADMIN_ACCOUNTS,
+  MOCK_ADMIN_INDICATORS, MOCK_ADMIN_INCOME, MOCK_ADMIN_ACCOUNTS, MOCK_ADMIN_DAILY, mockAdminLive,
 } from '../mocks/stats'
 import type {
   StoreStatsDto, StoreInventoryDto,
   FoundationStatsDto, FoundationMonthDto,
-  AdminIndicatorsDto, AdminIncomeDto, AdminAccountsByPlanDto,
+  AdminIndicatorsDto, AdminIncomeDto, AdminAccountsByPlanDto, AdminDailyDto, AdminLiveDto,
   StatsPeriod,
 } from '../types/stats.dto'
 
@@ -42,6 +42,16 @@ export const statsService = {
   getAdminIncome(): Promise<AdminIncomeDto> {
     if (env.useMocks) return mockDelay(MOCK_ADMIN_INCOME)
     return apiClient.get<AdminIncomeDto>('/api/estadisticas/admin/ingresos').then((r) => r.data)
+  },
+  /** RF-86: búsquedas, registros y publicaciones por día del mes en curso. */
+  getAdminDaily(): Promise<AdminDailyDto> {
+    if (env.useMocks) return mockDelay(MOCK_ADMIN_DAILY)
+    return apiClient.get<AdminDailyDto>('/api/estadisticas/admin/actividad-diaria').then((r) => r.data)
+  },
+  /** RF-88: sesiones abiertas ahora (la vista consulta cada 15 s con la pestaña visible). */
+  getAdminLive(): Promise<AdminLiveDto> {
+    if (env.useMocks) return mockDelay(mockAdminLive(), 150)
+    return apiClient.get<AdminLiveDto>('/api/estadisticas/admin/en-vivo').then((r) => r.data)
   },
   getAdminAccounts(): Promise<AdminAccountsByPlanDto> {
     if (env.useMocks) return mockDelay(MOCK_ADMIN_ACCOUNTS)

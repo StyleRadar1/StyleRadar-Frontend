@@ -10,7 +10,7 @@ const renderLogin = () => render(
     <MemoryRouter initialEntries={['/login']}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin/usuarios" element={<p>Panel de administración</p>} />
+        <Route path="/admin/estadisticas" element={<p>Panel de administración</p>} />
       </Routes>
     </MemoryRouter>
   </AuthProvider>,
