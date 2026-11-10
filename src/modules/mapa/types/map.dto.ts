@@ -30,7 +30,7 @@ export interface MapPinDto {
   accepts?: string[]
   /** Estadísticas [prendas, donaciones, voluntarios] (fundaciones) */
   stats?: [number, number, number]
-  /** URL o clave de la foto */
+  /** Foto del punto (archivo en public/img/mapa) */
   photo?: string
 }
 
