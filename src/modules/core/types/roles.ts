@@ -12,6 +12,6 @@ export const ROLE_LABEL: Record<Role, string> = {
 export const ROLE_HOME: Record<Role, string> = {
   COMPRADOR: '/catalogo',
   ADMIN_ALMACEN: '/tienda/inventario',
-  REPRESENTANTE_FUNDACION: '/fundacion/donaciones',
+  REPRESENTANTE_FUNDACION: '/fundacion',
   ADMIN_STYLERADAR: '/admin/usuarios',
 }
