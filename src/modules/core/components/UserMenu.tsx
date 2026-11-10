@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 import { ThemeSegment } from '@/modules/core/theme/ThemeSegment'
 import { ROLE_DOT, avatarCls } from './roleTone'
 
@@ -92,7 +93,7 @@ export function UserMenu() {
           title="¿Cerrar sesión?"
           confirmLabel="Cerrar sesión"
           cancelLabel="Seguir aquí"
-          onConfirm={() => { setAskLogout(false); logout(); navigate('/', { replace: true }) }}
+          onConfirm={() => { setAskLogout(false); marcarSalidaVoluntaria(); navigate('/', { replace: true }); logout() }}
           onCancel={() => setAskLogout(false)}
         >
           Tendrás que volver a entrar con tu correo y contraseña.

@@ -15,7 +15,7 @@ const renderAdmin = (path = '/admin/estadisticas') => render(
           <Route path="/admin/estadisticas" element={<StatsPage />} />
           <Route path="/admin/usuarios" element={<p>Página de usuarios</p>} />
         </Route>
-        <Route path="/login" element={<p>Inicia sesión</p>} />
+        <Route path="/" element={<p>Inicio del landing</p>} />
         <Route path="/catalogo" element={<p>Catálogo</p>} />
       </Routes>
     </MemoryRouter>
@@ -53,7 +53,7 @@ describe('módulo de administración', () => {
     renderAdmin('/admin/usuarios')
     await user.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cerrar sesión' }))
-    expect(await screen.findByText('Inicia sesión')).toBeInTheDocument()
+    expect(await screen.findByText('Inicio del landing')).toBeInTheDocument()
   })
 })
 

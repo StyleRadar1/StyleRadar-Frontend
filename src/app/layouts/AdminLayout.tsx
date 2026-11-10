@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { ADMIN_CHANGED, adminStoreService } from '@/modules/administracion/services/adminService'
 import { moderationService } from '@/modules/catalogo/services/moderationService'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
@@ -7,6 +7,7 @@ import { EnvironmentBanner, MockBanner } from '@/modules/core/components/Status'
 import { iniciales } from '@/modules/core/components/UserMenu'
 import { Logo } from '@/modules/core/design-system'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 import { env } from '@/configs/env'
 import { RequireRole } from '../RequireRole'
 
@@ -48,6 +49,7 @@ export function AdminLayout() {
 
 function AdminShell() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const { pathname } = useLocation()
   const [pendientes, setPendientes] = useState<{ publicaciones: number; tiendas: number }>({ publicaciones: 0, tiendas: 0 })
   const [salir, setSalir] = useState(false)
@@ -132,7 +134,7 @@ function AdminShell() {
       </div>
 
       <ConfirmDialog open={salir} title="¿Cerrar sesión?" confirmLabel="Cerrar sesión" cancelLabel="Seguir aquí"
-        onConfirm={() => { setSalir(false); logout() }} onCancel={() => setSalir(false)}>
+        onConfirm={() => { setSalir(false); marcarSalidaVoluntaria(); navigate('/', { replace: true }); logout() }} onCancel={() => setSalir(false)}>
         Tendrás que volver a entrar con tu correo y contraseña.
       </ConfirmDialog>
     </div>

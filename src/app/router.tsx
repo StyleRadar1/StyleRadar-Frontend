@@ -9,7 +9,6 @@ import { RequireRole } from './RequireRole'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 import LandingPage from '@/modules/landing/pages/LandingPage'
-const Login = lazy(() => import('@/modules/identidad/pages/LoginPage'))
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
 const AdminUsers = lazy(() => import('@/modules/identidad/pages/AdminUsersPage'))
@@ -59,7 +58,8 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
     children: [
       // Públicas
       { path: '/', element: <LandingPage /> },
-      { path: '/login', element: page(<Login />) },
+      // Un solo inicio de sesion: el modal del landing (/?login). /login redirige ahi.
+      { path: '/login', element: <Navigate to="/?login" replace /> },
       { path: '/registro', element: page(<Register />) },
       { path: '/catalogo', element: page(<Catalog />) },
       { path: '/catalogo/:id', element: page(<ItemDetail />) },
