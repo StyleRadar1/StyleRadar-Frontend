@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Logo } from '@/modules/core/design-system'
-import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
+import type { Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { ThemeSelect } from '@/modules/core/theme/ThemeSelect'
 import { NotificationBell } from '@/modules/soporte/components/NotificationBell'
+import { UserMenu } from './UserMenu'
 
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
@@ -14,10 +15,8 @@ const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   ADMIN_STYLERADAR: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
 }
 
-const DOT: Record<Role, string> = { COMPRADOR: 'bg-violeta-claro', ADMIN_ALMACEN: 'bg-arena', REPRESENTANTE_FUNDACION: 'bg-lavanda', ADMIN_STYLERADAR: 'bg-blanco' }
-
 export function Navbar() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const links = LINKS[user?.role ?? 'GUEST']
   const linkCls = ({ isActive }: { isActive: boolean }) => `rounded-lg px-3 py-2 text-sm ${isActive ? 'bg-white/10 text-blanco' : 'text-white/75 hover:text-blanco'}`
@@ -34,10 +33,7 @@ export function Navbar() {
           {user ? (
             <>
               {user.role === 'COMPRADOR' && <NotificationBell />}
-              <span className="hidden items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold uppercase tracking-wider sm:inline-flex">
-                <i className={`h-2 w-2 rounded-full ${DOT[user.role]}`} />{ROLE_LABEL[user.role]}
-              </span>
-              <button onClick={logout} className="rounded-lg px-3 py-2 text-sm text-white/75 hover:text-blanco">Salir</button>
+              <UserMenu />
             </>
           ) : (
             <Link to="/login" className="rounded-lg bg-violeta px-4 py-2 text-sm font-semibold">Iniciar sesión</Link>

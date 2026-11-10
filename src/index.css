@@ -83,8 +83,10 @@ html[data-tema="daltonico"] main a:not([class*="rounded"]) { text-decoration: un
 
 /* ---------- Zonas siempre oscuras ----------
    Texto sobre fotos (hero del landing, inicio de sesión, registro) y botones
-   violeta: conservan el texto blanco en el tema claro. */
-html[data-tema="claro"] :is(.zona-oscura, section:has(> img.absolute)) {
+   violeta: conservan el texto blanco en el tema claro. El landing completo (.sr-landing)
+   es una página editorial oscura con fondo propio: sin esto el texto pasaba a gris oscuro
+   sobre fondo oscuro y no se leía. */
+html[data-tema="claro"] :is(.zona-oscura, .sr-landing, section:has(> img.absolute)) {
   --sr-tx: #ffffff;
   --sr-tx-2: #b9b9ca;
   --sr-acc-tx: #b9b9ca;
@@ -100,7 +102,7 @@ html[data-tema="claro"] :is(.zona-oscura, section:has(> img.absolute)) {
   --color-violeta-claro: #7b4dd8;
   color: #ffffff;
 }
-html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-[#c0392b]"]) {
+html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/9"], [class*="bg-[#c0392b]"]) {
   --color-blanco: #ffffff;
   --color-white: #ffffff;
   color: #ffffff;
@@ -111,6 +113,16 @@ html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-[#c0392b
    el tema (en claro se oscurecen para tener contraste 4.5:1; en daltónico
    pasan a azul y naranja). */
 html:is([data-tema="claro"], [data-tema="daltonico"]) :is(.text-\[\#ffb4b4\], .text-\[\#ff8a8a\]) { color: var(--sr-bad); }
+/* Más colores fijos que usan las pantallas. En claro pasan a las variables del tema: el violeta y el
+   gris claro sobre fondo claro no se leían (contraste menor a 3:1). Las zonas oscuras reponen sus variables. */
+html[data-tema="claro"] .text-\[\#a98be0\] { color: var(--sr-acc-tx); }
+html[data-tema="claro"] :is(.text-\[\#b9b9ca\], .text-\[\#d1ced7\], .text-\[\#cfcfdc\]) { color: var(--sr-tx-2); }
+html[data-tema="claro"] .text-\[\#e8dccb\] { color: var(--color-arena); }
+html[data-tema="claro"] .text-\[\#f2c078\] { color: var(--sr-warn); }
+html[data-tema="claro"] :is(.text-amber-200, .text-amber-300) { color: var(--sr-warn); }
+html[data-tema="claro"] .text-green-400 { color: var(--sr-ok); }
+html[data-tema="claro"] .text-red-200 { color: var(--sr-bad); }
+html[data-tema="claro"] .bg-red-950\/50 { background-color: color-mix(in srgb, var(--sr-bad) 12%, transparent); }
 html:is([data-tema="claro"], [data-tema="daltonico"]) .text-\[\#9be3b4\] { color: var(--sr-ok); }
 html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="bg-[#ff8a8a]"] { background-color: color-mix(in srgb, var(--sr-bad) 12%, transparent); }
 html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="bg-[#9be3b4]"] { background-color: color-mix(in srgb, var(--sr-ok) 12%, transparent); }
@@ -118,7 +130,7 @@ html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="border-[#ff8a8a]"
 html[data-tema="claro"] .text-\[\#B9B9CA\] { color: var(--sr-tx-2); }
 /* Texto tenue (text-white/40 a /80): sobre fondo claro la transparencia baja el contraste,
    así que en el tema claro todo pasa al gris de texto secundario (7:1). */
-html[data-tema="claro"] [class*="text-white/"]:not(:is(.zona-oscura, section:has(> img.absolute), .bg-violeta) *) { color: var(--sr-tx-2); }
+html[data-tema="claro"] [class*="text-white/"]:not(:is(.zona-oscura, .sr-landing, section:has(> img.absolute), .bg-violeta) *) { color: var(--sr-tx-2); }
 
 html { background: var(--color-fondo); }
 body { @apply font-sans text-blanco antialiased; }
