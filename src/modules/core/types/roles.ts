@@ -11,7 +11,7 @@ export const ROLE_LABEL: Record<Role, string> = {
 /** Pantalla de inicio de cada rol después de iniciar sesión. */
 export const ROLE_HOME: Record<Role, string> = {
   COMPRADOR: '/catalogo',
-  ADMIN_ALMACEN: '/tienda/inventario',
+  ADMIN_ALMACEN: '/mi-tienda',
   REPRESENTANTE_FUNDACION: '/fundacion',
   ADMIN_STYLERADAR: '/admin/estadisticas',
 }

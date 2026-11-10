@@ -17,6 +17,9 @@ const ItemDetail = lazy(() => import('@/modules/catalogo/pages/ItemDetailPage'))
 const MapPage = lazy(() => import('@/modules/mapa/pages/MapPage'))
 const Store = lazy(() => import('@/modules/catalogo/pages/StorePage'))
 const Inventory = lazy(() => import('@/modules/catalogo/pages/InventoryPage'))
+const MyStore = lazy(() => import('@/modules/catalogo/pages/MiTiendaPage'))
+const StoreInfo = lazy(() => import('@/modules/catalogo/pages/StoreInfoPage'))
+const StoreStats = lazy(() => import('@/modules/catalogo/pages/StoreStatsPage'))
 const Playlists = lazy(() => import('@/modules/catalogo/pages/PlaylistsPage'))
 const Moderation = lazy(() => import('@/modules/catalogo/pages/ModerationPage'))
 const TryOn = lazy(() => import('@/modules/experiencia/pages/TryOnPage'))
@@ -83,8 +86,10 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/alertas', element: only(USER, <Alerts />) },
       { path: '/mensajes', element: only(ANY, <Messages />) },
       // Tienda
+      { path: '/mi-tienda', element: only(STORE, <MyStore />) },
       { path: '/tienda/inventario', element: only(STORE, <Inventory />) },
-      { path: '/tienda/estadisticas', element: only(STORE, <Stats />) },
+      { path: '/tienda/informacion', element: only(STORE, <StoreInfo />) },
+      { path: '/tienda/estadisticas', element: only(STORE, <StoreStats />) },
       { path: '/tienda/suscripcion', element: only(STORE, <StoreSubscription />) },
       // Fundación
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },

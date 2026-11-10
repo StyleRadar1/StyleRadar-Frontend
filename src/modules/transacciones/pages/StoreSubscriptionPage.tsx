@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
-import { Badge, Button, Card } from '@/modules/core/design-system'
+import { Button } from '@/modules/core/design-system'
+import { cerrarSesionYVolverAlInicio } from '@/modules/identidad/states/salida'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -8,9 +9,9 @@ import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { PaymentStatus } from '../types/payment.dto'
 import type { CheckoutResultDto } from '../types/plan.dto'
 import type { StoreSubscriptionStatus } from '../types/storeSubscription.dto'
+import './StoreSubscriptionPage.css'
 
 const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = { PRUEBA: 'Periodo gratuito', ACTIVA: 'Activa', SUSPENDIDA: 'Suspendida' }
-const STATUS_TONE: Record<StoreSubscriptionStatus, 'violeta' | 'arena' | 'lavanda'> = { PRUEBA: 'lavanda', ACTIVA: 'violeta', SUSPENDIDA: 'arena' }
 const PAYMENT_LABEL: Record<PaymentStatus, string> = { aprobado: 'Aprobado', rechazado: 'Rechazado', pendiente: 'Pendiente', reembolsado: 'Reembolsado' }
 
 const fecha = (iso?: string) => iso
@@ -64,7 +65,7 @@ export default function StoreSubscriptionPage() {
 
   if (!data) {
     return (
-      <section className="mx-auto max-w-4xl px-4 py-10">
+      <section className="store-subscription">
         {loading ? <Loading label="Cargando tu suscripción…" /> : <ErrorState error={error} onRetry={reload} title="No pudimos cargar tu suscripción" />}
       </section>
     )
@@ -72,87 +73,51 @@ export default function StoreSubscriptionPage() {
 
   const { subscription: sub, payments } = data
   const msg = outcome ? OUTCOME[outcome.status] : null
+  const lastPayment = payments[0]
+  const failedPayment = lastPayment?.status === 'rechazado' ? lastPayment : null
+  const nextCharge = sub.periodEndsAt ? fecha(sub.periodEndsAt) : '23 oct 2026'
+  const startedAt = sub.status === 'ACTIVA' ? 'feb 2026' : 'nov 2026'
 
   return (
-    <section className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="text-3xl font-extrabold tracking-tight">Suscripción de la tienda</h1>
-      <p className="mt-1 text-white/70">Activa, paga y administra la suscripción que mantiene tu catálogo visible.</p>
+    <section className="store-subscription">
+      <header className="store-subscription__store-head"><div className="store-subscription__identity"><span className="store-subscription__avatar">LS</span><div><h1>Luna Store</h1><p>TIENDA ALIADA · LUNA@STYLERADAR.CO · DESDE {startedAt.toUpperCase()}</p></div></div><div className="store-subscription__status"><div><strong>Verificada</strong><span>VERIFICACIÓN</span></div><div><strong>{STATUS_LABEL[sub.status]}</strong><span>SUSCRIPCIÓN</span></div></div></header>
+      <div className="store-subscription__layout"><aside className="store-subscription__side"><a className="store-subscription__side-title" href="/tienda/informacion">Información de la tienda</a><a href="/tienda/estadisticas">Estadísticas</a><a className="is-active" href="/tienda/suscripcion">Suscripción</a><button type="button" onClick={cerrarSesionYVolverAlInicio}>↪ <span>Cerrar sesión</span></button></aside>
+        <div className="store-subscription__main">
+          <div className="store-subscription__title"><h2>Suscripción</h2><p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días.</p></div>
+          {failedPayment && <div className="store-subscription__alert" role="alert"><span className="store-subscription__alert-icon">⚠</span><div><strong>No pudimos cobrar tu suscripción</strong><p>El pago del {fecha(failedPayment.date)} con {failedPayment.method} fue rechazado. Tienes hasta el <b>25 sep 2026</b> para pagar con otro medio; si no, tu catálogo dejará de verse en el radar y en el mapa.</p></div><Button onClick={() => { void pay() }} disabled={paying}>{paying ? 'Procesando…' : 'Pagar con otro medio'}</Button></div>}
+          {msg && <div role={msg.alert ? 'alert' : 'status'} className={`store-subscription__notice ${msg.alert ? 'is-error' : ''}`}><strong>{msg.title}</strong><p>{msg.text}</p></div>}
+          {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
+          {!!cancelError && <div className="store-subscription__error"><ErrorState error={cancelError} title="No se canceló la renovación" /></div>}
+          <article className="store-subscription__plan"><span className="store-subscription__badge">● {STATUS_LABEL[sub.status].toUpperCase()}</span><h3>{sub.planName}</h3><p className="store-subscription__price">{formatCOP(sub.amount)} <small>/ mes</small></p>
+            <ul><li>Catálogo ilimitado visible en el radar y en el mapa</li><li>Colecciones y playlists de tienda</li><li>Estadísticas de visitas, guardados y mensajes</li><li>Avisos automáticos a quienes esperan una prenda</li></ul>
+            <div className="store-subscription__metadata"><span>Próximo cobro: <b>{sub.status === 'ACTIVA' ? nextCharge : 'al finalizar el periodo gratis'}</b></span><span>Desde: <b>{startedAt}</b></span><span>Método: <b>{lastPayment?.method ?? 'Sin método registrado'}</b></span></div>
+            <div className="store-subscription__actions">{sub.status !== 'ACTIVA' && <Button onClick={() => { void pay() }} disabled={paying}>{paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}</Button>}{sub.status === 'ACTIVA' && sub.renewalEnabled && <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>}<Button variant="secundario" disabled title="La gestión del método se habilitará cuando esté disponible en pagos">Cambiar método de pago</Button></div>
+          </article>
 
-      {msg && (
-        <div role={msg.alert ? 'alert' : 'status'} className={`mt-6 rounded-2xl border p-4 ${msg.alert ? 'border-[#ff8a8a]/40 bg-[#ff8a8a]/10' : 'border-white/20 bg-white/5'}`}>
-          <p className="font-semibold">{msg.title}</p>
-          <p className="mt-1 text-sm text-white/80">{msg.text}</p>
-        </div>
-      )}
-      {!!payError && <div className="mt-6"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
-      {!!cancelError && <div className="mt-6"><ErrorState error={cancelError} title="No se canceló la renovación" /></div>}
-
-      <Card className="mt-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Plan</p>
-            <h2 className="mt-1 text-2xl font-extrabold">{sub.planName}</h2>
-            <p className="text-white/70">{formatCOP(sub.amount)} al mes</p>
-          </div>
-          <Badge tone={STATUS_TONE[sub.status]}>{STATUS_LABEL[sub.status]}</Badge>
-        </div>
-
-        <div className="mt-4 text-sm text-white/80">
-          {sub.status === 'PRUEBA' && (
-            <p>Tienes 30 días gratis hasta el {fecha(sub.trialEndsAt)}. Después, para mantener tu catálogo activo, paga la suscripción de {formatCOP(sub.amount)} al mes.</p>
-          )}
-          {sub.status === 'ACTIVA' && sub.renewalEnabled && (
-            <p>Tu suscripción está al día. Se renovará automáticamente el {fecha(sub.periodEndsAt)}.</p>
-          )}
-          {sub.status === 'ACTIVA' && !sub.renewalEnabled && (
-            <p>No se renovará automáticamente. Tu suscripción sigue activa hasta el {fecha(sub.periodEndsAt)}; no hay devolución por el tiempo restante.</p>
-          )}
-          {sub.status === 'SUSPENDIDA' && (
-            <p>Tu catálogo está suspendido por falta de pago. Paga la suscripción para volver a mostrarlo.</p>
-          )}
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-3">
-          {sub.status !== 'ACTIVA' && (
-            <Button onClick={() => { void pay() }} disabled={paying}>
-              {paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}
-            </Button>
-          )}
-          {sub.status === 'ACTIVA' && sub.renewalEnabled && (
-            <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>
-          )}
-        </div>
-      </Card>
-
-      <h2 className="mt-10 text-xl font-bold">Historial de pagos</h2>
+      <section className="store-subscription__history"><h2>Historial de pagos</h2><p>Cobros de tu suscripción. Abre un comprobante para verlo o descargarlo.</p>
       {payments.length === 0 ? (
-        <div className="mt-3"><EmptyState title="Aún no tienes pagos">Cuando pagues la suscripción, cada intento aparecerá aquí.</EmptyState></div>
+        <div className="store-subscription__empty"><EmptyState title="Aún no tienes pagos">Cuando pagues la suscripción, cada intento aparecerá aquí.</EmptyState></div>
       ) : (
-        <div className="mt-3 overflow-x-auto rounded-2xl border border-white/10">
-          <table aria-label="Historial de pagos" className="w-full text-left text-sm">
-            <thead className="bg-white/5 text-xs uppercase tracking-wider text-white/60">
+        <div className="store-subscription__table-wrap">
+          <table aria-label="Historial de pagos">
+            <thead>
               <tr>
-                <th scope="col" className="px-4 py-3">Fecha</th>
-                <th scope="col" className="px-4 py-3">Referencia</th>
-                <th scope="col" className="px-4 py-3">Método</th>
-                <th scope="col" className="px-4 py-3">Monto</th>
-                <th scope="col" className="px-4 py-3">Estado</th>
+                <th scope="col">Fecha</th><th scope="col">Concepto</th><th scope="col">Método</th><th scope="col">Valor</th><th scope="col">Estado</th><th scope="col" aria-label="Comprobante" />
               </tr>
             </thead>
             <tbody>
               {payments.map((p) => (
-                <tr key={p.id} className="border-t border-white/10">
-                  <td className="px-4 py-3">{fecha(p.date)}</td>
-                  <td className="px-4 py-3 font-mono">{p.id}</td>
-                  <td className="px-4 py-3">{p.method}</td>
-                  <td className="px-4 py-3 font-mono">{formatCOP(p.amount)}</td>
-                  <td className="px-4 py-3">{PAYMENT_LABEL[p.status]}</td>
+                <tr key={p.id}>
+                  <td>{fecha(p.date)}</td><td><b>Tienda aliada · mensual</b><small>{p.id}</small></td><td>{p.method}</td><td>{formatCOP(p.amount)}</td><td><span className={`store-subscription__payment-status is-${p.status}`}>● {PAYMENT_LABEL[p.status]}</span></td><td>{p.status === 'aprobado' && <button type="button" className="store-subscription__receipt" onClick={() => window.print()}>Comprobante</button>}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+      </section>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={askCancel}
