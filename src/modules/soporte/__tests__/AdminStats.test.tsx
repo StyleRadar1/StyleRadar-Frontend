@@ -25,7 +25,7 @@ const renderAdmin = (path = '/admin/estadisticas') => render(
 beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
 
 describe('módulo de administración', () => {
-  it('tiene la barra lateral con las secciones del prototipo y marca las que aún no existen', async () => {
+  it('tiene la barra lateral con todas las secciones del prototipo y sus insignias', async () => {
     loginAs('a-1', 'Mariana Bernal', 'ADMIN_STYLERADAR')
     renderAdmin()
     const nav = screen.getByRole('navigation', { name: 'Administración' })
@@ -33,7 +33,10 @@ describe('módulo de administración', () => {
     expect(within(nav).getByRole('link', { name: 'Usuarios' })).toHaveAttribute('href', '/admin/usuarios')
     expect(within(nav).getByRole('link', { name: 'Pagos' })).toHaveAttribute('href', '/admin/pagos')
     expect(await within(nav).findByRole('link', { name: /Publicaciones\s*5\s*pendientes/ }, { timeout: 3000 })).toHaveAttribute('href', '/admin/moderacion')
-    for (const s of ['Tiendas', 'Fundaciones', 'Playlists']) expect(within(nav).getByText(s).closest('[aria-disabled]')).toHaveTextContent('Pronto')
+    expect(await within(nav).findByRole('link', { name: /Tiendas\s*1\s*pendientes/ })).toHaveAttribute('href', '/admin/tiendas')
+    expect(within(nav).getByRole('link', { name: 'Fundaciones' })).toHaveAttribute('href', '/admin/fundaciones')
+    expect(within(nav).getByRole('link', { name: 'Playlists' })).toHaveAttribute('href', '/admin/playlists')
+    expect(within(nav).queryByText('Pronto')).not.toBeInTheDocument()
     expect(screen.getByText('Mariana Bernal')).toBeInTheDocument()
   })
 

@@ -34,6 +34,11 @@ const AdminPayments = lazy(() => import('@/modules/transacciones/pages/AdminPaym
 const Alerts = lazy(() => import('@/modules/soporte/pages/AlertsPage'))
 const Messages = lazy(() => import('@/modules/soporte/pages/MessagesPage'))
 const Stats = lazy(() => import('@/modules/soporte/pages/StatsPage'))
+const AdminStores = lazy(() => import('@/modules/administracion/pages/AdminStoresPage'))
+const AdminStoreDetail = lazy(() => import('@/modules/administracion/pages/AdminStoreDetailPage'))
+const AdminFoundations = lazy(() => import('@/modules/administracion/pages/AdminFoundationsPage'))
+const AdminFoundationDetail = lazy(() => import('@/modules/administracion/pages/AdminFoundationDetailPage'))
+const AdminPlaylists = lazy(() => import('@/modules/administracion/pages/AdminPlaylistsPage'))
 
 const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-white/60">Cargando…</p>}>{el}</Suspense>
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
@@ -92,7 +97,12 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/admin', element: <Navigate to="/admin/estadisticas" replace /> },
       { path: '/admin/estadisticas', element: page(<Stats />) },
       { path: '/admin/usuarios', element: page(<AdminUsers />) },
+      { path: '/admin/tiendas', element: page(<AdminStores />) },
+      { path: '/admin/tiendas/:id', element: page(<AdminStoreDetail />) },
+      { path: '/admin/fundaciones', element: page(<AdminFoundations />) },
+      { path: '/admin/fundaciones/:id', element: page(<AdminFoundationDetail />) },
       { path: '/admin/moderacion', element: page(<Moderation />) },
+      { path: '/admin/playlists', element: page(<AdminPlaylists />) },
       { path: '/admin/pagos', element: page(<AdminPayments />) },
     ],
   },

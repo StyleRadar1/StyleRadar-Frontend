@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { ADMIN_CHANGED, adminStoreService } from '@/modules/administracion/services/adminService'
 import { moderationService } from '@/modules/catalogo/services/moderationService'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EnvironmentBanner, MockBanner } from '@/modules/core/components/Status'
@@ -23,13 +24,13 @@ const ICONOS = {
 }
 
 /** Secciones del módulo de administración, en el orden del prototipo. Sin `to` = aún no existe en React. */
-const SECCIONES: { to?: string; label: string; icon: keyof typeof ICONOS; badge?: 'publicaciones' }[] = [
+const SECCIONES: { to?: string; label: string; icon: keyof typeof ICONOS; badge?: 'publicaciones' | 'tiendas' }[] = [
   { to: '/admin/estadisticas', label: 'Estadísticas', icon: 'chart' },
   { to: '/admin/usuarios', label: 'Usuarios', icon: 'users' },
-  { label: 'Tiendas', icon: 'store' },
-  { label: 'Fundaciones', icon: 'gift' },
+  { to: '/admin/tiendas', label: 'Tiendas', icon: 'store', badge: 'tiendas' },
+  { to: '/admin/fundaciones', label: 'Fundaciones', icon: 'gift' },
   { to: '/admin/moderacion', label: 'Publicaciones', icon: 'shield', badge: 'publicaciones' },
-  { label: 'Playlists', icon: 'list' },
+  { to: '/admin/playlists', label: 'Playlists', icon: 'list' },
   { to: '/admin/pagos', label: 'Pagos', icon: 'card' },
 ]
 
@@ -48,15 +49,20 @@ export function AdminLayout() {
 function AdminShell() {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
-  const [pendientes, setPendientes] = useState<number | null>(null)
+  const [pendientes, setPendientes] = useState<{ publicaciones: number; tiendas: number }>({ publicaciones: 0, tiendas: 0 })
   const [salir, setSalir] = useState(false)
   const actual = SECCIONES.find((s) => s.to && pathname.startsWith(s.to))?.label ?? 'Administración'
 
-  // Número de publicaciones esperando moderación (insignia de «Publicaciones»)
+  // Insignias: publicaciones esperando moderación y tiendas esperando verificación
   useEffect(() => {
     let activo = true
-    moderationService.getPending().then((l) => { if (activo) setPendientes(l.length) }).catch(() => {})
-    return () => { activo = false }
+    const cargar = () => {
+      moderationService.getPending().then((l) => { if (activo) setPendientes((p) => ({ ...p, publicaciones: l.length })) }).catch(() => {})
+      adminStoreService.list().then((l) => { if (activo) setPendientes((p) => ({ ...p, tiendas: l.filter((t) => t.verificacion === 'Pendiente').length })) }).catch(() => {})
+    }
+    cargar()
+    window.addEventListener(ADMIN_CHANGED, cargar)
+    return () => { activo = false; window.removeEventListener(ADMIN_CHANGED, cargar) }
   }, [pathname])
 
   if (!user) return null
@@ -66,7 +72,7 @@ function AdminShell() {
   const nav = (
     <>
       {SECCIONES.map((s) => {
-        const badge = s.badge === 'publicaciones' && pendientes ? pendientes : null
+        const badge = s.badge ? pendientes[s.badge] || null : null
         return s.to ? (
           <NavLink key={s.label} to={s.to} className={enlace}>
             {ICONOS[s.icon]}<span className="flex-1">{s.label}</span>
