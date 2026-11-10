@@ -50,9 +50,10 @@ export default function TryOnPage() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Probador virtual</p>
-      <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Pruébate la ropa antes de salir</h1>
-      <p className="mt-3 max-w-2xl text-white/70">Sube una foto, elige una prenda de las tiendas del radar y mira cómo te queda. Tu foto es privada y puedes borrarla en cualquier momento.</p>
+      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Probador virtual · Bogotá</p>
+      <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Pruébate una chaqueta hecha para el clima cambiante</h1>
+      <p className="mt-3 max-w-2xl text-white/70">Sube una foto, elige una prenda de las tiendas del radar y mira cómo te queda. Empezamos con la Chaqueta State de Remanence: canvas repelente a líquidos, forro acolchado y cuello de corduroy. Tu foto es privada y puedes borrarla en cualquier momento.</p>
+      <p className="mt-3 max-w-2xl text-xs text-white/50">La generación de imagen todavía depende de conectar el servicio de IA. En modo demostración, cualquier resultado aparece marcado como simulado.</p>
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
         <div className="space-y-8">
@@ -87,6 +88,17 @@ export default function TryOnPage() {
           <h2 id="t-resultado" className="text-lg font-bold">3. Resultado</h2>
           {!photo && <p className="mt-3 text-sm text-white/70">Primero sube tu foto.</p>}
           {photo && !garment && <p className="mt-3 text-sm text-white/70">Ahora elige una prenda.</p>}
+
+          {garment?.id === 'remanence-state' && (
+            <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-black/20">
+              <img src={garment.imagen} alt="Chaqueta State Negra de Remanence" className="h-52 w-full object-cover object-center" />
+              <div className="p-4">
+                <p className="text-xs font-bold uppercase tracking-[.16em] text-arena">Remanence · Medellín</p>
+                <p className="mt-1 font-semibold">Canvas repelente a líquidos · forro acolchado</p>
+                <p className="mt-1 text-sm text-white/65">Una capa para mañanas frías y llovizna en Bogotá, con cuello contrastante en corduroy.</p>
+              </div>
+            </div>
+          )}
 
           {photo && garment && job.phase === 'idle' && (
             <button type="button" onClick={startTry} disabled={!canStart} className="mt-4 w-full rounded-xl bg-violeta px-5 py-3 font-semibold disabled:opacity-50">Probarme {garment.nombre}</button>

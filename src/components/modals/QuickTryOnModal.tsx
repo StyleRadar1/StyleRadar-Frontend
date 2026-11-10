@@ -1,6 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import './QuickTryOnModal.css'
 
+/* ================================================================
+   QuickTryOnModal — Probador Virtual Editorial Premium
+   Experiencia inmersiva full-screen: maniquí central con capas de
+   ropa superpuestas + panel lateral "Arma tu look" con catálogo.
+   ================================================================ */
+
+/* ---------- Tipos ---------- */
 export interface TryOnItem {
   id: string
   name: string
@@ -18,6 +25,7 @@ export interface TryOnCategory {
   items: TryOnItem[]
 }
 
+/* ---------- Filtros de color para capas ---------- */
 const COLOR_FILTERS: Record<string, string> = {
   blanco: 'none',
   celeste: 'sepia(1) hue-rotate(160deg) saturate(2.4) brightness(.9)',
@@ -34,6 +42,7 @@ const COLOR_FILTERS: Record<string, string> = {
   none: 'none',
 }
 
+/* ---------- Rutas de capas del maniquí ---------- */
 const LAYER_PATHS: Record<string, string> = {
   camisa: '/prototipo/assets/img/probador-capas/camisa.png',
   pantalon: '/prototipo/assets/img/probador-capas/pantalon.png',
@@ -48,28 +57,21 @@ const LAYER_PATHS: Record<string, string> = {
   guantes: '/prototipo/assets/img/probador-capas/guantes.png',
 }
 
-const ORDER = [
-  'zapatos',
-  'tenis',
-  'camisa',
-  'pantalon',
-  'cinturon',
-  'corbata',
-  'saco',
-  'cuero',
-  'abrigo',
-  'bufanda',
-  'guantes',
+/* Orden de renderizado Z de las capas (de atrás hacia adelante) */
+const LAYER_ORDER = [
+  'zapatos', 'tenis', 'camisa', 'pantalon', 'cinturon',
+  'corbata', 'saco', 'cuero', 'abrigo', 'bufanda', 'guantes',
 ]
 
+/* ---------- Catálogo de prendas ---------- */
 const CATEGORIES_DATA: TryOnCategory[] = [
   {
     tab: 'Camisas',
     slot: 'camisa',
     items: [
       { id: 'cam-bl', name: 'Camisa Oxford blanca', store: 'The Local Lab', price: 165000, slot: 'camisa', color: 'blanco', layer: 'camisa', image: '/prototipo/assets/img/productos/camiseta-blanca-de-algodon.jpg' },
-      { id: 'cam-ce', name: 'Camisa celeste de algodón', store: 'Nómada Studio', price: 149000, slot: 'camisa', color: 'celeste', layer: 'camisa', image: '/prototipo/assets/img/probador-miniaturas/camisa.png' },
-      { id: 'cam-ne', name: 'Camisa negra de popelina', store: 'Luna Store', price: 139000, slot: 'camisa', color: 'negro', layer: 'camisa', image: '/prototipo/assets/img/productos/camisa-negra-de-popelina.jpg' },
+      { id: 'cam-ce', name: 'Camisa celeste algodón', store: 'Nómada Studio', price: 149000, slot: 'camisa', color: 'celeste', layer: 'camisa', image: '/prototipo/assets/img/probador-miniaturas/camisa.png' },
+      { id: 'cam-ne', name: 'Camisa negra popelina', store: 'Luna Store', price: 139000, slot: 'camisa', color: 'negro', layer: 'camisa', image: '/prototipo/assets/img/productos/camisa-negra-de-popelina.jpg' },
       { id: 'cam-hu', name: 'Camisa hueso de lino', store: 'Segunda mano', price: 48000, slot: 'camisa', color: 'hueso', layer: 'camisa', image: '/prototipo/assets/img/probador-miniaturas/camisa.png' },
     ],
   },
@@ -77,10 +79,10 @@ const CATEGORIES_DATA: TryOnCategory[] = [
     tab: 'Pantalones',
     slot: 'pantalon',
     items: [
-      { id: 'pan-gr', name: 'Pantalón de lana gris', store: 'Nómada Studio', price: 210000, slot: 'pantalon', color: 'carbon', layer: 'pantalon', image: '/prototipo/assets/img/productos/pantalon-gris-de-lana.jpg' },
-      { id: 'pan-ne', name: 'Pantalón sastre negro', store: 'The Local Lab', price: 189000, slot: 'pantalon', color: 'negro', layer: 'pantalon', image: '/prototipo/assets/img/productos/pantalon-negro-recto.jpg' },
+      { id: 'pan-gr', name: 'Pantalón de lana gris', store: 'Nómada Studio', price: 210000, slot: 'pantalon', color: 'carbon', layer: 'pantalon', image: '/prototipo/assets/img/probador-miniaturas/pantalon.png' },
+      { id: 'pan-ne', name: 'Pantalón sastre negro', store: 'The Local Lab', price: 189000, slot: 'pantalon', color: 'negro', layer: 'pantalon', image: '/prototipo/assets/img/productos/r1c4-pantalon-negro.jpg' },
       { id: 'pan-ca', name: 'Chino camel', store: 'The Local Lab', price: 159000, slot: 'pantalon', color: 'camel', layer: 'pantalon', image: '/prototipo/assets/img/probador-miniaturas/pantalon.png' },
-      { id: 'pan-ma', name: 'Pantalón azul marino', store: 'Segunda mano', price: 62000, slot: 'pantalon', color: 'marino', layer: 'pantalon', image: '/prototipo/assets/img/productos/pantalon-de-pinzas.jpg' },
+      { id: 'pan-ma', name: 'Pantalón azul marino', store: 'Segunda mano', price: 62000, slot: 'pantalon', color: 'marino', layer: 'pantalon', image: '/prototipo/assets/img/probador-miniaturas/pantalon.png' },
     ],
   },
   {
@@ -90,8 +92,8 @@ const CATEGORIES_DATA: TryOnCategory[] = [
       { id: 'sac-ca', name: 'Saco de lana carbón', store: 'Nómada Studio', price: 395000, slot: 'chaqueta', color: 'carbon', layer: 'saco', image: '/prototipo/assets/img/productos/saco-de-lana-negro.jpg' },
       { id: 'sac-ma', name: 'Saco azul marino', store: 'The Local Lab', price: 360000, slot: 'chaqueta', color: 'marino', layer: 'saco', image: '/prototipo/assets/img/productos/blazer-oversize.jpg' },
       { id: 'sac-ol', name: 'Saco verde oliva', store: 'Segunda mano', price: 95000, slot: 'chaqueta', color: 'oliva', layer: 'saco', image: '/prototipo/assets/img/probador-miniaturas/saco.png' },
-      { id: 'cue-ne', name: 'Chaqueta de cuero negra', store: 'Nómada Studio', price: 450000, slot: 'chaqueta', color: 'cuero_negro', layer: 'cuero', image: '/prototipo/assets/img/productos/chaqueta-con-arnes.jpg' },
-      { id: 'cue-ca', name: 'Chaqueta de cuero café', store: 'Nómada Studio', price: 430000, slot: 'chaqueta', color: 'cuero_cafe', layer: 'cuero', image: '/prototipo/assets/img/probador-miniaturas/cuero.png' },
+      { id: 'cue-ne', name: 'Chaqueta cuero negra', store: 'Nómada Studio', price: 450000, slot: 'chaqueta', color: 'cuero_negro', layer: 'cuero', image: '/prototipo/assets/img/productos/chaqueta-con-arnes.jpg' },
+      { id: 'cue-ca', name: 'Chaqueta cuero café', store: 'Nómada Studio', price: 430000, slot: 'chaqueta', color: 'cuero_cafe', layer: 'cuero', image: '/prototipo/assets/img/probador-miniaturas/cuero.png' },
     ],
   },
   {
@@ -119,598 +121,387 @@ const CATEGORIES_DATA: TryOnCategory[] = [
     slot: 'accesorios',
     items: [
       { id: 'cor-ne', name: 'Corbata negra de seda', store: 'The Local Lab', price: 55000, slot: 'corbata', color: 'negro', layer: 'corbata', image: '/prototipo/assets/img/productos/corbata-de-seda.jpg' },
-      { id: 'buf-gr', name: 'Bufanda de espiga gris', store: 'Segunda mano', price: 38000, slot: 'bufanda', color: 'gris', layer: 'bufanda', image: '/prototipo/assets/img/probador-miniaturas/bufanda.png' },
+      { id: 'buf-gr', name: 'Bufanda espiga gris', store: 'Segunda mano', price: 38000, slot: 'bufanda', color: 'gris', layer: 'bufanda', image: '/prototipo/assets/img/probador-miniaturas/bufanda.png' },
       { id: 'cint', name: 'Cinturón de cuero', store: 'Nómada Studio', price: 95000, slot: 'cinturon', color: 'cuero_cafe', layer: 'cinturon', image: '/prototipo/assets/img/productos/cinturon-de-cuero.jpg' },
+      { id: 'gua-ne', name: 'Guantes negros', store: 'Nómada Studio', price: 72000, slot: 'guantes', color: 'negro', layer: 'guantes', image: '/prototipo/assets/img/probador-miniaturas/guantes.png' },
     ],
   },
 ]
 
-const PROC_STAGES = [
-  'Detectando silueta corporal',
-  'Analizando proporciones y hombros',
-  'Ajustando caída de prendas',
-  'Renderizando iluminación sobre la foto',
-]
+/* ---------- Formatear precio COP ---------- */
+function money(n: number): string {
+  return '$' + n.toLocaleString('es-CO')
+}
 
+/* ---------- Componente Principal ---------- */
 interface QuickTryOnModalProps {
   isOpen: boolean
   onClose: () => void
   initialGarmentId?: string
 }
 
-export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryOnModalProps) {
-  const [sex, setSex] = useState<'mujer' | 'hombre'>('hombre')
-  const [sourceMode, setSourceMode] = useState<'mannequin' | 'photo'>('mannequin')
+export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
+  /* Estado del probador */
   const [activeTab, setActiveTab] = useState('Camisas')
   const [wearing, setWearing] = useState<Record<string, TryOnItem>>({})
-  const [showCoach, setShowCoach] = useState(true)
+  const [sourceMode, setSourceMode] = useState<'mannequin' | 'photo'>('mannequin')
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  const [showGuide, setShowGuide] = useState(true)
+  const [photoScale, setPhotoScale] = useState(1)
+  const [photoOffset, setPhotoOffset] = useState({ x: 0, y: 0 })
+  const fileRef = useRef<HTMLInputElement>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
-  // Foto y simulación
-  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [processStage, setProcessStage] = useState(0)
-  const [photoFitted, setPhotoFitted] = useState(false)
-  const [showAdj, setShowAdj] = useState(false)
-  const [boxAdj, setBoxAdj] = useState({ cx: 50, top: 22, h: 90, sx: 1.0 })
-  const [statusNote, setStatusNote] = useState<string | null>(null)
+  /* Computa el total y la cantidad de prendas activas */
+  const wornItems = Object.values(wearing)
+  const totalPrice = wornItems.reduce((sum, item) => sum + item.price, 0)
+  const totalCount = wornItems.length
+  const MAX_SLOTS = 4
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const uploadedObjectUrlRef = useRef<string | null>(null)
-  const processingTimerRef = useRef<number | null>(null)
-  const isDraggingRef = useRef(false)
-  const dragStartRef = useRef({ x: 0, y: 0, cx: 50, top: 22 })
-
-  const stopPhotoProcessing = () => {
-    if (processingTimerRef.current !== null) {
-      window.clearInterval(processingTimerRef.current)
-      processingTimerRef.current = null
+  /* Mapa de layers activas para renderizar en el maniquí */
+  const activeLayers: { layer: string; color: string; zIndex: number }[] = []
+  for (const item of wornItems) {
+    const zIndex = LAYER_ORDER.indexOf(item.layer)
+    if (zIndex >= 0 && LAYER_PATHS[item.layer]) {
+      activeLayers.push({ layer: item.layer, color: item.color, zIndex })
     }
   }
+  activeLayers.sort((a, b) => a.zIndex - b.zIndex)
 
-  const releaseUploadedPhoto = () => {
-    if (uploadedObjectUrlRef.current) {
-      URL.revokeObjectURL(uploadedObjectUrlRef.current)
-      uploadedObjectUrlRef.current = null
-    }
-  }
-
-  const processPhoto = (src: string) => {
-    stopPhotoProcessing()
-    setSourceMode('photo')
-    setUploadedPhoto(src)
-    setIsProcessing(true)
-    setPhotoFitted(false)
-    setProcessStage(0)
-    let stage = 0
-    processingTimerRef.current = window.setInterval(() => {
-      stage += 1
-      if (stage < PROC_STAGES.length) {
-        setProcessStage(stage)
-        return
+  /* Vestir / desvestir prenda */
+  const toggleGarment = useCallback((item: TryOnItem) => {
+    setWearing(prev => {
+      const key = item.layer
+      // Si ya la lleva puesta, la quita
+      if (prev[key]?.id === item.id) {
+        const next = { ...prev }
+        delete next[key]
+        return next
       }
-      stopPhotoProcessing()
-      setIsProcessing(false)
-      setPhotoFitted(true)
-    }, 750)
-  }
-
-  useEffect(() => () => {
-    stopPhotoProcessing()
-    releaseUploadedPhoto()
+      // Si es del mismo slot pero otra prenda, la reemplaza
+      return { ...prev, [key]: item }
+    })
   }, [])
 
-  // Inicializar prenda inicial
-  useEffect(() => {
-    if (initialGarmentId) {
-      for (const cat of CATEGORIES_DATA) {
-        const match = cat.items.find((i) => i.id === initialGarmentId)
-        if (match) {
-          setWearing((prev) => ({ ...prev, [match.slot]: match }))
-          setActiveTab(cat.tab)
-          break
-        }
-      }
-    }
-  }, [initialGarmentId])
+  /* Resetear look */
+  const resetLook = useCallback(() => {
+    setWearing({})
+  }, [])
 
-  // Cerrar con Escape
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose()
+  /* Carga de foto */
+  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setUserPhoto(reader.result as string)
+      setSourceMode('photo')
+      setPhotoScale(1)
+      setPhotoOffset({ x: 0, y: 0 })
     }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
+    reader.readAsDataURL(file)
+  }, [])
+
+  /* Usar foto de ejemplo */
+  const useExample = useCallback(() => {
+    setUserPhoto('/prototipo/assets/img/general/ref.jpg')
+    setSourceMode('photo')
+    setPhotoScale(1)
+    setPhotoOffset({ x: 0, y: 0 })
+  }, [])
+
+  /* Volver al maniquí */
+  const backToMannequin = useCallback(() => {
+    setSourceMode('mannequin')
+    setUserPhoto(null)
+  }, [])
+
+  /* Drag to move photo */
+  const isDragging = useRef(false)
+  const dragStart = useRef({ x: 0, y: 0 })
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (sourceMode !== 'photo') return
+    isDragging.current = true
+    dragStart.current = { x: e.clientX - photoOffset.x, y: e.clientY - photoOffset.y }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }, [sourceMode, photoOffset])
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return
+    setPhotoOffset({
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y,
+    })
+  }, [])
+
+  const onPointerUp = useCallback(() => {
+    isDragging.current = false
+  }, [])
+
+  /* Zoom con rueda del mouse */
+  const onWheel = useCallback((e: React.WheelEvent) => {
+    if (sourceMode !== 'photo') return
+    e.preventDefault()
+    setPhotoScale(prev => Math.max(0.3, Math.min(3, prev + (e.deltaY > 0 ? -0.05 : 0.05))))
+  }, [sourceMode])
+
+  /* Escape para cerrar */
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [isOpen, onClose])
+
+  /* Categoría activa */
+  const currentCategory = CATEGORIES_DATA.find(c => c.tab === activeTab)
 
   if (!isOpen) return null
 
-  const handleToggleGarment = (item: TryOnItem) => {
-    setWearing((prev) => {
-      const copy = { ...prev }
-      if (copy[item.slot]?.id === item.id) {
-        delete copy[item.slot]
-      } else {
-        copy[item.slot] = item
-      }
-      return copy
-    })
-  }
-
-  const handleUndressAll = () => {
-    setWearing({})
-  }
-
-  const handleUseSample = () => {
-    releaseUploadedPhoto()
-    processPhoto('/prototipo/assets/img/general/ref.jpg')
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      setStatusNote('Elige una imagen JPG, PNG o WebP.')
-      e.target.value = ''
-      return
-    }
-    if (file.size > 12 * 1024 * 1024) {
-      setStatusNote('La foto supera el límite de 12 MB. Elige una imagen más liviana.')
-      e.target.value = ''
-      return
-    }
-    releaseUploadedPhoto()
-    const url = URL.createObjectURL(file)
-    uploadedObjectUrlRef.current = url
-    processPhoto(url)
-    e.target.value = ''
-  }
-
-  const totalLook = Object.values(wearing).reduce((acc, cur) => acc + cur.price, 0)
-  const itemsWorn = Object.values(wearing)
-  const activeCategory = CATEGORIES_DATA.find((c) => c.tab === activeTab) || CATEGORIES_DATA[0]
-
-  const mannequinSrc =
-    sex === 'mujer'
-      ? '/prototipo/assets/img/general/maniqui-f.png'
-      : '/prototipo/assets/img/general/maniqui.png'
-
   return (
-    <div
-      className="cz-modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="czMainTitle"
-      onClick={onClose}
-    >
-      <div className="cz-modal-container" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          className="cz-modal-close"
-          onClick={onClose}
-          aria-label="Cerrar probador virtual"
-        >
-          <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-current stroke-2">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-
-        <div className="cz">
-          {/* Escenario Izquierdo: Maniquí / Foto interactiva */}
-          <div className="cz-stage-wrap" id="czWrap">
-            <span className="cz-tl" id="czMode">
-              {sourceMode === 'photo'
-                ? 'Mi foto · visualización aproximada'
-                : `Maniquí de ${sex} · talla M`}
-            </span>
-
-            <div className="cz-tr">
-              <div className="seg-mini" role="tablist" aria-label="Sobre qué probar">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={sourceMode === 'mannequin'}
-                  onClick={() => setSourceMode('mannequin')}
-                >
-                  Maniquí
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={sourceMode === 'photo'}
-                  onClick={() => {
-                    setSourceMode('photo')
-                    if (!uploadedPhoto) handleUseSample()
-                  }}
-                >
-                  Mi foto
-                </button>
-              </div>
-
-              {sourceMode === 'mannequin' && (
-                <div className="seg-mini" role="radiogroup" aria-label="Sexo del maniquí">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={sex === 'mujer'}
-                    onClick={() => setSex('mujer')}
-                  >
-                    Mujer
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={sex === 'hombre'}
-                    onClick={() => setSex('hombre')}
-                  >
-                    Hombre
-                  </button>
-                </div>
-              )}
-
-              <button type="button" className="chip" onClick={handleUndressAll}>
-                Quitar todo
-              </button>
-            </div>
-
-            {sourceMode === 'mannequin' ? (
-              <div className="cz-stage" id="czStage">
-                <img
-                  className="mann"
-                  src={mannequinSrc}
-                  alt={`Maniquí blanco de ${sex}`}
-                />
-                {ORDER.map((layerKey) => {
-                  const item = Object.values(wearing).find((w) => w.layer === layerKey)
-                  const isLayerOn = !!item
-                  const filterVal = item ? COLOR_FILTERS[item.color] || 'none' : 'none'
-
-                  return (
-                    <img
-                      key={layerKey}
-                      className={`lay ${isLayerOn ? 'on' : ''}`}
-                      data-layer={layerKey}
-                      src={LAYER_PATHS[layerKey]}
-                      alt=""
-                      aria-hidden="true"
-                      style={{ filter: filterVal }}
-                    />
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="cz-photo">
-                {isProcessing && (
-                  <div className="cz-proc">
-                    <img src={uploadedPhoto || '/prototipo/assets/img/general/ref.jpg'} alt="Tu foto" />
-                    <div className="proc-ov">
-                      <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-[#e8dccb] animate-spin" />
-                      <b>{PROC_STAGES[processStage]}…</b>
-                      <ol className="proc-steps">
-                        {PROC_STAGES.map((t, k) => (
-                          <li key={k} className={k === processStage ? 'on' : ''}>
-                            {t}
-                          </li>
-                        ))}
-                      </ol>
-                      <div className="pbar">
-                        <i />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {!isProcessing && photoFitted && (
-                  <div className="cz-pv">
-                    <img
-                      className="pv-base"
-                      src={uploadedPhoto || '/prototipo/assets/img/general/ref.jpg'}
-                      alt="Tu foto"
-                    />
-
-                    {/* Prenda colocada sobre la foto con arrastre y escala */}
-                    <div
-                      className="pv-fit"
-                      style={{
-                        left: `${boxAdj.cx}%`,
-                        top: `${boxAdj.top}%`,
-                        height: `${boxAdj.h}%`,
-                        transform: `translateX(-50%) scaleX(${boxAdj.sx})`,
-                      }}
-                      onPointerDown={(e) => {
-                        isDraggingRef.current = true
-                        dragStartRef.current = {
-                          x: e.clientX,
-                          y: e.clientY,
-                          cx: boxAdj.cx,
-                          top: boxAdj.top,
-                        }
-                      }}
-                      onPointerMove={(e) => {
-                        if (!isDraggingRef.current) return
-                        const dx = ((e.clientX - dragStartRef.current.x) / 360) * 100
-                        const dy = ((e.clientY - dragStartRef.current.y) / 480) * 100
-                        setBoxAdj((prev) => ({
-                          ...prev,
-                          cx: dragStartRef.current.cx + dx,
-                          top: dragStartRef.current.top + dy,
-                        }))
-                      }}
-                      onPointerUp={() => {
-                        isDraggingRef.current = false
-                      }}
-                    >
-                      {ORDER.map((layerKey) => {
-                        const item = Object.values(wearing).find((w) => w.layer === layerKey)
-                        if (!item) return null
-                        return (
-                          <img
-                            key={layerKey}
-                            src={LAYER_PATHS[layerKey]}
-                            alt=""
-                            style={{ filter: COLOR_FILTERS[item.color] || 'none' }}
-                          />
-                        )
-                      })}
-                    </div>
-
-                    <span className="pv-tag">
-                      Visualización aproximada · {itemsWorn.length} prenda
-                      {itemsWorn.length === 1 ? '' : 's'}
-                    </span>
-
-                    {showAdj && (
-                      <div className="pv-adj">
-                        <b>Ajusta la prenda a tu cuerpo</b>
-                        <label>
-                          Tamaño
-                          <input
-                            type="range"
-                            min="60"
-                            max="125"
-                            value={boxAdj.h}
-                            onChange={(e) =>
-                              setBoxAdj((prev) => ({ ...prev, h: Number(e.target.value) }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          Ancho
-                          <input
-                            type="range"
-                            min="0.8"
-                            max="1.7"
-                            step="0.05"
-                            value={boxAdj.sx}
-                            onChange={(e) =>
-                              setBoxAdj((prev) => ({ ...prev, sx: Number(e.target.value) }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          Altura
-                          <input
-                            type="range"
-                            min="-20"
-                            max="40"
-                            value={boxAdj.top}
-                            onChange={(e) =>
-                              setBoxAdj((prev) => ({ ...prev, top: Number(e.target.value) }))
-                            }
-                          />
-                        </label>
-                      </div>
-                    )}
-
-                    <div className="pv-acts">
-                      <button type="button" onClick={() => setShowAdj(!showAdj)}>
-                        {showAdj ? 'Cerrar ajustes' : 'Ajustar prenda'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUploadedPhoto(null)
-                          setPhotoFitted(false)
-                        }}
-                      >
-                        Eliminar foto
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="cz-floor" />
-
-            {/* Sumatoria flotante */}
-            <div className="cz-bl">
-              <div className="cz-sum">
-                <b id="czTotal">${totalLook.toLocaleString('es-CO')}</b>
-                <span id="czCount">
-                  {itemsWorn.length === 0
-                    ? 'Sin prendas todavía'
-                    : `${itemsWorn.length} prenda${itemsWorn.length === 1 ? '' : 's'} elegida${
-                        itemsWorn.length === 1 ? '' : 's'
-                      }`}
-                </span>
-              </div>
-              <span className="cz-hint">
-                Toca una prenda
-                <br />
-                para ponérsela
-              </span>
-            </div>
-          </div>
-
-          {/* Panel Derecho: Selección Editorial y Carga */}
-          <div className="cz-panel">
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#a98be0]">
-              Probador virtual
-            </span>
-            <h1 id="czMainTitle">Arma tu look</h1>
-            <p>
-              Elige prendas de las boutiques y tiendas independientes de Bogotá y míralas puestas al instante.
-            </p>
-
-            {showCoach && (
-              <div className="coach">
-                <b>¿Primera vez aquí?</b>
-                <ol>
-                  <li>Elige una pestaña: camisas, pantalones, chaquetas, zapatos…</li>
-                  <li>Toca una prenda para ponérsela; tócala otra vez para quitarla.</li>
-                  <li>Guarda el look o añádelo todo a tu wishlist.</li>
-                </ol>
-                <button
-                  type="button"
-                  className="linkish"
-                  onClick={() => setShowCoach(false)}
-                >
-                  Entendido
-                </button>
-              </div>
-            )}
-
-            {/* Selector de subida de fotos */}
-            <div className="upload-row">
-              <button
-                type="button"
-                className="upload"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-                <div>
-                  <b>Cargar foto</b>
-                  <span>Cuerpo entero, de frente. JPG o PNG.</span>
-                </div>
-              </button>
-
-              <button type="button" className="upload" onClick={handleUseSample}>
-                <img src="/prototipo/assets/img/general/ref.jpg" alt="" />
-                <div>
-                  <b>Usar foto ejemplo</b>
-                  <span>Mira la prueba en foto de referencia.</span>
-                </div>
-              </button>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                hidden
-                onChange={handleFileChange}
-              />
-            </div>
-
-            {/* Pestañas de categorías */}
-            <div className="cz-tabs" role="tablist">
-              {CATEGORIES_DATA.map((cat) => {
-                const countInSlot = cat.items.filter((i) =>
-                  Object.values(wearing).some((w) => w.id === i.id),
-                ).length
-
-                return (
-                  <button
-                    key={cat.tab}
-                    type="button"
-                    role="tab"
-                    aria-selected={activeTab === cat.tab}
-                    onClick={() => setActiveTab(cat.tab)}
-                  >
-                    {cat.tab}
-                    {countInSlot > 0 && <sup>({countInSlot})</sup>}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Catálogo de prendas de la categoría activa */}
-            <div className="cz-list" role="tabpanel">
-              {activeCategory.items.map((item) => {
-                const isSelected = wearing[item.slot]?.id === item.id
-
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="cz-item"
-                    aria-pressed={isSelected}
-                    onClick={() => handleToggleGarment(item)}
-                  >
-                    <span className="cz-sw">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        style={{ filter: COLOR_FILTERS[item.color] || 'none' }}
-                      />
-                    </span>
-                    <b>{item.name}</b>
-                    <span>{item.store}</span>
-                    <span className="pp">
-                      <span>${item.price.toLocaleString('es-CO')}</span>
-                      {item.store === 'Segunda mano' && <i>Usada</i>}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Resumen del Look */}
-            <div className="cz-look">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#a98be0]">
-                Tu combinación ({itemsWorn.length})
-              </span>
-              {itemsWorn.length === 0 ? (
-                <p className="text-xs text-[#b9b9ca] italic py-1">
-                  Aún no has agregado prendas a este look.
-                </p>
-              ) : (
-                <ul>
-                  {itemsWorn.map((w) => (
-                    <li key={w.id}>
-                      <span>{w.name}</span>
-                      <span>${w.price.toLocaleString('es-CO')}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {statusNote && (
-              <div className="p-3 rounded-xl bg-[#48119a]/40 border border-[#e8dccb]/30 text-xs text-[#e8dccb]">
-                {statusNote}
-              </div>
-            )}
-
-            {/* Acciones principales */}
-            <div className="cz-acts">
-              <button
-                type="button"
-                className="btn-line"
-                onClick={() => {
-                  setStatusNote('¡Todas las prendas fueron agregadas a tu Wishlist!')
-                  setTimeout(() => setStatusNote(null), 3500)
-                }}
-              >
-                Todo a la wishlist
-              </button>
-              <button
-                type="button"
-                className="btn-acc"
-                onClick={() => {
-                  setStatusNote('¡Look guardado exitosamente en tu perfil!')
-                  setTimeout(() => setStatusNote(null), 3500)
-                }}
-              >
-                Guardar look
-              </button>
-            </div>
-          </div>
+    <div className="cz-fullscreen" role="dialog" aria-modal="true" aria-label="Probador Virtual StyleRadar">
+      {/* ═══════════════════════════════════════════════════════════════
+          1. BARRA DE NAVEGACIÓN SUPERIOR
+          ═══════════════════════════════════════════════════════════════ */}
+      <nav className="cz-topbar">
+        <div className="cz-topbar-left">
+          <button className="cz-nav-back" onClick={onClose} aria-label="Volver">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            VOLVER
+          </button>
+          <span className="cz-nav-sep" aria-hidden="true">/</span>
+          <span className="cz-nav-crumb">INICIO</span>
+          <span className="cz-nav-sep" aria-hidden="true">/</span>
+          <span className="cz-nav-crumb cz-nav-active">PROBADOR</span>
+          <span className="cz-nav-sep" aria-hidden="true">/</span>
+          <span className="cz-nav-crumb cz-nav-accent">ARMA TU LOOK</span>
         </div>
+
+        <div className="cz-topbar-right">
+          {sourceMode === 'photo' && (
+            <button className="cz-nav-pill" onClick={backToMannequin}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 119 9"/><path d="M3 21V12h9"/></svg>
+              Maniquí
+            </button>
+          )}
+          {totalCount > 0 && (
+            <button className="cz-nav-pill cz-nav-pill-reset" onClick={resetLook}>
+              Limpiar todo
+            </button>
+          )}
+        </div>
+      </nav>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          2. CANVAS CENTRAL DEL MANIQUÍ
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="cz-canvas-area">
+        {/* Glow ambiental difuso detrás del maniquí */}
+        <div className="cz-ambient-glow" aria-hidden="true" />
+
+        <div
+          className="cz-mannequin-stage"
+          ref={canvasRef}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onWheel={onWheel}
+        >
+          {sourceMode === 'mannequin' ? (
+            <>
+              {/* Base del maniquí */}
+              <img
+                src="/prototipo/assets/img/general/maniqui.png"
+                alt="Maniquí base de cuerpo entero"
+                className="cz-mannequin-base"
+                draggable={false}
+              />
+
+              {/* Capas de ropa superpuestas */}
+              {activeLayers.map(({ layer, color }) => (
+                <img
+                  key={layer}
+                  src={LAYER_PATHS[layer]}
+                  alt=""
+                  className="cz-mannequin-layer"
+                  style={{
+                    filter: COLOR_FILTERS[color] || 'none',
+                    zIndex: LAYER_ORDER.indexOf(layer) + 10,
+                  }}
+                  draggable={false}
+                />
+              ))}
+            </>
+          ) : (
+            /* Foto del usuario cargada */
+            userPhoto && (
+              <img
+                src={userPhoto}
+                alt="Tu foto"
+                className="cz-user-photo"
+                style={{
+                  transform: `translate(${photoOffset.x}px, ${photoOffset.y}px) scale(${photoScale})`,
+                  cursor: 'grab',
+                }}
+                draggable={false}
+              />
+            )
+          )}
+
+          {/* Sombra del piso */}
+          <div className="cz-floor-shadow" aria-hidden="true" />
+        </div>
+
+        {/* Píldora flotante de precio */}
+        <div className="cz-price-pill" aria-live="polite">
+          <span className="cz-price-amount">{money(totalPrice)}</span>
+          <span className="cz-price-sep">·</span>
+          <span className="cz-price-count">
+            {totalCount}/{MAX_SLOTS} PRENDAS{totalCount === 0 ? ' TODAVÍA' : ''}
+          </span>
+        </div>
+
+        {/* Indicador zoom/drag si hay foto */}
+        {sourceMode === 'photo' && (
+          <div className="cz-photo-hint" aria-hidden="true">
+            Arrastra para mover · Scroll para zoom
+          </div>
+        )}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          3. PANEL LATERAL DERECHO — "ARMA TU LOOK"
+          ═══════════════════════════════════════════════════════════════ */}
+      <aside className="cz-panel" aria-label="Panel de catálogo de prendas">
+        {/* ---- Encabezado ---- */}
+        <div className="cz-panel-header">
+          <h2 className="cz-panel-title">
+            Arma tu <span>look</span>
+          </h2>
+          <p className="cz-panel-desc">
+            Elige hasta {MAX_SLOTS} prendas del catálogo y mira cómo se ven juntas.
+            Todo es inventario real de tiendas de Bogotá.
+          </p>
+
+          {/* Acordeón de guía */}
+          <button
+            className="cz-guide-toggle"
+            onClick={() => setShowGuide(prev => !prev)}
+            aria-expanded={showGuide}
+          >
+            <span className="cz-guide-q">{showGuide ? '▾' : '▸'} ¿Primera vez aquí?</span>
+          </button>
+          {showGuide && (
+            <div className="cz-guide-body">
+              <ol className="cz-guide-steps">
+                <li>Elige las prendas que te gusten del catálogo</li>
+                <li>El maniquí se viste en tiempo real</li>
+                <li>Carga tu foto para verte con el look</li>
+                <li>Guarda o comparte tu combinación</li>
+              </ol>
+              <button className="cz-guide-ok" onClick={() => setShowGuide(false)}>
+                ENTENDIDO
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ---- Bloque de carga de foto ---- */}
+        <div className="cz-upload-block">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={handlePhotoUpload}
+            aria-label="Cargar foto personal"
+          />
+          <button
+            className="cz-upload-btn"
+            onClick={() => fileRef.current?.click()}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+            </svg>
+            CARGAR FOTO
+          </button>
+          <button className="cz-example-btn" onClick={useExample}>
+            <img
+              src="/prototipo/assets/img/general/ref.jpg"
+              alt="Ejemplo"
+              className="cz-example-thumb"
+            />
+            USAR FOTO DE EJEMPLO
+          </button>
+        </div>
+
+        {/* ---- Filtros de categorías (pills) ---- */}
+        <div className="cz-filter-row" role="tablist" aria-label="Categorías de prendas">
+          {CATEGORIES_DATA.map(cat => (
+            <button
+              key={cat.tab}
+              role="tab"
+              aria-selected={activeTab === cat.tab}
+              className={`cz-filter-pill${activeTab === cat.tab ? ' active' : ''}`}
+              onClick={() => setActiveTab(cat.tab)}
+            >
+              {cat.tab.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* ---- Grid de prendas ---- */}
+        <div className="cz-garment-grid" role="tabpanel" aria-label={`Prendas de ${activeTab}`}>
+          {currentCategory?.items.map(item => {
+            const isWorn = wearing[item.layer]?.id === item.id
+            return (
+              <button
+                key={item.id}
+                className={`cz-garment-card${isWorn ? ' active' : ''}`}
+                onClick={() => toggleGarment(item)}
+                aria-pressed={isWorn}
+                aria-label={`${item.name} de ${item.store} por ${money(item.price)}`}
+              >
+                <div className="cz-garment-img-wrap">
+                  <img src={item.image} alt={item.name} loading="lazy" />
+                  {isWorn && (
+                    <span className="cz-garment-check" aria-hidden="true">✓</span>
+                  )}
+                </div>
+                <div className="cz-garment-info">
+                  <span className="cz-garment-store">{item.store}</span>
+                  <span className="cz-garment-name">{item.name}</span>
+                  <span className="cz-garment-price">{money(item.price)}</span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* ---- Botón masivo de guardar ---- */}
+        <button
+          className="cz-save-look"
+          disabled={totalCount === 0}
+          aria-label={totalCount > 0 ? `Guardar look de ${totalCount} prendas por ${money(totalPrice)}` : 'Selecciona prendas primero'}
+        >
+          {totalCount > 0 ? (
+            <>
+              Guardar look · {money(totalPrice)}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </>
+          ) : (
+            'Selecciona al menos una prenda'
+          )}
+        </button>
+      </aside>
     </div>
   )
 }
-
