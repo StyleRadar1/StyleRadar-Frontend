@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MapPinDto } from '../types/map.dto'
 import { sortByDistance } from '../utils/mapUtils'
 
@@ -10,10 +10,11 @@ interface Props {
 }
 
 /** Burbuja redonda con la foto del punto; si no hay foto o falla, muestra la inicial. */
-function BubbleAvatar({ pin }: { pin: MapPinDto }) {
+function BubbleAvatar({ pin, active }: { pin: MapPinDto; active: boolean }) {
   const [failed, setFailed] = useState(false)
   const isFound = pin.tipo === 'fundacion'
   const ring = isFound ? 'ring-arena' : 'ring-violeta'
+  const size = active ? 'h-[72px] w-[72px] ring-[3px]' : 'h-[50px] w-[50px] ring-2'
   if (pin.photo && !failed) {
     return (
       <img
@@ -21,13 +22,13 @@ function BubbleAvatar({ pin }: { pin: MapPinDto }) {
         alt=""
         loading="lazy"
         onError={() => setFailed(true)}
-        className={`h-14 w-14 flex-shrink-0 rounded-full object-cover ring-2 ${ring}`}
+        className={`flex-shrink-0 rounded-full object-cover shadow-[0_12px_28px_rgba(0,0,0,.6)] transition-all duration-300 ${size} ${ring}`}
       />
     )
   }
   return (
     <div
-      className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-lg font-bold ring-2 ${ring} ${
+      className={`flex flex-shrink-0 items-center justify-center rounded-full text-base font-bold shadow-[0_12px_28px_rgba(0,0,0,.6)] transition-all duration-300 ${size} ${ring} ${
         isFound ? 'bg-arena text-grafito' : 'bg-violeta text-white'
       }`}
     >
@@ -36,9 +37,38 @@ function BubbleAvatar({ pin }: { pin: MapPinDto }) {
   )
 }
 
-/** Columna de burbujas con foto y nombre de cada punto, como en el prototipo. */
+/**
+ * Burbujas con foto en arco (hero del mapa): el nombre queda a la izquierda de cada foto,
+ * la burbuja activa crece y la columna se curva hacia el mapa. Sin panel: las burbujas flotan.
+ */
 export default function BubbleColumn({ pins, selectedId, onSelect, onHover }: Props) {
   const sorted = useMemo(() => sortByDistance(pins), [pins])
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  /* Rueda del mouse sobre las burbujas: pasa a la tienda anterior o siguiente.
+     En los extremos deja de capturar la rueda para que la página siga desplazándose. */
+  const latest = useRef({ sorted, selectedId, onSelect })
+  latest.current = { sorted, selectedId, onSelect }
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+    let lastStep = 0
+    const onWheel = (e: WheelEvent) => {
+      const { sorted: list, selectedId: sel, onSelect: select } = latest.current
+      if (!list.length || Math.abs(e.deltaY) < 4) return
+      const dir = e.deltaY > 0 ? 1 : -1
+      const idx = list.findIndex((p) => p.id === sel)
+      const next = idx === -1 ? (dir > 0 ? 0 : list.length - 1) : idx + dir
+      if (next < 0 || next >= list.length) return
+      e.preventDefault()
+      const now = Date.now()
+      if (now - lastStep < 280) return
+      lastStep = now
+      select(list[next])
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
 
   if (!sorted.length) {
     return (
@@ -48,49 +78,49 @@ export default function BubbleColumn({ pins, selectedId, onSelect, onHover }: Pr
     )
   }
 
+  const n = sorted.length
+
   return (
-    <div className="flex flex-col gap-3 overflow-y-auto p-4">
-      {sorted.map((pin) => {
-        const isFound = pin.tipo === 'fundacion'
-        const isActive = pin.id === selectedId
-        return (
-          <button
-            key={pin.id}
-            type="button"
-            className={`group flex items-center gap-3 rounded-2xl border p-3 text-left transition
-              ${isActive
-                ? 'border-violeta bg-violeta/15 shadow-[0_0_16px_rgba(72,17,154,.4)]'
-                : 'border-white/10 bg-white/[.04] hover:border-white/25 hover:bg-white/[.08]'
-              }`}
-            onClick={() => onSelect(pin)}
-            onMouseEnter={() => onHover(pin)}
-            onMouseLeave={() => onHover(null)}
-            aria-pressed={isActive}
-          >
-            <BubbleAvatar pin={pin} />
-
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{pin.name}</p>
-              <p className="truncate text-xs text-white/50">
-                {isFound ? 'Fundación' : pin.cat} · {pin.barrio} · {pin.d}
-              </p>
-            </div>
-
-            {/* Flecha */}
-            <svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="flex-shrink-0 text-white/30 transition group-hover:text-white/70"
+    <div ref={rootRef} className="sr-bubbles relative">
+      <div className="flex flex-col gap-1.5 py-2 pr-10">
+        {sorted.map((pin, i) => {
+          const isFound = pin.tipo === 'fundacion'
+          const isActive = pin.id === selectedId
+          const dx = n > 1 ? Math.round(Math.sin((Math.PI * i) / (n - 1)) * 40) : 0
+          return (
+            <button
+              key={pin.id}
+              type="button"
+              style={{ ['--dx' as string]: `${-dx}px` }}
+              className="group flex items-center justify-end gap-3 text-right transition-transform duration-300 lg:[transform:translateX(var(--dx))]"
+              onClick={() => onSelect(pin)}
+              onMouseEnter={() => onHover(pin)}
+              onMouseLeave={() => onHover(null)}
+              aria-pressed={isActive}
             >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        )
-      })}
+              <div className="min-w-0">
+                <p className={`truncate font-semibold transition-all ${isActive ? 'text-base text-white' : 'text-[13px] text-white/85 group-hover:text-white'}`}>
+                  {pin.name}
+                </p>
+                <p className="truncate text-xs text-white/60">
+                  {isFound ? 'Fundación' : pin.cat} · {pin.barrio} · {pin.d}
+                </p>
+              </div>
+              <BubbleAvatar pin={pin} active={isActive} />
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Indicador de posición */}
+      <div aria-hidden="true" className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-col gap-2">
+        {sorted.map((pin) => (
+          <span
+            key={pin.id}
+            className={`block rounded-full transition-all ${pin.id === selectedId ? 'h-2.5 w-2.5 bg-white' : 'h-1.5 w-1.5 bg-white/40'}`}
+          />
+        ))}
+      </div>
     </div>
   )
 }

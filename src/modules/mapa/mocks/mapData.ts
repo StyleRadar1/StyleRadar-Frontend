@@ -1,4 +1,5 @@
-import type { MapPinDto } from '../types/map.dto'
+import type { MapPinDto, MapProductDto } from '../types/map.dto'
+import { ITEMS } from '@/modules/catalogo/mocks/items'
 
 /**
  * Datos mock de tiendas y fundaciones para el mapa.
@@ -6,7 +7,7 @@ import type { MapPinDto } from '../types/map.dto'
  * Solo incluye puntos visibles (verificadas / activas, no ocultas).
  */
 
-const TIENDAS: MapPinDto[] = [
+const TIENDAS_BASE: MapPinDto[] = [
   {
     id: 'luna',
     tipo: 'tienda',
@@ -72,6 +73,18 @@ const TIENDAS: MapPinDto[] = [
     desc: 'Marcas independientes colombianas: punto, denim y accesorios de autor.',
   },
 ]
+
+/** Productos de cada tienda, tomados del catálogo mock (por nombre de tienda). */
+function productosDe(tienda: string): MapProductDto[] {
+  return ITEMS.filter((i) => i.tienda === tienda).map((i) => ({
+    id: i.id,
+    nombre: i.nombre,
+    precio: i.precio,
+    imagen: i.imagen,
+  }))
+}
+
+const TIENDAS: MapPinDto[] = TIENDAS_BASE.map((t) => ({ ...t, products: productosDe(t.name) }))
 
 const FUNDACIONES: MapPinDto[] = [
   {

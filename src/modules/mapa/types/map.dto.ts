@@ -2,6 +2,14 @@
 
 export type PinTipo = 'tienda' | 'fundacion'
 
+/** Producto que ofrece una tienda (vista previa en la tarjeta del mapa). */
+export interface MapProductDto {
+  id: string
+  nombre: string
+  precio: number
+  imagen: string
+}
+
 export interface MapPinDto {
   id: string
   tipo: PinTipo
@@ -32,6 +40,8 @@ export interface MapPinDto {
   stats?: [number, number, number]
   /** Foto del punto (archivo en public/img/mapa) */
   photo?: string
+  /** Productos destacados (solo tiendas) */
+  products?: MapProductDto[]
 }
 
 export type MapFilter = 'todos' | 'tiendas' | 'fundaciones'

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { formatCOP } from '@/modules/core/utils/format'
 import type { MapPinDto } from '../types/map.dto'
 
 interface Props {
@@ -40,6 +41,15 @@ export default function MapCard({ pin, onClose }: Props) {
       role="dialog"
       aria-label={`Detalle de ${pin.name}`}
     >
+      {/* Foto del punto */}
+      <div className={`lm-photo${isFound ? ' is-tall' : ''}`}>
+        {pin.photo ? <img src={pin.photo} alt={pin.name} loading="lazy" /> : <span className="lm-photo-empty">{pin.name.charAt(0)}</span>}
+        <span className="lm-photo-fade" aria-hidden="true" />
+        <span className={`lm-photo-badge${isFound ? ' is-found' : ''}`}>
+          {isFound ? '♥ Fundación' : `● ${pin.cat}`}
+        </span>
+      </div>
+
       {/* Botón cerrar */}
       <button
         type="button"
@@ -53,20 +63,11 @@ export default function MapCard({ pin, onClose }: Props) {
         </svg>
       </button>
 
-      {/* Badge de tipo */}
-      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${
-        isFound
-          ? 'bg-arena/20 text-arena'
-          : 'bg-violeta/20 text-violeta-claro'
-      }`}>
-        {isFound ? '♥ Fundación' : `● ${pin.cat}`}
-      </span>
-
-      <h3 className="mt-3 text-lg font-bold leading-tight">{pin.name}</h3>
-      <p className="mt-1 text-sm text-white/60">{pin.barrio} · a {pin.d}</p>
+      <h3 className="text-base font-bold leading-tight">{pin.name}</h3>
+      <p className="mt-0.5 text-xs text-white/60">{pin.barrio} · a {pin.d}</p>
 
       {/* Info */}
-      <dl className="mt-4 space-y-2 text-sm">
+      <dl className="mt-3 space-y-1 text-xs">
         <div className="flex gap-2">
           <dt className="text-white/40">Dirección</dt>
           <dd className="text-white/80">{pin.dir}</dd>
@@ -83,7 +84,28 @@ export default function MapCard({ pin, onClose }: Props) {
         )}
       </dl>
 
-      {pin.desc && <p className="mt-3 text-sm text-white/70">{pin.desc}</p>}
+      {pin.desc && <p className="mt-2 text-xs leading-snug text-white/70">{pin.desc}</p>}
+
+      {/* Tienda: vista previa de productos */}
+      {!isFound && pin.products && pin.products.length > 0 && (
+        <div className="mt-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40">Lo que ofrece</p>
+          <ul className="mt-2 grid grid-cols-3 gap-2">
+            {pin.products.slice(0, 3).map((p) => (
+              <li key={p.id} className="min-w-0">
+                <img
+                  src={p.imagen}
+                  alt={p.nombre}
+                  loading="lazy"
+                  className="aspect-[4/5] w-full rounded-lg object-cover"
+                />
+                <p className="mt-1 truncate text-[11px] font-semibold text-white/85">{p.nombre}</p>
+                <p className="text-[11px] text-white/50">{formatCOP(p.precio)}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Fundación: qué acepta */}
       {isFound && pin.accepts && pin.accepts.length > 0 && (
@@ -118,7 +140,7 @@ export default function MapCard({ pin, onClose }: Props) {
       {/* Acción */}
       <Link
         to={pin.href}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-px hover:bg-[#5a16c0]"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-violeta px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:bg-[#5a16c0]"
       >
         {isFound ? 'Conocer la fundación' : 'Ver tienda'}
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5">

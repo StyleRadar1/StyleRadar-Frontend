@@ -23,4 +23,21 @@ describe('burbujas del mapa', () => {
     expect(container.querySelectorAll('img')).toHaveLength(antes - 1)
     expect(screen.getAllByRole('button')).toHaveLength(ALL_PINS.length)
   })
+
+  it('la rueda del mouse pasa a la siguiente tienda y a la anterior', () => {
+    const onSelect = vi.fn()
+    const { container, rerender } = render(
+      <BubbleColumn pins={ALL_PINS} selectedId={null} onSelect={onSelect} onHover={vi.fn()} />,
+    )
+    const raiz = container.querySelector('.sr-bubbles') as HTMLElement
+    fireEvent.wheel(raiz, { deltaY: 100 })
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'lab' }))
+
+    rerender(<BubbleColumn pins={ALL_PINS} selectedId="lab" onSelect={onSelect} onHover={vi.fn()} />)
+    // evita el límite de velocidad entre pasos
+    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 1000)
+    fireEvent.wheel(raiz, { deltaY: 100 })
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'luna' }))
+    vi.restoreAllMocks()
+  })
 })

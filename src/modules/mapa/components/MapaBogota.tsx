@@ -9,6 +9,33 @@ import { filterPins, calcBounds } from '../utils/mapUtils'
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
 const hasToken = !!MAPBOX_TOKEN
 
+type ViewMode = 'normal' | '3d'
+
+/** Un solo estilo para las dos vistas: en «Normal» se oculta la imagen satelital y queda el mapa oscuro con calles de colores. */
+const MAP_STYLE = 'mapbox://styles/mapbox/satellite-streets-v12'
+
+/** Aplica la vista: satélite + relieve en 3D; mapa oscuro plano en normal. */
+function applyViewMode(map: mapboxgl.Map, mode: ViewMode) {
+  if (map.getLayer('satellite')) {
+    map.setLayoutProperty('satellite', 'visibility', mode === '3d' ? 'visible' : 'none')
+  }
+  if (mode === '3d') {
+    if (!map.getSource('mapbox-dem')) {
+      map.addSource('mapbox-dem', {
+        type: 'raster-dem',
+        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        tileSize: 512,
+        maxzoom: 14,
+      })
+    }
+    map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 })
+  } else {
+    map.setTerrain(null)
+  }
+}
+
+const pitchFor = (mode: ViewMode) => (mode === '3d' ? 50 : 0)
+
 /* ── Iconos SVG para los pines ── */
 const BAG_ICON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`
 const HEART_ICON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="#262626" stroke="#262626" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`
@@ -43,6 +70,8 @@ export default function MapaBogota({
 
   const [internalFilter, setInternalFilter] = useState<MapFilter>(filter)
   const [legendExpanded, setLegendExpanded] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('normal')
+  const viewModeRef = useRef<ViewMode>('normal')
 
   const activeFilter = showControls ? internalFilter : filter
 
@@ -100,26 +129,23 @@ export default function MapaBogota({
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      style: MAP_STYLE,
       center: [-74.08, 4.65],
       zoom: 11,
-      pitch: 45,
-      bearing: -10,
-      attributionControl: true,
+      pitch: pitchFor(viewModeRef.current),
+      bearing: 0,
+      attributionControl: false,
       logoPosition: 'bottom-right',
     })
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'top-right')
+    // Créditos de Mapbox/OpenStreetMap colapsados tras un botón «i» (se despliegan al tocarlo)
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right')
+
+    // Al cargar el estilo, aplica la vista activa (normal o 3D)
+    map.on('style.load', () => applyViewMode(map, viewModeRef.current))
 
     map.on('load', () => {
-      // Agregar terreno DEM
-      map.addSource('mapbox-dem', {
-        type: 'raster-dem',
-        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        tileSize: 512,
-        maxzoom: 14,
-      })
-      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 })
 
       // Encuadrar
       if (pins.length) {
@@ -209,7 +235,7 @@ export default function MapaBogota({
           popupRef.current = null
         }
         onSelect?.(pin)
-        map.flyTo({ center: pin.lngLat, zoom: 14.5, pitch: 50, duration: 800 })
+        map.flyTo({ center: pin.lngLat, zoom: 14.5, pitch: pitchFor(viewModeRef.current), duration: 800 })
       })
 
       const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
@@ -241,7 +267,7 @@ export default function MapaBogota({
     if (!selectedId || !mapRef.current) return
     const pin = pins.find((p) => p.id === selectedId)
     if (pin) {
-      mapRef.current.flyTo({ center: pin.lngLat, zoom: 14.5, pitch: 50, duration: 800 })
+      mapRef.current.flyTo({ center: pin.lngLat, zoom: 14.5, pitch: pitchFor(viewModeRef.current), duration: 800 })
     }
   }, [selectedId, pins])
 
@@ -266,6 +292,19 @@ export default function MapaBogota({
     return () => document.removeEventListener('keydown', handler)
   }, [onSelect])
 
+  /* ── Cambio de vista normal / 3D ── */
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || viewModeRef.current === viewMode) return
+    viewModeRef.current = viewMode
+    applyViewMode(map, viewMode)
+    map.easeTo({
+      pitch: viewMode === '3d' ? 55 : 0,
+      bearing: viewMode === '3d' ? -10 : 0,
+      duration: 800,
+    })
+  }, [viewMode])
+
   /* ── Sin token: render fallback ── */
   if (!hasToken) {
     return (
@@ -284,7 +323,22 @@ export default function MapaBogota({
   return (
     <div className={`relative ${className}`}>
       {/* Contenedor del mapa */}
-      <div ref={containerRef} className="h-full w-full rounded-2xl" style={{ minHeight: 400 }} />
+      <div ref={containerRef} className="h-full w-full rounded-2xl bg-[#171a20]" style={{ minHeight: 400 }} />
+
+      {/* Vista normal / 3D */}
+      <div className="sr-view-toggle" role="group" aria-label="Tipo de vista del mapa">
+        {(['normal', '3d'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            className={viewMode === m ? 'is-active' : ''}
+            aria-pressed={viewMode === m}
+            onClick={() => setViewMode(m)}
+          >
+            {m === 'normal' ? 'Normal' : 'Vista 3D'}
+          </button>
+        ))}
+      </div>
 
       {/* Leyenda + filtros */}
       {showControls && (

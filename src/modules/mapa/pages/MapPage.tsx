@@ -43,9 +43,9 @@ export default function MapPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-64px)] flex-col overflow-hidden">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6">
       {/* Header */}
-      <div className="flex flex-shrink-0 items-center gap-4 border-b border-white/10 px-4 py-3 sm:px-6">
+      <div className="flex flex-wrap items-center gap-4">
         <Link
           to="/"
           className="flex items-center gap-1.5 rounded-lg border border-white/20 px-3 py-1.5 text-sm text-white/70 transition hover:bg-white/10"
@@ -79,10 +79,9 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Hero: mapa + burbujas */}
-      <div className="sr-store-map flex flex-1 flex-col overflow-hidden lg:flex-row">
-        {/* Mapa ~63% */}
-        <div className="relative flex-1 lg:flex-[63]">
+      {/* Hero: mapa + burbujas en arco */}
+      <div className="sr-store-map grid items-center gap-6 lg:grid-cols-[2.2fr_1fr]">
+        <div className="relative h-[380px] overflow-hidden rounded-[22px] border border-white/[.14] shadow-[0_20px_50px_rgba(0,0,0,.55)] lg:h-[min(calc(100dvh-170px),700px)]">
           <MapaBogota
             pins={pins}
             selectedId={selectedId}
@@ -93,7 +92,6 @@ export default function MapPage() {
             showControls={false}
             className="h-full w-full"
           />
-          {/* Tarjeta flotante */}
           {selectedPin && (
             <MapCard
               pin={selectedPin}
@@ -102,13 +100,7 @@ export default function MapPage() {
           )}
         </div>
 
-        {/* Columna de burbujas ~37% */}
-        <aside className="w-full flex-shrink-0 border-t border-white/10 bg-grafito/50 backdrop-blur lg:w-[37%] lg:border-l lg:border-t-0">
-          <div className="px-4 pt-4">
-            <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
-              {visiblePins.length} {visiblePins.length === 1 ? 'punto' : 'puntos'}
-            </span>
-          </div>
+        <aside>
           <BubbleColumn
             pins={visiblePins}
             selectedId={selectedId}
