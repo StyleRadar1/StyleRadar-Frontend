@@ -3,8 +3,16 @@ import { useSearchParams } from 'react-router-dom'
 import { ItemCard } from '../components/ItemCard'
 import { useItems } from '../hooks/useItems'
 import type { Estilo } from '../types/item.dto'
+import './CatalogPage.css'
 
 const ESTILOS: Estilo[] = ['Sastre', 'Calle', 'Futuro', 'Rebelde', 'Esencial']
+const DISC_COVERS: Record<Estilo, { image: string; tone: string }> = {
+  Sastre: { image: '/img/productos/blazer-oversize.jpg', tone: '#8c63c7' },
+  Calle: { image: '/img/productos/hoodie-azul-noche.jpg', tone: '#5426a2' },
+  Futuro: { image: '/img/productos/chaqueta-de-nylon.jpg', tone: '#a17adc' },
+  Rebelde: { image: '/img/productos/r2c3-chaqueta-cuero.jpg', tone: '#6f35b4' },
+  Esencial: { image: '/img/productos/sueter-de-canale-crudo.jpg', tone: '#c1a1ec' },
+}
 
 /** RF-07 a RF-13: búsqueda y filtros. Ejemplo completo del patrón página → hook → servicio. */
 export default function CatalogPage() {
@@ -31,12 +39,33 @@ export default function CatalogPage() {
           className="w-full rounded-xl border border-white/20 bg-black/20 px-4 py-3 text-sm outline-none focus:border-violeta-claro" />
         <button className="rounded-xl bg-violeta px-5 text-sm font-semibold">Buscar</button>
       </form>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button onClick={() => setEstilo()} className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${!estilo ? 'border-arena bg-arena text-grafito' : 'border-white/20'}`}>Todos</button>
-        {ESTILOS.map((e) => (
-          <button key={e} onClick={() => setEstilo(e)} className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${estilo === e ? 'border-arena bg-arena text-grafito' : 'border-white/20'}`}>{e}</button>
-        ))}
-      </div>
+      <section className="catalog-disc-section" aria-labelledby="catalog-disc-heading">
+        <div className="catalog-disc-heading-row">
+          <div>
+            <p className="catalog-disc-eyebrow">Lado A · encuentra tu sonido</p>
+            <h2 id="catalog-disc-heading">Explora por estilo</h2>
+          </div>
+          <span>Elige un disco para filtrar las prendas</span>
+        </div>
+        <div className="catalog-disc-list" role="group" aria-label="Filtrar prendas por estilo">
+          <button type="button" aria-pressed={!estilo} onClick={() => setEstilo()} className={`catalog-disc-option${!estilo ? ' is-selected' : ''}`}>
+            <span className="catalog-vinyl" style={{ '--disc-tone': '#48119a' } as React.CSSProperties}>
+              <span className="catalog-vinyl-label catalog-vinyl-label-all"><b>SR</b></span>
+            </span>
+            <span className="catalog-disc-name">Todos</span>
+            <span className="catalog-disc-caption">Catálogo completo</span>
+          </button>
+          {ESTILOS.map((e) => (
+            <button key={e} type="button" aria-pressed={estilo === e} onClick={() => setEstilo(e)} className={`catalog-disc-option${estilo === e ? ' is-selected' : ''}`}>
+              <span className="catalog-vinyl" style={{ '--disc-tone': DISC_COVERS[e].tone } as React.CSSProperties}>
+                <span className="catalog-vinyl-label"><img src={DISC_COVERS[e].image} alt="" loading="lazy" /></span>
+              </span>
+              <span className="catalog-disc-name">{e}</span>
+              <span className="catalog-disc-caption">Ver prendas</span>
+            </button>
+          ))}
+        </div>
+      </section>
       {error && <p role="alert" className="mt-8 text-[#ffb4b4]">{error}</p>}
       {loading ? (
         <p className="mt-8 text-white/60">Buscando prendas…</p>

@@ -19,6 +19,7 @@ const Inventory = lazy(() => import('@/modules/catalogo/pages/InventoryPage'))
 const Playlists = lazy(() => import('@/modules/catalogo/pages/PlaylistsPage'))
 const Moderation = lazy(() => import('@/modules/catalogo/pages/ModerationPage'))
 const TryOn = lazy(() => import('@/modules/experiencia/pages/TryOnPage'))
+const ProbadorVirtual = lazy(() => import('@/modules/experiencia/pages/ProbadorVirtualPage'))
 const SecondHand = lazy(() => import('@/modules/experiencia/pages/SecondHandPage'))
 const PublishListing = lazy(() => import('@/modules/experiencia/pages/PublishListingPage'))
 const Donate = lazy(() => import('@/modules/experiencia/pages/DonatePage'))
@@ -55,7 +56,8 @@ export const router = createBrowserRouter([
       { path: '/planes', element: page(<Plans />) },
       // Usuario (comprador)
       { path: '/perfil', element: only(USER, <Profile />) },
-      { path: '/probador', element: only(USER, <TryOn />) },
+      { path: '/probador', element: page(<ProbadorVirtual />) },
+      { path: '/probador/avanzado', element: only(USER, <TryOn />) },
       { path: '/segunda-mano', element: only(USER, <SecondHand />) },
       { path: '/segunda-mano/publicar', element: only(USER, <PublishListing />) },
       { path: '/segunda-mano/:id/editar', element: only(USER, <PublishListing />) },

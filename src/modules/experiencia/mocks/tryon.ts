@@ -1,6 +1,7 @@
 import type { TryOnGarmentDto } from '../types/tryon.dto'
 
 export const TRYON_GARMENTS: TryOnGarmentDto[] = [
+  { id: 'remanence-state', nombre: 'Chaqueta State Negra', tienda: 'Remanence · Medellín', imagen: 'https://remanence.co/cdn/shop/files/CHAQUETA-STATE-NEGRA-HOMBRE_01.jpg?v=1791578052&width=1000', zona: 'SUPERIOR', tallas: ['S', 'M', 'L', 'XL'], disponible: true },
   { id: 'p1', nombre: 'Blazer oversize', tienda: 'Nómada Studio', imagen: '/img/productos/blazer-oversize.jpg', zona: 'SUPERIOR', tallas: ['S', 'M', 'L'], disponible: true },
   { id: 'p3', nombre: 'Hoodie azul noche', tienda: 'Luna Store', imagen: '/img/productos/hoodie-azul-noche.jpg', zona: 'SUPERIOR', tallas: ['M', 'L', 'XL'], disponible: true },
   { id: 'p5', nombre: 'Chaqueta de nylon', tienda: 'Kicks Local', imagen: '/img/productos/chaqueta-de-nylon.jpg', zona: 'SUPERIOR', tallas: ['S', 'M'], disponible: false },
