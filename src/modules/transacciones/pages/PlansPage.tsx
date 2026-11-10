@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -21,6 +21,7 @@ export default function PlansPage() {
   const { user } = useAuth()
   const comprador = user?.role === 'COMPRADOR'
   const { plan } = useUserPlan(comprador)
+  const navigate = useNavigate()
   const [cambio, setCambio] = useState<PlanUsuario | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -45,7 +46,8 @@ export default function PlansPage() {
       const id = p.id
       if (!plan) return null
       if (plan === id) return <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">Plan actual</p>
-      return <button type="button" onClick={() => setCambio(id)} className={`mt-auto rounded-xl px-5 py-3 text-sm font-semibold ${p.destacado ? 'bg-violeta' : 'border border-white/25'}`}>Cambiar a {p.nombre}</button>
+      // Subir a Radar+ pasa por el pago (/suscripcion); bajar a Radar solo pide confirmación.
+      return <button type="button" onClick={() => (id === 'RADAR_PLUS' ? navigate('/suscripcion') : setCambio(id))} className={`mt-auto rounded-xl px-5 py-3 text-sm font-semibold ${p.destacado ? 'bg-violeta' : 'border border-white/25'}`}>Cambiar a {p.nombre}</button>
     }
     if (user.role === 'ADMIN_ALMACEN' && p.id === 'TIENDA') {
       return <Link to="/tienda/suscripcion" className="mt-auto block rounded-xl border border-white/25 px-5 py-3 text-center text-sm font-semibold">Ver mi suscripción</Link>
@@ -111,7 +113,7 @@ export default function PlansPage() {
 
       <ConfirmDialog open={!!cambio} busy={busy} onCancel={() => setCambio(null)} onConfirm={cambiar}
         title={`¿Cambiar a ${cambio ? PLAN_LABEL[cambio] : ''}?`} confirmLabel="Cambiar plan">
-        {cambio === 'RADAR_PLUS' ? `Pagarás ${formatCOP(14900)} al mes. Puedes cancelar la renovación cuando quieras.` : 'Perderás el probador con tu foto y las alertas y la wishlist sin límite.'}
+        Perderás el probador con tu foto y las alertas y la wishlist sin límite.
       </ConfirmDialog>
     </section>
   )

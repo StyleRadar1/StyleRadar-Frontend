@@ -50,4 +50,16 @@ export const userPlanService = {
     window.dispatchEvent(new Event(PLAN_CHANGED))
     return r
   },
+
+  /**
+   * RF-100: el plan de pago solo queda activo con un pago aprobado. Se llama desde la pantalla de resultado del pago.
+   * En mocks simula la activación; con el backend real ms-pagos ya la hizo, y aquí solo se avisa a las pantallas.
+   */
+  activatePaid(plan: PlanUsuario): void {
+    if (env.useMocks) {
+      const u = mockSessionUser()
+      if (u) setMockPlan(u.id, plan)
+    }
+    window.dispatchEvent(new Event(PLAN_CHANGED))
+  },
 }

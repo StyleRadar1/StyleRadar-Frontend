@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { usePlans } from '../hooks/usePlans'
+import { useUserPlan } from '../hooks/useUserPlan'
 import { planService } from '../services/planService'
+import { userPlanService } from '../services/userPlanService'
 import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
 
 /* ─── Subcomponente: resultado del pago ─── */
@@ -18,7 +20,11 @@ function CheckoutResult() {
 
   useEffect(() => {
     planService.getCheckoutResult(orderId)
-      .then(setResult)
+      .then((r) => {
+        // RF-100: solo un pago aprobado activa el plan; si no, la persona conserva el que tenía.
+        if (r.status === 'aprobado' && r.planName === 'Radar+') userPlanService.activatePaid('RADAR_PLUS')
+        setResult(r)
+      })
       .catch(setError)
       .finally(() => setLoading(false))
   }, [orderId])
@@ -48,6 +54,7 @@ function CheckoutResult() {
           <dt className="text-white/50">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
         </dl>
       </Card>
+      <Link to="/planes" className="mt-6 inline-block text-sm font-semibold text-arena underline">Ver mis planes</Link>
     </section>
   )
 }
@@ -100,8 +107,9 @@ function PlansSelector() {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
 
-  // TODO: leer plan del usuario de un único lugar (hook/servicio que Kevin defina)
-  const currentPlan = user ? 'free' : null
+  // El plan de la persona se lee de un único lugar: useUserPlan (el mismo que usan /planes y los candados).
+  const { plan: userPlan } = useUserPlan(user?.role === 'COMPRADOR')
+  const currentPlan = userPlan === 'RADAR_PLUS' ? 'plus' : userPlan === 'RADAR' ? 'free' : null
 
   const handleSelect = useCallback(async (plan: PlanDto) => {
     if (plan.price === 0) return // Radar es gratis, no requiere checkout
