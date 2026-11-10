@@ -15,7 +15,7 @@ export function Hero() {
 
   const handleScrollToNext = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    const target = document.getElementById('pe-que-es') || document.getElementById('como-funciona')
+    const target = document.getElementById('pe-videos')
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' })
     }
@@ -88,7 +88,7 @@ export function Hero() {
           </Link>
 
           <a
-            href="#pe-que-es"
+            href="#pe-videos"
             onClick={handleScrollToNext}
             className="inline-flex items-center gap-2 px-7 py-4 rounded-full border border-white/40 hover:border-white/80 bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase backdrop-blur-md hover:-translate-y-0.5 transition-all"
           >

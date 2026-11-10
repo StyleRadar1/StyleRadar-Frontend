@@ -70,7 +70,6 @@ export interface NavCapsuleItem {
 }
 
 export const navCapsules: NavCapsuleItem[] = [
-  { label: 'Cómo funciona', targetId: 'como-funciona' },
   { label: 'Categorías', targetId: 'categorias' },
   { label: 'Videos', targetId: 'videos' },
   { label: 'Ciclo de la ropa', targetId: 'ciclo' },

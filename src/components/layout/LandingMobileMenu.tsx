@@ -21,6 +21,7 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
   return (
     <div
       className="fixed inset-0 z-40 bg-[#15121b]/95 backdrop-blur-xl flex flex-col justify-between p-8 pt-28 xl:hidden transition-all"
+      id="landing-mobile-menu"
       role="dialog"
       aria-modal="true"
       aria-label="Menú de navegación móvil"

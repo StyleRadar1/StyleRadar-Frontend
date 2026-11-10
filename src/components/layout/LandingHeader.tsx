@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Logo } from '@/modules/core/design-system'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { navCapsules } from '@/data/landingData'
+import './LandingHeader.css'
 
 interface LandingHeaderProps {
   onOpenLogin?: () => void
@@ -9,150 +9,141 @@ interface LandingHeaderProps {
   isMobileMenuOpen?: boolean
 }
 
+type Theme = 'oscuro' | 'claro' | 'daltonico'
+
+const sectionTargets: Record<string, string> = {
+  categorias: 'categorias',
+  videos: 'pe-videos',
+  ciclo: 'ciclo',
+  planes: 'planes',
+  mapa: 'pe-mapa',
+  'quienes-somos': 'pe-pie',
+}
+
 export function LandingHeader({
   onOpenLogin,
   onToggleMobileMenu,
   isMobileMenuOpen = false,
 }: LandingHeaderProps) {
-  const [theme, setTheme] = useState<'oscuro' | 'claro' | 'daltonico'>('oscuro')
+  const navigate = useNavigate()
+  const [theme, setTheme] = useState<Theme>(
+    () => (document.documentElement.getAttribute('data-tema') as Theme | null) ?? 'oscuro',
+  )
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 40)
-    }
+    const handleScroll = () => setIsScrolled(window.scrollY > 40)
     window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleThemeChange = (newTheme: 'oscuro' | 'claro' | 'daltonico') => {
+  const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme)
     document.documentElement.setAttribute('data-tema', newTheme)
   }
 
-  const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    e.preventDefault()
+  const handleScrollTo = (targetId: string) => {
     const element = document.getElementById(targetId)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
+    element?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between gap-4 px-6 md:px-12 py-5 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-[#15121b]/85 backdrop-blur-md border-b border-white/10 shadow-lg'
-          : 'bg-transparent'
-      }`}
-    >
-      <div className="flex items-center gap-6">
-        <Link
-          to="/"
-          className="flex items-center gap-2.5 text-white font-extrabold uppercase tracking-widest text-sm hover:opacity-90 transition-opacity"
+    <header id="peHeader" className={`pe-header${isScrolled ? ' is-scrolled' : ''}`}>
+      <div className="pe-header-left">
+        <a
+          href="#inicio"
+          className="pe-brand"
+          id="peBrandHome"
           aria-label="StyleRadar, volver al inicio"
+          onClick={(event) => {
+            event.preventDefault()
+            handleScrollTo('inicio')
+          }}
         >
-          <Logo className="h-7 w-auto" />
-          <span className="text-base tracking-wider">StyleRadar</span>
-        </Link>
+          <svg className="pe-logo" viewBox="0 0 556 935" width="22" height="36" aria-hidden="true">
+            <path className="srl-d" d="M237 6 L234 6 L209 23 L195 83 L193 85 L147 30 L108 40 L138 147 L58 233 L68 496 L68 544 L62 621 L86 629 L128 639 L160 643 L190 643 L225 636 L245 627 L264 614 L284 594 L298 576 L292 568 L192 477 L210 347 L210 329 L194 169Z" />
+            <path className="srl-w" d="M410 646 L380 631 L347 610 L344 610 L321 639 L295 663 L274 677 L258 685 L225 696 L189 701 L147 700 L108 694 L54 680 L43 749 L97 767 L128 774 L163 779 L221 779 L264 771 L283 765 L310 753 L330 741 L351 725 L369 708 L389 684 L407 656Z" />
+            <path className="srl-w" d="M549 696 L467 671 L452 699 L425 736 L396 766 L378 781 L345 803 L321 815 L286 828 L258 835 L202 841 L144 838 L75 824 L29 809 L20 845 L6 888 L43 905 L74 915 L117 924 L154 928 L214 928 L259 923 L303 914 L348 900 L403 875 L431 858 L467 830 L490 807 L507 786 L525 758 L541 724Z" />
+          </svg>
+          <span className="pe-brand-text">StyleRadar</span>
+        </a>
 
-        {/* Cápsulas de navegación para desktop */}
-        <nav
-          className="hidden xl:flex items-center gap-2"
-          aria-label="Secciones del landing"
-        >
-          {navCapsules.map((item) => (
-            <a
-              key={item.targetId}
-              href={`#${item.targetId}`}
-              onClick={(e) => handleScrollTo(e, item.targetId)}
-              className="px-3.5 py-1.5 rounded-full border border-white/15 bg-[#161120]/30 backdrop-blur-sm text-[#f1e9df] text-[11px] font-semibold tracking-wider uppercase hover:border-white/40 hover:bg-white/10 transition-colors"
-            >
-              {item.label}
-            </a>
-          ))}
+        <nav className="pe-nav-capsules" aria-label="Secciones del landing">
+          {navCapsules.map((item) => {
+            const targetId = sectionTargets[item.targetId] ?? item.targetId
+            return (
+              <button
+                key={item.targetId}
+                type="button"
+                className="pe-capsule-btn"
+                data-scroll={`pe-${item.targetId}`}
+                onClick={() => handleScrollTo(targetId)}
+              >
+                {item.label}
+              </button>
+            )
+          })}
         </nav>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Selector de tema */}
-        <div className="hidden sm:flex items-center gap-1.5 bg-white/5 border border-white/15 rounded-full px-3 py-1.5 text-xs text-white/80">
-          <svg
-            className="w-4 h-4 text-white/70"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
+      <div className="pe-header-right">
+        <label data-nog className="tema-sel pe-tema">
+          <svg className="tema-sel-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" />
           </svg>
+          <span className="sr-only">Tema de color</span>
           <select
+            data-tema-select
             value={theme}
-            onChange={(e) => handleThemeChange(e.target.value as 'oscuro' | 'claro' | 'daltonico')}
-            className="bg-transparent text-white text-xs font-medium cursor-pointer focus:outline-none"
+            onChange={(event) => handleThemeChange(event.target.value as Theme)}
             aria-label="Tema de color"
           >
-            <option value="oscuro" className="bg-[#1f1b26] text-white">Oscuro</option>
-            <option value="claro" className="bg-[#1f1b26] text-white">Claro</option>
-            <option value="daltonico" className="bg-[#1f1b26] text-white">Daltónico</option>
+            <option value="oscuro">Oscuro</option>
+            <option value="claro">Claro</option>
+            <option value="daltonico">Daltónico</option>
           </select>
-        </div>
+        </label>
 
-        {/* Acciones principales */}
-        {onOpenLogin ? (
-          <button
-            type="button"
-            onClick={onOpenLogin}
-            className="text-white hover:text-white/80 text-xs font-semibold px-3 py-2 transition-colors cursor-pointer"
-          >
-            Iniciar sesión
-          </button>
-        ) : (
-          <Link
-            to="/login"
-            className="text-white hover:text-white/80 text-xs font-semibold px-3 py-2 transition-colors"
-          >
-            Iniciar sesión
-          </Link>
-        )}
+        <button
+          type="button"
+          className="pe-login-btn"
+          id="portalLoginBtn"
+          data-login
+          onClick={onOpenLogin}
+        >
+          Iniciar sesión
+        </button>
 
-        <Link
-          to="/catalogo"
-          className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 bg-[#48119a] hover:bg-[#5b17c2] text-white text-xs font-bold tracking-wider uppercase shadow-[0_4px_20px_#48119a66] hover:shadow-[0_6px_24px_#48119a99] transition-all"
+        <button
+          type="button"
+          className="pe-explore-btn"
+          id="portalEnterBtn"
+          data-enter
+          onClick={() => navigate('/catalogo')}
         >
           <span>Entrar a StyleRadar</span>
-          <svg
-            viewBox="0 0 24 24"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <line x1="7" y1="17" x2="17" y2="7" />
             <polyline points="7 7 17 7 17 17" />
           </svg>
-        </Link>
+        </button>
 
-        {/* Botón hamburguesa móvil */}
         <button
           type="button"
-          onClick={onToggleMobileMenu}
-          className="xl:hidden flex flex-col justify-center items-center gap-1.5 w-10 h-10 rounded-full border border-white/20 bg-white/5 text-white cursor-pointer"
+          className="pe-mobile-menu-btn"
+          id="peMobileToggle"
           aria-label="Menú de secciones"
           aria-expanded={isMobileMenuOpen}
+          aria-controls="landing-mobile-menu"
+          onClick={onToggleMobileMenu}
         >
-          <span className={`block h-0.5 w-5 bg-white transition-transform ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} />
-          <span className={`block h-0.5 w-5 bg-white transition-opacity ${isMobileMenuOpen ? 'opacity-0' : ''}`} />
-          <span className={`block h-0.5 w-5 bg-white transition-transform ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+          <span />
+          <span />
+          <span />
         </button>
       </div>
     </header>
   )
 }
-
