@@ -39,6 +39,11 @@
   --sr-ok: #9be3b4;
   --sr-bad: #ffb4b4;
   --sr-warn: #f3d27a;
+  /* Color del punto de cada rol en el menú de cuenta (siempre va con el nombre del rol). */
+  --sr-rol-usuario: #a98be0;
+  --sr-rol-tienda: #9be3b4;
+  --sr-rol-fundacion: #f0c27b;
+  --sr-rol-admin: #e8dccb;
   color-scheme: dark;
 }
 
@@ -55,6 +60,10 @@ html[data-tema="claro"] {
   --sr-ok: #1e6b3a;
   --sr-bad: #a3231a;
   --sr-warn: #7a5300;
+  --sr-rol-usuario: #5a2bb0;
+  --sr-rol-tienda: #1e6b3a;
+  --sr-rol-fundacion: #9a5b00;
+  --sr-rol-admin: #6a4f2a;
   color-scheme: light;
 
   --color-fondo: #f6f3ee;
@@ -71,6 +80,9 @@ html[data-tema="claro"] {
    Oscuro con estados de la paleta Okabe-Ito (azul, naranja, amarillo), que se
    distinguen con cualquier tipo de daltonismo. Nunca solo rojo y verde. */
 html[data-tema="daltonico"] {
+  --sr-rol-usuario: #cc79a7;
+  --sr-rol-tienda: #56b4e9;
+  --sr-rol-fundacion: #e69f00;
   --sr-tx-2: #d6d6e2;
   --sr-acc-tx: #d6d6e2;
   --sr-foco: #f0e442;

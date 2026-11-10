@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import type { Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
@@ -28,10 +28,11 @@ describe('menú de cuenta', () => {
     const user = userEvent.setup()
     loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
     renderApp(<UserMenu />)
-    await user.click(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas' }))
+    await user.click(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas, Usuario' }))
     const menu = screen.getByRole('menu', { name: 'Mi cuenta' })
     expect(within(menu).getByText('Valentina Rojas')).toBeInTheDocument()
-    expect(within(menu).getByText('Usuario · usuario@styleradar.co')).toBeInTheDocument()
+    expect(within(menu).getByText('usuario@styleradar.co')).toBeInTheDocument()
+    expect(within(menu).getByText('Usuario')).toBeInTheDocument()
     expect(within(menu).getByRole('menuitem', { name: 'Mi cuenta' })).toHaveAttribute('href', '/perfil')
   })
 
@@ -39,9 +40,10 @@ describe('menú de cuenta', () => {
     const user = userEvent.setup()
     loginAs('a-1', 'Mariana Bernal', 'admin@styleradar.co', 'ADMIN_STYLERADAR')
     renderApp(<UserMenu />)
-    await user.click(screen.getByRole('button', { name: 'Mi cuenta: Mariana Bernal' }))
+    await user.click(screen.getByRole('button', { name: 'Mi cuenta: Mariana Bernal, Admin' }))
     const menu = screen.getByRole('menu', { name: 'Mi cuenta' })
-    expect(within(menu).getByText('Admin · admin@styleradar.co')).toBeInTheDocument()
+    expect(within(menu).getByText('admin@styleradar.co')).toBeInTheDocument()
+    expect(within(menu).getByText('Admin')).toBeInTheDocument()
     expect(within(menu).getByRole('menuitem', { name: 'Usuarios' })).toHaveAttribute('href', '/admin/usuarios')
   })
 
@@ -49,7 +51,7 @@ describe('menú de cuenta', () => {
     const user = userEvent.setup()
     loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'ADMIN_ALMACEN')
     renderApp(<UserMenu />)
-    await user.click(screen.getByRole('button', { name: 'Mi cuenta: Luna Store' }))
+    await user.click(screen.getByRole('button', { name: 'Mi cuenta: Luna Store, Tienda' }))
     expect(screen.getByRole('menu')).toBeInTheDocument()
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
@@ -59,12 +61,33 @@ describe('menú de cuenta', () => {
     const user = userEvent.setup()
     loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
     renderApp(<UserMenu />)
-    await user.click(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas' }))
+    await user.click(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas, Usuario' }))
     await user.click(screen.getByRole('menuitem', { name: 'Cerrar sesión' }))
     const dialogo = screen.getByRole('dialog', { name: '¿Cerrar sesión?' })
     await user.click(within(dialogo).getByRole('button', { name: 'Cerrar sesión' }))
     expect(screen.queryByRole('button', { name: /Mi cuenta/ })).not.toBeInTheDocument()
     expect(localStorage.getItem('sr_user')).toBeNull()
+  })
+})
+
+describe('cerrar sesión', () => {
+  it('lleva al inicio (landing), donde se vuelve a entrar con el mismo inicio de sesión', async () => {
+    const user = userEvent.setup()
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/catalogo']}>
+          <Routes>
+            <Route path="/" element={<p>Landing</p>} />
+            <Route path="/catalogo" element={<UserMenu />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+    await user.click(screen.getByRole('button', { name: /Mi cuenta/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Cerrar sesión' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cerrar sesión' }))
+    expect(screen.getByText('Landing')).toBeInTheDocument()
   })
 })
 

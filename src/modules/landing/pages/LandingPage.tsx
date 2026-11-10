@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CustomCursor, NoiseGrain } from '@/components/ui'
 import { LandingHeader, LandingMobileMenu, LandingFooter } from '@/components/layout'
 import {
@@ -15,7 +16,9 @@ import './LandingPage.css'
 
 export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isAuthOpen, setIsAuthOpen] = useState(false)
+  // /?login abre el inicio de sesión (lo usan el botón «Iniciar sesión» del menú de la app y «Cerrar sesión»).
+  const [params, setParams] = useSearchParams()
+  const [isAuthOpen, setIsAuthOpen] = useState(() => params.has('login'))
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
 
@@ -79,7 +82,10 @@ export default function LandingPage() {
       {/* Modal unificado de Autenticación (Login, Registro, OTP de 2 pasos y cuentas demo) */}
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={() => {
+          setIsAuthOpen(false)
+          if (params.has('login')) setParams({}, { replace: true })
+        }}
         initialTab={authTab}
       />
 
