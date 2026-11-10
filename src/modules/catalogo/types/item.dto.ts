@@ -1,5 +1,15 @@
-/** DTOs de RST-ItemCatalog-Service y RST-Inventory-Service. Ajustar a los del Swagger. */
-export type Estilo = 'Sastre' | 'Calle' | 'Futuro' | 'Rebelde' | 'Esencial'
+/** DTOs de RST-ItemCatalog-Service y RST-Inventory-Service. */
+export type Estilo =
+  | 'Streetwear'
+  | 'Elegante'
+  | 'Casual'
+  | 'Vintage'
+  | 'Techwear'
+  | 'Sastre'
+  | 'Calle'
+  | 'Futuro'
+  | 'Rebelde'
+  | 'Esencial'
 
 export interface ItemResponseDto {
   id: string
@@ -17,7 +27,15 @@ export interface ItemResponseDto {
 
 export interface ItemFiltersDto {
   texto?: string
-  estilo?: Estilo
+  estilo?: Estilo | string
+  categoria?: string
+  tipo?: string
+  color?: string
   talla?: string
+  precioMin?: number
   precioMax?: number
+  origen?: string
+  marca?: string
+  cercaDe?: string
+  orden?: string
 }
