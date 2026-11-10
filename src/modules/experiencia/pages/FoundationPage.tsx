@@ -3,6 +3,7 @@ import { useResource } from '@/modules/core/hooks/useResource'
 import { errorKind, errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
+import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { donationService } from '../services/donationService'
 import { ESTADO_DONACION_LABEL, SIGUIENTE, type DonationDto, type EstadoDonacion } from '../types/donation.dto'
 import { CONSERVACION_LABEL } from '../types/secondhand.dto'
@@ -97,6 +98,10 @@ export default function FoundationPage() {
                         )
                       })}
                       {!SIGUIENTE[d.estado].length && <span className="text-xs text-white/50">Sin acciones</span>}
+                      {/* RF-41: coordinar la entrega con quien dona, sin publicar la dirección */}
+                      {(d.estado === 'APROBADA' || d.estado === 'EN_RECOGIDA') && (
+                        <ContactButton label="Escribir a quien dona" contacto={{ ...d.donante, tipo: 'DONANTE' }} asunto={`Donación: ${d.prenda.titulo}`} referenciaId={d.id} />
+                      )}
                     </div>
                   </div>
                 </li>

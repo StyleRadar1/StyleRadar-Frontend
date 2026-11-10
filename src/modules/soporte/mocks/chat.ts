@@ -1,18 +1,24 @@
 import type { ConversacionDto, MensajeDto } from '../types/chat.dto'
 
+/**
+ * Tiendas del catálogo que tienen cuenta de prueba, para que al escribirles la conversación
+ * le llegue a esa cuenta (Luna Store = t-1). Las demás reciben un id provisional.
+ */
+export const TIENDAS_DEMO: Record<string, string> = { 'Luna Store': 't-1' }
+
 /** Conversaciones de prueba por usuario (ids de las cuentas demo). El administrador no tiene chats. */
 export const seedConversations = (): Record<string, ConversacionDto[]> => ({
   'u-1': [
     { id: 'c1', contacto: { id: 'u-7', nombre: 'Sofía L.', tipo: 'VENDEDOR' }, asunto: 'Collar medalla dorado', ultimoMensaje: 'Sí, sigue disponible. ¿Te queda bien el sábado?', noLeidos: 1, actualizadaEn: '2026-11-08T19:40:00' },
     { id: 'c2', contacto: { id: 't-1', nombre: 'Luna Store', tipo: 'TIENDA' }, asunto: 'Consulta a la tienda', ultimoMensaje: 'Abrimos hasta las 8:00 p. m.', noLeidos: 0, actualizadaEn: '2026-11-07T17:05:00' },
-    { id: 'c3', contacto: { id: 'f-1', nombre: 'Fundación Abrigo Bogotá', tipo: 'FUNDACION' }, asunto: 'Donación: Suéter trenzado crudo', ultimoMensaje: '¿Qué día te queda bien para entregarla?', noLeidos: 0, actualizadaEn: '2026-11-05T10:02:00' },
+    { id: 'c3', contacto: { id: 'f-1', nombre: 'Fundación Abrigo Bogotá', tipo: 'FUNDACION' }, asunto: 'Donación: Suéter trenzado crudo', referenciaId: 'd1', ultimoMensaje: '¿Qué día te queda bien para entregarla?', noLeidos: 0, actualizadaEn: '2026-11-05T10:02:00' },
   ],
   't-1': [
     { id: 'c2', contacto: { id: 'u-1', nombre: 'Valentina R.', tipo: 'COMPRADOR' }, asunto: 'Consulta a la tienda', ultimoMensaje: 'Abrimos hasta las 8:00 p. m.', noLeidos: 0, actualizadaEn: '2026-11-07T17:05:00' },
     { id: 'c4', contacto: { id: 'u-8', nombre: 'Mateo P.', tipo: 'COMPRADOR' }, asunto: 'Chaqueta track negra', ultimoMensaje: '¿La tienen en talla L?', noLeidos: 1, actualizadaEn: '2026-11-09T09:20:00' },
   ],
   'f-1': [
-    { id: 'c3', contacto: { id: 'u-1', nombre: 'Valentina R.', tipo: 'DONANTE' }, asunto: 'Donación: Suéter trenzado crudo', ultimoMensaje: '¿Qué día te queda bien para entregarla?', noLeidos: 0, actualizadaEn: '2026-11-05T10:02:00' },
+    { id: 'c3', contacto: { id: 'u-1', nombre: 'Valentina R.', tipo: 'DONANTE' }, asunto: 'Donación: Suéter trenzado crudo', referenciaId: 'd1', ultimoMensaje: '¿Qué día te queda bien para entregarla?', noLeidos: 0, actualizadaEn: '2026-11-05T10:02:00' },
   ],
 })
 

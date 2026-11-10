@@ -4,6 +4,8 @@ import { Button, Badge } from '@/modules/core/design-system'
 import { Loading, ErrorState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useResource } from '@/modules/core/hooks/useResource'
+import { ContactButton } from '@/modules/soporte/components/ContactButton'
+import { tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { ItemCard } from '../components/ItemCard'
 import { itemService } from '../services/itemService'
 import type { ItemResponseDto } from '../types/item.dto'
@@ -120,6 +122,8 @@ export default function ItemDetailPage() {
                   <p className="mt-1 text-white/60">
                     Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong> ({prenda.barrio}).
                   </p>
+                  {/* RF-73: escribirle a la tienda por chat (reemplaza «Llamar») */}
+                  <ContactButton className="mt-3" label="Enviar mensaje a la tienda" contacto={tiendaContacto(prenda.tienda)} asunto={prenda.nombre} referenciaId={prenda.id} />
                 </div>
 
                 {/* Selector de tallas interactivas */}

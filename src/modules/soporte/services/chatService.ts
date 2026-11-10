@@ -3,10 +3,14 @@ import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { seedConversations, seedMessages } from '../mocks/chat'
-import { MAX_MENSAJE, type ConversacionDto, type MensajeDto } from '../types/chat.dto'
+import { MAX_MENSAJE, TIPO_ESPEJO, type ConversacionDto, type IniciarConversacionDto, type MensajeDto } from '../types/chat.dto'
 
 /** Rutas del API Gateway hacia ms-chat. Provisionales hasta tener el Swagger. */
 const BASE = '/api/chat/conversations'
+
+/** Se dispara cuando cambia algo que mueve el contador de mensajes sin leer del menú. */
+export const CHAT_CHANGED = 'sr:chat'
+const changed = () => window.dispatchEvent(new Event(CHAT_CHANGED))
 
 let convs: Record<string, ConversacionDto[]> | null = null
 let msgs: Record<string, MensajeDto[]> | null = null
@@ -25,6 +29,10 @@ const own = (id: string) => {
   if (!c) throw new ApiError(404, 'Esa conversación no existe.')
   return c
 }
+/** Cada participante tiene su copia de la conversación (su contador de no leídos y su etiqueta). */
+const copies = (id: string) => Object.entries(db().convs).flatMap(([owner, l]) => l.filter((c) => c.id === id).map((c) => [owner, c] as const))
+const mismaReferencia = (c: ConversacionDto, req: IniciarConversacionDto) =>
+  c.contacto.id === req.contacto.id && (c.referenciaId ?? c.asunto) === (req.referenciaId ?? req.asunto)
 
 export const chatService = {
   /** RF-40, RF-41 y RF-73: bandeja de la persona, la tienda o la fundación. */
@@ -36,14 +44,46 @@ export const chatService = {
     return apiClient.get<ConversacionDto[]>(BASE).then((r) => r.data)
   },
 
+  /** Total de mensajes sin leer, para el ícono de mensajes del menú. */
+  async unreadCount(): Promise<number> {
+    const l = await this.conversations()
+    return l.reduce((n, c) => n + c.noLeidos, 0)
+  },
+
+  /**
+   * RF-73 y RF-41: abre una conversación desde una prenda del catálogo o una donación.
+   * Si ya existe una con la misma persona sobre lo mismo, devuelve esa en lugar de duplicarla.
+   */
+  async start(req: IniciarConversacionDto): Promise<ConversacionDto> {
+    if (env.useMocks) {
+      failIfScenario()
+      const yo = me()
+      if (req.contacto.id === yo.id) throw new ApiError(400, 'Es tu propia publicación: no puedes escribirte a ti misma o a ti mismo.')
+      const mias = (db().convs[yo.id] ??= [])
+      const existente = mias.find((c) => mismaReferencia(c, req))
+      if (existente) return mockDelay(existente, 200)
+      const ahora = new Date().toISOString()
+      const c: ConversacionDto = { id: `c-${Date.now().toString(36)}`, contacto: req.contacto, asunto: req.asunto, referenciaId: req.referenciaId, noLeidos: 0, actualizadaEn: ahora }
+      mias.push(c)
+      // La otra persona la ve en su bandeja cuando llegue el primer mensaje (y si es una cuenta de prueba, se puede comprobar entrando con ella)
+      ;(db().convs[req.contacto.id] ??= []).push({ ...c, contacto: { id: yo.id, nombre: yo.name, tipo: TIPO_ESPEJO[req.contacto.tipo] } })
+      db().msgs[c.id] = []
+      return mockDelay(c, 300)
+    }
+    return apiClient.post<ConversacionDto>(BASE, req).then((r) => r.data)
+  },
+
   /** Al abrir la conversación sus mensajes quedan leídos. */
   async messages(id: string): Promise<MensajeDto[]> {
     if (env.useMocks) {
       failIfScenario()
-      own(id).noLeidos = 0
+      const c = own(id)
+      if (c.noLeidos) { c.noLeidos = 0; changed() }
       return mockDelay(db().msgs[id] ?? [])
     }
-    return apiClient.get<MensajeDto[]>(`${BASE}/${encodeURIComponent(id)}/messages`).then((r) => r.data)
+    const r = await apiClient.get<MensajeDto[]>(`${BASE}/${encodeURIComponent(id)}/messages`)
+    changed()
+    return r.data
   },
 
   async send(id: string, texto: string): Promise<MensajeDto> {
@@ -52,11 +92,15 @@ export const chatService = {
     if (t.length > MAX_MENSAJE) throw new ApiError(400, `El mensaje no puede superar ${MAX_MENSAJE} caracteres.`)
     if (env.useMocks) {
       failIfScenario('conflicto')
-      const c = own(id)
-      const m: MensajeDto = { id: `m-${Date.now().toString(36)}`, conversacionId: id, autorId: me().id, texto: t, enviadoEn: new Date().toISOString() }
+      own(id)
+      const yo = me().id
+      const m: MensajeDto = { id: `m-${Date.now().toString(36)}`, conversacionId: id, autorId: yo, texto: t, enviadoEn: new Date().toISOString() }
       ;(db().msgs[id] ??= []).push(m)
-      c.ultimoMensaje = t
-      c.actualizadaEn = m.enviadoEn
+      for (const [owner, c] of copies(id)) {
+        c.ultimoMensaje = t
+        c.actualizadaEn = m.enviadoEn
+        if (owner !== yo) c.noLeidos += 1
+      }
       return mockDelay(m, 300)
     }
     return apiClient.post<MensajeDto>(`${BASE}/${encodeURIComponent(id)}/messages`, { texto: t }).then((r) => r.data)
