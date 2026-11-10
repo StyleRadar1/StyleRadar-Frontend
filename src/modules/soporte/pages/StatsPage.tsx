@@ -4,10 +4,10 @@ import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Statu
 import { formatCOP } from '@/modules/core/utils/format'
 import {
   useStatsRole, useStoreStats, useStoreInventory,
-  useFoundationStats, useFoundationMonths,
   useAdminIndicators, useAdminIncome, useAdminAccounts,
 } from '../hooks/useStats'
 import type { KpiDto, StatsPeriod } from '../types/stats.dto'
+import { FoundationStatsView } from '../components/FoundationStats'
 
 /* ─── Componentes auxiliares de Stats ─── */
 
@@ -94,42 +94,6 @@ function StoreStatsView() {
           <ProgressBar label="Disponibles" value={inventory.disponibles} total={inventory.total} tone="bg-green-500" />
           <ProgressBar label="Últimas unidades" value={inventory.ultimasUnidades} total={inventory.total} tone="bg-yellow-500" />
           <ProgressBar label="Agotadas" value={inventory.agotadas} total={inventory.total} tone="bg-[#ff8a8a]" />
-        </Card>
-      )}
-    </>
-  )
-}
-
-function FoundationStatsView() {
-  const { data: stats, loading, error, reload } = useFoundationStats()
-  const { data: months } = useFoundationMonths()
-
-  if (loading) return <Loading label="Cargando estadísticas de tu fundación…" />
-  if (error) return <ErrorState error={error} onRetry={reload} />
-  if (!stats) return <EmptyState title="Sin datos">Cuando recibas donaciones, verás los indicadores aquí.</EmptyState>
-
-  return (
-    <>
-      <h2 className="text-2xl font-bold">Estadísticas de tu fundación</h2>
-      <p className="text-sm text-white/60">Solo tú y StyleRadar ven estos datos.</p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Prendas recibidas</p>
-          <p className="mt-1 text-2xl font-extrabold">{stats.totalPrendasRecibidas.toLocaleString('es-CO')}</p>
-        </Card>
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">De tiendas</p>
-          <p className="mt-1 text-2xl font-extrabold">{stats.donaciones.deTiendas.toLocaleString('es-CO')}</p>
-        </Card>
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">De personas</p>
-          <p className="mt-1 text-2xl font-extrabold">{stats.donaciones.dePersonas.toLocaleString('es-CO')}</p>
-        </Card>
-      </div>
-      {months.length > 0 && (
-        <Card className="mt-6">
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-[.16em] text-arena">Solicitudes mensuales</h3>
-          <BarChart data={months as unknown as Record<string, string | number>[]} labelKey="mes" valueKey="total" />
         </Card>
       )}
     </>

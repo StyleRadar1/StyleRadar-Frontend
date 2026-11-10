@@ -21,16 +21,20 @@ export const MOCK_STORE_INVENTORY: StoreInventoryDto = {
 
 export const MOCK_FOUNDATION_STATS: FoundationStatsDto = {
   totalPrendasRecibidas: 420,
-  donaciones: { total: 48, deTiendas: 18, dePersonas: 30 },
+  donaciones: { total: 55, deTiendas: 21, dePersonas: 34 },
+  meta: { etiqueta: 'septiembre 2026', recibidas: 99, objetivo: 180 },
+  porTipo: [{ tipo: 'Chaquetas', pct: 44 }, { tipo: 'Calzado', pct: 26 }, { tipo: 'Suéteres', pct: 17 }, { tipo: 'Pantalones', pct: 13 }],
+  porEstado: [{ estado: 'Pendiente', cantidad: 5 }, { estado: 'Aceptada', cantidad: 7 }, { estado: 'Recogida', cantidad: 3 }, { estado: 'Recibida', cantidad: 31 }],
 }
 
+/** Mismos datos del prototipo (vista «Ver como tabla» de Solicitudes por mes). */
 export const MOCK_FOUNDATION_MONTHS: FoundationMonthDto[] = [
-  { mes: 'abr', etiqueta: 'Abril 2026', personas: 12, tiendas: 4, total: 16 },
-  { mes: 'may', etiqueta: 'Mayo 2026', personas: 18, tiendas: 6, total: 24 },
-  { mes: 'jun', etiqueta: 'Junio 2026', personas: 15, tiendas: 5, total: 20 },
-  { mes: 'jul', etiqueta: 'Julio 2026', personas: 20, tiendas: 7, total: 27 },
-  { mes: 'ago', etiqueta: 'Agosto 2026', personas: 22, tiendas: 8, total: 30 },
-  { mes: 'sep', etiqueta: 'Septiembre 2026', personas: 25, tiendas: 9, total: 34 },
+  { mes: 'abr', etiqueta: 'abr 2026', personas: 17, tiendas: 3, total: 20 },
+  { mes: 'may', etiqueta: 'may 2026', personas: 19, tiendas: 6, total: 25 },
+  { mes: 'jun', etiqueta: 'jun 2026', personas: 21, tiendas: 4, total: 25 },
+  { mes: 'jul', etiqueta: 'jul 2026', personas: 17, tiendas: 5, total: 22 },
+  { mes: 'ago', etiqueta: 'ago 2026', personas: 18, tiendas: 7, total: 25 },
+  { mes: 'sep', etiqueta: 'sep 2026', personas: 15, tiendas: 7, total: 22 },
 ]
 
 /* ─── Administrador (RF-86 a 91) ─── */
