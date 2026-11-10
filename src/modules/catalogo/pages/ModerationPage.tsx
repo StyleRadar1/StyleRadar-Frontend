@@ -191,7 +191,7 @@ export default function ModerationPage() {
       {/* Estados principales */}
       {loading && <Loading label="Cargando cola de moderación..." />}
 
-      {error && <ErrorState error={error} onRetry={reload} title="No se pudo cargar la moderación" />}
+      {!!error && <ErrorState error={error} onRetry={reload} title="No se pudo cargar la moderación" />}
 
       {!loading && !error && itemsFiltrados.length === 0 && (
         <div className="mt-10">

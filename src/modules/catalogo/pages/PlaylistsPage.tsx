@@ -48,8 +48,8 @@ export default function PlaylistsPage() {
     )
   }, [playlists, tab, busqueda, usuarioActual.id])
 
-  const handleCrear = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleCrear = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     if (!nombre.trim()) {
       setErrorCrear('Escribe el nombre de la playlist.')
       return
@@ -207,7 +207,7 @@ export default function PlaylistsPage() {
       {/* Estados */}
       {loading && <Loading label="Cargando playlists de estilo..." />}
 
-      {error && <ErrorState error={error} onRetry={reload} title="No se pudieron cargar las playlists" />}
+      {!!error && <ErrorState error={error} onRetry={reload} title="No se pudieron cargar las playlists" />}
 
       {!loading && !error && playlistsFiltradas.length === 0 && (
         <div className="mt-10">
@@ -317,7 +317,7 @@ export default function PlaylistsPage() {
         title="Crear nueva playlist de estilo"
         confirmLabel={guardando ? 'Guardando...' : 'Crear playlist'}
         busy={guardando}
-        onConfirm={handleCrear as () => void}
+        onConfirm={() => { void handleCrear() }}
         onCancel={() => setMostrarCrear(false)}
       >
         <form onSubmit={handleCrear} className="space-y-4">

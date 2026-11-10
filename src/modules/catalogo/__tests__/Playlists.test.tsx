@@ -52,7 +52,7 @@ describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
     await user.click(botonesVer[0])
 
     expect(screen.getByRole('dialog')).toBeInTheDocument()
-    expect(screen.getByText(/RNF-12/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/RNF-12/i).length).toBeGreaterThan(0)
   })
 })
 

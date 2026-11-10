@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Card, Button, Badge } from '@/modules/core/design-system'
+import { Button, Badge } from '@/modules/core/design-system'
 import { Loading, ErrorState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useResource } from '@/modules/core/hooks/useResource'
@@ -59,7 +59,7 @@ export default function ItemDetailPage() {
       {/* Estados */}
       {loading && <Loading label="Cargando detalles de la prenda..." />}
 
-      {error && (
+      {!!error && (
         <ErrorState
           error={error}
           onRetry={reload}

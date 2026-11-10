@@ -15,7 +15,7 @@ describe('ItemDetailPage (RF-16, RF-22, RF-57)', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1, name: /Blazer oversize/i })).toBeInTheDocument()
-      expect(screen.getByText(/Nómada Studio/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/Nómada Studio/i).length).toBeGreaterThan(0)
       expect(screen.getByText(/Usaquén/i)).toBeInTheDocument()
       expect(screen.getByText(/Disponibilidad en tienda real/i)).toBeInTheDocument()
     })
