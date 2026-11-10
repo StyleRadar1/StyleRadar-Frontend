@@ -51,7 +51,7 @@ export const chatService = {
   },
 
   /**
-   * RF-40 y RF-73: abre una conversación desde una publicación, una prenda de tienda o una donación.
+   * RF-73 y RF-41: abre una conversación desde una prenda del catálogo o una donación.
    * Si ya existe una con la misma persona sobre lo mismo, devuelve esa en lugar de duplicarla.
    */
   async start(req: IniciarConversacionDto): Promise<ConversacionDto> {

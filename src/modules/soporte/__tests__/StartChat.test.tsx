@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
-import SecondHandPage from '@/modules/experiencia/pages/SecondHandPage'
+import CatalogPage from '@/modules/catalogo/pages/CatalogPage'
 import { ContactButton } from '../components/ContactButton'
 import { MessagesLink } from '../components/MessagesLink'
 import MessagesPage from '../pages/MessagesPage'
@@ -11,30 +11,29 @@ import { loginAs, renderAt } from './helpers'
 
 beforeEach(() => { resetChatMock(); localStorage.clear(); sessionStorage.clear() })
 
-describe('iniciar una conversación (RF-40, RF-41 y RF-73)', () => {
-  it('RF-40: desde una publicación de segunda mano abre el chat con quien vende', async () => {
+describe('iniciar una conversación (RF-41 y RF-73)', () => {
+  it('RF-73: cada prenda del catálogo tiene el ícono para escribirle a la tienda', async () => {
     const user = userEvent.setup()
     loginAs('u-1', 'Valentina Rojas')
-    renderAt('/segunda-mano', [{ path: '/segunda-mano', element: <SecondHandPage /> }, { path: '/mensajes', element: <MessagesPage /> }])
+    renderAt('/catalogo', [{ path: '/catalogo', element: <CatalogPage /> }, { path: '/mensajes', element: <MessagesPage /> }])
 
-    const resultados = await screen.findByRole('list', { name: 'Resultados' }, { timeout: 3000 })
-    const blazer = within(resultados).getByText('Blazer negro oversize').closest('li')!
-    await user.click(within(blazer).getByRole('button', { name: 'Escribir a quien vende' }))
+    await screen.findByRole('heading', { name: 'Hoodie azul noche' }, { timeout: 3000 })
+    const iconos = screen.getAllByRole('button', { name: /^Escribir a .+ sobre / })
+    expect(iconos.length).toBe(screen.getAllByRole('heading', { level: 3 }).length)
+    await user.click(screen.getByRole('button', { name: 'Escribir a Luna Store sobre Hoodie azul noche' }))
 
-    const hilo = await screen.findByRole('list', { name: 'Mensajes con Mateo P.' }, { timeout: 3000 })
-    expect(screen.getByText(/Acuerden aquí el lugar y la hora/)).toBeInTheDocument()
-    await user.type(screen.getByLabelText('Escribe un mensaje'), '¿Sigue disponible el blazer?')
+    const hilo = await screen.findByRole('list', { name: 'Mensajes con Luna Store' }, { timeout: 3000 })
+    await user.type(screen.getByLabelText('Escribe un mensaje'), '¿Lo tienen en talla M?')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
-    expect(await within(hilo).findByText('¿Sigue disponible el blazer?')).toBeInTheDocument()
+    expect(await within(hilo).findByText('¿Lo tienen en talla M?')).toBeInTheDocument()
   })
 
-  it('en su propia publicación no ofrece escribirse', async () => {
-    loginAs('u-1', 'Valentina Rojas')
-    renderAt('/segunda-mano', [{ path: '/segunda-mano', element: <SecondHandPage /> }])
-    const resultados = await screen.findByRole('list', { name: 'Resultados' }, { timeout: 3000 })
-    const propia = within(resultados).getByText('Jean recto azul claro').closest('li')!
-    expect(within(propia).getByText('Es tu publicación')).toBeInTheDocument()
-    expect(within(propia).queryByRole('button', { name: 'Escribir a quien vende' })).not.toBeInTheDocument()
+  it('la tienda no ve el ícono en sus propias prendas', async () => {
+    loginAs('t-1', 'Luna Store', 'ADMIN_ALMACEN')
+    renderAt('/catalogo', [{ path: '/catalogo', element: <CatalogPage /> }])
+    await screen.findByRole('heading', { name: 'Hoodie azul noche' }, { timeout: 3000 })
+    expect(screen.queryByRole('button', { name: /^Escribir a Luna Store/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Escribir a Nómada Studio sobre Blazer oversize' })).toBeInTheDocument()
   })
 
   it('no duplica la conversación si se escribe dos veces sobre lo mismo', async () => {
@@ -67,8 +66,9 @@ describe('iniciar una conversación (RF-40, RF-41 y RF-73)', () => {
 
   it('sin sesión invita a iniciar sesión y el administrador no ve el botón', () => {
     const props = { label: 'Enviar mensaje a la tienda', contacto: tiendaContacto('Luna Store'), asunto: 'Hoodie' }
-    const { unmount } = renderAt('/', [{ path: '/', element: <ContactButton {...props} /> }])
+    const { unmount } = renderAt('/', [{ path: '/', element: <><ContactButton {...props} /><ContactButton icon {...props} /></> }])
     expect(screen.getByRole('link', { name: 'Inicia sesión para escribir' })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: 'Inicia sesión para escribir a Luna Store' })).toHaveAttribute('href', '/login')
     unmount()
     loginAs('a-1', 'Mariana Bernal', 'ADMIN_STYLERADAR')
     renderAt('/', [{ path: '/', element: <ContactButton {...props} /> }])

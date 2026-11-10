@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
-import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { MyListings } from '../components/MyListings'
 import { secondHandService } from '../services/secondHandService'
 import { CONSERVACIONES, CONSERVACION_LABEL, TALLAS, type Conservacion, type ListingDto } from '../types/secondhand.dto'
@@ -99,8 +98,6 @@ function Explore() {
                     <h3 className="mt-1 font-semibold">{l.titulo}</h3>
                     <p className="text-xs text-white/60">{l.marca} · {l.vendedor.nombre} · {l.barrio}</p>
                     <p className="mt-2 font-semibold">{formatCOP(l.precio)}</p>
-                    {/* RF-40: el chat se abre desde la publicación activa */}
-                    <ContactButton className="mt-3" label="Escribir a quien vende" contacto={{ ...l.vendedor, tipo: 'VENDEDOR' }} asunto={l.titulo} referenciaId={l.id} />
                   </div>
                 </li>
               ))}
