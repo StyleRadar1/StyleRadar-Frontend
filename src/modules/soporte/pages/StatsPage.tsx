@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { Card, Badge } from '@/modules/core/design-system'
+import { Card } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
-import { formatCOP } from '@/modules/core/utils/format'
 import {
   useStatsRole, useStoreStats, useStoreInventory,
-  useAdminIndicators, useAdminIncome, useAdminAccounts,
 } from '../hooks/useStats'
 import type { KpiDto, StatsPeriod } from '../types/stats.dto'
 import { FoundationStatsView } from '../components/FoundationStats'
+import { AdminStatsView } from '../components/AdminStats'
 
 /* ─── Componentes auxiliares de Stats ─── */
 
@@ -33,25 +32,6 @@ function ProgressBar({ label, value, total, tone }: { label: string; value: numb
       <div className="mt-1 h-2 w-full rounded-full bg-white/10">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
       </div>
-    </div>
-  )
-}
-
-function BarChart({ data, labelKey, valueKey, unit }: { data: readonly Record<string, string | number>[]; labelKey: string; valueKey: string; unit?: string }) {
-  const max = Math.max(...data.map((d) => Number(d[valueKey]) || 0), 1)
-  return (
-    <div className="flex items-end gap-2" style={{ height: 160 }} role="img" aria-label="Gráfico de barras">
-      {data.map((d, i) => {
-        const val = Number(d[valueKey]) || 0
-        const h = Math.max(4, (val / max) * 140)
-        return (
-          <div key={i} className="flex flex-1 flex-col items-center gap-1">
-            <span className="text-[10px] text-white/60">{val}{unit}</span>
-            <div className="w-full rounded-t bg-violeta" style={{ height: h }} />
-            <span className="text-[10px] text-white/50">{String(d[labelKey])}</span>
-          </div>
-        )
-      })}
     </div>
   )
 }
@@ -94,101 +74,6 @@ function StoreStatsView() {
           <ProgressBar label="Disponibles" value={inventory.disponibles} total={inventory.total} tone="bg-green-500" />
           <ProgressBar label="Últimas unidades" value={inventory.ultimasUnidades} total={inventory.total} tone="bg-yellow-500" />
           <ProgressBar label="Agotadas" value={inventory.agotadas} total={inventory.total} tone="bg-[#ff8a8a]" />
-        </Card>
-      )}
-    </>
-  )
-}
-
-function AdminStatsView() {
-  const { data: indicators, loading, error, reload } = useAdminIndicators()
-  const { data: income } = useAdminIncome()
-  const { data: accounts } = useAdminAccounts()
-
-  if (loading) return <Loading label="Cargando estadísticas de la plataforma…" />
-  if (error) return <ErrorState error={error} onRetry={reload} />
-  if (!indicators) return <EmptyState title="Sin datos">No hay indicadores disponibles.</EmptyState>
-
-  return (
-    <>
-      <h2 className="text-2xl font-bold">Estadísticas generales</h2>
-      <p className="text-sm text-white/60">Indicadores globales de StyleRadar.</p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Usuarios activos</p>
-          <p className="mt-1 text-2xl font-extrabold">{indicators.usuariosActivos.toLocaleString('es-CO')}</p>
-          <p className={`text-xs ${indicators.variacionUsuarios.direccion === 'up' ? 'text-green-400' : 'text-[#ff8a8a]'}`}>
-            {indicators.variacionUsuarios.direccion === 'up' ? '▲' : '▼'} {indicators.variacionUsuarios.pct}%
-          </p>
-        </Card>
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Tiendas verificadas</p>
-          <p className="mt-1 text-2xl font-extrabold">{indicators.tiendas.verificadas}</p>
-          <p className="text-xs text-white/50">{indicators.tiendas.pendientes} pendientes · {indicators.tiendas.total} total</p>
-        </Card>
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Ingresos del mes</p>
-          <p className="mt-1 text-2xl font-extrabold">{formatCOP(indicators.ingresosMes)}</p>
-          <p className={`text-xs ${indicators.variacionIngresos.direccion === 'up' ? 'text-green-400' : 'text-[#ff8a8a]'}`}>
-            {indicators.variacionIngresos.direccion === 'up' ? '▲' : '▼'} {indicators.variacionIngresos.pct}%
-          </p>
-        </Card>
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Fundaciones activas</p>
-          <p className="mt-1 text-2xl font-extrabold">{indicators.fundacionesActivas}</p>
-        </Card>
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Prendas publicadas</p>
-          <p className="mt-1 text-2xl font-extrabold">{indicators.prendasPublicadas.toLocaleString('es-CO')}</p>
-        </Card>
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Playlists creadas</p>
-          <p className="mt-1 text-2xl font-extrabold">{indicators.playlistsCreadas.toLocaleString('es-CO')}</p>
-        </Card>
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Donaciones del mes</p>
-          <p className="mt-1 text-2xl font-extrabold">{indicators.donacionesMes}</p>
-        </Card>
-      </div>
-
-      {/* Ingresos */}
-      {income && (
-        <Card className="mt-6">
-          <h3 className="text-sm font-bold uppercase tracking-[.16em] text-arena">Ingresos por suscripciones</h3>
-          <div className="mt-3 grid gap-4 sm:grid-cols-3">
-            <div>
-              <p className="text-xs text-white/50">Netos este mes</p>
-              <p className="text-xl font-bold">{formatCOP(income.mesActual.ingresosNetos)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-white/50">Reembolsos descontados</p>
-              <p className="text-xl font-bold text-[#ff8a8a]">−{formatCOP(income.mesActual.reembolsosDescontados)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-white/50">Meta</p>
-              <p className="text-xl font-bold">{income.mesActual.porcentajeAvance}% de {formatCOP(income.mesActual.meta)}</p>
-            </div>
-          </div>
-          {income.historico.length > 0 && (
-            <div className="mt-4">
-              <BarChart data={income.historico} labelKey="mes" valueKey="total" />
-            </div>
-          )}
-        </Card>
-      )}
-
-      {/* Cuentas por plan */}
-      {accounts && (
-        <Card className="mt-6">
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-[.16em] text-arena">Cuentas por plan</h3>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {accounts.resumen.map((r) => (
-              <div key={r.plan} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-3">
-                <span className="text-sm">{r.plan}</span>
-                <Badge tone="violeta">{r.cuentas.toLocaleString('es-CO')}</Badge>
-              </div>
-            ))}
-          </div>
         </Card>
       )}
     </>

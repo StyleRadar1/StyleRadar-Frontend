@@ -30,9 +30,9 @@ describe('estadísticas de la fundación (RF-82 a 85)', () => {
   it('las solicitudes por mes se pueden ver como tabla y cada mes tiene tooltip', async () => {
     const user = userEvent.setup()
     renderAt('/fundacion/estadisticas', routes)
-    const mayo = await screen.findByRole('listitem', { name: 'may 2026: 19 de personas y 6 de tiendas' }, { timeout: 3000 })
+    const mayo = await screen.findByRole('listitem', { name: 'may 2026: De personas 19, De tiendas 6' }, { timeout: 3000 })
     await user.hover(mayo)
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Personas 19')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('De personas 19')
 
     await user.click(screen.getByRole('button', { name: 'Ver como tabla' }))
     const tabla = screen.getByRole('table', { name: 'Detalle de solicitudes mensuales' })

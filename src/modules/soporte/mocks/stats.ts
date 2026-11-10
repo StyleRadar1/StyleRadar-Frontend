@@ -1,7 +1,7 @@
 import type {
   StoreStatsDto, StoreInventoryDto,
   FoundationStatsDto, FoundationMonthDto,
-  AdminIndicatorsDto, AdminIncomeDto, AdminAccountsByPlanDto,
+  AdminIndicatorsDto, AdminIncomeDto, AdminAccountsByPlanDto, AdminDailyDto, AdminLiveDto,
   StatsPeriod,
 } from '../types/stats.dto'
 
@@ -39,34 +39,52 @@ export const MOCK_FOUNDATION_MONTHS: FoundationMonthDto[] = [
 
 /* ─── Administrador (RF-86 a 91) ─── */
 
+/* Mismos datos del módulo de administración del prototipo (septiembre 2026). */
 export const MOCK_ADMIN_INDICATORS: AdminIndicatorsDto = {
-  usuariosActivos: 1892,
-  variacionUsuarios: { pct: 11.2, direccion: 'up' },
-  tiendas: { verificadas: 24, pendientes: 5, total: 29 },
-  fundacionesActivas: 8,
-  ingresosMes: 820_000,
+  usuariosActivos: 1859,
+  variacionUsuarios: { pct: 11.2, direccion: 'up', vsMesAnterior: 'agosto' },
+  tiendas: { verificadas: 5, pendientes: 1, total: 6 },
+  fundacionesActivas: 4,
+  ingresosMes: 222_700,
   variacionIngresos: { pct: 8.5, direccion: 'up' },
-  prendasPublicadas: 312,
-  playlistsCreadas: 428,
-  donacionesMes: 94,
+  prendasPublicadas: 67,
+  playlistsCreadas: 422,
+  donacionesMes: 95,
+}
+
+const DIAS: [number, number, number][] = [
+  [890, 32, 30], [760, 32, 32], [760, 24, 43], [730, 16, 50], [1050, 24, 56], [1020, 24, 63], [770, 20, 32], [930, 20, 51],
+  [810, 20, 45], [800, 32, 47], [730, 20, 43], [980, 52, 57], [1220, 44, 74], [810, 28, 46], [850, 36, 45], [850, 24, 41],
+  [950, 24, 42], [960, 40, 58], [1370, 52, 73], [1270, 44, 82], [860, 32, 44], [880, 36, 56], [850, 44, 62], [890, 36, 50],
+]
+export const MOCK_ADMIN_DAILY: AdminDailyDto = {
+  mes: 'septiembre 2026',
+  dias: DIAS.map(([busquedas, registros, publicaciones], i) => ({ etiqueta: `${i + 1} sep`, busquedas, registros, publicaciones })),
 }
 
 export const MOCK_ADMIN_INCOME: AdminIncomeDto = {
-  mesActual: { mes: 'sep', ingresosNetos: 820_000, reembolsosDescontados: 29_800, meta: 1_000_000, porcentajeAvance: 82 },
+  mesActual: { mes: 'sep', ingresosNetos: 222_700, reembolsosDescontados: 29_800, meta: 1_000_000, porcentajeAvance: 22 },
   historico: [
-    { mes: 'jun', usuarios: 280_000, tiendas: 350_000, total: 630_000 },
-    { mes: 'jul', usuarios: 320_000, tiendas: 380_000, total: 700_000 },
-    { mes: 'ago', usuarios: 360_000, tiendas: 410_000, total: 770_000 },
-    { mes: 'sep', usuarios: 390_000, tiendas: 430_000, total: 820_000 },
+    { mes: 'jun', usuarios: 89_400, tiendas: 356_000, total: 445_400 },
+    { mes: 'jul', usuarios: 74_500, tiendas: 356_000, total: 430_500 },
+    { mes: 'ago', usuarios: 89_400, tiendas: 356_000, total: 445_400 },
+    { mes: 'sep', usuarios: 44_700, tiendas: 178_000, total: 222_700 },
   ],
 }
 
 export const MOCK_ADMIN_ACCOUNTS: AdminAccountsByPlanDto = {
-  compradores: { radar: 1420, radarPlus: 472 },
+  compradores: { radar: 840, radarPlus: 300 },
   almacenes: { basico: 18, destacado: 11 },
   resumen: [
-    { plan: 'Radar (gratis)', cuentas: 1420 },
-    { plan: 'Radar+', cuentas: 472 },
-    { plan: 'Tiendas aliadas', cuentas: 29 },
+    { plan: 'Radar (gratis)', cuentas: 840 },
+    { plan: 'Radar+', cuentas: 300 },
+    { plan: 'Tiendas aliadas', cuentas: 63 },
   ],
+}
+
+/** Sesiones abiertas simuladas: se mueven un poco en cada consulta, como en el prototipo. */
+let sesiones = 230
+export const mockAdminLive = (): AdminLiveDto => {
+  sesiones = Math.max(180, Math.min(290, sesiones + Math.round((Math.random() - 0.45) * 16)))
+  return { sesionesAbiertas: sesiones, ultimaActualizacion: new Date().toISOString() }
 }
