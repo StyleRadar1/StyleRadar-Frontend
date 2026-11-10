@@ -4,7 +4,6 @@ import { LandingHeader, LandingMobileMenu, LandingFooter } from '@/components/la
 import {
   Hero,
   ProblemSection,
-  HowItWorks,
   CategoriesGrid,
   VideoReels,
   ClothingCycle,
@@ -58,22 +57,19 @@ export default function LandingPage() {
         {/* 2. Problemática urbana en Bogotá */}
         <ProblemSection />
 
-        {/* 3. Cómo funciona / Flujo en 4 pasos */}
-        <HowItWorks />
-
-        {/* 4. Categorías de estilo */}
+        {/* 3. Categorías de estilo */}
         <CategoriesGrid />
 
-        {/* 5. Video reels / Módulos interactivos en video */}
+        {/* 4. Video reels / Módulos interactivos en video */}
         <VideoReels />
 
-        {/* 6. Ciclo de la ropa y economía circular */}
+        {/* 5. Ciclo de la ropa y economía circular */}
         <ClothingCycle />
 
-        {/* 7. Planes de membresía */}
+        {/* 6. Planes de membresía */}
         <PricingPlans onOpenRegister={handleOpenRegister} />
 
-        {/* 8. Mapa de boutiques de Bogotá */}
+        {/* 7. Mapa de boutiques de Bogotá */}
         <MapPreview />
       </main>
 
