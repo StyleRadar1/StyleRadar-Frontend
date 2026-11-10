@@ -143,6 +143,11 @@ function Thread({ conv, me, onBack, onRead, onSent }: ThreadProps) {
         </div>
         {conv.contacto.tipo === 'TIENDA' && <Link to={`/tiendas/${conv.contacto.id}`} className="ml-auto shrink-0 text-sm underline">Ver tienda</Link>}
       </header>
+      {conv.contacto.tipo !== 'TIENDA' && (
+        <p className="border-b border-white/10 bg-white/[.03] px-4 py-2 text-xs text-white/65">
+          Acuerden aquí el lugar y la hora de la entrega. No los publiques en el anuncio y prefiere sitios públicos.
+        </p>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4">
         {loading && !msgs.length ? <Loading label="Cargando mensajes…" />

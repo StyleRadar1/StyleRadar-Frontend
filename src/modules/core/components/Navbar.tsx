@@ -4,13 +4,14 @@ import { Logo } from '@/modules/core/design-system'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { ThemeSelect } from '@/modules/core/theme/ThemeSelect'
+import { MessagesLink } from '@/modules/soporte/components/MessagesLink'
 import { NotificationBell } from '@/modules/soporte/components/NotificationBell'
 
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
-  COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/playlists', 'Playlists'], ['/segunda-mano', 'Segunda mano'], ['/mensajes', 'Mensajes'], ['/planes', 'Planes']],
-  ADMIN_ALMACEN: [['/tienda/inventario', 'Inventario'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción'], ['/mensajes', 'Mensajes']],
-  REPRESENTANTE_FUNDACION: [['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas'], ['/mensajes', 'Mensajes']],
+  COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/playlists', 'Playlists'], ['/segunda-mano', 'Segunda mano'], ['/planes', 'Planes']],
+  ADMIN_ALMACEN: [['/tienda/inventario', 'Inventario'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
+  REPRESENTANTE_FUNDACION: [['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
   ADMIN_STYLERADAR: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
 }
 
@@ -33,6 +34,8 @@ export function Navbar() {
           <ThemeSelect className="max-md:hidden" />
           {user ? (
             <>
+              {/* RF-73: la tienda (y quien compra o la fundación) responde desde el ícono de mensajes */}
+              {user.role !== 'ADMIN_STYLERADAR' && <MessagesLink />}
               {user.role === 'COMPRADOR' && <NotificationBell />}
               <span className="hidden items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold uppercase tracking-wider sm:inline-flex">
                 <i className={`h-2 w-2 rounded-full ${DOT[user.role]}`} />{ROLE_LABEL[user.role]}
