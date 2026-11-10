@@ -52,7 +52,7 @@ export interface FoundationMonthDto {
 /** Indicadores admin (RF-86 a 91). */
 export interface AdminIndicatorsDto {
   usuariosActivos: number
-  variacionUsuarios: { pct: number; direccion: 'up' | 'down' | 'neutral' }
+  variacionUsuarios: { pct: number; direccion: 'up' | 'down' | 'neutral'; vsMesAnterior?: string }
   tiendas: { verificadas: number; pendientes: number; total: number }
   fundacionesActivas: number
   ingresosMes: number
@@ -79,6 +79,18 @@ export interface AdminAccountsByPlanDto {
   compradores: { radar: number; radarPlus: number }
   almacenes: { basico: number; destacado: number }
   resumen: { plan: string; cuentas: number }[]
+}
+
+/** Actividad diaria de la plataforma (RF-86): un registro por día del mes. */
+export interface AdminDailyDto {
+  mes: string
+  dias: { etiqueta: string; busquedas: number; registros: number; publicaciones: number }[]
+}
+
+/** Sesiones abiertas en este momento (RF-88). */
+export interface AdminLiveDto {
+  sesionesAbiertas: number
+  ultimaActualizacion: string
 }
 
 export type StatsPeriod = '7d' | '30d' | '90d'

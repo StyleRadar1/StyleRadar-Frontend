@@ -1,7 +1,9 @@
 import { lazy, Suspense, type ReactNode } from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import type { Role } from '@/modules/core/types/roles'
 import { NotFound } from '@/modules/core/components/NotFound'
+import { WelcomeOverlay } from '@/modules/core/components/WelcomeOverlay'
+import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
 
@@ -32,6 +34,11 @@ const AdminPayments = lazy(() => import('@/modules/transacciones/pages/AdminPaym
 const Alerts = lazy(() => import('@/modules/soporte/pages/AlertsPage'))
 const Messages = lazy(() => import('@/modules/soporte/pages/MessagesPage'))
 const Stats = lazy(() => import('@/modules/soporte/pages/StatsPage'))
+const AdminStores = lazy(() => import('@/modules/administracion/pages/AdminStoresPage'))
+const AdminStoreDetail = lazy(() => import('@/modules/administracion/pages/AdminStoreDetailPage'))
+const AdminFoundations = lazy(() => import('@/modules/administracion/pages/AdminFoundationsPage'))
+const AdminFoundationDetail = lazy(() => import('@/modules/administracion/pages/AdminFoundationDetailPage'))
+const AdminPlaylists = lazy(() => import('@/modules/administracion/pages/AdminPlaylistsPage'))
 
 const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-white/60">Cargando…</p>}>{el}</Suspense>
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
@@ -39,10 +46,14 @@ const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{
 const USER: Role[] = ['COMPRADOR']
 const STORE: Role[] = ['ADMIN_ALMACEN']
 const FOUND: Role[] = ['REPRESENTANTE_FUNDACION']
-const ADMIN: Role[] = ['ADMIN_STYLERADAR']
 const ANY: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION', 'ADMIN_STYLERADAR']
 
-export const router = createBrowserRouter([
+/** Raíz: la bienvenida al iniciar sesión vive aquí para verse aunque se pase del sitio al módulo de administración. */
+function RootLayout() {
+  return <><Outlet /><WelcomeOverlay /></>
+}
+
+export const router = createBrowserRouter([{ element: <RootLayout />, children: [
   {
     element: <AppLayout />,
     children: [
@@ -76,12 +87,23 @@ export const router = createBrowserRouter([
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },
       { path: '/fundacion/estadisticas', element: only(FOUND, <Stats />) },
-      // Administrador
-      { path: '/admin/usuarios', element: only(ADMIN, <AdminUsers />) },
-      { path: '/admin/moderacion', element: only(ADMIN, <Moderation />) },
-      { path: '/admin/pagos', element: only(ADMIN, <AdminPayments />) },
-      { path: '/admin/estadisticas', element: only(ADMIN, <Stats />) },
       { path: '*', element: <NotFound /> },
     ],
   },
-])
+  // Administrador: módulo propio con barra lateral (el layout ya exige el rol)
+  {
+    element: <AdminLayout />,
+    children: [
+      { path: '/admin', element: <Navigate to="/admin/estadisticas" replace /> },
+      { path: '/admin/estadisticas', element: page(<Stats />) },
+      { path: '/admin/usuarios', element: page(<AdminUsers />) },
+      { path: '/admin/tiendas', element: page(<AdminStores />) },
+      { path: '/admin/tiendas/:id', element: page(<AdminStoreDetail />) },
+      { path: '/admin/fundaciones', element: page(<AdminFoundations />) },
+      { path: '/admin/fundaciones/:id', element: page(<AdminFoundationDetail />) },
+      { path: '/admin/moderacion', element: page(<Moderation />) },
+      { path: '/admin/playlists', element: page(<AdminPlaylists />) },
+      { path: '/admin/pagos', element: page(<AdminPayments />) },
+    ],
+  },
+] }])
