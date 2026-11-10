@@ -4,16 +4,21 @@ import { describe, expect, it } from 'vitest'
 import PlaylistsPage from '../pages/PlaylistsPage'
 import { renderAt } from '../../experiencia/__tests__/helpers'
 
-const routes = [{ path: '/playlists', element: <PlaylistsPage /> }]
+const routes = [
+  { path: '/playlists', element: <PlaylistsPage /> },
+  { path: '/playlists/:id', element: <PlaylistsPage /> },
+  { path: '/probador', element: <div>Pantalla Probador</div> },
+]
 
 describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
-  it('muestra el encabezado, contador y la regla de máximo 15 prendas', async () => {
+  it('muestra el encabezado de perfil, Mis playlists y la regla de máximo 15 prendas', async () => {
     renderAt('/playlists', routes)
-    expect(screen.getByRole('heading', { name: /Playlists de estilo/i })).toBeInTheDocument()
-    expect(screen.getByText(/15 prendas/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: /Mis playlists/i })).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(screen.getByText(/Monocromático Chapinero/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/Hasta 15 prendas/i).length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByText(/Fin de semana en Usaquén/i)).toBeInTheDocument()
+      expect(screen.getByText(/Oficina con Estilo/i)).toBeInTheDocument()
     })
   })
 
@@ -40,19 +45,18 @@ describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
     })
   })
 
-  it('muestra las prendas de una playlist y la capacidad RNF-12', async () => {
+  it('muestra las prendas de una playlist al pulsar sobre ella y la capacidad RNF-12', async () => {
     const user = userEvent.setup()
     renderAt('/playlists', routes)
 
     await waitFor(() => {
-      expect(screen.getByText(/Monocromático Chapinero/i)).toBeInTheDocument()
+      expect(screen.getByText(/Fin de semana en Usaquén/i)).toBeInTheDocument()
     })
 
-    const botonesVer = screen.getAllByRole('button', { name: /Ver prendas/i })
-    await user.click(botonesVer[0])
+    const playlistCard = screen.getByText(/Fin de semana en Usaquén/i)
+    await user.click(playlistCard)
 
     expect(screen.getByRole('dialog')).toBeInTheDocument()
-    expect(screen.getAllByText(/RNF-12/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/RNF-12/i).length).toBeGreaterThanOrEqual(1)
   })
 })
-
