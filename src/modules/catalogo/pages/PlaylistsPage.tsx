@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Card, Button, Badge } from '@/modules/core/design-system'
 import { Loading, EmptyState, ErrorState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { formatCurrency } from '@/modules/core/utils/format'
+import { formatCOP } from '@/modules/core/utils/format'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { usePlaylists } from '../hooks/usePlaylists'
 import { ITEMS } from '../mocks/items'
@@ -420,7 +420,7 @@ export default function PlaylistsPage() {
                     (it) => !playlistSeleccionada.prendas.some((p) => p.id === it.id)
                   ).map((it) => (
                     <option key={it.id} value={it.id}>
-                      {it.nombre} · {it.tienda} ({formatCurrency(it.precio)})
+                      {it.nombre} · {it.tienda} ({formatCOP(it.precio)})
                     </option>
                   ))}
                 </select>
@@ -455,7 +455,7 @@ export default function PlaylistsPage() {
                     <img src={p.imagen} alt={p.nombre} className="h-9 w-9 rounded-lg object-cover" />
                     <div>
                       <p className="text-xs font-semibold text-white">{p.nombre}</p>
-                      <p className="text-[11px] text-white/50">{p.tienda} · {formatCurrency(p.precio)}</p>
+                      <p className="text-[11px] text-white/50">{p.tienda} · {formatCOP(p.precio)}</p>
                     </div>
                   </div>
                   <button

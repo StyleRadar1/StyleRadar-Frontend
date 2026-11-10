@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Card, Button, Badge } from '@/modules/core/design-system'
 import { Loading, EmptyState, ErrorState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { formatCurrency } from '@/modules/core/utils/format'
+import { formatCOP } from '@/modules/core/utils/format'
 import { useModeration } from '../hooks/useModeration'
 import { REJECTION_REASONS, type ModerationItemDto, type ModerationType } from '../types/moderation.dto'
 
@@ -219,7 +219,7 @@ export default function ModerationPage() {
                   {item.tipo}
                 </span>
                 <span className="absolute bottom-3 right-3 rounded-md bg-violeta/90 px-2.5 py-1 text-xs font-bold text-white shadow">
-                  {formatCurrency(item.precio)}
+                  {formatCOP(item.precio)}
                 </span>
               </div>
 
@@ -323,7 +323,7 @@ export default function ModerationPage() {
                 {grupo.publicaciones.map((item) => (
                   <Card key={item.id} className="p-4">
                     <h4 className="font-semibold text-white">{item.titulo}</h4>
-                    <p className="text-xs text-white/60">{formatCurrency(item.precio)} · Tallas: {item.tallas.join(', ')}</p>
+                    <p className="text-xs text-white/60">{formatCOP(item.precio)} · Tallas: {item.tallas.join(', ')}</p>
                     <div className="mt-3 flex justify-end gap-2">
                       <button
                         type="button"

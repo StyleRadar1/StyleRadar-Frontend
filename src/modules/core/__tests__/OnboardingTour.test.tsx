@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from 'vitest'
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { OnboardingTour, TOUR_STORAGE_KEY } from '../components/OnboardingTour'
 

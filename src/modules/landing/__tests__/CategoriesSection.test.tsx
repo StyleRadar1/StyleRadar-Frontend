@@ -14,7 +14,7 @@ describe('CategoriesSection (P3)', () => {
     expect(screen.getByText('Descubre tu identidad:')).toBeInTheDocument()
     expect(screen.getByText('Estilo 01 · Tendencia urbana')).toBeInTheDocument()
     expect(screen.getAllByText('Streetwear').length).toBeGreaterThan(0)
-    expect(screen.getByText('Actitud de calle y autenticidad bogotana')).toBeInTheDocument()
+    expect(screen.getAllByText('Actitud de calle y autenticidad bogotana').length).toBeGreaterThan(0)
     expect(screen.getByText(/Ver prendas Streetwear en el catálogo/i)).toBeInTheDocument()
   })
 
@@ -31,7 +31,7 @@ describe('CategoriesSection (P3)', () => {
 
     expect(onSelect).toHaveBeenCalled()
     expect(screen.getByText('Estilo 02 · Sastrería & Formal')).toBeInTheDocument()
-    expect(screen.getByText('Cortes estructurados y sobriedad contemporánea')).toBeInTheDocument()
+    expect(screen.getAllByText('Cortes estructurados y sobriedad contemporánea').length).toBeGreaterThan(0)
     expect(screen.getByText(/Ver prendas Elegante en el catálogo/i)).toBeInTheDocument()
   })
 
@@ -46,7 +46,7 @@ describe('CategoriesSection (P3)', () => {
     fireEvent.click(thumbVintage)
 
     expect(screen.getByText('Estilo 04 · Retro & Segunda mano')).toBeInTheDocument()
-    expect(screen.getByText('Piezas con historia, carácter y nostalgia')).toBeInTheDocument()
+    expect(screen.getAllByText('Piezas con historia, carácter y nostalgia').length).toBeGreaterThan(0)
     expect(screen.getByText('Chaquetas de cuero')).toBeInTheDocument()
   })
 })

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Card, Button, Badge } from '@/modules/core/design-system'
 import { Loading, ErrorState } from '@/modules/core/components/Status'
-import { formatCurrency } from '@/modules/core/utils/format'
+import { formatCOP } from '@/modules/core/utils/format'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { ItemCard } from '../components/ItemCard'
 import { itemService } from '../services/itemService'
@@ -111,7 +111,7 @@ export default function ItemDetailPage() {
                 </h1>
 
                 <p className="mt-4 text-3xl font-extrabold text-violeta-claro">
-                  {formatCurrency(prenda.precio)}
+                  {formatCOP(prenda.precio)}
                 </p>
 
                 {/* Disponibilidad en tienda (RF-22) */}
