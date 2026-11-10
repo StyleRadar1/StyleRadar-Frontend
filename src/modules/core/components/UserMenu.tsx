@@ -9,7 +9,7 @@ import { useAuth } from '@/modules/identidad/hooks/useAuth'
 const ITEMS: Record<Role, [string, string][]> = {
   COMPRADOR: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/mensajes', 'Mensajes'], ['/segunda-mano', 'Mis publicaciones'], ['/alertas', 'Mis búsquedas y alertas'], ['/planes', 'Mi plan']],
   ADMIN_ALMACEN: [['/tienda/inventario', 'Mi tienda'], ['/mensajes', 'Mensajes'], ['/tienda/suscripcion', 'Mi suscripción']],
-  REPRESENTANTE_FUNDACION: [['/fundacion/donaciones', 'Mis donaciones'], ['/fundacion/estadisticas', 'Estadísticas'], ['/mensajes', 'Mensajes']],
+  REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Mis donaciones'], ['/fundacion/estadisticas', 'Estadísticas'], ['/mensajes', 'Mensajes']],
   ADMIN_STYLERADAR: [['/admin/estadisticas', 'Estadísticas'], ['/admin/usuarios', 'Usuarios'], ['/admin/pagos', 'Pagos']],
 }
 

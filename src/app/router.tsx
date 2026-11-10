@@ -24,6 +24,7 @@ const SecondHand = lazy(() => import('@/modules/experiencia/pages/SecondHandPage
 const PublishListing = lazy(() => import('@/modules/experiencia/pages/PublishListingPage'))
 const Donate = lazy(() => import('@/modules/experiencia/pages/DonatePage'))
 const Foundation = lazy(() => import('@/modules/experiencia/pages/FoundationPage'))
+const FoundationHome = lazy(() => import('@/modules/experiencia/pages/FoundationHomePage'))
 const Plans = lazy(() => import('@/modules/transacciones/pages/PlansPage'))
 const Checkout = lazy(() => import('@/modules/transacciones/pages/CheckoutPage'))
 const StoreSubscription = lazy(() => import('@/modules/transacciones/pages/StoreSubscriptionPage'))
@@ -72,6 +73,7 @@ export const router = createBrowserRouter([
       { path: '/tienda/estadisticas', element: only(STORE, <Stats />) },
       { path: '/tienda/suscripcion', element: only(STORE, <StoreSubscription />) },
       // Fundación
+      { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },
       { path: '/fundacion/estadisticas', element: only(FOUND, <Stats />) },
       // Administrador

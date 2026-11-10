@@ -12,7 +12,7 @@ const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
   COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
   ADMIN_ALMACEN: [['/tienda/inventario', 'Inventario'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
-  REPRESENTANTE_FUNDACION: [['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
+  REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
   ADMIN_STYLERADAR: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
 }
 
@@ -27,7 +27,7 @@ export function Navbar() {
       <nav className="mx-auto flex h-[72px] max-w-6xl items-center gap-4 px-4" aria-label="Principal">
         <Link to="/" className="flex items-center gap-2 text-lg font-bold"><Logo className="h-8 w-auto" />StyleRadar</Link>
         <div className="ml-auto hidden items-center gap-1 md:flex">
-          {links.map(([to, label]) => <NavLink key={to} to={to} className={linkCls}>{label}</NavLink>)}
+          {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls}>{label}</NavLink>)}
         </div>
         <div className="ml-auto flex items-center gap-2 md:ml-2">
           <ThemeSelect className="max-md:hidden" />
@@ -46,7 +46,7 @@ export function Navbar() {
       </nav>
       {open && (
         <div className="flex flex-col gap-1 border-t border-white/10 px-4 py-3 md:hidden">
-          {links.map(([to, label]) => <NavLink key={to} to={to} className={linkCls} onClick={() => setOpen(false)}>{label}</NavLink>)}
+          {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls} onClick={() => setOpen(false)}>{label}</NavLink>)}
           <ThemeSelect className="px-3 py-2" />
         </div>
       )}
