@@ -13,7 +13,7 @@ const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
 const AdminUsers = lazy(() => import('@/modules/identidad/pages/AdminUsersPage'))
 const Catalog = lazy(() => import('@/modules/catalogo/pages/CatalogPage'))
 const ItemDetail = lazy(() => import('@/modules/catalogo/pages/ItemDetailPage'))
-const MapPage = lazy(() => import('@/modules/catalogo/pages/MapPage'))
+const MapPage = lazy(() => import('@/modules/mapa/pages/MapPage'))
 const Store = lazy(() => import('@/modules/catalogo/pages/StorePage'))
 const Inventory = lazy(() => import('@/modules/catalogo/pages/InventoryPage'))
 const Playlists = lazy(() => import('@/modules/catalogo/pages/PlaylistsPage'))
@@ -53,6 +53,7 @@ export const router = createBrowserRouter([
       { path: '/tiendas/:id', element: page(<Store />) },
       { path: '/playlists', element: page(<Playlists />) },
       { path: '/planes', element: page(<Plans />) },
+      { path: '/pago/resultado', element: page(<Plans />) },
       // Usuario (comprador)
       { path: '/perfil', element: only(USER, <Profile />) },
       { path: '/probador', element: only(USER, <TryOn />) },

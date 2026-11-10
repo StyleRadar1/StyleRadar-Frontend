@@ -9,8 +9,8 @@ import {
   VideoReels,
   ClothingCycle,
   PricingPlans,
-  MapPreview,
 } from '@/components/landing'
+import MapaLanding from '@/modules/mapa/components/MapaLanding'
 import { AuthModal, QuickTryOnModal } from '@/components/modals'
 import './LandingPage.css'
 
@@ -73,8 +73,8 @@ export default function LandingPage() {
         {/* 7. Planes de membresía */}
         <PricingPlans onOpenRegister={handleOpenRegister} />
 
-        {/* 8. Mapa de boutiques de Bogotá */}
-        <MapPreview />
+        {/* 8. Mapa interactivo de tiendas y fundaciones (Mapbox) */}
+        <MapaLanding />
       </main>
 
       {/* Cierre editorial del landing */}
