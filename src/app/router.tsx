@@ -24,6 +24,7 @@ const PublishListing = lazy(() => import('@/modules/experiencia/pages/PublishLis
 const Donate = lazy(() => import('@/modules/experiencia/pages/DonatePage'))
 const Foundation = lazy(() => import('@/modules/experiencia/pages/FoundationPage'))
 const Plans = lazy(() => import('@/modules/transacciones/pages/PlansPage'))
+const Checkout = lazy(() => import('@/modules/transacciones/pages/CheckoutPage'))
 const StoreSubscription = lazy(() => import('@/modules/transacciones/pages/StoreSubscriptionPage'))
 const AdminPayments = lazy(() => import('@/modules/transacciones/pages/AdminPaymentsPage'))
 const Alerts = lazy(() => import('@/modules/soporte/pages/AlertsPage'))
@@ -53,7 +54,8 @@ export const router = createBrowserRouter([
       { path: '/tiendas/:id', element: page(<Store />) },
       { path: '/playlists', element: page(<Playlists />) },
       { path: '/planes', element: page(<Plans />) },
-      { path: '/pago/resultado', element: page(<Plans />) },
+      { path: '/pago/resultado', element: page(<Checkout />) },
+      { path: '/suscripcion', element: page(<Checkout />) },
       // Usuario (comprador)
       { path: '/perfil', element: only(USER, <Profile />) },
       { path: '/probador', element: only(USER, <TryOn />) },

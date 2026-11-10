@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
 import { ApiError } from '@/modules/core/api/apiClient'
+import { GoogleSignIn } from '../components/GoogleSignIn'
 import { useAuth } from '../hooks/useAuth'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../mocks/demoAccounts'
 
@@ -58,6 +59,8 @@ export default function LoginPage() {
           <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
             <h2 className="text-3xl font-extrabold">Inicia sesión</h2>
             <p className="-mt-2 text-sm text-white/75">¿No tienes cuenta? <Link to="/registro" className="font-semibold text-arena underline underline-offset-4">Crea una gratis</Link></p>
+            <GoogleSignIn onSignedIn={(u) => navigate(ROLE_HOME[u.role], { replace: true })} />
+            <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[.14em] text-white/55 before:h-px before:flex-1 before:bg-white/20 after:h-px after:flex-1 after:bg-white/20">o con tu correo</p>
             <label className="text-[11px] font-bold uppercase tracking-[.14em] text-white/70">Correo
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="tucorreo@ejemplo.com"
                 className="mt-1 w-full rounded-lg border border-white/20 bg-black/20 px-3 py-3 text-sm font-normal normal-case tracking-normal text-blanco outline-none focus:border-violeta-claro" />

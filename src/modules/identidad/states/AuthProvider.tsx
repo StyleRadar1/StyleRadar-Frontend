@@ -41,11 +41,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const loginWithGoogle = useCallback(async (idToken: string) => start(await authService.google({ idToken })), [start])
+
   useEffect(() => {
     window.addEventListener('sr:sesion-expirada', logout)
     return () => window.removeEventListener('sr:sesion-expirada', logout)
   }, [logout])
 
-  const value = useMemo(() => ({ user, login, register, updateUser, logout }), [user, login, register, updateUser, logout])
+  const value = useMemo(() => ({ user, login, loginWithGoogle, register, updateUser, logout }), [user, login, loginWithGoogle, register, updateUser, logout])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

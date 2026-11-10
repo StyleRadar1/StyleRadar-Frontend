@@ -1,176 +1,118 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Card, Badge, Button } from '@/modules/core/design-system'
-import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { errorMessage } from '@/modules/core/api/errors'
+import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { usePlans } from '../hooks/usePlans'
-import { planService } from '../services/planService'
-import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
+import { useUserPlan } from '../hooks/useUserPlan'
+import { userPlanService } from '../services/userPlanService'
+import { COMPARATIVA, PLAN_LABEL, PLANES, REGLAS, type PlanInfo, type PlanUsuario } from '../types/plan.dto'
 
-/* ─── Subcomponente: resultado del pago ─── */
-function CheckoutResult() {
-  const [params] = useSearchParams()
-  const orderId = params.get('orden') ?? 'MOCK_ORDER_OK'
-  const [result, setResult] = useState<CheckoutResultDto | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
+const REGISTRO: Record<string, [string, string]> = {
+  RADAR: ['/registro', 'Crear cuenta gratis'],
+  RADAR_PLUS: ['/registro?plan=radar-plus', 'Empezar con Radar+'],
+  TIENDA: ['/registro?tipo=tienda', 'Registrar mi tienda'],
+  FUNDACION: ['/registro?tipo=fundacion', 'Registrar mi fundación'],
+}
+const esPlanUsuario = (id: string): id is PlanUsuario => id === 'RADAR' || id === 'RADAR_PLUS'
 
-  useEffect(() => {
-    planService.getCheckoutResult(orderId)
-      .then(setResult)
-      .catch(setError)
-      .finally(() => setLoading(false))
-  }, [orderId])
+/** P7 · Planes: lo que ofrece StyleRadar y lo que incluye cada plan (RF-100 y RF-101 para el comprador). */
+export default function PlansPage() {
+  const { user } = useAuth()
+  const comprador = user?.role === 'COMPRADOR'
+  const { plan } = useUserPlan(comprador)
+  const [cambio, setCambio] = useState<PlanUsuario | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
-  if (loading) return <Loading label="Consultando el estado del pago…" />
-  if (error) return <ErrorState error={error} title="No pudimos consultar el pago" />
-  if (!result) return <EmptyState title="Sin resultado" />
+  const cambiar = async () => {
+    if (!cambio || busy) return
+    setBusy(true); setMsg(null)
+    try {
+      const r = await userPlanService.change(cambio)
+      setMsg({ ok: true, text: r.plan === 'RADAR_PLUS' ? 'Listo: ya tienes Radar+. Los candados desaparecen.' : 'Volviste al plan Radar. Los beneficios de Radar+ quedan con candado.' })
+    } catch (e) {
+      setMsg({ ok: false, text: errorMessage(e, 'No pudimos cambiar tu plan. Intenta de nuevo.') })
+    } finally { setBusy(false); setCambio(null) }
+  }
 
-  const icons: Record<string, string> = { aprobado: '✅', pendiente: '⏳', rechazado: '❌' }
-  const messages: Record<string, string> = {
-    aprobado: '¡Tu pago fue aprobado! Ya tienes acceso a todos los beneficios de tu plan.',
-    pendiente: 'Tu pago está pendiente. Si elegiste Efecty, acércate a un punto autorizado para completar el pago.',
-    rechazado: 'El pago fue rechazado. Puedes intentarlo de nuevo con otro medio.',
+  const accion = (p: PlanInfo) => {
+    if (!user) {
+      const [to, label] = REGISTRO[p.id]
+      return <Link to={to} className={`mt-auto block rounded-xl px-5 py-3 text-center text-sm font-semibold ${p.destacado ? 'bg-violeta' : 'border border-white/25'}`}>{label}</Link>
+    }
+    if (comprador && esPlanUsuario(p.id)) {
+      const id = p.id
+      if (!plan) return null
+      if (plan === id) return <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">Plan actual</p>
+      return <button type="button" onClick={() => setCambio(id)} className={`mt-auto rounded-xl px-5 py-3 text-sm font-semibold ${p.destacado ? 'bg-violeta' : 'border border-white/25'}`}>Cambiar a {p.nombre}</button>
+    }
+    if (user.role === 'ADMIN_ALMACEN' && p.id === 'TIENDA') {
+      return <Link to="/tienda/suscripcion" className="mt-auto block rounded-xl border border-white/25 px-5 py-3 text-center text-sm font-semibold">Ver mi suscripción</Link>
+    }
+    return null
   }
 
   return (
-    <section className="mx-auto max-w-lg px-4 py-16 text-center">
-      <span className="text-5xl">{icons[result.status]}</span>
-      <h1 className="mt-4 text-3xl font-extrabold">{result.status === 'aprobado' ? '¡Listo!' : result.status === 'pendiente' ? 'Pago pendiente' : 'Pago rechazado'}</h1>
-      <p className="mt-2 text-white/70">{messages[result.status]}</p>
-      <Card className="mx-auto mt-8 max-w-sm text-left">
-        <dl className="grid grid-cols-2 gap-2 text-sm">
-          <dt className="text-white/50">Orden</dt><dd className="font-mono">{result.orderId}</dd>
-          <dt className="text-white/50">Plan</dt><dd>{result.planName}</dd>
-          <dt className="text-white/50">Monto</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
-          {result.method && <><dt className="text-white/50">Método</dt><dd>{result.method}</dd></>}
-          <dt className="text-white/50">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
-        </dl>
-      </Card>
-    </section>
-  )
-}
+    <section className="mx-auto max-w-6xl px-4 py-12">
+      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Planes</p>
+      <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Un plan para cada quien</h1>
+      <p className="mt-3 max-w-2xl text-white/70">Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras.</p>
+      {comprador && plan && <p className="mt-4 text-sm">Tu plan actual: <b>{PLAN_LABEL[plan]}</b></p>}
+      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-4 rounded-xl p-3 text-sm ${msg.ok ? 'bg-[#9be3b4]/10 text-[#9be3b4]' : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'}`}>{msg.text}</p>}
 
-/* ─── Subcomponente: tarjeta de plan ─── */
-function PlanCard({ plan, currentPlan, onSelect }: { plan: PlanDto; currentPlan: string | null; onSelect: (p: PlanDto) => void }) {
-  const isCurrent = currentPlan === plan.id
-  return (
-    <Card className={`relative flex flex-col ${plan.highlighted ? 'border-violeta ring-2 ring-violeta/30' : ''}`}>
-      {plan.highlighted && (
-        <Badge tone="violeta" >Recomendado</Badge>
-      )}
-      <h3 className="mt-3 text-2xl font-extrabold">{plan.name}</h3>
-      <p className="mt-1 text-3xl font-extrabold">
-        {plan.price === 0 ? 'Gratis' : <>{formatCOP(plan.price)}<span className="text-base font-normal text-white/50">/mes</span></>}
-      </p>
-      <ul className="mt-4 flex-1 space-y-2 text-sm text-white/80">
-        {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-2">
-            <span className="mt-0.5 text-green-400">✓</span>{f}
+      <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Planes">
+        {PLANES.map((p) => (
+          <li key={p.id} aria-label={p.nombre} className={`relative flex flex-col rounded-2xl border p-6 ${p.destacado ? 'border-violeta bg-gradient-to-b from-violeta/35 to-white/[.03]' : 'border-white/10 bg-white/[.03]'}`}>
+            {p.destacado && !(comprador && plan === p.id) && <span className="absolute right-4 top-4 rounded-full bg-violeta px-3 py-1 text-[11px] font-semibold">Más elegido</span>}
+            {comprador && plan === p.id && <span className="absolute right-4 top-4 rounded-full bg-arena px-3 py-1 text-[11px] font-semibold text-grafito">Tu plan</span>}
+            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-lavanda">{p.para}</p>
+            <h2 className="mt-2 text-2xl font-bold">{p.nombre}</h2>
+            <p className="mt-3 text-3xl font-extrabold">{p.precio ? formatCOP(p.precio) : '$0'} <small className="text-sm font-medium text-white/60">{p.periodo}</small></p>
+            <p className="mt-1 min-h-10 text-sm text-arena">{p.nota}</p>
+            <ul className="mb-6 mt-5 space-y-2 text-sm text-white/80">
+              {p.incluye.map((i) => <li key={i} className="flex gap-2"><span aria-hidden="true" className="text-arena">✓</span>{i}</li>)}
+            </ul>
+            {accion(p)}
           </li>
         ))}
       </ul>
-      <div className="mt-6">
-        {isCurrent ? (
-          <Button variant="secundario" className="w-full" disabled>Plan actual</Button>
-        ) : (
-          <Button variant={plan.highlighted ? 'primario' : 'secundario'} className="w-full" onClick={() => onSelect(plan)}>
-            {plan.price === 0 ? 'Usar gratis' : 'Suscribirme'}
-          </Button>
-        )}
-      </div>
-    </Card>
-  )
-}
+      <p className="mt-6 text-sm text-white/55">Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar.</p>
 
-/* ─── Página principal ─── */
-export default function PlansPage() {
-  const [params] = useSearchParams()
-  const isResult = params.has('orden')
-
-  if (isResult) return <CheckoutResult />
-
-  return <PlansSelector />
-}
-
-function PlansSelector() {
-  const { data: plans, loading, error, reload } = usePlans()
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const [busy, setBusy] = useState(false)
-
-  // TODO: leer plan del usuario de un único lugar (hook/servicio que Kevin defina)
-  const currentPlan = user ? 'free' : null
-
-  const handleSelect = useCallback(async (plan: PlanDto) => {
-    if (plan.price === 0) return // Radar es gratis, no requiere checkout
-
-    if (!user) {
-      // Sin sesión: guardar intención y redirigir a login
-      planService.saveIntent({
-        planId: plan.id,
-        accountType: 'COMPRADOR',
-        returnPath: `/planes`,
-      })
-      navigate('/login')
-      return
-    }
-
-    // Con sesión: crear checkout mock
-    setBusy(true)
-    try {
-      await planService.createCheckout(plan.id)
-      // En producción aquí se redirige al initPoint de Mercado Pago.
-      // En mock mostramos el resultado simulado.
-      navigate(`/planes?orden=MOCK_ORDER_OK`)
-    } catch {
-      // El error lo maneja el servicio
-    } finally {
-      setBusy(false)
-    }
-  }, [user, navigate])
-
-  // Si venimos del login y hay intención guardada, mostrar aviso
-  useEffect(() => {
-    if (user) {
-      const intent = planService.readIntent()
-      if (intent) {
-        planService.clearIntent()
-        // Podrían auto-redirigir al checkout aquí
-      }
-    }
-  }, [user])
-
-  return (
-    <section className="mx-auto max-w-4xl px-4 py-16">
-      <div className="text-center">
-        <Badge tone="violeta">Planes</Badge>
-        <h1 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Elige tu plan</h1>
-        <p className="mx-auto mt-3 max-w-lg text-white/70">
-          Descubre moda local en Bogotá. Empieza gratis o desbloquea todo con Radar+.
-        </p>
+      <h2 className="mt-14 text-2xl font-bold">Radar y Radar+, lado a lado</h2>
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
+        <table className="w-full min-w-[520px] text-left text-sm">
+          <caption className="sr-only">Comparación de los planes Radar y Radar+</caption>
+          <thead className="bg-white/[.04] text-[11px] uppercase tracking-[.14em] text-lavanda">
+            <tr><th scope="col" className="p-4 font-bold">Qué incluye</th><th scope="col" className="p-4 font-bold">Radar</th><th scope="col" className="p-4 font-bold text-arena">Radar+</th></tr>
+          </thead>
+          <tbody>
+            {COMPARATIVA.map(([que, radar, plus]) => (
+              <tr key={que} className="border-t border-white/10">
+                <th scope="row" className="p-4 font-semibold">{que}</th>
+                <td className="p-4 text-white/75">{radar}</td>
+                <td className="p-4">{plus}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {loading ? (
-        <Loading label="Cargando planes…" />
-      ) : error ? (
-        <ErrorState error={error} onRetry={reload} />
-      ) : plans.length === 0 ? (
-        <EmptyState title="No hay planes disponibles" />
-      ) : (
-        <div className="mt-12 grid gap-6 sm:grid-cols-2">
-          {plans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} currentPlan={currentPlan} onSelect={handleSelect} />
-          ))}
-        </div>
-      )}
+      <h2 className="mt-14 text-2xl font-bold">Reglas de los planes</h2>
+      <p className="mt-2 text-sm text-white/60">Provisionales: falta validarlas con el squad de Transacciones (ms-pagos-suscripciones).</p>
+      <ol className="mt-5 grid gap-3 md:grid-cols-2" aria-label="Reglas de los planes">
+        {REGLAS.map(([titulo, texto], i) => (
+          <li key={titulo} className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+            <p className="font-semibold"><span className="mr-2 text-arena">{i + 1}.</span>{titulo}</p>
+            <p className="mt-1 text-sm text-white/70">{texto}</p>
+          </li>
+        ))}
+      </ol>
 
-      {busy && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60">
-          <Loading label="Preparando el pago…" />
-        </div>
-      )}
+      <ConfirmDialog open={!!cambio} busy={busy} onCancel={() => setCambio(null)} onConfirm={cambiar}
+        title={`¿Cambiar a ${cambio ? PLAN_LABEL[cambio] : ''}?`} confirmLabel="Cambiar plan">
+        {cambio === 'RADAR_PLUS' ? `Pagarás ${formatCOP(14900)} al mes. Puedes cancelar la renovación cuando quieras.` : 'Perderás el probador con tu foto y las alertas y la wishlist sin límite.'}
+      </ConfirmDialog>
     </section>
   )
 }
