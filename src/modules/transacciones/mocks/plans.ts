@@ -54,4 +54,8 @@ export const MOCK_CHECKOUT_RESULTS: Record<string, CheckoutResultDto> = {
   'MOCK_ORDER_OK': { orderId: 'MOCK_ORDER_OK', status: 'aprobado', planName: 'Radar+', amount: 14_900, method: 'Mercado Pago' },
   'MOCK_ORDER_PENDING': { orderId: 'MOCK_ORDER_PENDING', status: 'pendiente', planName: 'Radar+', amount: 14_900, method: 'Efecty' },
   'MOCK_ORDER_FAIL': { orderId: 'MOCK_ORDER_FAIL', status: 'rechazado', planName: 'Radar+', amount: 14_900, method: 'PSE' },
+  // Suscripción de tienda aliada (RF-67)
+  'MOCK_STORE_OK': { orderId: 'MOCK_STORE_OK', status: 'aprobado', planName: 'Tienda aliada', amount: 89_000, method: 'Mercado Pago' },
+  'MOCK_STORE_PENDING': { orderId: 'MOCK_STORE_PENDING', status: 'pendiente', planName: 'Tienda aliada', amount: 89_000, method: 'Efecty' },
+  'MOCK_STORE_FAIL': { orderId: 'MOCK_STORE_FAIL', status: 'rechazado', planName: 'Tienda aliada', amount: 89_000, method: 'PSE' },
 }
