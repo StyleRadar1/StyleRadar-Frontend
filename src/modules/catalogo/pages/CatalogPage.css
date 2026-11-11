@@ -1,0 +1,449 @@
+/* ==========================================================================
+   StyleRadar — Sección Editorial de Prendas Colgadas en Barra (/catalogo)
+   Paleta: Grafito #262626 · Blanco #FFFFFF · Arena #E8DCCB · Lavanda #B9B9CA · Violeta #48119A
+   Tipografía: Poppins
+   ========================================================================== */
+
+.sr-rack-section {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(180deg, #fcfbf9 0%, #f4eee4 55%, #faf8f5 100%);
+  color: #262626;
+  font-family: 'Poppins', sans-serif;
+  padding: clamp(2.25rem, 4.5vw, 3.75rem) 0 clamp(2.5rem, 5vw, 4rem);
+  overflow: hidden;
+  border-radius: 1.25rem;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  user-select: none;
+}
+
+/* Encabezado centrado en mayúsculas con separador vertical fino */
+.sr-rack-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 2vw, 1.35rem);
+  padding: 0 1rem;
+  margin-bottom: clamp(1.75rem, 3.5vw, 2.75rem);
+  text-align: center;
+}
+
+.sr-rack-kicker {
+  font-size: clamp(0.65rem, 1.1vw, 0.76rem);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #262626;
+}
+
+.sr-rack-kicker--muted {
+  font-weight: 500;
+  color: rgba(38, 38, 38, 0.68);
+}
+
+.sr-rack-divider {
+  display: inline-block;
+  width: 1px;
+  height: 14px;
+  background-color: rgba(38, 38, 38, 0.32);
+  flex-shrink: 0;
+}
+
+/* Escenario del perchero y la barra metálica horizontal */
+.sr-rack-viewport {
+  position: relative;
+  width: 100%;
+  height: clamp(320px, 44vw, 450px);
+  touch-action: pan-y;
+  cursor: grab;
+  outline: none;
+}
+
+.sr-rack-viewport:active {
+  cursor: grabbing;
+}
+
+.sr-rack-viewport:focus-visible {
+  box-shadow: inset 0 0 0 2px #48119a;
+}
+
+/* Barra metálica horizontal fina de lado a lado con brillo sutil */
+.sr-rack-bar {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  right: 0;
+  height: 5px;
+  z-index: 12;
+  background: linear-gradient(
+    180deg,
+    #6b6b76 0%,
+    #262626 42%,
+    #8c8c98 72%,
+    #262626 100%
+  );
+  box-shadow:
+    0 2px 5px rgba(38, 38, 38, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.65) inset;
+}
+
+/* Contenedor relativo centrado donde se posicionan las prendas por offset */
+.sr-rack-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* Cada prenda colgada */
+.sr-rack-item {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  width: clamp(210px, 22vw, 276px);
+  transform-origin: 50% 11px;
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: center;
+}
+
+.sr-rack-item:focus-visible .sr-rack-garment-frame {
+  outline: 2px solid #48119a;
+  outline-offset: 4px;
+}
+
+/* Posiciones por offset respecto a la prenda central (0) */
+.sr-rack-item[data-offset='0'] {
+  transform: translate3d(-50%, 0, 0) scale(1);
+  z-index: 30;
+  opacity: 1;
+  filter: none;
+}
+
+.sr-rack-item[data-offset='-1'] {
+  transform: translate3d(calc(-50% - clamp(150px, 19.5vw, 245px)), 6px, 0) scale(0.76);
+  z-index: 24;
+  opacity: 0.86;
+  filter: contrast(0.96) brightness(0.97);
+}
+
+.sr-rack-item[data-offset='1'] {
+  transform: translate3d(calc(-50% + clamp(150px, 19.5vw, 245px)), 6px, 0) scale(0.76);
+  z-index: 24;
+  opacity: 0.86;
+  filter: contrast(0.96) brightness(0.97);
+}
+
+.sr-rack-item[data-offset='-2'] {
+  transform: translate3d(calc(-50% - clamp(275px, 35.5vw, 445px)), 12px, 0) scale(0.68);
+  z-index: 18;
+  opacity: 0.72;
+  filter: contrast(0.93) brightness(0.95);
+}
+
+.sr-rack-item[data-offset='2'] {
+  transform: translate3d(calc(-50% + clamp(275px, 35.5vw, 445px)), 12px, 0) scale(0.68);
+  z-index: 18;
+  opacity: 0.72;
+  filter: contrast(0.93) brightness(0.95);
+}
+
+.sr-rack-item[data-offset='-3'] {
+  transform: translate3d(calc(-50% - clamp(390px, 50vw, 635px)), 16px, 0) scale(0.62);
+  z-index: 14;
+  opacity: 0.5;
+  filter: contrast(0.9) brightness(0.93);
+}
+
+.sr-rack-item[data-offset='3'] {
+  transform: translate3d(calc(-50% + clamp(390px, 50vw, 635px)), 16px, 0) scale(0.62);
+  z-index: 14;
+  opacity: 0.5;
+  filter: contrast(0.9) brightness(0.93);
+}
+
+/* Balanceo sutil en el gancho al pasar el cursor */
+@keyframes sr-hanger-sway {
+  0% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-1.6deg);
+  }
+  65% {
+    transform: rotate(1.25deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.sr-rack-sway {
+  transform-origin: 50% 10px;
+  transition: transform 320ms ease;
+}
+
+.sr-rack-item:hover .sr-rack-sway {
+  animation: sr-hanger-sway 1.6s ease-in-out infinite;
+}
+
+/* Gancho minimalista (hanger) conectado a la barra */
+.sr-rack-hanger {
+  display: block;
+  width: 96px;
+  height: 48px;
+  margin: 0 auto -6px;
+  position: relative;
+  z-index: 25;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.14));
+}
+
+/* Marco de la prenda colgada */
+.sr-rack-garment-frame {
+  position: relative;
+  width: 100%;
+  height: clamp(230px, 31vw, 325px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0 0.5rem;
+  transition: filter 360ms ease;
+}
+
+.sr-rack-item[data-offset='0'] .sr-rack-garment-frame {
+  filter: drop-shadow(0 22px 28px rgba(38, 38, 38, 0.22));
+}
+
+.sr-rack-item:not([data-offset='0']) .sr-rack-garment-frame {
+  filter: drop-shadow(0 12px 18px rgba(38, 38, 38, 0.14));
+}
+
+/* Imagen de la prenda con recorte editorial de hombros/caída que preserva proporción sin deformar */
+.sr-rack-garment-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 22px 22px 14px 14px;
+  overflow: hidden;
+  background-color: #ece6dc;
+  border: 1px solid rgba(38, 38, 38, 0.08);
+  transition:
+    border-color 320ms ease,
+    box-shadow 320ms ease;
+}
+
+.sr-rack-item[data-offset='0'] .sr-rack-garment-card {
+  border-color: rgba(72, 17, 154, 0.32);
+  box-shadow: 0 4px 18px rgba(72, 17, 154, 0.1);
+}
+
+.sr-rack-garment-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  pointer-events: none;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sr-rack-item:hover .sr-rack-garment-img {
+  transform: scale(1.025);
+}
+
+/* Sombra elíptica suave bajo cada prenda para dar profundidad sobre el piso claro */
+.sr-rack-shadow {
+  width: 68%;
+  height: 14px;
+  margin: 12px auto 0;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(38, 38, 38, 0.22) 0%,
+    rgba(38, 38, 38, 0.06) 55%,
+    transparent 78%
+  );
+  transition:
+    transform 420ms ease,
+    opacity 420ms ease;
+}
+
+.sr-rack-item:not([data-offset='0']) .sr-rack-shadow {
+  width: 56%;
+  opacity: 0.55;
+}
+
+/* Etiquetas pequeñas en pill sobre las prendas */
+.sr-rack-badge {
+  position: absolute;
+  top: 34px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-5deg);
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.26rem 0.72rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(38, 38, 38, 0.18);
+  pointer-events: none;
+}
+
+/* "-20%" en grafito con texto blanco */
+.sr-rack-badge--discount {
+  background-color: #262626;
+  color: #ffffff;
+  transform: translateX(-50%) rotate(-7deg);
+}
+
+/* "NUEVO" en blanco con borde grafito */
+.sr-rack-badge--new {
+  background-color: #ffffff;
+  color: #262626;
+  border: 1.5px solid #262626;
+  transform: translateX(-50%) rotate(5deg);
+}
+
+/* "SOLO N UNIDADES" en violeta con texto blanco */
+.sr-rack-badge--stock {
+  background-color: #48119a;
+  color: #ffffff;
+  transform: translateX(-50%) rotate(-3deg);
+}
+
+/* Pie de la prenda destacada: nombre en Poppins y botón pill outline suave */
+.sr-rack-footer {
+  margin-top: clamp(1rem, 2.2vw, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.sr-rack-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(0.95rem, 1.4vw, 1.12rem);
+  font-weight: 600;
+  color: #262626;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.sr-rack-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: rgba(38, 38, 38, 0.6);
+}
+
+.sr-rack-cta {
+  margin-top: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.62rem 1.65rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(38, 38, 38, 0.32);
+  background-color: rgba(232, 220, 203, 0.42);
+  color: #262626;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease,
+    transform 220ms ease;
+}
+
+.sr-rack-cta:hover {
+  border-color: #48119a;
+  background-color: #48119a;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.sr-rack-cta:focus-visible {
+  outline: 2px solid #48119a;
+  outline-offset: 3px;
+}
+
+/* Responsive móvil: la prenda destacada ocupa ~50% del ancho y se asoman las vecinas */
+@media (max-width: 640px) {
+  .sr-rack-viewport {
+    height: 315px;
+  }
+
+  .sr-rack-item {
+    width: 48vw;
+    max-width: 205px;
+    min-width: 150px;
+  }
+
+  .sr-rack-garment-frame {
+    height: 215px;
+  }
+
+  .sr-rack-item[data-offset='-1'] {
+    transform: translate3d(calc(-50% - 37vw), 8px, 0) scale(0.74);
+  }
+
+  .sr-rack-item[data-offset='1'] {
+    transform: translate3d(calc(-50% + 37vw), 8px, 0) scale(0.74);
+  }
+
+  .sr-rack-item[data-offset='-2'] {
+    transform: translate3d(calc(-50% - 68vw), 14px, 0) scale(0.62);
+  }
+
+  .sr-rack-item[data-offset='2'] {
+    transform: translate3d(calc(-50% + 68vw), 14px, 0) scale(0.62);
+  }
+
+  .sr-rack-item[data-offset='-3'],
+  .sr-rack-item[data-offset='3'] {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* Accesibilidad: prefers-reduced-motion sin balanceo ni transiciones largas */
+@media (prefers-reduced-motion: reduce) {
+  .sr-rack-item,
+  .sr-rack-sway,
+  .sr-rack-garment-card,
+  .sr-rack-garment-img,
+  .sr-rack-shadow,
+  .sr-rack-cta {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .sr-rack-item:hover .sr-rack-sway {
+    animation: none !important;
+  }
+}
+

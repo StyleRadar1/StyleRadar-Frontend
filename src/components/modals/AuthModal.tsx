@@ -1,18 +1,73 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Logo } from '@/modules/core/design-system'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAccounts'
 import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
 import { ApiError } from '@/modules/core/api/apiClient'
+import './AuthModal.css'
 
 type DemoAccountRole = (typeof DEMO_ACCOUNTS)[number]['role']
+type PicKey = 'login' | 'sign' | 'user' | 'store' | 'found' | 'admin'
 
-const ROLE_PREVIEW: Record<DemoAccountRole, { src: string; alt: string }> = {
-  COMPRADOR: { src: '/img/representantes/R1.png', alt: 'Personas probándose ropa' },
-  ADMIN_ALMACEN: { src: '/img/representantes/R2.png', alt: 'Representante de una tienda local' },
-  REPRESENTANTE_FUNDACION: { src: '/img/representantes/R3.png', alt: 'Voluntarios de una fundación' },
-  ADMIN_STYLERADAR: { src: '/img/representantes/R4.png', alt: 'Administrador de StyleRadar frente a Bogotá' },
+const AUTH_PIC: Record<PicKey, { src: string; alt: string }> = {
+  login: { src: '/img/representantes/S1.png', alt: 'Representante iniciando sesión' },
+  sign: { src: '/img/representantes/S2.png', alt: 'Representantes creando una cuenta' },
+  user: { src: '/img/representantes/R1.png', alt: 'Personas probándose ropa' },
+  store: { src: '/img/representantes/R2.png', alt: 'Representante de una tienda local' },
+  found: { src: '/img/representantes/R3.png', alt: 'Voluntarios de una fundación' },
+  admin: { src: '/img/representantes/R4.png', alt: 'Administrador de StyleRadar frente a Bogotá' },
+}
+
+const AUTH_CAP: Record<PicKey, [string, string]> = {
+  login: ['Iniciar sesión', 'Qué bueno verte otra vez'],
+  sign: ['Crear cuenta', 'Empieza tu radar'],
+  user: ['Usuario', 'Tu estilo, cerca de ti'],
+  store: ['Tienda', 'Que te encuentren en tu talla'],
+  found: ['Fundación', 'La ropa sigue su camino'],
+  admin: ['Administrador', 'Todo StyleRadar en un vistazo'],
+}
+
+const ROLE_TO_PIC: Record<DemoAccountRole, PicKey> = {
+  COMPRADOR: 'user',
+  ADMIN_ALMACEN: 'store',
+  REPRESENTANTE_FUNDACION: 'found',
+  ADMIN_STYLERADAR: 'admin',
+}
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false
+}
+
+function canAnimate(el: HTMLElement | null): boolean {
+  return Boolean(el && typeof el.animate === 'function' && !prefersReducedMotion())
+}
+
+async function runAnim(
+  el: HTMLElement | null,
+  keyframes: Keyframe[],
+  options: KeyframeAnimationOptions,
+): Promise<void> {
+  if (!el || !canAnimate(el)) return
+  try {
+    const anim = el.animate(keyframes, { fill: 'forwards', ...options })
+    if (anim && anim.finished) {
+      await anim.finished
+    }
+  } catch {
+    // Ignorar si la animación se cancela al desmontar o cambiar de vista
+  }
+}
+
+function cancelAnims(el: Element | null) {
+  if (!el || typeof (el as HTMLElement).getAnimations !== 'function') return
+  try {
+    ;(el as HTMLElement).getAnimations().forEach((a) => a.cancel())
+  } catch {
+    // Ignorar en entornos de prueba sin Web Animations API
+  }
 }
 
 interface AuthModalProps {
@@ -25,6 +80,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   const { login } = useAuth()
   const navigate = useNavigate()
 
+  const [rendered, setRendered] = useState(isOpen)
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab)
   const [step, setStep] = useState<'form' | 'otp'>('form')
 
@@ -44,24 +100,314 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Referencias para la animación de la pila (prototipo 05-core.js)
+  const bgRef = useRef<HTMLDivElement>(null)
+  const photoRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const capRef = useRef<HTMLDivElement>(null)
+  const metaRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const busyRef = useRef(false)
+  const prevSrcRef = useRef<string>('')
+
+  const getPicKey = (
+    tab: 'login' | 'register',
+    currentPreviewRole: DemoAccountRole | null,
+    currentEmail: string,
+  ): PicKey => {
+    if (currentPreviewRole) return ROLE_TO_PIC[currentPreviewRole]
+    if (tab === 'register') return 'sign'
+    const matched = DEMO_ACCOUNTS.find(
+      (a) => a.email.toLowerCase() === currentEmail.trim().toLowerCase(),
+    )
+    return matched ? ROLE_TO_PIC[matched.role] : 'login'
+  }
+
+  const picKey = getPicKey(activeTab, previewRole, email)
+  const activePhoto = AUTH_PIC[picKey]
+  const activeCap = AUTH_CAP[picKey]
+
+  const animateCardIn = async (card: HTMLElement | null) => {
+    if (!card) return
+    const kids = Array.from(card.children) as HTMLElement[]
+    if (!canAnimate(card)) {
+      card.style.opacity = '1'
+      kids.forEach((k) => {
+        k.style.opacity = '1'
+      })
+      return
+    }
+    await runAnim(
+      card,
+      [
+        { opacity: 0, transform: 'translateY(48px) scale(.9)', filter: 'blur(14px)' },
+        { opacity: 1, transform: 'none', filter: 'blur(0px)' },
+      ],
+      { duration: 680, easing: 'cubic-bezier(.2,.7,.1,1)' },
+    )
+    kids.forEach((k, i) => {
+      void runAnim(
+        k,
+        [
+          { opacity: 0, transform: 'translateY(12px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        { duration: 440, delay: i * 45, easing: 'cubic-bezier(.2,.7,.1,1)' },
+      )
+    })
+  }
+
+  const animateCardOut = async (card: HTMLElement | null) => {
+    if (!card || !canAnimate(card)) return
+    const kids = Array.from(card.children) as HTMLElement[]
+    await Promise.all(
+      kids
+        .slice()
+        .reverse()
+        .map((k, i) =>
+          runAnim(
+            k,
+            [
+              { opacity: 1, transform: 'none' },
+              { opacity: 0, transform: 'translateY(-8px)' },
+            ],
+            { duration: 200, delay: i * 18 },
+          ),
+        ),
+    )
+    await runAnim(
+      card,
+      [
+        { opacity: 1, transform: 'none', filter: 'blur(0px)' },
+        { opacity: 0, transform: 'translateY(34px) scale(.92)', filter: 'blur(12px)' },
+      ],
+      { duration: 420, easing: 'cubic-bezier(.4,0,.2,1)' },
+    )
+  }
+
+  // Sincronizar apertura del modal y ejecutar la secuencia openAuth del prototipo
   useEffect(() => {
-    setActiveTab(initialTab)
-    setStep('form')
-    setError('')
-    setPreviewRole(null)
+    if (isOpen) {
+      setActiveTab(initialTab)
+      setStep('form')
+      setError('')
+      setPreviewRole(null)
+      setRendered(true)
+    }
   }, [initialTab, isOpen])
 
   useEffect(() => {
+    if (!rendered || !isOpen) return
+    let cancelled = false
+    const bg = bgRef.current
+    const ph = photoRef.current
+    const img = imgRef.current
+    const meta = metaRef.current
+    const card = cardRef.current
+
+    prevSrcRef.current = activePhoto.src
+    document.documentElement.classList.add('lock')
+
+    const openSequence = async () => {
+      busyRef.current = true
+      if (!canAnimate(ph)) {
+        if (bg) bg.style.opacity = '1'
+        if (ph) {
+          ph.style.opacity = '1'
+          ph.style.clipPath = 'inset(0% 0% round 18px)'
+        }
+        if (meta) meta.style.opacity = '1'
+        await animateCardIn(card)
+        busyRef.current = false
+        return
+      }
+
+      void runAnim(bg, [{ opacity: 0 }, { opacity: 1 }], { duration: 320 })
+      await runAnim(
+        ph,
+        [
+          {
+            opacity: 0,
+            clipPath: 'inset(41% 44% round 12px)',
+            transform: 'scale(.55) rotate(-4deg)',
+          },
+          {
+            opacity: 1,
+            clipPath: 'inset(38% 41% round 14px)',
+            transform: 'scale(1) rotate(0deg)',
+          },
+        ],
+        { duration: 520, easing: 'cubic-bezier(.34,1.56,.64,1)' },
+      )
+      if (cancelled) return
+
+      void runAnim(
+        img,
+        [{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
+        { duration: 950, easing: 'cubic-bezier(.65,0,.35,1)' },
+      )
+      await runAnim(
+        ph,
+        [
+          { clipPath: 'inset(38% 41% round 14px)' },
+          { clipPath: 'inset(0% 0% round 18px)' },
+        ],
+        { duration: 900, easing: 'cubic-bezier(.65,0,.35,1)' },
+      )
+      if (cancelled) return
+
+      void runAnim(
+        meta,
+        [
+          { opacity: 0, transform: 'translateY(-8px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        { duration: 420 },
+      )
+      await animateCardIn(card)
+      busyRef.current = false
+
+      if (!cancelled) {
+        window.setTimeout(() => {
+          const firstInput = card?.querySelector<HTMLElement>('input')
+          firstInput?.focus({ preventScroll: true })
+        }, 120)
+      }
+    }
+
+    void openSequence()
+
+    return () => {
+      cancelled = true
+      document.documentElement.classList.remove('lock')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rendered, isOpen])
+
+  // Transición suave de foto (.sr-auth-ghost) y leyenda (.sr-auth-cap) al cambiar rol o pestaña
+  useEffect(() => {
+    if (!rendered || !isOpen) return
+    const ph = photoRef.current
+    const img = imgRef.current
+    const cap = capRef.current
+    const previousSrc = prevSrcRef.current
+
+    if (cap && canAnimate(cap)) {
+      void runAnim(
+        cap,
+        [
+          { opacity: 0, transform: 'translateY(10px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        { duration: 520, easing: 'cubic-bezier(.2,.7,.1,1)' },
+      )
+    }
+
+    if (previousSrc && previousSrc !== activePhoto.src && ph && img && canAnimate(ph)) {
+      const ghost = document.createElement('img')
+      ghost.src = previousSrc
+      ghost.alt = ''
+      ghost.className = 'sr-auth-ghost'
+      ghost.style.transform = window.getComputedStyle(img).transform
+      img.after(ghost)
+      void runAnim(ghost, [{ opacity: 1 }, { opacity: 0 }], {
+        duration: 650,
+        easing: 'ease',
+      }).then(() => {
+        ghost.remove()
+      })
+    }
+    prevSrcRef.current = activePhoto.src
+  }, [activePhoto.src, picKey, rendered, isOpen])
+
+  const handleRequestClose = async () => {
+    if (busyRef.current) return
+    busyRef.current = true
+    const bg = bgRef.current
+    const ph = photoRef.current
+    const img = imgRef.current
+    const meta = metaRef.current
+    const card = cardRef.current
+
+    if (canAnimate(ph)) {
+      await animateCardOut(card)
+      void runAnim(meta, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 })
+      void runAnim(
+        img,
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }],
+        { duration: 800, easing: 'cubic-bezier(.65,0,.35,1)' },
+      )
+      await runAnim(
+        ph,
+        [
+          { clipPath: 'inset(0% 0% round 18px)' },
+          { clipPath: 'inset(38% 41% round 14px)' },
+        ],
+        { duration: 780, easing: 'cubic-bezier(.65,0,.35,1)' },
+      )
+      await runAnim(
+        ph,
+        [
+          { opacity: 1, transform: 'scale(1) rotate(0deg)' },
+          { opacity: 0, transform: 'scale(.55) rotate(4deg)' },
+        ],
+        { duration: 360, easing: 'cubic-bezier(.36,0,.66,-.56)' },
+      )
+      await runAnim(bg, [{ opacity: 1 }, { opacity: 0 }], { duration: 280 })
+    }
+
+    ;[bg, ph, img, meta, card].forEach(cancelAnims)
+    document.documentElement.classList.remove('lock')
+    busyRef.current = false
+    setRendered(false)
+    onClose()
+  }
+
+  const handleSwapTab = async (targetTab: 'login' | 'register') => {
+    if (busyRef.current || (targetTab === activeTab && step === 'form')) return
+    busyRef.current = true
+    const card = cardRef.current
+    await animateCardOut(card)
+    cancelAnims(card)
+    setError('')
+    setStep('form')
+    if (targetTab === 'login') {
+      setPreviewRole(null)
+    } else {
+      setPreviewRole(null)
+    }
+    setActiveTab(targetTab)
+    requestAnimationFrame(() => {
+      void animateCardIn(cardRef.current).then(() => {
+        busyRef.current = false
+        const firstInput = cardRef.current?.querySelector<HTMLElement>('input')
+        firstInput?.focus({ preventScroll: true })
+      })
+    })
+  }
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
+      if (e.key === 'Escape' && isOpen && rendered) {
+        // Si está abierto otro diálogo en portal (como el selector de Google), dejar que ese cierre primero
+        const dialogs = document.querySelectorAll('[role="dialog"]')
+        if (dialogs.length > 1) return
+        void handleRequestClose()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, rendered])
 
-  if (!isOpen) return null
+  if (!rendered && !isOpen) return null
+
+  const finishAuthAndNavigate = (targetPath: string) => {
+    document.documentElement.classList.remove('lock')
+    setRendered(false)
+    onClose()
+    navigate(targetPath, { replace: true })
+  }
 
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -75,8 +421,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
     try {
       const user = await login({ email, password })
-      onClose()
-      navigate(ROLE_HOME[user.role], { replace: true })
+      finishAuthAndNavigate(ROLE_HOME[user.role])
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Credenciales inválidas.')
     } finally {
@@ -92,10 +437,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setPreviewRole(account?.role ?? null)
   }
 
-  const activePhoto = previewRole
-    ? ROLE_PREVIEW[previewRole]
-    : { src: activeTab === 'login' ? '/img/representantes/S1.png' : '/img/representantes/S2.png', alt: activeTab === 'login' ? 'Representante iniciando sesión' : 'Representantes creando una cuenta' }
-
   const handleRegisterSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!email || password.length < 4 || !fullName) {
@@ -103,7 +444,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       return
     }
     setError('')
-    // Simulación del paso a verificación de 2 factores (RF-92)
     setStep('otp')
   }
 
@@ -113,7 +453,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     newOtp[index] = val
     setOtp(newOtp)
 
-    // Auto-focus siguiente input si hay valor
     if (val && index < 5) {
       const nextInput = document.getElementById(`otp-input-${index + 1}`)
       nextInput?.focus()
@@ -131,11 +470,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setLoading(true)
     setError('')
     try {
-      // Simular login exitoso tras verificación
       const user = await login({ email: 'usuario@styleradar.co', password: DEMO_PASSWORD })
-      onClose()
-      navigate(ROLE_HOME[user.role], { replace: true })
-    } catch (err) {
+      finishAuthAndNavigate(ROLE_HOME[user.role])
+    } catch {
       setError('Código inválido o expirado. Intenta de nuevo.')
     } finally {
       setLoading(false)
@@ -144,79 +481,68 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+      className="sr-auth"
+      id="auth"
+      data-pic={picKey}
       role="dialog"
       aria-modal="true"
       aria-labelledby="authTitle"
     >
       {/* Fondo oscuro con desenfoque */}
       <div
-        className="fixed inset-0 bg-[#0e0a14]/80 backdrop-blur-md transition-opacity"
-        onClick={onClose}
+        ref={bgRef}
+        className="sr-auth-bg"
+        id="authBg"
+        onClick={() => void handleRequestClose()}
         aria-hidden="true"
       />
 
-      {/* Contenedor Modal: Pila Foto + Vidrio */}
-      <div className="relative z-10 w-full max-w-4xl bg-[#1f1b26] border border-white/15 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-12 min-h-[580px]">
-        {/* Columna Izquierda: Foto Editorial */}
-        <div className="hidden md:block md:col-span-5 relative bg-[#15121b] overflow-hidden">
+      {/* Contenedor Pila: Foto que se abre + Tarjeta de vidrio encima */}
+      <div className="sr-auth-stack">
+        <div ref={photoRef} className="sr-auth-photo" id="authPhoto">
           <img
             src={activePhoto.src}
-            alt={activePhoto.alt}
-            className="w-full h-full object-cover object-[50%_45%]"
+            alt=""
+            aria-hidden="true"
+            className="sr-auth-backdrop-img"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#15121b]/95 via-[#15121b]/30 to-transparent" />
-          <div className="absolute bottom-8 left-8 right-8 space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#a98be0]">
-              StyleRadar · Bogotá
-            </span>
-            <p className="text-sm font-extrabold text-white leading-snug">
-              Conectando boutiques, personas y fundaciones en un solo radar.
-            </p>
+          <img ref={imgRef} id="authImg" src={activePhoto.src} alt={activePhoto.alt} />
+          <div ref={capRef} className="sr-auth-cap" id="authCap" aria-hidden="true">
+            <span className="ac-k">{activeCap[0]}</span>
+            <b className="ac-t">{activeCap[1]}</b>
           </div>
         </div>
 
-        {/* Columna Derecha: Tarjeta de Autenticación */}
-        <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-between space-y-6">
-          {/* Barra superior de marca y botón cerrar */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Logo className="h-6 w-auto" />
-              <span className="font-extrabold text-xs uppercase tracking-wider text-white">
-                StyleRadar
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-white/60 hover:text-white text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              Cerrar ✕
-            </button>
-          </div>
+        {/* Barra superior de marca y botón Cerrar */}
+        <div ref={metaRef} className="sr-auth-meta" id="authMeta">
+          <span className="sr-brand-s">
+            <svg viewBox="0 0 556 935" aria-hidden="true">
+              <path d="M237 6 L234 6 L209 23 L195 83 L193 85 L147 30 L108 40 L138 147 L58 233 L68 496 L68 544 L62 621 L86 629 L128 639 L160 643 L190 643 L225 636 L245 627 L264 614 L284 594 L298 576 L292 568 L192 477 L210 347 L210 329 L194 169Z" />
+              <path d="M410 646 L380 631 L347 610 L344 610 L321 639 L295 663 L274 677 L258 685 L225 696 L189 701 L147 700 L108 694 L54 680 L43 749 L97 767 L128 774 L163 779 L221 779 L264 771 L283 765 L310 753 L330 741 L351 725 L369 708 L389 684 L407 656Z" />
+              <path d="M549 696 L467 671 L452 699 L425 736 L396 766 L378 781 L345 803 L321 815 L286 828 L258 835 L202 841 L144 838 L75 824 L29 809 L20 845 L6 888 L43 905 L74 915 L117 924 L154 928 L214 928 L259 923 L303 914 L348 900 L403 875 L431 858 L467 830 L490 807 L507 786 L525 758 L541 724Z" />
+            </svg>
+            <span>StyleRadar</span>
+          </span>
+          <button
+            type="button"
+            id="authClose"
+            className="sr-auth-close"
+            onClick={() => void handleRequestClose()}
+          >
+            Cerrar
+          </button>
+        </div>
 
+        {/* Tarjeta de vidrio */}
+        <div ref={cardRef} className="sr-auth-card" id={activeTab === 'login' ? 'authCard' : 'signCard'}>
           {step === 'form' ? (
-            <div className="space-y-6">
-              {/* Selector de Pestañas: Iniciar sesión / Registro */}
-              <div
-                role="tablist"
-                aria-label="Cuenta"
-                className="grid grid-cols-2 p-1 rounded-full bg-white/5 border border-white/10"
-              >
+            <>
+              <div className="sr-auth-tabs" role="tablist" aria-label="Cuenta">
                 <button
                   type="button"
                   role="tab"
                   aria-selected={activeTab === 'login'}
-                  onClick={() => {
-                    setActiveTab('login')
-                    setError('')
-                    setPreviewRole(null)
-                  }}
-                  className={`py-2 text-xs font-black uppercase tracking-wider rounded-full transition-all cursor-pointer ${
-                    activeTab === 'login'
-                      ? 'bg-[#48119a] text-white shadow-md'
-                      : 'text-white/60 hover:text-white'
-                  }`}
+                  onClick={() => void handleSwapTab('login')}
                 >
                   Iniciar sesión
                 </button>
@@ -224,103 +550,80 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   type="button"
                   role="tab"
                   aria-selected={activeTab === 'register'}
-                  onClick={() => {
-                    setActiveTab('register')
-                    setError('')
-                    setPreviewRole(null)
-                  }}
-                  className={`py-2 text-xs font-black uppercase tracking-wider rounded-full transition-all cursor-pointer ${
-                    activeTab === 'register'
-                      ? 'bg-[#48119a] text-white shadow-md'
-                      : 'text-white/60 hover:text-white'
-                  }`}
+                  onClick={() => void handleSwapTab('register')}
                 >
                   Crear cuenta
                 </button>
               </div>
 
-              {/* Título de la sección */}
-              <div>
-                <h2 id="authTitle" className="text-2xl sm:text-3xl font-extrabold text-white">
-                  {activeTab === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}
-                </h2>
-                <p className="text-xs text-[#b9b9ca] mt-1">
-                  {activeTab === 'login'
-                    ? 'Entra con tu correo registrado para continuar.'
-                    : 'Únete a StyleRadar y descubre la moda de tu ciudad.'}
-                </p>
-              </div>
+              <h2 id="authTitle">{activeTab === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}</h2>
+              <p className="sr-sub">
+                {activeTab === 'login'
+                  ? 'Entra con Google o con tu correo.'
+                  : 'Únete a StyleRadar con Google o con tu correo.'}
+              </p>
 
-              {/* Mensaje de error */}
+              <GoogleSignIn onSignedIn={(u) => finishAuthAndNavigate(ROLE_HOME[u.role])} />
+
+              <div className="sr-auth-or">o con tu correo</div>
+
               {error && (
-                <div
-                  role="alert"
-                  className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs font-medium"
-                >
+                <div role="alert" className="sr-auth-err">
                   {error}
                 </div>
               )}
 
-              {/* Formulario de Login */}
               {activeTab === 'login' ? (
-                <form onSubmit={handleLoginSubmit} className="space-y-4" noValidate>
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="authEmail"
-                      className="text-[11px] font-bold uppercase tracking-wider text-white/70"
-                    >
-                      Correo electrónico
-                    </label>
+                <form onSubmit={handleLoginSubmit} className="flex flex-col gap-3" noValidate>
+                  <div className="sr-field">
+                    <label htmlFor="authEmail">Correo</label>
                     <input
                       id="authEmail"
                       type="email"
+                      autoComplete="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        setPreviewRole(null)
+                      }}
                       placeholder="tucorreo@ejemplo.com"
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 focus:border-[#48119a] focus:bg-white/10 text-white text-sm outline-none transition-all"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="authPass"
-                      className="text-[11px] font-bold uppercase tracking-wider text-white/70"
-                    >
-                      Contraseña
-                    </label>
-                    <div className="relative">
+                  <div className="sr-field">
+                    <label htmlFor="authPass">Contraseña</label>
+                    <div className="sr-pw">
                       <input
                         id="authPass"
                         type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mínimo 4 caracteres"
-                        className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 focus:border-[#48119a] focus:bg-white/10 text-white text-sm outline-none transition-all pr-20"
                       />
                       <button
                         type="button"
+                        id="authShow"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#a98be0] hover:text-white"
                       >
                         {showPassword ? 'Ocultar' : 'Mostrar'}
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-white/70 pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  <div className="sr-auth-row">
+                    <label className="sr-check">
                       <input
                         type="checkbox"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
-                        className="rounded accent-[#48119a]"
                       />
                       <span>Recordarme</span>
                     </label>
                     <button
                       type="button"
-                      onClick={() => setError('Contacta a soporte o usa una cuenta demo.')}
-                      className="text-[#a98be0] hover:underline"
+                      className="sr-forgot"
+                      onClick={() => setError('Contacta a soporte o elige una cuenta de prueba abajo.')}
                     >
                       ¿Olvidaste tu contraseña?
                     </button>
@@ -328,103 +631,143 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
                   <button
                     type="submit"
+                    id="authSubmit"
                     disabled={loading}
-                    className="w-full py-3.5 rounded-full bg-[#48119a] hover:bg-[#5e18c8] disabled:opacity-50 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[#48119a55] transition-all cursor-pointer"
+                    className="sr-auth-submit"
                   >
-                    {loading ? 'Entrando…' : 'Entrar a StyleRadar'}
+                    {loading ? 'Entrando…' : 'Entrar'}
                   </button>
                 </form>
               ) : (
-                /* Formulario de Registro */
-                <form onSubmit={handleRegisterSubmit} className="space-y-4" noValidate>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-white/70">
-                      Nombre completo
+                <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3" noValidate>
+                  <div className="sr-field">
+                    <span className="sr-lab" id="suRoleL">
+                      ¿Cómo vas a usar StyleRadar?
+                    </span>
+                    <div className="sr-role-pick" role="radiogroup" aria-labelledby="suRoleL">
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={role === 'COMPRADOR'}
+                        onClick={() => {
+                          setRole('COMPRADOR')
+                          setPreviewRole('COMPRADOR')
+                        }}
+                      >
+                        <b>Usuario</b>
+                        <span>Descubro, me pruebo y dono</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={role === 'ADMIN_ALMACEN'}
+                        onClick={() => {
+                          setRole('ADMIN_ALMACEN')
+                          setPreviewRole('ADMIN_ALMACEN')
+                        }}
+                      >
+                        <b>Tienda</b>
+                        <span>Publico mi catálogo</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={role === 'REPRESENTANTE_FUNDACION'}
+                        onClick={() => {
+                          setRole('REPRESENTANTE_FUNDACION')
+                          setPreviewRole('REPRESENTANTE_FUNDACION')
+                        }}
+                      >
+                        <b>Fundación</b>
+                        <span>Recibo donaciones</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="sr-field">
+                    <label htmlFor="suName">
+                      {role === 'ADMIN_ALMACEN'
+                        ? 'Nombre de la tienda'
+                        : role === 'REPRESENTANTE_FUNDACION'
+                          ? 'Nombre de la fundación'
+                          : 'Nombre completo'}
                     </label>
                     <input
+                      id="suName"
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Tu nombre o el de tu marca"
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 focus:border-[#48119a] focus:bg-white/10 text-white text-sm outline-none transition-all"
+                      placeholder={
+                        role === 'ADMIN_ALMACEN'
+                          ? 'Ej. Luna Store'
+                          : role === 'REPRESENTANTE_FUNDACION'
+                            ? 'Ej. Fundación Abrigo Bogotá'
+                            : 'Ej. Valentina Rojas'
+                      }
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-white/70">
-                      Correo electrónico
-                    </label>
+                  <div className="sr-field">
+                    <label htmlFor="suEmail">Correo</label>
                     <input
+                      id="suEmail"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="tucorreo@ejemplo.com"
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 focus:border-[#48119a] focus:bg-white/10 text-white text-sm outline-none transition-all"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-white/70">
-                      Tipo de cuenta
-                    </label>
-                    <select
-                      value={role}
-                      onChange={(e) => {
-                        const nextRole = e.target.value as typeof role
-                        setRole(nextRole)
-                        setPreviewRole(nextRole)
-                      }}
-                      className="w-full px-4 py-3 rounded-xl bg-[#1f1b26] border border-white/15 text-white text-sm outline-none"
-                    >
-                      <option value="COMPRADOR">Persona / Comprador</option>
-                      <option value="ADMIN_ALMACEN">Tienda o Boutique local</option>
-                      <option value="REPRESENTANTE_FUNDACION">Fundación aliada</option>
-                    </select>
-                    <img
-                      src={role === 'COMPRADOR' ? '/img/representantes/R1.png' : role === 'ADMIN_ALMACEN' ? '/img/representantes/R2.png' : '/img/representantes/R3.png'}
-                      alt={role === 'COMPRADOR' ? 'Personas usando el probador' : role === 'ADMIN_ALMACEN' ? 'Representante de una tienda local' : 'Voluntarios de una fundación'}
-                      loading="lazy"
-                      className="mx-auto mt-3 block h-56 w-auto max-w-full rounded-xl bg-[#15121b] object-contain"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-white/70">
-                      Contraseña
-                    </label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Mínimo 4 caracteres"
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 focus:border-[#48119a] focus:bg-white/10 text-white text-sm outline-none transition-all"
-                    />
+                  <div className="sr-field">
+                    <label htmlFor="suPass">Contraseña</label>
+                    <div className="sr-pw">
+                      <input
+                        id="suPass"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mín. 6 caracteres"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? 'Ocultar' : 'Mostrar'}
+                      </button>
+                    </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 rounded-full bg-[#48119a] hover:bg-[#5e18c8] text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[#48119a55] transition-all cursor-pointer"
+                    id="suSubmit"
+                    disabled={loading}
+                    className="sr-auth-submit"
                   >
-                    Continuar a verificación ↗
+                    {loading
+                      ? 'Creando cuenta…'
+                      : role === 'ADMIN_ALMACEN'
+                        ? 'Registrar mi tienda'
+                        : role === 'REPRESENTANTE_FUNDACION'
+                          ? 'Registrar mi fundación'
+                          : 'Crear cuenta'}
                   </button>
                 </form>
               )}
 
-              {/* Seleccionar una cuenta demo solo completa el formulario; el ingreso requiere submit. */}
               {activeTab === 'login' && (
-                <div className="pt-4 border-t border-white/10 space-y-2.5">
-                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-white/60 font-semibold uppercase tracking-wider">
-                    <span>Elige una cuenta y luego oprime Entrar:</span>
-                    <span className="text-[#a98be0]">Clave: 1234</span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="sr-auth-demo">
+                  <span className="sr-lbl">
+                    <span>Cuentas de prueba</span>
+                    <span>Clave: 1234</span>
+                  </span>
+                  <div className="sr-auth-demo-row">
                     {DEMO_ACCOUNTS.map((acc) => (
                       <button
                         key={acc.email}
                         type="button"
                         disabled={loading}
+                        className={email === acc.email ? 'on' : ''}
                         onClick={() => selectDemoAccount(acc.email)}
-                        className="py-2 px-2.5 rounded-xl bg-white/5 hover:bg-[#48119a]/40 border border-white/10 text-[11px] font-bold text-white/90 hover:text-white transition-all text-center truncate cursor-pointer"
                       >
                         {ROLE_LABEL[acc.role]}
                       </button>
@@ -432,44 +775,40 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   </div>
                 </div>
               )}
-            </div>
+
+              <p className="sr-auth-foot">
+                {activeTab === 'login' ? (
+                  <>
+                    ¿No tienes cuenta?{' '}
+                    <button type="button" onClick={() => void handleSwapTab('register')}>
+                      Crear cuenta gratis →
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    ¿Ya tienes cuenta?{' '}
+                    <button type="button" onClick={() => void handleSwapTab('login')}>
+                      Inicia sesión →
+                    </button>
+                  </>
+                )}
+              </p>
+            </>
           ) : (
-            /* Pantalla de OTP (Verificación en dos pasos RF-92) */
-            <form onSubmit={handleVerifyOtp} className="space-y-6">
-              <div className="text-center space-y-2">
-                <div className="w-12 h-12 mx-auto rounded-full bg-[#48119a]/30 border border-[#48119a] flex items-center justify-center text-white mb-3">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-black text-white">Verifica que eres tú</h3>
-                <p className="text-xs text-[#b9b9ca] max-w-sm mx-auto">
-                  Enviamos un código de 6 dígitos a <b className="text-white">{email}</b>. Vence en
-                  10 minutos.
-                </p>
-              </div>
+            <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+              <h2>Verifica que eres tú</h2>
+              <p className="sr-sub">
+                Enviamos un código de 6 dígitos a <b className="text-white">{email}</b>. Vence en 10
+                minutos.
+              </p>
 
               {error && (
-                <div
-                  role="alert"
-                  className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs font-medium text-center"
-                >
+                <div role="alert" className="sr-auth-err">
                   {error}
                 </div>
               )}
 
-              {/* Grid de 6 dígitos */}
-              <div className="flex justify-center gap-2 sm:gap-3 py-2">
+              <div className="flex justify-center gap-2 py-2">
                 {otp.map((digit, idx) => (
                   <input
                     key={idx}
@@ -479,29 +818,23 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
-                    className="w-11 h-14 sm:w-12 sm:h-16 text-center text-xl font-black text-white rounded-xl bg-white/5 border border-white/20 focus:border-[#7b4dd8] focus:bg-white/10 outline-none transition-all"
+                    className="w-11 h-14 text-center text-xl font-black text-white rounded-xl bg-white/10 border border-white/25 focus:border-[#E8DCCB] outline-none"
                     aria-label={`Dígito ${idx + 1}`}
                   />
                 ))}
               </div>
 
-              <div className="space-y-3">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 rounded-full bg-[#48119a] hover:bg-[#5e18c8] disabled:opacity-50 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[#48119a55] transition-all cursor-pointer"
-                >
-                  {loading ? 'Verificando…' : 'Confirmar y entrar'}
-                </button>
+              <button type="submit" disabled={loading} className="sr-auth-submit">
+                {loading ? 'Verificando…' : 'Confirmar y entrar'}
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setStep('form')}
-                  className="w-full text-center text-xs font-semibold text-white/60 hover:text-white transition-colors"
-                >
-                  ← Volver al formulario
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setStep('form')}
+                className="w-full text-center text-xs font-semibold text-white/70 hover:text-white"
+              >
+                ← Volver al formulario
+              </button>
             </form>
           )}
         </div>
@@ -509,4 +842,3 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     </div>
   )
 }
-

@@ -43,71 +43,53 @@ export default function MapPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-4">
-        <Link
-          to="/"
-          className="flex items-center gap-1.5 rounded-lg border border-white/20 px-3 py-1.5 text-sm text-white/70 transition hover:bg-white/10"
-        >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Volver
-        </Link>
-        <div className="flex-1">
-          <span className="text-xs font-semibold uppercase tracking-widest text-white/40">Moda local · Bogotá</span>
-          <h1 className="text-lg font-bold leading-tight">Tiendas y fundaciones</h1>
+    <div className="sr-map-page-shell px-4 py-4 sm:px-6">
+      <div className="sr-map-layout-wrap">
+        {/* Fila superior con botón VOLVER tipo píldora */}
+        <div className="sr-map-top-nav">
+          <Link to="/" className="sr-map-back-btn" aria-label="Volver al inicio">
+            <span aria-hidden="true">←</span>
+            <span>Volver</span>
+          </Link>
         </div>
 
-        {/* Filtros */}
-        <div className="flex gap-1 rounded-full border border-white/10 bg-white/[.04] p-1">
-          {(['todos', 'tiendas', 'fundaciones'] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition ${
-                filter === f
-                  ? 'bg-violeta text-white shadow'
-                  : 'text-white/50 hover:text-white/80'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Hero: mapa + burbujas en arco */}
-      <div className="sr-store-map grid items-center gap-6 lg:grid-cols-[2.2fr_1fr]">
-        <div className="relative h-[380px] overflow-hidden rounded-[22px] border border-white/[.14] shadow-[0_20px_50px_rgba(0,0,0,.55)] lg:h-[min(calc(100dvh-170px),700px)]">
-          <MapaBogota
-            pins={pins}
-            selectedId={selectedId}
-            hoveredId={hoveredId}
-            filter={filter}
-            onSelect={handleSelect}
-            onHover={handleHover}
-            showControls={false}
-            className="h-full w-full"
-          />
-          {selectedPin && (
-            <MapCard
-              pin={selectedPin}
-              onClose={() => setSelectedId(null)}
+        {/* Hero principal: Mapa (~63%) + Carrusel de burbujas en arco (~37%) */}
+        <div className="sr-map-hero sr-store-map">
+          <div className="sr-map-hero-main">
+            <MapaBogota
+              pins={pins}
+              selectedId={selectedId}
+              hoveredId={hoveredId}
+              filter={filter}
+              onFilterChange={setFilter}
+              onSelect={handleSelect}
+              onHover={handleHover}
+              showControls={true}
+              className="h-full w-full"
             />
-          )}
-        </div>
+            {selectedPin && (
+              <MapCard
+                pin={selectedPin}
+                onClose={() => setSelectedId(null)}
+              />
+            )}
+          </div>
 
-        <aside>
-          <BubbleColumn
-            pins={visiblePins}
-            selectedId={selectedId}
-            onSelect={handleBubbleSelect}
-            onHover={handleHover}
-          />
-        </aside>
+          <aside className="sr-map-hero-side" aria-label="Tiendas y fundaciones aliadas">
+            <div className="sr-bubbles-header">
+              <span className="sr-bubbles-kicker">Moda local · Bogotá</span>
+              <h1 className="sr-bubbles-title">Tiendas y fundaciones</h1>
+            </div>
+
+            <BubbleColumn
+              pins={visiblePins}
+              selectedId={selectedId}
+              hoveredId={hoveredId}
+              onSelect={handleBubbleSelect}
+              onHover={handleHover}
+            />
+          </aside>
+        </div>
       </div>
     </div>
   )

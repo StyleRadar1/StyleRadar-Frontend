@@ -1,0 +1,268 @@
+/* =====================================================================
+   STYLERADAR · ESTÉTICA VERDELO (GLASS + AURORA + 3D CARDS + HEATMAP)
+   Adaptado a la paleta oficial de StyleRadar:
+   Grafito #262626 · Violeta #48119A · Violeta claro #7B4DD8
+   Arena #E8DCCB · Lavanda #B9B9CA · Blanco #FFFFFF
+   ===================================================================== */
+
+.sr-verdelo-shell {
+  position: relative;
+  min-height: 100vh;
+  background-color: #110c1a;
+  background-image:
+    radial-gradient(760px 540px at 12% 10%, rgba(72, 17, 154, 0.38) 0%, rgba(72, 17, 154, 0) 70%),
+    radial-gradient(680px 500px at 88% 22%, rgba(123, 77, 216, 0.24) 0%, rgba(123, 77, 216, 0) 72%),
+    radial-gradient(640px 480px at 50% 62%, rgba(72, 17, 154, 0.22) 0%, rgba(72, 17, 154, 0) 74%),
+    radial-gradient(580px 440px at 22% 92%, rgba(232, 220, 203, 0.11) 0%, rgba(232, 220, 203, 0) 72%),
+    linear-gradient(180deg, #130d1e 0%, #171222 50%, #120e1b 100%);
+  background-attachment: fixed;
+  color: #FFFFFF;
+}
+
+.sr-verdelo-page {
+  position: relative;
+  z-index: 1;
+}
+
+.sr-verdelo-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(650px 480px at 18% 16%, rgba(72, 17, 154, 0.32) 0%, transparent 70%),
+    radial-gradient(600px 440px at 84% 30%, rgba(123, 77, 216, 0.20) 0%, transparent 70%),
+    radial-gradient(520px 380px at 30% 85%, rgba(232, 220, 203, 0.09) 0%, transparent 72%);
+}
+
+/* Superficie de vidrio esmerilado tipo Verdelo */
+.sr-verdelo-panel {
+  position: relative;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.018) 55%, rgba(72, 17, 154, 0.08) 100%),
+    rgba(24, 19, 34, 0.62);
+  backdrop-filter: blur(24px) saturate(1.25);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 20px 50px rgba(5, 2, 12, 0.45);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.sr-verdelo-panel:hover {
+  border-color: rgba(185, 185, 202, 0.22);
+}
+
+/* Píldora activa con resplandor en barra lateral */
+.sr-verdelo-nav-active {
+  background: linear-gradient(90deg, rgba(123, 77, 216, 0.32) 0%, rgba(72, 17, 154, 0.55) 100%) !important;
+  border: 1px solid rgba(232, 220, 203, 0.28);
+  color: #FFFFFF !important;
+  box-shadow:
+    0 0 22px rgba(123, 77, 216, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* =====================================================================
+   PILA 3D DE TARJETAS INTERACTIVAS (CARDS · VERDELO 00:01 - 00:06)
+   ===================================================================== */
+.sr-vcard-stage {
+  position: relative;
+  height: 238px;
+  perspective: 1200px;
+  margin: 18px auto 14px;
+  width: 100%;
+  max-width: 360px;
+  user-select: none;
+}
+
+.sr-vcard-slot {
+  position: absolute;
+  inset: 18px 0 0 0;
+  transition:
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease,
+    filter 0.45s ease;
+  transform-style: preserve-3d;
+}
+
+.sr-vcard-slot[data-depth="0"] {
+  z-index: 3;
+  transform: translate3d(0, 0, 0) scale(1);
+  opacity: 1;
+  cursor: pointer;
+}
+
+.sr-vcard-slot[data-depth="1"] {
+  z-index: 2;
+  transform: translate3d(0, -14px, -40px) scale(0.93);
+  opacity: 0.78;
+  filter: brightness(0.78);
+  pointer-events: none;
+}
+
+.sr-vcard-slot[data-depth="2"] {
+  z-index: 1;
+  transform: translate3d(0, -26px, -80px) scale(0.86);
+  opacity: 0.52;
+  filter: brightness(0.6);
+  pointer-events: none;
+}
+
+.sr-vcard-inner {
+  position: relative;
+  width: 100%;
+  height: 210px;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sr-vcard-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.sr-vcard-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  padding: 20px 22px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.28),
+    0 22px 44px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.sr-vcard-face::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.22) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.sr-vcard-face--violeta {
+  background: linear-gradient(135deg, #5d1ec2 0%, #48119A 48%, #21074a 100%);
+}
+
+.sr-vcard-face--arena {
+  background: linear-gradient(135deg, #4b423b 0%, #2c2623 52%, #19161c 100%);
+  border-color: rgba(232, 220, 203, 0.35);
+}
+
+.sr-vcard-face--lavanda {
+  background: linear-gradient(135deg, #5b4b8a 0%, #36285c 52%, #1b142e 100%);
+  border-color: rgba(185, 185, 202, 0.35);
+}
+
+.sr-vcard-back {
+  transform: rotateY(180deg);
+  padding: 0;
+  justify-content: flex-start;
+}
+
+.sr-vcard-stripe {
+  width: 100%;
+  height: 42px;
+  background: rgba(10, 8, 16, 0.88);
+  margin-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sr-vcard-chip {
+  width: 36px;
+  height: 26px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #f3e7d3 0%, #cbb493 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  position: relative;
+}
+
+/* =====================================================================
+   CÁPSULAS VERTICALES DE METAS (GOALS · VERDELO 00:12 - 00:17)
+   ===================================================================== */
+.sr-goal-capsule {
+  position: relative;
+  width: 66px;
+  height: 176px;
+  border-radius: 999px;
+  background: rgba(12, 9, 20, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 4px 14px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sr-goal-fill {
+  position: relative;
+  width: 100%;
+  border-radius: 0 0 999px 999px;
+  transition: height 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sr-goal-fill::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+.sr-goal-fill--violeta {
+  background: linear-gradient(180deg, rgba(123, 77, 216, 0.92) 0%, rgba(72, 17, 154, 0.45) 100%);
+  box-shadow: 0 -8px 24px rgba(123, 77, 216, 0.45);
+}
+
+.sr-goal-fill--arena {
+  background: linear-gradient(180deg, rgba(232, 220, 203, 0.92) 0%, rgba(232, 220, 203, 0.28) 100%);
+  box-shadow: 0 -8px 24px rgba(232, 220, 203, 0.35);
+}
+
+.sr-goal-fill--lavanda {
+  background: linear-gradient(180deg, rgba(185, 185, 202, 0.9) 0%, rgba(123, 77, 216, 0.32) 100%);
+  box-shadow: 0 -8px 24px rgba(185, 185, 202, 0.35);
+}
+
+/* =====================================================================
+   MAPA DE CALOR POR DÍA (INSIGHTS HEATMAP · VERDELO 00:20 - 00:24)
+   ===================================================================== */
+.sr-heatmap-grid {
+  display: grid;
+  grid-template-columns: 36px repeat(12, minmax(0, 1fr));
+  gap: 5px;
+  align-items: center;
+}
+
+.sr-heatmap-cell {
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.sr-heatmap-cell:hover {
+  transform: scale(1.08);
+  border-color: #E8DCCB;
+  z-index: 5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+

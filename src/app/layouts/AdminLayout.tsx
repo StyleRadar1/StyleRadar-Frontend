@@ -10,6 +10,7 @@ import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 import { env } from '@/configs/env'
 import { RequireRole } from '../RequireRole'
+import '@/styles/verdelo-dashboard.css'
 
 const ico = (d: ReactNode) => <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0">{d}</svg>
 const ICONOS = {
@@ -69,7 +70,7 @@ function AdminShell() {
 
   if (!user) return null
   const enlace = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${isActive ? 'bg-white/10 font-semibold text-blanco' : 'text-white/70 hover:bg-white/5 hover:text-blanco'}`
+    `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${isActive ? 'sr-verdelo-nav-active font-semibold text-blanco' : 'text-white/70 hover:bg-white/5 hover:text-blanco'}`
 
   const nav = (
     <>
@@ -90,18 +91,18 @@ function AdminShell() {
   )
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="sr-verdelo-shell flex min-h-screen flex-col">
       {env.useMocks && <MockBanner />}
       {env.appEnvironment === 'qa' && <EnvironmentBanner environment="qa" />}
       <div className="flex flex-1">
         {/* Barra lateral */}
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-black/25 lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-[#181520]/80 backdrop-blur-xl lg:flex">
           <Link to="/admin/estadisticas" className="flex items-center gap-2.5 border-b border-white/10 px-5 py-4">
             <Logo className="h-8 w-auto" />
             <span><b className="block leading-tight">StyleRadar</b><span className="block text-[10px] font-bold uppercase tracking-[.16em] text-white/55">Módulo de administración</span></span>
           </Link>
           <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
-            <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violeta text-xs font-bold text-blanco">{iniciales(user.name)}</span>
+            <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violeta text-xs font-bold text-blanco shadow-[0_0_18px_rgba(72,17,154,0.55)]">{iniciales(user.name)}</span>
             <span className="min-w-0"><b className="block truncate text-sm">{user.name}</b><span className="block text-[10px] font-bold uppercase tracking-[.16em] text-white/55">Administrador</span></span>
           </div>
           <nav aria-label="Administración" className="flex-1 space-y-1 overflow-y-auto p-3">{nav}</nav>
@@ -113,7 +114,7 @@ function AdminShell() {
 
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Barra superior */}
-          <header className="sticky top-0 z-30 border-b border-white/10 bg-grafito/80 backdrop-blur">
+          <header className="sticky top-0 z-30 border-b border-white/10 bg-[#181520]/75 backdrop-blur-xl">
             <div className="flex h-14 items-center gap-3 px-4 md:px-8">
               <Link to="/admin/estadisticas" className="lg:hidden" aria-label="StyleRadar, administración"><Logo className="h-7 w-auto" /></Link>
               <p className="text-[11px] font-bold uppercase tracking-[.16em] text-white/60">

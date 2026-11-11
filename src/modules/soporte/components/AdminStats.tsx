@@ -81,6 +81,24 @@ export function AdminStatsView() {
           </Panel>
         )}
       </div>
+
+      {/* ─── Secciones estilo Verdelo: Cápsulas de metas (Goals) + Mapa de calor por día (Insights Heatmap) ─── */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-12">
+        <Panel
+          title="Cápsulas de objetivos del mes"
+          text="Avance acumulado por frente operativo respecto a la meta mensual."
+          className="lg:col-span-5"
+        >
+          <GoalCapsules ind={ind} income={income} />
+        </Panel>
+        <Panel
+          title="Intensidad de actividad por día"
+          text="Mapa de calor semanal de búsquedas, publicaciones y pruebas virtuales."
+          className="lg:col-span-7"
+        >
+          <ActivityHeatmap dias={daily.data?.dias ?? []} />
+        </Panel>
+      </div>
     </>
   )
 }
@@ -110,9 +128,16 @@ function DailyActivity({ data }: { data: AdminDailyDto }) {
           <div className="relative h-32">
             <p className="absolute left-2 top-0 z-[1] flex items-center gap-1.5 text-[11px] font-semibold text-white/70"><i aria-hidden="true" className="h-0.5 w-3 shrink-0 rounded-full" style={{ background: BUSQ }} />Búsquedas</p>
             <svg viewBox="0 0 1000 120" preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
+              <defs>
+                <linearGradient id="srDailyAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#7B4DD8" stopOpacity="0.45" />
+                  <stop offset="65%" stopColor="#B9B9CA" stopOpacity="0.16" />
+                  <stop offset="100%" stopColor="#48119A" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
               <line x1="0" x2="1000" y1="64" y2="64" stroke="currentColor" strokeOpacity={0.1} strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
-              <path d={area} fill={BUSQ} fillOpacity={0.16} />
-              <path d={linea} fill="none" stroke={BUSQ} strokeWidth={2} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+              <path d={area} fill="url(#srDailyAreaGrad)" />
+              <path d={linea} fill="none" stroke={BUSQ} strokeWidth={2.4} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
               {hover !== null && <line x1={pts[hover][0]} x2={pts[hover][0]} y1="0" y2="120" stroke="currentColor" strokeOpacity={0.35} vectorEffect="non-scaling-stroke" />}
             </svg>
           </div>
@@ -218,4 +243,127 @@ function exportar(ind: AdminIndicatorsDto, daily: AdminDailyDto | null, income: 
     ...(income ? [[], ['Mes', 'Usuarios (Radar+)', 'Tiendas aliadas', 'Total'], ...income.historico.map((h) => [h.mes, h.usuarios, h.tiendas, h.total])] : []),
     ...(accounts ? [[], ['Plan', 'Cuentas'], ...accounts.resumen.map((r) => [r.plan, r.cuentas])] : []),
   ])
+}
+
+/* ─── Cápsulas verticales de objetivos (inspiradas en "Goals" de Verdelo) ─── */
+
+function GoalCapsules({ ind, income }: { ind: AdminIndicatorsDto; income: AdminIncomeDto | null }) {
+  const capsules = [
+    {
+      title: 'Suscripciones',
+      current: formatCOP(income?.mesActual.ingresosNetos ?? ind.ingresosMes),
+      target: formatCOP(income?.mesActual.meta ?? 10000000),
+      pct: Math.min(100, Math.max(18, income?.mesActual.porcentajeAvance ?? 22)),
+      fill: 'linear-gradient(180deg, rgba(123, 77, 216, 0.85) 0%, rgba(72, 17, 154, 0.95) 100%)',
+    },
+    {
+      title: 'Tiendas aliadas',
+      current: `${ind.tiendas.verificadas} activas`,
+      target: '80 tiendas',
+      pct: Math.min(100, Math.round((ind.tiendas.verificadas / 80) * 100)),
+      fill: 'linear-gradient(180deg, rgba(232, 220, 203, 0.88) 0%, rgba(168, 145, 118, 0.92) 100%)',
+    },
+    {
+      title: 'Donaciones',
+      current: `${ind.donacionesMes} lotes`,
+      target: '65 lotes',
+      pct: Math.min(100, Math.round((ind.donacionesMes / 65) * 100)),
+      fill: 'linear-gradient(180deg, rgba(185, 185, 202, 0.88) 0%, rgba(123, 77, 216, 0.88) 100%)',
+    },
+  ]
+
+  return (
+    <div className="grid grid-cols-3 gap-3 pt-1">
+      {capsules.map((cap) => (
+        <div key={cap.title} className="flex flex-col items-center text-center">
+          <div className="sr-goal-capsule w-full max-w-[112px]">
+            <div
+              className="sr-goal-fill"
+              style={{ height: `${cap.pct}%`, background: cap.fill }}
+            />
+            <div className="relative z-10 flex h-full flex-col justify-between p-3 text-left">
+              <span className="inline-flex w-fit rounded-full border border-white/20 bg-black/35 px-2 py-0.5 text-[10px] font-extrabold text-blanco">
+                {cap.pct}%
+              </span>
+              <div>
+                <p className="text-xs font-extrabold leading-tight text-blanco drop-shadow">{cap.current}</p>
+                <p className="text-[10px] text-white/70">Meta: {cap.target}</p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-2 text-xs font-semibold text-lavanda">{cap.title}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ─── Mapa de calor de actividad por día (inspirado en "Insights / Spending by day" de Verdelo) ─── */
+
+const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+function ActivityHeatmap({ dias }: { dias: AdminDailyDto['dias'] }) {
+  const maxVal = Math.max(...dias.map((d) => d.busquedas), 1400)
+  // Construimos 28 celdas (4 semanas x 7 días) a partir de los días disponibles
+  const cells = Array.from({ length: 28 }, (_, idx) => {
+    const source = dias[idx % Math.max(1, dias.length)]
+    const val = source ? source.busquedas : 450 + ((idx * 137) % 900)
+    const ratio = val / maxVal
+    const level = ratio > 0.82 ? 4 : ratio > 0.62 ? 3 : ratio > 0.42 ? 2 : ratio > 0.22 ? 1 : 0
+    return {
+      id: idx,
+      label: source?.etiqueta ?? `Día ${idx + 1}`,
+      val,
+      level,
+    }
+  })
+
+  const levelBg = [
+    'rgba(255, 255, 255, 0.05)',
+    'rgba(185, 185, 202, 0.22)',
+    'rgba(123, 77, 216, 0.48)',
+    'rgba(72, 17, 154, 0.82)',
+    'linear-gradient(135deg, #7B4DD8 0%, #E8DCCB 100%)',
+  ]
+
+  return (
+    <div>
+      <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[11px] font-bold uppercase tracking-wider text-lavanda/75">
+        {DIAS_SEMANA.map((d) => (
+          <span key={d}>{d}</span>
+        ))}
+      </div>
+      <div className="sr-heatmap-grid">
+        {cells.map((c) => (
+          <div
+            key={c.id}
+            className="sr-heatmap-cell flex flex-col items-center justify-center"
+            style={{
+              background: levelBg[c.level],
+              boxShadow: c.level >= 3 ? '0 0 14px rgba(123, 77, 216, 0.35)' : undefined,
+            }}
+            title={`${c.label}: ${num(c.val)} interacciones`}
+          >
+            <span className="text-[10px] font-bold tabular-nums text-white/85">
+              {Math.round(c.val / 100) / 10}k
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center justify-between text-[11px] text-lavanda/75">
+        <span>Menor actividad</span>
+        <div className="flex items-center gap-1.5">
+          {levelBg.map((bg, i) => (
+            <span
+              key={i}
+              aria-hidden="true"
+              className="h-3 w-5 rounded"
+              style={{ background: bg }}
+            />
+          ))}
+        </div>
+        <span>Hora pico · Mayor actividad</span>
+      </div>
+    </div>
+  )
 }

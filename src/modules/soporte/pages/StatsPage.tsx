@@ -7,6 +7,7 @@ import {
 import type { KpiDto, StatsPeriod } from '../types/stats.dto'
 import { FoundationStatsView } from '../components/FoundationStats'
 import { AdminStatsView } from '../components/AdminStats'
+import '@/styles/verdelo-dashboard.css'
 
 /* ─── Componentes auxiliares de Stats ─── */
 
@@ -96,7 +97,7 @@ export default function StatsPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
+    <section className="sr-verdelo-page mx-auto max-w-6xl px-4 py-10">
       {role === 'store' && <StoreStatsView />}
       {role === 'foundation' && <FoundationStatsView />}
       {role === 'admin' && <AdminStatsView />}

@@ -62,30 +62,107 @@ function AccountPicker({ onPick, onClose }: { onPick: (email: string) => void; o
   const submit = (e: FormEvent) => { e.preventDefault(); e.stopPropagation(); if (/^\S+@\S+\.\S+$/.test(otra.trim())) onPick(otra) }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId} className="w-full max-w-sm rounded-2xl border border-white/15 bg-grafito p-6 shadow-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[.14em] text-white/60">Continuar con Google</p>
-        <h2 id={titleId} className="mt-1 text-xl font-bold">Elige una cuenta</h2>
-        <ul className="mt-4 space-y-2">
+    <div
+      className="fixed inset-0 z-[200] grid place-items-center bg-black/65 p-4 backdrop-blur-md"
+      style={{ zIndex: 200 }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        ref={box}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative w-full max-w-[430px] rounded-2xl border border-white/20 bg-[#262626]/85 p-6 text-white shadow-2xl backdrop-blur-xl"
+      >
+        <div className="pr-10">
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-white/65">
+            Continuar con Google
+          </p>
+          <h2 id={titleId} className="mt-1 text-3xl font-extrabold tracking-tight text-white">
+            Elige una cuenta
+          </h2>
+        </div>
+
+        <p className="mt-2 text-sm text-[#e8dccb]">para continuar a StyleRadar</p>
+
+        <ul className="mt-4 space-y-2.5">
           {DEMO_ACCOUNTS.map((a) => (
             <li key={a.email}>
-              <button type="button" onClick={() => onPick(a.email)} className="flex w-full items-center gap-3 rounded-xl border border-white/15 p-3 text-left hover:border-violeta-claro">
-                <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violeta text-xs font-bold">{a.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
-                <span className="min-w-0"><b className="block truncate text-sm">{a.name}</b><span className="block truncate text-xs text-white/60">{a.email} · {ROLE_LABEL[a.role]}</span></span>
+              <button
+                type="button"
+                onClick={() => onPick(a.email)}
+                className="flex w-full items-center gap-3.5 rounded-xl border border-white/15 bg-white/[0.03] px-3.5 py-3 text-left transition hover:border-[#7b4dd8] hover:bg-white/[0.08]"
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#48119A] text-xs font-bold text-white"
+                >
+                  {a.name
+                    .split(' ')
+                    .map((w) => w[0])
+                    .slice(0, 2)
+                    .join('')}
+                </span>
+                <span className="min-w-0">
+                  <b className="block truncate text-sm font-bold text-white">{a.name}</b>
+                  <span className="block truncate text-xs text-white/65">
+                    {a.email} · {ROLE_LABEL[a.role]}
+                  </span>
+                </span>
               </button>
             </li>
           ))}
         </ul>
+
         <form onSubmit={submit} className="mt-4">
-          <label htmlFor="g-otra" className="text-sm font-semibold">Usar otra cuenta</label>
-          <div className="mt-1 flex gap-2">
-            <input id="g-otra" type="email" value={otra} onChange={(e) => setOtra(e.target.value)} placeholder="tucorreo@gmail.com"
-              className="min-w-0 flex-1 rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm outline-none focus:border-violeta-claro" />
-            <button type="submit" className="rounded-xl bg-violeta px-4 text-sm font-semibold">Seguir</button>
+          <label
+            htmlFor="g-otra"
+            className="inline-flex items-center text-xs font-semibold text-white/90 before:mr-1.5 before:text-[10px] before:content-['▸']"
+          >
+            Usar otra cuenta
+          </label>
+          <div className="mt-2 flex gap-2">
+            <input
+              id="g-otra"
+              type="email"
+              value={otra}
+              onChange={(e) => setOtra(e.target.value)}
+              placeholder="tucorreo@gmail.com"
+              className="min-w-0 flex-1 rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-sm text-white outline-none focus:border-[#e8dccb]"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-[#48119A] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-[#5a16c0]"
+            >
+              Seguir
+            </button>
           </div>
         </form>
-        <p className="mt-4 text-xs text-white/50">Simulación del prototipo: no se conecta con Google.</p>
-        <button type="button" onClick={onClose} className="mt-3 w-full rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold">Cancelar</button>
+
+        <p className="mt-3 text-xs text-white/55">
+          Simulación del prototipo: no se conecta con Google.
+        </p>
+
+        <div className="mt-4 flex justify-end border-t border-white/10 pt-3.5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white hover:text-[#262626]"
+          >
+            Cancelar
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar selector"
+          className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-xl border border-white/25 bg-white/5 text-sm text-white/80 transition hover:bg-white hover:text-[#262626]"
+        >
+          ✕
+        </button>
       </div>
     </div>
   )

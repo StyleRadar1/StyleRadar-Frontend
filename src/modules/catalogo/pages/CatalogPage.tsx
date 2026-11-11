@@ -1,8 +1,12 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { formatCOP } from '@/modules/core/utils/format'
 import { ItemCard } from '../components/ItemCard'
 import { useItems } from '../hooks/useItems'
+import { ITEMS } from '../mocks/items'
+import { INVENTORY_ITEMS } from '../mocks/inventory'
 import type { ItemFiltersDto } from '../types/item.dto'
+import './CatalogPage.css'
 
 // Tipos de prenda
 const TIPOS_PRENDA = [
@@ -748,6 +752,22 @@ export default function CatalogPage() {
           </div>
         )}
 
+        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ESTILO REFERENCIA EDITORIAL) */}
+        <div className="mb-10">
+          <HangingCollectionRack
+            onApplyCollectionFilter={(tipo, estilo) => {
+              setFiltroTipo(tipo)
+              setFiltroEstilo(estilo)
+              const next = new URLSearchParams(params)
+              if (tipo !== 'Todos') next.set('tipo', tipo)
+              else next.delete('tipo')
+              if (estilo !== 'Todos') next.set('estilo', estilo)
+              else next.delete('estilo')
+              setParams(next)
+            }}
+          />
+        </div>
+
         {/* LISTADO PRINCIPAL DEL CATÁLOGO */}
         <div>
           <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-3">
@@ -796,5 +816,273 @@ export default function CatalogPage() {
         </div>
       </section>
     </div>
+  )
+}
+
+/* ============================================================================
+ * Sección de "Prendas colgadas en una barra" (Nueva Colección | Moda Local Bogotá)
+ * ============================================================================ */
+
+type RackBadgeVariant = 'discount' | 'new' | 'stock'
+
+interface HangingRackGarment {
+  id: string
+  nombre: string
+  tienda: string
+  barrio: string
+  precio: number
+  imagen: string
+  tipoFiltro: string
+  estilo: string
+  badge?: {
+    text: string
+    variant: RackBadgeVariant
+  }
+}
+
+const LOW_STOCK_INV =
+  INVENTORY_ITEMS.find((inv) => inv.id === 'inv-2') ??
+  INVENTORY_ITEMS.find((inv) => inv.estado === 'BAJO_STOCK' && inv.stockTotal > 0)
+
+const LOW_STOCK_COUNT = LOW_STOCK_INV?.stockTotal ?? 2
+
+const RACK_IDS = ['p1', 'p3', 'p5', 'p6', 'p8', 'p13', 'p2', 'p4'] as const
+
+const HANGING_RACK_GARMENTS: HangingRackGarment[] = RACK_IDS.map((id) => {
+  const found = ITEMS.find((it) => it.id === id) ?? ITEMS[0]
+  const tipoNorm = found.tipo === 'Suéter' ? 'Saco' : found.tipo
+  let badge: HangingRackGarment['badge']
+
+  if (id === 'p3') {
+    badge = { text: '-20%', variant: 'discount' }
+  } else if (id === 'p6') {
+    badge = {
+      text: `SOLO ${LOW_STOCK_COUNT} ${LOW_STOCK_COUNT === 1 ? 'UNIDAD' : 'UNIDADES'}`,
+      variant: 'stock',
+    }
+  } else if (id === 'p13') {
+    badge = { text: 'NUEVO', variant: 'new' }
+  }
+
+  return {
+    id: found.id,
+    nombre: found.nombre,
+    tienda: found.tienda,
+    barrio: found.barrio,
+    precio: found.precio,
+    imagen: found.imagen,
+    tipoFiltro: tipoNorm,
+    estilo: found.estilo,
+    badge,
+  }
+})
+
+function HangerSvg({ isCenter }: { isCenter: boolean }) {
+  return (
+    <svg
+      className="sr-rack-hanger"
+      viewBox="0 0 120 56"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* Gancho metálico superior apoyado sobre la barra horizontal */}
+      <path
+        d="M60 20 C60 12, 51 9, 54 3 C56 -1, 65 -1, 66 5 C67 9, 60 12, 60 16"
+        stroke="#262626"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      {/* Cuello del gancho */}
+      <line
+        x1="60"
+        y1="16"
+        x2="60"
+        y2="25"
+        stroke="#262626"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      {/* Hombros minimalistas en grafito */}
+      <path
+        d="M10 50 L56 25 Q60 23 64 25 L110 50"
+        stroke={isCenter ? '#262626' : '#3a3a40'}
+        strokeWidth={isCenter ? '4' : '3.4'}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Detalle central sutil */}
+      <circle cx="60" cy="25" r="2.2" fill="#48119A" />
+    </svg>
+  )
+}
+
+function HangingCollectionRack({
+  onApplyCollectionFilter,
+}: {
+  onApplyCollectionFilter: (tipo: string, estilo: string) => void
+}) {
+  // Índice 3 corresponde a "Chaqueta de cuero" (p6) en el centro al iniciar
+  const [activeIndex, setActiveIndex] = useState<number>(3)
+  const dragStartX = useRef<number | null>(null)
+  const dragDeltaX = useRef<number>(0)
+  const didDrag = useRef<boolean>(false)
+
+  const total = HANGING_RACK_GARMENTS.length
+
+  const moveBy = useCallback(
+    (delta: number) => {
+      setActiveIndex((prev) => (prev + delta + total) % total)
+    },
+    [total]
+  )
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      moveBy(-1)
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      moveBy(1)
+    }
+  }
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragStartX.current = e.clientX
+    dragDeltaX.current = 0
+    didDrag.current = false
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStartX.current === null) return
+    dragDeltaX.current = e.clientX - dragStartX.current
+    if (Math.abs(dragDeltaX.current) > 10) {
+      didDrag.current = true
+    }
+  }
+
+  const handlePointerEnd = () => {
+    if (dragStartX.current === null) return
+    const dx = dragDeltaX.current
+    dragStartX.current = null
+    dragDeltaX.current = 0
+    if (Math.abs(dx) > 36) {
+      moveBy(dx < 0 ? 1 : -1)
+    }
+  }
+
+  const featured = HANGING_RACK_GARMENTS[activeIndex] ?? HANGING_RACK_GARMENTS[0]
+
+  // Calculamos el desplazamiento circular más corto (-3..+3) para cada prenda
+  const visibleGarments = useMemo(() => {
+    return HANGING_RACK_GARMENTS.map((garment, index) => {
+      let offset = index - activeIndex
+      if (offset > total / 2) offset -= total
+      if (offset < -total / 2) offset += total
+      return { garment, index, offset }
+    }).filter(({ offset }) => offset >= -3 && offset <= 3)
+  }, [activeIndex, total])
+
+  const collectionHref = `/catalogo?tipo=${encodeURIComponent(featured.tipoFiltro)}&estilo=${encodeURIComponent(featured.estilo)}`
+
+  return (
+    <section
+      className="sr-rack-section"
+      aria-label="Nueva colección de moda local en Bogotá"
+      onKeyDown={handleKeyDown}
+    >
+      {/* 1. Encabezado pequeño centrado en mayúsculas con separador vertical fino */}
+      <header className="sr-rack-header">
+        <span className="sr-rack-kicker">NUEVA COLECCIÓN</span>
+        <span className="sr-rack-divider" aria-hidden="true" />
+        <span className="sr-rack-kicker sr-rack-kicker--muted">MODA LOCAL BOGOTÁ</span>
+      </header>
+
+      {/* 2. Barra metálica horizontal fina + prendas colgadas de ganchos */}
+      <div
+        className="sr-rack-viewport"
+        tabIndex={0}
+        role="region"
+        aria-roledescription="carrusel"
+        aria-label="Perchero interactivo de prendas"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        onPointerLeave={handlePointerEnd}
+      >
+        {/* Barra metálica horizontal de lado a lado */}
+        <div className="sr-rack-bar" aria-hidden="true" />
+
+        {/* Prendas colgadas */}
+        <div className="sr-rack-stage">
+          {visibleGarments.map(({ garment, index, offset }) => {
+            const isCenter = offset === 0
+
+            return (
+              <button
+                key={garment.id}
+                type="button"
+                data-offset={offset}
+                aria-pressed={isCenter}
+                aria-label={`${garment.nombre}${garment.badge ? ` (${garment.badge.text})` : ''}`}
+                onClick={() => {
+                  if (didDrag.current) {
+                    didDrag.current = false
+                    return
+                  }
+                  setActiveIndex(index)
+                }}
+                className="sr-rack-item"
+              >
+                <div className="sr-rack-sway">
+                  {/* Gancho minimalista apoyado en la barra */}
+                  <HangerSvg isCenter={isCenter} />
+
+                  {/* Etiqueta en pill sobre algunas prendas */}
+                  {garment.badge && (
+                    <span
+                      className={`sr-rack-badge sr-rack-badge--${garment.badge.variant}`}
+                    >
+                      {garment.badge.text}
+                    </span>
+                  )}
+
+                  {/* Foto de la prenda */}
+                  <div className="sr-rack-garment-frame">
+                    <div className="sr-rack-garment-card">
+                      <img
+                        src={garment.imagen}
+                        alt={garment.nombre}
+                        draggable={false}
+                        className="sr-rack-garment-img"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sombra suave bajo cada prenda */}
+                <div className="sr-rack-shadow" aria-hidden="true" />
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* 3. Detalle inferior de la prenda destacada + botón "Ver la colección" */}
+      <div className="sr-rack-footer">
+        <h3 className="sr-rack-title">{featured.nombre}</h3>
+        <p className="sr-rack-meta">
+          {featured.tienda} · {formatCOP(featured.precio)}
+        </p>
+
+        <Link
+          to={collectionHref}
+          onClick={() => onApplyCollectionFilter(featured.tipoFiltro, featured.estilo)}
+          className="sr-rack-cta"
+        >
+          Ver la colección
+        </Link>
+      </div>
+    </section>
   )
 }

@@ -1,5 +1,6 @@
-import { useState, useMemo, useContext, useEffect, useCallback } from 'react'
+import { useState, useMemo, useContext, useEffect, useCallback, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/modules/core/design-system'
 import { ErrorState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -8,6 +9,7 @@ import { mockSessionUser } from '@/modules/core/api/mock'
 import { usePlaylists } from '../hooks/usePlaylists'
 import { ITEMS } from '../mocks/items'
 import { MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistVisibility } from '../types/playlist.dto'
+import './PlaylistsPage.css'
 
 export default function PlaylistsPage() {
   const { id: urlId } = useParams<{ id?: string }>()
@@ -126,7 +128,183 @@ export default function PlaylistsPage() {
     setCarouselIndex((prev) => (prev < carouselPlaylists.length - 1 ? prev + 1 : 0))
   }, [carouselPlaylists.length])
 
-  // Navegación por teclado en el carrusel
+  // Navegación por teclado y en el vinilo interactivo
+  const STEP_DEGREES = 45
+  const [vinylStepIndex, setVinylStepIndex] = useState(0)
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1)
+  const [vinylRotation, setVinylRotation] = useState(0)
+  const [isDraggingVinyl, setIsDraggingVinyl] = useState(false)
+  const [isSnappingVinyl, setIsSnappingVinyl] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+
+  const discRef = useRef<HTMLDivElement | null>(null)
+  const didDragVinylRef = useRef(false)
+  const lastWheelTimeRef = useRef(0)
+  const dragSessionRef = useRef({
+    active: false,
+    lastAngle: 0,
+    startRotation: 0,
+    currentRotation: 0,
+    baseStepIndex: 0,
+    lastStepDelta: 0,
+    velocity: 0,
+    lastTime: 0,
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefersReducedMotion(mq.matches)
+    const onChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
+  }, [])
+
+  const stepVinylPlaylist = useCallback(
+    (dir: 1 | -1) => {
+      if (carouselPlaylists.length === 0) return
+      setStepDirection(dir)
+      setIsSnappingVinyl(true)
+      setVinylRotation((prev) => prev + dir * STEP_DEGREES)
+      setVinylStepIndex((prev) => {
+        const total = carouselPlaylists.length
+        return ((prev + dir) % total + total) % total
+      })
+      window.setTimeout(() => setIsSnappingVinyl(false), 500)
+    },
+    [carouselPlaylists.length]
+  )
+
+  const jumpToVinylPlaylist = useCallback(
+    (targetIdx: number) => {
+      if (carouselPlaylists.length === 0) return
+      const total = carouselPlaylists.length
+      const currentNorm = ((vinylStepIndex % total) + total) % total
+      const diff = targetIdx - currentNorm
+      if (diff === 0) return
+      setStepDirection(diff > 0 ? 1 : -1)
+      setIsSnappingVinyl(true)
+      setVinylRotation((prev) => prev + diff * STEP_DEGREES)
+      setVinylStepIndex(((targetIdx % total) + total) % total)
+      window.setTimeout(() => setIsSnappingVinyl(false), 500)
+    },
+    [carouselPlaylists.length, vinylStepIndex]
+  )
+
+  const getAngleFromDiscCenter = (clientX: number, clientY: number) => {
+    const rect = discRef.current?.getBoundingClientRect()
+    if (!rect) return 0
+    const cx = rect.left + rect.width / 2
+    const cy = rect.top + rect.height / 2
+    return Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI)
+  }
+
+  const handleVinylPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+    const startAngle = getAngleFromDiscCenter(e.clientX, e.clientY)
+    didDragVinylRef.current = false
+    setIsSnappingVinyl(false)
+    setIsDraggingVinyl(true)
+    dragSessionRef.current = {
+      active: true,
+      lastAngle: startAngle,
+      startRotation: vinylRotation,
+      currentRotation: vinylRotation,
+      baseStepIndex: vinylStepIndex,
+      lastStepDelta: 0,
+      velocity: 0,
+      lastTime: performance.now(),
+    }
+  }
+
+  const handleVinylPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragSessionRef.current.active) return
+    const angle = getAngleFromDiscCenter(e.clientX, e.clientY)
+    let delta = angle - dragSessionRef.current.lastAngle
+    if (delta > 180) delta -= 360
+    if (delta < -180) delta += 360
+
+    const now = performance.now()
+    const dt = Math.max(8, now - dragSessionRef.current.lastTime)
+    dragSessionRef.current.velocity = delta / dt
+    dragSessionRef.current.lastAngle = angle
+    dragSessionRef.current.lastTime = now
+
+    const nextRotation = dragSessionRef.current.currentRotation + delta
+    dragSessionRef.current.currentRotation = nextRotation
+
+    if (Math.abs(nextRotation - dragSessionRef.current.startRotation) > 2.5) {
+      didDragVinylRef.current = true
+    }
+
+    setVinylRotation(nextRotation)
+
+    const stepDelta = Math.round(
+      (nextRotation - dragSessionRef.current.startRotation) / STEP_DEGREES
+    )
+    if (
+      stepDelta !== dragSessionRef.current.lastStepDelta &&
+      carouselPlaylists.length > 0
+    ) {
+      const diff = stepDelta - dragSessionRef.current.lastStepDelta
+      setStepDirection(diff >= 0 ? 1 : -1)
+      dragSessionRef.current.lastStepDelta = stepDelta
+      const total = carouselPlaylists.length
+      const nextIndex =
+        (((dragSessionRef.current.baseStepIndex + stepDelta) % total) + total) %
+        total
+      setVinylStepIndex(nextIndex)
+    }
+  }
+
+  const handleVinylPointerUp = () => {
+    if (!dragSessionRef.current.active) return
+    dragSessionRef.current.active = false
+    setIsDraggingVinyl(false)
+
+    const inertia = prefersReducedMotion
+      ? 0
+      : Math.max(-90, Math.min(90, dragSessionRef.current.velocity * 135))
+    const projected = dragSessionRef.current.currentRotation + inertia
+    const snappedStepDelta = Math.round(
+      (projected - dragSessionRef.current.startRotation) / STEP_DEGREES
+    )
+    const snappedRotation =
+      dragSessionRef.current.startRotation + snappedStepDelta * STEP_DEGREES
+
+    setIsSnappingVinyl(true)
+    setVinylRotation(snappedRotation)
+
+    if (
+      snappedStepDelta !== dragSessionRef.current.lastStepDelta &&
+      carouselPlaylists.length > 0
+    ) {
+      const diff = snappedStepDelta - dragSessionRef.current.lastStepDelta
+      setStepDirection(diff >= 0 ? 1 : -1)
+      const total = carouselPlaylists.length
+      const nextIndex =
+        (((dragSessionRef.current.baseStepIndex + snappedStepDelta) % total) +
+          total) %
+        total
+      setVinylStepIndex(nextIndex)
+    }
+
+    window.setTimeout(() => {
+      didDragVinylRef.current = false
+      setIsSnappingVinyl(false)
+    }, 520)
+  }
+
+  const handleVinylWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const now = performance.now()
+    if (now - lastWheelTimeRef.current < 240) return
+    const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX
+    if (Math.abs(delta) < 6) return
+    lastWheelTimeRef.current = now
+    stepVinylPlaylist(delta > 0 ? 1 : -1)
+  }
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (selectedPlaylist) return
@@ -134,13 +312,15 @@ export default function PlaylistsPage() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
       if (e.key === 'ArrowLeft') {
         handlePrev()
+        stepVinylPlaylist(-1)
       } else if (e.key === 'ArrowRight') {
         handleNext()
+        stepVinylPlaylist(1)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selectedPlaylist, handlePrev, handleNext])
+  }, [selectedPlaylist, handlePrev, handleNext, stepVinylPlaylist])
 
   // Otras playlists para sección "Más playlists de estilo"
   const otrasPlaylists = useMemo(() => {
@@ -148,6 +328,30 @@ export default function PlaylistsPage() {
       .filter((p) => p.id !== selectedPlaylist?.id)
       .slice(0, 4)
   }, [playlists, selectedPlaylist?.id])
+
+  // Grupo de 3 polaroids visibles que rota en loop por la lista filtrada (Todas / Creadas por ti / Guardadas)
+  const polaroidSlots = useMemo(() => {
+    const total = carouselPlaylists.length
+    if (total === 0) return []
+    const count = Math.min(3, total)
+    const items: { playlist: PlaylistDto; slot: 0 | 1 | 2; baseRotate: number }[] = []
+    const rotations = [-13, 14, -10] as const
+    for (let i = 0; i < count; i++) {
+      const idx = (((vinylStepIndex + i) % total) + total) % total
+      items.push({
+        playlist: carouselPlaylists[idx],
+        slot: i as 0 | 1 | 2,
+        baseRotate: rotations[i],
+      })
+    }
+    return items
+  }, [carouselPlaylists, vinylStepIndex])
+
+  const polaroidSlotClasses = [
+    'sr-polaroid-card sr-polaroid-card--slot-0',
+    'sr-polaroid-card sr-polaroid-card--slot-1',
+    'sr-polaroid-card sr-polaroid-card--slot-2',
+  ] as const
 
   const esMia = useMemo(() => {
     if (!selectedPlaylist) return false
@@ -902,11 +1106,8 @@ export default function PlaylistsPage() {
     )
   }
 
-  // Active playlist for carousel
-  const activeCarouselPlaylist = carouselPlaylists[carouselIndex] ?? carouselPlaylists[0]
-
   // ==========================================
-  // VISTA LISTA DE PLAYLISTS CON CARRUSEL 3D Y VINILO PROTAGONISTA
+  // VISTA LISTA DE PLAYLISTS CON VINILO PROTAGONISTA
   // ==========================================
   return (
     <div
@@ -963,301 +1164,280 @@ export default function PlaylistsPage() {
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* CARRUSEL 3D COVER-FLOW CON DISCO DE VINILO */}
-        {/* ========================================== */}
-        <div className="relative mb-14 rounded-3xl border border-white/10 bg-white/[0.02] p-4 sm:p-8 pt-6 sm:pt-8 backdrop-blur-2xl shadow-2xl overflow-hidden">
-          {/* Luz ambiental púrpura de fondo centrada en el vinilo */}
-          <div className="absolute top-[35%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 sm:w-96 sm:h-96 bg-[#5013b8]/25 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Selector de pestañas para el carrusel */}
-          <div className="relative z-30 mb-2 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-md">
-              <button
-                type="button"
-                onClick={() => {
-                  setCarouselTab('todas')
-                  setCarouselIndex(0)
-                }}
-                className={`rounded-full px-3.5 py-1 text-xs font-bold transition ${
-                  carouselTab === 'todas'
-                    ? 'bg-violeta text-white shadow-md shadow-purple-900/40'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Todas ({playlists.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCarouselTab('creadas')
-                  setCarouselIndex(0)
-                }}
-                className={`rounded-full px-3.5 py-1 text-xs font-bold transition ${
-                  carouselTab === 'creadas'
-                    ? 'bg-violeta text-white shadow-md shadow-purple-900/40'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Creadas por ti ({creadasPorTi.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCarouselTab('guardadas')
-                  setCarouselIndex(0)
-                }}
-                className={`rounded-full px-3.5 py-1 text-xs font-bold transition ${
-                  carouselTab === 'guardadas'
-                    ? 'bg-violeta text-white shadow-md shadow-purple-900/40'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Guardadas ({guardadas.length})
-              </button>
-            </div>
-
-            <div className="hidden sm:flex items-center gap-2 text-xs text-white/40">
-              <span>Usa</span>
-              <kbd className="rounded border border-white/20 bg-white/5 px-1.5 py-0.5 text-[10px] font-mono text-white/70">
-                ←
-              </kbd>
-              <kbd className="rounded border border-white/20 bg-white/5 px-1.5 py-0.5 text-[10px] font-mono text-white/70">
-                →
-              </kbd>
-              <span>para navegar</span>
-            </div>
-          </div>
-
-          {/* Escenario 3D Cover Flow */}
-          <div
-            className="relative z-20 w-full pt-16 sm:pt-20 pb-4 select-none"
-            style={{ perspective: '1100px' }}
+        {/* ========================================================== */}
+        {/* SECCIÓN FULL-SCREEN: VINILO GIRATORIO + 3 POLAROIDS SOBRE DISCO */}
+        {/* ========================================================== */}
+        {polaroidSlots.length > 0 && (
+          <section
+            aria-label="Selección editorial en vinilo y polaroids"
+            className="sr-vinyl-showcase"
           >
-            {/* Botones de navegación laterales flotantes */}
-            <button
-              type="button"
-              onClick={handlePrev}
-              aria-label="Playlist anterior"
-              className="absolute left-1 sm:left-4 top-[58%] -translate-y-1/2 z-40 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white backdrop-blur-md transition hover:scale-110 hover:border-violeta hover:bg-violeta/30 active:scale-95 shadow-2xl"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={handleNext}
-              aria-label="Playlist siguiente"
-              className="absolute right-1 sm:right-4 top-[58%] -translate-y-1/2 z-40 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white backdrop-blur-md transition hover:scale-110 hover:border-violeta hover:bg-violeta/30 active:scale-95 shadow-2xl"
-            >
-              ›
-            </button>
+            <div className="sr-vinyl-showcase__stage">
+              {/* Sello editorial + Pestañas (Todas / Creadas por ti / Guardadas) arriba a la derecha */}
+              <div className="sr-vinyl-showcase__kicker">
+                <div>
+                  <span>EDICIÓN VINILO · BOGOTÁ</span>
+                  <p>
+                    {carouselPlaylists.length}{' '}
+                    {carouselPlaylists.length === 1
+                      ? 'colección destacada para explorar'
+                      : 'colecciones destacadas para explorar'}
+                  </p>
+                </div>
 
-            {/* Contenedor relativo de tarjetas 3D */}
-            <div className="relative flex items-center justify-center h-[320px] sm:h-[380px]">
-              {carouselPlaylists.map((pl, idx) => {
-                let diff = idx - carouselIndex
-                const total = carouselPlaylists.length
-                if (total > 3) {
-                  if (diff > total / 2) diff -= total
-                  if (diff < -total / 2) diff += total
-                }
-
-                const isActive = diff === 0
-                const isVisible = Math.abs(diff) <= 2
-
-                // Transformaciones visuales 3D
-                let transform = 'scale(0.5) translateZ(-300px)'
-                let zIndex = 0
-                let opacity = 0
-                let pointerEvents: 'auto' | 'none' = 'none'
-
-                if (diff === 0) {
-                  transform = 'translateX(0%) translateZ(60px) rotateY(0deg) scale(1)'
-                  zIndex = 30
-                  opacity = 1
-                  pointerEvents = 'auto'
-                } else if (diff === -1) {
-                  transform = 'translateX(-55%) translateZ(-70px) rotateY(26deg) scale(0.85)'
-                  zIndex = 20
-                  opacity = 0.75
-                  pointerEvents = 'auto'
-                } else if (diff === 1) {
-                  transform = 'translateX(55%) translateZ(-70px) rotateY(-26deg) scale(0.85)'
-                  zIndex = 20
-                  opacity = 0.75
-                  pointerEvents = 'auto'
-                } else if (diff === -2) {
-                  transform = 'translateX(-105%) translateZ(-160px) rotateY(38deg) scale(0.7)'
-                  zIndex = 10
-                  opacity = 0.35
-                  pointerEvents = 'auto'
-                } else if (diff === 2) {
-                  transform = 'translateX(105%) translateZ(-160px) rotateY(-38deg) scale(0.7)'
-                  zIndex = 10
-                  opacity = 0.35
-                  pointerEvents = 'auto'
-                }
-
-                return (
+                {/* Selector de pestañas integrado en el vinilo nuevo */}
+                <div
+                  className="sr-vinyl-tabs"
+                  role="tablist"
+                  aria-label="Filtrar colecciones en el vinilo"
+                >
                   <button
-                    key={pl.id}
                     type="button"
-                    onClick={() => handleSeleccionarPlaylist(pl)}
-                    className={`absolute text-left transition-all duration-500 ease-out cursor-pointer group focus:outline-none ${
-                      !isVisible ? 'pointer-events-none' : ''
-                    }`}
-                    style={{
-                      transform,
-                      zIndex,
-                      opacity,
-                      pointerEvents,
-                      transformStyle: 'preserve-3d',
+                    role="tab"
+                    aria-selected={carouselTab === 'todas'}
+                    onClick={() => {
+                      setCarouselTab('todas')
+                      setVinylStepIndex(0)
                     }}
+                    className={`sr-vinyl-tabs__btn ${
+                      carouselTab === 'todas' ? 'is-active' : ''
+                    }`}
                   >
-                    {/* Contenedor del estuche + vinilo */}
-                    <div className="relative w-52 h-52 sm:w-64 sm:h-64 md:w-72 md:h-72">
-                      {/* Disco de vinilo saliendo por ARRIBA del estuche activo */}
-                      {isActive && (
-                        <div
-                          className="absolute left-1/2 -translate-x-1/2 -top-[44%] sm:-top-[48%] w-[88%] h-[88%] sm:w-[92%] sm:h-[92%] z-0 pointer-events-none transition-transform duration-500 group-hover:-translate-y-3 drop-shadow-[0_-12px_35px_rgba(80,19,184,0.75)] animate-spin-vinyl"
-                        >
-                          <img
-                            src="/img/vinyl-record.png"
-                            alt="Disco de vinilo StyleRadar"
-                            className="h-full w-full object-contain select-none"
-                          />
-                        </div>
-                      )}
+                    Todas ({playlists.length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={carouselTab === 'creadas'}
+                    onClick={() => {
+                      setCarouselTab('creadas')
+                      setVinylStepIndex(0)
+                    }}
+                    className={`sr-vinyl-tabs__btn ${
+                      carouselTab === 'creadas' ? 'is-active' : ''
+                    }`}
+                  >
+                    Creadas por ti ({creadasPorTi.length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={carouselTab === 'guardadas'}
+                    onClick={() => {
+                      setCarouselTab('guardadas')
+                      setVinylStepIndex(0)
+                    }}
+                    className={`sr-vinyl-tabs__btn ${
+                      carouselTab === 'guardadas' ? 'is-active' : ''
+                    }`}
+                  >
+                    Guardadas ({guardadas.length})
+                  </button>
+                </div>
+              </div>
 
-                      {/* Carátula del álbum */}
-                      <div
-                        className={`relative z-10 w-full h-full rounded-2xl overflow-hidden bg-[#e8dccb] border transition-all duration-300 ${
-                          isActive
-                            ? 'border-violeta/80 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.95),0_0_35px_rgba(80,19,184,0.45)] ring-2 ring-violeta/40'
-                            : 'border-white/10 shadow-[0_15px_35px_-10px_rgba(0,0,0,0.7)] group-hover:border-white/30'
-                        }`}
+              {/* Disco de vinilo grande a la izquierda, recortado por el borde e interactivo */}
+              <div className="sr-vinyl-disc-wrap">
+                <div
+                  className={`sr-vinyl-disc-idle ${
+                    isDraggingVinyl ? 'is-paused' : ''
+                  }`}
+                >
+                  <div
+                    ref={discRef}
+                    role="slider"
+                    tabIndex={0}
+                    aria-label="Disco de vinilo interactivo: arrastra o gira para explorar las playlists"
+                    aria-valuemin={1}
+                    aria-valuemax={carouselPlaylists.length}
+                    aria-valuenow={
+                      (((vinylStepIndex % carouselPlaylists.length) +
+                        carouselPlaylists.length) %
+                        carouselPlaylists.length) +
+                      1
+                    }
+                    onPointerDown={handleVinylPointerDown}
+                    onPointerMove={handleVinylPointerMove}
+                    onPointerUp={handleVinylPointerUp}
+                    onPointerCancel={handleVinylPointerUp}
+                    onWheel={handleVinylWheel}
+                    style={{
+                      transform: `rotate(${vinylRotation}deg)`,
+                      transition:
+                        isSnappingVinyl && !prefersReducedMotion
+                          ? 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)'
+                          : 'none',
+                    }}
+                    className={`sr-vinyl-disc-interactive ${
+                      isDraggingVinyl ? 'is-dragging' : ''
+                    }`}
+                  >
+                    <div className="sr-vinyl-label">
+                      <div className="sr-vinyl-label__ring" />
+                      <div className="sr-vinyl-label__lines" />
+                      <div className="sr-vinyl-label__bottom-rule" />
+                      <div className="sr-vinyl-label__stereo-box">
+                        <span className="sr-vinyl-label__stereo-text">
+                          STYLERADAR
+                        </span>
+                      </div>
+                      <div className="sr-vinyl-spindle" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tres polaroids sobre la superficie y el borde derecho del disco */}
+              <div className="sr-polaroids-stack">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {polaroidSlots.map(({ playlist: pl, slot, baseRotate }) => {
+                    const count = pl.prendas.length
+                    const prendasLabel = `${count} ${
+                      count === 1 ? 'prenda' : 'prendas'
+                    }`
+
+                    return (
+                      <motion.div
+                        layout={!prefersReducedMotion}
+                        key={pl.id}
+                        initial={
+                          prefersReducedMotion
+                            ? { opacity: 0, rotate: baseRotate }
+                            : {
+                                opacity: 0,
+                                x: stepDirection > 0 ? 34 : -34,
+                                y: stepDirection > 0 ? 26 : -26,
+                                rotate: baseRotate + (stepDirection > 0 ? 7 : -7),
+                              }
+                        }
+                        animate={{
+                          opacity: 1,
+                          x: 0,
+                          y: 0,
+                          rotate: baseRotate,
+                        }}
+                        exit={
+                          prefersReducedMotion
+                            ? { opacity: 0, rotate: baseRotate }
+                            : {
+                                opacity: 0,
+                                x: stepDirection > 0 ? -34 : 34,
+                                y: stepDirection > 0 ? -26 : 26,
+                                rotate: baseRotate + (stepDirection > 0 ? -7 : 7),
+                              }
+                        }
+                        whileHover={
+                          prefersReducedMotion
+                            ? undefined
+                            : {
+                                y: -8,
+                                rotate: baseRotate * 0.35,
+                                scale: 1.03,
+                              }
+                        }
+                        transition={{
+                          duration: prefersReducedMotion ? 0.18 : 0.48,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className={polaroidSlotClasses[slot]}
                       >
-                        {pl.portadaUrl ? (
-                          <img
-                            src={pl.portadaUrl}
-                            alt={pl.nombre}
-                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center">
-                            <span className="text-5xl font-bold text-black/30">SR</span>
+                        <Link
+                          to={`/playlists/${pl.id}`}
+                          onClick={(e) => {
+                            if (didDragVinylRef.current) {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              return
+                            }
+                            setSelectedLocalId(pl.id)
+                          }}
+                          className="block h-full w-full text-inherit no-underline focus:outline-none"
+                          aria-label={`Ver playlist ${pl.nombre} (${prendasLabel})`}
+                        >
+                          <div className="sr-polaroid-card__photo">
+                            <img
+                              src={
+                                pl.portadaUrl ||
+                                '/img/productos/sueter-de-canale-crudo.jpg'
+                              }
+                              alt={pl.nombre}
+                              loading="lazy"
+                              draggable={false}
+                            />
                           </div>
-                        )}
-
-                        {/* Brillo reflectivo de vinilo */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-white/10 pointer-events-none" />
-
-                        {/* Indicador en tornamesa */}
-                        {isActive && (
-                          <div className="absolute top-3 left-3 z-20">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase text-white/90 border border-white/15 shadow-lg">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              En tornamesa
+                          <div className="sr-polaroid-card__caption">
+                            <span className="sr-polaroid-card__title">
+                              {pl.nombre}
+                            </span>
+                            <span className="sr-polaroid-card__tag">
+                              {prendasLabel}
                             </span>
                           </div>
-                        )}
+                        </Link>
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
+              </div>
 
-                        {/* Pie de portada con título y prendas */}
-                        <div className="absolute bottom-0 inset-x-0 p-3 sm:p-4 bg-gradient-to-t from-black/90 via-black/55 to-transparent z-20">
-                          <p className="text-white font-extrabold text-xs sm:text-base truncate drop-shadow">
-                            {pl.nombre}
-                          </p>
-                          <p className="text-white/70 text-[10px] sm:text-[11px] truncate flex items-center gap-1.5 mt-0.5">
-                            <span>{pl.creador.nombre}</span>
-                            <span>·</span>
-                            <span>{pl.prendas.length}/15 prendas · Hasta 15 prendas</span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+              {/* Controles discretos e indicador de posición en violeta #48119A */}
+              <div className="sr-vinyl-controls">
+                <span className="sr-vinyl-controls__hint">
+                  Arrastra el vinilo para girar
+                </span>
+                <div className="sr-vinyl-controls__bar">
+                  <button
+                    type="button"
+                    onClick={() => stepVinylPlaylist(-1)}
+                    aria-label="Colección anterior en el vinilo"
+                    className="sr-vinyl-controls__btn"
+                  >
+                    ‹
                   </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Indicadores de puntos (Dots) */}
-          <div className="flex items-center justify-center gap-1.5 mt-3">
-            {carouselPlaylists.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                aria-label={`Ir a playlist ${i + 1}`}
-                onClick={() => setCarouselIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === carouselIndex
-                    ? 'w-6 bg-violeta shadow-sm shadow-purple-500/50'
-                    : 'w-1.5 bg-white/20 hover:bg-white/40'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Barra reproductor flotante inspirada en Spotify */}
-          {activeCarouselPlaylist && (
-            <div className="mt-6 mx-auto max-w-2xl rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 sm:p-4 backdrop-blur-xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
-              {/* Info de reproducción */}
-              <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
-                <div className="h-11 w-11 shrink-0 rounded-xl overflow-hidden bg-[#e8dccb] border border-white/10 shadow">
-                  <img
-                    src={activeCarouselPlaylist.portadaUrl || '/img/productos/sueter-de-canale-crudo.jpg'}
-                    alt="Portada activa"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Colección de estilo LP</span>
-                  </p>
-                  <p className="text-[11px] text-white/50 truncate">
-                    {activeCarouselPlaylist.creador.nombre} · {activeCarouselPlaylist.visibilidad === 'PRIVADA' ? '🔒 Privada' : '👁️ Pública'}
-                  </p>
+                  <span
+                    className="sr-vinyl-controls__counter"
+                    aria-live="polite"
+                  >
+                    {(((vinylStepIndex % carouselPlaylists.length) +
+                      carouselPlaylists.length) %
+                      carouselPlaylists.length) +
+                      1}{' '}
+                    / {carouselPlaylists.length}
+                  </span>
+                  <div className="sr-vinyl-controls__dots" role="tablist" aria-label="Posición de la colección">
+                    {carouselPlaylists.map((pl, idx) => {
+                      const activePos =
+                        ((vinylStepIndex % carouselPlaylists.length) +
+                          carouselPlaylists.length) %
+                        carouselPlaylists.length
+                      return (
+                        <button
+                          key={pl.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={activePos === idx}
+                          aria-label={`Mostrar desde ${pl.nombre}`}
+                          onClick={() => jumpToVinylPlaylist(idx)}
+                          className={`sr-vinyl-controls__dot ${
+                            activePos === idx ? 'is-active' : ''
+                          }`}
+                        />
+                      )
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => stepVinylPlaylist(1)}
+                    aria-label="Siguiente colección en el vinilo"
+                    className="sr-vinyl-controls__btn"
+                  >
+                    ›
+                  </button>
                 </div>
               </div>
-
-              {/* Botones de control */}
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  aria-label="Anterior"
-                  className="text-white/60 hover:text-white transition active:scale-90 p-1.5 text-sm"
-                >
-                  ⏮
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSeleccionarPlaylist(activeCarouselPlaylist)}
-                  className="flex items-center gap-2 rounded-full bg-violeta hover:bg-violeta-hover text-white text-xs font-bold px-4 py-2 shadow-lg shadow-purple-900/40 transition active:scale-95"
-                >
-                  <span>▶</span>
-                  <span>Explorar prendas</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  aria-label="Siguiente"
-                  className="text-white/60 hover:text-white transition active:scale-90 p-1.5 text-sm"
-                >
-                  ⏭
-                </button>
-              </div>
-
-              {/* Métricas */}
-              <div className="hidden md:flex items-center gap-2 text-xs text-white/40 font-mono">
-                <span>{activeCarouselPlaylist.prendas.length}/15 prendas</span>
-                <span>·</span>
-                <span>{activeCarouselPlaylist.likes} likes</span>
-              </div>
             </div>
-          )}
-        </div>
+          </section>
+        )}
       </section>
 
       {/* MODAL CREAR PLAYLIST */}

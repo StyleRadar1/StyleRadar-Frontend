@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CustomCursor, NoiseGrain } from '@/components/ui'
 import { LandingHeader, LandingMobileMenu, LandingFooter } from '@/components/layout'
@@ -21,6 +21,13 @@ export default function LandingPage() {
   const [isAuthOpen, setIsAuthOpen] = useState(() => params.has('login'))
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
+
+  useEffect(() => {
+    if (params.has('login')) {
+      setAuthTab('login')
+      setIsAuthOpen(true)
+    }
+  }, [params])
 
   const handleOpenLogin = () => {
     setAuthTab('login')

@@ -103,8 +103,12 @@ export function GroupedBars({ grupos, series, fmt = (n) => n.toLocaleString('es-
               <li key={g.key} tabIndex={0} className="relative flex flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
                 aria-label={`${g.titulo}: ${g.valores.map((v, s) => `${series[s]} ${fmt(v)}`).join(', ')}`}
                 onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(i)} onBlur={() => setHover(null)}>
-                <div className={`flex flex-1 items-end justify-center gap-[2px] border-b border-white/25 ${hover === i ? 'bg-white/[.04]' : ''}`}>
-                  {g.valores.map((v, s) => <span key={s} className="w-3 rounded-t-[4px] sm:w-4" style={{ height: `${(v / max) * 100}%`, background: SERIE[s] }} />)}
+                <div className={`flex flex-1 items-end justify-center gap-1 border-b border-white/20 px-1 py-1 rounded-t-xl transition ${hover === i ? 'bg-white/[.06]' : ''}`}>
+                  {g.valores.map((v, s) => (
+                    <span key={s} className="flex h-full w-3 items-end rounded-full bg-white/[.05] sm:w-4">
+                      <span className="w-full rounded-full transition-all duration-300" style={{ height: `${(v / max) * 100}%`, background: SERIE[s], boxShadow: s === 1 ? '0 0 12px rgba(123,77,216,0.45)' : '0 0 10px rgba(232,220,203,0.28)' }} />
+                    </span>
+                  ))}
                 </div>
                 <span aria-hidden="true" className="h-5 pt-1 text-center text-[10px] text-white/55">{g.eje}</span>
                 {hover === i && (
