@@ -11,8 +11,8 @@
   z-index: 9999;
   width: 100vw;
   height: 100vh;
-  background: #121212;
-  color: #e8e4ef;
+  background: var(--probador-bg, #121212);
+  color: var(--probador-text, #e8e4ef);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: linear-gradient(180deg, rgba(18, 18, 18, 0.95) 0%, rgba(18, 18, 18, 0.6) 70%, transparent 100%);
+  background: var(--probador-topbar-bg, linear-gradient(180deg, rgba(18, 18, 18, 0.95) 0%, rgba(18, 18, 18, 0.6) 70%, transparent 100%));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -58,7 +58,7 @@
   gap: 6px;
   background: none;
   border: none;
-  color: #e8e4ef;
+  color: var(--probador-text, #e8e4ef);
   font: 700 11px/1 system-ui, sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -69,12 +69,12 @@
 }
 
 .cz-nav-back:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: rgba(125, 125, 125, 0.12);
+  color: var(--probador-text, #fff);
 }
 
 .cz-nav-sep {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--probador-text-muted, rgba(255, 255, 255, 0.2));
   font-size: 12px;
   user-select: none;
 }
@@ -83,15 +83,15 @@
   font: 600 11px/1 system-ui, sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--probador-text-muted, rgba(255, 255, 255, 0.35));
 }
 
 .cz-nav-active {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--probador-text, rgba(255, 255, 255, 0.7));
 }
 
 .cz-nav-accent {
-  color: #E8DCCB;
+  color: var(--probador-accent, #E8DCCB);
 }
 
 .cz-nav-pill {
@@ -100,9 +100,9 @@
   gap: 5px;
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e8e4ef;
+  border: 1px solid var(--probador-text-muted, rgba(255, 255, 255, 0.12));
+  background: rgba(125, 125, 125, 0.08);
+  color: var(--probador-text, #e8e4ef);
   font: 600 11px/1 system-ui, sans-serif;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -112,8 +112,8 @@
 }
 
 .cz-nav-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(125, 125, 125, 0.15);
+  border-color: var(--probador-text, rgba(255, 255, 255, 0.25));
 }
 
 .cz-nav-pill-reset {
@@ -154,6 +154,7 @@
   );
   pointer-events: none;
   filter: blur(60px);
+  display: var(--probador-ambient-glow-display, block);
 }
 
 .cz-mannequin-stage {
@@ -177,7 +178,7 @@
   width: auto;
   object-fit: contain;
   pointer-events: none;
-  filter: drop-shadow(0 0 80px rgba(72, 17, 154, 0.12));
+  filter: var(--probador-mannequin-filter, drop-shadow(0 0 80px rgba(72, 17, 154, 0.12)));
 }
 
 .cz-mannequin-layer {
@@ -211,7 +212,7 @@
   transform: translateX(-50%);
   width: 180px;
   height: 30px;
-  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.45) 0%, transparent 70%);
+  background: var(--probador-floor-shadow, radial-gradient(ellipse, rgba(0, 0, 0, 0.45) 0%, transparent 70%));
   pointer-events: none;
 }
 
@@ -224,22 +225,23 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: rgba(26, 26, 26, 0.88);
+  background: var(--probador-pill-bg, rgba(26, 26, 26, 0.88));
   backdrop-filter: blur(16px) saturate(1.5);
   -webkit-backdrop-filter: blur(16px) saturate(1.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--probador-pill-border, rgba(255, 255, 255, 0.08));
   border-radius: 999px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 .cz-price-amount {
   font: 800 18px/1 system-ui, sans-serif;
   letter-spacing: -0.02em;
-  color: #E8DCCB;
+  color: var(--probador-pill-text, #E8DCCB);
 }
 
 .cz-price-sep {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--probador-pill-text, rgba(255, 255, 255, 0.2));
+  opacity: 0.5;
   font-size: 14px;
 }
 
@@ -247,7 +249,8 @@
   font: 600 11px/1 system-ui, sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--probador-pill-text, rgba(255, 255, 255, 0.45));
+  opacity: 0.85;
 }
 
 /* Hint de drag/zoom */

@@ -5,11 +5,12 @@ import {
 } from '../auroraRoutes'
 
 describe('auroraRoutes & exclusion rules', () => {
-  it('identifica correctamente las rutas excluidas (landing y probador)', () => {
-    expect(AURORA_EXCLUDED_ROUTES).toContain('/')
+  it('identifica correctamente las rutas excluidas (únicamente probador)', () => {
+    expect(AURORA_EXCLUDED_ROUTES).not.toContain('/')
     expect(AURORA_EXCLUDED_ROUTES).toContain('/probador')
+    expect(AURORA_EXCLUDED_ROUTES).toContain('/probador/avanzado')
 
-    expect(isAuroraExcluded('/')).toBe(true)
+    expect(isAuroraExcluded('/')).toBe(false)
     expect(isAuroraExcluded('/probador')).toBe(true)
     expect(isAuroraExcluded('/probador/avanzado')).toBe(true)
   })

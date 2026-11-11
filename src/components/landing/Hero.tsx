@@ -39,7 +39,12 @@ export function Hero() {
   return (
     <section
       id="inicio"
-      className="relative min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-[#18151d] text-white"
+      className="relative min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-[#18151d] text-[var(--hero-fg)]"
+      style={{
+        '--color-white': '#ffffff',
+        '--color-blanco': '#ffffff',
+        color: 'var(--hero-fg)',
+      } as React.CSSProperties}
       aria-label="StyleRadar, descubre tu estilo en tu ciudad"
     >
       {/* Carrusel de diapositivas de fondo */}
@@ -62,20 +67,19 @@ export function Hero() {
         <div
           className="absolute inset-0 z-10"
           style={{
-            background:
-              'linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65))',
+            background: 'var(--hero-overlay)',
           }}
         />
       </div>
 
       {/* Contenido Central */}
       <div className="relative z-20 flex flex-col items-center text-center px-6 max-w-4xl mx-auto pt-20">
-        <h1 className="flex items-center justify-center gap-3 sm:gap-6 text-white text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter drop-shadow-2xl">
+        <h1 className="flex items-center justify-center gap-3 sm:gap-6 text-[var(--hero-fg)] text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter drop-shadow-2xl">
           <Logo className="h-[1.1em] w-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]" />
-          <span className="tracking-tight">StyleRadar</span>
+          <span className="tracking-tight text-[var(--hero-fg)]">StyleRadar</span>
         </h1>
 
-        <p className="mt-8 px-6 py-2.5 rounded-full bg-[#231e25]/75 border border-white/20 backdrop-blur-md text-white font-extrabold text-xs sm:text-sm tracking-[0.2em] uppercase shadow-lg">
+        <p className="mt-8 px-6 py-2.5 rounded-full bg-[var(--hero-sub-bg)] border border-[var(--hero-sub-border)] backdrop-blur-md text-[var(--hero-fg)] font-extrabold text-xs sm:text-sm tracking-[0.2em] uppercase shadow-lg">
           Descubre tu estilo. En tu ciudad.
         </p>
 
@@ -83,7 +87,7 @@ export function Hero() {
         <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
           <Link
             to="/catalogo"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#48119a] hover:bg-[#5b17c2] text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_32px_#48119a77] hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--hero-btn-primary-bg)] hover:bg-[#5b17c2] text-[var(--hero-btn-primary-fg)] font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_32px_#48119a77] hover:-translate-y-0.5 transition-all"
           >
             <span>Entrar a StyleRadar</span>
             <svg
@@ -105,7 +109,7 @@ export function Hero() {
           <a
             href="#pe-videos"
             onClick={handleScrollTo}
-            className="inline-flex items-center gap-2 px-7 py-4 rounded-full border border-white/40 hover:border-white/80 bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase backdrop-blur-md hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center gap-2 px-7 py-4 rounded-full border border-[var(--hero-btn-border)] hover:border-white/80 bg-[var(--hero-btn-bg)] hover:bg-white/20 text-[var(--hero-btn-fg)] font-extrabold text-xs sm:text-sm tracking-wider uppercase backdrop-blur-md hover:-translate-y-0.5 transition-all"
           >
             <span>Conoce cómo funciona</span>
             <svg
@@ -127,28 +131,28 @@ export function Hero() {
       </div>
 
       {/* Pie del hero con indicador de scroll y contador de diapositivas */}
-      <div className="absolute z-20 bottom-8 inset-x-6 md:inset-x-14 flex items-center justify-between text-xs font-extrabold tracking-widest uppercase text-white/80">
+      <div className="absolute z-20 bottom-8 inset-x-6 md:inset-x-14 flex items-center justify-between text-xs font-extrabold tracking-widest uppercase text-[var(--hero-fg-muted)]">
         <a
           href="#categorias"
           onClick={handleScrollTo}
-          className="flex items-center gap-2 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-[var(--hero-fg-muted)] hover:text-[var(--hero-fg)] transition-colors"
         >
-          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-          <span>Desliza</span>
-          <span aria-hidden="true">↓</span>
+          <span className="w-2 h-2 rounded-full bg-[var(--hero-fg)] animate-ping" />
+          <span className="text-[var(--hero-fg)]">Desliza</span>
+          <span aria-hidden="true" className="text-[var(--hero-fg)]">↓</span>
         </a>
 
-        <div className="flex items-center gap-3 text-sm font-semibold tracking-widest">
+        <div className="flex items-center gap-3 text-sm font-semibold tracking-widest text-[var(--hero-fg-muted)]">
           <span aria-live="polite" aria-atomic="true">
-            <span className="text-white font-black">
+            <span className="text-[var(--hero-fg)] font-black">
               {String(currentSlide + 1).padStart(2, '0')}
             </span>{' '}
-            <span className="text-white/40">/</span>{' '}
-            <span>{String(heroSlides.length).padStart(2, '0')}</span>
+            <span className="text-[var(--hero-fg-muted)] opacity-60">/</span>{' '}
+            <span className="text-[var(--hero-fg-muted)]">{String(heroSlides.length).padStart(2, '0')}</span>
           </span>
           <button
             type="button"
-            className="rounded-full border border-white/35 bg-black/25 px-3 py-2 text-[10px] font-bold tracking-[.12em] text-white transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
+            className="rounded-full border border-[var(--hero-sub-border)] bg-black/25 px-3 py-2 text-[10px] font-bold tracking-[.12em] text-[var(--hero-fg)] transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
             aria-label={isPaused ? 'Reanudar carrusel de imágenes' : 'Pausar carrusel de imágenes'}
             aria-pressed={isPaused}
             onClick={() => setIsPaused((paused) => !paused)}

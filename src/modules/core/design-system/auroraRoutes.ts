@@ -3,7 +3,6 @@
  * Estas pantallas conservan su fondo propio en modo claro y modo oscuro.
  */
 export const AURORA_EXCLUDED_ROUTES: readonly string[] = [
-  '/',
   '/probador',
   '/probador/avanzado',
 ] as const
@@ -12,9 +11,9 @@ export const AURORA_EXCLUDED_ROUTES: readonly string[] = [
  * Determina si una ruta dada está excluida de renderizar <AuroraBackground>.
  */
 export function isAuroraExcluded(pathname: string): boolean {
-  if (!pathname || pathname === '/') return true
+  if (!pathname) return false
   // Comprobación exacta o prefijo de ruta (ej. /probador/...)
   return AURORA_EXCLUDED_ROUTES.some(
-    (route) => route !== '/' && (pathname === route || pathname.startsWith(`${route}/`))
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
 }

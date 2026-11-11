@@ -23,22 +23,22 @@ export default function MapaLanding() {
   const hasError = Boolean(error)
 
   return (
-    <section className="bg-[#1c1c1c] px-4 py-8 sm:px-6 md:py-10" aria-labelledby="lmTitle">
+    <section className="bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-6 md:py-10" aria-labelledby="lmTitle">
       <div className="mx-auto max-w-6xl">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-lavanda">Mapa interactivo</p>
-            <h2 id="lmTitle" className="text-2xl font-extrabold leading-tight md:text-3xl">
-              El radar en el <span className="text-lavanda">mapa</span>
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--sr-accent)]">Mapa interactivo</p>
+            <h2 id="lmTitle" className="text-2xl font-extrabold leading-tight md:text-3xl text-[var(--sr-hero-text)]">
+              El radar en el <span className="text-[var(--sr-accent-text)]">mapa</span>
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <p className="max-w-[460px] text-sm leading-relaxed text-lavanda">
+            <p className="max-w-[460px] text-sm leading-relaxed text-[var(--sr-hero-text-muted)]">
               Toca una tienda o fundación para ver sus detalles sin salir del mapa.
             </p>
             <Link
               to="/mapa"
-              className="flex-shrink-0 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-semibold transition hover:bg-white/10"
+              className="flex-shrink-0 rounded-full border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] text-[var(--sr-hero-text)] px-4 py-2 text-xs font-semibold transition hover:bg-[var(--sr-surface-raised)]"
             >
               Abrir el mapa completo →
             </Link>
