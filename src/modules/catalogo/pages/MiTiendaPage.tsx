@@ -1,6 +1,7 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import './MiTiendaPage.css'
+import './MiTiendaDashboard.css'
 
 type CatalogTab = 'Todas' | 'Publicadas' | 'En revisión' | 'Agotadas' | 'Retiradas'
 
@@ -75,6 +76,68 @@ const FILTERS: CatalogTab[] = ['Todas', 'Publicadas', 'En revisión', 'Agotadas'
 
 const COP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
 
+/* Foto existente de la dueña de la tienda (misma que se usa en la tarjeta de rol «Tienda» del inicio de sesión). */
+const HERO_PHOTO = '/img/sesion/rol-tienda.jpg'
+
+/* Filtros del resumen de inventario del panel (no reemplazan a los filtros del catálogo completo). */
+type InventoryFilter = 'Todo' | 'Disponible' | 'Pocas unidades' | 'Agotado'
+const INVENTORY_FILTERS: InventoryFilter[] = ['Todo', 'Disponible', 'Pocas unidades', 'Agotado']
+
+/* Datos mock de la semana: mismos valores que usa StoreStatsPage (últimos 7 días, visitantes activos,
+   meta semanal y prendas más guardadas). Solo se leen aquí para el resumen del panel. */
+const WEEK_VISITS = [
+  { label: '4 nov', visits: 38 }, { label: '5 nov', visits: 45 }, { label: '6 nov', visits: 62 },
+  { label: '7 nov', visits: 75 }, { label: '8 nov', visits: 59 }, { label: '9 nov', visits: 64 },
+  { label: '10 nov', visits: 51 },
+]
+const LIVE_VISITORS = 12
+const WEEKLY_VISITS = 445
+const WEEKLY_GOAL = 500
+const POPULAR_ITEMS = [
+  { name: 'Gorra NY lavada', count: 72, image: '/prototipo/assets/img/productos/r1c2-gorra-ny.jpg' },
+  { name: 'Hoodie gris jaspeado', count: 50, image: '/prototipo/assets/img/productos/hoodie-gris-jaspeado.jpg' },
+  { name: 'Conjunto técnico negro', count: 40, image: '/prototipo/assets/img/productos/conjunto-tecnico-negro.jpg' },
+]
+
+/** Gráfico de línea violeta con área lavanda y tooltip accesible (teclado y ratón). */
+function WeekChart() {
+  const [active, setActive] = useState<number | null>(null)
+  const width = 600
+  const height = 180
+  const max = 100
+  const points = WEEK_VISITS.map((point, index) => ({
+    ...point,
+    x: (index / (WEEK_VISITS.length - 1)) * width,
+    y: height - (point.visits / max) * height,
+  }))
+  const line = points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ')
+  const area = `${line} L ${width} ${height} L 0 ${height} Z`
+  const current = active === null ? null : points[active]
+  return (
+    <div className="msd-chart" role="group" aria-label="Visitas de los últimos 7 días">
+      <div className="msd-chart__axis" aria-hidden="true">{[100, 75, 50, 25, 0].map((tick) => <span key={tick}>{tick}</span>)}</div>
+      <div className="msd-chart__plot">
+        {[0, 1, 2, 3, 4].map((line) => <i key={line} className="msd-chart__grid" style={{ top: `${line * 25}%` }} />)}
+        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="msdArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#b9b9ca" stopOpacity=".55" /><stop offset="1" stopColor="#b9b9ca" stopOpacity=".05" /></linearGradient></defs>
+          <path d={area} fill="url(#msdArea)" />
+          <path d={line} fill="none" stroke="#48119a" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+          {current ? <line x1={current.x} x2={current.x} y1="0" y2={height} stroke="#b9b9ca" strokeDasharray="3 4" vectorEffect="non-scaling-stroke" /> : null}
+        </svg>
+        {points.map((point, index) => <span key={point.label} className={`msd-chart__dot${active === index ? ' is-active' : ''}`} style={{ left: `${(point.x / width) * 100}%`, top: `${(point.y / height) * 100}%` }} aria-hidden="true" />)}
+        <div className="msd-chart__hits">
+          {points.map((point, index) => <button key={point.label} type="button" aria-label={`${point.label}: ${point.visits} visitas`} onMouseEnter={() => setActive(index)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(index)} onBlur={() => setActive(null)} />)}
+        </div>
+        {current ? <div className="msd-chart__tooltip" role="status" style={{ left: `${Math.min(88, Math.max(12, (current.x / width) * 100))}%`, top: `${(current.y / height) * 100}%` }}><b>{current.visits} visitas</b><span>{current.label}</span></div> : null}
+      </div>
+      <div className="msd-chart__labels" aria-hidden="true">{WEEK_VISITS.map((point) => <span key={point.label}>{point.label}</span>)}</div>
+    </div>
+  )
+}
+
+const PencilIcon = () => <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m13.8 3.2 3 3M3 17l3.8-.8L16.7 6.3a2.1 2.1 0 0 0-3-3L3.8 13.2 3 17Z" /></svg>
+const BoxIcon = () => <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 6.5h15v11h-15zM1.5 3h17v3.5h-17zM8 10h4" /></svg>
+
 export default function MiTiendaPage() {
   const [activeTab, setActiveTab] = useState<CatalogTab>('Todas')
   const [query, setQuery] = useState('')
@@ -110,6 +173,18 @@ export default function MiTiendaPage() {
   const [newArrivalDays, setNewArrivalDays] = useState(14)
   const [lastUnitsDraft, setLastUnitsDraft] = useState('3')
   const [newArrivalDaysDraft, setNewArrivalDaysDraft] = useState('14')
+  const [inventoryFilter, setInventoryFilter] = useState<InventoryFilter>('Todo')
+
+  /* Resumen del panel: se calcula con el mismo inventario mock y el umbral de «Últimas unidades». */
+  const activeCount = items.filter((item) => item.status === 'Publicadas' && item.stock > 0).length
+  const lowStockCount = items.filter((item) => item.status !== 'Retiradas' && item.stock > 0 && item.stock <= lastUnitsLimit).length
+  const visitorsToday = WEEK_VISITS[WEEK_VISITS.length - 1].visits
+  const weeklyProgress = Math.min(100, Math.round((WEEKLY_VISITS / WEEKLY_GOAL) * 100))
+  const stockState = (item: StoreItem) => item.stock === 0 ? 'Agotado' : item.stock <= lastUnitsLimit ? 'Pocas unidades' : 'Disponible'
+  const inventoryPreview = items
+    .filter((item) => item.status !== 'Retiradas')
+    .filter((item) => inventoryFilter === 'Todo' || stockState(item) === inventoryFilter)
+    .slice(0, 4)
 
   const visibleItems = useMemo(() => items.filter((item) => {
     const matchesTab = activeTab === 'Todas' ? item.status !== 'Retiradas' : item.status === activeTab
@@ -255,105 +330,193 @@ export default function MiTiendaPage() {
   }
 
   return (
-    <main className="my-store">
-      <div className="my-store__cover" role="img" aria-label="Fachada de Luna Store">
-        <img src={storeInfo.photo} alt="" />
-        <div className="my-store__cover-shade" />
-        <nav className="my-store__breadcrumbs" aria-label="Ruta de navegación">
-          <Link to="/catalogo">Inicio</Link><span>/</span><span>Mi tienda</span>
-        </nav>
-        <span className="my-store__cover-caption">CHAPINERO · BOGOTÁ</span>
-      </div>
+    <main className="my-store msd">
+      {/* ── Hero a todo el ancho ── */}
+      <section className="msd-hero" aria-labelledby="store-title">
+        <div className="msd-hero__media" aria-hidden="true"><img src={HERO_PHOTO} alt="" /></div>
+        <div className="msd-hero__shade" aria-hidden="true" />
+        <div className="msd-hero__inner">
+          <nav className="msd-hero__crumbs" aria-label="Ruta de navegación">
+            <Link to="/catalogo">Inicio</Link><span aria-hidden="true">/</span><span>Mi tienda</span>
+          </nav>
+          <span className="msd-hero__eyebrow">PANEL DE TIENDA · BOGOTÁ</span>
+          <h1 id="store-title" className="msd-hero__title">{storeInfo.name}</h1>
+          <p className="msd-hero__lead">Administra tu inventario, tus colecciones y tus ventas en un solo lugar.</p>
+          <div className="msd-hero__pills">
+            <span className="msd-pill msd-pill--glass">◉ Así te ven tus clientes · Las herramientas de edición solo las ves tú</span>
+            <span className="msd-pill msd-pill--glass">{storeInfo.category.toUpperCase()}</span>
+            <span className="msd-pill msd-pill--verified">Verificada</span>
+            <span className="msd-pill msd-pill--glass">Suscripción activa</span>
+          </div>
+          <div className="msd-hero__actions">
+            <Link className="msd-btn msd-btn--primary" to="/tienda/inventario#catalogo">＋ Nueva prenda</Link>
+            <Link className="msd-btn msd-btn--ghost" to="/tienda/estadisticas">Ver estadísticas</Link>
+          </div>
 
-      <div className="my-store__content">
-        <div className="my-store__billing-alert" role="alert">
-          <span className="my-store__alert-mark" aria-hidden="true">!</span>
+          <ul className="msd-kpis" aria-label="Resumen de la tienda">
+            <li className="msd-kpi">
+              <span className="msd-kpi__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6a2 2 0 1 1 2 2c-1 0-2 .7-2 1.6V10l9 6.2c.8.6.4 1.8-.6 1.8H3.6c-1 0-1.4-1.2-.6-1.8L12 10" /></svg></span>
+              <div><b>{activeCount}</b><span>Prendas activas</span></div>
+            </li>
+            <li className="msd-kpi">
+              <span className="msd-kpi__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Zm0 6v5m0 3v.5" /></svg></span>
+              <div><b>{lowStockCount}</b><span>Stock bajo</span></div>
+            </li>
+            <li className="msd-kpi">
+              <span className="msd-kpi__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg></span>
+              <div><b>{visitorsToday}</b><span>Visitantes hoy</span></div>
+            </li>
+            <li className="msd-kpi msd-kpi--goal">
+              <span className="msd-kpi__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8m0 0h-5m5 0v5" /></svg></span>
+              <div className="msd-kpi__goal">
+                <span>Meta semanal</span>
+                <b>{weeklyProgress}%</b>
+                <span className="msd-progress" role="progressbar" aria-label="Meta semanal de visitas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={weeklyProgress}><i style={{ width: `${weeklyProgress}%` }} /></span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <div className="msd-content">
+        <div className="msd-alert" role="alert">
+          <span className="msd-alert__mark" aria-hidden="true">!</span>
           <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para pagar con otro medio y mantener tu tienda visible.</p></div>
           <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
         </div>
-        <div className="my-store__trust-row">
-          <span>◉ &nbsp;Así te ven tus clientes · Las herramientas de edición solo las ves tú</span>
-          <div><span className="my-store__pill my-store__pill--verified">Verificada</span><span className="my-store__pill">Suscripción activa</span></div>
-        </div>
 
-        <section className="my-store__intro" aria-labelledby="store-title">
-          <div className="my-store__identity">
-            <h1 id="store-title">{storeInfo.name}</h1>
-            <div className="my-store__tags"><span>{storeInfo.category.toUpperCase()}</span><span className="my-store__verified">VERIFICADA</span></div>
-            <p>{storeInfo.description}</p>
-          </div>
-          <dl className="my-store__facts">
-            <div><dt>Dirección</dt><dd>{storeInfo.address}</dd></div>
-            <div><dt>Teléfono</dt><dd>{storeInfo.phone}</dd></div>
-            <div><dt>Horario</dt><dd>{storeInfo.hours}</dd></div>
-            <div><dt>Pagos</dt><dd>{storeInfo.payments}</dd></div>
-          </dl>
-          <div className="my-store__actions">
-            <Link className="my-store__button my-store__button--primary" to="/tienda/inventario#catalogo">＋ Agregar prenda</Link>
-            <button className="my-store__button" type="button" onClick={openStoreInfo}>Editar información</button>
-            <button className="my-store__button" type="button" onClick={openBadgesSettings}>Distintivos</button>
-            <a className="my-store__button" href="#fotos-tienda">Fotos de la tienda</a>
-            <Link className="my-store__button" to="/tienda/estadisticas">Estadísticas</Link>
-          </div>
-        </section>
+        {notice ? <div className="msd-notice" role="status">{notice}<button type="button" onClick={() => setNotice('')} aria-label="Cerrar aviso">×</button></div> : null}
 
-        {notice ? <div className="my-store__notice" role="status">{notice}<button type="button" onClick={() => setNotice('')} aria-label="Cerrar aviso">×</button></div> : null}
-
-        <div className="my-store__stats" aria-label="Resumen de la tienda">
-          <span><b>12</b> publicadas y disponibles</span><span><b>0</b> en revisión</span><span><b>1</b> agotadas</span><span><b>{collections.length}</b> colecciones</span>
-        </div>
-
-        <section className="my-store__catalog" id="catalogo" aria-labelledby="catalog-title">
-          <div className="my-store__section-head">
-            <div><span className="my-store__eyebrow">TU SELECCIÓN ACTUAL</span><h2 id="catalog-title">Catálogo</h2></div>
-            <label className="my-store__search"><span className="sr-only">Buscar en mi catálogo</span><span aria-hidden="true">⌕</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en mi catálogo" /></label>
-          </div>
-          <div className="my-store__toolbar">
-            <div className="my-store__filters" role="tablist" aria-label="Filtrar prendas">
-              {FILTERS.map((filter) => <button key={filter} type="button" role="tab" aria-selected={activeTab === filter} onClick={() => setActiveTab(filter)}>{filter}<sup>{filter === 'Todas' ? items.length : items.filter((item) => item.status === filter).length}</sup></button>)}
+        {/* ── Fila 1: inventario + estadísticas ── */}
+        <div className="msd-row msd-row--main">
+          <section className="msd-card msd-inventory" aria-labelledby="msd-inventory-title">
+            <header className="msd-card__head">
+              <h2 id="msd-inventory-title">Mi inventario</h2>
+              <Link className="msd-link" to="/tienda/inventario">Ver todo <span aria-hidden="true">→</span></Link>
+            </header>
+            <div className="msd-chips" role="tablist" aria-label="Filtrar inventario por disponibilidad">
+              {INVENTORY_FILTERS.map((filter) => <button key={filter} type="button" role="tab" aria-selected={inventoryFilter === filter} className={inventoryFilter === filter ? 'is-active' : ''} onClick={() => setInventoryFilter(filter)}>{filter}</button>)}
             </div>
-            <span className="my-store__sort-label">ORDENAR <select aria-label="Ordenar prendas"><option>Recientes</option><option>Precio menor</option><option>Precio mayor</option><option>Menos unidades</option></select></span>
-          </div>
-          {visibleItems.length ? <div className="my-store__grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {visibleItems.map((item) => <article className="my-store__product" key={item.id}>
-              <div className="my-store__product-image"><img src={item.image} alt={item.name} loading="lazy" /><span className={`my-store__status${item.status === 'Agotadas' ? ' my-store__status--sold' : ''}`}>{item.status === 'Publicadas' ? 'PUBLICADA' : item.status === 'Agotadas' ? 'AGOTADA' : item.status.toUpperCase()}</span>{item.flag ? <span className={`my-store__flag${item.flag === 'Nueva llegada' ? ' my-store__flag--new' : ''}`}>{item.flag.toUpperCase()}</span> : null}</div>
-              <div className="my-store__product-row"><h3>{item.name}</h3><strong>{COP.format(item.price)}</strong></div>
-              <div className="my-store__product-meta"><span>{item.category}</span><span className={item.stock <= 2 ? 'my-store__low-stock' : ''}>{item.stock} u · {item.sizes}</span></div>
-              <div className="my-store__card-actions">
-                <button type="button" onClick={() => openItemAction(item, 'edit')}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m13.8 3.2 3 3M3 17l3.8-.8L16.7 6.3a2.1 2.1 0 0 0-3-3L3.8 13.2 3 17Z" /></svg>Editar</button>
-                <button type="button" onClick={() => openItemAction(item, 'stock')}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 6.5h15v11h-15zM1.5 3h17v3.5h-17zM8 10h4" /></svg>Unidades</button>
-              </div>
-              <div className="my-store__card-tools">
-                <button type="button" onClick={() => openItemAction(item, 'collection')} aria-label={`Agregar ${item.name} a una colección`} title="Agregar a una colección"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" /></svg></button>
-                <button type="button" onClick={() => removeItem(item)} aria-label={`Retirar ${item.name} del catálogo`} title="Retirar del catálogo"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M8 5V3h4v2m-7 0 1 12h8l1-12M8 8v6m4-6v6" /></svg></button>
-              </div>
-            </article>)}
-          </div> : <div className="my-store__empty">No hay prendas en esta categoría. Prueba otro filtro o busca por otro nombre.</div>}
-        </section>
+            {inventoryPreview.length ? <div className="msd-products">
+              {inventoryPreview.map((item) => {
+                const state = stockState(item)
+                return <article className="msd-product" key={item.id}>
+                  <div className="msd-product__img"><img src={item.image} alt={item.name} loading="lazy" /></div>
+                  <h3>{item.name}</h3>
+                  <strong>{COP.format(item.price)}</strong>
+                  <span className="msd-product__meta">Talla {item.sizes} · {item.stock} uds</span>
+                  <div className="msd-product__foot">
+                    <span className={`msd-status msd-status--${state === 'Disponible' ? 'ok' : state === 'Agotado' ? 'out' : 'low'}`}>{state}</span>
+                    <span className="msd-product__tools">
+                      <button type="button" className="msd-icon-btn" onClick={() => openItemAction(item, 'stock')} aria-label={`Actualizar unidades de ${item.name}`} title="Unidades"><BoxIcon /></button>
+                      <button type="button" className="msd-icon-btn" onClick={() => openItemAction(item, 'edit')} aria-label={`Editar ${item.name}`} title="Editar"><PencilIcon /></button>
+                    </span>
+                  </div>
+                </article>
+              })}
+            </div> : <p className="msd-empty">No hay prendas con este estado.</p>}
+          </section>
 
-        <section className="my-store__photos" id="fotos-tienda" aria-labelledby="store-photos-title">
-          <div className="my-store__photos-head"><div><h2 id="store-photos-title">Fotos de la tienda</h2><p>Fachada, vitrina e interior. Salen en tu página para que la gente te reconozca al llegar. Hasta 6 fotos.</p></div>
-            <label className="my-store__upload-button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h3l1.3-2h5.4L14 6h3v10H3z" /><circle cx="10" cy="11" r="3" /></svg>Subir fotos<input type="file" accept="image/*" multiple onChange={uploadPhotos} /></label>
-          </div>
-          {photoError ? <p className="my-store__photo-error" role="alert">{photoError}</p> : null}
-          <div className="my-store__photo-grid">
-          {storePhotos.length ? storePhotos.map((photo, index) => <figure key={photo}><img src={photo} alt={`Foto ${index + 1} de Luna Store`} /><figcaption>FOTO {index + 1} · LUNA STORE</figcaption><button type="button" onClick={() => setStorePhotos((current) => current.filter((entry) => entry !== photo))} aria-label={`Quitar foto ${index + 1}`}>×</button></figure>) : <figure className="my-store__sample-photo"><img src={storeInfo.photo} alt="Fachada de ejemplo de Luna Store" loading="lazy" /><figcaption>FOTO DE EJEMPLO · SUBE LA TUYA PARA REEMPLAZARLA</figcaption></figure>}
-          </div>
-        </section>
+          <section className="msd-card msd-stats" aria-labelledby="msd-stats-title">
+            <header className="msd-card__head">
+              <h2 id="msd-stats-title">Estadísticas de la semana</h2>
+              <span className="msd-live"><i aria-hidden="true" />Visitantes activos: {LIVE_VISITORS}</span>
+            </header>
+            <WeekChart />
+            <h3 className="msd-subtitle">Prendas populares</h3>
+            <ul className="msd-popular">
+              {POPULAR_ITEMS.map((product) => <li key={product.name}><img src={product.image} alt="" loading="lazy" /><span>{product.name}</span><b>{product.count} guardadas</b></li>)}
+            </ul>
+          </section>
+        </div>
 
-        <section className="my-store__collections" id="colecciones" aria-labelledby="collections-title">
-          <div className="my-store__collections-head">
-            <div><h2 id="collections-title">Colecciones y playlists</h2><p>Agrupa prendas de tu catálogo. Las públicas aparecen en tu página.</p></div>
-            <button className="my-store__collection-new" type="button" onClick={() => { setCollectionError(''); setCollectionDialogOpen(true) }}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14" /></svg>Nueva colección</button>
+        {/* ── Fila 2: colecciones, distintivos, información ── */}
+        <div className="msd-row msd-row--three">
+          <section className="msd-card" id="colecciones" aria-labelledby="collections-title">
+            <header className="msd-card__head"><h2 id="collections-title">Colecciones</h2></header>
+            <div className="msd-collections">
+              {collections.map((collection) => <Link className="msd-collection" key={collection.id} to={`/playlists/${collection.id}`} state={{ collection }} aria-label={`Abrir colección ${collection.title}`}>
+                <img src={collection.image} alt="" loading="lazy" />
+                <span className="msd-collection__shade" aria-hidden="true" />
+                <span className="msd-collection__name">{collection.title}</span>
+                <span className="msd-collection__meta">{collection.items} prendas · {collection.visibility}</span>
+              </Link>)}
+              <button className="msd-collection msd-collection--new" type="button" onClick={() => { setCollectionError(''); setCollectionDialogOpen(true) }}>＋ Nueva colección</button>
+            </div>
+          </section>
+
+          <section className="msd-card" aria-labelledby="msd-badges-title">
+            <header className="msd-card__head">
+              <h2 id="msd-badges-title">Distintivos de la tienda</h2>
+              <button type="button" className="msd-link" onClick={openBadgesSettings}>Configurar</button>
+            </header>
+            <ul className="msd-badges">
+              <li><span className="msd-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10" /></svg></span>Tienda verificada</li>
+              <li><span className="msd-badge msd-badge--soft" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v10m0 4v1" /></svg></span>Últimas unidades<small>≤ {lastUnitsLimit} uds</small></li>
+              <li><span className="msd-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z" /></svg></span>Nueva llegada<small>{newArrivalDays} días</small></li>
+            </ul>
+          </section>
+
+          <section className="msd-card msd-info" aria-labelledby="msd-info-title">
+            <header className="msd-card__head">
+              <h2 id="msd-info-title">Información de la tienda</h2>
+              <button type="button" className="msd-btn msd-btn--outline" onClick={openStoreInfo}><PencilIcon />Editar información</button>
+            </header>
+            <p className="msd-info__desc">{storeInfo.description}</p>
+            <dl className="msd-info__list">
+              <div><dt><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z" /><circle cx="12" cy="9" r="2.5" /></svg><span className="sr-only">Dirección</span></dt><dd>{storeInfo.address}</dd></div>
+              <div><dt><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg><span className="sr-only">Horario</span></dt><dd>{storeInfo.hours}</dd></div>
+              <div><dt><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2Z" /></svg><span className="sr-only">Teléfono</span></dt><dd>{storeInfo.phone}</dd></div>
+              <div><dt><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18" /></svg><span className="sr-only">Pagos</span></dt><dd>{storeInfo.payments}</dd></div>
+            </dl>
+            <a className="msd-link" href="#fotos-tienda">Fotos de la tienda <span aria-hidden="true">↓</span></a>
+          </section>
+        </div>
+
+        {/* ── Gestión completa (catálogo y fotos): mismas funciones de antes, en un panel grafito ── */}
+        <div className="msd-dark">
+          <div className="my-store__stats" aria-label="Resumen del catálogo">
+            <span><b>12</b> publicadas y disponibles</span><span><b>0</b> en revisión</span><span><b>1</b> agotadas</span><span><b>{collections.length}</b> colecciones</span>
           </div>
-          <div className="my-store__collection-grid">
-            {collections.map((collection) => <Link className="my-store__collection-card" key={collection.id} to={`/playlists/${collection.id}`} state={{ collection }} aria-label={`Abrir colección ${collection.title}`}>
-              <img src={collection.image} alt={collection.title} loading="lazy" />
-              <span className="my-store__collection-name">{collection.title}</span>
-              <span className="my-store__collection-meta">{collection.items}/15 PRENDAS · {collection.visibility.toUpperCase()} · {collection.likes} ME GUSTA</span>
-            </Link>)}
-          </div>
-        </section>
+
+          <section className="my-store__catalog" id="catalogo" aria-labelledby="catalog-title">
+            <div className="my-store__section-head">
+              <div><span className="my-store__eyebrow">TU SELECCIÓN ACTUAL</span><h2 id="catalog-title">Catálogo</h2></div>
+              <label className="my-store__search"><span className="sr-only">Buscar en mi catálogo</span><span aria-hidden="true">⌕</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en mi catálogo" /></label>
+            </div>
+            <div className="my-store__toolbar">
+              <div className="my-store__filters" role="tablist" aria-label="Filtrar prendas">
+                {FILTERS.map((filter) => <button key={filter} type="button" role="tab" aria-selected={activeTab === filter} onClick={() => setActiveTab(filter)}>{filter}<sup>{filter === 'Todas' ? items.length : items.filter((item) => item.status === filter).length}</sup></button>)}
+              </div>
+              <span className="my-store__sort-label">ORDENAR <select aria-label="Ordenar prendas"><option>Recientes</option><option>Precio menor</option><option>Precio mayor</option><option>Menos unidades</option></select></span>
+            </div>
+            {visibleItems.length ? <div className="my-store__grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {visibleItems.map((item) => <article className="my-store__product" key={item.id}>
+                <div className="my-store__product-image"><img src={item.image} alt={item.name} loading="lazy" /><span className={`my-store__status${item.status === 'Agotadas' ? ' my-store__status--sold' : ''}`}>{item.status === 'Publicadas' ? 'PUBLICADA' : item.status === 'Agotadas' ? 'AGOTADA' : item.status.toUpperCase()}</span>{item.flag ? <span className={`my-store__flag${item.flag === 'Nueva llegada' ? ' my-store__flag--new' : ''}`}>{item.flag.toUpperCase()}</span> : null}</div>
+                <div className="my-store__product-row"><h3>{item.name}</h3><strong>{COP.format(item.price)}</strong></div>
+                <div className="my-store__product-meta"><span>{item.category}</span><span className={item.stock <= 2 ? 'my-store__low-stock' : ''}>{item.stock} u · {item.sizes}</span></div>
+                <div className="my-store__card-actions">
+                  <button type="button" onClick={() => openItemAction(item, 'edit')}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m13.8 3.2 3 3M3 17l3.8-.8L16.7 6.3a2.1 2.1 0 0 0-3-3L3.8 13.2 3 17Z" /></svg>Editar</button>
+                  <button type="button" onClick={() => openItemAction(item, 'stock')}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 6.5h15v11h-15zM1.5 3h17v3.5h-17zM8 10h4" /></svg>Unidades</button>
+                </div>
+                <div className="my-store__card-tools">
+                  <button type="button" onClick={() => openItemAction(item, 'collection')} aria-label={`Agregar ${item.name} a una colección`} title="Agregar a una colección"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" /></svg></button>
+                  <button type="button" onClick={() => removeItem(item)} aria-label={`Retirar ${item.name} del catálogo`} title="Retirar del catálogo"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M8 5V3h4v2m-7 0 1 12h8l1-12M8 8v6m4-6v6" /></svg></button>
+                </div>
+              </article>)}
+            </div> : <div className="my-store__empty">No hay prendas en esta categoría. Prueba otro filtro o busca por otro nombre.</div>}
+          </section>
+
+          <section className="my-store__photos" id="fotos-tienda" aria-labelledby="store-photos-title">
+            <div className="my-store__photos-head"><div><h2 id="store-photos-title">Fotos de la tienda</h2><p>Fachada, vitrina e interior. Salen en tu página para que la gente te reconozca al llegar. Hasta 6 fotos.</p></div>
+              <label className="my-store__upload-button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h3l1.3-2h5.4L14 6h3v10H3z" /><circle cx="10" cy="11" r="3" /></svg>Subir fotos<input type="file" accept="image/*" multiple onChange={uploadPhotos} /></label>
+            </div>
+            {photoError ? <p className="my-store__photo-error" role="alert">{photoError}</p> : null}
+            <div className="my-store__photo-grid">
+            {storePhotos.length ? storePhotos.map((photo, index) => <figure key={photo}><img src={photo} alt={`Foto ${index + 1} de Luna Store`} /><figcaption>FOTO {index + 1} · LUNA STORE</figcaption><button type="button" onClick={() => setStorePhotos((current) => current.filter((entry) => entry !== photo))} aria-label={`Quitar foto ${index + 1}`}>×</button></figure>) : <figure className="my-store__sample-photo"><img src={storeInfo.photo} alt="Fachada de ejemplo de Luna Store" loading="lazy" /><figcaption>FOTO DE EJEMPLO · SUBE LA TUYA PARA REEMPLAZARLA</figcaption></figure>}
+            </div>
+          </section>
+        </div>
       </div>
 
       {action && actionItem ? <div className="my-store__dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) { setAction(null); setActionItem(null) } }}>
