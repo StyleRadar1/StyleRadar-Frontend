@@ -4,9 +4,9 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import './mapa.css'
 import type { MapFilter, MapPinDto } from '../types/map.dto'
 import { filterPins, calcBounds } from '../utils/mapUtils'
+import { MAPBOX_TOKEN } from '../config'
 
 /* ── Token ── */
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
 const hasToken = !!MAPBOX_TOKEN
 
 type ViewMode = 'normal' | '3d'
