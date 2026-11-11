@@ -1,7 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
-import { AuroraBackground } from '@/modules/core/design-system'
 import { ItemCard } from '../components/ItemCard'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
@@ -205,11 +204,7 @@ export default function CatalogPage() {
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
   return (
-    <AuroraBackground
-      tone="malva"
-      fullHeight
-      className="px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
-    >
+    <div className="min-h-screen bg-transparent px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white">
       <section className="mx-auto max-w-6xl">
         {/* Migas de pan */}
         <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">
@@ -814,7 +809,7 @@ export default function CatalogPage() {
           )}
         </div>
       </section>
-    </AuroraBackground>
+    </div>
   )
 }
 

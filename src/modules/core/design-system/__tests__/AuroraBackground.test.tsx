@@ -26,7 +26,6 @@ describe('AuroraBackground Component', () => {
     expect(screen.getByTestId('aurora-blob-2')).toBeDefined()
     expect(screen.getByTestId('aurora-blob-3')).toBeDefined()
     expect(screen.getByTestId('aurora-blob-4')).toBeDefined()
-    expect(screen.getByTestId('aurora-noise')).toBeDefined()
     expect(screen.getByText('Contenido del Hero')).toBeDefined()
   })
 

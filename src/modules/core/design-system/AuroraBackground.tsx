@@ -11,22 +11,20 @@ export interface AuroraBackgroundProps {
   children?: ReactNode
   /** Si debe tener una altura mínima completa o ajustarse al contenido */
   fullHeight?: boolean
+  /** Si debe actuar como fondo fijo global (layout) detrás de todo el contenido */
+  fixed?: boolean
 }
 
 /**
  * AuroraBackground — Fondo "Amanecer en el radar" animado.
  *
- * En MODO OSCURO (Fase 2): Base negro-violeta (#05030A), manchas de luz morada/violeta
- * desde el borde izquierdo y esquina inferior derecha, y toque rosado arriba a la izquierda.
- * Grano con mix-blend-mode: screen (opacity 0.10), blur 70px.
- *
- * En MODO CLARO (Fase 1): Base arena (#E6D9C0), manchas suaves lila/malva/rosa,
- * grano con mix-blend-mode: multiply (opacity 0.16).
+ * Degradado suave, limpio y liso con manchas de color difusas sin grano ni relieve.
+ * - Modo Claro: Base arena (#E6D9C0), manchas suaves lila/malva/rosa.
+ * - Modo Oscuro: Base negro-violeta (#05030A), manchas violetas/lila/malva/salvia/rosa.
  *
  * Rendimiento y Accesibilidad:
  * - will-change: transform en las 4 manchas.
- * - IntersectionObserver: pausa las animaciones cuando el héroe sale del viewport.
- * - document.visibilityState: pausa cuando la pestaña está en segundo plano.
+ * - IntersectionObserver / visibilitychange: pausa las animaciones cuando no está visible.
  * - prefers-reduced-motion: desactiva las animaciones por completo.
  */
 export function AuroraBackground({
@@ -34,6 +32,7 @@ export function AuroraBackground({
   className = '',
   children,
   fullHeight = false,
+  fixed = false,
 }: AuroraBackgroundProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(true)
@@ -44,7 +43,6 @@ export function AuroraBackground({
       if (document.hidden) {
         setIsVisible(false)
       } else {
-        // Al regresar, verificar si el contenedor sigue en el viewport
         if (containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect()
           const hasZeroDims = rect.height === 0 && rect.width === 0
@@ -58,11 +56,11 @@ export function AuroraBackground({
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // 2. IntersectionObserver para pausar si el héroe no está en pantalla
+    // 2. IntersectionObserver para pausar si el héroe no está en pantalla (solo si no es fixed)
     const el = containerRef.current
     let observer: IntersectionObserver | null = null
 
-    if (el && typeof IntersectionObserver !== 'undefined') {
+    if (!fixed && el && typeof IntersectionObserver !== 'undefined') {
       observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[0]
@@ -82,21 +80,22 @@ export function AuroraBackground({
         observer.disconnect()
       }
     }
-  }, [])
+  }, [fixed])
 
   return (
     <div
       ref={containerRef}
       data-aurora-tone={tone}
       data-testid="aurora-background"
-      className={`sr-aurora-container relative overflow-hidden ${
-        fullHeight ? 'min-h-screen' : ''
-      } ${className}`}
+      aria-hidden={fixed}
+      className={`sr-aurora-container overflow-hidden ${
+        fixed ? 'fixed inset-0 pointer-events-none z-0' : 'relative'
+      } ${fullHeight ? 'min-h-screen' : ''} ${className}`}
       style={{
         animationPlayState: isVisible ? 'running' : 'paused',
       }}
     >
-      {/* Capa de manchas de luz (blobs de aurora) */}
+      {/* Capa de manchas de luz difusas (blobs de aurora sin grano) */}
       <div
         className="sr-aurora-blobs-layer pointer-events-none absolute inset-0 overflow-hidden"
         aria-hidden="true"
@@ -104,84 +103,81 @@ export function AuroraBackground({
           animationPlayState: isVisible ? 'running' : 'paused',
         }}
       >
-        {/* Mancha 1: Toque rosado arriba izquierda (46% tamaño, c1) */}
+        {/* Mancha 1: Toque rosado arriba izquierda */}
         <div
           data-testid="aurora-blob-1"
           className="sr-aurora-blob sr-aurora-blob-1 absolute rounded-full"
           style={{
-            width: '46%',
-            height: '46%',
-            left: '-12%',
-            top: '-30%',
+            width: '52vw',
+            height: '52vw',
+            minWidth: '380px',
+            minHeight: '380px',
+            left: '-12vw',
+            top: '-15vw',
             backgroundColor: 'var(--aurora-c1)',
-            filter: 'blur(var(--aurora-blur, 70px))',
+            filter: 'blur(var(--aurora-blur, 75px))',
             willChange: 'transform',
             animationPlayState: isVisible ? 'running' : 'paused',
           }}
         />
 
-        {/* Mancha 2: Mancha violeta naciendo del borde izquierdo (56% tamaño, c2) */}
+        {/* Mancha 2: Mancha violeta naciendo del borde izquierdo */}
         <div
           data-testid="aurora-blob-2"
           className="sr-aurora-blob sr-aurora-blob-2 absolute rounded-full"
           style={{
-            width: '56%',
-            height: '56%',
-            left: '-8%',
-            top: '10%',
+            width: '60vw',
+            height: '60vw',
+            minWidth: '420px',
+            minHeight: '420px',
+            left: '-14vw',
+            top: '15vh',
             backgroundColor: 'var(--aurora-c2)',
-            filter: 'blur(var(--aurora-blur, 70px))',
+            filter: 'blur(var(--aurora-blur, 75px))',
             willChange: 'transform',
             animationPlayState: isVisible ? 'running' : 'paused',
           }}
         />
 
-        {/* Mancha 3: Mancha en esquina inferior derecha (48% tamaño, c3) */}
+        {/* Mancha 3: Mancha en esquina inferior derecha */}
         <div
           data-testid="aurora-blob-3"
           className="sr-aurora-blob sr-aurora-blob-3 absolute rounded-full"
           style={{
-            width: '48%',
-            height: '48%',
-            right: '-10%',
-            bottom: '-45%',
+            width: '56vw',
+            height: '56vw',
+            minWidth: '400px',
+            minHeight: '400px',
+            right: '-12vw',
+            bottom: '-15vh',
             backgroundColor: 'var(--aurora-c3)',
-            filter: 'blur(var(--aurora-blur, 70px))',
+            filter: 'blur(var(--aurora-blur, 75px))',
             willChange: 'transform',
             animationPlayState: isVisible ? 'running' : 'paused',
           }}
         />
 
-        {/* Mancha 4: Mancha de profundidad arriba a la derecha (34% tamaño, c4) */}
+        {/* Mancha 4: Mancha de profundidad arriba a la derecha */}
         <div
           data-testid="aurora-blob-4"
           className="sr-aurora-blob sr-aurora-blob-4 absolute rounded-full"
           style={{
-            width: '34%',
-            height: '34%',
-            right: '18%',
-            top: '-35%',
+            width: '45vw',
+            height: '45vw',
+            minWidth: '320px',
+            minHeight: '320px',
+            right: '8vw',
+            top: '-18vw',
             backgroundColor: 'var(--aurora-c4)',
-            filter: 'blur(var(--aurora-blur, 70px))',
+            filter: 'blur(var(--aurora-blur, 75px))',
             willChange: 'transform',
             animationPlayState: isVisible ? 'running' : 'paused',
           }}
         />
       </div>
 
-      {/* Capa de textura de grano (SVG feTurbulence) */}
-      <div
-        data-testid="aurora-noise"
-        className="sr-aurora-noise pointer-events-none absolute inset-0"
-        aria-hidden="true"
-        style={{
-          backgroundImage: `url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='noiseFilter'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noiseFilter)'/></svg>")`,
-          backgroundRepeat: 'repeat',
-        }}
-      />
-
-      {/* Contenido principal en capa superior */}
-      <div className="relative z-10 w-full">{children}</div>
+      {/* Contenido principal si se renderiza como contenedor directo */}
+      {children && <div className="relative z-10 w-full">{children}</div>}
     </div>
   )
 }

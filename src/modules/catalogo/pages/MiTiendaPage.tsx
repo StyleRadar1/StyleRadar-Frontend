@@ -1,6 +1,5 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { AuroraBackground } from '@/modules/core/design-system'
 import './MiTiendaPage.css'
 
 type CatalogTab = 'Todas' | 'Publicadas' | 'En revisión' | 'Agotadas' | 'Retiradas'
@@ -256,8 +255,7 @@ export default function MiTiendaPage() {
   }
 
   return (
-    <AuroraBackground tone="rosa" fullHeight className="my-store-aurora">
-      <main className="my-store">
+    <main className="my-store">
       <div className="my-store__cover" role="img" aria-label="Fachada de Luna Store">
         <img src={storeInfo.photo} alt="" />
         <div className="my-store__cover-shade" />
@@ -438,6 +436,5 @@ export default function MiTiendaPage() {
         </form>
       </div> : null}
     </main>
-  </AuroraBackground>
-)
+  )
 }

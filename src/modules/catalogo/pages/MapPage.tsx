@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom'
-import { AuroraBackground } from '@/modules/core/design-system'
 import { MapPreview } from '@/components/landing/MapPreview'
 
 export default function MapPage() {
   return (
-    <AuroraBackground tone="salvia" fullHeight className="pt-24 pb-16">
+    <div className="min-h-screen bg-transparent pt-24 pb-16 text-[var(--sr-hero-text)]">
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -34,6 +33,6 @@ export default function MapPage() {
         {/* Componente real del mapa de Bogotá */}
         <MapPreview />
       </div>
-    </AuroraBackground>
+    </div>
   )
 }

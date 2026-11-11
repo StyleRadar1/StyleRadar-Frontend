@@ -1,7 +1,7 @@
 import { useState, useMemo, useContext, useEffect, useCallback, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Button, AuroraBackground } from '@/modules/core/design-system'
+import { Button } from '@/modules/core/design-system'
 import { ErrorState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
@@ -505,17 +505,12 @@ export default function PlaylistsPage() {
     const isSaved = userSaved[selectedPlaylist.id] || selectedPlaylist.esGuardada
 
     return (
-      <AuroraBackground
-        tone="lila"
-        fullHeight
-        className="px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
+      <section
+        role="dialog"
+        aria-modal="false"
+        aria-label={`Detalle de ${selectedPlaylist.nombre}`}
+        className="min-h-screen bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
       >
-        <section
-          role="dialog"
-          aria-modal="false"
-          aria-label={`Detalle de ${selectedPlaylist.nombre}`}
-          className="min-h-screen text-[var(--sr-hero-text)]"
-        >
         <style>{`
           @keyframes spinSlow {
             from { transform: rotate(0deg); }
@@ -1103,8 +1098,7 @@ export default function PlaylistsPage() {
             </div>
           </div>
         )}
-        </section>
-      </AuroraBackground>
+      </section>
     )
   }
 
@@ -1112,11 +1106,7 @@ export default function PlaylistsPage() {
   // VISTA LISTA DE PLAYLISTS CON VINILO PROTAGONISTA
   // ==========================================
   return (
-    <AuroraBackground
-      tone="lila"
-      fullHeight
-      className="px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden"
-    >
+    <div className="min-h-screen bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden">
       <style>{`
         @keyframes spinSlow {
           from { transform: rotate(0deg); }
@@ -1558,6 +1548,6 @@ export default function PlaylistsPage() {
           </div>
         </div>
       )}
-    </AuroraBackground>
+    </div>
   )
 }

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { AuroraBackground } from '@/modules/core/design-system'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { useUserPlan } from '../hooks/useUserPlan'
@@ -57,9 +56,8 @@ export default function PlansPage() {
   }
 
   return (
-    <AuroraBackground tone="rosa" fullHeight className="px-4 py-12">
-      <section className="mx-auto max-w-6xl">
-        <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Planes</p>
+    <section className="mx-auto max-w-6xl px-4 py-12 bg-transparent text-[var(--sr-hero-text)]">
+      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Planes</p>
         <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
           Un plan para cada quien
         </h1>
@@ -132,7 +130,6 @@ export default function PlansPage() {
           title={`¿Cambiar a ${cambio ? PLAN_LABEL[cambio] : ''}?`} confirmLabel="Cambiar plan">
           Perderás el probador con tu foto y las alertas y la wishlist sin límite.
         </ConfirmDialog>
-      </section>
-    </AuroraBackground>
+    </section>
   )
 }
