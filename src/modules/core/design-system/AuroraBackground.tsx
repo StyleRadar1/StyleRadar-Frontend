@@ -5,8 +5,6 @@ export type AuroraTone = 'lila' | 'malva' | 'salvia' | 'rosa'
 export interface AuroraBackgroundProps {
   /** Tono de la paleta de manchas: lila (playlists/probador), malva (catálogo), salvia (mapa), rosa (planes/tiendas) */
   tone?: AuroraTone
-  /** Muestra los anillos de radar concéntricos con respiración sutil */
-  showRadar?: boolean
   /** Clases CSS adicionales para el contenedor */
   className?: string
   /** Elementos hijos renderizados dentro del contenido de la aurora */
@@ -33,7 +31,6 @@ export interface AuroraBackgroundProps {
  */
 export function AuroraBackground({
   tone = 'lila',
-  showRadar = false,
   className = '',
   children,
   fullHeight = false,
@@ -171,26 +168,6 @@ export function AuroraBackground({
           }}
         />
       </div>
-
-      {/* Capa de anillos de radar (opcional con respiración) */}
-      {showRadar && (
-        <div
-          data-testid="aurora-radar-rings"
-          className="sr-radar-rings pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          aria-hidden="true"
-          style={{
-            width: '720px',
-            height: '720px',
-            backgroundImage:
-              'repeating-radial-gradient(circle at center, transparent 0, transparent 48px, var(--sr-radar-ring) 49px, var(--sr-radar-ring) 50px)',
-            maskImage:
-              'radial-gradient(circle at center, black 35%, transparent 72%)',
-            WebkitMaskImage:
-              'radial-gradient(circle at center, black 35%, transparent 72%)',
-            animationPlayState: isVisible ? 'running' : 'paused',
-          }}
-        />
-      )}
 
       {/* Capa de textura de grano (SVG feTurbulence) */}
       <div

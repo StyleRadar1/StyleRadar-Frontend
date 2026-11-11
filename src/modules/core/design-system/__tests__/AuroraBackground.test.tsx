@@ -41,14 +41,6 @@ describe('AuroraBackground Component', () => {
     expect(screen.getByTestId('aurora-background').getAttribute('data-aurora-tone')).toBe('rosa')
   })
 
-  it('renderiza los anillos de radar solo cuando showRadar es true', () => {
-    const { rerender } = render(<AuroraBackground showRadar={false} />)
-    expect(screen.queryByTestId('aurora-radar-rings')).toBeNull()
-
-    rerender(<AuroraBackground showRadar={true} />)
-    expect(screen.getByTestId('aurora-radar-rings')).toBeDefined()
-  })
-
   it('pausa las animaciones cuando el documento cambia a hidden', () => {
     render(<AuroraBackground tone="lila" />)
     const container = screen.getByTestId('aurora-background')

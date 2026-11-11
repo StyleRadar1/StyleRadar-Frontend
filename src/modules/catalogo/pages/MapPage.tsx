@@ -4,7 +4,7 @@ import { MapPreview } from '@/components/landing/MapPreview'
 
 export default function MapPage() {
   return (
-    <AuroraBackground tone="salvia" showRadar fullHeight className="pt-24 pb-16">
+    <AuroraBackground tone="salvia" fullHeight className="pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -14,7 +14,7 @@ export default function MapPage() {
               <span className="text-[var(--sr-hero-text)]">Mapa de Bogotá</span>
             </nav>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight text-[var(--sr-hero-text)]">
-              Boutiques y Tiendas de <span className="sr-marker-highlight">Bogotá</span>
+              Boutiques y Tiendas de Bogotá
             </h1>
             <p className="text-sm md:text-base text-[var(--sr-hero-text-muted)] max-w-2xl mt-2">
               Explora las tiendas aliadas de Chapinero, Usaquén, Teusaquillo, Zona G y Suba. Consulta qué prendas tienen hoy disponibles en tu talla.

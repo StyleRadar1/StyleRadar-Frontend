@@ -1114,7 +1114,6 @@ export default function PlaylistsPage() {
   return (
     <AuroraBackground
       tone="lila"
-      showRadar
       fullHeight
       className="px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden"
     >
@@ -1143,7 +1142,7 @@ export default function PlaylistsPage() {
               Colecciones en vinilo
             </span>
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
-              Mis <span className="sr-marker-highlight">playlists</span>
+              Mis playlists
             </h2>
             <p className="mt-2 text-xs text-[var(--sr-hero-text-muted)]">
               Las que creaste y las que guardaste de otras personas. Hasta 15 prendas (RNF-12).

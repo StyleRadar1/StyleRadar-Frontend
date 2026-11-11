@@ -54,7 +54,7 @@ export default function TryOnPage() {
       <section className="mx-auto max-w-6xl">
         <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Probador virtual · Bogotá</p>
         <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
-          Pruébate una chaqueta hecha para el <span className="sr-marker-highlight">clima cambiante</span>
+          Pruébate una chaqueta hecha para el clima cambiante
         </h1>
         <p className="mt-3 max-w-2xl text-[var(--sr-hero-text-muted)]">Sube una foto, elige una prenda de las tiendas del radar y mira cómo te queda. Empezamos con la Chaqueta State de Remanence: canvas repelente a líquidos, forro acolchado y cuello de corduroy. Tu foto es privada y puedes borrarla en cualquier momento.</p>
         <p className="mt-3 max-w-2xl text-xs text-[var(--sr-hero-text-muted)]">La generación de imagen todavía depende de conectar el servicio de IA. En modo demostración, cualquier resultado aparece marcado como simulado.</p>

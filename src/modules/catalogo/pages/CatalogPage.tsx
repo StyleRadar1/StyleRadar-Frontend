@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { AuroraBackground } from '@/modules/core/design-system'
 import { ItemCard } from '../components/ItemCard'
-import { MarqueeTape } from '../components/MarqueeTape'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
@@ -222,17 +221,14 @@ export default function CatalogPage() {
         </div>
 
         {/* Encabezado del catálogo */}
-        <div className="mb-4">
+        <div className="mb-6">
           <span className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--sr-hero-text-muted)]">
             Catálogo
           </span>
           <h1 className="mt-1 text-3xl font-black tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
-            Todas las <span className="sr-marker-highlight">prendas</span>
+            Todas las prendas
           </h1>
         </div>
-
-        {/* Cinta adhesiva inclinada en Catálogo (-1.6°) */}
-        <MarqueeTape />
 
         {/* Barra de búsqueda interactiva */}
         <form onSubmit={handleSearchSubmit} className="relative mb-4 flex gap-2">

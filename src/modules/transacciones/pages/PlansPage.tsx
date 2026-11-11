@@ -61,7 +61,7 @@ export default function PlansPage() {
       <section className="mx-auto max-w-6xl">
         <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Planes</p>
         <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
-          Un plan para <span className="sr-marker-highlight">cada quien</span>
+          Un plan para cada quien
         </h1>
         <p className="mt-3 max-w-2xl text-[var(--sr-hero-text-muted)]">
           Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras.

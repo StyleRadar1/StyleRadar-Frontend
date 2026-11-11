@@ -433,10 +433,6 @@ html[data-tema="claro"] [data-aurora-tone="rosa"] {
   animation: sr-aurora-b4 20s ease-in-out infinite alternate;
 }
 
-.sr-radar-rings {
-  animation: sr-radar-breathe 8s ease-in-out infinite alternate;
-}
-
 @keyframes sr-aurora-b1 {
   0% { transform: translate(0%, 0%) scale(1); }
   100% { transform: translate(28%, 30%) scale(1.2); }
@@ -453,34 +449,6 @@ html[data-tema="claro"] [data-aurora-tone="rosa"] {
   0% { transform: translate(0%, 0%) scale(1); }
   100% { transform: translate(-44%, 40%) scale(0.82); }
 }
-@keyframes sr-radar-breathe {
-  0% { transform: translate(-50%, -50%) scale(0.97); opacity: 0.8; }
-  100% { transform: translate(-50%, -50%) scale(1.03); opacity: 1; }
-}
-
-/* Trazo tipo marcador en títulos de hero */
-.sr-marker-highlight {
-  display: inline-block;
-  background-image: linear-gradient(transparent 62%, var(--aurora-c1) 62% 92%, transparent 92%);
-  background-repeat: no-repeat;
-  padding: 0 4px;
-}
-
-/* Cinta adhesiva inclinada en Catálogo (Marquee) */
-.sr-marquee-tape-wrapper {
-  transform: rotate(-1.6deg);
-}
-
-@keyframes sr-marquee-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.sr-marquee-track {
-  display: flex;
-  width: max-content;
-  animation: sr-marquee-scroll 24s linear infinite;
-}
 
 /* Tarjetas elevadas con sombra violeta translúcida */
 .sr-card-hover {
@@ -494,8 +462,6 @@ html[data-tema="claro"] [data-aurora-tone="rosa"] {
 /* Respeto estricto a prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .sr-aurora-blob,
-  .sr-radar-rings,
-  .sr-marquee-track,
   .animate-spin-vinyl {
     animation: none !important;
     transition: none !important;
