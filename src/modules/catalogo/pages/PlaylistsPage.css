@@ -341,15 +341,7 @@
   overflow: hidden;
   user-select: none;
   font-family: "Poppins", var(--font-sans, system-ui, sans-serif);
-  /* Fondo continuo en degradado lavanda #B9B9CA -> arena #E8DCCB sin bordes visibles */
-  background:
-    radial-gradient(
-      circle at 8% 50%,
-      rgba(72, 17, 154, 0.24) 0%,
-      rgba(185, 185, 202, 0.18) 38%,
-      transparent 68%
-    ),
-    linear-gradient(125deg, #B9B9CA 0%, #d2cad8 46%, #E8DCCB 100%);
+  background: transparent;
 }
 
 .sr-vinyl-showcase:focus-visible {
@@ -385,14 +377,14 @@
   font-weight: 800;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #48119A;
+  color: var(--sr-accent, #7b4dd8);
 }
 
 .sr-vinyl-showcase__kicker p {
   margin: 2px 0 0;
   font-size: clamp(11px, 1.25vw, 14px);
   font-weight: 600;
-  color: #262626;
+  color: var(--sr-hero-text, #f4eee3);
   opacity: 0.85;
 }
 

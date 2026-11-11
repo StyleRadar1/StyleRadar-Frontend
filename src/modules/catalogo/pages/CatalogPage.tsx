@@ -1,7 +1,9 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
+import { AuroraBackground } from '@/modules/core/design-system'
 import { ItemCard } from '../components/ItemCard'
+import { MarqueeTape } from '../components/MarqueeTape'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
@@ -204,38 +206,39 @@ export default function CatalogPage() {
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
   return (
-    <div
-      className="min-h-screen bg-[#110e17] text-white px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
-      style={{
-        backgroundImage:
-          'radial-gradient(ellipse 90% 40% at 50% 0%, rgba(80, 19, 184, 0.18), transparent 70%)',
-      }}
+    <AuroraBackground
+      tone="malva"
+      fullHeight
+      className="px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
     >
       <section className="mx-auto max-w-6xl">
         {/* Migas de pan */}
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/50">
-          <Link to="/" className="hover:text-white">← Volver</Link>
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">
+          <Link to="/" className="hover:text-[var(--sr-hero-text)]">← Volver</Link>
           <span>·</span>
           <span>Inicio</span>
           <span>/</span>
-          <span className="text-white/80">Catálogo</span>
+          <span className="text-[var(--sr-hero-text)]">Catálogo</span>
         </div>
 
         {/* Encabezado del catálogo */}
-        <div className="mb-6">
-          <span className="text-[11px] font-bold uppercase tracking-[.2em] text-white/50">
+        <div className="mb-4">
+          <span className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--sr-hero-text-muted)]">
             Catálogo
           </span>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-white md:text-5xl">
-            Todas las prendas
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
+            Todas las <span className="sr-marker-highlight">prendas</span>
           </h1>
         </div>
+
+        {/* Cinta adhesiva inclinada en Catálogo (-1.6°) */}
+        <MarqueeTape />
 
         {/* Barra de búsqueda interactiva */}
         <form onSubmit={handleSearchSubmit} className="relative mb-4 flex gap-2">
           <div className="relative flex-1">
             <svg
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--sr-hero-text-muted)]"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -253,7 +256,7 @@ export default function CatalogPage() {
               onChange={(e) => setTexto(e.target.value)}
               placeholder="Busca «camisa blanca manga larga talla M», «blazer», «cuero»…"
               aria-label="Buscar prendas"
-              className="w-full rounded-2xl border border-white/15 bg-white/[0.04] py-3.5 pl-11 pr-10 text-sm text-white placeholder-white/40 outline-none backdrop-blur-xl focus:border-violeta focus:ring-1 focus:ring-violeta"
+              className="w-full rounded-2xl border border-[var(--sr-border-control)] bg-[var(--sr-surface)]/50 py-3.5 pl-11 pr-10 text-sm text-[var(--sr-hero-text)] placeholder-[var(--sr-hero-text-muted)] outline-none backdrop-blur-xl focus:border-violeta focus:ring-1 focus:ring-violeta"
             />
             {texto && (
               <button
@@ -815,7 +818,7 @@ export default function CatalogPage() {
           )}
         </div>
       </section>
-    </div>
+    </AuroraBackground>
   )
 }
 

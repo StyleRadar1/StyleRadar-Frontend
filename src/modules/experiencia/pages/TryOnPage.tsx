@@ -3,6 +3,7 @@ import { useResource } from '@/modules/core/hooks/useResource'
 import { errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { ErrorState } from '@/modules/core/components/Status'
+import { AuroraBackground } from '@/modules/core/design-system'
 import { PlanGate } from '@/modules/transacciones/components/PlanGate'
 import { GarmentSelector } from '../components/GarmentSelector'
 import { garmentProblem } from '../utils/garments'
@@ -49,15 +50,18 @@ export default function TryOnPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Probador virtual · Bogotá</p>
-      <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Pruébate una chaqueta hecha para el clima cambiante</h1>
-      <p className="mt-3 max-w-2xl text-white/70">Sube una foto, elige una prenda de las tiendas del radar y mira cómo te queda. Empezamos con la Chaqueta State de Remanence: canvas repelente a líquidos, forro acolchado y cuello de corduroy. Tu foto es privada y puedes borrarla en cualquier momento.</p>
-      <p className="mt-3 max-w-2xl text-xs text-white/50">La generación de imagen todavía depende de conectar el servicio de IA. En modo demostración, cualquier resultado aparece marcado como simulado.</p>
+    <AuroraBackground tone="lila" fullHeight className="px-4 py-12">
+      <section className="mx-auto max-w-6xl">
+        <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Probador virtual · Bogotá</p>
+        <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
+          Pruébate una chaqueta hecha para el <span className="sr-marker-highlight">clima cambiante</span>
+        </h1>
+        <p className="mt-3 max-w-2xl text-[var(--sr-hero-text-muted)]">Sube una foto, elige una prenda de las tiendas del radar y mira cómo te queda. Empezamos con la Chaqueta State de Remanence: canvas repelente a líquidos, forro acolchado y cuello de corduroy. Tu foto es privada y puedes borrarla en cualquier momento.</p>
+        <p className="mt-3 max-w-2xl text-xs text-[var(--sr-hero-text-muted)]">La generación de imagen todavía depende de conectar el servicio de IA. En modo demostración, cualquier resultado aparece marcado como simulado.</p>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-        <div className="space-y-8">
-          <section aria-labelledby="t-foto" className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+        <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
+          <div className="space-y-8">
+            <section aria-labelledby="t-foto" className="rounded-2xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/70 backdrop-blur-xl p-5">
             <h2 id="t-foto" className="text-lg font-bold">1. Tu foto</h2>
             <div className="mt-4">
               <PlanGate title="Pruébate la ropa sobre tu foto con Radar+" text="Con el plan Radar usas el maniquí. Radar+ te deja subir tu foto de cuerpo entero y ver las prendas sobre ti.">
@@ -149,6 +153,7 @@ export default function TryOnPage() {
       <ConfirmDialog open={confirmDel} title="¿Eliminar tu foto?" confirmLabel="Eliminar" danger busy={deleting} onConfirm={deletePhoto} onCancel={() => setConfirmDel(false)}>
         Se borra de StyleRadar tu foto original y los resultados generados con ella. No se puede deshacer.
       </ConfirmDialog>
-    </section>
+      </section>
+    </AuroraBackground>
   )
 }

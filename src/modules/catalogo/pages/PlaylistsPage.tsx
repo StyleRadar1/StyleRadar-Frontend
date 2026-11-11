@@ -1,7 +1,7 @@
 import { useState, useMemo, useContext, useEffect, useCallback, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/modules/core/design-system'
+import { Button, AuroraBackground } from '@/modules/core/design-system'
 import { ErrorState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
@@ -505,16 +505,17 @@ export default function PlaylistsPage() {
     const isSaved = userSaved[selectedPlaylist.id] || selectedPlaylist.esGuardada
 
     return (
-      <section
-        role="dialog"
-        aria-modal="false"
-        aria-label={`Detalle de ${selectedPlaylist.nombre}`}
-        className="min-h-screen bg-[#110e17] text-white px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
-        style={{
-          backgroundImage:
-            'radial-gradient(ellipse 90% 40% at 50% 0%, rgba(80, 19, 184, 0.28), transparent 75%)',
-        }}
+      <AuroraBackground
+        tone="lila"
+        fullHeight
+        className="px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
       >
+        <section
+          role="dialog"
+          aria-modal="false"
+          aria-label={`Detalle de ${selectedPlaylist.nombre}`}
+          className="min-h-screen text-[var(--sr-hero-text)]"
+        >
         <style>{`
           @keyframes spinSlow {
             from { transform: rotate(0deg); }
@@ -527,22 +528,22 @@ export default function PlaylistsPage() {
 
         <div className="mx-auto max-w-6xl">
           {/* Barra de migas de pan y botón Volver */}
-          <div className="mb-6 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wider text-white/50">
+          <div className="mb-6 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">
             <button
               type="button"
               onClick={handleVolver}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/40 px-3 py-1.5 text-[var(--sr-hero-text)] transition hover:bg-[var(--sr-surface)]"
             >
               ← Volver
             </button>
             <span>·</span>
-            <Link to="/" className="hover:text-white">Inicio</Link>
+            <Link to="/" className="hover:text-[var(--sr-hero-text)]">Inicio</Link>
             <span>/</span>
-            <button type="button" onClick={handleVolver} className="hover:text-white">
+            <button type="button" onClick={handleVolver} className="hover:text-[var(--sr-hero-text)]">
               Playlists
             </button>
             <span>/</span>
-            <span className="text-white/90 truncate max-w-xs">{selectedPlaylist.nombre}</span>
+            <span className="text-[var(--sr-hero-text)] truncate max-w-xs">{selectedPlaylist.nombre}</span>
           </div>
 
           {/* Feedback Toast */}
@@ -553,7 +554,7 @@ export default function PlaylistsPage() {
           )}
 
           {/* BANNER PRINCIPAL HERO TIPO SPOTIFY CON VINILO PROTAGONISTA */}
-          <div className="relative rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-10 backdrop-blur-2xl shadow-2xl overflow-hidden">
+          <div className="relative rounded-3xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/40 p-6 sm:p-10 backdrop-blur-2xl shadow-2xl overflow-hidden">
             {/* Ambient background glow */}
             <div className="absolute -right-24 -top-24 w-96 h-96 bg-[#5013b8]/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -1102,7 +1103,8 @@ export default function PlaylistsPage() {
             </div>
           </div>
         )}
-      </section>
+        </section>
+      </AuroraBackground>
     )
   }
 
@@ -1110,12 +1112,11 @@ export default function PlaylistsPage() {
   // VISTA LISTA DE PLAYLISTS CON VINILO PROTAGONISTA
   // ==========================================
   return (
-    <div
-      className="min-h-screen bg-[#110e17] text-white px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden"
-      style={{
-        backgroundImage:
-          'radial-gradient(ellipse 90% 45% at 50% 0%, rgba(80, 19, 184, 0.25), transparent 75%)',
-      }}
+    <AuroraBackground
+      tone="lila"
+      showRadar
+      fullHeight
+      className="px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden"
     >
       <style>{`
         @keyframes spinSlow {
@@ -1129,22 +1130,22 @@ export default function PlaylistsPage() {
 
       <section className="mx-auto max-w-6xl">
         {/* Migas de pan */}
-        <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/50">
-          <Link to="/" className="hover:text-white">Inicio</Link>
+        <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">
+          <Link to="/" className="hover:text-[var(--sr-hero-text)]">Inicio</Link>
           <span>/</span>
-          <span className="text-white/80">Playlists</span>
+          <span className="text-[var(--sr-hero-text)]">Playlists</span>
         </div>
 
         {/* Encabezado de la sección */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-[var(--sr-border-subtle)] pb-6">
           <div>
             <span className="text-[11px] font-bold tracking-widest uppercase text-violeta-claro block mb-1">
               Colecciones en vinilo
             </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-white md:text-5xl">
-              Mis playlists
+            <h2 className="text-3xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
+              Mis <span className="sr-marker-highlight">playlists</span>
             </h2>
-            <p className="mt-2 text-xs text-white/60">
+            <p className="mt-2 text-xs text-[var(--sr-hero-text-muted)]">
               Las que creaste y las que guardaste de otras personas. Hasta 15 prendas (RNF-12).
             </p>
           </div>
@@ -1558,6 +1559,6 @@ export default function PlaylistsPage() {
           </div>
         </div>
       )}
-    </div>
+    </AuroraBackground>
   )
 }
