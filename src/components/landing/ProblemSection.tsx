@@ -74,7 +74,12 @@ export function ProblemSection() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {audiences.map(({ image, label }) => (
               <figure key={label} className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 bg-[#211d29]">
-                <img src={image} alt={label} loading="lazy" className="h-full w-full object-cover" />
+                <img
+                  src={image}
+                  alt={label}
+                  loading="lazy"
+                  className={`h-full w-full ${label === 'Tiendas locales' ? 'object-contain' : 'object-cover'}`}
+                />
                 <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-5 pb-4 pt-12 text-sm font-bold text-white">{label}</figcaption>
               </figure>
             ))}

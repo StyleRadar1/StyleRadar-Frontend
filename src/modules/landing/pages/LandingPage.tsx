@@ -57,14 +57,14 @@ export default function LandingPage() {
         {/* 1. Hero interactivo con carrusel de diapositivas y CTA */}
         <Hero />
 
-        {/* 2. Problemática urbana en Bogotá */}
+        {/* 2. Para quién es StyleRadar: personas, tiendas y fundaciones */}
         <ProblemSection />
 
         {/* 3. Categorías de estilo */}
         <CategoriesGrid />
 
-        {/* 4. Video reels / Módulos interactivos en video */}
-        <VideoReels />
+        {/* 4. Videos de uso y acceso al probador virtual */}
+        <VideoReels onOpenTryOn={() => setIsTryOnOpen(true)} />
 
         {/* 5. Ciclo de la ropa y economía circular */}
         <ClothingCycle />

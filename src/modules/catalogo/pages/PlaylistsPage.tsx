@@ -1031,7 +1031,7 @@ export default function PlaylistsPage() {
 
           {/* Escenario 3D Cover Flow */}
           <div
-            className="relative w-full pt-16 sm:pt-20 pb-4 select-none"
+            className="relative z-20 w-full pt-16 sm:pt-20 pb-4 select-none"
             style={{ perspective: '1100px' }}
           >
             {/* Botones de navegación laterales flotantes */}

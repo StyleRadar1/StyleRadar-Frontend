@@ -36,6 +36,12 @@ export default function LoginPage() {
     enter(email, password)
   }
 
+  const selectDemoAccount = (demoEmail: string) => {
+    setEmail(demoEmail)
+    setPassword(DEMO_PASSWORD)
+    setError('')
+  }
+
   return (
     <section className="relative min-h-[calc(100vh-72px)] overflow-hidden">
       <img src="/img/iniciar-sesion.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_45%]" />
@@ -48,10 +54,10 @@ export default function LoginPage() {
         <Card className="bg-grafito/60 p-7">
           {jurado && (
             <div className="mb-6">
-              <p className="text-sm text-white/80">Entra con un clic como cualquiera de los cuatro roles:</p>
+              <p className="text-sm text-white/80">Elige un rol para completar los datos. Luego oprime «Entrar» para ingresar:</p>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {DEMO_ACCOUNTS.map((a) => (
-                  <Button key={a.email} variant="arena" disabled={loading} onClick={() => enter(a.email, DEMO_PASSWORD)}>{ROLE_LABEL[a.role]}</Button>
+                {DEMO_ACCOUNTS.map((account) => (
+                  <Button key={account.email} variant="arena" disabled={loading} onClick={() => selectDemoAccount(account.email)}>{ROLE_LABEL[account.role]}</Button>
                 ))}
               </div>
             </div>
@@ -75,9 +81,9 @@ export default function LoginPage() {
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[.14em] text-white/60">Cuentas de prueba</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {DEMO_ACCOUNTS.map((a) => (
-                    <button key={a.email} type="button" onClick={() => { setEmail(a.email); setPassword(DEMO_PASSWORD) }}
-                      className="rounded-full border border-white/25 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider hover:bg-white/10">{ROLE_LABEL[a.role]}</button>
+                  {DEMO_ACCOUNTS.map((account) => (
+                    <button key={account.email} type="button" onClick={() => selectDemoAccount(account.email)}
+                      className="rounded-full border border-white/25 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider hover:bg-white/10">{ROLE_LABEL[account.role]}</button>
                   ))}
                 </div>
               </div>

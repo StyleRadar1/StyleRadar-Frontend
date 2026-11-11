@@ -7,7 +7,7 @@ import type { MapPinDto } from '../types/map.dto'
 
 /** Sección del mapa interactivo (Mapbox) para el landing: pines, tarjeta y filtros. */
 export default function MapaLanding() {
-  const { data: pins } = useMapData()
+  const { data: pins, error, loading, reload } = useMapData()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
@@ -20,8 +20,7 @@ export default function MapaLanding() {
   const handleHover = useCallback((pin: MapPinDto | null) => {
     setHoveredId(pin?.id ?? null)
   }, [])
-
-  if (pins.length === 0) return null
+  const hasError = Boolean(error)
 
   return (
     <section className="bg-[#1c1c1c] px-4 py-8 sm:px-6 md:py-10" aria-labelledby="lmTitle">
@@ -46,18 +45,57 @@ export default function MapaLanding() {
           </div>
         </div>
 
-        <div className="sr-store-map relative overflow-hidden rounded-[22px] border border-white/[.14] shadow-[0_20px_50px_rgba(0,0,0,.55)]">
-          <MapaBogota
-            pins={pins}
-            selectedId={selectedId}
-            hoveredId={hoveredId}
-            onSelect={handleSelect}
-            onHover={handleHover}
-            showControls={true}
-            className="h-[min(calc(100dvh-195px),700px)] min-h-[420px] w-full"
-          />
-          {selectedPin && <MapCard pin={selectedPin} onClose={() => setSelectedId(null)} />}
-        </div>
+        {hasError || pins.length === 0 ? (
+          <div
+            className="sr-store-map flex min-h-[260px] items-center justify-center rounded-[22px] border border-white/[.14] bg-white/[.04] p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,.35)]"
+            role={hasError ? 'alert' : 'status'}
+          >
+            <div className="max-w-lg">
+              <p className="text-lg font-bold text-white">
+                {hasError
+                  ? 'No pudimos cargar las tiendas y fundaciones.'
+                  : loading
+                    ? 'Cargando el radar de Bogotá…'
+                    : 'Todavía no hay tiendas o fundaciones para mostrar.'}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-[#b9b9ca]">
+                {hasError
+                  ? 'Revisa tu conexión e inténtalo de nuevo.'
+                  : 'Puedes abrir el mapa completo para explorar el radar.'}
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                {hasError && (
+                  <button
+                    type="button"
+                    onClick={reload}
+                    className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
+                  >
+                    Reintentar
+                  </button>
+                )}
+                <Link
+                  to="/mapa"
+                  className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
+                >
+                  Abrir mapa completo →
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="sr-store-map relative overflow-hidden rounded-[22px] border border-white/[.14] shadow-[0_20px_50px_rgba(0,0,0,.55)]">
+            <MapaBogota
+              pins={pins}
+              selectedId={selectedId}
+              hoveredId={hoveredId}
+              onSelect={handleSelect}
+              onHover={handleHover}
+              showControls={true}
+              className="h-[min(calc(100dvh-195px),700px)] min-h-[420px] w-full"
+            />
+            {selectedPin && <MapCard pin={selectedPin} onClose={() => setSelectedId(null)} />}
+          </div>
+        )}
       </div>
     </section>
   )

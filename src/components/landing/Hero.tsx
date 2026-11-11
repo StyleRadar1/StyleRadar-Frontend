@@ -5,17 +5,32 @@ import { heroSlides } from '@/data/landingData'
 
 export function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true,
+  )
 
   useEffect(() => {
+    const media = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    if (!media) return
+    const syncPreference = () => setPrefersReducedMotion(media.matches)
+    syncPreference()
+    media.addEventListener?.('change', syncPreference)
+    return () => media.removeEventListener?.('change', syncPreference)
+  }, [])
+
+  useEffect(() => {
+    if (isPaused || prefersReducedMotion) return
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
     }, 5500)
     return () => clearInterval(timer)
-  }, [])
+  }, [isPaused, prefersReducedMotion])
 
-  const handleScrollToNext = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    const target = document.getElementById('pe-videos')
+    const targetId = e.currentTarget.getAttribute('href')?.slice(1)
+    const target = targetId ? document.getElementById(targetId) : null
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' })
     }
@@ -89,7 +104,7 @@ export function Hero() {
 
           <a
             href="#pe-videos"
-            onClick={handleScrollToNext}
+            onClick={handleScrollTo}
             className="inline-flex items-center gap-2 px-7 py-4 rounded-full border border-white/40 hover:border-white/80 bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase backdrop-blur-md hover:-translate-y-0.5 transition-all"
           >
             <span>Conoce cómo funciona</span>
@@ -114,8 +129,8 @@ export function Hero() {
       {/* Pie del hero con indicador de scroll y contador de diapositivas */}
       <div className="absolute z-20 bottom-8 inset-x-6 md:inset-x-14 flex items-center justify-between text-xs font-extrabold tracking-widest uppercase text-white/80">
         <a
-          href="#pe-que-es"
-          onClick={handleScrollToNext}
+          href="#categorias"
+          onClick={handleScrollTo}
           className="flex items-center gap-2 hover:text-white transition-colors"
         >
           <span className="w-2 h-2 rounded-full bg-white animate-ping" />
@@ -123,12 +138,23 @@ export function Hero() {
           <span aria-hidden="true">↓</span>
         </a>
 
-        <div className="text-sm font-semibold tracking-widest">
-          <span className="text-white font-black">
-            {String(currentSlide + 1).padStart(2, '0')}
-          </span>{' '}
-          <span className="text-white/40">/</span>{' '}
-          <span>{String(heroSlides.length).padStart(2, '0')}</span>
+        <div className="flex items-center gap-3 text-sm font-semibold tracking-widest">
+          <span aria-live="polite" aria-atomic="true">
+            <span className="text-white font-black">
+              {String(currentSlide + 1).padStart(2, '0')}
+            </span>{' '}
+            <span className="text-white/40">/</span>{' '}
+            <span>{String(heroSlides.length).padStart(2, '0')}</span>
+          </span>
+          <button
+            type="button"
+            className="rounded-full border border-white/35 bg-black/25 px-3 py-2 text-[10px] font-bold tracking-[.12em] text-white transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
+            aria-label={isPaused ? 'Reanudar carrusel de imágenes' : 'Pausar carrusel de imágenes'}
+            aria-pressed={isPaused}
+            onClick={() => setIsPaused((paused) => !paused)}
+          >
+            {isPaused ? 'Reanudar' : 'Pausar'}
+          </button>
         </div>
       </div>
     </section>

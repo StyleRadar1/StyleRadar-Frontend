@@ -6,6 +6,15 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAcco
 import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
 import { ApiError } from '@/modules/core/api/apiClient'
 
+type DemoAccountRole = (typeof DEMO_ACCOUNTS)[number]['role']
+
+const ROLE_PREVIEW: Record<DemoAccountRole, { src: string; alt: string }> = {
+  COMPRADOR: { src: '/img/representantes/R1.png', alt: 'Personas probándose ropa' },
+  ADMIN_ALMACEN: { src: '/img/representantes/R2.png', alt: 'Representante de una tienda local' },
+  REPRESENTANTE_FUNDACION: { src: '/img/representantes/R3.png', alt: 'Voluntarios de una fundación' },
+  ADMIN_STYLERADAR: { src: '/img/representantes/R4.png', alt: 'Administrador de StyleRadar frente a Bogotá' },
+}
+
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
@@ -27,6 +36,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   // Campos para registro
   const [fullName, setFullName] = useState('')
   const [role, setRole] = useState<'COMPRADOR' | 'ADMIN_ALMACEN' | 'REPRESENTANTE_FUNDACION'>('COMPRADOR')
+  const [previewRole, setPreviewRole] = useState<DemoAccountRole | null>(null)
 
   // OTP 6 dígitos
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
@@ -38,6 +48,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setActiveTab(initialTab)
     setStep('form')
     setError('')
+    setPreviewRole(null)
   }, [initialTab, isOpen])
 
   useEffect(() => {
@@ -73,22 +84,17 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     }
   }
 
-  const handleQuickDemo = async (demoEmail: string) => {
+  const selectDemoAccount = (demoEmail: string) => {
+    const account = DEMO_ACCOUNTS.find((item) => item.email === demoEmail)
     setEmail(demoEmail)
     setPassword(DEMO_PASSWORD)
     setError('')
-    setLoading(true)
-
-    try {
-      const user = await login({ email: demoEmail, password: DEMO_PASSWORD })
-      onClose()
-      navigate(ROLE_HOME[user.role], { replace: true })
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Error al ingresar con cuenta demo.')
-    } finally {
-      setLoading(false)
-    }
+    setPreviewRole(account?.role ?? null)
   }
+
+  const activePhoto = previewRole
+    ? ROLE_PREVIEW[previewRole]
+    : { src: activeTab === 'login' ? '/img/representantes/S1.png' : '/img/representantes/S2.png', alt: activeTab === 'login' ? 'Representante iniciando sesión' : 'Representantes creando una cuenta' }
 
   const handleRegisterSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -155,8 +161,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         {/* Columna Izquierda: Foto Editorial */}
         <div className="hidden md:block md:col-span-5 relative bg-[#15121b] overflow-hidden">
           <img
-            src={activeTab === 'login' ? '/img/representantes/S1.png' : '/img/representantes/S2.png'}
-            alt={activeTab === 'login' ? 'Representante iniciando sesión' : 'Representantes creando una cuenta'}
+            src={activePhoto.src}
+            alt={activePhoto.alt}
             className="w-full h-full object-cover object-[50%_45%]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#15121b]/95 via-[#15121b]/30 to-transparent" />
@@ -204,6 +210,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   onClick={() => {
                     setActiveTab('login')
                     setError('')
+                    setPreviewRole(null)
                   }}
                   className={`py-2 text-xs font-black uppercase tracking-wider rounded-full transition-all cursor-pointer ${
                     activeTab === 'login'
@@ -220,6 +227,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   onClick={() => {
                     setActiveTab('register')
                     setError('')
+                    setPreviewRole(null)
                   }}
                   className={`py-2 text-xs font-black uppercase tracking-wider rounded-full transition-all cursor-pointer ${
                     activeTab === 'register'
@@ -361,7 +369,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     </label>
                     <select
                       value={role}
-                      onChange={(e) => setRole(e.target.value as any)}
+                      onChange={(e) => {
+                        const nextRole = e.target.value as typeof role
+                        setRole(nextRole)
+                        setPreviewRole(nextRole)
+                      }}
                       className="w-full px-4 py-3 rounded-xl bg-[#1f1b26] border border-white/15 text-white text-sm outline-none"
                     >
                       <option value="COMPRADOR">Persona / Comprador</option>
@@ -372,7 +384,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       src={role === 'COMPRADOR' ? '/img/representantes/R1.png' : role === 'ADMIN_ALMACEN' ? '/img/representantes/R2.png' : '/img/representantes/R3.png'}
                       alt={role === 'COMPRADOR' ? 'Personas usando el probador' : role === 'ADMIN_ALMACEN' ? 'Representante de una tienda local' : 'Voluntarios de una fundación'}
                       loading="lazy"
-                      className="mt-3 h-32 w-full rounded-xl object-cover"
+                      className="mx-auto mt-3 block h-56 w-auto max-w-full rounded-xl bg-[#15121b] object-contain"
                     />
                   </div>
 
@@ -398,26 +410,28 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                 </form>
               )}
 
-              {/* Botones de cuentas de prueba / Demo */}
-              <div className="pt-4 border-t border-white/10 space-y-2.5">
-                <div className="flex items-center justify-between text-[11px] text-white/60 font-semibold uppercase tracking-wider">
-                  <span>Cuentas de prueba (1 clic):</span>
-                  <span className="text-[#a98be0]">Pass: 1234</span>
+              {/* Seleccionar una cuenta demo solo completa el formulario; el ingreso requiere submit. */}
+              {activeTab === 'login' && (
+                <div className="pt-4 border-t border-white/10 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-white/60 font-semibold uppercase tracking-wider">
+                    <span>Elige una cuenta y luego oprime Entrar:</span>
+                    <span className="text-[#a98be0]">Clave: 1234</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {DEMO_ACCOUNTS.map((acc) => (
+                      <button
+                        key={acc.email}
+                        type="button"
+                        disabled={loading}
+                        onClick={() => selectDemoAccount(acc.email)}
+                        className="py-2 px-2.5 rounded-xl bg-white/5 hover:bg-[#48119a]/40 border border-white/10 text-[11px] font-bold text-white/90 hover:text-white transition-all text-center truncate cursor-pointer"
+                      >
+                        {ROLE_LABEL[acc.role]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {DEMO_ACCOUNTS.map((acc) => (
-                    <button
-                      key={acc.email}
-                      type="button"
-                      disabled={loading}
-                      onClick={() => handleQuickDemo(acc.email)}
-                      className="py-2 px-2.5 rounded-xl bg-white/5 hover:bg-[#48119a]/40 border border-white/10 text-[11px] font-bold text-white/90 hover:text-white transition-all text-center truncate cursor-pointer"
-                    >
-                      {ROLE_LABEL[acc.role]}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           ) : (
             /* Pantalla de OTP (Verificación en dos pasos RF-92) */

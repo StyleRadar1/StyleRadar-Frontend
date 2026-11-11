@@ -2,6 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { videoFilms } from '@/data/landingData'
 import './VideoReels.css'
 
+interface VideoReelsProps {
+  onOpenTryOn?: () => void
+}
+
 function formatTime(s: number): string {
   const safe = Math.max(0, Math.floor(s))
   const mins = Math.floor(safe / 60)
@@ -9,7 +13,7 @@ function formatTime(s: number): string {
   return `${mins}:${secs}`
 }
 
-export function VideoReels() {
+export function VideoReels({ onOpenTryOn }: VideoReelsProps = {}) {
   const [cur, setCur] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -474,6 +478,13 @@ export function VideoReels() {
                 />
               ))}
             </div>
+
+            {onOpenTryOn && (
+              <button type="button" className="vc-tryon-btn" onClick={onOpenTryOn}>
+                Pruébate una prenda
+                <span aria-hidden="true">↗</span>
+              </button>
+            )}
           </aside>
 
           {/* Anuncio accesible de cambios de video */}

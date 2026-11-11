@@ -482,6 +482,35 @@
   background: #fff;
 }
 
+.vc-tryon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-top: 18px;
+  padding: 0 18px;
+  border: 1px solid #a98be0;
+  border-radius: 999px;
+  color: #fff;
+  background: #48119a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color .2s ease, transform .2s ease;
+}
+
+.vc-tryon-btn:hover {
+  background: #5b17c2;
+  transform: translateY(-1px);
+}
+
+.vc-tryon-btn:focus-visible {
+  outline: 2px solid #e8dccb;
+  outline-offset: 3px;
+}
+
 .vc-dots button:focus-visible {
   outline: 2px solid #E8DCCB;
   outline-offset: 4px;

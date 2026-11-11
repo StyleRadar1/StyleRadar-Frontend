@@ -71,6 +71,7 @@ export default function MapaBogota({
   const [internalFilter, setInternalFilter] = useState<MapFilter>(filter)
   const [legendExpanded, setLegendExpanded] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('normal')
+  const [mapLoadError, setMapLoadError] = useState(false)
   const viewModeRef = useRef<ViewMode>('normal')
 
   const activeFilter = showControls ? internalFilter : filter
@@ -145,7 +146,17 @@ export default function MapaBogota({
     // Al cargar el estilo, aplica la vista activa (normal o 3D)
     map.on('style.load', () => applyViewMode(map, viewModeRef.current))
 
+    const loadTimeout = window.setTimeout(() => setMapLoadError(true), 12000)
+    map.on('error', (event) => {
+      const message = event.error?.message ?? ''
+      if (!map.isStyleLoaded() || /token|unauthori[sz]ed|forbidden/i.test(message)) {
+        setMapLoadError(true)
+      }
+    })
+
     map.on('load', () => {
+      window.clearTimeout(loadTimeout)
+      setMapLoadError(false)
 
       // Encuadrar
       if (pins.length) {
@@ -168,6 +179,7 @@ export default function MapaBogota({
     mapRef.current = map
 
     return () => {
+      window.clearTimeout(loadTimeout)
       markersRef.current.forEach((m) => m.remove())
       markersRef.current.clear()
       if (popupRef.current) {
@@ -324,6 +336,20 @@ export default function MapaBogota({
     <div className={`relative ${className}`}>
       {/* Contenedor del mapa */}
       <div ref={containerRef} className="h-full w-full rounded-2xl bg-[#171a20]" style={{ minHeight: 400 }} />
+
+      {mapLoadError && (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl border border-white/10 bg-[#171a20] p-8 text-center"
+          role="alert"
+        >
+          <div className="max-w-md">
+            <p className="text-lg font-semibold">No se pudo cargar el mapa</p>
+            <p className="mt-2 text-sm leading-relaxed text-white/70">
+              Revisa la conexión y que <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs">VITE_MAPBOX_TOKEN</code> sea válido en <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs">.env.local</code>. Después, recarga la página.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Vista normal / 3D */}
       <div className="sr-view-toggle" role="group" aria-label="Tipo de vista del mapa">
