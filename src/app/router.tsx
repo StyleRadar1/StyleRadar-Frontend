@@ -3,7 +3,7 @@ import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router
 import type { Role } from '@/modules/core/types/roles'
 import { NotFound } from '@/modules/core/components/NotFound'
 import { WelcomeOverlay } from '@/modules/core/components/WelcomeOverlay'
-import { AuroraBackground, isAuroraExcluded, getAuroraToneForPath } from '@/modules/core/design-system'
+import { AuroraBackground, isAuroraExcluded } from '@/modules/core/design-system'
 import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
@@ -55,13 +55,11 @@ const ANY: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION', 'A
 function RootLayout() {
   const { pathname } = useLocation()
   const excluded = isAuroraExcluded(pathname)
-  const tone = getAuroraToneForPath(pathname)
 
   return (
     <div className="relative min-h-screen">
       {!excluded && (
         <AuroraBackground
-          tone={tone}
           fixed
         />
       )}

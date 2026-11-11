@@ -13,14 +13,13 @@ describe('AuroraBackground Component', () => {
 
   it('renderiza correctamente el contenedor y los 4 blobs de luz de aurora', () => {
     render(
-      <AuroraBackground tone="lila">
+      <AuroraBackground>
         <h1>Contenido del Hero</h1>
       </AuroraBackground>
     )
 
     const container = screen.getByTestId('aurora-background')
     expect(container).toBeDefined()
-    expect(container.getAttribute('data-aurora-tone')).toBe('lila')
 
     expect(screen.getByTestId('aurora-blob-1')).toBeDefined()
     expect(screen.getByTestId('aurora-blob-2')).toBeDefined()
@@ -29,19 +28,15 @@ describe('AuroraBackground Component', () => {
     expect(screen.getByText('Contenido del Hero')).toBeDefined()
   })
 
-  it('aplica los diferentes tonos (lila, malva, salvia, rosa)', () => {
-    const { rerender } = render(<AuroraBackground tone="malva" />)
-    expect(screen.getByTestId('aurora-background').getAttribute('data-aurora-tone')).toBe('malva')
-
-    rerender(<AuroraBackground tone="salvia" />)
-    expect(screen.getByTestId('aurora-background').getAttribute('data-aurora-tone')).toBe('salvia')
-
-    rerender(<AuroraBackground tone="rosa" />)
-    expect(screen.getByTestId('aurora-background').getAttribute('data-aurora-tone')).toBe('rosa')
+  it('soporta la variante fija para layout global', () => {
+    render(<AuroraBackground fixed />)
+    const container = screen.getByTestId('aurora-background')
+    expect(container.getAttribute('aria-hidden')).toBe('true')
+    expect(container.className).toContain('fixed inset-0')
   })
 
   it('pausa las animaciones cuando el documento cambia a hidden', () => {
-    render(<AuroraBackground tone="lila" />)
+    render(<AuroraBackground />)
     const container = screen.getByTestId('aurora-background')
 
     const spy = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)

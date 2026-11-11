@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
-export type AuroraTone = 'lila' | 'malva' | 'salvia' | 'rosa'
-
 export interface AuroraBackgroundProps {
-  /** Tono de la paleta de manchas: lila (playlists/probador), malva (catálogo), salvia (mapa), rosa (planes/tiendas) */
-  tone?: AuroraTone
   /** Clases CSS adicionales para el contenedor */
   className?: string
   /** Elementos hijos renderizados dentro del contenido de la aurora */
@@ -19,8 +15,9 @@ export interface AuroraBackgroundProps {
  * AuroraBackground — Fondo "Amanecer en el radar" animado.
  *
  * Degradado suave, limpio y liso con manchas de color difusas sin grano ni relieve.
- * - Modo Claro: Base arena (#E6D9C0), manchas suaves lila/malva/rosa.
- * - Modo Oscuro: Base negro-violeta (#05030A), manchas violetas/lila/malva/salvia/rosa.
+ * Paleta malva unificada para toda la aplicación (referencia del Catálogo).
+ * - Modo Claro: Base arena (#E6D9C0), manchas suaves moradas/malvas (#e3b3d3, #cfa6e6, #a97fd6, #e8d4f0).
+ * - Modo Oscuro: Base negro-violeta (#05030A), manchas violetas/malvas (#c98ab8, #6a2f8a, #b06ae0, #3a1a6a).
  *
  * Rendimiento y Accesibilidad:
  * - will-change: transform en las 4 manchas.
@@ -28,7 +25,6 @@ export interface AuroraBackgroundProps {
  * - prefers-reduced-motion: desactiva las animaciones por completo.
  */
 export function AuroraBackground({
-  tone = 'lila',
   className = '',
   children,
   fullHeight = false,
@@ -85,7 +81,6 @@ export function AuroraBackground({
   return (
     <div
       ref={containerRef}
-      data-aurora-tone={tone}
       data-testid="aurora-background"
       aria-hidden={fixed}
       className={`sr-aurora-container overflow-hidden ${

@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   AURORA_EXCLUDED_ROUTES,
   isAuroraExcluded,
-  getAuroraToneForPath,
 } from '../auroraRoutes'
 
 describe('auroraRoutes & exclusion rules', () => {
@@ -15,7 +14,7 @@ describe('auroraRoutes & exclusion rules', () => {
     expect(isAuroraExcluded('/probador/avanzado')).toBe(true)
   })
 
-  it('permite que el resto de rutas (catálogo, playlists, mapa, admin, etc.) monten la aurora', () => {
+  it('permite que el resto de rutas (catálogo, playlists, mapa, admin, etc.) monten la aurora unificada', () => {
     expect(isAuroraExcluded('/catalogo')).toBe(false)
     expect(isAuroraExcluded('/catalogo/item-123')).toBe(false)
     expect(isAuroraExcluded('/playlists')).toBe(false)
@@ -27,19 +26,5 @@ describe('auroraRoutes & exclusion rules', () => {
     expect(isAuroraExcluded('/admin/estadisticas')).toBe(false)
     expect(isAuroraExcluded('/admin/tiendas')).toBe(false)
     expect(isAuroraExcluded('/mi-tienda')).toBe(false)
-  })
-
-  it('asigna los tonos correctos según la ruta', () => {
-    expect(getAuroraToneForPath('/playlists')).toBe('lila')
-    expect(getAuroraToneForPath('/playlists/favoritas')).toBe('lila')
-    expect(getAuroraToneForPath('/catalogo')).toBe('malva')
-    expect(getAuroraToneForPath('/catalogo/prenda-99')).toBe('malva')
-    expect(getAuroraToneForPath('/mapa')).toBe('salvia')
-    expect(getAuroraToneForPath('/planes')).toBe('rosa')
-    expect(getAuroraToneForPath('/suscripcion')).toBe('rosa')
-    expect(getAuroraToneForPath('/tienda/inventario')).toBe('rosa')
-    expect(getAuroraToneForPath('/mi-tienda')).toBe('rosa')
-    expect(getAuroraToneForPath('/mensajes')).toBe('lila')
-    expect(getAuroraToneForPath('/admin/estadisticas')).toBe('lila')
   })
 })

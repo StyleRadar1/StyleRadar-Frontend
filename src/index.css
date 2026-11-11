@@ -93,11 +93,18 @@ html[data-tema="oscuro"] {
   --sr-hero-bar: #0c0814;
   --aurora-blur: 70px;
 
-  /* Paleta Aurora Noche (por defecto lila) */
-  --aurora-c1: #d99fa0;
-  --aurora-c2: #4a2a9c;
-  --aurora-c3: #9a66f0;
-  --aurora-c4: #2a1566;
+  /* Paleta Aurora Noche (Unificada: referencia del Catálogo) */
+  --aurora-c1: #c98ab8;
+  --aurora-c2: #6a2f8a;
+  --aurora-c3: #b06ae0;
+  --aurora-c4: #3a1a6a;
+
+  /* Variables de ajuste de movimiento Aurora:
+     --aurora-speed: multiplicador de velocidad (1.0 base, 1.3 = +30% más rápido)
+     --aurora-travel: multiplicador de amplitud de recorrido (1.0 base, 1.25 = +25% de desplazamiento)
+  */
+  --aurora-speed: 1.3;
+  --aurora-travel: 1.25;
 
   color-scheme: dark;
 }
@@ -168,11 +175,11 @@ html[data-tema="claro"] {
   --sr-hero-bar: #efe5d0;
   --aurora-blur: 75px;
 
-  /* Paleta Aurora Día (por defecto lila) */
-  --aurora-c1: #e8b4cc;
-  --aurora-c2: #b8a2f0;
-  --aurora-c3: #9a78e8;
-  --aurora-c4: #dcc8f5;
+  /* Paleta Aurora Día (Unificada: referencia del Catálogo) */
+  --aurora-c1: #e3b3d3;
+  --aurora-c2: #cfa6e6;
+  --aurora-c3: #a97fd6;
+  --aurora-c4: #e8d4f0;
 
   color-scheme: light;
 
@@ -324,81 +331,9 @@ html[data-tema="claro"] header svg path.srl-w {
 }
 
 /* =====================================================================
-   Variantes de Tono Aurora por Tema (Lila, Malva, Salvia, Rosa)
-   ===================================================================== */
-
-/* MODO OSCURO (Noche): base #05030A con manchas violetas/lila/malva/salvia/rosa */
-:root [data-aurora-tone="lila"],
-html[data-theme="oscuro"] [data-aurora-tone="lila"],
-html[data-tema="oscuro"] [data-aurora-tone="lila"] {
-  --aurora-c1: #d99fa0;
-  --aurora-c2: #4a2a9c;
-  --aurora-c3: #9a66f0;
-  --aurora-c4: #2a1566;
-}
-
-:root [data-aurora-tone="malva"],
-html[data-theme="oscuro"] [data-aurora-tone="malva"],
-html[data-tema="oscuro"] [data-aurora-tone="malva"] {
-  --aurora-c1: #c98ab8;
-  --aurora-c2: #6a2f8a;
-  --aurora-c3: #b06ae0;
-  --aurora-c4: #3a1a6a;
-}
-
-:root [data-aurora-tone="salvia"],
-html[data-theme="oscuro"] [data-aurora-tone="salvia"],
-html[data-tema="oscuro"] [data-aurora-tone="salvia"] {
-  --aurora-c1: #8fc3a8;
-  --aurora-c2: #2a5a6a;
-  --aurora-c3: #6a9ae0;
-  --aurora-c4: #3a2a8a;
-}
-
-:root [data-aurora-tone="rosa"],
-html[data-theme="oscuro"] [data-aurora-tone="rosa"],
-html[data-tema="oscuro"] [data-aurora-tone="rosa"] {
-  --aurora-c1: #f0a0b8;
-  --aurora-c2: #8a2a6a;
-  --aurora-c3: #c86ae0;
-  --aurora-c4: #4a1a5a;
-}
-
-/* MODO CLARO (Día): base #E6D9C0 con manchas suaves */
-html[data-theme="claro"] [data-aurora-tone="lila"],
-html[data-tema="claro"] [data-aurora-tone="lila"] {
-  --aurora-c1: #e8b4cc;
-  --aurora-c2: #b8a2f0;
-  --aurora-c3: #9a78e8;
-  --aurora-c4: #dcc8f5;
-}
-
-html[data-theme="claro"] [data-aurora-tone="malva"],
-html[data-tema="claro"] [data-aurora-tone="malva"] {
-  --aurora-c1: #e3b3d3;
-  --aurora-c2: #cfa6e6;
-  --aurora-c3: #a97fd6;
-  --aurora-c4: #e8d4f0;
-}
-
-html[data-theme="claro"] [data-aurora-tone="salvia"],
-html[data-tema="claro"] [data-aurora-tone="salvia"] {
-  --aurora-c1: #b5d8bf;
-  --aurora-c2: #cfd9a8;
-  --aurora-c3: #a9bff0;
-  --aurora-c4: #dcc8f5;
-}
-
-html[data-theme="claro"] [data-aurora-tone="rosa"],
-html[data-tema="claro"] [data-aurora-tone="rosa"] {
-  --aurora-c1: #f5b5c8;
-  --aurora-c2: #e8b0d8;
-  --aurora-c3: #c9a3f0;
-  --aurora-c4: #efc4de;
-}
-
-/* =====================================================================
    Animaciones del fondo Aurora ("Amanecer en el radar")
+   Paleta única unificada para toda la app (referencia Catálogo).
+   Movimiento vivo: velocidad (+30%) y recorrido (+25%) parametrizados.
    ===================================================================== */
 .sr-aurora-container {
   background-color: var(--sr-hero-bg);
@@ -407,33 +342,33 @@ html[data-tema="claro"] [data-aurora-tone="rosa"] {
 }
 
 .sr-aurora-blob-1 {
-  animation: sr-aurora-b1 15s ease-in-out infinite alternate;
+  animation: sr-aurora-b1 calc(15s / var(--aurora-speed, 1.3)) ease-in-out infinite alternate;
 }
 .sr-aurora-blob-2 {
-  animation: sr-aurora-b2 18s ease-in-out infinite alternate;
+  animation: sr-aurora-b2 calc(18s / var(--aurora-speed, 1.3)) ease-in-out infinite alternate;
 }
 .sr-aurora-blob-3 {
-  animation: sr-aurora-b3 16s ease-in-out infinite alternate;
+  animation: sr-aurora-b3 calc(16s / var(--aurora-speed, 1.3)) ease-in-out infinite alternate;
 }
 .sr-aurora-blob-4 {
-  animation: sr-aurora-b4 20s ease-in-out infinite alternate;
+  animation: sr-aurora-b4 calc(20s / var(--aurora-speed, 1.3)) ease-in-out infinite alternate;
 }
 
 @keyframes sr-aurora-b1 {
   0% { transform: translate(0%, 0%) scale(1); }
-  100% { transform: translate(28%, 30%) scale(1.2); }
+  100% { transform: translate(calc(28% * var(--aurora-travel, 1.25)), calc(30% * var(--aurora-travel, 1.25))) scale(1.2); }
 }
 @keyframes sr-aurora-b2 {
   0% { transform: translate(0%, 0%) scale(1); }
-  100% { transform: translate(22%, -20%) scale(0.88); }
+  100% { transform: translate(calc(22% * var(--aurora-travel, 1.25)), calc(-20% * var(--aurora-travel, 1.25))) scale(0.88); }
 }
 @keyframes sr-aurora-b3 {
   0% { transform: translate(0%, 0%) scale(1); }
-  100% { transform: translate(-38%, -18%) scale(1.25); }
+  100% { transform: translate(calc(-38% * var(--aurora-travel, 1.25)), calc(-18% * var(--aurora-travel, 1.25))) scale(1.25); }
 }
 @keyframes sr-aurora-b4 {
   0% { transform: translate(0%, 0%) scale(1); }
-  100% { transform: translate(-44%, 40%) scale(0.82); }
+  100% { transform: translate(calc(-44% * var(--aurora-travel, 1.25)), calc(40% * var(--aurora-travel, 1.25))) scale(0.82); }
 }
 
 /* Tarjetas elevadas con sombra violeta translúcida */
