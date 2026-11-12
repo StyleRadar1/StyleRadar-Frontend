@@ -781,10 +781,11 @@ export default function PlaylistsPage() {
                               className="h-11 w-11 shrink-0 rounded-lg object-cover bg-black/40 border border-white/10"
                             />
                             <div className="min-w-0">
-                              <p className="font-semibold text-white truncate text-xs">{p.nombre}</p>
-                              <p className="text-[11px] text-white/50 truncate">
+                              <p className="font-semibold text-[var(--color-text,#fff)] truncate text-xs">{p.nombre}</p>
+                              <p className="text-[11px] text-[var(--color-text-muted,#b9b9ca)] truncate">
                                 {p.noDisponible ? (
-                                  <span className="text-amber-400 font-semibold italic">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-warning-bg,rgba(245,158,11,0.15))] border border-[var(--color-warning-border,rgba(245,158,11,0.3))] px-2 py-0.5 text-[10px] font-bold text-[var(--color-warning-text,#f59e0b)]">
+                                    <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                     Agotado · no disponible
                                   </span>
                                 ) : (

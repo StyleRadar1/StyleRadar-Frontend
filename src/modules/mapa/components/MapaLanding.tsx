@@ -47,18 +47,18 @@ export default function MapaLanding() {
 
         {hasError || pins.length === 0 ? (
           <div
-            className="sr-store-map flex min-h-[260px] items-center justify-center rounded-[22px] border border-white/[.14] bg-white/[.04] p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,.35)]"
+            className="sr-store-map flex min-h-[260px] items-center justify-center rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-xl text-[var(--color-text)]"
             role={hasError ? 'alert' : 'status'}
           >
             <div className="max-w-lg">
-              <p className="text-lg font-bold text-white">
+              <p className="text-lg font-bold text-[var(--color-text)]">
                 {hasError
                   ? 'No pudimos cargar las tiendas y fundaciones.'
                   : loading
                     ? 'Cargando el radar de Bogotá…'
                     : 'Todavía no hay tiendas o fundaciones para mostrar.'}
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-[#b9b9ca]">
+              <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
                 {hasError
                   ? 'Revisa tu conexión e inténtalo de nuevo.'
                   : 'Puedes abrir el mapa completo para explorar el radar.'}
@@ -68,14 +68,14 @@ export default function MapaLanding() {
                   <button
                     type="button"
                     onClick={reload}
-                    className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
+                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-4 py-2 text-xs font-bold text-[var(--color-text)] transition hover:bg-[var(--color-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
                   >
                     Reintentar
                   </button>
                 )}
                 <Link
                   to="/mapa"
-                  className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
+                  className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-4 py-2 text-xs font-bold text-[var(--color-text)] transition hover:bg-[var(--color-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
                 >
                   Abrir mapa completo →
                 </Link>

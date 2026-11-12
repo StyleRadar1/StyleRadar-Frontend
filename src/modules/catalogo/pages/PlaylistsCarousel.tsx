@@ -206,7 +206,7 @@ export default function PlaylistsPage() {
   }, [])
 
   return (
-    <div className="plx-page min-h-screen bg-[#15121b] text-[#e8e4ef]">
+    <div className="plx-page min-h-screen bg-[var(--color-bg,#15121b)] text-[var(--color-text,#e8e4ef)]">
       <section className="plx-sec" id="colecciones">
         {/* ---- Cabecera de sección ---- */}
         <div className="sec-head">

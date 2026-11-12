@@ -204,23 +204,23 @@ export default function CatalogPage() {
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
   return (
-    <div className="min-h-screen bg-transparent px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white">
+    <div className="min-h-screen bg-transparent px-4 py-8 sm:px-8 selection:bg-[var(--color-accent)] selection:text-[var(--color-text-on-accent)]">
       <section className="mx-auto max-w-6xl">
         {/* Migas de pan */}
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">
-          <Link to="/" className="hover:text-[var(--sr-hero-text)]">← Volver</Link>
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          <Link to="/" className="hover:text-[var(--color-text)]">← Volver</Link>
           <span>·</span>
           <span>Inicio</span>
           <span>/</span>
-          <span className="text-[var(--sr-hero-text)]">Catálogo</span>
+          <span className="text-[var(--color-text)]">Catálogo</span>
         </div>
 
         {/* Encabezado del catálogo */}
         <div className="mb-6">
-          <span className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--sr-hero-text-muted)]">
+          <span className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)]">
             Catálogo
           </span>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-[var(--color-text)] md:text-5xl">
             Todas las prendas
           </h1>
         </div>
@@ -229,7 +229,7 @@ export default function CatalogPage() {
         <form onSubmit={handleSearchSubmit} className="relative mb-4 flex gap-2">
           <div className="relative flex-1">
             <svg
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--sr-hero-text-muted)]"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -247,13 +247,13 @@ export default function CatalogPage() {
               onChange={(e) => setTexto(e.target.value)}
               placeholder="Busca «camisa blanca manga larga talla M», «blazer», «cuero»…"
               aria-label="Buscar prendas"
-              className="w-full rounded-2xl border border-[var(--sr-border-control)] bg-[var(--sr-surface)]/50 py-3.5 pl-11 pr-10 text-sm text-[var(--sr-hero-text)] placeholder-[var(--sr-hero-text-muted)] outline-none backdrop-blur-xl focus:border-violeta focus:ring-1 focus:ring-violeta"
+              className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] py-3.5 pl-11 pr-10 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] outline-none backdrop-blur-xl focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-focus-ring)]"
             />
             {texto && (
               <button
                 type="button"
                 onClick={() => setTexto('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                 aria-label="Borrar texto"
               >
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -265,28 +265,28 @@ export default function CatalogPage() {
           </div>
           <button
             type="submit"
-            className="rounded-2xl bg-violeta px-7 text-sm font-bold text-white shadow-lg shadow-purple-900/30 transition hover:bg-violeta-hover"
+            className="rounded-2xl bg-[var(--color-accent)] px-7 text-sm font-bold text-[var(--color-text-on-accent)] shadow-lg transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             Buscar
           </button>
         </form>
 
         {/* BARRA DE HERRAMIENTAS: Filtros (botón mediano) + Guardar búsqueda + Ordenar (diseño uniforme) */}
-        <div className="relative z-20 mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.02] p-3 backdrop-blur-xl">
+        <div className="relative z-20 mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)]">
           {/* LADO IZQUIERDO: Botón Filtros mediano con badge */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMenuFiltrosAbierto((prev) => !prev)}
-              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition shadow-sm ${
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                 menuFiltrosAbierto || filtrosActivosCount > 0
-                  ? 'border-violeta bg-violeta/20 text-white shadow-purple-950/30'
-                  : 'border-white/20 bg-white/5 text-white/90 hover:bg-white/10 hover:border-white/30'
+                  ? 'border-[var(--color-accent)] bg-[var(--color-surface-raised)] text-[var(--color-text)]'
+                  : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
               }`}
               aria-expanded={menuFiltrosAbierto}
               aria-label="Filtros del catálogo"
             >
-              <svg className="h-4 w-4 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg className="h-4 w-4 text-[var(--color-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <line x1="4" y1="21" x2="4" y2="14" />
                 <line x1="4" y1="10" x2="4" y2="3" />
                 <line x1="12" y1="21" x2="12" y2="12" />
@@ -299,16 +299,16 @@ export default function CatalogPage() {
               </svg>
               <span>Filtros</span>
               {filtrosActivosCount > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violeta text-[10px] font-black text-white">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-[10px] font-black text-[var(--color-text-on-accent)]">
                   {filtrosActivosCount}
                 </span>
               )}
-              <svg className={`h-3 w-3 text-white/50 transition-transform ${menuFiltrosAbierto ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg className={`h-3 w-3 text-[var(--color-text-muted)] transition-transform ${menuFiltrosAbierto ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
 
-            <span className="hidden text-xs text-white/50 sm:inline">
+            <span className="hidden text-xs text-[var(--color-text-muted)] sm:inline">
               {filtrosActivosCount === 0 ? 'Sin filtros aplicados' : `${filtrosActivosCount} filtros activos`}
             </span>
           </div>
@@ -319,10 +319,10 @@ export default function CatalogPage() {
             <button
               type="button"
               onClick={handleGuardarBusqueda}
-              className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               title="Guardar esta búsqueda en tu perfil para recibir avisos"
             >
-              <svg className="h-3.5 w-3.5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
               </svg>
               <span>Guardar búsqueda</span>
@@ -333,22 +333,22 @@ export default function CatalogPage() {
               <button
                 type="button"
                 onClick={() => setMenuOrdenAbierto((prev) => !prev)}
-                className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition shadow-sm ${
+                className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                   menuOrdenAbierto
-                    ? 'border-violeta bg-violeta/20 text-white'
-                    : 'border-white/20 bg-white/5 text-white/90 hover:bg-white/10 hover:border-white/30'
+                    ? 'border-[var(--color-accent)] bg-[var(--color-surface-raised)] text-[var(--color-text)]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
                 }`}
                 aria-expanded={menuOrdenAbierto}
                 aria-label="Ordenar resultados"
               >
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
                   Ordenar:
                 </span>
-                <span className="text-white text-xs">
+                <span className="text-[var(--color-text)] text-xs">
                   {opcionOrdenActual?.label ?? 'Recomendados'}
                 </span>
                 <svg
-                  className={`h-3 w-3 text-white/50 transition-transform ${menuOrdenAbierto ? 'rotate-180' : ''}`}
+                  className={`h-3 w-3 text-[var(--color-text-muted)] transition-transform ${menuOrdenAbierto ? 'rotate-180' : ''}`}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -362,7 +362,7 @@ export default function CatalogPage() {
               </button>
 
               {menuOrdenAbierto && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-white/15 bg-[#17141f]/95 p-1.5 shadow-2xl backdrop-blur-2xl z-30 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-1.5 shadow-2xl backdrop-blur-2xl z-30 animate-in fade-in zoom-in-95 duration-100 text-[var(--color-text)]">
                   {OPCIONES_ORDEN.map((op) => {
                     const isSelected = orden === op.id
                     return (
@@ -373,15 +373,15 @@ export default function CatalogPage() {
                           handleCambiarOrden(op.id)
                           setMenuOrdenAbierto(false)
                         }}
-                        className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition text-left ${
+                        className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           isSelected
-                            ? 'bg-violeta text-white'
-                            : 'text-white/80 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] font-bold'
+                            : 'text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
                         }`}
                       >
                         <span>{op.label}</span>
                         {isSelected && (
-                          <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                         )}
@@ -399,19 +399,19 @@ export default function CatalogPage() {
           {menuFiltrosAbierto && (
             <div
               ref={menuRef}
-              className="absolute left-0 top-full mt-2 w-full max-w-xl rounded-2xl border border-white/15 bg-[#16131e]/95 p-4 sm:p-5 shadow-2xl backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 max-h-[72vh] overflow-y-auto"
+              className="absolute left-0 top-full mt-2 w-full max-w-xl rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 sm:p-5 shadow-2xl backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 max-h-[72vh] overflow-y-auto text-[var(--color-text)]"
             >
               {/* Encabezado del menú */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3.5">
+              <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2.5 mb-3.5">
                 <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-violeta-claro" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg className="h-4 w-4 text-[var(--color-accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                   </svg>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text)]">
                     Filtrar catálogo
                   </h3>
                   {filtrosActivosCount > 0 && (
-                    <span className="rounded-full bg-violeta/30 border border-violeta/50 px-2 py-0.5 text-[9px] font-bold text-violeta-claro">
+                    <span className="rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-accent)] px-2 py-0.5 text-[9px] font-bold text-[var(--color-accent)]">
                       {filtrosActivosCount} activos
                     </span>
                   )}
@@ -419,7 +419,7 @@ export default function CatalogPage() {
                 <button
                   type="button"
                   onClick={() => setMenuFiltrosAbierto(false)}
-                  className="text-white/50 hover:text-white p-1"
+                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                   aria-label="Cerrar filtros"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -433,7 +433,7 @@ export default function CatalogPage() {
               <div className="space-y-3.5">
                 {/* 1. Cerca de (localidades y barrios con 'No especificar' primero y 'Cerca de mí' segundo) */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
                     Cerca de
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -442,10 +442,10 @@ export default function CatalogPage() {
                         key={loc}
                         type="button"
                         onClick={() => setFiltroCercaDe(loc)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           filtroCercaDe === loc
-                            ? 'bg-violeta text-white ring-1 ring-violeta-claro shadow-sm'
-                            : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
+                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         {loc}
@@ -456,7 +456,7 @@ export default function CatalogPage() {
 
                 {/* 2. Tipo de prenda */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
                     Tipo de prenda
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -465,10 +465,10 @@ export default function CatalogPage() {
                         key={t}
                         type="button"
                         onClick={() => setFiltroTipo(t)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           filtroTipo === t
-                            ? 'bg-violeta text-white ring-1 ring-violeta-claro shadow-sm'
-                            : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
+                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         {t}
@@ -479,7 +479,7 @@ export default function CatalogPage() {
 
                 {/* 3. Talla disponible */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
                     Talla disponible
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -488,10 +488,10 @@ export default function CatalogPage() {
                         key={sz}
                         type="button"
                         onClick={() => setFiltroTalla(sz)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           filtroTalla === sz
-                            ? 'bg-violeta text-white ring-1 ring-violeta-claro shadow-sm'
-                            : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
+                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         {sz}
@@ -502,7 +502,7 @@ export default function CatalogPage() {
 
                 {/* 4. Rango de precio */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
                     Rango de precio
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -511,10 +511,10 @@ export default function CatalogPage() {
                         key={preset.label}
                         type="button"
                         onClick={() => setFiltroPrecio(idx)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           filtroPrecio === idx
-                            ? 'bg-violeta text-white ring-1 ring-violeta-claro shadow-sm'
-                            : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
+                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         {preset.label}
@@ -525,7 +525,7 @@ export default function CatalogPage() {
 
                 {/* 5. Origen */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
                     Origen
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -534,10 +534,10 @@ export default function CatalogPage() {
                         key={orig.id}
                         type="button"
                         onClick={() => setFiltroOrigen(orig.id)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           filtroOrigen === orig.id
-                            ? 'bg-violeta text-white ring-1 ring-violeta-claro shadow-sm'
-                            : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
+                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         {orig.label}
@@ -548,7 +548,7 @@ export default function CatalogPage() {
 
                 {/* 6. Marca */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
                     Marca
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -557,10 +557,10 @@ export default function CatalogPage() {
                         key={m}
                         type="button"
                         onClick={() => setFiltroMarca(m)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           filtroMarca === m
-                            ? 'bg-violeta text-white ring-1 ring-violeta-claro shadow-sm'
-                            : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
+                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         {m}
@@ -571,7 +571,7 @@ export default function CatalogPage() {
 
                 {/* 7. Color (en la parte de abajo, mismo estilo) */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
                     Color
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -580,10 +580,10 @@ export default function CatalogPage() {
                         key={c}
                         type="button"
                         onClick={() => setFiltroColor(c)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           filtroColor === c
-                            ? 'bg-violeta text-white ring-1 ring-violeta-claro shadow-sm'
-                            : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
+                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         {c}
@@ -594,7 +594,7 @@ export default function CatalogPage() {
 
                 {/* 8. Estilo (los 5 estilos del prototipo) */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
                     Estilo
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -603,10 +603,10 @@ export default function CatalogPage() {
                         key={st}
                         type="button"
                         onClick={() => setFiltroEstilo(st)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                           filtroEstilo === st
-                            ? 'bg-violeta text-white ring-1 ring-violeta-claro shadow-sm'
-                            : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
+                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         {st}
@@ -617,18 +617,18 @@ export default function CatalogPage() {
               </div>
 
               {/* Pie del menú */}
-              <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
+              <div className="mt-4 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
                 <button
                   type="button"
                   onClick={handleResetFiltros}
-                  className="text-xs font-semibold text-white/50 hover:text-rose-400 transition"
+                  className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-danger-text,#ef4444)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded"
                 >
                   Restablecer filtros
                 </button>
                 <button
                   type="button"
                   onClick={() => setMenuFiltrosAbierto(false)}
-                  className="rounded-xl bg-violeta px-5 py-2 text-xs font-bold text-white hover:bg-violeta-hover shadow-lg shadow-purple-900/30 transition"
+                  className="rounded-xl bg-[var(--color-accent)] px-5 py-2 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                 >
                   Aplicar filtros {filtrosActivosCount > 0 ? `(${filtrosActivosCount})` : ''}
                 </button>
@@ -640,11 +640,11 @@ export default function CatalogPage() {
         {/* CHIPS DE FILTROS ACTIVOS (para remover rápido) */}
         {filtrosActivosCount > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-[11px] text-white/40">Filtros aplicados:</span>
+            <span className="text-[11px] text-[var(--color-text-muted)]">Filtros aplicados:</span>
             {filtroCercaDe !== 'No especificar' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Cerca de: {filtroCercaDe}
-                <button type="button" onClick={() => setFiltroCercaDe('No especificar')} className="text-white/60 hover:text-white" aria-label="Quitar filtro de ubicación">
+                <button type="button" onClick={() => setFiltroCercaDe('No especificar')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de ubicación">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -653,9 +653,9 @@ export default function CatalogPage() {
               </span>
             )}
             {filtroTipo !== 'Todos' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Tipo: {filtroTipo}
-                <button type="button" onClick={() => setFiltroTipo('Todos')} className="text-white/60 hover:text-white" aria-label="Quitar filtro de tipo">
+                <button type="button" onClick={() => setFiltroTipo('Todos')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de tipo">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -664,9 +664,9 @@ export default function CatalogPage() {
               </span>
             )}
             {filtroTalla !== 'Todas' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Talla: {filtroTalla}
-                <button type="button" onClick={() => setFiltroTalla('Todas')} className="text-white/60 hover:text-white" aria-label="Quitar filtro de talla">
+                <button type="button" onClick={() => setFiltroTalla('Todas')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de talla">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -675,9 +675,9 @@ export default function CatalogPage() {
               </span>
             )}
             {filtroPrecio !== 0 && (
-              <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 {PRECIOS_PRESETS[filtroPrecio].label}
-                <button type="button" onClick={() => setFiltroPrecio(0)} className="text-white/60 hover:text-white" aria-label="Quitar filtro de precio">
+                <button type="button" onClick={() => setFiltroPrecio(0)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de precio">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -686,9 +686,9 @@ export default function CatalogPage() {
               </span>
             )}
             {filtroOrigen !== 'Todos' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 {ORIGENES.find((o) => o.id === filtroOrigen)?.label}
-                <button type="button" onClick={() => setFiltroOrigen('Todos')} className="text-white/60 hover:text-white" aria-label="Quitar filtro de origen">
+                <button type="button" onClick={() => setFiltroOrigen('Todos')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de origen">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -697,9 +697,9 @@ export default function CatalogPage() {
               </span>
             )}
             {filtroMarca !== 'Todas' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Marca: {filtroMarca}
-                <button type="button" onClick={() => setFiltroMarca('Todas')} className="text-white/60 hover:text-white" aria-label="Quitar filtro de marca">
+                <button type="button" onClick={() => setFiltroMarca('Todas')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de marca">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -708,9 +708,9 @@ export default function CatalogPage() {
               </span>
             )}
             {filtroColor !== 'Todos' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Color: {filtroColor}
-                <button type="button" onClick={() => setFiltroColor('Todos')} className="text-white/60 hover:text-white" aria-label="Quitar filtro de color">
+                <button type="button" onClick={() => setFiltroColor('Todos')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de color">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -719,9 +719,9 @@ export default function CatalogPage() {
               </span>
             )}
             {filtroEstilo !== 'Todos' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Estilo: {filtroEstilo}
-                <button type="button" onClick={() => setFiltroEstilo('Todos')} className="text-white/60 hover:text-white" aria-label="Quitar filtro de estilo">
+                <button type="button" onClick={() => setFiltroEstilo('Todos')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de estilo">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -732,7 +732,7 @@ export default function CatalogPage() {
             <button
               type="button"
               onClick={handleResetFiltros}
-              className="text-xs text-rose-400 hover:underline font-semibold ml-2"
+              className="text-xs text-[var(--color-danger-text,#ef4444)] hover:underline font-semibold ml-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded"
             >
               Limpiar todo
             </button>
@@ -741,8 +741,12 @@ export default function CatalogPage() {
 
         {/* Feedback toast */}
         {toastMsg && (
-          <div role="status" className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 backdrop-blur-md">
-            {toastMsg}
+          <div role="status" className="mb-6 rounded-xl border border-[var(--color-success-border,rgba(16,185,129,0.3))] bg-[var(--color-success-bg,rgba(16,185,129,0.1))] p-4 text-sm text-[var(--color-success-text,#10b981)] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
+            <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            <span>{toastMsg}</span>
           </div>
         )}
 
@@ -764,20 +768,29 @@ export default function CatalogPage() {
 
         {/* LISTADO PRINCIPAL DEL CATÁLOGO */}
         <div>
-          <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-3">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-white/70">
+          <div className="mb-6 flex items-center justify-between border-b border-[var(--color-border)] pb-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text)]">
               Prendas encontradas ({items.length})
             </h2>
-            <span className="text-xs text-white/40 font-mono">
+            <span className="text-xs text-[var(--color-text-muted)] font-mono">
               {orden === 'cerca' ? 'Ordenado por cercanía' : `Orden: ${opcionOrdenActual?.label}`}
             </span>
           </div>
 
-          {error && <p role="alert" className="my-8 text-rose-400">{error}</p>}
+          {error && (
+            <div role="alert" className="my-8 rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.3))] bg-[var(--color-danger-bg,rgba(239,68,68,0.1))] p-4 text-sm text-[var(--color-danger-text,#ef4444)] flex items-center gap-2">
+              <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
 
           {loading ? (
-            <div className="py-16 text-center text-white/50">
-              <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-violeta" />
+            <div className="py-16 text-center text-[var(--color-text-muted)]">
+              <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-accent)]" />
               <p className="text-sm">Buscando prendas en el catálogo…</p>
             </div>
           ) : items.length ? (
@@ -787,21 +800,21 @@ export default function CatalogPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-12 text-center backdrop-blur-xl">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/5 text-white/40 border border-white/10">
+            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center backdrop-blur-xl text-[var(--color-text)] shadow-sm">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-white">No encontramos prendas con esos filtros</h3>
-              <p className="mt-2 text-xs text-white/60 max-w-md mx-auto leading-relaxed">
+              <h3 className="text-lg font-bold text-[var(--color-text)]">No encontramos prendas con esos filtros</h3>
+              <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
                 Prueba cambiando el tipo de prenda, ajustando la ubicación o eliminando algún filtro.
               </p>
               <button
                 type="button"
                 onClick={handleResetFiltros}
-                className="mt-6 rounded-xl bg-violeta px-6 py-2.5 text-xs font-bold text-white hover:bg-violeta-hover shadow-lg shadow-purple-900/30 transition"
+                className="mt-6 rounded-xl bg-[var(--color-accent)] px-6 py-2.5 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
                 Quitar filtros
               </button>
