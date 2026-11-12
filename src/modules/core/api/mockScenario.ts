@@ -17,6 +17,29 @@ export const MOCK_SCENARIOS = {
   'catalogo-vacio': 'El catálogo del probador y de segunda mano llega vacío',
   'conflicto': 'Los cambios de estado responden 409',
   'duplicado': 'Crear una solicitud de donación responde 409 por duplicado',
+  // Flujo de errores · experiencia del comprador (Daniel)
+  'ubicacion-requerida': 'Ordenar o buscar por cercanía responde 400 por falta de ubicación',
+  'busqueda-pendiente': 'Activar la alerta de una búsqueda recién guardada responde 422',
+  'alerta-duplicada': 'Crear una alerta responde 409 porque ya existe',
+  'alerta-con-stock': 'Crear la alerta de una prenda responde 422 porque sí tiene unidades',
+  'catalogo-caido': 'Crear la alerta de una prenda responde 503',
+  'sin-unidades': 'Reservar una talla responde 409 por falta de unidades',
+  'radio-invalido': 'Buscar tiendas cercanas responde 422 por radio fuera de rango',
+  'tienda-retirada': 'Abrir una tienda del mapa responde 404',
+  'consentimiento': 'Crear la prueba responde 400 CONSENT_REQUIRED',
+  'foto-pesada': 'Subir la foto responde 413',
+  'foto-dimensiones': 'Subir la foto responde 422 INVALID_PHOTO_DIMENSIONS',
+  'foto-formato': 'Subir la foto responde 400 por formato',
+  'cuota-agotada': 'Crear la prueba responde 429 QUOTA_EXCEEDED',
+  'prenda-no-probable': 'Crear la prueba responde 400 INVALID_GARMENT',
+  'ia-lenta': 'Crear la prueba responde 504 AI_TIMEOUT',
+  'silueta': 'La prueba termina en FAILED porque no se reconoció la silueta',
+  'prueba-no-existe': 'Consultar la prueba responde 404',
+  'publicacion-propia': 'Abrir el chat responde 422 (publicación propia o no disponible)',
+  'chat-cerrado': 'Enviar un mensaje responde 422 porque la publicación se vendió o retiró',
+  'publicaciones-caido': 'Enviar un mensaje responde 503',
+  'alerta-ajena': 'Cambiar o borrar una alerta responde 403',
+  'alerta-borrada': 'Cambiar o borrar una alerta responde 404',
 } as const
 
 export type MockScenario = keyof typeof MOCK_SCENARIOS
@@ -45,4 +68,12 @@ export function failIfScenario(...own: MockScenario[]) {
   }
   if (active.includes('sin-permiso')) throw new ApiError(403, 'No tienes permiso para hacer esto.')
   for (const s of own) if (active.includes(s)) throw new ApiError(s === 'conflicto' || s === 'duplicado' ? 409 : 500, MOCK_SCENARIOS[s])
+}
+
+/**
+ * Escenario que responde con un error HTTP concreto (y su errorCode, si el backend lo manda).
+ * El mensaje es solo descriptivo: las pantallas eligen su propio texto según status y code.
+ */
+export function failWithScenario(s: MockScenario, status: number, code?: string) {
+  if (read().includes(s)) throw new ApiError(status, MOCK_SCENARIOS[s], code)
 }
