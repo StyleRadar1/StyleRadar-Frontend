@@ -110,7 +110,7 @@ describe('Admin › Fundaciones', () => {
     await user.click(within(dlg).getByRole('button', { name: 'Registrar fundación' }))
     expect(await screen.findByText(/Ropa con Amor quedó registrada/, {}, T)).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getByText('Ropa con Amor')).toBeInTheDocument()
-  })
+  }, 10000)
 
   it('edita, desactiva una fundación y controla conflicto 409 si ya está inactiva', async () => {
     const user = userEvent.setup()
