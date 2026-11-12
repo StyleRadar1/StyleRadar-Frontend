@@ -1,9 +1,13 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
+import { MENSAJES } from '@/modules/core/api/mensajes'
 import { env } from '@/configs/env'
 import { PERFILES_BASE, USUARIOS_BASE, perfilNuevo } from '../mocks/usuarios'
 import type { ActualizarPerfilDto, CambioEstadoDto, PerfilDto, UsuarioAdminDto } from '../types/usuario.dto'
+
+/** Solo datos de prueba: con este barrio el guardado responde 400 con errores por campo. */
+export const BARRIO_DEMO_400 = 'prueba-400'
 
 /* Estado de los datos de prueba: vive mientras la pestaña esté abierta. */
 let usuarios: UsuarioAdminDto[] = structuredClone(USUARIOS_BASE)
@@ -63,6 +67,10 @@ export const usuarioService = {
   async updateMe(body: ActualizarPerfilDto): Promise<PerfilDto> {
     if (env.useMocks) {
       failIfScenario()
+      // Demostración del 400 al guardar: barrio «prueba-400» → errores por campo del servidor.
+      if (body.barrio.trim().toLowerCase() === BARRIO_DEMO_400) {
+        throw new ApiError(400, MENSAJES.datos, { barrio: 'Escribe un barrio de Bogotá.', calzado: 'Elige una talla de calzado de la lista.' })
+      }
       const p = perfilDeSesion()
       Object.assign(p, structuredClone(body))
       const fila = usuarios.find((x) => x.id === p.id)
