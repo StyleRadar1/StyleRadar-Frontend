@@ -57,7 +57,7 @@ export default function MessagesPage() {
   )
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 md:py-12">
+    <section className="mx-auto max-w-7xl px-4 py-4 md:py-6 bg-transparent border-0 shadow-none overflow-visible">
       {loading ? (
         <Loading label="Cargando tus conversaciones…" />
       ) : error ? (
@@ -88,7 +88,7 @@ export default function MessagesPage() {
           </EmptyState>
         </div>
       ) : (
-        <div className="relative w-full">
+        <div className="relative w-full bg-transparent border-0 shadow-none overflow-visible">
           {/* Cabecera idéntica a la referencia aprobada */}
           <header className="mb-4">
             <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--s-ink2,#CFC6E0)] mb-1">

@@ -9,9 +9,9 @@ export interface TrackOrbitConfig {
 }
 
 export const ORB_CONFIGS: Record<1 | 2 | 3, TrackOrbitConfig> = {
-  1: { f: 0.255, k: 1, tilt: 0, w: 9, label: 'Sin leer' },
+  1: { f: 0.26, k: 1, tilt: 0, w: 9, label: 'Sin leer' },
   2: { f: 0.36, k: 1, tilt: 0, w: 9, label: 'Vistos' },
-  3: { f: 0.455, k: 1, tilt: 0, w: 9, label: 'Antiguos' },
+  3: { f: 0.46, k: 1, tilt: 0, w: 9, label: 'Antiguos' },
 }
 
 export interface VinylSignal {
