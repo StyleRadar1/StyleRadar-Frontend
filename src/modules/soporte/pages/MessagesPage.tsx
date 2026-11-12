@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
@@ -9,15 +9,7 @@ import { chatService } from '../services/chatService'
 import {
   type ConversacionDto,
   type MensajeDto,
-  type TipoContacto,
 } from '../types/chat.dto'
-
-const FILTROS: [string, string, TipoContacto[]][] = [
-  ['todos', 'Todos', []],
-  ['personas', 'Personas', ['VENDEDOR', 'COMPRADOR']],
-  ['tiendas', 'Tiendas', ['TIENDA']],
-  ['fundaciones', 'Fundaciones', ['FUNDACION']],
-]
 
 const VACIO: Record<Role, string> = {
   COMPRADOR: 'Cuando le escribas a quien vende, a una tienda o a una fundación, la conversación aparecerá aquí.',
@@ -30,7 +22,6 @@ export default function MessagesPage() {
   const { user } = useAuth()
   const [params, setParams] = useSearchParams()
   const actual = params.get('c')
-  const [filtro, setFiltro] = useState('todos')
 
   const { data: convs, loading, error, reload, setData } = useResource(
     chatService.conversations,
@@ -44,8 +35,6 @@ export default function MessagesPage() {
     setParams(n)
   }
 
-  const tipos = FILTROS.find(([k]) => k === filtro)?.[2] ?? []
-  const lista = convs.filter((c) => !tipos.length || tipos.includes(c.contacto.tipo))
   const conv = convs.find((c) => c.id === actual) ?? null
 
   const leida = useCallback(
@@ -100,49 +89,22 @@ export default function MessagesPage() {
         </div>
       ) : (
         <div className="relative w-full">
-          {/* Encabezado editorial */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[#CFC6E0]">
-                Comunicación
-              </p>
-              <h1 className="mt-1 text-3xl font-extrabold tracking-tight md:text-4xl text-white">
-                Mensajes
-              </h1>
-              <p className="mt-1 max-w-2xl text-xs md:text-sm text-white/70">
-                Coordina entregas y responde preguntas girando en tu propio vinilo.
-              </p>
-            </div>
+          {/* Cabecera idéntica a la referencia aprobada */}
+          <header className="mb-4">
+            <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--s-ink2,#CFC6E0)] mb-1">
+              Comunicación
+            </p>
+            <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl text-[var(--s-ink,#F4EEE3)]">
+              Mensajes
+            </h1>
+            <p className="mt-1 max-w-2xl text-xs md:text-sm text-[var(--s-ink2,#CFC6E0)]">
+              Coordina entregas y responde preguntas sin compartir tu número.
+            </p>
+          </header>
 
-            {/* Filtros para comprador */}
-            {user?.role === 'COMPRADOR' && (
-              <div
-                className="flex flex-wrap gap-2"
-                role="group"
-                aria-label="Filtrar conversaciones"
-              >
-                {FILTROS.map(([k, label]) => (
-                  <button
-                    key={k}
-                    type="button"
-                    aria-pressed={filtro === k}
-                    onClick={() => setFiltro(k)}
-                    className={`min-h-[38px] rounded-full border px-4 py-1.5 text-xs font-semibold transition ${
-                      filtro === k
-                        ? 'border-[#B79AF5] bg-[#4B1FA8] text-white shadow-md'
-                        : 'border-white/20 text-white/70 hover:bg-white/10'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* EL VINILO ES LA ÚNICA FORMA DE VER LOS MENSAJES */}
+          {/* EL VINILO ES LA ÚNICA VISTA (sin filtros ni selector de vista) */}
           <MessagesVinyl
-            conversations={lista}
+            conversations={convs}
             selectedId={actual}
             currentUserId={user?.id ?? ''}
             onSelect={abrir}

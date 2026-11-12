@@ -1070,7 +1070,7 @@ function HangingCollectionRack({
 
       {/* 3. Detalle inferior de la prenda destacada + botón "Ver la colección" */}
       <div className="sr-rack-footer">
-        <h3 className="sr-rack-title">{featured.nombre}</h3>
+        <p className="sr-rack-title">{featured.nombre}</p>
         <p className="sr-rack-meta">
           {featured.tienda} · {formatCOP(featured.precio)}
         </p>

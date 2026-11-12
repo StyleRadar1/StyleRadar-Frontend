@@ -1,55 +1,36 @@
 import type { ContactoDto, ConversacionDto, TipoContacto } from '../types/chat.dto'
 
-/** Umbral para clasificar conversación como reciente (48 horas) */
-export const RECENT_THRESHOLD_MS = 48 * 60 * 60 * 1000
-
-export type VinylTrackLevel = 1 | 2 | 3
-
-export interface TrackConfig {
-  level: VinylTrackLevel
+export interface TrackOrbitConfig {
+  f: number // Factor de radio respecto al ancho del escenario
+  k: number // Factor elíptico (1 para circular en vinilo)
+  tilt: number // Inclinación en grados (0 para vinilo plano)
+  w: number // Velocidad angular en grados/segundo
   label: string
-  /** Radio proporcional al tamaño del contenedor (width) */
-  radiusRatio: number
-  glowColor: string
-  badgeColor: string
 }
 
-export const TRACK_CONFIGS: Record<VinylTrackLevel, TrackConfig> = {
-  1: {
-    level: 1,
-    label: 'SIN LEER',
-    radiusRatio: 0.255,
-    glowColor: 'rgba(214, 47, 107, 0.65)',
-    badgeColor: '#D62F6B',
-  },
-  2: {
-    level: 2,
-    label: 'VISTOS',
-    radiusRatio: 0.36,
-    glowColor: 'rgba(183, 154, 245, 0.45)',
-    badgeColor: '#B79AF5',
-  },
-  3: {
-    level: 3,
-    label: 'ANTIGUOS',
-    radiusRatio: 0.455,
-    glowColor: 'rgba(244, 238, 227, 0.25)',
-    badgeColor: '#CFC6E0',
-  },
+export const ORB_CONFIGS: Record<1 | 2 | 3, TrackOrbitConfig> = {
+  1: { f: 0.255, k: 1, tilt: 0, w: 9, label: 'Sin leer' },
+  2: { f: 0.36, k: 1, tilt: 0, w: 9, label: 'Vistos' },
+  3: { f: 0.455, k: 1, tilt: 0, w: 9, label: 'Antiguos' },
 }
 
-export interface VinylItem {
+export interface VinylSignal {
   id: string
   conv: ConversacionDto
-  trackLevel: VinylTrackLevel
-  angle: number // Radianes
-  radiusRatio: number
-  x: number // Coordenadas relativas al centro (px)
-  y: number // Coordenadas relativas al centro (px)
-  unreadCount: number
-  initials: string
+  orbit: 1 | 2 | 3
+  ang: number // Ángulo en grados
+  r: number
+  k: number
+  tl: number
+  px: number // Posición x en px relativa al centro de la escena
+  py: number // Posición y en px relativa al centro de la escena
+  s: number
+  unread: number
+  name: string
+  tag: string
+  type: TipoContacto
   photoUrl: string | null
-  contactType: TipoContacto
+  initials: string
 }
 
 /**
@@ -62,7 +43,7 @@ export function getContactPhoto(contacto: ContactoDto): string | null {
   if (contacto.tipo === 'TIENDA') {
     if (nombre.includes('luna')) return '/img/mapa/luna.jpg'
     if (nombre.includes('nomada') || nombre.includes('nómada')) return '/img/mapa/nomada.jpg'
-    if (nombre.includes('kicks')) return '/img/mapa/kicks.jpg'
+    if (nombre.includes('retro') || nombre.includes('kicks')) return '/img/mapa/kicks.jpg'
     if (nombre.includes('lab')) return '/img/mapa/lab.jpg'
     if (nombre.includes('kennedy')) return '/img/mapa/kennedy.jpg'
     if (nombre.includes('dignidad')) return '/img/mapa/dignidad.jpg'
@@ -89,15 +70,14 @@ export function getContactPhoto(contacto: ContactoDto): string | null {
     return '/img/landing/slide-5.jpg'
   }
 
-  // Fallback con imagen de persona editorial
   return '/img/landing/slide-1.jpg'
 }
 
 export function getInitials(nombre: string): string {
   if (!nombre) return 'SR'
-  const partes = nombre.trim().split(/\s+/)
+  const partes = nombre.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ ]/g, '').trim().split(/\s+/)
   if (partes.length >= 2) {
-    return (partes[0][0] + partes[1][0]).toUpperCase()
+    return (partes[0][0] + (partes[1] ? partes[1][0] : '')).toUpperCase()
   }
   return nombre.slice(0, 2).toUpperCase()
 }

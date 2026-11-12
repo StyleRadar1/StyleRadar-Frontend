@@ -1,6 +1,6 @@
 /**
- * Sistema de Contrastes Formales WCAG para el Vinilo de Mensajes
- * Garantiza cumplimiento WCAG AA (>= 4.5:1) y WCAG AAA (>= 7.0:1)
+ * Sistema de Contrastes Formales WCAG para el Vinilo de Mensajes (Fuente de Verdad)
+ * Garantiza cumplimiento WCAG AA (>= 4.5:1) y WCAG AAA (>= 7.0:1) tanto en día como en noche.
  */
 
 export interface ContrastRatioReport {
@@ -45,7 +45,7 @@ export function getContrastRatio(hex1: string, hex2: string): number {
 
 export const VINYL_CONTRAST_TOKENS: Record<string, ContrastRatioReport> = {
   BURBUJA_PROPIA: {
-    name: 'Burbuja propia',
+    name: 'Burbuja propia (--me / --me-ink)',
     fgHex: '#F7F1E4',
     bgHex: '#4B1FA8',
     ratio: 9.05,
@@ -53,15 +53,15 @@ export const VINYL_CONTRAST_TOKENS: Record<string, ContrastRatioReport> = {
     wcagAAA: true,
   },
   BURBUJA_AJENA_DIA: {
-    name: 'Burbuja ajena (día)',
+    name: 'Burbuja ajena día (--them / --them-ink)',
     fgHex: '#1F1433',
-    bgHex: '#FFFFFF', // fondo translúcido sobre base clara
+    bgHex: '#FFFFFF',
     ratio: 14.2,
     wcagAA: true,
     wcagAAA: true,
   },
-  TEXTO_NOCHE: {
-    name: 'Texto noche principal',
+  TEXTO_NOCHE_CABECERA: {
+    name: 'Texto noche cabecera chat (--p-ink)',
     fgHex: '#F4EEE3',
     bgHex: '#05030A',
     ratio: 17.76,
@@ -69,15 +69,15 @@ export const VINYL_CONTRAST_TOKENS: Record<string, ContrastRatioReport> = {
     wcagAAA: true,
   },
   TEXTO_SECUNDARIO_NOCHE: {
-    name: 'Texto secundario noche',
+    name: 'Texto secundario noche (--p-ink2)',
     fgHex: '#CFC6E0',
     bgHex: '#05030A',
     ratio: 12.51,
     wcagAA: true,
     wcagAAA: true,
   },
-  TEXTO_DIA: {
-    name: 'Texto día principal',
+  TEXTO_DIA_CABECERA: {
+    name: 'Texto día cabecera chat (--p-ink)',
     fgHex: '#1F1433',
     bgHex: '#E6D9C0',
     ratio: 12.48,
