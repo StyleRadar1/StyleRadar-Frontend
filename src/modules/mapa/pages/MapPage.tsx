@@ -120,7 +120,7 @@ export default function MapPage() {
             <span aria-hidden="true">←</span>
             <span>Volver</span>
           </Link>
-          {cercanos ? (
+          {ubicacion ? (
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <label htmlFor="radio-km" className="text-white/80">Radio de búsqueda: <b>{radio} km</b></label>
               <input id="radio-km" type="range" min={RADIO_KM.min} max={RADIO_KM.max} step={1} value={radio}
