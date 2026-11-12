@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useResource } from '@/modules/core/hooks/useResource'
-import { errorMessage } from '@/modules/core/api/errors'
+import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO } from '@/modules/core/components/Aviso'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { ErrorState } from '@/modules/core/components/Status'
 import { PlanGate } from '@/modules/transacciones/components/PlanGate'
 import { GarmentSelector } from '../components/GarmentSelector'
 import { garmentProblem } from '../utils/garments'
 import { PhotoPicker, type UploadedPhoto } from '../components/PhotoPicker'
 import { ResultViewer } from '../components/ResultViewer'
 import { useTryOnJob } from '../hooks/useTryOnJob'
+import { problemaPrueba, problemaResultado, type ProblemaPrueba } from '../utils/tryOnRules'
 import { tryOnService } from '../services/tryOnService'
 import type { TryOnGarmentDto } from '../types/tryon.dto'
 
@@ -22,6 +23,11 @@ export default function TryOnPage() {
   const [delMsg, setDelMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const job = useTryOnJob()
   const selectorRef = useRef<HTMLElement>(null)
+  const fotoRef = useRef<HTMLElement>(null)
+  /** Ley 1581: qué se estaba haciendo cuando el servidor pidió la autorización. */
+  const [consent, setConsent] = useState<null | 'foto' | 'prueba'>(null)
+  const [consintiendo, setConsintiendo] = useState(false)
+  const [consentMsg, setConsentMsg] = useState('')
 
   // La URL temporal de la foto se libera al salir de la pantalla.
   const photoUrl = photo?.previewUrl
@@ -32,6 +38,36 @@ export default function TryOnPage() {
 
   const startTry = () => { if (photo && garment && !garmentProblem(garment)) job.start(photo.photoId, garment.id) }
   const otherGarment = () => { job.reset(); setGarmentId(null); selectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+  const otherPhoto = () => { job.reset(); setPhoto(null); fotoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+
+  const aceptarConsentimiento = async () => {
+    const venia = consent
+    setConsintiendo(true); setConsentMsg('')
+    try {
+      await tryOnService.giveConsent()
+      setConsent(null)
+      if (venia === 'prueba') { job.reset(); startTry() }
+    } catch {
+      setConsentMsg('No pudimos guardar tu autorización. Intenta de nuevo.')
+    } finally { setConsintiendo(false) }
+  }
+
+  /** Botones que resuelven cada problema de la prueba. */
+  const accionesDe = (p: ProblemaPrueba) => {
+    switch (p.accion) {
+      case 'consentimiento': return <>
+        <button type="button" onClick={() => setConsent('prueba')} className={BTN_PRINCIPAL}>Ver y aceptar</button>
+        <button type="button" onClick={job.reset} className={BTN_SECUNDARIO}>Ahora no</button>
+      </>
+      case 'planes': return <Link to="/planes" className={BTN_PRINCIPAL}>Ver Radar+</Link>
+      case 'otra-foto': return <button type="button" onClick={otherPhoto} className={BTN_PRINCIPAL}>Subir otra foto</button>
+      case 'otra-prenda': return <button type="button" onClick={otherGarment} className={BTN_PRINCIPAL}>Elegir otra prenda</button>
+      case 'volver': return <button type="button" onClick={job.reset} className={BTN_PRINCIPAL}>Volver al probador</button>
+      case 'iniciar-sesion': return <Link to="/login" className={BTN_PRINCIPAL}>Iniciar sesión</Link>
+      default: return <button type="button" onClick={() => { job.reset(); startTry() }} className={BTN_PRINCIPAL}>Reintentar</button>
+    }
+  }
+  const problema = job.phase === 'error' ? problemaPrueba(job.error) : job.phase === 'failed' ? problemaResultado(job.result?.error) : null
 
   const deletePhoto = async () => {
     if (!photo) return
@@ -41,8 +77,8 @@ export default function TryOnPage() {
       job.reset()
       setPhoto(null)
       setDelMsg({ ok: true, text: 'Eliminamos tu foto y los resultados generados con ella.' })
-    } catch (e) {
-      setDelMsg({ ok: false, text: `No tenemos confirmación de que tu foto se haya borrado. ${errorMessage(e)}` })
+    } catch {
+      setDelMsg({ ok: false, text: 'No tenemos confirmación de que tu foto se haya borrado. Intenta de nuevo.' })
     } finally {
       setDeleting(false); setConfirmDel(false)
     }
@@ -57,11 +93,11 @@ export default function TryOnPage() {
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
         <div className="space-y-8">
-          <section aria-labelledby="t-foto" className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+          <section ref={fotoRef} aria-labelledby="t-foto" className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
             <h2 id="t-foto" className="text-lg font-bold">1. Tu foto</h2>
             <div className="mt-4">
               <PlanGate title="Pruébate la ropa sobre tu foto con Radar+" text="Con el plan Radar usas el maniquí. Radar+ te deja subir tu foto de cuerpo entero y ver las prendas sobre ti.">
-                <PhotoPicker photo={photo} onUploaded={(p) => { setDelMsg(null); job.reset(); setPhoto(p) }} />
+                <PhotoPicker photo={photo} onUploaded={(p) => { setDelMsg(null); job.reset(); setPhoto(p) }} onConsentRequired={() => setConsent('foto')} />
               </PlanGate>
             </div>
             {photo && (
@@ -120,23 +156,27 @@ export default function TryOnPage() {
             <div className="mt-4"><ResultViewer result={job.result} garmentName={garment.nombre} onRegenerate={startTry} onOtherGarment={otherGarment} /></div>
           )}
 
-          {(job.phase === 'failed' || job.phase === 'expired') && (
-            <div role="alert" className="mt-4 rounded-2xl border border-[#ff8a8a]/40 bg-[#ff8a8a]/10 p-5">
-              <p className="font-semibold">{job.phase === 'failed' ? 'No pudimos generar tu prueba' : 'La prueba tardó demasiado y se canceló'}</p>
-              <p className="mt-1 text-sm text-white/80">{job.result?.error ?? 'Puedes intentarlo otra vez; no se cobrará ni se duplicará nada.'}</p>
-              <button type="button" onClick={() => { job.reset(); startTry() }} className="mt-4 rounded-xl bg-violeta px-4 py-2 text-sm font-semibold">Intentar de nuevo</button>
-            </div>
+          {job.phase === 'expired' && (
+            <Aviso tono="error" className="mt-4" titulo="La prueba tardó demasiado y se canceló"
+              acciones={<button type="button" onClick={() => { job.reset(); startTry() }} className={BTN_PRINCIPAL}>Intentar de nuevo</button>}>
+              Puedes intentarlo otra vez; no se cobrará ni se duplicará nada.
+            </Aviso>
+          )}
+
+          {problema && (
+            <Aviso tono={problema.accion === 'consentimiento' || problema.accion === 'planes' ? 'alerta' : 'error'} className="mt-4" titulo={problema.titulo} acciones={accionesDe(problema)}>
+              {problema.texto}
+            </Aviso>
           )}
 
           {job.phase === 'offline' && (
             <div role="alert" className="mt-4 rounded-2xl border border-arena/40 bg-arena/10 p-5">
               <p className="font-semibold">Se perdió la conexión</p>
-              <p className="mt-1 text-sm text-white/80">{job.jobId ? 'Tu prueba sigue en proceso. Cuando vuelva la conexión, seguimos consultando la misma prueba sin crear otra.' : errorMessage(job.error)}</p>
+              <p className="mt-1 text-sm text-white/80">{job.jobId ? 'Tu prueba sigue en proceso. Cuando vuelva la conexión, seguimos consultando la misma prueba sin crear otra.' : 'Revisa tu internet e inténtalo de nuevo.'}</p>
               <button type="button" onClick={job.jobId ? job.resume : startTry} className="mt-4 rounded-xl bg-violeta px-4 py-2 text-sm font-semibold">{job.jobId ? 'Seguir consultando' : 'Reintentar'}</button>
             </div>
           )}
 
-          {job.phase === 'error' && <div className="mt-4"><ErrorState error={job.error} onRetry={() => { job.reset(); startTry() }} title="No pudimos completar la prueba" /></div>}
 
           {job.phase === 'cancelled' && (
             <div className="mt-4 text-sm text-white/70">
@@ -145,6 +185,13 @@ export default function TryOnPage() {
           )}
         </aside>
       </div>
+
+      <ConfirmDialog open={!!consent} title="Antes de probar, acepta el uso de tu foto" confirmLabel="Acepto" cancelLabel="Ahora no" busy={consintiendo}
+        onConfirm={aceptarConsentimiento} onCancel={() => { setConsent(null); setConsentMsg(''); if (job.phase === 'error') job.reset() }}>
+        <p>Lo pide la Ley 1581 de protección de datos. Tu foto solo se usa para generar la prueba en el probador, se guarda de forma temporal y la puedes borrar cuando quieras.</p>
+        {consent === 'foto' && <p className="mt-2">Después de aceptar, vuelve a elegir tu foto.</p>}
+        {consentMsg && <p role="alert" className="mt-2 text-[#ffb4b4]">{consentMsg}</p>}
+      </ConfirmDialog>
 
       <ConfirmDialog open={confirmDel} title="¿Eliminar tu foto?" confirmLabel="Eliminar" danger busy={deleting} onConfirm={deletePhoto} onCancel={() => setConfirmDel(false)}>
         Se borra de StyleRadar tu foto original y los resultados generados con ella. No se puede deshacer.
