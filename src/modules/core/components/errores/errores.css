@@ -1,0 +1,52 @@
+/* Colores de error de la paleta del líder (oscuro y claro) y Okabe-Ito (daltónico).
+   Se suman a las variables --sr-* de index.css. */
+:root {
+  --sr-e404: #b79af5;
+  --sr-e500: #ff8fb3;
+  --sr-e403: #f3d27a;
+  --sr-enet: #8dc5e8;
+  --sr-info: #8dc5e8;
+  --sr-escena-piso: #141414;
+  --sr-escena-luz: rgba(185, 154, 245, .16);
+  --sr-sombra: rgba(0, 0, 0, .6);
+  --sr-metal-1: #55525c;
+  --sr-metal-2: #d9d6de;
+}
+html[data-tema="claro"] {
+  --sr-e404: #48119a;
+  --sr-e500: #b81d57;
+  --sr-e403: #7a5300;
+  --sr-enet: #1c537b;
+  --sr-info: #1c537b;
+  --sr-escena-piso: #e3d6bf;
+  --sr-escena-luz: rgba(255, 255, 255, .75);
+  --sr-sombra: rgba(60, 40, 20, .28);
+  --sr-metal-1: #7d7468;
+  --sr-metal-2: #d8cfc2;
+}
+html[data-tema="daltonico"] {
+  --sr-e404: #cc79a7;
+  --sr-e500: #e69f00;
+  --sr-e403: #f0e442;
+  --sr-enet: #56b4e9;
+  --sr-info: #56b4e9;
+  --sr-escena-luz: rgba(86, 180, 233, .14);
+}
+
+/* Escenario: luz arriba, piso abajo. */
+.sr-escena {
+  background:
+    radial-gradient(70% 60% at 50% 30%, var(--sr-escena-luz), transparent 70%),
+    linear-gradient(180deg, var(--sr-bg-2) 0 70%, var(--sr-escena-piso) 70% 100%);
+}
+.sr-escena-sombra { border-radius: 50%; background: radial-gradient(closest-side, var(--sr-sombra), transparent); filter: blur(2px) }
+.sr-radar {
+  background:
+    repeating-radial-gradient(circle, transparent 0 calc(25% - 1px), color-mix(in srgb, var(--k) 35%, transparent) calc(25% - 1px) 25%),
+    radial-gradient(circle, color-mix(in srgb, var(--k) 8%, transparent), transparent 72%);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--k) 55%, transparent);
+}
+.sr-radar-barrido { background: conic-gradient(from 0deg, color-mix(in srgb, var(--k) 50%, transparent), transparent 70deg) }
+.sr-toast-barra { transform-origin: left; animation: sr-vaciar var(--dur, 5s) linear forwards }
+@keyframes sr-vaciar { to { transform: scaleX(0) } }
+@media (prefers-reduced-motion: reduce) { .sr-toast-barra { animation: none } }

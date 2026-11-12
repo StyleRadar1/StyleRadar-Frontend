@@ -41,6 +41,8 @@ const AdminStoreDetail = lazy(() => import('@/modules/administracion/pages/Admin
 const AdminFoundations = lazy(() => import('@/modules/administracion/pages/AdminFoundationsPage'))
 const AdminFoundationDetail = lazy(() => import('@/modules/administracion/pages/AdminFoundationDetailPage'))
 const AdminPlaylists = lazy(() => import('@/modules/administracion/pages/AdminPlaylistsPage'))
+// Vitrina de las piezas de error: solo en desarrollo, no llega al build de QA ni producción.
+const ErroresDemo = import.meta.env.DEV ? lazy(() => import('@/modules/core/pages/ErroresDemo')) : null
 
 const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-white/60">Cargando…</p>}>{el}</Suspense>
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
@@ -95,6 +97,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },
       { path: '/fundacion/estadisticas', element: only(FOUND, <Stats />) },
+      ...(ErroresDemo ? [{ path: '/dev/errores', element: page(<ErroresDemo />) }] : []),
       { path: '*', element: <NotFound /> },
     ],
   },

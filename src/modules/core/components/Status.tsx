@@ -16,12 +16,14 @@ export function Loading({ label = 'Cargando…' }: { label?: string }) {
 export function ErrorState({ error, onRetry, title = 'Algo salió mal' }: { error: unknown; onRetry?: () => void; title?: string }) {
   const kind = errorKind(error)
   return (
-    <div role="alert" className="rounded-2xl border border-[#ff8a8a]/40 bg-[#ff8a8a]/10 p-5">
-      <p className="font-semibold">{title}</p>
-      <p className="mt-1 text-sm text-white/80">{errorMessage(error)}</p>
+    <div role="alert" className="rounded-2xl border border-[color-mix(in_srgb,var(--sr-bad)_45%,transparent)] bg-[color-mix(in_srgb,var(--sr-bad)_9%,var(--sr-bg-2))] p-5">
+      <p className="flex items-center gap-2 font-semibold text-[var(--sr-tx)]">
+        <span aria-hidden="true" className="grid h-5 w-5 place-items-center rounded-full bg-[var(--sr-bad)] text-[11px] font-bold text-[var(--sr-bg)]">!</span>{title}
+      </p>
+      <p className="mt-1 text-sm text-[var(--sr-tx-2)]">{errorMessage(error)}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {kind === 'sesion' ? (
-          <Link to="/login" className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold">Iniciar sesión</Link>
+          <Link to="/?login" className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold text-white">Iniciar sesión</Link>
         ) : onRetry && kind !== 'permiso' ? (
           <button type="button" onClick={onRetry} className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold">Reintentar</button>
         ) : null}
