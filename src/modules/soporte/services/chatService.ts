@@ -1,6 +1,6 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
-import { failIfScenario } from '@/modules/core/api/mockScenario'
+import { failIfScenario, failWithScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { seedConversations, seedMessages } from '../mocks/chat'
 import { MAX_MENSAJE, TIPO_ESPEJO, type ConversacionDto, type IniciarConversacionDto, type MensajeDto } from '../types/chat.dto'
@@ -57,8 +57,11 @@ export const chatService = {
   async start(req: IniciarConversacionDto): Promise<ConversacionDto> {
     if (env.useMocks) {
       failIfScenario()
+      failWithScenario('publicacion-propia', 422)
+      failWithScenario('publicaciones-caido', 503)
       const yo = me()
-      if (req.contacto.id === yo.id) throw new ApiError(400, 'Es tu propia publicación: no puedes escribirte a ti misma o a ti mismo.')
+      // Como ms-chat: escribir sobre una publicación propia o no disponible es 422
+      if (req.contacto.id === yo.id) throw new ApiError(422, 'Publicación propia.')
       const mias = (db().convs[yo.id] ??= [])
       const existente = mias.find((c) => mismaReferencia(c, req))
       if (existente) return mockDelay(existente, 200)
@@ -92,6 +95,8 @@ export const chatService = {
     if (t.length > MAX_MENSAJE) throw new ApiError(400, `El mensaje no puede superar ${MAX_MENSAJE} caracteres.`)
     if (env.useMocks) {
       failIfScenario('conflicto')
+      failWithScenario('chat-cerrado', 422)
+      failWithScenario('publicaciones-caido', 503)
       own(id)
       const yo = me().id
       const m: MensajeDto = { id: `m-${Date.now().toString(36)}`, conversacionId: id, autorId: yo, texto: t, enviadoEn: new Date().toISOString() }
