@@ -67,7 +67,7 @@ export const inventoryService = {
 
   async updateStock(dto: UpdateStockDto): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
-      failIfScenario('sin-permiso', 'conflicto', 'regla')
+      failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === dto.prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
 
@@ -99,7 +99,7 @@ export const inventoryService = {
 
   async removeSize(prendaId: string, talla: string): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
-      failIfScenario('sin-permiso', 'conflicto')
+      failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
 
@@ -137,7 +137,7 @@ export const inventoryService = {
 
   async updatePrice(dto: UpdatePriceDto): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
-      failIfScenario('sin-permiso', 'conflicto', 'regla')
+      failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === dto.prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
 
@@ -161,7 +161,7 @@ export const inventoryService = {
 
   async toggleActive(prendaId: string): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
-      failIfScenario('sin-permiso', 'conflicto', 'regla')
+      failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
 
@@ -181,7 +181,7 @@ export const inventoryService = {
 
   async addItem(dto: CreateInventoryItemDto): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
-      failIfScenario('sin-permiso', 'conflicto', 'regla')
+      failIfScenario('sin-permiso', 'regla')
       const fields: Record<string, string> = {}
       if (!dto.nombre.trim()) fields.nombre = 'Indica el nombre de la prenda.'
       if (!Number.isFinite(dto.precio) || dto.precio <= 0) fields.precio = 'El precio debe ser mayor a 0.'

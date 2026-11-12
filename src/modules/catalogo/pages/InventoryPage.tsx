@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Card, Button, Badge } from '@/modules/core/design-system'
 import { Loading, EmptyState, ErrorState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
@@ -53,6 +53,17 @@ export default function InventoryPage() {
   const isLoadPermError = Boolean(error) && errorKind(error) === 'permiso'
   const isSuspended = isLoadPermError || suspendedByAction
 
+  const [searchParams] = useSearchParams()
+  const mockParam = searchParams.get('mock')
+  const prevMock = useRef(mockParam)
+  useEffect(() => {
+    if (prevMock.current !== mockParam) {
+      prevMock.current = mockParam
+      setSuspendedByAction(false)
+      void reload()
+    }
+  }, [mockParam, reload])
+
   const itemsFiltrados = useMemo(() => {
     let list = items
     if (filtroEstado !== 'TODAS') {
@@ -77,7 +88,7 @@ export default function InventoryPage() {
   const handleActionFailure = (err: unknown): boolean => {
     const kind = errorKind(err)
     if (kind === 'permiso') {
-      if (err instanceof ApiError && err.message.toLowerCase().includes('suspend')) {
+      if (err instanceof ApiError && !err.message.toLowerCase().includes('no existe')) {
         setSuspendedByAction(true)
       } else {
         showToast(errorMessageAjeno(err), 'warn')
@@ -353,11 +364,11 @@ export default function InventoryPage() {
       </div>
 
       {/* Estados de carga y error */}
-      {loading && <Loading label="Cargando inventario de la tienda..." />}
+      {loading && !items.length && <Loading label="Cargando inventario de la tienda..." />}
       {Boolean(error) && !isLoadPermError && <ErrorState error={error} onRetry={reload} title="No se pudo cargar el inventario" />}
 
       {/* Lista vacía */}
-      {!loading && !error && itemsFiltrados.length === 0 && (
+      {(!loading || items.length > 0) && !error && itemsFiltrados.length === 0 && (
         <div className="mt-12">
           <EmptyState
             title="No se encontraron prendas en el inventario"
@@ -373,7 +384,7 @@ export default function InventoryPage() {
       )}
 
       {/* Grilla de prendas */}
-      {!loading && !error && itemsFiltrados.length > 0 && (
+      {(!loading || items.length > 0) && !error && itemsFiltrados.length > 0 && (
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {itemsFiltrados.map((item) => (
             <Card key={item.id} className="flex flex-col justify-between p-5">

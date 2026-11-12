@@ -92,11 +92,29 @@ describe('InventoryPage (RF-50 a RF-60)', () => {
     sessionStorage.setItem('sr_mock', 'regla')
     await user.click(screen.getAllByRole('button', { name: /Aumentar stock talla S/i })[0])
     expect(await screen.findByText('Esta acción no está disponible por ahora')).toBeInTheDocument()
+    expect(screen.getByText(/Chaqueta Denim Oversize/i)).toBeInTheDocument()
 
     sessionStorage.setItem('sr_mock', 'sin-permiso')
     renderAt('/tienda/inventario', routes)
     expect(await screen.findByText('Tu inventario está suspendido')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Revisar suscripción' })).toHaveAttribute('href', '/tienda/suscripcion')
+  })
+
+  it('permite ajustar stock con conflicto heredado de otra vista y suspende al recibir 403 en acción', async () => {
+    const user = userEvent.setup()
+    sessionStorage.setItem('sr_mock', 'conflicto')
+    renderAt('/tienda/inventario', routes)
+
+    const inputS = await screen.findByLabelText(/Cantidad talla S de Chaqueta Denim Oversize/i)
+    const before = Number((inputS as HTMLInputElement).value)
+    await user.click(screen.getAllByRole('button', { name: /^Aumentar stock talla S$/i })[0])
+    await waitFor(() => {
+      expect(Number((screen.getByLabelText(/Cantidad talla S de Chaqueta Denim Oversize/i) as HTMLInputElement).value)).toBe(before + 1)
+    })
+
+    sessionStorage.setItem('sr_mock', 'sin-permiso')
+    await user.click(screen.getAllByRole('button', { name: /^Aumentar stock talla S$/i })[0])
+    expect(await screen.findByText('Tu inventario está suspendido')).toBeInTheDocument()
   })
 })
 
