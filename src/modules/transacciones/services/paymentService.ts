@@ -1,6 +1,7 @@
 import { apiClient } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
 import { env } from '@/configs/env'
+import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { MOCK_PAYMENTS } from '../mocks/payments'
 import type { PaymentDto, PaymentFiltersDto, RefundRequestDto } from '../types/payment.dto'
 
@@ -20,8 +21,8 @@ function applyFilters(payments: PaymentDto[], f: PaymentFiltersDto): PaymentDto[
 
 /** Servicio de pagos para el admin. Patrón: mock o gateway. */
 export const paymentService = {
-  list(filters: PaymentFiltersDto): Promise<PaymentDto[]> {
-    if (env.useMocks) return mockDelay(applyFilters(MOCK_PAYMENTS, filters))
+  async list(filters: PaymentFiltersDto): Promise<PaymentDto[]> {
+    if (env.useMocks) { failIfScenario(); return mockDelay(applyFilters(MOCK_PAYMENTS, filters)) }
     return apiClient.get<PaymentDto[]>('/api/pagos', { params: filters }).then((r) => r.data)
   },
 
@@ -34,8 +35,9 @@ export const paymentService = {
     return apiClient.get<PaymentDto>(`/api/pagos/${id}`).then((r) => r.data)
   },
 
-  refund(req: RefundRequestDto): Promise<PaymentDto> {
+  async refund(req: RefundRequestDto): Promise<PaymentDto> {
     if (env.useMocks) {
+      failIfScenario()
       const p = MOCK_PAYMENTS.find((x) => x.id === req.paymentId)
       if (!p) return Promise.reject(new Error('Pago no encontrado'))
       const refunded: PaymentDto = { ...p, status: 'reembolsado', refundReason: req.reason, refundDate: new Date().toISOString().slice(0, 10) }
