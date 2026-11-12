@@ -140,4 +140,12 @@ export const inventoryService = {
     }
     return apiClient.post<InventoryItemDto>('/tienda/inventario', dto).then((r) => r.data)
   },
+
+  async deleteItem(prendaId: string): Promise<void> {
+    if (USE_MOCKS) {
+      memoryInventory = memoryInventory.filter((x) => x.id !== prendaId)
+      return mockDelay(undefined)
+    }
+    return apiClient.delete(`/tienda/inventario/${prendaId}`).then(() => undefined)
+  },
 }

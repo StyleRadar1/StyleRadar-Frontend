@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Logo } from '@/modules/core/design-system'
 import { heroSlides } from '@/data/landingData'
+import { CursorHanger } from './CursorHanger'
 
 export function Hero() {
+  const heroRef = useRef<HTMLElement | null>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
@@ -39,6 +41,7 @@ export function Hero() {
   return (
     <section
       id="inicio"
+      ref={heroRef}
       className="relative min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-[#18151d] text-white"
       aria-label="StyleRadar, descubre tu estilo en tu ciudad"
     >
@@ -67,6 +70,9 @@ export function Hero() {
           }}
         />
       </div>
+
+      {/* Efecto de percha y prenda en cursor */}
+      <CursorHanger containerRef={heroRef} />
 
       {/* Contenido Central */}
       <div className="relative z-20 flex flex-col items-center text-center px-6 max-w-4xl mx-auto pt-20">

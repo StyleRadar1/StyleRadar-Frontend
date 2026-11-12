@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { cerrarSesionYVolverAlInicio } from '@/modules/identidad/states/salida'
 import './StoreStatsPage.css'
 
 type Period = '7' | '30' | '90'
@@ -133,7 +132,6 @@ export default function StoreStatsPage() {
   }
 
   return <main className="store-stats">
-    <aside className="store-stats__side"><Link className="store-stats__side-title" to="/tienda/informacion">Información de la tienda</Link><a className="is-active" href="#estadisticas">Estadísticas</a><Link to="/tienda/suscripcion">Suscripción</Link><button type="button" onClick={cerrarSesionYVolverAlInicio}>↪ <span>Cerrar sesión</span></button></aside>
     <section className="store-stats__content" id="estadisticas">
       <header className="store-stats__heading"><div><p className="store-stats__eyebrow">LUNA STORE · MÉTRICAS PRIVADAS</p><h1>Estadísticas de tu tienda</h1><p>Consulta las métricas clave de Luna Store · Solo tú y StyleRadar ven estos datos.</p></div>
         <div className="store-stats__tools"><div className="store-stats__period" role="group" aria-label="Periodo de estadísticas">{(['7', '30', '90'] as const).map((value) => <button key={value} type="button" aria-pressed={period === value} onClick={() => setPeriod(value)}>{periodLabels[value]}</button>)}</div><button type="button" className="store-stats__export" onClick={exportCsv}>↓ <span>Exportar a Excel</span></button></div>

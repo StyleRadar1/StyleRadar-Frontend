@@ -11,7 +11,7 @@ import { UserMenu } from './UserMenu'
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
   COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
-  ADMIN_ALMACEN: [['/tienda/inventario', 'Inventario'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
+  ADMIN_ALMACEN: [['/mi-tienda', 'Mi tienda'], ['/tienda/inventario', 'Inventario'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
   REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
   ADMIN_STYLERADAR: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
 }
@@ -21,7 +21,10 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const links = LINKS[user?.role ?? 'GUEST']
   const esAdmin = user?.role === 'ADMIN_STYLERADAR'
-  const linkCls = ({ isActive }: { isActive: boolean }) => `whitespace-nowrap rounded-lg px-3 py-2 text-sm ${isActive ? 'bg-white/10 text-blanco' : 'text-white/75 hover:text-blanco'}`
+  const linkCls = ({ isActive }: { isActive: boolean }) =>
+    `whitespace-nowrap px-3.5 py-1.5 text-sm font-medium transition ${
+      isActive ? 'rounded-full bg-violeta text-blanco shadow-sm' : 'rounded-lg text-white/75 hover:text-blanco'
+    }`
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-grafito/70 backdrop-blur-xl">
@@ -40,8 +43,8 @@ export function Navbar() {
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls}>{label}</NavLink>)}
         </div>
         <div className="ml-auto flex items-center gap-2 md:ml-2">
-          {/* Con sesión, el tema está en el menú de cuenta. */}
-          {!user && <ThemeSelect className="max-md:hidden" />}
+          {/* Con sesión, el tema está en el menú de cuenta; para tienda y fundación se muestra directo en barra */}
+          {(!user || user.role === 'ADMIN_ALMACEN' || user.role === 'REPRESENTANTE_FUNDACION') && <ThemeSelect className="max-md:hidden" />}
           {user ? (
             <>
               {/* RF-73: la tienda (y quien compra o la fundación) responde desde el ícono de mensajes */}
@@ -58,7 +61,7 @@ export function Navbar() {
       {open && (
         <div className="flex flex-col gap-1 border-t border-white/10 px-4 py-3 md:hidden">
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls} onClick={() => setOpen(false)}>{label}</NavLink>)}
-          {!user && <ThemeSelect className="px-3 py-2" />}
+          {(!user || user.role === 'ADMIN_ALMACEN' || user.role === 'REPRESENTANTE_FUNDACION') && <ThemeSelect className="px-3 py-2" />}
         </div>
       )}
     </header>

@@ -67,6 +67,16 @@ export function useInventory(tiendaId?: string) {
     [tiendaId]
   )
 
+  const deleteItem = useCallback(
+    async (prendaId: string) => {
+      await inventoryService.deleteItem(prendaId)
+      setItems((prev) => prev.filter((it) => it.id !== prendaId))
+      const sum = await inventoryService.getSummary(tiendaId)
+      setSummary(sum)
+    },
+    [tiendaId]
+  )
+
   return {
     items,
     summary,
@@ -77,6 +87,7 @@ export function useInventory(tiendaId?: string) {
     updatePrice,
     toggleActive,
     addItem,
+    deleteItem,
   }
 }
 

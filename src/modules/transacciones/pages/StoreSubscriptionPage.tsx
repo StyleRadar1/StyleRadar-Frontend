@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react'
 import { Button } from '@/modules/core/design-system'
-import { cerrarSesionYVolverAlInicio } from '@/modules/identidad/states/salida'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -80,10 +79,17 @@ export default function StoreSubscriptionPage() {
 
   return (
     <section className="store-subscription">
-      <header className="store-subscription__store-head"><div className="store-subscription__identity"><span className="store-subscription__avatar">LS</span><div><h1>Luna Store</h1><p>TIENDA ALIADA · LUNA@STYLERADAR.CO · DESDE {startedAt.toUpperCase()}</p></div></div><div className="store-subscription__status"><div><strong>Verificada</strong><span>VERIFICACIÓN</span></div><div><strong>{STATUS_LABEL[sub.status]}</strong><span>SUSCRIPCIÓN</span></div></div></header>
-      <div className="store-subscription__layout"><aside className="store-subscription__side"><a className="store-subscription__side-title" href="/tienda/informacion">Información de la tienda</a><a href="/tienda/estadisticas">Estadísticas</a><a className="is-active" href="/tienda/suscripcion">Suscripción</a><button type="button" onClick={cerrarSesionYVolverAlInicio}>↪ <span>Cerrar sesión</span></button></aside>
-        <div className="store-subscription__main">
-          <div className="store-subscription__title"><h2>Suscripción</h2><p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días.</p></div>
+      <div className="store-subscription__main">
+        <div className="store-subscription__title">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2>Suscripción</h2>
+            <span className="store-subscription__badge">
+              <span aria-hidden="true">● </span>
+              <span>{STATUS_LABEL[sub.status]}</span>
+            </span>
+          </div>
+          <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días.</p>
+        </div>
           {failedPayment && <div className="store-subscription__alert" role="alert"><span className="store-subscription__alert-icon">⚠</span><div><strong>No pudimos cobrar tu suscripción</strong><p>El pago del {fecha(failedPayment.date)} con {failedPayment.method} fue rechazado. Tienes hasta el <b>25 sep 2026</b> para pagar con otro medio; si no, tu catálogo dejará de verse en el radar y en el mapa.</p></div><Button onClick={() => { void pay() }} disabled={paying}>{paying ? 'Procesando…' : 'Pagar con otro medio'}</Button></div>}
           {msg && <div role={msg.alert ? 'alert' : 'status'} className={`store-subscription__notice ${msg.alert ? 'is-error' : ''}`}><strong>{msg.title}</strong><p>{msg.text}</p></div>}
           {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
@@ -116,7 +122,6 @@ export default function StoreSubscriptionPage() {
         </div>
       )}
       </section>
-        </div>
       </div>
 
       <ConfirmDialog

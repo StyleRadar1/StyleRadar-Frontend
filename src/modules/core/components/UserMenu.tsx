@@ -12,7 +12,7 @@ import { ROLE_DOT, avatarCls } from './roleTone'
 const ITEMS: Record<Role, [string, string][]> = {
   COMPRADOR: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/segunda-mano', 'Mis publicaciones'], ['/alertas', 'Mis búsquedas y alertas'], ['/planes', 'Mi plan']],
   ADMIN_ALMACEN: [['/tienda/inventario', 'Mi tienda'], ['/tienda/suscripcion', 'Mi suscripción']],
-  REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Mis donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
+  REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
   ADMIN_STYLERADAR: [['/admin/estadisticas', 'Estadísticas'], ['/admin/usuarios', 'Usuarios'], ['/admin/pagos', 'Pagos']],
 }
 
@@ -43,7 +43,7 @@ export function UserMenu() {
   const firstName = user.name.split(/\s+/)[0]
 
   return (
-    <div ref={box} className="relative">
+    <div ref={box} className="relative flex items-center gap-2">
       <button
         ref={trigger}
         type="button"
@@ -63,6 +63,21 @@ export function UserMenu() {
         </span>
         <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" className={`text-white/60 transition ${open ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
       </button>
+
+      {(user.role === 'ADMIN_ALMACEN' || user.role === 'REPRESENTANTE_FUNDACION') && (
+        <button
+          type="button"
+          onClick={() => setAskLogout(true)}
+          className="hidden md:flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:border-rose-400 hover:bg-rose-500/15 hover:text-rose-200 transition"
+          aria-label={user.role === 'ADMIN_ALMACEN' ? 'Cerrar sesión de tienda' : 'Cerrar sesión de fundación'}
+          title="Cerrar sesión"
+        >
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 stroke-current fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+          <span>Salir</span>
+        </button>
+      )}
 
       {open && (
         <div id={menuId} role="menu" aria-label="Mi cuenta" className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-white/15 bg-grafito p-1.5 shadow-2xl">
