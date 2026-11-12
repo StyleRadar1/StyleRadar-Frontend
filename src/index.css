@@ -101,12 +101,13 @@ html[data-tema="oscuro"] {
   --aurora-c3: #b06ae0;
   --aurora-c4: #3a1a6a;
 
-  /* Variables de ajuste de movimiento Aurora:
-     --aurora-speed: multiplicador de velocidad (1.0 base, 1.3 = +30% más rápido)
-     --aurora-travel: multiplicador de amplitud de recorrido (1.0 base, 1.25 = +25% de desplazamiento)
+  /* Variables de ajuste de la Aurora:
+     --aurora-speed: multiplicador de velocidad (1 = ciclos de 26 a 34 s; 1.3 = más vivo; 0.7 = más calmado)
+     --aurora-opacity: intensidad del color (más alto = más color)
   */
   --aurora-speed: 1.3;
-  --aurora-travel: 1.25;
+  --aurora-travel: 1;
+  --aurora-opacity: 0.5;
 
   /* Tokens Probador Virtual */
   --probador-bg: #121212;
@@ -214,6 +215,7 @@ html[data-tema="claro"] {
   --aurora-c2: #cfa6e6;
   --aurora-c3: #a97fd6;
   --aurora-c4: #e8d4f0;
+  --aurora-opacity: 0.55;
 
   /* Tokens Probador Virtual (Modo Claro: fondo blanco puro y maniquí negro con volumen) */
   --probador-bg: #ffffff;
@@ -315,6 +317,7 @@ html[data-tema="daltonico"] {
   --aurora-c2: #56b4e9;
   --aurora-c3: #0072b2;
   --aurora-c4: #e69f00;
+  --aurora-opacity: 0.35;
 
   /* Tokens Probador Virtual */
   --probador-bg: #121212;
@@ -435,9 +438,10 @@ html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
 }
 
 /* =====================================================================
-   Animaciones del fondo Aurora ("Amanecer en el radar")
-   Paleta única unificada para toda la app (referencia Catálogo).
-   Movimiento vivo: velocidad (+30%) y recorrido (+25%) parametrizados.
+   Fondo Aurora ("Amanecer en el radar") · versión UNIFORME y con movimiento
+   4 manchas enormes repartidas por toda la pantalla: se mezclan entre sí,
+   cubren todo el espacio (sin foco central) y se desplazan con suavidad.
+   Colores: --aurora-c1..c4 · Intensidad: --aurora-opacity · Velocidad: --aurora-speed
    ===================================================================== */
 .sr-aurora-container {
   background-color: var(--sr-hero-bg);
@@ -445,34 +449,53 @@ html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+.sr-aurora-blob {
+  width: 95vmax !important;
+  height: 95vmax !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  right: auto !important;
+  bottom: auto !important;
+  border-radius: 9999px !important;
+  filter: blur(110px) !important;
+  opacity: var(--aurora-opacity, 0.5);
+}
 .sr-aurora-blob-1 {
-  animation: sr-aurora-b1 calc(15s / var(--aurora-speed, 1.3)) ease-in-out infinite alternate;
+  left: calc(30% - 47.5vmax) !important;
+  top: calc(28% - 47.5vmax) !important;
+  animation: sr-aurora-b1 calc(26s / var(--aurora-speed, 1)) ease-in-out infinite alternate;
 }
 .sr-aurora-blob-2 {
-  animation: sr-aurora-b2 calc(18s / var(--aurora-speed, 1.3)) ease-in-out infinite alternate;
+  left: calc(28% - 47.5vmax) !important;
+  top: calc(74% - 47.5vmax) !important;
+  animation: sr-aurora-b2 calc(30s / var(--aurora-speed, 1)) ease-in-out infinite alternate;
 }
 .sr-aurora-blob-3 {
-  animation: sr-aurora-b3 calc(16s / var(--aurora-speed, 1.3)) ease-in-out infinite alternate;
+  left: calc(72% - 47.5vmax) !important;
+  top: calc(72% - 47.5vmax) !important;
+  animation: sr-aurora-b3 calc(28s / var(--aurora-speed, 1)) ease-in-out infinite alternate;
 }
 .sr-aurora-blob-4 {
-  animation: sr-aurora-b4 calc(20s / var(--aurora-speed, 1.3)) ease-in-out infinite alternate;
+  left: calc(70% - 47.5vmax) !important;
+  top: calc(26% - 47.5vmax) !important;
+  animation: sr-aurora-b4 calc(34s / var(--aurora-speed, 1)) ease-in-out infinite alternate;
 }
 
 @keyframes sr-aurora-b1 {
-  0% { transform: translate(0%, 0%) scale(1); }
-  100% { transform: translate(calc(28% * var(--aurora-travel, 1.25)), calc(30% * var(--aurora-travel, 1.25))) scale(1.2); }
+  0% { transform: translate3d(-4vw, -3vh, 0) scale(1); }
+  100% { transform: translate3d(14vw, 12vh, 0) scale(1.1); }
 }
 @keyframes sr-aurora-b2 {
-  0% { transform: translate(0%, 0%) scale(1); }
-  100% { transform: translate(calc(22% * var(--aurora-travel, 1.25)), calc(-20% * var(--aurora-travel, 1.25))) scale(0.88); }
+  0% { transform: translate3d(-3vw, 4vh, 0) scale(1.08); }
+  100% { transform: translate3d(13vw, -14vh, 0) scale(0.95); }
 }
 @keyframes sr-aurora-b3 {
-  0% { transform: translate(0%, 0%) scale(1); }
-  100% { transform: translate(calc(-38% * var(--aurora-travel, 1.25)), calc(-18% * var(--aurora-travel, 1.25))) scale(1.25); }
+  0% { transform: translate3d(4vw, 3vh, 0) scale(1); }
+  100% { transform: translate3d(-15vw, -12vh, 0) scale(1.1); }
 }
 @keyframes sr-aurora-b4 {
-  0% { transform: translate(0%, 0%) scale(1); }
-  100% { transform: translate(calc(-44% * var(--aurora-travel, 1.25)), calc(40% * var(--aurora-travel, 1.25))) scale(0.82); }
+  0% { transform: translate3d(3vw, -4vh, 0) scale(1.08); }
+  100% { transform: translate3d(-14vw, 14vh, 0) scale(0.95); }
 }
 
 /* Tarjetas elevadas con sombra violeta translúcida */
@@ -492,4 +515,3 @@ html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
     transition: none !important;
   }
 }
-

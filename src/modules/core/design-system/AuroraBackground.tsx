@@ -14,13 +14,16 @@ export interface AuroraBackgroundProps {
 /**
  * AuroraBackground — Fondo "Amanecer en el radar" animado.
  *
- * Degradado suave, limpio y liso con manchas de color difusas sin grano ni relieve.
- * Paleta malva unificada para toda la aplicación (referencia del Catálogo).
- * - Modo Claro: Base arena (#E6D9C0), manchas suaves moradas/malvas (#e3b3d3, #cfa6e6, #a97fd6, #e8d4f0).
- * - Modo Oscuro: Base negro-violeta (#05030A), manchas violetas/malvas (#c98ab8, #6a2f8a, #b06ae0, #3a1a6a).
+ * Velo de color UNIFORME que cubre toda la pantalla, sin foco central ni manchas
+ * definidas (descansa la vista). Cada una de las 4 capas es un degradado lineal
+ * gigante (ver index.css) que se desplaza muy lento con transform.
+ * - Modo Claro: base arena (#E6D9C0), capas malvas suaves.
+ * - Modo Oscuro: base negro-violeta (#05030A), capas violetas muy tenues.
+ * - Modo Daltónico: paleta Okabe-Ito a baja intensidad.
+ * La intensidad se ajusta con --aurora-opacity y la velocidad con --aurora-speed.
  *
  * Rendimiento y Accesibilidad:
- * - will-change: transform en las 4 manchas.
+ * - will-change: transform en las 4 capas.
  * - IntersectionObserver / visibilitychange: pausa las animaciones cuando no está visible.
  * - prefers-reduced-motion: desactiva las animaciones por completo.
  */
@@ -90,7 +93,7 @@ export function AuroraBackground({
         animationPlayState: isVisible ? 'running' : 'paused',
       }}
     >
-      {/* Capa de manchas de luz difusas (blobs de aurora sin grano) */}
+      {/* Capa de degradados amplios de la aurora (cubren toda la pantalla) */}
       <div
         className="sr-aurora-blobs-layer pointer-events-none absolute inset-0 overflow-hidden"
         aria-hidden="true"
@@ -98,7 +101,7 @@ export function AuroraBackground({
           animationPlayState: isVisible ? 'running' : 'paused',
         }}
       >
-        {/* Mancha 1: Toque rosado arriba izquierda */}
+        {/* Capa 1 */}
         <div
           data-testid="aurora-blob-1"
           className="sr-aurora-blob sr-aurora-blob-1 absolute rounded-full"
@@ -116,7 +119,7 @@ export function AuroraBackground({
           }}
         />
 
-        {/* Mancha 2: Mancha violeta naciendo del borde izquierdo */}
+        {/* Capa 2 */}
         <div
           data-testid="aurora-blob-2"
           className="sr-aurora-blob sr-aurora-blob-2 absolute rounded-full"
@@ -134,7 +137,7 @@ export function AuroraBackground({
           }}
         />
 
-        {/* Mancha 3: Mancha en esquina inferior derecha */}
+        {/* Capa 3 */}
         <div
           data-testid="aurora-blob-3"
           className="sr-aurora-blob sr-aurora-blob-3 absolute rounded-full"
@@ -152,7 +155,7 @@ export function AuroraBackground({
           }}
         />
 
-        {/* Mancha 4: Mancha de profundidad arriba a la derecha */}
+        {/* Capa 4 */}
         <div
           data-testid="aurora-blob-4"
           className="sr-aurora-blob sr-aurora-blob-4 absolute rounded-full"
