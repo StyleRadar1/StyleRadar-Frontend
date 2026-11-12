@@ -5,3 +5,67 @@
 @media(min-width:1450px){.desktop-break{display:block}}
 @media(max-width:950px){.store-subscription__layout{grid-template-columns:190px minmax(0,1fr);gap:25px}.store-subscription__store-head{align-items:flex-end}.store-subscription__avatar{width:78px;height:78px;font-size:30px}.store-subscription__status{gap:16px}.store-subscription__alert{align-items:flex-start;flex-wrap:wrap}.store-subscription__alert button{margin-left:42px}}
 @media(max-width:680px){.store-subscription{padding:18px 15px 34px}.store-subscription__store-head{align-items:flex-start;flex-direction:column}.store-subscription__identity{gap:13px}.store-subscription__avatar{width:58px;height:58px;font-size:22px}.store-subscription__identity h1{font-size:45px}.store-subscription__identity p{font-size:9px;letter-spacing:.08em}.store-subscription__status{align-self:flex-end}.store-subscription__layout{display:block}.store-subscription__side{display:none}.store-subscription__title h2,.store-subscription__history h2{font-size:40px}.store-subscription__plan{padding:18px}.store-subscription__plan h3{font-size:30px}.store-subscription__metadata{display:grid;gap:10px}.store-subscription__history{margin-top:42px}.store-subscription__alert{padding:16px}.store-subscription__alert button{margin-left:0;width:100%}}
+
+/* =====================================================================
+   Adaptación de temas: Claro, Oscuro y Daltónico
+   ===================================================================== */
+html[data-theme="light"] .store-subscription,
+html[data-theme="claro"] .store-subscription,
+html[data-tema="claro"] .store-subscription {
+  --sr-text-primary: #262626;
+  color: #262626;
+}
+
+html[data-theme="light"] .store-subscription__side,
+html[data-theme="claro"] .store-subscription__side,
+html[data-tema="claro"] .store-subscription__side {
+  background: var(--color-surface, #f4efe6);
+  border-color: var(--color-border, #d4c7b5);
+  box-shadow: 0 10px 30px rgba(38,38,38,0.06);
+}
+
+html[data-theme="light"] .store-subscription__side a,
+html[data-theme="claro"] .store-subscription__side a,
+html[data-tema="claro"] .store-subscription__side a {
+  color: var(--color-text-muted, #595959);
+  border-color: var(--color-border, #d4c7b5);
+}
+
+html[data-theme="light"] .store-subscription__side a.is-active,
+html[data-theme="claro"] .store-subscription__side a.is-active,
+html[data-tema="claro"] .store-subscription__side a.is-active {
+  color: var(--color-text, #262626);
+}
+
+html[data-theme="light"] .store-subscription__plan,
+html[data-theme="claro"] .store-subscription__plan,
+html[data-tema="claro"] .store-subscription__plan {
+  background: var(--color-surface, #f4efe6);
+  border-color: var(--color-border, #d4c7b5);
+  box-shadow: 0 12px 35px rgba(38,38,38,0.08);
+  color: var(--color-text, #262626);
+}
+
+html[data-theme="light"] .store-subscription__plan ul,
+html[data-theme="claro"] .store-subscription__plan ul,
+html[data-tema="claro"] .store-subscription__plan ul {
+  color: var(--color-text-muted, #595959);
+}
+
+html[data-theme="light"] .store-subscription__table-wrap,
+html[data-theme="claro"] .store-subscription__table-wrap,
+html[data-tema="claro"] .store-subscription__table-wrap {
+  border-color: var(--color-border, #d4c7b5);
+  background: var(--color-surface, #f4efe6);
+}
+
+html[data-theme="light"] .store-subscription__table-wrap th,
+html[data-theme="light"] .store-subscription__table-wrap td,
+html[data-theme="claro"] .store-subscription__table-wrap th,
+html[data-theme="claro"] .store-subscription__table-wrap td,
+html[data-tema="claro"] .store-subscription__table-wrap th,
+html[data-tema="claro"] .store-subscription__table-wrap td {
+  border-color: var(--color-border, #d4c7b5);
+  color: var(--color-text, #262626);
+}
+

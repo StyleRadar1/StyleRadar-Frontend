@@ -13,11 +13,11 @@ import '@/styles/verdelo-dashboard.css'
 
 function KpiCard({ label, kpi }: { label: string; kpi: KpiDto }) {
   const arrow = kpi.direccion === 'up' ? '▲' : kpi.direccion === 'down' ? '▼' : '—'
-  const color = kpi.direccion === 'up' ? 'text-green-400' : kpi.direccion === 'down' ? 'text-[#ff8a8a]' : 'text-white/50'
+  const color = kpi.direccion === 'up' ? 'text-[var(--color-success)]' : kpi.direccion === 'down' ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-muted)]'
   return (
     <Card>
-      <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold">{kpi.valor.toLocaleString('es-CO')}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-sand)]">{label}</p>
+      <p className="mt-1 text-2xl font-extrabold text-[var(--color-text)]">{kpi.valor.toLocaleString('es-CO')}</p>
       <p className={`mt-1 text-xs ${color}`}>
         {arrow} {kpi.variacionPct}% vs. periodo anterior
       </p>
@@ -28,9 +28,9 @@ function KpiCard({ label, kpi }: { label: string; kpi: KpiDto }) {
 function ProgressBar({ label, value, total, tone }: { label: string; value: number; total: number; tone: string }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0
   return (
-    <div className="mt-3">
+    <div className="mt-3 text-[var(--color-text)]">
       <div className="flex justify-between text-sm"><span>{label}</span><strong>{value.toLocaleString('es-CO')} ({pct}%)</strong></div>
-      <div className="mt-1 h-2 w-full rounded-full bg-white/10">
+      <div className="mt-1 h-2 w-full rounded-full bg-[var(--color-border)]">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
@@ -49,16 +49,16 @@ function StoreStatsView() {
   if (!stats) return <EmptyState title="Sin datos">Cuando tu tienda tenga actividad, verás los indicadores aquí.</EmptyState>
 
   return (
-    <>
+    <div className="text-[var(--color-text)]">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Estadísticas de tu tienda</h2>
-          <p className="text-sm text-white/60">Solo tú y StyleRadar ven estos datos.</p>
+          <h2 className="text-2xl font-bold text-[var(--color-text)]">Estadísticas de tu tienda</h2>
+          <p className="text-sm text-[var(--color-text-muted)]">Solo tú y StyleRadar ven estos datos.</p>
         </div>
-        <div className="flex gap-1 rounded-xl bg-white/5 p-1" role="radiogroup" aria-label="Periodo">
+        <div className="flex gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1" role="radiogroup" aria-label="Periodo">
           {(['7d', '30d', '90d'] as const).map((p) => (
             <button key={p} type="button" role="radio" aria-checked={periodo === p}
-              className={`rounded-lg px-3 py-1 text-sm font-semibold transition ${periodo === p ? 'bg-violeta' : 'hover:bg-white/10'}`}
+              className={`rounded-lg px-3 py-1 text-sm font-semibold transition ${periodo === p ? 'bg-violeta text-white' : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)]'}`}
               onClick={() => setPeriodo(p)}
             >{p === '7d' ? '7 días' : p === '30d' ? '30 días' : '90 días'}</button>
           ))}
@@ -71,13 +71,13 @@ function StoreStatsView() {
       </div>
       {inventory && (
         <Card className="mt-6">
-          <h3 className="text-sm font-bold uppercase tracking-[.16em] text-arena">Inventario por estado</h3>
-          <ProgressBar label="Disponibles" value={inventory.disponibles} total={inventory.total} tone="bg-green-500" />
-          <ProgressBar label="Últimas unidades" value={inventory.ultimasUnidades} total={inventory.total} tone="bg-yellow-500" />
-          <ProgressBar label="Agotadas" value={inventory.agotadas} total={inventory.total} tone="bg-[#ff8a8a]" />
+          <h3 className="text-sm font-bold uppercase tracking-[.16em] text-[var(--color-sand)]">Inventario por estado</h3>
+          <ProgressBar label="Disponibles" value={inventory.disponibles} total={inventory.total} tone="bg-[var(--color-success)]" />
+          <ProgressBar label="Últimas unidades" value={inventory.ultimasUnidades} total={inventory.total} tone="bg-[var(--color-warning)]" />
+          <ProgressBar label="Agotadas" value={inventory.agotadas} total={inventory.total} tone="bg-[var(--color-danger)]" />
         </Card>
       )}
-    </>
+    </div>
   )
 }
 

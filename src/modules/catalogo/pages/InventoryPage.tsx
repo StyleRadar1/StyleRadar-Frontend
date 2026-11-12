@@ -123,21 +123,21 @@ export default function InventoryPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
+    <section className="mx-auto max-w-6xl px-4 py-10 text-[var(--color-text)]">
       {/* Encabezado */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-arena">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-sand)]">
               ms-inventario · Puerto 8200
             </span>
-            <span className="text-white/40">·</span>
+            <span className="text-[var(--color-text-muted)]">·</span>
             <Badge tone="violeta">RF-50 a RF-60</Badge>
           </div>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-text)] md:text-4xl">
             Inventario de la tienda
           </h1>
-          <p className="mt-1 text-sm text-white/70">
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
             Control de existencias por talla, disponibilidad en vitrina física y actualización inmediata de precios.
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function InventoryPage() {
 
       {/* Alerta toast */}
       {feedback && (
-        <div role="status" className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+        <div role="status" className="mt-6 rounded-xl border border-[var(--color-success)]/30 bg-[var(--color-success-bg)] p-4 text-sm text-[var(--color-success)]">
           {feedback}
         </div>
       )}
@@ -164,30 +164,30 @@ export default function InventoryPage() {
       {summary && (
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Card className="p-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">Total referencias</span>
-            <p className="mt-1 text-2xl font-extrabold text-white">{summary.totalPrendas}</p>
-            <p className="mt-0.5 text-xs text-white/60">{summary.activas} visibles en radar</p>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Total referencias</span>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--color-text)]">{summary.totalPrendas}</p>
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{summary.activas} visibles en radar</p>
           </Card>
           <Card className="p-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">Unidades en stock</span>
-            <p className="mt-1 text-2xl font-extrabold text-arena">{summary.totalUnidades}</p>
-            <p className="mt-0.5 text-xs text-white/60">Disponibles hoy en tienda</p>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Unidades en stock</span>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--color-sand)]">{summary.totalUnidades}</p>
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Disponibles hoy en tienda</p>
           </Card>
           <Card className="p-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">Bajo stock</span>
-            <p className="mt-1 text-2xl font-extrabold text-amber-300">{summary.bajoStock}</p>
-            <p className="mt-0.5 text-xs text-white/60">≤ 3 unidades restantes</p>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-warning)]">Bajo stock</span>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--color-warning)]">{summary.bajoStock}</p>
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">≤ 3 unidades restantes</p>
           </Card>
           <Card className="p-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400">Agotadas</span>
-            <p className="mt-1 text-2xl font-extrabold text-rose-300">{summary.agotados}</p>
-            <p className="mt-0.5 text-xs text-white/60">Requiere reposición</p>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-danger)]">Agotadas</span>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--color-danger)]">{summary.agotados}</p>
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Requiere reposición</p>
           </Card>
         </div>
       )}
 
       {/* Filtros y búsqueda */}
-      <div className="mt-8 flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-8 flex flex-col gap-4 border-b border-[var(--color-border)] pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2" role="tablist">
           {(['TODAS', 'DISPONIBLE', 'BAJO_STOCK', 'AGOTADO', 'RETIRADO'] as const).map((estado) => {
             const labels: Record<typeof estado, string> = {
@@ -206,7 +206,7 @@ export default function InventoryPage() {
                 aria-selected={active}
                 onClick={() => setFiltroEstado(estado)}
                 className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                  active ? 'bg-arena text-grafito shadow-sm' : 'border border-white/20 text-white/80 hover:bg-white/5'
+                  active ? 'bg-arena text-grafito shadow-sm' : 'border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]'
                 }`}
               >
                 {labels[estado]}
@@ -220,7 +220,7 @@ export default function InventoryPage() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por prenda, estilo o categoría..."
-            className="w-full rounded-xl border border-white/20 bg-black/20 px-3.5 py-2 text-xs text-white outline-none focus:border-violeta-claro"
+            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-xs text-[var(--color-text)] outline-none focus:border-violeta-claro"
           />
         </div>
       </div>
@@ -252,7 +252,7 @@ export default function InventoryPage() {
             <Card key={item.id} className="flex flex-col justify-between p-5">
               <div>
                 <div className="flex gap-4">
-                  <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                  <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
                     <img
                       src={item.imagenUrl}
                       alt={item.nombre}
@@ -263,10 +263,10 @@ export default function InventoryPage() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-arena">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-sand)]">
                           {item.estilo} · {item.categoria}
                         </span>
-                        <h3 className="mt-0.5 text-lg font-bold text-white">{item.nombre}</h3>
+                        <h3 className="mt-0.5 text-lg font-bold text-[var(--color-text)]">{item.nombre}</h3>
                       </div>
                       <Badge
                         tone={
@@ -288,14 +288,14 @@ export default function InventoryPage() {
                     </div>
 
                     <div className="mt-2 flex items-center justify-between">
-                      <p className="text-lg font-extrabold text-violeta-claro">{formatCOP(item.precio)}</p>
+                      <p className="text-lg font-extrabold text-[var(--color-accent)]">{formatCOP(item.precio)}</p>
                       <button
                         type="button"
                         onClick={() => {
                           setItemParaPrecio(item)
                           setPrecioEditado(item.precio)
                         }}
-                        className="text-xs text-white/60 hover:text-white hover:underline"
+                        className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:underline"
                       >
                         Editar precio
                       </button>
@@ -304,27 +304,27 @@ export default function InventoryPage() {
                 </div>
 
                 {/* Desglose de existencias por talla (RF-50, RF-52) */}
-                <div className="mt-5 border-t border-white/10 pt-4">
-                  <div className="flex items-center justify-between text-xs font-semibold text-white/70">
+                <div className="mt-5 border-t border-[var(--color-border)] pt-4">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[var(--color-text-muted)]">
                     <span>Stock por talla en tienda</span>
-                    <span className="font-mono text-white">Total: {item.stockTotal} u.</span>
+                    <span className="font-mono text-[var(--color-text)]">Total: {item.stockTotal} u.</span>
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     {Object.entries(item.stockPorTalla).map(([talla, cantidad]) => (
                       <div
                         key={talla}
-                        className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5"
+                        className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1.5"
                       >
-                        <span className="text-xs font-bold text-arena">{talla}:</span>
-                        <span className="font-mono text-xs font-semibold text-white">{cantidad}</span>
+                        <span className="text-xs font-bold text-[var(--color-sand)]">{talla}:</span>
+                        <span className="font-mono text-xs font-semibold text-[var(--color-text)]">{cantidad}</span>
                         <div className="ml-1 flex items-center gap-1">
                           <button
                             type="button"
                             aria-label={`Reducir stock talla ${talla}`}
                             disabled={cantidad <= 0}
                             onClick={() => updateStock(item.id, talla, cantidad - 1)}
-                            className="flex h-5 w-5 items-center justify-center rounded bg-white/10 text-xs font-bold text-white transition hover:bg-white/20 disabled:opacity-30"
+                            className="flex h-5 w-5 items-center justify-center rounded bg-[var(--color-border)] text-xs font-bold text-[var(--color-text)] transition hover:bg-[var(--color-surface-muted)] disabled:opacity-30"
                           >
                             -
                           </button>
@@ -332,7 +332,7 @@ export default function InventoryPage() {
                             type="button"
                             aria-label={`Aumentar stock talla ${talla}`}
                             onClick={() => updateStock(item.id, talla, cantidad + 1)}
-                            className="flex h-5 w-5 items-center justify-center rounded bg-white/10 text-xs font-bold text-white transition hover:bg-white/20"
+                            className="flex h-5 w-5 items-center justify-center rounded bg-[var(--color-border)] text-xs font-bold text-[var(--color-text)] transition hover:bg-[var(--color-surface-muted)]"
                           >
                             +
                           </button>
@@ -344,8 +344,8 @@ export default function InventoryPage() {
               </div>
 
               {/* Botón de estado */}
-              <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
-                <span className="text-[11px] text-white/40">
+              <div className="mt-6 flex items-center justify-between border-t border-[var(--color-border)] pt-4">
+                <span className="text-[11px] text-[var(--color-text-muted)]">
                   Actualizado: {new Date(item.actualizadoEn).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <button
@@ -353,8 +353,8 @@ export default function InventoryPage() {
                   onClick={() => setItemParaToggle(item)}
                   className={`text-xs font-semibold transition ${
                     item.estado === 'RETIRADO'
-                      ? 'text-emerald-400 hover:text-emerald-300'
-                      : 'text-rose-400 hover:text-rose-300'
+                      ? 'text-[var(--color-success)] hover:underline'
+                      : 'text-[var(--color-danger)] hover:underline'
                   }`}
                 >
                   {item.estado === 'RETIRADO' ? '✓ Reactivar en vitrina' : '× Retirar de vitrina'}
@@ -374,9 +374,9 @@ export default function InventoryPage() {
         onConfirm={() => { void handleCrearPrenda() }}
         onCancel={() => setMostrarAgregar(false)}
       >
-        <form onSubmit={handleCrearPrenda} className="space-y-4">
+        <form onSubmit={handleCrearPrenda} className="space-y-4 text-[var(--color-text)]">
           <div>
-            <label htmlFor="nombrePrenda" className="block text-xs font-semibold text-white/80">
+            <label htmlFor="nombrePrenda" className="block text-xs font-semibold text-[var(--color-text)]">
               Nombre de la prenda *
             </label>
             <input
@@ -385,20 +385,20 @@ export default function InventoryPage() {
               value={nuevoNombre}
               onChange={(e) => setNuevoNombre(e.target.value)}
               placeholder="Ej. Sobrecamisa Pana Marfil"
-              className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-sm text-[var(--color-text)] outline-none focus:border-violeta-claro"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="estiloPrenda" className="block text-xs font-semibold text-white/80">
+              <label htmlFor="estiloPrenda" className="block text-xs font-semibold text-[var(--color-text)]">
                 Estilo
               </label>
               <select
                 id="estiloPrenda"
                 value={nuevoEstilo}
                 onChange={(e) => setNuevoEstilo(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+                className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-violeta-claro"
               >
                 <option value="Streetwear">Streetwear</option>
                 <option value="Minimalista">Minimalista</option>
@@ -408,14 +408,14 @@ export default function InventoryPage() {
               </select>
             </div>
             <div>
-              <label htmlFor="catPrenda" className="block text-xs font-semibold text-white/80">
+              <label htmlFor="catPrenda" className="block text-xs font-semibold text-[var(--color-text)]">
                 Categoría
               </label>
               <select
                 id="catPrenda"
                 value={nuevaCategoria}
                 onChange={(e) => setNuevaCategoria(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+                className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-violeta-claro"
               >
                 <option value="Chaquetas">Chaquetas</option>
                 <option value="Pantalones">Pantalones</option>
@@ -427,7 +427,7 @@ export default function InventoryPage() {
           </div>
 
           <div>
-            <label htmlFor="precioPrenda" className="block text-xs font-semibold text-white/80">
+            <label htmlFor="precioPrenda" className="block text-xs font-semibold text-[var(--color-text)]">
               Precio al público (COP) *
             </label>
             <input
@@ -437,44 +437,44 @@ export default function InventoryPage() {
               onChange={(e) => setNuevoPrecio(Number(e.target.value))}
               min={1000}
               step={1000}
-              className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-sm text-[var(--color-text)] outline-none focus:border-violeta-claro"
             />
           </div>
 
           <div>
-            <span className="block text-xs font-semibold text-white/80">Stock inicial por tallas</span>
+            <span className="block text-xs font-semibold text-[var(--color-text)]">Stock inicial por tallas</span>
             <div className="mt-2 grid grid-cols-3 gap-3">
               <div>
-                <label htmlFor="tallaS" className="text-[11px] text-white/60">Talla S</label>
+                <label htmlFor="tallaS" className="text-[11px] text-[var(--color-text-muted)]">Talla S</label>
                 <input
                   id="tallaS"
                   type="number"
                   min={0}
                   value={stockS}
                   onChange={(e) => setStockS(Number(e.target.value))}
-                  className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
+                  className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-center text-sm text-[var(--color-text)]"
                 />
               </div>
               <div>
-                <label htmlFor="tallaM" className="text-[11px] text-white/60">Talla M</label>
+                <label htmlFor="tallaM" className="text-[11px] text-[var(--color-text-muted)]">Talla M</label>
                 <input
                   id="tallaM"
                   type="number"
                   min={0}
                   value={stockM}
                   onChange={(e) => setStockM(Number(e.target.value))}
-                  className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
+                  className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-center text-sm text-[var(--color-text)]"
                 />
               </div>
               <div>
-                <label htmlFor="tallaL" className="text-[11px] text-white/60">Talla L</label>
+                <label htmlFor="tallaL" className="text-[11px] text-[var(--color-text-muted)]">Talla L</label>
                 <input
                   id="tallaL"
                   type="number"
                   min={0}
                   value={stockL}
                   onChange={(e) => setStockL(Number(e.target.value))}
-                  className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
+                  className="mt-0.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-center text-sm text-[var(--color-text)]"
                 />
               </div>
             </div>
@@ -493,12 +493,12 @@ export default function InventoryPage() {
         onCancel={() => setItemParaPrecio(null)}
       >
         {itemParaPrecio && (
-          <div className="space-y-4">
-            <p className="text-xs text-white/70">
+          <div className="space-y-4 text-[var(--color-text)]">
+            <p className="text-xs text-[var(--color-text-muted)]">
               Modificando precio para: <strong>{itemParaPrecio.nombre}</strong>
             </p>
             <div>
-              <label htmlFor="nuevoPrecioInput" className="block text-xs font-semibold text-white/80">
+              <label htmlFor="nuevoPrecioInput" className="block text-xs font-semibold text-[var(--color-text)]">
                 Nuevo precio en COP
               </label>
               <input
@@ -508,7 +508,7 @@ export default function InventoryPage() {
                 step={1000}
                 value={precioEditado}
                 onChange={(e) => setPrecioEditado(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+                className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-sm text-[var(--color-text)] outline-none focus:border-violeta-claro"
               />
             </div>
           </div>
@@ -524,7 +524,7 @@ export default function InventoryPage() {
         onCancel={() => setItemParaToggle(null)}
       >
         {itemParaToggle && (
-          <p className="text-xs text-white/70">
+          <p className="text-xs text-[var(--color-text-muted)]">
             {itemParaToggle.estado === 'RETIRADO'
               ? `¿Deseas volver a mostrar "${itemParaToggle.nombre}" en las búsquedas y el mapa del catálogo?`
               : `¿Deseas ocultar "${itemParaToggle.nombre}" del catálogo público temporalmente? El registro y existencias permanecerán guardados.`}
