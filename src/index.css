@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./modules/core/theme/tokens.css";
 
 /* =====================================================================
    Paleta y tipografía del manual de identidad de StyleRadar.
@@ -40,6 +41,7 @@
    ===================================================================== */
 
 :root,
+html[data-theme="dark"],
 html[data-theme="oscuro"],
 html[data-tema="oscuro"] {
   /* Fondo y superficies oscuras */
@@ -153,6 +155,7 @@ html[data-tema="oscuro"] {
    - texto sobre acento: #FBF7EF
    - sombras: café translúcido rgba(43, 33, 24, 0.10)
    ===================================================================== */
+html[data-theme="light"],
 html[data-theme="claro"],
 html[data-tema="claro"] {
   /* Fondo y superficies arena cálida */
@@ -260,6 +263,8 @@ html[data-tema="claro"] {
    TEMA DALTÓNICO · Basado en paleta Okabe-Ito accesible
    Nunca usa verde y rojo solos. Estados en azul, naranja y amarillo.
    ===================================================================== */
+html[data-theme="colorblind"],
+html[data-cvd="on"],
 html[data-theme="daltonico"],
 html[data-tema="daltonico"] {
   --sr-bg: #1d1d1d;
