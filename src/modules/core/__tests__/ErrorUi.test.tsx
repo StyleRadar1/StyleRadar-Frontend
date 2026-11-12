@@ -7,7 +7,7 @@ import { ErrorBanner, ErrorToast, FieldError } from '../components/ErrorFeedback
 import { ErrorCard } from '../components/ErrorScene'
 import { NotFound } from '../components/NotFound'
 import { SessionExpiredOverlay } from '../components/SessionExpiredOverlay'
-import { ErrorState } from '../components/Status'
+import { ErrorState, MockBanner } from '../components/Status'
 import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 
 describe('piezas comunes de errores en core', () => {
@@ -99,5 +99,15 @@ describe('piezas comunes de errores en core', () => {
     )
     expect(screen.getByText('Esta prenda ya se vendió o donó')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: /perchero/i })).toBeInTheDocument()
+  })
+
+  it('MockBanner muestra la simulación ?mock activa y permite quitarla', async () => {
+    const user = userEvent.setup()
+    sessionStorage.setItem('sr_mock', 'conflicto')
+    render(<MockBanner />)
+    expect(screen.getByText('Simulación activa: ?mock=conflicto')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Quitar simulación' }))
+    expect(sessionStorage.getItem('sr_mock')).toBeNull()
+    expect(screen.queryByText(/Simulación activa/)).not.toBeInTheDocument()
   })
 })

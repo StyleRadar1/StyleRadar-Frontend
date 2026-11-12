@@ -28,7 +28,13 @@ function read(): MockScenario[] {
   let raw = ''
   try {
     const q = new URLSearchParams(window.location.search).get('mock')
-    if (q !== null) sessionStorage.setItem(KEY, q)
+    const prev = sessionStorage.getItem(KEY)
+    if (q !== null) {
+      sessionStorage.setItem(KEY, q)
+      if (q !== prev) {
+        queueMicrotask(() => window.dispatchEvent(new Event('sr:mock-changed')))
+      }
+    }
     raw = sessionStorage.getItem(KEY) ?? ''
   } catch { /* sin almacenamiento */ }
   return raw.split(',').map((s) => s.trim()).filter((s): s is MockScenario => s in MOCK_SCENARIOS)
@@ -36,6 +42,19 @@ function read(): MockScenario[] {
 
 export const mockScenarios = (): MockScenario[] => read()
 export const hasScenario = (s: MockScenario) => read().includes(s)
+
+/** Limpia la simulación ?mock activa en la pestaña y limpia la URL actual. */
+export function clearMockScenarios() {
+  try {
+    sessionStorage.removeItem(KEY)
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('mock')) {
+      url.searchParams.delete('mock')
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    }
+    window.dispatchEvent(new Event('sr:mock-changed'))
+  } catch { /* sin almacenamiento */ }
+}
 
 /** Lanza el error que corresponde a los escenarios globales (red, permisos, sesión). */
 export function failIfScenario(...own: MockScenario[]) {

@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Clock, Lock, RefreshCw, SearchX, ServerOff, WifiOff } from 'lucide-react'
 import { errorKind, errorMessage, type ErrorKind } from '@/modules/core/api/errors'
+import { clearMockScenarios, mockScenarios, type MockScenario } from '@/modules/core/api/mockScenario'
 import { ErrorScene, type SceneVariant } from './ErrorScene'
 
 /** Estado de carga accesible: los lectores de pantalla lo anuncian. */
@@ -109,9 +110,39 @@ export function EmptyState({ title, children, action }: { title: string; childre
 
 /** Aviso fijo cuando la app usa datos simulados, para no confundir mocks con integración real. */
 export function MockBanner() {
+  const [active, setActive] = useState<MockScenario[]>(() => mockScenarios())
+
+  useEffect(() => {
+    const sync = () => setActive(mockScenarios())
+    window.addEventListener('sr:mock-changed', sync)
+    window.addEventListener('popstate', sync)
+    return () => {
+      window.removeEventListener('sr:mock-changed', sync)
+      window.removeEventListener('popstate', sync)
+    }
+  }, [])
+
+  const clear = () => {
+    clearMockScenarios()
+    setActive([])
+    if (import.meta.env.MODE !== 'test') window.location.reload()
+  }
+
   return (
-    <div className="border-b border-arena/30 bg-arena/10 px-4 py-2 text-center text-xs text-arena">
-      Modo demostración: los datos son simulados (VITE_USE_MOCKS=true). Nada se envía al API Gateway.
+    <div className="flex flex-wrap items-center justify-center gap-2 border-b border-arena/30 bg-arena/10 px-4 py-2 text-center text-xs text-arena">
+      <span>Modo demostración: los datos son simulados (VITE_USE_MOCKS=true). Nada se envía al API Gateway.</span>
+      {active.length > 0 && (
+        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--sr-warn)]/40 bg-[var(--sr-warn)]/15 px-2.5 py-0.5 font-semibold text-[var(--sr-warn)]">
+          <span>Simulación activa: ?mock={active.join(',')}</span>
+          <button
+            type="button"
+            onClick={clear}
+            className="rounded-full border border-[var(--sr-warn)]/45 px-2 py-0.5 text-[11px] font-bold hover:bg-[var(--sr-warn)]/20"
+          >
+            Quitar simulación
+          </button>
+        </span>
+      )}
     </div>
   )
 }
