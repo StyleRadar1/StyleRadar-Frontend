@@ -113,7 +113,11 @@ describe('gestionar publicaciones propias (RF-37 a RF-39)', () => {
     expect(within(list).getByText('Vendida: ya no se puede cambiar.')).toBeInTheDocument()
 
     await user.click(within(list).getByRole('button', { name: 'Marcar Jean recto azul claro como vendida' }))
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Marcar vendida' }))
+    const dialog = screen.getByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Confirmar venta' }))
+    expect(within(dialog).getByText('Elige a la persona que te la compró.')).toBeInTheDocument()
+    await user.selectOptions(within(dialog).getByLabelText('¿A quién se la vendiste?'), 'u-7')
+    await user.click(within(dialog).getByRole('button', { name: 'Confirmar venta' }))
     expect(await screen.findByText('«Jean recto azul claro» quedó como vendida.')).toBeInTheDocument()
     expect(within(list).queryByRole('button', { name: /Jean recto azul claro/ })).not.toBeInTheDocument()
   })
@@ -128,8 +132,33 @@ describe('gestionar publicaciones propias (RF-37 a RF-39)', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument()
   })
 
-  it('no deja editar una publicación vendida', async () => {
+  it('no deja editar una publicación vendida (409) ni una de otra persona (403)', async () => {
     renderAt('/segunda-mano/l2/editar', routes)
-    expect(await screen.findByText(/está vendida y ya no se puede editar/, {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(await screen.findByText('Esta prenda ya se vendió o donó', {}, { timeout: 3000 })).toBeInTheDocument()
+
+    renderAt('/segunda-mano/l3/editar', routes)
+    expect(await screen.findByText('Esta publicación no está disponible', {}, { timeout: 3000 })).toBeInTheDocument()
+  })
+
+  it('valida foto mayor a 5 MB, formato no permitido y precio en 0 al vender', async () => {
+    const user = userEvent.setup({ applyAccept: false })
+    renderAt('/segunda-mano/publicar', routes)
+    const big = new File([new Uint8Array(6 * 1024 * 1024)], 'grande.jpg', { type: 'image/jpeg' })
+    const heic = new File([new Uint8Array([1, 2, 3])], 'chaqueta.heic', { type: 'image/heic' })
+    await user.upload(screen.getByTestId('lfotos-input'), [heic, big])
+    expect(screen.getByText(/Usa una foto JPG o PNG de máximo 5 MB/)).toBeInTheDocument()
+
+    await user.upload(screen.getByTestId('lfotos-input'), png())
+    await user.click(screen.getByRole('radio', { name: 'Muy bueno' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    await user.type(screen.getByLabelText('Nombre de la prenda'), 'Chaqueta denim')
+    await user.selectOptions(screen.getByLabelText('Categoría'), 'Chaquetas')
+    await user.selectOptions(screen.getByLabelText('Talla'), 'M')
+    await user.click(screen.getByLabelText('No tiene marca o no la sé'))
+    await user.type(screen.getByLabelText('Descripción'), 'Chaqueta azul clásica sin defectos.')
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    await user.type(screen.getByLabelText('Precio en pesos colombianos (COP)'), '0')
+    await user.click(screen.getByRole('button', { name: 'Publicar' }))
+    expect(screen.getByText('El precio debe ser mayor a 0.')).toBeInTheDocument()
   })
 })

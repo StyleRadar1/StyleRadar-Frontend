@@ -40,6 +40,7 @@ export function validateListingStep(step: number, f: ListingForm): ListingErrors
     const n = Number(raw.replace(/\./g, ''))
     if (!raw) e.precio = 'Escribe el precio en pesos.'
     else if (!/^\d[\d.]*$/.test(raw) || !Number.isInteger(n)) e.precio = 'Escribe solo números, sin decimales.'
+    else if (n <= 0) e.precio = 'El precio debe ser mayor a 0.'
     else if (n < R.precioMin) e.precio = `El precio mínimo es $${R.precioMin.toLocaleString('es-CO')}.`
     else if (n > R.precioMax) e.precio = `El precio máximo es $${R.precioMax.toLocaleString('es-CO')}.`
   }

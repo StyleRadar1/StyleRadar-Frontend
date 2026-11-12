@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { Link } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { errorKind, fieldErrors } from '@/modules/core/api/errors'
+import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { Steps } from '@/modules/core/components/Steps'
 import { ChoiceGroup, Field } from '../components/Field'
@@ -47,7 +48,11 @@ export default function DonatePage() {
           ...(form.modalidad === 'ENTREGA_EN_PUNTO' ? { puntoId: form.puntoId } : { direccion: form.direccion.trim() }) },
       }, form.fotos.map((p) => p.file!).filter(Boolean))
       setDone(res)
-    } catch (e) { setSendError(e) } finally { setSending(false) }
+    } catch (e) {
+      const campos = fieldErrors(e)
+      if (Object.keys(campos).length) setErrors((prev) => ({ ...prev, ...(campos as DonationErrors) }))
+      setSendError(e)
+    } finally { setSending(false) }
   }
 
   if (done) return (
@@ -101,7 +106,7 @@ export default function DonatePage() {
                   )
                 }) : <p className="text-sm text-white/70">Ninguna fundación cercana recibe {form.categoria.toLowerCase()} ahora. Desmarca el filtro para verlas todas o cambia la categoría.</p>}
               </div>
-              {errors.fundacionId && <p role="alert" className="mt-2 text-xs text-[#ffb4b4]">{errors.fundacionId}</p>}
+              {errors.fundacionId && <FieldError message={errors.fundacionId} />}
             </fieldset>
           ))}
 
@@ -123,7 +128,19 @@ export default function DonatePage() {
           </div>
         </>)}
 
-        {sendError != null && <p role="alert" className="rounded-xl bg-[#ff8a8a]/10 p-3 text-sm text-[#ffb4b4]">No pudimos enviar la solicitud. {errorMessage(sendError)}</p>}
+        {sendError != null && (
+          errorKind(sendError) === 'servidor' || errorKind(sendError) === 'sin-conexion' || errorKind(sendError) === 'limite' ? (
+            <ErrorState compact error={sendError} title="No pudimos registrar la donación" onRetry={submit} />
+          ) : errorKind(sendError) === 'conflicto' ? (
+            <ErrorBanner tone="warn" icon="refresh" title="No pudimos registrar la donación">
+              Ya enviaste una donación igual a esta fundación que sigue pendiente. Revisa tus donaciones antes de reintentar.
+            </ErrorBanner>
+          ) : (
+            <ErrorBanner tone="warn" icon="warn" title="No pudimos registrar la donación">
+              Revisa los datos. La donación debe ir a una fundación, no a tu propia cuenta.
+            </ErrorBanner>
+          )
+        )}
 
         <div className="flex flex-wrap justify-between gap-2 border-t border-white/10 pt-5">
           {step > 0 ? <button type="button" onClick={() => { setErrors({}); setStep((s) => s - 1) }} disabled={sending} className="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold">Atrás</button> : <span />}

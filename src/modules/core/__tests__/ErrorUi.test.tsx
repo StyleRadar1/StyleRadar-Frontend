@@ -111,3 +111,4 @@ describe('piezas comunes de errores en core', () => {
     expect(screen.queryByText(/Simulación activa/)).not.toBeInTheDocument()
   })
 })
+
