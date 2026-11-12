@@ -48,3 +48,28 @@ export function sortByDistance(pins: MapPinDto[]): MapPinDto[] {
   }
   return [...pins].sort((a, b) => parseKm(a.d) - parseKm(b.d))
 }
+
+/** Ubicación de la persona (del navegador o del centro de un barrio). */
+export interface Ubicacion { lat: number; lng: number }
+
+/** Radio de búsqueda permitido por ms-geolocalización; fuera de él responde 422. */
+export const RADIO_KM = { min: 1, max: 10, inicial: 5 } as const
+
+/** Distancia en km (Haversine), igual que la calcula ms-geolocalización. */
+export function distanciaKm(u: Ubicacion, [lng, lat]: [number, number]): number {
+  const rad = (g: number) => (g * Math.PI) / 180
+  const dLat = rad(lat - u.lat)
+  const dLng = rad(lng - u.lng)
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(u.lat)) * Math.cos(rad(lat)) * Math.sin(dLng / 2) ** 2
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+/** Centro de un barrio a partir de sus puntos, para quien no comparte su ubicación. */
+export function centroBarrio(pins: MapPinDto[], barrio: string): Ubicacion | null {
+  const del = pins.filter((p) => p.barrio === barrio)
+  if (!del.length) return null
+  return {
+    lng: del.reduce((s, p) => s + p.lngLat[0], 0) / del.length,
+    lat: del.reduce((s, p) => s + p.lngLat[1], 0) / del.length,
+  }
+}
