@@ -72,34 +72,36 @@ export default function PublishListingPage() {
   if (loadError) return <section className="mx-auto max-w-3xl px-4 py-12"><ErrorState error={loadError} title="No pudimos abrir la publicación" /></section>
   if (blocked) return (
     <section className="mx-auto max-w-3xl px-4 py-12">
-      <div role="alert" className="rounded-2xl border border-arena/40 bg-arena/10 p-6"><p className="font-semibold">{blocked}</p>
-        <Link to="/segunda-mano?vista=mias" className="mt-4 inline-block rounded-xl bg-violeta px-4 py-2 text-sm font-semibold">Volver a mis publicaciones</Link></div>
+      <div role="alert" className="rounded-2xl border border-[var(--color-warning-border,#d97706)] bg-[var(--color-warning-bg,rgba(217,119,6,0.1))] text-[var(--color-warning-text,#92400e)] p-6">
+        <p className="font-semibold">{blocked}</p>
+        <Link to="/segunda-mano?vista=mias" className="mt-4 inline-block rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-4 py-2 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Volver a mis publicaciones</Link>
+      </div>
     </section>
   )
 
   if (done) return (
     <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">{editing ? 'Cambios guardados' : 'Publicación creada'}</p>
-      <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold outline-none">{editing ? 'Listo, actualizamos tu prenda' : '¡Tu prenda ya está en Segunda vida!'}</h1>
-      <p className="mt-3 text-white/70">«{done.titulo}» por {formatCOP(done.precio)}. Te avisaremos cuando alguien te escriba.</p>
+      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">{editing ? 'Cambios guardados' : 'Publicación creada'}</p>
+      <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">{editing ? 'Listo, actualizamos tu prenda' : '¡Tu prenda ya está en Segunda vida!'}</h1>
+      <p className="mt-3 text-[var(--color-text-muted)]">«{done.titulo}» por {formatCOP(done.precio)}. Te avisaremos cuando alguien te escriba.</p>
       <div className="mt-8 flex flex-wrap justify-center gap-2">
-        <Link to="/segunda-mano?vista=mias" className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold">Ver mis publicaciones</Link>
-        {!editing && <button type="button" onClick={() => { setForm(emptyListing()); setDone(null); setStep(0) }} className="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold">Publicar otra</button>}
+        <Link to="/segunda-mano?vista=mias" className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Ver mis publicaciones</Link>
+        {!editing && <button type="button" onClick={() => { setForm(emptyListing()); setDone(null); setStep(0) }} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Publicar otra</button>}
       </div>
     </section>
   )
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Segunda vida · {editing ? 'Editar publicación' : 'Vender una prenda'}</p>
-      <h1 ref={heading} tabIndex={-1} className="mt-2 text-3xl font-extrabold tracking-tight outline-none md:text-4xl">{STEPS[step]}</h1>
+      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Segunda vida · {editing ? 'Editar publicación' : 'Vender una prenda'}</p>
+      <h1 ref={heading} tabIndex={-1} className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-text)] outline-none md:text-4xl">{STEPS[step]}</h1>
       <div className="mt-5"><Steps steps={STEPS} current={step} /></div>
 
-      <form className="mt-8 space-y-6 rounded-2xl border border-white/10 bg-white/[.03] p-5 md:p-7" noValidate
+      <form className="mt-8 space-y-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-7 shadow-sm" noValidate
         onSubmit={(e) => { e.preventDefault(); if (step < 2) next(); else submit() }}>
         {step === 0 && (<>
           <div>
-            <p className="mb-2 text-sm font-semibold">Fotos (hasta {LISTING_RULES.maxFotos})</p>
+            <p className="mb-2 text-sm font-semibold text-[var(--color-text)]">Fotos (hasta {LISTING_RULES.maxFotos})</p>
             <MultiPhotoInput id="lfotos" photos={form.fotos} onChange={(p) => set('fotos', p)} max={LISTING_RULES.maxFotos} error={errors.fotos} />
           </div>
           <ChoiceGroup label="Estado de conservación" options={CONSERVACIONES} labels={CONSERVACION_LABEL} value={form.conservacion} onChange={(v) => set('conservacion', v)} error={errors.conservacion} />
@@ -117,7 +119,7 @@ export default function PublishListingPage() {
                 <option value="">Elige una</option>{TALLAS.map((t) => <option key={t}>{t}</option>)}</select></Field>
             <div className="sm:col-span-2"><Field id="lmar" label="Marca" error={errors.marca}>
               <input {...a11y('lmar', errors.marca)} className={inputCls} value={form.marca} onChange={(e) => set('marca', e.target.value)} placeholder="Ej. Levi’s" />
-              <label className="mt-1 flex items-center gap-2 text-xs text-white/70"><input type="checkbox" checked={form.marca === 'Sin marca'} onChange={(e) => set('marca', e.target.checked ? 'Sin marca' : '')} /> No tiene marca o no la sé</label>
+              <label className="mt-1 flex items-center gap-2 text-xs text-[var(--color-text-muted)]"><input type="checkbox" checked={form.marca === 'Sin marca'} onChange={(e) => set('marca', e.target.checked ? 'Sin marca' : '')} /> No tiene marca o no la sé</label>
             </Field></div>
             <div className="sm:col-span-2"><Field id="ldes" label="Descripción" error={errors.descripcion} hint={`${form.descripcion.trim().length}/${LISTING_RULES.descripcionMax} · Cuenta medidas, detalles o defectos.`}>
               <textarea {...a11y('ldes', errors.descripcion, true)} className={`${inputCls} min-h-28`} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} /></Field></div>
@@ -127,33 +129,44 @@ export default function PublishListingPage() {
         {step === 2 && (
           <div className="grid gap-6 md:grid-cols-[1fr_1.1fr]">
             <Field id="lpre" label="Precio en pesos colombianos (COP)" error={errors.precio} hint={`Entre ${formatCOP(LISTING_RULES.precioMin)} y ${formatCOP(LISTING_RULES.precioMax)}.`}>
-              <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60">$</span>
+              <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-semibold">$</span>
                 <input {...a11y('lpre', errors.precio, true)} inputMode="numeric" className={`${inputCls} pl-8`} value={form.precio} onChange={(e) => set('precio', e.target.value)} placeholder="85.000" /></div>
             </Field>
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4" aria-label="Resumen de la publicación">
-              <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Resumen</p>
+            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4" aria-label="Resumen de la publicación">
+              <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">Resumen</p>
               <div className="mt-3 flex gap-3">
-                {form.fotos[0] && <img src={form.fotos[0].url} alt="" className="h-24 w-20 rounded-lg object-cover" />}
+                {form.fotos[0] && <img src={form.fotos[0].url} alt="" className="h-24 w-20 rounded-lg object-cover bg-[var(--color-surface)]" />}
                 <div className="text-sm">
-                  <p className="font-semibold">{form.titulo || 'Sin nombre'}</p>
-                  <p className="text-white/70">{form.categoria} · Talla {form.talla} · {form.conservacion ? CONSERVACION_LABEL[form.conservacion] : ''}</p>
-                  <p className="text-white/70">{form.marca}</p>
-                  <p className="mt-1 font-semibold">{priceValue(form.precio) > 0 ? formatCOP(priceValue(form.precio)) : '—'}</p>
+                  <p className="font-semibold text-[var(--color-text)]">{form.titulo || 'Sin nombre'}</p>
+                  <p className="text-[var(--color-text-muted)]">{form.categoria} · Talla {form.talla} · {form.conservacion ? CONSERVACION_LABEL[form.conservacion] : ''}</p>
+                  <p className="text-[var(--color-text-muted)]">{form.marca}</p>
+                  <p className="mt-1 font-semibold text-[var(--color-text)]">{priceValue(form.precio) > 0 ? formatCOP(priceValue(form.precio)) : '—'}</p>
                 </div>
               </div>
-              <p className="mt-3 line-clamp-3 text-xs text-white/60">{form.descripcion}</p>
-              <p className="mt-2 text-xs text-white/60">{form.fotos.length} foto{form.fotos.length === 1 ? '' : 's'}</p>
+              <p className="mt-3 line-clamp-3 text-xs text-[var(--color-text-muted)]">{form.descripcion}</p>
+              <p className="mt-2 text-xs text-[var(--color-text-muted)]">{form.fotos.length} foto{form.fotos.length === 1 ? '' : 's'}</p>
             </div>
           </div>
         )}
 
-        {sendError != null && <p role="alert" className="rounded-xl bg-[#ff8a8a]/10 p-3 text-sm text-[#ffb4b4]">No pudimos {editing ? 'guardar los cambios' : 'publicar tu prenda'}. {errorMessage(sendError)} Tus datos siguen aquí; puedes intentarlo de nuevo.</p>}
+        {sendError != null && (
+          <p role="alert" className="flex items-center gap-2 rounded-xl border border-[var(--color-danger-border,#ff8a8a)] bg-[var(--color-danger-bg,rgba(220,38,38,0.12))] p-3 text-sm text-[var(--color-danger-text,#ff8a8a)] font-medium">
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            </svg>
+            <span>No pudimos {editing ? 'guardar los cambios' : 'publicar tu prenda'}. {errorMessage(sendError)} Tus datos siguen aquí; puedes intentarlo de nuevo.</span>
+          </p>
+        )}
 
-        <div className="flex flex-wrap justify-between gap-2 border-t border-white/10 pt-5">
-          {step > 0 ? <button type="button" onClick={back} disabled={sending} className="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold">Atrás</button>
-            : <button type="button" onClick={() => navigate(-1)} className="rounded-xl px-5 py-3 text-sm text-white/70 underline">Cancelar</button>}
-          <button type="submit" disabled={sending} className="rounded-xl bg-violeta px-6 py-3 text-sm font-semibold disabled:opacity-60">
-            {step < 2 ? 'Continuar' : sending ? 'Enviando…' : editing ? 'Guardar cambios' : 'Publicar'}</button>
+        <div className="flex flex-wrap justify-between gap-2 border-t border-[var(--color-border)] pt-5">
+          {step > 0 ? (
+            <button type="button" onClick={back} disabled={sending} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Atrás</button>
+          ) : (
+            <button type="button" onClick={() => navigate(-1)} className="rounded-xl px-5 py-3 text-sm text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]">Cancelar</button>
+          )}
+          <button type="submit" disabled={sending} className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-6 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-60 transition-all shadow-sm">
+            {step < 2 ? 'Continuar' : sending ? 'Enviando…' : editing ? 'Guardar cambios' : 'Publicar'}
+          </button>
         </div>
       </form>
     </section>

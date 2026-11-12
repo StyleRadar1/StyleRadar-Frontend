@@ -9,7 +9,32 @@ import { secondHandService } from '../services/secondHandService'
 import { ESTADO_PUBLICACION_LABEL, type ListingDto } from '../types/secondhand.dto'
 
 type Action = { listing: ListingDto; to: 'VENDIDA' | 'RETIRADA' }
-const TONE = { DISPONIBLE: 'bg-[#9be3b4]/15 text-[#9be3b4]', VENDIDA: 'bg-arena/20 text-arena', RETIRADA: 'bg-white/10 text-white/60' }
+const STATUS_BADGE = {
+  DISPONIBLE: {
+    cls: 'bg-[var(--color-success-bg,rgba(30,107,58,0.15))] text-[var(--color-success-text,#144a27)] border border-[var(--color-success-border,#1e6b3a)]',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  VENDIDA: {
+    cls: 'bg-[var(--color-warning-bg,rgba(217,119,6,0.15))] text-[var(--color-warning-text,#92400e)] border border-[var(--color-warning-border,#d97706)]',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
+        <path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  RETIRADA: {
+    cls: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)] border border-[var(--color-border)]',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+}
 
 /** RF-37 a RF-39: el dueño ve solo las acciones que permite el estado de cada prenda. */
 export function MyListings() {
@@ -35,27 +60,72 @@ export function MyListings() {
 
   if (loading) return <Loading label="Cargando tus publicaciones…" />
   if (error) return <ErrorState error={error} onRetry={load} title="No pudimos cargar tus publicaciones" />
-  if (!list.length) return <EmptyState title="Aún no tienes publicaciones" action={<Link to="/segunda-mano/publicar" className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold">Vender una prenda</Link>}>Publica una prenda que ya no uses y dale una segunda vida.</EmptyState>
+  if (!list.length) return <EmptyState title="Aún no tienes publicaciones" action={<Link to="/segunda-mano/publicar" className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Vender una prenda</Link>}>Publica una prenda que ya no uses y dale una segunda vida.</EmptyState>
 
   return (
     <div>
-      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mb-4 rounded-xl p-3 text-sm ${msg.ok ? 'bg-[#9be3b4]/10 text-[#9be3b4]' : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'}`}>{msg.text}</p>}
+      {msg && (
+        <p
+          role={msg.ok ? 'status' : 'alert'}
+          className={`mb-4 flex items-center gap-2 rounded-xl p-3 text-sm border ${
+            msg.ok
+              ? 'bg-[var(--color-success-bg,rgba(30,107,58,0.12))] text-[var(--color-success-text,#144a27)] border-[var(--color-success-border,#1e6b3a)]'
+              : 'bg-[var(--color-danger-bg,rgba(220,38,38,0.12))] text-[var(--color-danger-text,#ff8a8a)] border-[var(--color-danger-border,#ff8a8a)]'
+          }`}
+        >
+          {msg.ok ? (
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            </svg>
+          )}
+          <span>{msg.text}</span>
+        </p>
+      )}
       <ul className="space-y-3" aria-label="Mis publicaciones">
         {list.map((l) => (
-          <li key={l.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/10 bg-white/[.03] p-3">
-            <img src={l.fotos[0]} alt="" className="h-20 w-16 rounded-lg bg-arena object-cover" />
+          <li key={l.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+            <img src={l.fotos[0]} alt="" className="h-20 w-16 rounded-lg bg-[var(--color-surface-subtle)] object-cover" />
             <div className="min-w-40 flex-1">
-              <p className="font-semibold">{l.titulo}</p>
-              <p className="text-sm text-white/65">{formatCOP(l.precio)} · Talla {l.talla}</p>
-              <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${TONE[l.estado]}`}>{ESTADO_PUBLICACION_LABEL[l.estado]}</span>
+              <p className="font-semibold text-[var(--color-text)]">{l.titulo}</p>
+              <p className="text-sm text-[var(--color-text-muted)]">{formatCOP(l.precio)} · Talla {l.talla}</p>
+              <span className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[l.estado].cls}`}>
+                {STATUS_BADGE[l.estado].icon}
+                <span>{ESTADO_PUBLICACION_LABEL[l.estado]}</span>
+              </span>
             </div>
             {l.estado === 'DISPONIBLE' ? (
               <div className="flex flex-wrap gap-2">
-                <Link to={`/segunda-mano/${l.id}/editar`} className="rounded-xl border border-white/20 px-3 py-2 text-sm font-semibold" aria-label={`Editar ${l.titulo}`}>Editar</Link>
-                <button type="button" disabled={busy} onClick={() => setAction({ listing: l, to: 'VENDIDA' })} className="rounded-xl border border-white/20 px-3 py-2 text-sm font-semibold" aria-label={`Marcar ${l.titulo} como vendida`}>Marcar vendida</button>
-                <button type="button" disabled={busy} onClick={() => setAction({ listing: l, to: 'RETIRADA' })} className="rounded-xl px-3 py-2 text-sm font-semibold text-[#ffb4b4]" aria-label={`Retirar ${l.titulo}`}>Retirar</button>
+                <Link
+                  to={`/segunda-mano/${l.id}/editar`}
+                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-3 py-2 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]"
+                  aria-label={`Editar ${l.titulo}`}
+                >
+                  Editar
+                </Link>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setAction({ listing: l, to: 'VENDIDA' })}
+                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-3 py-2 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]"
+                  aria-label={`Marcar ${l.titulo} como vendida`}
+                >
+                  Marcar vendida
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setAction({ listing: l, to: 'RETIRADA' })}
+                  className="rounded-xl border border-[var(--color-border-subtle,transparent)] px-3 py-2 text-sm font-semibold text-[var(--color-danger-text,#ff8a8a)] hover:bg-[var(--color-danger-bg,rgba(220,38,38,0.1))] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]"
+                  aria-label={`Retirar ${l.titulo}`}
+                >
+                  Retirar
+                </button>
               </div>
-            ) : <p className="text-xs text-white/50">{l.estado === 'VENDIDA' ? 'Vendida: ya no se puede cambiar.' : 'Retirada: ya no se muestra.'}</p>}
+            ) : <p className="text-xs text-[var(--color-text-muted)]">{l.estado === 'VENDIDA' ? 'Vendida: ya no se puede cambiar.' : 'Retirada: ya no se muestra.'}</p>}
           </li>
         ))}
       </ul>

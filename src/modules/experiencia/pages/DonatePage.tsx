@@ -52,12 +52,12 @@ export default function DonatePage() {
 
   if (done) return (
     <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Solicitud enviada</p>
-      <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold outline-none">Gracias por donar</h1>
-      <p className="mt-3 text-white/70">{done.fundacion.nombre} revisará «{done.prenda.titulo}». Propusiste {formatDay(done.logistica.fecha)}, de {done.logistica.franja}. Te avisaremos cuando la acepten.</p>
+      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Solicitud enviada</p>
+      <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">Gracias por donar</h1>
+      <p className="mt-3 text-[var(--color-text-muted)]">{done.fundacion.nombre} revisará «{done.prenda.titulo}». Propusiste {formatDay(done.logistica.fecha)}, de {done.logistica.franja}. Te avisaremos cuando la acepten.</p>
       <div className="mt-8 flex flex-wrap justify-center gap-2">
-        <Link to="/segunda-mano" className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold">Volver a Segunda vida</Link>
-        <button type="button" onClick={() => { setForm(emptyDonation()); setDone(null); setStep(0) }} className="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold">Donar otra prenda</button>
+        <Link to="/segunda-mano" className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm">Volver a Segunda vida</Link>
+        <button type="button" onClick={() => { setForm(emptyDonation()); setDone(null); setStep(0) }} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Donar otra prenda</button>
       </div>
     </section>
   )
@@ -66,13 +66,13 @@ export default function DonatePage() {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Donar una prenda</p>
-      <h1 ref={heading} tabIndex={-1} className="mt-2 text-3xl font-extrabold tracking-tight outline-none md:text-4xl">{STEPS[step]}</h1>
+      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Donar una prenda</p>
+      <h1 ref={heading} tabIndex={-1} className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-text)] outline-none md:text-4xl">{STEPS[step]}</h1>
       <div className="mt-5"><Steps steps={STEPS} current={step} /></div>
 
-      <form className="mt-8 space-y-6 rounded-2xl border border-white/10 bg-white/[.03] p-5 md:p-7" noValidate onSubmit={(e) => { e.preventDefault(); if (step < 2) next(); else submit() }}>
+      <form className="mt-8 space-y-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-7 shadow-sm" noValidate onSubmit={(e) => { e.preventDefault(); if (step < 2) next(); else submit() }}>
         {step === 0 && (<>
-          <div><p className="mb-2 text-sm font-semibold">Fotos (hasta {DONATION_RULES.maxFotos})</p>
+          <div><p className="mb-2 text-sm font-semibold text-[var(--color-text)]">Fotos (hasta {DONATION_RULES.maxFotos})</p>
             <MultiPhotoInput id="dfotos" photos={form.fotos} onChange={(p) => set('fotos', p)} max={DONATION_RULES.maxFotos} error={errors.fotos} /></div>
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2"><Field id="dtit" label="¿Qué donas?" error={errors.titulo}><input {...a11y('dtit', errors.titulo)} className={inputCls} value={form.titulo} onChange={(e) => set('titulo', e.target.value)} placeholder="Ej. Suéter de lana" /></Field></div>
@@ -87,21 +87,28 @@ export default function DonatePage() {
         {step === 1 && (
           fLoading ? <Loading label="Buscando fundaciones cercanas…" /> : fError ? <ErrorState error={fError} onRetry={loadF} title="No pudimos cargar las fundaciones" /> : (
             <fieldset>
-              <legend className="text-sm font-semibold">Elige la fundación (de la más cercana a la más lejana)</legend>
-              <label className="mt-2 flex items-center gap-2 text-sm text-white/75"><input type="checkbox" checked={onlyCompatible} onChange={(e) => setOnlyCompatible(e.target.checked)} /> Solo las que reciben {form.categoria.toLowerCase() || 'esta categoría'}</label>
+              <legend className="text-sm font-semibold text-[var(--color-text)]">Elige la fundación (de la más cercana a la más lejana)</legend>
+              <label className="mt-2 flex items-center gap-2 text-sm text-[var(--color-text-muted)]"><input type="checkbox" checked={onlyCompatible} onChange={(e) => setOnlyCompatible(e.target.checked)} /> Solo las que reciben {form.categoria.toLowerCase() || 'esta categoría'}</label>
               <div role="radiogroup" aria-label="Fundaciones" className="mt-4 space-y-2">
                 {shown.length ? shown.map((f) => {
                   const p = foundationProblem(f, form.categoria)
                   return (
                     <button key={f.id} type="button" role="radio" aria-checked={form.fundacionId === f.id} disabled={!!p} onClick={() => set('fundacionId', f.id)}
-                      className={`flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border p-4 text-left ${form.fundacionId === f.id ? 'border-arena ring-2 ring-arena' : 'border-white/10'} disabled:cursor-not-allowed disabled:opacity-50`}>
-                      <span><span className="block font-semibold">{f.nombre}</span><span className="block text-xs text-white/60">{f.barrio} · a {f.distanciaKm.toLocaleString('es-CO')} km · Recibe {f.categorias.join(', ').toLowerCase()}</span></span>
-                      {p && <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs">{p}</span>}
+                      className={`flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] ${form.fundacionId === f.id ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-focus-ring)] bg-[var(--color-surface-hover,var(--color-surface))]' : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]'} disabled:cursor-not-allowed disabled:opacity-50`}>
+                      <span><span className="block font-semibold text-[var(--color-text)]">{f.nombre}</span><span className="block text-xs text-[var(--color-text-muted)]">{f.barrio} · a {f.distanciaKm.toLocaleString('es-CO')} km · Recibe {f.categorias.join(', ').toLowerCase()}</span></span>
+                      {p && <span className="rounded-full bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)] border border-[var(--color-border)] px-2.5 py-1 text-xs">{p}</span>}
                     </button>
                   )
-                }) : <p className="text-sm text-white/70">Ninguna fundación cercana recibe {form.categoria.toLowerCase()} ahora. Desmarca el filtro para verlas todas o cambia la categoría.</p>}
+                }) : <p className="text-sm text-[var(--color-text-muted)]">Ninguna fundación cercana recibe {form.categoria.toLowerCase()} ahora. Desmarca el filtro para verlas todas o cambia la categoría.</p>}
               </div>
-              {errors.fundacionId && <p role="alert" className="mt-2 text-xs text-[#ffb4b4]">{errors.fundacionId}</p>}
+              {errors.fundacionId && (
+                <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-danger-text,#ff8a8a)] font-medium">
+                  <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <span>{errors.fundacionId}</span>
+                </p>
+              )}
             </fieldset>
           ))}
 
@@ -115,19 +122,26 @@ export default function DonatePage() {
             {form.modalidad === 'RECOGIDA' && (
               <div className="sm:col-span-2"><Field id="ddir" label="Dirección de recogida" error={errors.direccion}><input {...a11y('ddir', errors.direccion)} className={inputCls} value={form.direccion} onChange={(e) => set('direccion', e.target.value)} placeholder="Ej. Cra. 7 #54-20, Chapinero" /></Field></div>)}
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm" aria-label="Resumen de la donación">
-            <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Resumen</p>
-            <p className="mt-2"><b>{form.cantidad} × {form.titulo}</b> · {form.categoria} · Talla {form.talla}{form.conservacion ? ` · ${CONSERVACION_LABEL[form.conservacion]}` : ''}</p>
-            <p className="text-white/70">Para {fd?.nombre}</p>
-            <p className="text-white/70">{form.modalidad ? MODALIDAD_LABEL[form.modalidad as Modalidad] : 'Entrega por definir'}{form.fecha ? ` · ${formatDay(form.fecha)}` : ''}{form.franja ? ` · ${form.franja}` : ''}</p>
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4 text-sm" aria-label="Resumen de la donación">
+            <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">Resumen</p>
+            <p className="mt-2 text-[var(--color-text)]"><b>{form.cantidad} × {form.titulo}</b> · {form.categoria} · Talla {form.talla}{form.conservacion ? ` · ${CONSERVACION_LABEL[form.conservacion]}` : ''}</p>
+            <p className="text-[var(--color-text-muted)]">Para {fd?.nombre}</p>
+            <p className="text-[var(--color-text-muted)]">{form.modalidad ? MODALIDAD_LABEL[form.modalidad as Modalidad] : 'Entrega por definir'}{form.fecha ? ` · ${formatDay(form.fecha)}` : ''}{form.franja ? ` · ${form.franja}` : ''}</p>
           </div>
         </>)}
 
-        {sendError != null && <p role="alert" className="rounded-xl bg-[#ff8a8a]/10 p-3 text-sm text-[#ffb4b4]">No pudimos enviar la solicitud. {errorMessage(sendError)}</p>}
+        {sendError != null && (
+          <p role="alert" className="flex items-center gap-2 rounded-xl border border-[var(--color-danger-border,#ff8a8a)] bg-[var(--color-danger-bg,rgba(220,38,38,0.12))] p-3 text-sm text-[var(--color-danger-text,#ff8a8a)] font-medium">
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            </svg>
+            <span>No pudimos enviar la solicitud. {errorMessage(sendError)}</span>
+          </p>
+        )}
 
-        <div className="flex flex-wrap justify-between gap-2 border-t border-white/10 pt-5">
-          {step > 0 ? <button type="button" onClick={() => { setErrors({}); setStep((s) => s - 1) }} disabled={sending} className="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold">Atrás</button> : <span />}
-          <button type="submit" disabled={sending || (step === 1 && (fLoading || !!fError))} className="rounded-xl bg-violeta px-6 py-3 text-sm font-semibold disabled:opacity-60">
+        <div className="flex flex-wrap justify-between gap-2 border-t border-[var(--color-border)] pt-5">
+          {step > 0 ? <button type="button" onClick={() => { setErrors({}); setStep((s) => s - 1) }} disabled={sending} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Atrás</button> : <span />}
+          <button type="submit" disabled={sending || (step === 1 && (fLoading || !!fError))} className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-6 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-60 transition-all shadow-sm">
             {step < 2 ? 'Continuar' : sending ? 'Enviando…' : 'Enviar solicitud'}</button>
         </div>
       </form>
