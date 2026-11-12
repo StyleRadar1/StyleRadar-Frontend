@@ -8,9 +8,7 @@
 .sr-map-page-shell {
   position: relative;
   width: 100%;
-  background:
-    radial-gradient(circle at 82% 48%, rgba(72, 17, 154, 0.22) 0%, rgba(20, 20, 24, 0) 62%),
-    radial-gradient(circle at 18% 20%, rgba(232, 220, 203, 0.05) 0%, rgba(20, 20, 24, 0) 50%);
+  background: transparent;
 }
 
 .sr-map-layout-wrap {
@@ -1113,4 +1111,155 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ==========================================================================
+   Adaptación al sistema de temas (Oscuro, Claro, Daltónico)
+   ========================================================================== */
+
+/* Tema Claro */
+html[data-theme='light'] .sr-map-hero-main {
+  background: var(--color-surface, #f8f7f5);
+  border-color: var(--color-border, rgba(0, 0, 0, 0.12));
+}
+
+html[data-theme='light'] .sr-map-back-btn {
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #1c1926);
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+html[data-theme='light'] .sr-map-back-btn:hover {
+  background: var(--color-surface-raised, #f0eef5);
+  color: var(--color-text, #1c1926);
+}
+
+html[data-theme='light'] .sr-map-ctrl-pill {
+  background: var(--color-surface, rgba(255, 255, 255, 0.92));
+  color: var(--color-text, #1c1926);
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme='light'] .sr-map-legend {
+  background: var(--color-bg-elevated, rgba(255, 255, 255, 0.95));
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+  color: var(--color-text, #1c1926);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme='light'] .sr-store-map .lm-pane {
+  background: var(--color-bg-elevated, rgba(255, 255, 255, 0.96));
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+  color: var(--color-text, #1c1926);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme='light'] .lm-close {
+  background: var(--color-surface, rgba(0, 0, 0, 0.08));
+  color: var(--color-text, #1c1926);
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+}
+
+html[data-theme='light'] .sr-mb-mini-popup .mapboxgl-popup-content {
+  background: var(--color-bg-elevated, rgba(255, 255, 255, 0.96));
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+  color: var(--color-text, #1c1926);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme='light'] .sr-mb-mini-popup .mapboxgl-popup-tip {
+  border-top-color: var(--color-bg-elevated, rgba(255, 255, 255, 0.96));
+}
+
+html[data-theme='light'] .sr-mini-card {
+  color: var(--color-text, #1c1926);
+}
+
+html[data-theme='light'] .sr-mc-barrio {
+  color: var(--color-text-muted, #5f5a6b);
+}
+
+html[data-theme='light'] .sr-mc-sub {
+  color: var(--color-accent, #48119a);
+}
+
+html[data-theme='light'] .sr-mc-hint {
+  border-top-color: var(--color-border, rgba(0, 0, 0, 0.1));
+  color: var(--color-text-muted, #5f5a6b);
+}
+
+html[data-theme='light'] .sr-bubble-name {
+  color: var(--color-text, #1c1926);
+  text-shadow: none;
+}
+
+html[data-theme='light'] .sr-bubble-sub {
+  color: var(--color-text-muted, #5f5a6b);
+}
+
+html[data-theme='light'] .sr-bubble-dist {
+  color: var(--color-text, #1c1926);
+}
+
+html[data-theme='light'] .sr-bubble-type-tag.tienda {
+  color: var(--color-accent, #48119a);
+}
+
+html[data-theme='light'] .sr-bubble-type-tag.fundacion {
+  color: var(--color-accent, #48119a);
+}
+
+html[data-theme='light'] .sr-bubble-dot-sep {
+  color: var(--color-border, #d1ced7);
+}
+
+/* Foco accesible */
+.sr-map-back-btn:focus-visible,
+.sr-map-ctrl-pill:focus-visible,
+.lm-close:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #48119a);
+  outline-offset: 2px;
+}
+
+/* Tema Daltónico (CVD Okabe-Ito) */
+html[data-theme='colorblind'] .sr-mb-pin i.sr-pin-shape.store,
+html[data-cvd='on'] .sr-mb-pin i.sr-pin-shape.store {
+  background: #0072b2;
+}
+
+html[data-theme='colorblind'] .sr-mb-pin.found i.sr-pin-shape.found,
+html[data-cvd='on'] .sr-mb-pin.found i.sr-pin-shape.found {
+  background: #e69f00;
+  outline-color: #0072b2;
+}
+
+html[data-theme='colorblind'] .sr-mc-badge.tienda,
+html[data-cvd='on'] .sr-mc-badge.tienda {
+  background: #0072b2;
+  color: #ffffff;
+}
+
+html[data-theme='colorblind'] .sr-mc-badge.fundacion,
+html[data-cvd='on'] .sr-mc-badge.fundacion {
+  background: #e69f00;
+  color: #000000;
+}
+
+html[data-theme='colorblind'] .sr-bubble-avatar.tienda,
+html[data-cvd='on'] .sr-bubble-avatar.tienda {
+  border-color: #0072b2;
+}
+
+html[data-theme='colorblind'] .sr-bubble-avatar.fundacion,
+html[data-cvd='on'] .sr-bubble-avatar.fundacion {
+  border-color: #e69f00;
+}
+
+html[data-theme='colorblind'] .sr-map-ctrl-pill:focus-visible,
+html[data-theme='colorblind'] .sr-map-back-btn:focus-visible,
+html[data-cvd='on'] .sr-map-ctrl-pill:focus-visible,
+html[data-cvd='on'] .sr-map-back-btn:focus-visible {
+  outline-color: var(--color-focus-ring, #0072b2);
 }

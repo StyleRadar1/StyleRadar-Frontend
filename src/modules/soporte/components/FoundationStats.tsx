@@ -19,13 +19,13 @@ export function FoundationStatsView() {
   const meta = pct(stats.meta.recibidas, stats.meta.objetivo)
 
   return (
-    <>
+    <section className="text-[var(--color-text)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">Estadísticas de tu fundación</h1>
-          <p className="mt-2 text-sm text-white/70">Donaciones y solicitudes recibidas por {nombre} · Solo tú y StyleRadar ven estos datos.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl text-[var(--color-text)]">Estadísticas de tu fundación</h1>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">Donaciones y solicitudes recibidas por {nombre} · Solo tú y StyleRadar ven estos datos.</p>
         </div>
-        <button type="button" onClick={() => exportar(nombre, stats, months)} className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10">
+        <button type="button" onClick={() => exportar(nombre, stats, months)} className="rounded-xl border border-[var(--color-border)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface)] text-[var(--color-text)]">
           Exportar a Excel
         </button>
       </div>
@@ -46,7 +46,7 @@ export function FoundationStatsView() {
         </Panel>
         <ByStatus data={stats.porEstado} />
       </div>
-    </>
+    </section>
   )
 }
 

@@ -3,8 +3,8 @@ export const SERIE = ['var(--color-arena)', 'var(--color-violeta-claro)', 'var(-
 /** Textura de cada posición (las dos últimas son claras y se confunden sin ella). */
 export const TEXTURA = [null, null, 'diag', 'cruz'] as const
 
-export const card = 'sr-verdelo-panel rounded-2xl border border-white/10 bg-white/[.03] p-5'
-export const kicker = 'text-[11px] font-bold uppercase tracking-[.16em] text-lavanda'
+export const card = 'sr-verdelo-panel rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] p-5'
+export const kicker = 'text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-sand)]'
 export const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0)
 /** Tope «redondo» del eje para que las marcas sean números enteros. */
 export const tope = (max: number) => {

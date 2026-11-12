@@ -1,0 +1,218 @@
+/* =====================================================================
+   StyleRadar · Sistema de Tokens de Color Semánticos
+   Tres modos: Claro (light), Oscuro (dark) y Daltónico (cvd Okabe-Ito).
+   Definidos con variables CSS registradas en Tailwind CSS v4 (@theme).
+   ===================================================================== */
+
+@theme {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-on-accent: var(--text-on-accent);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-sand: var(--sand);
+  --color-focus-ring: var(--focus-ring);
+  --color-overlay: var(--overlay);
+  --color-shadow-color: var(--shadow-color);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-text: var(--warning-text);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-text: var(--danger-text);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-info-text: var(--info-text);
+}
+
+/* =====================================================================
+   1. MODO CLARO (data-theme="light")
+   Identidad: grafito #262626, blanco #FFFFFF, arena #E8DCCB,
+              lavanda #B9B9CA, violeta #48119A.
+   ===================================================================== */
+:root,
+html[data-theme="light"],
+html[data-theme="claro"],
+html[data-tema="claro"] {
+  /* Fondos y superficies */
+  --bg: #ffffff;
+  --bg-elevated: #f8f6f2;
+  --surface: #f4efe6;
+  --surface-muted: #eae2d5;
+  --border: #d4c7b5;
+
+  /* Tipografía */
+  --text: #262626;
+  --text-muted: #595959;
+  --text-on-accent: #ffffff;
+
+  /* Marca y acento */
+  --accent: #48119a;
+  --accent-hover: #360c74;
+  --accent-soft: #b9b9ca;
+  --sand: #e8dccb;
+  --focus-ring: #48119a;
+
+  /* Capas */
+  --overlay: rgba(38, 38, 38, 0.6);
+  --shadow-color: rgba(38, 38, 38, 0.12);
+
+  /* Estados accesibles (WCAG AA) */
+  --success: #1e6b3a;
+  --success-bg: rgba(30, 107, 58, 0.12);
+  --success-text: #144a27;
+
+  --warning: #8a5800;
+  --warning-bg: rgba(138, 88, 0, 0.12);
+  --warning-text: #5c3b00;
+
+  --danger: #b31d1d;
+  --danger-bg: rgba(179, 29, 29, 0.12);
+  --danger-text: #7a1212;
+
+  --info: #006699;
+  --info-bg: rgba(0, 102, 153, 0.12);
+  --info-text: #004466;
+
+  color-scheme: light;
+}
+
+/* =====================================================================
+   2. MODO OSCURO (data-theme="dark")
+   Fondos grafito/azulado muy oscuros, superficies más claras,
+   texto casi blanco, violeta aclarado #A98BEA para contraste.
+   ===================================================================== */
+html[data-theme="dark"],
+html[data-theme="oscuro"],
+html[data-tema="oscuro"] {
+  /* Fondos y superficies */
+  --bg: #15131c;
+  --bg-elevated: #1d1a27;
+  --surface: #242031;
+  --surface-muted: #2d283e;
+  --border: rgba(255, 255, 255, 0.14);
+
+  /* Tipografía */
+  --text: #f5f3f8;
+  --text-muted: #b2aec2;
+  --text-on-accent: #15131c;
+
+  /* Marca y acento */
+  --accent: #a98bea;
+  --accent-hover: #c1acf2;
+  --accent-soft: #3d3354;
+  --sand: #e8dccb;
+  --focus-ring: #a98bea;
+
+  /* Capas */
+  --overlay: rgba(0, 0, 0, 0.75);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+
+  /* Estados accesibles (WCAG AA) */
+  --success: #56d38e;
+  --success-bg: rgba(86, 211, 142, 0.16);
+  --success-text: #86e3b0;
+
+  --warning: #f5b842;
+  --warning-bg: rgba(245, 184, 66, 0.16);
+  --warning-text: #f7ca74;
+
+  --danger: #ff7575;
+  --danger-bg: rgba(255, 117, 117, 0.16);
+  --danger-text: #ffa8a8;
+
+  --info: #5cb8ff;
+  --info-bg: rgba(92, 184, 255, 0.16);
+  --info-text: #8fd0ff;
+
+  color-scheme: dark;
+}
+
+/* =====================================================================
+   3. PALETA SEGURA PARA DALTONISMO (Okabe-Ito)
+   Azul #0072B2, naranja #E69F00, cielo #56B4E9, verde azulado #009E73,
+   bermellón #D55E00, amarillo #F0E442, púrpura rojizo #CC79A7, negro.
+   Aplica con data-cvd="on" sobre claro u oscuro, o con data-theme="colorblind".
+   ===================================================================== */
+
+/* Daltónico sobre Modo Claro */
+html[data-theme="light"][data-cvd="on"],
+html[data-theme="claro"][data-cvd="on"],
+html[data-tema="claro"][data-cvd="on"],
+html[data-theme="light"][data-contrast="on"],
+html[data-theme="claro"][data-contrast="on"],
+html[data-tema="claro"][data-contrast="on"] {
+  --success: #0072b2;
+  --success-bg: rgba(0, 114, 178, 0.14);
+  --success-text: #004c78;
+
+  --warning: #e69f00;
+  --warning-bg: rgba(230, 159, 0, 0.16);
+  --warning-text: #7a4c00;
+
+  --danger: #d55e00;
+  --danger-bg: rgba(213, 94, 0, 0.14);
+  --danger-text: #803800;
+
+  --info: #009e73;
+  --info-bg: rgba(0, 158, 115, 0.14);
+  --info-text: #005c43;
+
+  --focus-ring: #0072b2;
+}
+
+/* Daltónico sobre Modo Oscuro o modo colorblind autónomo */
+html[data-theme="dark"][data-cvd="on"],
+html[data-theme="oscuro"][data-cvd="on"],
+html[data-tema="oscuro"][data-cvd="on"],
+html[data-theme="dark"][data-contrast="on"],
+html[data-theme="oscuro"][data-contrast="on"],
+html[data-tema="oscuro"][data-contrast="on"],
+html[data-theme="colorblind"],
+html[data-theme="daltonico"],
+html[data-tema="daltonico"] {
+  --success: #56b4e9;
+  --success-bg: rgba(86, 180, 233, 0.18);
+  --success-text: #85cbf2;
+
+  --warning: #f0e442;
+  --warning-bg: rgba(240, 228, 66, 0.16);
+  --warning-text: #f5eb78;
+
+  --danger: #e69f00;
+  --danger-bg: rgba(230, 159, 0, 0.18);
+  --danger-text: #ffbf33;
+
+  --info: #0072b2;
+  --info-bg: rgba(0, 114, 178, 0.18);
+  --info-text: #70b8e8;
+
+  --focus-ring: #f0e442;
+}
+
+/* =====================================================================
+   Transición suave y movimiento reducido (prefers-reduced-motion)
+   Fade corto (180ms) o inexistente si se solicita reducción de movimiento.
+   ===================================================================== */
+html {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}

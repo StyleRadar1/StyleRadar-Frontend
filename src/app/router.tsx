@@ -1,8 +1,9 @@
 import { lazy, Suspense, type ReactNode } from 'react'
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import type { Role } from '@/modules/core/types/roles'
 import { NotFound } from '@/modules/core/components/NotFound'
 import { WelcomeOverlay } from '@/modules/core/components/WelcomeOverlay'
+import { AuroraBackground, isAuroraExcluded } from '@/modules/core/design-system'
 import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
@@ -50,9 +51,24 @@ const STORE: Role[] = ['ADMIN_ALMACEN']
 const FOUND: Role[] = ['REPRESENTANTE_FUNDACION']
 const ANY: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION', 'ADMIN_STYLERADAR']
 
-/** Raíz: la bienvenida al iniciar sesión vive aquí para verse aunque se pase del sitio al módulo de administración. */
+/** Raíz: la bienvenida al iniciar sesión y el fondo aurora a nivel de layout (excepto en rutas excluidas). */
 function RootLayout() {
-  return <><Outlet /><WelcomeOverlay /></>
+  const { pathname } = useLocation()
+  const excluded = isAuroraExcluded(pathname)
+
+  return (
+    <div className="relative min-h-screen">
+      {!excluded && (
+        <AuroraBackground
+          fixed
+        />
+      )}
+      <div className="relative z-10 min-h-screen">
+        <Outlet />
+      </div>
+      <WelcomeOverlay />
+    </div>
+  )
 }
 
 export const router = createBrowserRouter([{ element: <RootLayout />, children: [

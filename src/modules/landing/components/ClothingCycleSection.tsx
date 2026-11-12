@@ -176,7 +176,7 @@ export function ClothingCycleSection({ onSelectPhase }: ClothingCycleSectionProp
   }
 
   return (
-    <section id="ciclo" aria-labelledby="cicloSectionTitle" className="relative overflow-hidden bg-[#181324] py-20 md:py-28">
+    <section id="ciclo" aria-labelledby="cicloSectionTitle" className="relative overflow-hidden bg-[var(--sr-bg)] py-20 md:py-28">
       {/* Halo ambiental */}
       <div
         className="pointer-events-none absolute -right-36 -top-36 h-[500px] w-[500px] rounded-full bg-violeta/25 blur-3xl"
@@ -186,18 +186,18 @@ export function ClothingCycleSection({ onSelectPhase }: ClothingCycleSectionProp
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Cabecera */}
         <div className="max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[.2em] text-[#B9B9CA]">Moda circular · Bogotá</p>
-          <h2 id="cicloSectionTitle" className="mt-3 text-3xl font-extrabold tracking-tight text-blanco sm:text-4xl md:text-5xl">
-            El ecosistema de StyleRadar: <span className="text-arena">tres formas de vivir la moda.</span>
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-[var(--sr-hero-text-muted)]">Moda circular · Bogotá</p>
+          <h2 id="cicloSectionTitle" className="mt-3 text-3xl font-extrabold tracking-tight text-[var(--sr-hero-text)] sm:text-4xl md:text-5xl">
+            El ecosistema de StyleRadar: <span className="text-[var(--sr-accent-text)]">tres formas de vivir la moda.</span>
           </h2>
-          <p className="mt-4 text-base text-[#cfcfdc]">
+          <p className="mt-4 text-base text-[var(--sr-hero-text-muted)]">
             En StyleRadar ninguna prenda se pierde: puedes estrenar talento local en boutiques de barrio, hacer circular lo que ya no usas
             entre personas o donarlo con propósito a fundaciones de Bogotá.
           </p>
         </div>
 
         {/* Diagrama del ciclo continuo (Tabs) */}
-        <div className="my-10 rounded-2xl border border-white/10 bg-[#262626]/60 p-2.5 backdrop-blur-md">
+        <div className="my-10 rounded-2xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/80 p-2.5 backdrop-blur-md">
           <div role="tablist" aria-label="Ciclo de la ropa en StyleRadar" className="grid grid-cols-1 gap-2 md:grid-cols-3">
             {PHASES.map((p, i) => {
               const isActive = activeTab === p.key
@@ -210,15 +210,15 @@ export function ClothingCycleSection({ onSelectPhase }: ClothingCycleSectionProp
                   aria-controls={`cycle-panel-${p.key}`}
                   onClick={() => handleTabChange(p.key)}
                   onKeyDown={(e) => handleKeyDown(e, i)}
-                  className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-left transition ${
+                  className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                     isActive
-                      ? 'border border-arena/35 bg-[#2a1645] text-blanco shadow-[0_8px_24px_rgba(72,17,154,0.35)]'
-                      : 'text-[#B9B9CA] hover:bg-white/5 hover:text-blanco'
+                      ? 'border border-[var(--sr-accent-text)]/40 bg-[var(--sr-surface-raised)] text-[var(--sr-hero-text)] shadow-[0_8px_24px_var(--color-shadow-color,rgba(72,17,154,0.35))]'
+                      : 'text-[var(--sr-hero-text-muted)] hover:bg-white/5 hover:text-[var(--sr-hero-text)]'
                   }`}
                 >
                   <span
                     className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-extrabold ${
-                      isActive ? 'bg-violeta text-arena' : 'bg-white/10 text-[#B9B9CA]'
+                      isActive ? 'bg-[var(--sr-accent)] text-[var(--sr-text-on-accent,#fff)]' : 'border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] text-[var(--sr-hero-text-muted)]'
                     }`}
                   >
                     {p.num}
@@ -241,16 +241,16 @@ export function ClothingCycleSection({ onSelectPhase }: ClothingCycleSectionProp
           className="grid gap-8 lg:grid-cols-2"
         >
           {/* Detalles y Acciones */}
-          <div className="flex flex-col gap-5 rounded-2xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+          <div className="flex flex-col gap-5 rounded-2xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] p-6 sm:p-8">
             <Badge tone="violeta">{currentPhase.badge}</Badge>
-            <h3 className="text-2xl font-bold tracking-tight text-blanco sm:text-3xl">{currentPhase.title}</h3>
-            <p className="text-sm leading-relaxed text-[#cfcfdc]">{currentPhase.description}</p>
+            <h3 className="text-2xl font-bold tracking-tight text-[var(--sr-hero-text)] sm:text-3xl">{currentPhase.title}</h3>
+            <p className="text-sm leading-relaxed text-[var(--sr-hero-text-muted)]">{currentPhase.description}</p>
 
-            <div className="grid grid-cols-1 gap-4 border-y border-white/10 py-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 border-y border-[var(--sr-border-subtle)] py-5 sm:grid-cols-2">
               {currentPhase.stats.map((s, idx) => (
                 <div key={idx} className="flex flex-col">
-                  <span className="text-2xl font-extrabold text-arena sm:text-3xl">{s.value}</span>
-                  <span className="mt-1 text-xs text-[#B9B9CA]">{s.label}</span>
+                  <span className="text-2xl font-extrabold text-[var(--sr-accent-text)] sm:text-3xl">{s.value}</span>
+                  <span className="mt-1 text-xs text-[var(--sr-hero-text-muted)]">{s.label}</span>
                 </div>
               ))}
             </div>
@@ -276,19 +276,19 @@ export function ClothingCycleSection({ onSelectPhase }: ClothingCycleSectionProp
             {currentPhase.previewCards.map((card, idx) => (
               <article
                 key={idx}
-                className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 transition hover:translate-x-1 hover:border-arena/40 hover:bg-violeta/20"
+                className="flex items-center gap-4 rounded-xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] p-3 transition hover:translate-x-1 hover:border-[var(--sr-accent)]/40 hover:bg-[var(--sr-surface-raised)]"
               >
                 <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-black/40">
                   <img src={card.image} alt={card.title} className="h-full w-full object-cover" loading="lazy" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="truncate text-sm font-bold text-blanco">{card.title}</h4>
-                  <p className="truncate text-xs text-[#B9B9CA]">{card.subtitle}</p>
-                  <span className="mt-2 inline-block rounded bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-arena">
+                  <h4 className="truncate text-sm font-bold text-[var(--sr-hero-text)]">{card.title}</h4>
+                  <p className="truncate text-xs text-[var(--sr-hero-text-muted)]">{card.subtitle}</p>
+                  <span className="mt-2 inline-block rounded border border-[var(--sr-border-subtle)] bg-[var(--sr-surface-raised)] px-2 py-0.5 text-[10px] font-semibold text-[var(--sr-accent-text)]">
                     {card.tag}
                   </span>
                 </div>
-                <div className="pr-2 text-xs font-bold text-arena">{card.badgeRight}</div>
+                <div className="pr-2 text-xs font-bold text-[var(--sr-accent-text)]">{card.badgeRight}</div>
               </article>
             ))}
           </div>

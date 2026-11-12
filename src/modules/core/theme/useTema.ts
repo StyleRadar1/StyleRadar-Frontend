@@ -1,16 +1,42 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useContext, useEffect, useState } from 'react'
+import { ThemeContext } from './ThemeContext'
 import { aplicarTema, leerTema, type Tema } from './tema'
 
-/** Tema actual y función para cambiarlo. Todos los selectores de la página quedan sincronizados. */
+/**
+ * Hook para temas legacy. Funciona dentro o fuera de ThemeProvider para
+ * total compatibilidad con pruebas unitarias y componentes antiguos.
+ */
 export function useTema() {
-  const [tema, setTemaState] = useState<Tema>(leerTema)
+  const ctx = useContext(ThemeContext)
+  const [temaFallback, setTemaFallback] = useState<Tema>(leerTema)
 
   useEffect(() => {
-    const onCambio = (e: Event) => setTemaState((e as CustomEvent<Tema>).detail)
+    if (ctx) return
+    const onCambio = (e: Event) => setTemaFallback((e as CustomEvent<Tema>).detail)
     window.addEventListener('sr:tema', onCambio)
     return () => window.removeEventListener('sr:tema', onCambio)
-  }, [])
+  }, [ctx])
 
-  const setTema = useCallback((t: Tema) => aplicarTema(t), [])
-  return { tema, setTema }
+  const setTema = useCallback(
+    (t: Tema) => {
+      if (ctx) {
+        ctx.setTheme(t)
+      } else {
+        aplicarTema(t)
+      }
+    },
+    [ctx],
+  )
+
+  if (ctx) {
+    return {
+      tema: ctx.theme as Tema,
+      setTema,
+    }
+  }
+
+  return {
+    tema: temaFallback,
+    setTema,
+  }
 }

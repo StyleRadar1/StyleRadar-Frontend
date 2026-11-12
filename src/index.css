@@ -1,9 +1,10 @@
 @import "tailwindcss";
+@import "./modules/core/theme/tokens.css";
 
-/* Paleta y tipografía del manual de identidad de StyleRadar.
-   Estos valores son los del tema oscuro (el de siempre). Los temas claro y daltónico
-   los cambian más abajo, así que las clases de siempre (bg-grafito, text-blanco,
-   text-white/70, border-white/10, bg-arena…) siguen funcionando en los tres temas. */
+/* =====================================================================
+   Paleta y tipografía del manual de identidad de StyleRadar.
+   Tokens base integrados con Tailwind CSS v4 (@theme).
+   ===================================================================== */
 @theme {
   --font-sans: "Poppins", system-ui, sans-serif;
   --color-grafito: #262626;
@@ -16,89 +17,367 @@
 }
 
 /* =====================================================================
-   P13 · Temas: oscuro (por defecto), claro y daltónico.
-   El tema se guarda en localStorage («sr:tema», la misma clave del prototipo)
-   y se aplica con <html data-tema="…"> (ver src/modules/core/theme).
+   P13 / Paso 2 · Tokens semánticos de temas (Oscuro, Claro y Daltónico).
+   Se aplican simultáneamente bajo [data-theme] y [data-tema] en <html>.
 
-   Variables para pantallas nuevas (úsenlas en vez de colores fijos):
-     --sr-tx      texto principal          --sr-tx-2   texto secundario
-     --sr-bg      fondo de la página        --sr-bg-2   superficies (tarjetas, menú)
-     --sr-acc-tx  violeta para texto        --sr-foco   borde de foco
-     --sr-ok      bien / disponible         --sr-bad    error / bloqueado
-     --sr-warn    aviso
-   Con Tailwind: text-[var(--sr-ok)], bg-[var(--sr-bad)]/10, etc.
-   Para fondos con foto, agreguen la clase .zona-oscura (siempre oscura).
+   Tokens universales disponibles:
+     --sr-bg               fondo general de la página
+     --sr-surface          superficie (tarjetas, contenedores, paneles)
+     --sr-surface-raised   superficies elevadas (modales, menús, inputs)
+     --sr-border-subtle    bordes decorativos / divisores tenues
+     --sr-border-control   borde de controles interactivos (ratio > 3:1)
+     --sr-text-primary     texto principal (ratio > 4.5:1)
+     --sr-text-secondary   texto secundario
+     --sr-text-muted       texto atenuado / hints
+     --sr-text-on-accent   texto sobre botones de color de marca
+     --sr-accent           acento primario de marca (violeta)
+     --sr-accent-text      variante de acento para texto con contraste óptimo
+     --sr-focus            color visible del foco de teclado
+     --sr-shadow           sombras ambientales acordes al tono de fondo
+     --sr-ok / --sr-ok-bg  éxito / disponible y su fondo translúcido
+     --sr-bad / --sr-bad-bg error / bloqueado y su fondo translúcido
+     --sr-warn / --sr-warn-bg advertencia / pendiente y su fondo translúcido
+     --sr-info / --sr-info-bg información y su fondo translúcido
    ===================================================================== */
-:root {
+
+:root,
+html[data-theme="dark"],
+html[data-theme="oscuro"],
+html[data-tema="oscuro"] {
+  /* Fondo y superficies oscuras */
   --sr-bg: #1d1d1d;
+  --sr-surface: #262626;
+  --sr-surface-raised: #2d2d33;
   --sr-bg-2: #262626;
+
+  /* Bordes */
+  --sr-border-subtle: rgba(255, 255, 255, 0.12);
+  --sr-border-control: rgba(255, 255, 255, 0.35);
+
+  /* Tipografía */
+  --sr-text-primary: #ffffff;
+  --sr-text-secondary: #b9b9ca;
+  --sr-text-muted: #8e8e9f;
+  --sr-text-on-accent: #ffffff;
   --sr-tx: #ffffff;
   --sr-tx-2: #b9b9ca;
+
+  /* Marca y foco */
+  --sr-accent: #7b4dd8;
+  --sr-accent-text: #b9b9ca;
   --sr-acc-tx: #b9b9ca;
+  --sr-focus: #e8dccb;
   --sr-foco: #e8dccb;
+
+  /* Sombras oscuras */
+  --sr-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  /* Estados accesibles */
   --sr-ok: #9be3b4;
+  --sr-ok-bg: rgba(155, 227, 180, 0.12);
   --sr-bad: #ffb4b4;
+  --sr-bad-bg: rgba(255, 180, 180, 0.12);
   --sr-warn: #f3d27a;
-  /* Color del punto de cada rol en el menú de cuenta (siempre va con el nombre del rol). */
+  --sr-warn-bg: rgba(243, 210, 122, 0.12);
+  --sr-info: #8dc5e8;
+  --sr-info-bg: rgba(141, 197, 232, 0.12);
+
+  /* Puntos de roles en menús */
   --sr-rol-usuario: #a98be0;
   --sr-rol-tienda: #9be3b4;
   --sr-rol-fundacion: #f0c27b;
   --sr-rol-admin: #e8dccb;
+
+  /* Superficie y tokens del Hero Aurora Noche */
+  --sr-hero-bg: #05030a;
+  --sr-hero-text: #f4eee3;
+  --sr-hero-text-muted: #cfc6e0;
+  --sr-hero-bar: #0c0814;
+  --aurora-blur: 70px;
+
+  /* Paleta Aurora Noche (Unificada: referencia del Catálogo) */
+  --aurora-c1: #c98ab8;
+  --aurora-c2: #6a2f8a;
+  --aurora-c3: #b06ae0;
+  --aurora-c4: #3a1a6a;
+
+  /* Variables de ajuste de la Aurora:
+     --aurora-speed: multiplicador de velocidad (1 = ciclos de 26 a 34 s; 1.3 = más vivo; 0.7 = más calmado)
+     --aurora-opacity: intensidad del color (más alto = más color)
+  */
+  --aurora-speed: 1.3;
+  --aurora-travel: 1;
+  --aurora-opacity: 0.5;
+
+  /* Tokens Probador Virtual */
+  --probador-bg: #121212;
+  --probador-text: #e8e4ef;
+  --probador-text-muted: rgba(255, 255, 255, 0.45);
+  --probador-topbar-bg: linear-gradient(180deg, rgba(18, 18, 18, 0.95) 0%, rgba(18, 18, 18, 0.6) 70%, transparent 100%);
+  --probador-mannequin-filter: drop-shadow(0 0 80px rgba(72, 17, 154, 0.12));
+  --probador-ambient-glow-display: block;
+  --probador-floor-shadow: radial-gradient(ellipse, rgba(0, 0, 0, 0.45) 0%, transparent 70%);
+  --probador-pill-bg: rgba(26, 26, 26, 0.88);
+  --probador-pill-border: rgba(255, 255, 255, 0.08);
+  --probador-pill-text: #e8dccb;
+  --probador-accent: #e8dccb;
+
+  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  --hero-fg: #ffffff;
+  --hero-fg-muted: rgba(255, 255, 255, 0.75);
+  --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));
+  --hero-sub-bg: rgba(35, 30, 37, 0.75);
+  --hero-sub-border: rgba(255, 255, 255, 0.2);
+  --hero-btn-primary-bg: #48119a;
+  --hero-btn-primary-fg: #ffffff;
+  --hero-btn-border: rgba(255, 255, 255, 0.4);
+  --hero-btn-fg: #ffffff;
+  --hero-btn-bg: rgba(255, 255, 255, 0.1);
+  --hero-nav-fg: #ffffff;
+  --hero-nav-border: rgba(185, 185, 202, 0.2);
+  --hero-nav-bg: rgba(255, 255, 255, 0.03);
+  --hero-select-bg: rgba(38, 38, 38, 0.6);
+  --hero-select-border: rgba(255, 255, 255, 0.35);
+  --hero-select-fg: #ffffff;
+
   color-scheme: dark;
 }
 
-/* ---------- Claro ----------
-   Se invierten las clases de siempre: «blanco» y «white» pasan a ser el texto
-   oscuro, «grafito» la superficie clara y «arena» un arena oscuro legible. */
+/* =====================================================================
+   TEMA CLARO · Paleta cálida arena (CERO blanco puro #FFFFFF)
+   - fondo: #EFE6D6
+   - superficie: #F7F1E6
+   - superficie elevada: #FBF7EF
+   - borde decorativo: #D9CBB2
+   - borde controles: #857458
+   - texto principal: #2B2118 (café profundo, contraste 12.8:1)
+   - texto secundario: #5C4D3C (contraste 6.2:1)
+   - texto atenuado: #6B5B48 (contraste 4.8:1)
+   - texto sobre acento: #FBF7EF
+   - sombras: café translúcido rgba(43, 33, 24, 0.10)
+   ===================================================================== */
+html[data-theme="light"],
+html[data-theme="claro"],
 html[data-tema="claro"] {
-  --sr-bg: #f6f3ee;
-  --sr-bg-2: #ece7df;
-  --sr-tx: #262626;
-  --sr-tx-2: #4f4f63;
+  /* Fondo y superficies arena cálida */
+  --sr-bg: #efe6d6;
+  --sr-surface: #f7f1e6;
+  --sr-surface-raised: #fbf7ef;
+  --sr-bg-2: #f7f1e6;
+
+  /* Bordes cálidos */
+  --sr-border-subtle: #d9cbb2;
+  --sr-border-control: #857458;
+
+  /* Tipografía café de alto contraste */
+  --sr-text-primary: #2b2118;
+  --sr-text-secondary: #5c4d3c;
+  --sr-text-muted: #6b5b48;
+  --sr-text-on-accent: #fbf7ef;
+  --sr-tx: #2b2118;
+  --sr-tx-2: #5c4d3c;
+
+  /* Marca y acento (violeta oscuro con contraste 9.1:1 sobre #EFE6D6) */
+  --sr-accent: #48119a;
+  --sr-accent-text: #48119a;
   --sr-acc-tx: #48119a;
+  --sr-focus: #48119a;
   --sr-foco: #48119a;
+
+  /* Sombras café translúcidas, sin grises ni negros fríos */
+  --sr-shadow: 0 10px 30px rgba(43, 33, 24, 0.1);
+
+  /* Estados con contraste reforzado para fondo claro */
   --sr-ok: #1e6b3a;
+  --sr-ok-bg: rgba(30, 107, 58, 0.12);
   --sr-bad: #a3231a;
+  --sr-bad-bg: rgba(163, 35, 26, 0.12);
   --sr-warn: #7a5300;
-  --sr-rol-usuario: #5a2bb0;
+  --sr-warn-bg: rgba(122, 83, 0, 0.12);
+  --sr-info: #1c537b;
+  --sr-info-bg: rgba(28, 83, 123, 0.12);
+
+  /* Roles con legibilidad adaptada */
+  --sr-rol-usuario: #48119a;
   --sr-rol-tienda: #1e6b3a;
-  --sr-rol-fundacion: #9a5b00;
-  --sr-rol-admin: #6a4f2a;
+  --sr-rol-fundacion: #7a5300;
+  --sr-rol-admin: #5c4d3c;
+
+  /* Superficie y tokens del Hero Aurora Día (Amanecer en el radar) */
+  --sr-hero-bg: #e6d9c0;
+  --sr-hero-text: #1f1433;
+  --sr-hero-text-muted: #2e2147;
+  --sr-hero-bar: #efe5d0;
+  --aurora-blur: 75px;
+
+  /* Paleta Aurora Día (Unificada: referencia del Catálogo) */
+  --aurora-c1: #e3b3d3;
+  --aurora-c2: #cfa6e6;
+  --aurora-c3: #a97fd6;
+  --aurora-c4: #e8d4f0;
+  --aurora-opacity: 0.55;
+
+  /* Tokens Probador Virtual (Modo Claro: fondo blanco puro y maniquí negro con volumen) */
+  --probador-bg: #ffffff;
+  --probador-text: #1f1433;
+  --probador-text-muted: rgba(31, 20, 51, 0.6);
+  --probador-topbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 70%, transparent 100%);
+  --probador-mannequin-filter: brightness(0.08) contrast(1.3) grayscale(1);
+  --probador-ambient-glow-display: none;
+  --probador-floor-shadow: radial-gradient(ellipse, rgba(0, 0, 0, 0.18) 0%, transparent 70%);
+  --probador-pill-bg: #1f1433;
+  --probador-pill-border: rgba(31, 20, 51, 0.2);
+  --probador-pill-text: #f4eee3;
+  --probador-accent: #48119a;
+
+  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  --hero-fg: #ffffff;
+  --hero-fg-muted: rgba(255, 255, 255, 0.75);
+  --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));
+  --hero-sub-bg: rgba(35, 30, 37, 0.75);
+  --hero-sub-border: rgba(255, 255, 255, 0.2);
+  --hero-btn-primary-bg: #48119a;
+  --hero-btn-primary-fg: #ffffff;
+  --hero-btn-border: rgba(255, 255, 255, 0.4);
+  --hero-btn-fg: #ffffff;
+  --hero-btn-bg: rgba(255, 255, 255, 0.1);
+  --hero-nav-fg: #ffffff;
+  --hero-nav-border: rgba(185, 185, 202, 0.2);
+  --hero-nav-bg: rgba(255, 255, 255, 0.03);
+  --hero-select-bg: rgba(38, 38, 38, 0.6);
+  --hero-select-border: rgba(255, 255, 255, 0.35);
+  --hero-select-fg: #ffffff;
+
   color-scheme: light;
 
-  --color-fondo: #f6f3ee;
-  --color-grafito: #ece7df;
-  --color-blanco: #262626;
-  --color-white: #262626;
-  --color-black: #ffffff;
-  --color-arena: #6a4f2a;
-  --color-lavanda: #4f4f63;
-  --color-violeta-claro: #5a2bb0;
+  /* Mapeo retrocompatible para componentes que aún lean variables históricas */
+  --color-fondo: #efe6d6;
+  --color-grafito: #f7f1e6;
+  --color-blanco: #2b2118;
+  --color-white: #2b2118;
+  --color-black: #fbf7ef;
+  --color-arena: #5c4d3c;
+  --color-lavanda: #5c4d3c;
+  --color-violeta-claro: #48119a;
 }
 
-/* ---------- Daltónico ----------
-   Oscuro con estados de la paleta Okabe-Ito (azul, naranja, amarillo), que se
-   distinguen con cualquier tipo de daltonismo. Nunca solo rojo y verde. */
+/* =====================================================================
+   TEMA DALTÓNICO · Basado en paleta Okabe-Ito accesible
+   Nunca usa verde y rojo solos. Estados en azul, naranja y amarillo.
+   ===================================================================== */
+html[data-theme="colorblind"],
+html[data-cvd="on"],
+html[data-theme="daltonico"],
 html[data-tema="daltonico"] {
+  --sr-bg: #1d1d1d;
+  --sr-surface: #262626;
+  --sr-surface-raised: #2d2d33;
+  --sr-bg-2: #262626;
+
+  --sr-border-subtle: rgba(255, 255, 255, 0.18);
+  --sr-border-control: rgba(255, 255, 255, 0.45);
+
+  --sr-text-primary: #ffffff;
+  --sr-text-secondary: #d6d6e2;
+  --sr-text-muted: #a6a6ba;
+  --sr-text-on-accent: #ffffff;
+  --sr-tx: #ffffff;
+  --sr-tx-2: #d6d6e2;
+
+  --sr-accent: #56b4e9;
+  --sr-accent-text: #56b4e9;
+  --sr-acc-tx: #d6d6e2;
+  --sr-focus: #f0e442;
+  --sr-foco: #f0e442;
+
+  --sr-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+
+  /* Okabe-Ito: azul = ok, naranja = bad, amarillo = warn, azul marino = info */
+  --sr-ok: #56b4e9;
+  --sr-ok-bg: rgba(86, 180, 233, 0.15);
+  --sr-bad: #e69f00;
+  --sr-bad-bg: rgba(230, 159, 0, 0.15);
+  --sr-warn: #f0e442;
+  --sr-warn-bg: rgba(240, 228, 66, 0.15);
+  --sr-info: #0072b2;
+  --sr-info-bg: rgba(0, 114, 178, 0.15);
+
   --sr-rol-usuario: #cc79a7;
   --sr-rol-tienda: #56b4e9;
   --sr-rol-fundacion: #e69f00;
-  --sr-tx-2: #d6d6e2;
-  --sr-acc-tx: #d6d6e2;
-  --sr-foco: #f0e442;
-  --sr-ok: #56b4e9;
-  --sr-bad: #e69f00;
-  --sr-warn: #f0e442;
-  --color-lavanda: #d6d6e2;
-}
-html[data-tema="daltonico"] main a:not([class*="rounded"]) { text-decoration: underline; text-underline-offset: 3px; }
+  --sr-rol-admin: #f0e442;
 
-/* ---------- Zonas siempre oscuras ----------
-   Texto sobre fotos (hero del landing, inicio de sesión, registro) y botones
-   violeta: conservan el texto blanco en el tema claro. El landing completo (.sr-landing)
-   es una página editorial oscura con fondo propio: sin esto el texto pasaba a gris oscuro
-   sobre fondo oscuro y no se leía. */
-html[data-tema="claro"] :is(.zona-oscura, .sr-landing, section:has(> img.absolute)) {
+  /* Superficie y tokens del Hero Aurora Daltónico */
+  --sr-hero-bg: #1d1d1d;
+  --sr-hero-text: #ffffff;
+  --sr-hero-text-muted: #d6d6e2;
+  --sr-hero-bar: #262626;
+  --aurora-blur: 70px;
+  --aurora-c1: #cc79a7;
+  --aurora-c2: #56b4e9;
+  --aurora-c3: #0072b2;
+  --aurora-c4: #e69f00;
+  --aurora-opacity: 0.35;
+
+  /* Tokens Probador Virtual */
+  --probador-bg: #121212;
+  --probador-text: #e8e4ef;
+  --probador-text-muted: rgba(255, 255, 255, 0.45);
+  --probador-topbar-bg: linear-gradient(180deg, rgba(18, 18, 18, 0.95) 0%, rgba(18, 18, 18, 0.6) 70%, transparent 100%);
+  --probador-mannequin-filter: drop-shadow(0 0 80px rgba(72, 17, 154, 0.12));
+  --probador-ambient-glow-display: block;
+  --probador-floor-shadow: radial-gradient(ellipse, rgba(0, 0, 0, 0.45) 0%, transparent 70%);
+  --probador-pill-bg: rgba(26, 26, 26, 0.88);
+  --probador-pill-border: rgba(255, 255, 255, 0.08);
+  --probador-pill-text: #e8dccb;
+  --probador-accent: #e8dccb;
+
+  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  --hero-fg: #ffffff;
+  --hero-fg-muted: rgba(255, 255, 255, 0.75);
+  --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));
+  --hero-sub-bg: rgba(35, 30, 37, 0.75);
+  --hero-sub-border: rgba(255, 255, 255, 0.2);
+  --hero-btn-primary-bg: #48119a;
+  --hero-btn-primary-fg: #ffffff;
+  --hero-btn-border: rgba(255, 255, 255, 0.4);
+  --hero-btn-fg: #ffffff;
+  --hero-btn-bg: rgba(255, 255, 255, 0.1);
+  --hero-nav-fg: #ffffff;
+  --hero-nav-border: rgba(185, 185, 202, 0.2);
+  --hero-nav-bg: rgba(255, 255, 255, 0.03);
+  --hero-select-bg: rgba(38, 38, 38, 0.6);
+  --hero-select-border: rgba(255, 255, 255, 0.35);
+  --hero-select-fg: #ffffff;
+
+  --color-lavanda: #d6d6e2;
+  color-scheme: dark;
+}
+
+html[data-theme="daltonico"] main a:not([class*="rounded"]),
+html[data-tema="daltonico"] main a:not([class*="rounded"]) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* =====================================================================
+   Tratamiento de imágenes de prendas en tema claro:
+   Fondos blancos pasan a integrarse con el tono arena de la superficie.
+   ===================================================================== */
+html[data-theme="claro"] img.img-prenda,
+html[data-theme="claro"] .p-card img,
+html[data-theme="claro"] .pd-img img,
+html[data-tema="claro"] img.img-prenda,
+html[data-tema="claro"] .p-card img,
+html[data-tema="claro"] .pd-img img {
+  mix-blend-mode: multiply;
+}
+
+/* =====================================================================
+   Zonas oscuras editoriales (hero de fotos, portadas con fondo propio)
+   ===================================================================== */
+html[data-theme="claro"] :is(.zona-oscura, #inicio, #peHeader, section:has(> img.absolute)),
+html[data-tema="claro"] :is(.zona-oscura, #inicio, #peHeader, section:has(> img.absolute)) {
   --sr-tx: #ffffff;
   --sr-tx-2: #b9b9ca;
   --sr-acc-tx: #b9b9ca;
@@ -112,46 +391,127 @@ html[data-tema="claro"] :is(.zona-oscura, .sr-landing, section:has(> img.absolut
   --color-arena: #e8dccb;
   --color-lavanda: #b9b9ca;
   --color-violeta-claro: #7b4dd8;
-  color: #ffffff;
-}
-html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/9"], [class*="bg-[#c0392b]"]) {
-  --color-blanco: #ffffff;
-  --color-white: #ffffff;
-  color: #ffffff;
+  color: var(--hero-fg, #ffffff);
 }
 
-/* ---------- Colores fijos que ya usan algunas pantallas ----------
-   Mientras cada módulo pasa a las variables, los verdes y rojos fijos siguen
-   el tema (en claro se oscurecen para tener contraste 4.5:1; en daltónico
-   pasan a azul y naranja). */
-html:is([data-tema="claro"], [data-tema="daltonico"]) :is(.text-\[\#ffb4b4\], .text-\[\#ff8a8a\]) { color: var(--sr-bad); }
-/* Más colores fijos que usan las pantallas. En claro pasan a las variables del tema: el violeta y el
-   gris claro sobre fondo claro no se leían (contraste menor a 3:1). Las zonas oscuras reponen sus variables. */
-html[data-tema="claro"] .text-\[\#a98be0\] { color: var(--sr-acc-tx); }
-html[data-tema="claro"] :is(.text-\[\#b9b9ca\], .text-\[\#d1ced7\], .text-\[\#cfcfdc\]) { color: var(--sr-tx-2); }
-html[data-tema="claro"] .text-\[\#e8dccb\] { color: var(--color-arena); }
-html[data-tema="claro"] .text-\[\#f2c078\] { color: var(--sr-warn); }
-html[data-tema="claro"] :is(.text-amber-200, .text-amber-300) { color: var(--sr-warn); }
-html[data-tema="claro"] .text-green-400 { color: var(--sr-ok); }
-html[data-tema="claro"] .text-red-200 { color: var(--sr-bad); }
-html[data-tema="claro"] .bg-red-950\/50 { background-color: color-mix(in srgb, var(--sr-bad) 12%, transparent); }
-html:is([data-tema="claro"], [data-tema="daltonico"]) .text-\[\#9be3b4\] { color: var(--sr-ok); }
-html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="bg-[#ff8a8a]"] { background-color: color-mix(in srgb, var(--sr-bad) 12%, transparent); }
-html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="bg-[#9be3b4]"] { background-color: color-mix(in srgb, var(--sr-ok) 12%, transparent); }
-html:is([data-tema="claro"], [data-tema="daltonico"]) [class*="border-[#ff8a8a]"] { border-color: color-mix(in srgb, var(--sr-bad) 45%, transparent); }
-html[data-tema="claro"] .text-\[\#B9B9CA\] { color: var(--sr-tx-2); }
-/* Texto tenue (text-white/40 a /80): sobre fondo claro la transparencia baja el contraste,
-   así que en el tema claro todo pasa al gris de texto secundario (7:1). */
-html[data-tema="claro"] [class*="text-white/"]:not(:is(.zona-oscura, .sr-landing, section:has(> img.absolute), .bg-violeta) *) { color: var(--sr-tx-2); }
+html[data-theme="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/9"]),
+html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/9"]) {
+  --color-blanco: #fbf7ef;
+  --color-white: #fbf7ef;
+  color: #fbf7ef;
+}
 
-html { background: var(--color-fondo); }
-body { @apply font-sans text-blanco antialiased; }
+html {
+  background: var(--sr-bg);
+  color: var(--sr-text-primary);
+}
+
+body {
+  @apply font-sans antialiased;
+  background-color: var(--sr-bg);
+  color: var(--sr-text-primary);
+}
 
 @layer base {
-  /* S2 · Foco visible de 2 px en todo lo que se alcanza con Tab. */
-  :focus-visible { outline: 2px solid var(--sr-foco); outline-offset: 2px; }
-  select option { background: var(--sr-bg-2); color: var(--sr-tx); }
+  :focus-visible {
+    outline: 2px solid var(--sr-focus);
+    outline-offset: 2px;
+  }
+  select option {
+    background: var(--sr-surface-raised);
+    color: var(--sr-text-primary);
+  }
 }
 
-/* El logo tiene la figura en blanco: en el menú del tema claro pasa a grafito. */
-html[data-tema="claro"] header svg path[fill="#fff"] { fill: #262626; }
+/* El logo en el menú del tema claro se adapta al tono de texto principal (excepto el header del hero landing) */
+html[data-theme="claro"] header:not(#peHeader) svg path[fill="#fff"],
+html[data-tema="claro"] header:not(#peHeader) svg path[fill="#fff"],
+html[data-theme="claro"] header:not(#peHeader) svg path.srl-w,
+html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
+  fill: var(--sr-text-primary);
+}
+
+#peHeader svg path[fill="#fff"],
+#peHeader svg path.srl-d,
+#inicio svg path[fill="#fff"] {
+  fill: var(--hero-fg, #ffffff) !important;
+}
+
+/* =====================================================================
+   Fondo Aurora ("Amanecer en el radar") · versión UNIFORME y con movimiento
+   4 manchas enormes repartidas por toda la pantalla: se mezclan entre sí,
+   cubren todo el espacio (sin foco central) y se desplazan con suavidad.
+   Colores: --aurora-c1..c4 · Intensidad: --aurora-opacity · Velocidad: --aurora-speed
+   ===================================================================== */
+.sr-aurora-container {
+  background-color: var(--sr-hero-bg);
+  color: var(--sr-hero-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.sr-aurora-blob {
+  width: 95vmax !important;
+  height: 95vmax !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  right: auto !important;
+  bottom: auto !important;
+  border-radius: 9999px !important;
+  filter: blur(110px) !important;
+  opacity: var(--aurora-opacity, 0.5);
+}
+.sr-aurora-blob-1 {
+  left: calc(30% - 47.5vmax) !important;
+  top: calc(28% - 47.5vmax) !important;
+  animation: sr-aurora-b1 calc(26s / var(--aurora-speed, 1)) ease-in-out infinite alternate;
+}
+.sr-aurora-blob-2 {
+  left: calc(28% - 47.5vmax) !important;
+  top: calc(74% - 47.5vmax) !important;
+  animation: sr-aurora-b2 calc(30s / var(--aurora-speed, 1)) ease-in-out infinite alternate;
+}
+.sr-aurora-blob-3 {
+  left: calc(72% - 47.5vmax) !important;
+  top: calc(72% - 47.5vmax) !important;
+  animation: sr-aurora-b3 calc(28s / var(--aurora-speed, 1)) ease-in-out infinite alternate;
+}
+.sr-aurora-blob-4 {
+  left: calc(70% - 47.5vmax) !important;
+  top: calc(26% - 47.5vmax) !important;
+  animation: sr-aurora-b4 calc(34s / var(--aurora-speed, 1)) ease-in-out infinite alternate;
+}
+
+@keyframes sr-aurora-b1 {
+  0% { transform: translate3d(-4vw, -3vh, 0) scale(1); }
+  100% { transform: translate3d(14vw, 12vh, 0) scale(1.1); }
+}
+@keyframes sr-aurora-b2 {
+  0% { transform: translate3d(-3vw, 4vh, 0) scale(1.08); }
+  100% { transform: translate3d(13vw, -14vh, 0) scale(0.95); }
+}
+@keyframes sr-aurora-b3 {
+  0% { transform: translate3d(4vw, 3vh, 0) scale(1); }
+  100% { transform: translate3d(-15vw, -12vh, 0) scale(1.1); }
+}
+@keyframes sr-aurora-b4 {
+  0% { transform: translate3d(3vw, -4vh, 0) scale(1.08); }
+  100% { transform: translate3d(-14vw, 14vh, 0) scale(0.95); }
+}
+
+/* Tarjetas elevadas con sombra violeta translúcida */
+.sr-card-hover {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sr-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -8px rgba(75, 31, 168, 0.18);
+}
+
+/* Respeto estricto a prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .sr-aurora-blob,
+  .animate-spin-vinyl {
+    animation: none !important;
+    transition: none !important;
+  }
+}

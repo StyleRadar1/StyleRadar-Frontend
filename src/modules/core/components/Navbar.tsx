@@ -23,11 +23,13 @@ export function Navbar() {
   const esAdmin = user?.role === 'ADMIN_STYLERADAR'
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     `whitespace-nowrap px-3.5 py-1.5 text-sm font-medium transition ${
-      isActive ? 'rounded-full bg-violeta text-blanco shadow-sm' : 'rounded-lg text-white/75 hover:text-blanco'
+      isActive
+        ? 'rounded-full bg-violeta text-blanco shadow-sm'
+        : 'rounded-lg text-[var(--sr-hero-text-muted)] hover:text-[var(--sr-hero-text)] hover:bg-[var(--sr-surface)]/50'
     }`
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-grafito/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/85 backdrop-blur-xl transition-colors duration-300">
       {esAdmin && (
         <p className="bg-arena px-4 py-1.5 text-center text-xs font-semibold tracking-wide text-grafito">
           <span aria-hidden="true">● </span><b className="uppercase tracking-[.12em]">Modo administrador</b>
@@ -35,7 +37,7 @@ export function Navbar() {
         </p>
       )}
       <nav className="mx-auto flex h-[72px] max-w-6xl items-center gap-4 px-4" aria-label="Principal">
-        <Link to="/" className="flex items-center gap-2 text-lg font-bold">
+        <Link to="/" className="flex items-center gap-2 text-lg font-bold text-[var(--sr-hero-text)]">
           <Logo className="h-8 w-auto" />StyleRadar
           {esAdmin && <span className="rounded-full bg-arena px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-grafito">Admin</span>}
         </Link>
@@ -53,13 +55,13 @@ export function Navbar() {
               <UserMenu />
             </>
           ) : (
-            <Link to="/?login" className="rounded-lg bg-violeta px-4 py-2 text-sm font-semibold">Iniciar sesión</Link>
+            <Link to="/?login" className="rounded-lg bg-violeta px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Iniciar sesión</Link>
           )}
-          <button className="rounded-lg border border-white/20 px-3 py-2 md:hidden" aria-expanded={open} aria-label="Abrir menú" onClick={() => setOpen(!open)}>☰</button>
+          <button className="rounded-lg border border-[var(--sr-border-control)] text-[var(--sr-hero-text)] px-3 py-2 md:hidden" aria-expanded={open} aria-label="Abrir menú" onClick={() => setOpen(!open)}>☰</button>
         </div>
       </nav>
       {open && (
-        <div className="flex flex-col gap-1 border-t border-white/10 px-4 py-3 md:hidden">
+        <div className="flex flex-col gap-1 border-t border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/95 px-4 py-3 md:hidden">
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls} onClick={() => setOpen(false)}>{label}</NavLink>)}
           {(!user || user.role === 'ADMIN_ALMACEN' || user.role === 'REPRESENTANTE_FUNDACION') && <ThemeSelect className="px-3 py-2" />}
         </div>

@@ -12,33 +12,32 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
   return (
     <footer
       id="pe-pie"
-      className="relative overflow-hidden py-24 px-6 md:px-16 bg-[#120f18] text-white border-t border-white/10"
+      className="relative overflow-hidden py-24 px-6 md:px-16 bg-transparent text-[var(--sr-hero-text)] border-t border-[var(--sr-border-subtle)]"
       aria-labelledby="peFinalTitle"
     >
-      {/* Imagen de fondo con gradiente oscurecedor */}
-      <div className="absolute inset-0 z-0">
+      {/* Imagen de fondo sutil integrada sin tapar la aurora */}
+      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
         <img
           src="/prototipo/assets/img/categorias/casual.jpg"
           alt=""
           loading="lazy"
-          className="w-full h-full object-cover opacity-15 filter grayscale contrast-125"
+          className="w-full h-full object-cover filter grayscale contrast-125"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#120f18] via-[#120f18]/85 to-transparent" />
       </div>
 
       <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-start gap-8">
         <div className="space-y-4 max-w-2xl">
-          <p className="text-xs font-extrabold tracking-widest uppercase text-[#b9b9ca]">
+          <p className="text-xs font-extrabold tracking-widest uppercase text-[var(--sr-accent)]">
             Explora sin límites · Bogotá
           </p>
           <h2
             id="peFinalTitle"
-            className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05]"
+            className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] text-[var(--sr-hero-text)]"
           >
             Antes de salir a buscar, <br />
-            <span className="text-[#e8dccb]">mira qué hay.</span>
+            <span className="text-[var(--sr-accent-text)]">mira qué hay.</span>
           </h2>
-          <p className="text-base md:text-lg text-[#d1ced7] leading-relaxed">
+          <p className="text-base md:text-lg text-[var(--sr-hero-text-muted)] leading-relaxed">
             Entra para ver el catálogo, el mapa interactivo y el probador virtual. Puedes
             explorar las boutiques y marcas locales de Bogotá sin necesidad de crear una cuenta.
           </p>
@@ -48,7 +47,7 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
         <div className="flex flex-wrap items-center gap-4 pt-2">
           <Link
             to="/catalogo"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#48119a] hover:bg-[#5e18c8] text-white font-extrabold text-xs tracking-wider uppercase shadow-[0_8px_30px_#48119a77] hover:translate-y-[-2px] transition-all"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-[var(--sr-accent)]/30 hover:translate-y-[-2px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             <span>Entrar a StyleRadar</span>
             <svg
@@ -71,14 +70,14 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
             <button
               type="button"
               onClick={onOpenLogin}
-              className="px-8 py-4 rounded-full border border-white/30 hover:border-white/70 bg-white/5 hover:bg-white/10 text-white font-extrabold text-xs tracking-wider uppercase backdrop-blur-sm transition-all cursor-pointer"
+              className="px-8 py-4 rounded-full border border-[var(--sr-border-subtle)] hover:border-[var(--sr-accent)] bg-[var(--sr-surface)] hover:bg-[var(--sr-surface-raised)] text-[var(--sr-hero-text)] font-extrabold text-xs tracking-wider uppercase backdrop-blur-sm transition-all cursor-pointer"
             >
               Iniciar sesión
             </button>
           ) : (
             <Link
               to="/login"
-              className="px-8 py-4 rounded-full border border-white/30 hover:border-white/70 bg-white/5 hover:bg-white/10 text-white font-extrabold text-xs tracking-wider uppercase backdrop-blur-sm transition-all"
+              className="px-8 py-4 rounded-full border border-[var(--sr-border-subtle)] hover:border-[var(--sr-accent)] bg-[var(--sr-surface)] hover:bg-[var(--sr-surface-raised)] text-[var(--sr-hero-text)] font-extrabold text-xs tracking-wider uppercase backdrop-blur-sm transition-all"
             >
               Iniciar sesión
             </Link>
@@ -86,14 +85,14 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
         </div>
 
         {/* Barra inferior y volver arriba */}
-        <div className="w-full pt-12 mt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#b9b9ca]">
+        <div className="w-full pt-12 mt-8 border-t border-[var(--sr-border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--sr-hero-text-muted)]">
           <p className="font-medium text-center sm:text-left">
             © 2026 StyleRadar · DOSW · Escuela Colombiana de Ingeniería Julio Garavito
           </p>
           <button
             type="button"
             onClick={scrollToTop}
-            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer group"
+            className="flex items-center gap-2 hover:text-[var(--sr-hero-text)] transition-colors cursor-pointer group"
           >
             <span className="font-bold uppercase tracking-wider text-[11px]">Volver arriba</span>
             <svg

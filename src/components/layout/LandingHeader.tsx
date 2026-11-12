@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { navCapsules } from '@/data/landingData'
+import { AppearancePicker } from '@/modules/core/theme'
 import './LandingHeader.css'
 
 interface LandingHeaderProps {
@@ -8,8 +9,6 @@ interface LandingHeaderProps {
   onToggleMobileMenu?: () => void
   isMobileMenuOpen?: boolean
 }
-
-type Theme = 'oscuro' | 'claro' | 'daltonico'
 
 const sectionTargets: Record<string, string> = {
   categorias: 'categorias',
@@ -26,9 +25,6 @@ export function LandingHeader({
   isMobileMenuOpen = false,
 }: LandingHeaderProps) {
   const navigate = useNavigate()
-  const [theme, setTheme] = useState<Theme>(
-    () => (document.documentElement.getAttribute('data-tema') as Theme | null) ?? 'oscuro',
-  )
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
@@ -37,11 +33,6 @@ export function LandingHeader({
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-
-  const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme)
-    document.documentElement.setAttribute('data-tema', newTheme)
-  }
 
   const handleScrollTo = (targetId: string) => {
     const element = document.getElementById(targetId)
@@ -88,23 +79,7 @@ export function LandingHeader({
       </div>
 
       <div className="pe-header-right">
-        <label data-nog className="tema-sel pe-tema">
-          <svg className="tema-sel-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" />
-          </svg>
-          <span className="sr-only">Tema de color</span>
-          <select
-            data-tema-select
-            value={theme}
-            onChange={(event) => handleThemeChange(event.target.value as Theme)}
-            aria-label="Tema de color"
-          >
-            <option value="oscuro">Oscuro</option>
-            <option value="claro">Claro</option>
-            <option value="daltonico">Daltónico</option>
-          </select>
-        </label>
+        <AppearancePicker className="pe-tema" />
 
         <button
           type="button"

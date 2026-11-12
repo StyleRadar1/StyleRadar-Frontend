@@ -509,11 +509,7 @@ export default function PlaylistsPage() {
         role="dialog"
         aria-modal="false"
         aria-label={`Detalle de ${selectedPlaylist.nombre}`}
-        className="min-h-screen bg-[#110e17] text-white px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
-        style={{
-          backgroundImage:
-            'radial-gradient(ellipse 90% 40% at 50% 0%, rgba(80, 19, 184, 0.28), transparent 75%)',
-        }}
+        className="min-h-screen bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
       >
         <style>{`
           @keyframes spinSlow {
@@ -527,22 +523,22 @@ export default function PlaylistsPage() {
 
         <div className="mx-auto max-w-6xl">
           {/* Barra de migas de pan y botón Volver */}
-          <div className="mb-6 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wider text-white/50">
+          <div className="mb-6 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">
             <button
               type="button"
               onClick={handleVolver}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/40 px-3 py-1.5 text-[var(--sr-hero-text)] transition hover:bg-[var(--sr-surface)]"
             >
               ← Volver
             </button>
             <span>·</span>
-            <Link to="/" className="hover:text-white">Inicio</Link>
+            <Link to="/" className="hover:text-[var(--sr-hero-text)]">Inicio</Link>
             <span>/</span>
-            <button type="button" onClick={handleVolver} className="hover:text-white">
+            <button type="button" onClick={handleVolver} className="hover:text-[var(--sr-hero-text)]">
               Playlists
             </button>
             <span>/</span>
-            <span className="text-white/90 truncate max-w-xs">{selectedPlaylist.nombre}</span>
+            <span className="text-[var(--sr-hero-text)] truncate max-w-xs">{selectedPlaylist.nombre}</span>
           </div>
 
           {/* Feedback Toast */}
@@ -553,7 +549,7 @@ export default function PlaylistsPage() {
           )}
 
           {/* BANNER PRINCIPAL HERO TIPO SPOTIFY CON VINILO PROTAGONISTA */}
-          <div className="relative rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-10 backdrop-blur-2xl shadow-2xl overflow-hidden">
+          <div className="relative rounded-3xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/40 p-6 sm:p-10 backdrop-blur-2xl shadow-2xl overflow-hidden">
             {/* Ambient background glow */}
             <div className="absolute -right-24 -top-24 w-96 h-96 bg-[#5013b8]/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -785,10 +781,11 @@ export default function PlaylistsPage() {
                               className="h-11 w-11 shrink-0 rounded-lg object-cover bg-black/40 border border-white/10"
                             />
                             <div className="min-w-0">
-                              <p className="font-semibold text-white truncate text-xs">{p.nombre}</p>
-                              <p className="text-[11px] text-white/50 truncate">
+                              <p className="font-semibold text-[var(--color-text,#fff)] truncate text-xs">{p.nombre}</p>
+                              <p className="text-[11px] text-[var(--color-text-muted,#b9b9ca)] truncate">
                                 {p.noDisponible ? (
-                                  <span className="text-amber-400 font-semibold italic">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-warning-bg,rgba(245,158,11,0.15))] border border-[var(--color-warning-border,rgba(245,158,11,0.3))] px-2 py-0.5 text-[10px] font-bold text-[var(--color-warning-text,#f59e0b)]">
+                                    <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                     Agotado · no disponible
                                   </span>
                                 ) : (
@@ -1110,13 +1107,7 @@ export default function PlaylistsPage() {
   // VISTA LISTA DE PLAYLISTS CON VINILO PROTAGONISTA
   // ==========================================
   return (
-    <div
-      className="min-h-screen bg-[#110e17] text-white px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden"
-      style={{
-        backgroundImage:
-          'radial-gradient(ellipse 90% 45% at 50% 0%, rgba(80, 19, 184, 0.25), transparent 75%)',
-      }}
-    >
+    <div className="min-h-screen bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden">
       <style>{`
         @keyframes spinSlow {
           from { transform: rotate(0deg); }
@@ -1129,22 +1120,22 @@ export default function PlaylistsPage() {
 
       <section className="mx-auto max-w-6xl">
         {/* Migas de pan */}
-        <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/50">
-          <Link to="/" className="hover:text-white">Inicio</Link>
+        <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">
+          <Link to="/" className="hover:text-[var(--sr-hero-text)]">Inicio</Link>
           <span>/</span>
-          <span className="text-white/80">Playlists</span>
+          <span className="text-[var(--sr-hero-text)]">Playlists</span>
         </div>
 
         {/* Encabezado de la sección */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-[var(--sr-border-subtle)] pb-6">
           <div>
             <span className="text-[11px] font-bold tracking-widest uppercase text-violeta-claro block mb-1">
               Colecciones en vinilo
             </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+            <h2 className="text-3xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
               Mis playlists
             </h2>
-            <p className="mt-2 text-xs text-white/60">
+            <p className="mt-2 text-xs text-[var(--sr-hero-text-muted)]">
               Las que creaste y las que guardaste de otras personas. Hasta 15 prendas (RNF-12).
             </p>
           </div>
