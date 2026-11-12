@@ -17,6 +17,8 @@ export const MOCK_SCENARIOS = {
   'catalogo-vacio': 'El catálogo del probador y de segunda mano llega vacío',
   'conflicto': 'Los cambios de estado responden 409',
   'duplicado': 'Crear una solicitud de donación responde 409 por duplicado',
+  'limite': 'Las peticiones simuladas responden 429',
+  'regla': 'Las peticiones simuladas responden 422 por regla de negocio',
 } as const
 
 export type MockScenario = keyof typeof MOCK_SCENARIOS
@@ -44,5 +46,11 @@ export function failIfScenario(...own: MockScenario[]) {
     throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
   }
   if (active.includes('sin-permiso')) throw new ApiError(403, 'No tienes permiso para hacer esto.')
-  for (const s of own) if (active.includes(s)) throw new ApiError(s === 'conflicto' || s === 'duplicado' ? 409 : 500, MOCK_SCENARIOS[s])
+  if (active.includes('limite')) throw new ApiError(429, 'Hiciste demasiados intentos. Espera un momento e intenta de nuevo.')
+  for (const s of own) {
+    if (active.includes(s)) {
+      const status = s === 'conflicto' || s === 'duplicado' ? 409 : s === 'regla' ? 422 : 500
+      throw new ApiError(status, MOCK_SCENARIOS[s])
+    }
+  }
 }
