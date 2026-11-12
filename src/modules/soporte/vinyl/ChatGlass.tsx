@@ -57,6 +57,8 @@ export function ChatGlass({
   const isPersona = contactType === 'COMPRADOR' || contactType === 'VENDEDOR' || contactType === 'DONANTE' || !contactType
   const isTienda = contactType === 'TIENDA'
   const shapeClass = isPersona ? 'persona' : isTienda ? 'tienda' : 'fundacion'
+  const contactLabel = isTienda ? 'Tienda' : contactType === 'FUNDACION' ? 'Fundación' : 'Vende'
+  const subtitle = conv.asunto ? `${contactLabel} · ${conv.asunto}` : contactLabel
 
   // Al abrir o cambiar mensajes, marcar como leída
   useEffect(() => {
@@ -172,7 +174,7 @@ export function ChatGlass({
 
           <div className="grow">
             <b>{conv.contacto.nombre}</b>
-            <span className="sb">{conv.asunto}</span>
+            <span className="sb">{subtitle}</span>
           </div>
 
           <button
@@ -188,7 +190,7 @@ export function ChatGlass({
 
         {/* Mensajes idénticos a la referencia */}
         <div className="msgs" ref={msgsContainerRef}>
-          <span className="seen">Visto · órbita de vistos</span>
+          <span className="seen">VISTO · PISTA DE VISTOS</span>
 
           {loading && !msgs.length ? (
             <div className="p-4 text-center text-xs opacity-60">Cargando…</div>
@@ -237,6 +239,11 @@ export function ChatGlass({
           <button
             type="submit"
             disabled={sending || !texto.trim()}
+            className="btn-send"
+            style={{
+              opacity: texto.trim() ? 1 : 0.65,
+              cursor: texto.trim() ? 'pointer' : 'default',
+            }}
           >
             {sending ? 'Enviando…' : 'Enviar'}
           </button>

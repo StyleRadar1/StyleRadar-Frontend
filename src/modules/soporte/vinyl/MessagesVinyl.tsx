@@ -195,20 +195,24 @@ export function MessagesVinyl({
       speedFactorRef.current += (targetTs - speedFactorRef.current) * Math.min(1, dt * 4)
       const ts = speedFactorRef.current
 
-      // Posiciones de los centros
+      // Geometría real de la escena y el escenario
       const sceneEl = sceneRef.current
       const stageEl = stageRef.current
 
-      let ox = 0
-      let oy = 0
+      const S0 = sceneEl?.offsetWidth || s0 || 640
+      const halfVal = S0 / 2
+      let sr = { left: 0, top: 0, width: S0, height: S0 }
+      let sg = { left: 0, top: 0, width: stageW, height: stageH }
       if (sceneEl && stageEl) {
-        const sr = sceneEl.getBoundingClientRect()
-        const sg = stageEl.getBoundingClientRect()
-        ox = sr.left - sg.left
-        oy = sr.top - sg.top
+        sr = sceneEl.getBoundingClientRect()
+        sg = stageEl.getBoundingClientRect()
       }
 
-      const cc = { x: ox + half, y: oy + half }
+      const scCurrent = sr.width ? sr.width / S0 : sc
+      const oxCurrent = sr.left - sg.left
+      const oyCurrent = sr.top - sg.top
+
+      const cc = { x: oxCurrent + halfVal * scCurrent, y: oyCurrent + halfVal * scCurrent }
 
       // 1. Giro del disco (9 grados por segundo como cuerpo rígido)
       discAngleRef.current += 9 * ts * dt * k
@@ -220,11 +224,11 @@ export function MessagesVinyl({
         if (s.id !== selectedId) {
           s.ang += cfg.w * ts * dt * k
         }
-        const rx = cfg.f * s0
+        const rx = cfg.f * S0
         const ry = rx * cfg.k
         const aRad = (s.ang * Math.PI) / 180
-        s.px = half + rx * Math.cos(aRad)
-        s.py = half + ry * Math.sin(aRad)
+        s.px = halfVal + rx * Math.cos(aRad)
+        s.py = halfVal + ry * Math.sin(aRad)
 
         // Actualizar posición en el DOM directamente
         const btn = signalElsRef.current.get(s.id)
@@ -249,16 +253,16 @@ export function MessagesVinyl({
           bx.setTransform(dpr, 0, 0, dpr, 0, 0)
           bx.clearRect(0, 0, stageW, stageH)
 
-          const VR = 0.505 * s0
-          const LR = 0.20 * s0
+          const VR = 0.505 * S0 * scCurrent
+          const LR = 0.20 * S0 * scCurrent
 
           // Sombra exterior difusa debajo del disco
-          const gShadow = bx.createRadialGradient(cc.x, cc.y + 18 * sc, VR * 0.92, cc.x, cc.y + 18 * sc, VR * 1.14)
+          const gShadow = bx.createRadialGradient(cc.x, cc.y + 18 * scCurrent, VR * 0.92, cc.x, cc.y + 18 * scCurrent, VR * 1.14)
           gShadow.addColorStop(0, 'rgba(20,8,40,.38)')
           gShadow.addColorStop(1, 'rgba(20,8,40,0)')
           bx.fillStyle = gShadow
           bx.beginPath()
-          bx.arc(cc.x, cc.y + 18 * sc, VR * 1.14, 0, TAU)
+          bx.arc(cc.x, cc.y + 18 * scCurrent, VR * 1.14, 0, TAU)
           bx.fill()
 
           // Cuerpo de vinilo con degradado radial profundo
@@ -273,7 +277,7 @@ export function MessagesVinyl({
 
           // Microsurcos concéntricos finos cada 3.1px
           bx.lineWidth = 0.7
-          for (let gr = LR + 6 * sc, gi = 0; gr < VR - 5 * sc; gr += 3.1 * sc, gi++) {
+          for (let gr = LR + 6 * scCurrent, gi = 0; gr < VR - 5 * scCurrent; gr += 3.1 * scCurrent, gi++) {
             bx.beginPath()
             bx.arc(cc.x, cc.y, gr, 0, TAU)
             bx.strokeStyle = `rgba(244,238,227,${(0.035 + 0.05 * Math.abs(Math.sin(gi * 1.7))).toFixed(3)})`
@@ -286,29 +290,29 @@ export function MessagesVinyl({
           const pl = 0.5 + 0.5 * Math.sin(rtRef.current * 2.4)
 
           ;([1, 2, 3] as const).forEach((o) => {
-            const rr = ORB_CONFIGS[o].f * s0
+            const rr = ORB_CONFIGS[o].f * S0 * scCurrent
             const isHot = o === 1
             const col = isHot ? hotColor : ringColor
 
             bx.beginPath()
             bx.arc(cc.x, cc.y, rr, 0, TAU)
             bx.strokeStyle = `rgba(${col},${isHot ? 0.14 + 0.1 * pl : 0.07})`
-            bx.lineWidth = (isHot ? 26 : 18) * sc
+            bx.lineWidth = (isHot ? 26 : 18) * scCurrent
             bx.stroke()
 
             bx.beginPath()
             bx.arc(cc.x, cc.y, rr, 0, TAU)
             bx.strokeStyle = `rgba(${col},${isHot ? 0.55 + 0.3 * pl : 0.28})`
-            bx.lineWidth = (isHot ? 2.4 : 1.4) * sc
+            bx.lineWidth = (isHot ? 2.4 : 1.4) * scCurrent
             bx.stroke()
           })
 
           // Líneas divisorias sutiles entre surcos
           ;[(0.255 + 0.36) / 2, (0.36 + 0.455) / 2, 0.485].forEach((fr) => {
             bx.beginPath()
-            bx.arc(cc.x, cc.y, fr * s0, 0, TAU)
+            bx.arc(cc.x, cc.y, fr * S0 * scCurrent, 0, TAU)
             bx.strokeStyle = 'rgba(244,238,227,.2)'
-            bx.lineWidth = 1.2 * sc
+            bx.lineWidth = 1.2 * scCurrent
             bx.stroke()
           })
 
@@ -316,9 +320,9 @@ export function MessagesVinyl({
           DUST_PARTICLES.forEach((d) => {
             bx.beginPath()
             const a0 = ((d.a + discAngleRef.current) * Math.PI) / 180
-            bx.arc(cc.x, cc.y, LR + d.r * (VR - LR - 6 * sc), a0, a0 + d.l)
+            bx.arc(cc.x, cc.y, LR + d.r * (VR - LR - 6 * scCurrent), a0, a0 + d.l)
             bx.strokeStyle = `rgba(255,255,255,${d.al})`
-            bx.lineWidth = 1 * sc
+            bx.lineWidth = 1 * scCurrent
             bx.stroke()
           })
 
@@ -348,7 +352,7 @@ export function MessagesVinyl({
           bx.beginPath()
           bx.arc(cc.x, cc.y, VR, 0, TAU)
           bx.strokeStyle = 'rgba(244,238,227,.35)'
-          bx.lineWidth = 2 * sc
+          bx.lineWidth = 2 * scCurrent
           bx.stroke()
 
           // ETIQUETA CENTRAL ROSA (SIN HUECO NEGRO NI NINGÚN AGUJERO)
@@ -361,14 +365,14 @@ export function MessagesVinyl({
           bx.fill()
 
           bx.strokeStyle = '#1f1433'
-          bx.lineWidth = 2 * sc
+          bx.lineWidth = 2 * scCurrent
           bx.stroke()
 
           // 3 puntos morados girando con el disco
           for (let m = 0; m < 3; m++) {
             const am = ((discAngleRef.current * 1.0 + m * 120) * Math.PI) / 180
             bx.beginPath()
-            bx.arc(cc.x + Math.cos(am) * LR * 0.86, cc.y + Math.sin(am) * LR * 0.86, 3.2 * sc, 0, TAU)
+            bx.arc(cc.x + Math.cos(am) * LR * 0.86, cc.y + Math.sin(am) * LR * 0.86, 3.2 * scCurrent, 0, TAU)
             bx.fillStyle = '#4b1fa8'
             bx.fill()
           }
@@ -377,8 +381,8 @@ export function MessagesVinyl({
           bx.beginPath()
           bx.arc(cc.x, cc.y, LR * 0.93, 0, TAU)
           bx.strokeStyle = 'rgba(31,20,51,.35)'
-          bx.lineWidth = 1 * sc
-          bx.setLineDash([2 * sc, 5 * sc])
+          bx.lineWidth = 1 * scCurrent
+          bx.setLineDash([2 * scCurrent, 5 * scCurrent])
           bx.stroke()
           bx.setLineDash([])
         }
@@ -404,9 +408,9 @@ export function MessagesVinyl({
           physSignals.forEach((s) => {
             if (s.unread < 1) return
             const n = Math.min(s.unread, 4)
-            const R = 33 * sc
-            const sx = ox + s.px
-            const sy = oy + s.py
+            const R = 33 * scCurrent
+            const sx = oxCurrent + s.px * scCurrent
+            const sy = oyCurrent + s.py * scCurrent
 
             ctx.beginPath()
             ctx.arc(sx, sy, R, 0, TAU)
@@ -420,42 +424,60 @@ export function MessagesVinyl({
               const my = sy + Math.sin(an) * R
 
               ctx.beginPath()
-              ctx.arc(mx, my, 7 * sc, 0, TAU)
+              ctx.arc(mx, my, 7 * scCurrent, 0, TAU)
               ctx.fillStyle = `rgba(${hotColor},.25)`
               ctx.fill()
 
               ctx.beginPath()
-              ctx.arc(mx, my, 3.4 * sc, 0, TAU)
+              ctx.arc(mx, my, 3.4 * scCurrent, 0, TAU)
               ctx.fillStyle = `rgb(${hotColor})`
               ctx.fill()
             }
           })
 
-          // Brazo Fonocaptor Telescópico
-          const pv = { x: ox + half + 0.60 * s0, y: oy + half - 0.56 * s0 }
-          const S0s = s0
+          // Brazo Fonocaptor Telescópico (calculado con rect real de la escena y centro real del avatar)
+          const pv = { x: halfVal + 0.60 * S0, y: halfVal - 0.56 * S0 }
+          const pvS = {
+            x: oxCurrent + pv.x * scCurrent,
+            y: oyCurrent + pv.y * scCurrent,
+          }
+          const S0s = S0 * scCurrent
+          const u1 = scCurrent
 
           if (armLenRef.current === null) {
             armLenRef.current = 0.70 * S0s
           }
 
-          const targetSignal = physSignals.find((s) => s.id === selectedId) || null
           let thTarget = TH_REST
           let lenTarget = 0.70 * S0s
 
-          if (targetSignal) {
-            const tx = ox + targetSignal.px
-            const ty = oy + targetSignal.py
-            thTarget = Math.atan2(ty - pv.y, tx - pv.x)
-            lenTarget = Math.hypot(tx - pv.x, ty - pv.y)
+          const targetBtn = selectedId ? signalElsRef.current.get(selectedId) : null
+          const targetAv = targetBtn?.querySelector<HTMLElement>('.av') || null
+
+          if (targetAv && stageEl) {
+            const avRect = targetAv.getBoundingClientRect()
+            const tc = {
+              x: avRect.left + avRect.width / 2 - sg.left,
+              y: avRect.top + avRect.height / 2 - sg.top,
+            }
+            thTarget = Math.atan2(tc.y - pvS.y, tc.x - pvS.x)
+            lenTarget = Math.hypot(tc.x - pvS.x, tc.y - pvS.y)
+          } else if (selectedId) {
+            const targetSignal = physSignals.find((s) => s.id === selectedId)
+            if (targetSignal) {
+              const tx = oxCurrent + targetSignal.px * scCurrent
+              const ty = oyCurrent + targetSignal.py * scCurrent
+              thTarget = Math.atan2(ty - pvS.y, tx - pvS.x)
+              lenTarget = Math.hypot(tx - pvS.x, ty - pvS.y)
+            }
           }
 
-          const kk = Math.min(1, dt * (targetSignal ? 9 : 3.2))
+          const kk = Math.min(1, dt * (selectedId ? 9 : 3.2))
           armThRef.current += angDiff(armThRef.current, thTarget) * kk
           armLenRef.current += (lenTarget - armLenRef.current) * kk
 
           // Elevación: 1 = levantado/en reposo, 0 = aterrizado en el disco
-          const liftTarget = targetSignal ? 0 : 1
+          const liftTarget = selectedId ? 0 : 1
           armLiftRef.current += (liftTarget - armLiftRef.current) * Math.min(1, dt * 9)
 
           const armTh = armThRef.current
@@ -465,44 +487,44 @@ export function MessagesVinyl({
           const ca = Math.cos(armTh)
           const sa = Math.sin(armTh)
           const D = armLen
-          const tx2 = pv.x + ca * D
-          const ty2 = pv.y + sa * D
+          const tx2 = pvS.x + ca * D
+          const ty2 = pvS.y + sa * D
 
-          const ap = (d: number) => ({ x: pv.x + ca * d, y: pv.y + sa * d })
+          const ap = (d: number) => ({ x: pvS.x + ca * d, y: pvS.y + sa * d })
 
           ctx.save()
           ctx.lineCap = 'round'
           ctx.lineJoin = 'round'
 
           // Sombra del brazo: se acorta y une al posar sobre el disco
-          const so = 12 * sc * armLift
+          const so = 12 * u1 * armLift
           ctx.globalAlpha = 0.18 + 0.1 * armLift
           ctx.strokeStyle = '#14081f'
-          ctx.lineWidth = 8 * sc
+          ctx.lineWidth = 8 * u1
           ctx.beginPath()
-          ctx.moveTo(pv.x + so, pv.y + so * 1.4)
+          ctx.moveTo(pvS.x + so, pvS.y + so * 1.4)
           ctx.lineTo(tx2 + so, ty2 + so * 1.4)
           ctx.stroke()
           ctx.globalAlpha = 1
 
           // Contrapeso cilíndrico lila detrás de la base
-          const bax = pv.x - ca * 34 * sc
-          const bay = pv.y - sa * 34 * sc
+          const bax = pvS.x - ca * 34 * u1
+          const bay = pvS.y - sa * 34 * u1
           ctx.strokeStyle = '#1f1433'
-          ctx.lineWidth = 17 * sc
+          ctx.lineWidth = 17 * u1
           ctx.beginPath()
-          ctx.moveTo(pv.x, pv.y)
+          ctx.moveTo(pvS.x, pvS.y)
           ctx.lineTo(bax, bay)
           ctx.stroke()
 
           ctx.strokeStyle = '#b79af5'
-          ctx.lineWidth = 12 * sc
+          ctx.lineWidth = 12 * u1
           ctx.beginPath()
-          ctx.moveTo(pv.x, pv.y)
+          ctx.moveTo(pvS.x, pvS.y)
           ctx.lineTo(bax, bay)
           ctx.stroke()
 
-          // Brazo telescópico: tres tubos concéntricos deslizantes
+          // Brazo telescópico: tres tubos concéntricos deslizantes (terminan en el cabezal, nunca pasan del avatar)
           const e1 = Math.min(D, 0.42 * S0s)
           const e2 = Math.min(D, 0.80 * S0s)
           const ov = 0.12 * S0s
@@ -516,14 +538,14 @@ export function MessagesVinyl({
             const A = ap(t[0])
             const B = ap(t[1])
             ctx.strokeStyle = '#1f1433'
-            ctx.lineWidth = (t[2] + 3.2) * sc
+            ctx.lineWidth = (t[2] + 3.2) * u1
             ctx.beginPath()
             ctx.moveTo(A.x, A.y)
             ctx.lineTo(B.x, B.y)
             ctx.stroke()
 
             ctx.strokeStyle = '#e9e1f5'
-            ctx.lineWidth = t[2] * sc
+            ctx.lineWidth = t[2] * u1
             ctx.beginPath()
             ctx.moveTo(A.x, A.y)
             ctx.lineTo(B.x, B.y)
@@ -532,17 +554,17 @@ export function MessagesVinyl({
 
           // Base circular metálica exterior
           ctx.beginPath()
-          ctx.arc(pv.x, pv.y, 24 * sc, 0, TAU)
+          ctx.arc(pvS.x, pvS.y, 24 * u1, 0, TAU)
           ctx.fillStyle = '#1f1433'
           ctx.fill()
 
           ctx.beginPath()
-          ctx.arc(pv.x, pv.y, 15 * sc, 0, TAU)
+          ctx.arc(pvS.x, pvS.y, 15 * u1, 0, TAU)
           ctx.fillStyle = '#b79af5'
           ctx.fill()
 
           ctx.beginPath()
-          ctx.arc(pv.x, pv.y, 5 * sc, 0, TAU)
+          ctx.arc(pvS.x, pvS.y, 5 * u1, 0, TAU)
           ctx.fillStyle = '#1f1433'
           ctx.fill()
 
@@ -554,25 +576,25 @@ export function MessagesVinyl({
           ctx.fillStyle = '#1f1433'
           ctx.beginPath()
           if (ctx.roundRect) {
-            ctx.roundRect(-14 * sc, -8 * sc, 24 * sc, 16 * sc, 4 * sc)
+            ctx.roundRect(-14 * u1, -8 * u1, 24 * u1, 16 * u1, 4 * u1)
           } else {
-            ctx.rect(-14 * sc, -8 * sc, 24 * sc, 16 * sc)
+            ctx.rect(-14 * u1, -8 * u1, 24 * u1, 16 * u1)
           }
           ctx.fill()
 
           ctx.fillStyle = '#d62f6b'
           ctx.beginPath()
           if (ctx.roundRect) {
-            ctx.roundRect(-11 * sc, -5 * sc, 18 * sc, 10 * sc, 3 * sc)
+            ctx.roundRect(-11 * u1, -5 * u1, 18 * u1, 10 * u1, 3 * u1)
           } else {
-            ctx.rect(-11 * sc, -5 * sc, 18 * sc, 10 * sc)
+            ctx.rect(-11 * u1, -5 * u1, 18 * u1, 10 * u1)
           }
           ctx.fill()
           ctx.restore()
 
-          // Punta de aguja blanca
+          // Punta de aguja blanca EXACTAMENTE en el centro del avatar
           ctx.beginPath()
-          ctx.arc(tx2, ty2, 2.6 * sc, 0, TAU)
+          ctx.arc(tx2, ty2, 2.6 * u1, 0, TAU)
           ctx.fillStyle = '#fff'
           ctx.fill()
           ctx.restore()
@@ -599,7 +621,7 @@ export function MessagesVinyl({
         }
       }
     },
-    [selectedId, isHovered, mode, half, s0, sc, stageW, stageH]
+    [selectedId, isHovered, mode, s0, sc, stageW, stageH]
   )
 
   useEffect(() => {
@@ -619,23 +641,25 @@ export function MessagesVinyl({
   const handleSelect = (c: ConversacionDto) => {
     if (selectedId === c.id) return
 
-    // Coordenadas para el impacto
-    const sig = signalsPhysicsRef.current.find((s) => s.id === c.id)
-    const sceneEl = sceneRef.current
+    // Coordenadas reales para el impacto obtenidas del elemento del avatar
+    const targetBtn = signalElsRef.current.get(c.id)
+    const targetAv = targetBtn?.querySelector<HTMLElement>('.av')
     const stageEl = stageRef.current
-    let ox = 0
-    let oy = 0
-    if (sceneEl && stageEl) {
-      const sr = sceneEl.getBoundingClientRect()
-      const sg = stageEl.getBoundingClientRect()
-      ox = sr.left - sg.left
-      oy = sr.top - sg.top
+    let impactX = half
+    let impactY = half
+
+    if (targetAv && stageEl) {
+      const ar = targetAv.getBoundingClientRect()
+      const sr = stageEl.getBoundingClientRect()
+      impactX = ar.left + ar.width / 2 - sr.left
+      impactY = ar.top + ar.height / 2 - sr.top
+    } else {
+      const sig = signalsPhysicsRef.current.find((s) => s.id === c.id)
+      impactX = sig ? sig.px : half
+      impactY = sig ? sig.py : half
     }
 
-    const impactX = ox + (sig ? sig.px : half)
-    const impactY = oy + (sig ? sig.py : half)
-
-    // Disparar aros de impacto
+    // Disparar aros de impacto minimalistas en el centro exacto
     ringsRef.current.push({
       x: impactX,
       y: impactY,
@@ -686,7 +710,7 @@ export function MessagesVinyl({
       <canvas
         id="bg"
         ref={bgCanvasRef}
-        className="pointer-events-none absolute inset-0 z-0"
+        className="pointer-events-none absolute inset-0"
         aria-hidden="true"
       />
 
@@ -694,7 +718,7 @@ export function MessagesVinyl({
       <canvas
         id="fx"
         ref={fxCanvasRef}
-        className="pointer-events-none absolute inset-0 z-[6]"
+        className="pointer-events-none absolute inset-0"
         aria-hidden="true"
       />
 
