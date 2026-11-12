@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { errorKind, errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { ErrorBanner, ErrorToast, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { donationService } from '../services/donationService'
@@ -26,7 +27,8 @@ export default function FoundationPage() {
   const [just, setJust] = useState('')
   const [justErr, setJustErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'warn' | 'bad'; text: string; sub?: string } | null>(null)
+  const [permError, setPermError] = useState(false)
   const inFlight = useRef(false)
 
 
@@ -36,19 +38,34 @@ export default function FoundationPage() {
   const open = (d: DonationDto, to: EstadoDonacion) => { setJust(''); setJustErr(''); setPending({ d, to }) }
   const run = async () => {
     if (!pending || inFlight.current) return
-    if (pending.to === 'RECHAZADA' && just.trim().length < 10) { setJustErr('Escribe por qué la rechazas (mínimo 10 caracteres). Se lo enviaremos a quien dona.'); return }
-    inFlight.current = true; setBusy(true); setMsg(null)
+    if (pending.to === 'RECHAZADA' && just.trim().length < 10) {
+      setJustErr('Escribe por qué la rechazas (mínimo 10 caracteres). Se lo enviaremos a quien dona.')
+      window.setTimeout(() => document.getElementById('rjust')?.focus(), 0)
+      return
+    }
+    inFlight.current = true; setBusy(true); setMsg(null); setPermError(false)
     try {
       const upd = await donationService.setStatus(pending.d.id, { estado: pending.to as Exclude<EstadoDonacion, 'PENDIENTE'>, justificacion: pending.to === 'RECHAZADA' ? just.trim() : undefined })
       setList((l) => l.map((x) => (x.id === upd.id ? upd : x)))
-      setMsg({ ok: true, text: upd.estado === 'ENTREGADA' ? `Recepción confirmada. Comprobante ${upd.comprobante?.codigo}.` : `«${upd.prenda.titulo}» ahora está ${ESTADO_DONACION_LABEL[upd.estado].toLowerCase()}.` })
+      setMsg({ tone: 'ok', text: upd.estado === 'ENTREGADA' ? `Recepción confirmada. Comprobante ${upd.comprobante?.codigo}.` : `«${upd.prenda.titulo}» ahora está ${ESTADO_DONACION_LABEL[upd.estado].toLowerCase()}.` })
       setPending(null)
     } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e) })
-      setPending(null)
-      if (errorKind(e) === 'conflicto') load()
+      const kind = errorKind(e)
+      if (kind === 'conflicto') {
+        setMsg({ tone: 'warn', text: 'Otra fundación ya la reclamó', sub: 'Actualizamos la lista.' })
+        setPending(null)
+        load()
+      } else if (kind === 'permiso') {
+        setPermError(true)
+        setPending(null)
+      } else {
+        setMsg({ tone: 'bad', text: errorMessage(e) })
+        setPending(null)
+      }
     } finally { inFlight.current = false; setBusy(false) }
   }
+
+  const isLoadPermError = !!error && errorKind(error) === 'permiso'
 
   const count = (f: EstadoDonacion | 'TODAS') => (f === 'TODAS' ? list.length : list.filter((d) => d.estado === f).length)
   const shown = list.filter((d) => filtro === 'TODAS' || d.estado === filtro)
@@ -59,7 +76,13 @@ export default function FoundationPage() {
       <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Solicitudes de donación</h1>
       <p className="mt-3 max-w-2xl text-white/70">Revisa cada prenda, acepta o rechaza con un motivo y confirma cuando la recibas. Al confirmar se genera el comprobante para quien donó.</p>
 
-      {loading ? <Loading label="Cargando solicitudes…" /> : error ? <div className="mt-8"><ErrorState error={error} onRetry={load} title="No pudimos cargar las solicitudes" /></div> : (<>
+      {loading ? <Loading label="Cargando solicitudes…" />
+        : isLoadPermError ? (
+          <ErrorBanner className="mt-8" tone="warn" icon="lock" title="No tienes permiso para hacer esto">
+            Solo la persona representante puede reclamar donaciones.
+          </ErrorBanner>
+        )
+        : error ? <div className="mt-8"><ErrorState error={error} onRetry={load} title="No pudimos cargar las solicitudes" /></div> : (<>
         <div role="group" aria-label="Filtrar por estado" className="mt-8 flex flex-wrap gap-2">
           {FILTROS.map((f) => (
             <button key={f} type="button" aria-pressed={filtro === f} onClick={() => setFiltro(f)}
@@ -67,7 +90,19 @@ export default function FoundationPage() {
               {f === 'TODAS' ? 'Todas' : ESTADO_DONACION_LABEL[f]} <span className="opacity-70">{count(f)}</span></button>
           ))}
         </div>
-        {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-4 rounded-xl p-3 text-sm ${msg.ok ? 'bg-[#9be3b4]/10 text-[#9be3b4]' : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'}`}>{msg.text}</p>}
+        {permError && (
+          <ErrorBanner className="mt-4" tone="warn" icon="lock" title="No tienes permiso para hacer esto">
+            Solo la persona representante puede reclamar donaciones.
+          </ErrorBanner>
+        )}
+        <ErrorToast
+          open={!!msg}
+          tone={msg?.tone ?? 'ok'}
+          icon={msg?.tone === 'warn' ? 'refresh' : msg?.tone === 'ok' ? 'ok' : 'warn'}
+          title={msg?.text ?? ''}
+          subtitle={msg?.sub}
+          onClose={() => setMsg(null)}
+        />
 
         <div className="mt-6">
           {!shown.length ? <EmptyState title="No hay solicitudes en este estado">{filtro === 'PENDIENTE' ? 'Cuando alguien te ofrezca una prenda, aparecerá aquí.' : 'Prueba con otro filtro.'}</EmptyState> : (
@@ -118,7 +153,7 @@ export default function FoundationPage() {
             <label htmlFor="rjust" className="font-semibold text-white">Motivo del rechazo</label>
             <textarea id="rjust" value={just} onChange={(e) => { setJust(e.target.value); setJustErr('') }} aria-invalid={!!justErr} aria-describedby={justErr ? 'rjust-err' : undefined}
               className="min-h-24 rounded-xl border border-white/20 bg-black/20 p-3 text-sm text-white outline-none focus:border-violeta-claro" />
-            {justErr && <p id="rjust-err" role="alert" className="text-xs text-[#ffb4b4]">{justErr}</p>}
+            <FieldError id="rjust-err" message={justErr} />
           </div>
         ) : pending?.to === 'ENTREGADA' ? 'Confirma solo si la prenda ya está en tus manos. Se generará el comprobante para quien donó y no se puede deshacer.'
           : pending?.to === 'APROBADA' ? 'Quien dona recibirá un aviso con la fecha y el lugar que propuso.'
