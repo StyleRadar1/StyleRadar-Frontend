@@ -100,10 +100,10 @@
 .sr-landing .cat-kicker-wrap { display: flex; align-items: center; gap: 12px; }
 .sr-landing .cat-badge {
   padding: 5px 12px;
-  border: 1px solid rgba(232, 220, 203, .3);
+  border: 1px solid var(--color-border, rgba(232, 220, 203, .3));
   border-radius: 100px;
-  color: #E8DCCB;
-  background: #48119A;
+  color: var(--color-text-on-accent, #E8DCCB);
+  background: var(--color-accent, #48119A);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .12em;

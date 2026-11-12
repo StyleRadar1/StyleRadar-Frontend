@@ -43,7 +43,7 @@
 }
 
 .vc:focus-visible {
-  outline: 2px solid #E8DCCB;
+  outline: 2px solid var(--color-focus-ring, #E8DCCB);
   outline-offset: 10px;
   border-radius: 16px;
 }
@@ -207,7 +207,7 @@
 }
 
 .vc-big:focus-visible {
-  outline: 3px solid #E8DCCB;
+  outline: 3px solid var(--color-focus-ring, #E8DCCB);
   outline-offset: 4px;
 }
 
@@ -247,11 +247,11 @@
 }
 
 .vc-arrow:hover {
-  background: #48119A;
+  background: var(--color-accent, #48119A);
 }
 
 .vc-arrow:focus-visible {
-  outline: 2px solid #E8DCCB;
+  outline: 2px solid var(--color-focus-ring, #E8DCCB);
   outline-offset: 3px;
 }
 
@@ -336,7 +336,7 @@
 
 .vc-play:focus-visible,
 .vc-mute:focus-visible {
-  outline: 2px solid #E8DCCB;
+  outline: 2px solid var(--color-focus-ring, #E8DCCB);
   outline-offset: 3px;
 }
 
@@ -415,7 +415,7 @@
 }
 
 .vc-steps button:focus-visible {
-  outline: 2px solid #E8DCCB;
+  outline: 2px solid var(--color-focus-ring, #E8DCCB);
   outline-offset: -2px;
 }
 
@@ -491,10 +491,10 @@
   min-height: 44px;
   margin-top: 18px;
   padding: 0 18px;
-  border: 1px solid #a98be0;
+  border: 1px solid var(--color-accent-soft, #a98be0);
   border-radius: 999px;
-  color: #fff;
-  background: #48119a;
+  color: var(--color-text-on-accent, #fff);
+  background: var(--color-accent, #48119a);
   font: inherit;
   font-size: 12px;
   font-weight: 800;
@@ -503,17 +503,17 @@
 }
 
 .vc-tryon-btn:hover {
-  background: #5b17c2;
+  background: var(--color-accent-hover, #5b17c2);
   transform: translateY(-1px);
 }
 
 .vc-tryon-btn:focus-visible {
-  outline: 2px solid #e8dccb;
+  outline: 2px solid var(--color-focus-ring, #e8dccb);
   outline-offset: 3px;
 }
 
 .vc-dots button:focus-visible {
-  outline: 2px solid #E8DCCB;
+  outline: 2px solid var(--color-focus-ring, #E8DCCB);
   outline-offset: 4px;
 }
 

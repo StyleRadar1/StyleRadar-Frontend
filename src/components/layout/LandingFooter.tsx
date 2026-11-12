@@ -47,7 +47,7 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
         <div className="flex flex-wrap items-center gap-4 pt-2">
           <Link
             to="/catalogo"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#48119a] hover:bg-[#5e18c8] text-white font-extrabold text-xs tracking-wider uppercase shadow-[0_8px_30px_#48119a77] hover:translate-y-[-2px] transition-all"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-[var(--sr-accent)]/30 hover:translate-y-[-2px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             <span>Entrar a StyleRadar</span>
             <svg

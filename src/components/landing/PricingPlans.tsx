@@ -49,7 +49,7 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                 onClick={() => setFilterAudience(tab)}
                 className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   filterAudience === tab
-                    ? 'bg-[#48119a] text-white shadow-md'
+                    ? 'bg-[var(--sr-accent)] text-[var(--sr-text-on-accent)] shadow-md'
                     : 'text-[var(--sr-hero-text-muted)] hover:text-[var(--sr-hero-text)]'
                 }`}
               >
@@ -74,7 +74,7 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                 }`}
               >
                 {isFeatured && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#7b4dd8] text-white text-[10px] font-black tracking-widest uppercase shadow-md">
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[var(--sr-accent)] text-[var(--sr-text-on-accent)] text-[10px] font-black tracking-widest uppercase shadow-md">
                     Más elegido
                   </span>
                 )}
@@ -124,9 +124,9 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                     <button
                       type="button"
                       onClick={onOpenRegister}
-                      className={`w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center cursor-pointer ${
+                      className={`w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                         isFeatured
-                          ? 'bg-[#48119a] hover:bg-[#5e18c8] text-white shadow-lg shadow-[#48119a66]'
+                          ? 'bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] shadow-lg shadow-[var(--sr-accent)]/30'
                           : 'bg-[var(--sr-surface)] hover:bg-[var(--sr-surface-raised)] text-[var(--sr-hero-text)] border border-[var(--sr-border-subtle)]'
                       }`}
                     >
@@ -135,9 +135,9 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                   ) : (
                     <Link
                       to={plan.to}
-                      className={`block w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center ${
+                      className={`block w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                         isFeatured
-                          ? 'bg-[#48119a] hover:bg-[#5e18c8] text-white shadow-lg shadow-[#48119a66]'
+                          ? 'bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] shadow-lg shadow-[var(--sr-accent)]/30'
                           : 'bg-[var(--sr-surface)] hover:bg-[var(--sr-surface-raised)] text-[var(--sr-hero-text)] border border-[var(--sr-border-subtle)]'
                       }`}
                     >

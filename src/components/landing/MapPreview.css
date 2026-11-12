@@ -514,3 +514,101 @@
   }
 }
 
+/* ==========================================================================
+   Adaptación al sistema de temas (Oscuro, Claro, Daltónico)
+   ========================================================================== */
+
+html[data-theme='light'] .pe-mapa {
+  background: var(--color-bg, #f8f7f5);
+  color: var(--color-text, #1c1926);
+}
+
+html[data-theme='light'] .pe-mapa .pe-h2 {
+  color: var(--color-text, #1c1926);
+}
+
+html[data-theme='light'] .pe-mapa .pe-h2 span {
+  color: var(--color-text-muted, #5f5a6b);
+}
+
+html[data-theme='light'] .pe-mapa .pe-lead {
+  color: var(--color-text-muted, #5f5a6b);
+}
+
+html[data-theme='light'] .pe-mapa .pe-kicker {
+  color: var(--color-accent, #48119a);
+}
+
+html[data-theme='light'] .lm-box {
+  background: var(--color-surface, #ffffff);
+  border-color: var(--color-border, rgba(0, 0, 0, 0.12));
+}
+
+html[data-theme='light'] .lm-pane {
+  background: var(--color-bg-elevated, #ffffff);
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+  color: var(--color-text, #1c1926);
+}
+
+html[data-theme='light'] .lm-close {
+  background: var(--color-surface, rgba(0, 0, 0, 0.08));
+  color: var(--color-text, #1c1926);
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+}
+
+html[data-theme='light'] .lm-sub {
+  color: var(--color-text-muted, #5f5a6b);
+}
+
+html[data-theme='light'] .lm-detail-row dt {
+  color: var(--color-text-muted, #5f5a6b);
+}
+
+html[data-theme='light'] .lm-detail-row dd {
+  color: var(--color-text, #1c1926);
+}
+
+html[data-theme='light'] .lm-desc {
+  color: var(--color-text-muted, #5f5a6b);
+}
+
+html[data-theme='light'] .lm-btn-main {
+  background: var(--color-accent, #48119a);
+  color: var(--color-text-on-accent, #ffffff);
+}
+
+html[data-theme='light'] .lm-btn-sub {
+  background: var(--color-surface-raised, #f0eef5);
+  color: var(--color-text, #1c1926);
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+}
+
+/* Foco visible */
+.lm-btn-main:focus-visible,
+.lm-btn-sub:focus-visible,
+.lm-close:focus-visible,
+.pe-mapa .pe-mapa-link:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #48119a);
+  outline-offset: 2px;
+}
+
+/* Modo Daltónico */
+html[data-theme='colorblind'] .lm-btn-main,
+html[data-cvd='on'] .lm-btn-main {
+  background: #0072b2;
+}
+
+html[data-theme='colorblind'] .pe-mapa .pe-kicker,
+html[data-cvd='on'] .pe-mapa .pe-kicker {
+  color: #0072b2;
+}
+
+html[data-theme='colorblind'] .lm-btn-main:focus-visible,
+html[data-theme='colorblind'] .lm-btn-sub:focus-visible,
+html[data-theme='colorblind'] .lm-close:focus-visible,
+html[data-cvd='on'] .lm-btn-main:focus-visible,
+html[data-cvd='on'] .lm-btn-sub:focus-visible,
+html[data-cvd='on'] .lm-close:focus-visible {
+  outline-color: #0072b2;
+}
+

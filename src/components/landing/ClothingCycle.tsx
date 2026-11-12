@@ -109,7 +109,7 @@ export function ClothingCycle() {
             <div className="pt-2">
               <Link
                 to={currentPillar.to}
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#48119a] hover:bg-[#5e18c8] text-white font-extrabold text-xs uppercase tracking-wider shadow-[0_8px_25px_#48119a77] hover:translate-x-1 transition-all"
+                className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[var(--sr-accent)]/30 hover:translate-x-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
                 <span>{currentPillar.action}</span>
                 <span aria-hidden="true">↗</span>
