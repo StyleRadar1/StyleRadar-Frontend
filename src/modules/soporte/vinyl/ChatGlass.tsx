@@ -15,8 +15,9 @@ import {
   MAX_MENSAJE,
   type ConversacionDto,
   type MensajeDto,
+  type TipoContacto,
 } from '../types/chat.dto'
-import { getInitials } from './types'
+import { getContactPhoto, getInitials } from './types'
 
 const REFRESH_MS = 15_000
 const hora = new Intl.DateTimeFormat('es-CO', {
@@ -53,10 +54,17 @@ export function ChatGlass({
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState('')
   const [lastSentId, setLastSentId] = useState<string | null>(null)
+  const [imgError, setImgError] = useState(false)
 
   const endRef = useRef<HTMLLIElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const photoUrl = getContactPhoto(conv.contacto)
+  const contactType = conv.contacto.tipo as TipoContacto
+  const isPersona = contactType === 'COMPRADOR' || contactType === 'VENDEDOR' || contactType === 'DONANTE' || !contactType
+  const isTienda = contactType === 'TIENDA'
+  const isFundacion = contactType === 'FUNDACION'
 
   // Al abrir o cambiar mensajes, marcar como leída
   useEffect(() => {
@@ -92,7 +100,7 @@ export function ChatGlass({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
-  // Sondeo de mensajes nuevos cuando la pestaña está visible
+  // Sondeo periódico de mensajes nuevos
   useEffect(() => {
     const t = window.setInterval(() => {
       if (document.visibilityState === 'visible' && isOpen) reload()
@@ -119,7 +127,7 @@ export function ChatGlass({
     }
   }
 
-  // Coordenadas relativas para el clip-path circular desde el punto de impacto
+  // Coordenadas relativas para el clip-path circular desde el punto de impacto de la aguja
   const originX = impactPos ? `${Math.round(impactPos.x)}px` : '50%'
   const originY = impactPos ? `${Math.round(impactPos.y)}px` : '50%'
 
@@ -132,53 +140,65 @@ export function ChatGlass({
   return (
     <div
       ref={containerRef}
-      className={`sr-chat-glass relative flex h-[min(78vh,680px)] w-full flex-col overflow-hidden rounded-3xl transition-all ${
+      className={`sr-vinyl-chat-glass relative flex h-[min(78vh,680px)] w-full flex-col overflow-hidden rounded-3xl transition-all shadow-2xl ${
         isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
       }`}
       style={{
         clipPath: clipPathStyle,
-        transitionDuration: prefersReducedMotion ? '250ms' : '1000ms',
-        transitionTimingFunction: 'cubic-bezier(.2, .8, .2, 1)',
+        transitionDuration: prefersReducedMotion ? '200ms' : '1000ms',
+        transitionTimingFunction: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
         backdropFilter: 'blur(18px) saturate(1.5)',
         WebkitBackdropFilter: 'blur(18px) saturate(1.5)',
       }}
       role="region"
       aria-label={`Chat con ${conv.contacto.nombre}`}
     >
-      {/* 1. Cabecera editorial del chat */}
-      <header className="flex items-center gap-3.5 border-b border-white/15 px-5 py-4">
-        {/* Avatar del contacto */}
+      {/* 1. Cabecera editorial del chat con fotografía real y forma del contacto */}
+      <header className="flex items-center gap-3.5 border-b border-white/15 px-5 py-4 bg-black/10">
+        {/* Avatar del contacto con su forma geométrica característica */}
         <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold text-sm tracking-wider text-white shadow-md ring-2 ring-white/20"
+          className={`relative h-11 w-11 shrink-0 overflow-hidden flex items-center justify-center font-bold text-sm tracking-wider text-white shadow-md ${
+            isPersona
+              ? 'rounded-full border-2 border-[#F4EEE3]'
+              : isTienda
+              ? 'rounded-xl border-2 border-[#F4EEE3]'
+              : 'border-2 border-[#F4EEE3]'
+          }`}
           style={{
-            background: conv.contacto.tipo === 'TIENDA'
-              ? 'linear-gradient(135deg, #4B1FA8 0%, #7B4DD8 100%)'
-              : conv.contacto.tipo === 'FUNDACION'
-                ? 'linear-gradient(135deg, #E69F00 0%, #D62F6B 100%)'
-                : 'linear-gradient(135deg, #2D1452 0%, #B79AF5 100%)',
+            clipPath: isFundacion
+              ? 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)'
+              : undefined,
+            backgroundColor: '#2A1A47',
           }}
           aria-hidden="true"
         >
-          {getInitials(conv.contacto.nombre)}
+          {photoUrl && !imgError ? (
+            <img
+              src={photoUrl}
+              alt=""
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#4B1FA8] to-[#1F1433] text-[#F7F1E4]">
+              {getInitials(conv.contacto.nombre)}
+            </div>
+          )}
         </div>
 
         {/* Nombre y contexto del chat */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h2 className="truncate font-bold text-base tracking-tight text-[var(--chat-text-primary)]">
+            <h2 className="truncate font-bold text-base tracking-tight text-[var(--chat-text-primary,#F4EEE3)]">
               {conv.contacto.nombre}
             </h2>
             <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
-              style={{
-                backgroundColor: 'rgba(183, 154, 245, 0.22)',
-                color: 'var(--chat-text-secondary)',
-              }}
+              className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-[rgba(183,154,245,0.22)] text-[var(--chat-text-secondary,#CFC6E0)]"
             >
               {CONTACTO_LABEL[conv.contacto.tipo]}
             </span>
           </div>
-          <p className="truncate text-xs font-medium text-[var(--chat-text-secondary)]">
+          <p className="truncate text-xs font-medium text-[var(--chat-text-secondary,#CFC6E0)]">
             {conv.asunto}
           </p>
         </div>
@@ -187,7 +207,7 @@ export function ChatGlass({
         {conv.contacto.tipo === 'TIENDA' && (
           <Link
             to={`/tiendas/${conv.contacto.id}`}
-            className="hidden sm:inline-flex rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-[var(--chat-text-secondary)] hover:border-white/50 hover:text-white transition"
+            className="hidden sm:inline-flex rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-[var(--chat-text-secondary,#CFC6E0)] hover:border-white/50 hover:text-white transition"
           >
             Ver tienda
           </Link>
@@ -210,7 +230,7 @@ export function ChatGlass({
 
       {/* Aviso de seguridad en tratos entre personas */}
       {conv.contacto.tipo !== 'TIENDA' && (
-        <div className="border-b border-white/10 bg-white/[.04] px-5 py-2 text-[11px] leading-relaxed text-[var(--chat-text-secondary)]">
+        <div className="border-b border-white/10 bg-white/[.04] px-5 py-2 text-[11px] leading-relaxed text-[var(--chat-text-secondary,#CFC6E0)]">
           Acuerden aquí el lugar y la hora de la entrega. Prefieran siempre sitios públicos concurridos.
         </div>
       )}
@@ -227,15 +247,15 @@ export function ChatGlass({
             aria-label={`Mensajes con ${conv.contacto.nombre}`}
             aria-live="polite"
           >
-            {/* Separador de órbita */}
+            {/* Divisor de contexto vinilo */}
             <li className="my-2 flex justify-center" aria-hidden="true">
-              <span className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[10px] font-bold tracking-[.18em] uppercase text-[var(--chat-text-secondary)]">
-                VISTO · ÓRBITA DE VISTOS
+              <span className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[10px] font-bold tracking-[.18em] uppercase text-[var(--chat-text-secondary,#CFC6E0)]">
+                VINILO · CANAL ACTIVO
               </span>
             </li>
 
             {!msgs.length && (
-              <li className="text-center text-sm py-8 text-[var(--chat-text-secondary)]">
+              <li className="text-center text-sm py-8 text-[var(--chat-text-secondary,#CFC6E0)]">
                 Escribe tu primer mensaje. Sé claro sobre talla, precio y punto de entrega.
               </li>
             )}
@@ -253,8 +273,8 @@ export function ChatGlass({
                   <div
                     className={`max-w-[82%] rounded-2xl px-4 py-3 shadow-md ${
                       mio
-                        ? 'bg-[var(--chat-bubble-self-bg)] text-[var(--chat-bubble-self-fg)]'
-                        : 'bg-[var(--chat-bubble-other-bg)] text-[var(--chat-bubble-other-fg)]'
+                        ? 'bg-[var(--chat-bubble-self-bg,#4B1FA8)] text-[var(--chat-bubble-self-fg,#F7F1E4)] rounded-br-xs'
+                        : 'bg-[var(--chat-bubble-other-bg,rgba(255,255,255,0.92))] text-[var(--chat-bubble-other-fg,#1F1433)] rounded-bl-xs'
                     }`}
                   >
                     <span className="sr-only">
@@ -266,7 +286,7 @@ export function ChatGlass({
                     <time
                       dateTime={m.enviadoEn}
                       className={`mt-1.5 block text-right text-[10px] font-semibold tracking-wider ${
-                        mio ? 'text-white/70' : 'text-[#1F1433]/70'
+                        mio ? 'text-[#F7F1E4]/70' : 'text-[#1F1433]/70'
                       }`}
                     >
                       {hora.format(new Date(m.enviadoEn))}
@@ -283,7 +303,7 @@ export function ChatGlass({
       {/* 3. Formulario de envío */}
       <form onSubmit={send} className="border-t border-white/15 bg-black/15 p-3.5">
         {sendError && (
-          <p role="alert" className="mb-2 text-xs font-semibold text-[#ffb4b4]">
+          <p role="alert" className="mb-2 text-xs font-semibold text-[#FFB4B4]">
             {sendError}
           </p>
         )}
@@ -306,17 +326,17 @@ export function ChatGlass({
             }}
             placeholder="Escribe un mensaje…"
             aria-describedby="chat-cuenta"
-            className="max-h-32 min-h-12 flex-1 resize-y rounded-2xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-[var(--chat-text-primary)] placeholder-white/40 outline-none transition focus:border-[var(--chat-text-secondary)] focus:ring-1 focus:ring-[var(--chat-text-secondary)]"
+            className="max-h-32 min-h-12 flex-1 resize-y rounded-2xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-[var(--chat-text-primary,#F4EEE3)] placeholder-white/40 outline-none transition focus:border-[var(--chat-text-secondary,#B79AF5)] focus:ring-1 focus:ring-[var(--chat-text-secondary,#B79AF5)]"
           />
           <button
             type="submit"
             disabled={sending || !texto.trim()}
-            className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[var(--chat-bubble-self-bg)] px-6 py-3 font-bold text-sm text-white shadow-md transition hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+            className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-[#D62F6B] to-[#4B1FA8] px-6 py-3 font-bold text-sm text-[#F7F1E4] shadow-md transition hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
           >
             {sending ? 'Enviando…' : 'Enviar'}
           </button>
         </div>
-        <p id="chat-cuenta" className="mt-1.5 text-right text-[11px] font-medium text-[var(--chat-text-secondary)]">
+        <p id="chat-cuenta" className="mt-1.5 text-right text-[11px] font-medium text-[var(--chat-text-secondary,#CFC6E0)]">
           {texto.length} / {MAX_MENSAJE}
         </p>
       </form>

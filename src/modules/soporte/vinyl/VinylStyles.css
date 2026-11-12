@@ -1,0 +1,82 @@
+/* Estilos del Sistema de Mensajes "Vinilo" */
+
+@keyframes vinylWaveExpand {
+  0% {
+    transform: scale(0.1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes bubbleIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-bubble-in {
+  animation: bubbleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Cristal de Chat (Glassmorphism con tokens de tema) */
+.sr-vinyl-chat-glass {
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: 0 16px 40px -10px rgba(11, 6, 21, 0.45);
+}
+
+/* Modo claro */
+:root {
+  --chat-text-primary: #1F1433;
+  --chat-text-secondary: #5C4A75;
+  --chat-bubble-other-bg: rgba(255, 255, 255, 0.92);
+  --chat-bubble-other-fg: #1F1433;
+  --chat-bubble-self-bg: #4B1FA8;
+  --chat-bubble-self-fg: #F7F1E4;
+}
+
+.sr-vinyl-chat-glass {
+  background: rgba(255, 250, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Modo oscuro */
+.dark .sr-vinyl-chat-glass,
+[data-theme='dark'] .sr-vinyl-chat-glass {
+  background: rgba(34, 20, 58, 0.34);
+  border: 1px solid rgba(183, 154, 245, 0.25);
+  --chat-text-primary: #F4EEE3;
+  --chat-text-secondary: #CFC6E0;
+  --chat-bubble-other-bg: rgba(31, 20, 51, 0.75);
+  --chat-bubble-other-fg: #F4EEE3;
+  --chat-bubble-self-bg: #4B1FA8;
+  --chat-bubble-self-fg: #F7F1E4;
+}
+
+/* Contenedor responsivo del vinilo */
+.sr-vinyl-disc-container {
+  will-change: transform;
+  transform-origin: center center;
+}
+
+@media (min-width: 861px) {
+  .sr-vinyl-stage-active {
+    transform: translateX(-27%) scale(0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-vinyl-disc-container,
+  .sr-vinyl-chat-glass {
+    transition: none !important;
+    animation: none !important;
+  }
+}
