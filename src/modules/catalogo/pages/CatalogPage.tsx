@@ -100,7 +100,27 @@ export default function CatalogPage() {
   const [menuFiltrosAbierto, setMenuFiltrosAbierto] = useState(false)
   const [menuOrdenAbierto, setMenuOrdenAbierto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const botonFiltrosRef = useRef<HTMLButtonElement>(null)
   const ordenRef = useRef<HTMLDivElement>(null)
+
+  // Secciones del acordeón de filtros (todas empiezan cerradas)
+  const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<string, boolean>>({
+    cercaDe: false,
+    tipo: false,
+    talla: false,
+    precio: false,
+    origen: false,
+    marca: false,
+    color: false,
+    estilo: false,
+  })
+
+  const toggleSeccion = (key: string) => {
+    setSeccionesAbiertas((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
+  }
 
   // Filtros del catálogo
   const [filtroCercaDe, setFiltroCercaDe] = useState<string>(params.get('cerca') ?? 'No especificar')
@@ -118,7 +138,12 @@ export default function CatalogPage() {
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (
+        menuFiltrosAbierto &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        (!botonFiltrosRef.current || !botonFiltrosRef.current.contains(event.target as Node))
+      ) {
         setMenuFiltrosAbierto(false)
       }
       if (ordenRef.current && !ordenRef.current.contains(event.target as Node)) {
@@ -287,6 +312,7 @@ export default function CatalogPage() {
           {/* LADO IZQUIERDO: Botón Filtros mediano con badge */}
           <div className="flex items-center gap-3">
             <button
+              ref={botonFiltrosRef}
               type="button"
               onClick={() => setMenuFiltrosAbierto((prev) => !prev)}
               className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
@@ -295,6 +321,7 @@ export default function CatalogPage() {
                   : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
               }`}
               aria-expanded={menuFiltrosAbierto}
+              aria-controls="catalogo-panel-filtros"
               aria-label="Filtros del catálogo"
             >
               <svg className="h-4 w-4 text-[var(--color-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -314,7 +341,7 @@ export default function CatalogPage() {
                   {filtrosActivosCount}
                 </span>
               )}
-              <svg className={`h-3 w-3 text-[var(--color-text-muted)] transition-transform ${menuFiltrosAbierto ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg className={`h-3 w-3 text-[var(--color-text-muted)] transition-transform duration-200 ${menuFiltrosAbierto ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
@@ -403,26 +430,39 @@ export default function CatalogPage() {
               )}
             </div>
           </div>
+        </div>
 
-          {/* ======================================================== */}
-          {/* MENÚ DESPLEGABLE DE FILTROS COMPACTO */}
-          {/* ======================================================== */}
-          {menuFiltrosAbierto && (
-            <div
-              ref={menuRef}
-              className="absolute left-0 top-full mt-2 w-full max-w-xl rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 sm:p-5 shadow-2xl backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 max-h-[72vh] overflow-y-auto text-[var(--color-text)]"
-            >
-              {/* Encabezado del menú */}
-              <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2.5 mb-3.5">
+        {/* ======================================================== */}
+        {/* PANEL DESPLEGABLE DE FILTROS EN EL FLUJO (EMPUJA CONTENIDO) */}
+        {/* ======================================================== */}
+        <div
+          ref={menuRef}
+          id="catalogo-panel-filtros"
+          className={`sr-filter-panel-wrapper ${menuFiltrosAbierto ? 'sr-filter-panel-wrapper--open' : ''}`}
+          aria-hidden={!menuFiltrosAbierto}
+        >
+          <div className="sr-filter-panel-inner">
+            <div className="sr-filter-panel-card">
+              {/* Encabezado del panel */}
+              <div className="sr-filter-panel-header">
                 <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-[var(--color-accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg
+                    className="h-4 w-4 text-[var(--sr-acento-primario,var(--color-accent))]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                   </svg>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text)]">
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--color-text)]">
                     Filtrar catálogo
                   </h3>
                   {filtrosActivosCount > 0 && (
-                    <span className="rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-accent)] px-2 py-0.5 text-[9px] font-bold text-[var(--color-accent)]">
+                    <span className="rounded-full bg-[var(--sr-surface-raised,var(--color-surface-raised))] border border-[var(--sr-acento-primario,var(--color-accent))] px-2 py-0.5 text-[10px] font-bold text-[var(--sr-acento-primario,var(--color-accent))]">
                       {filtrosActivosCount} activos
                     </span>
                   )}
@@ -430,7 +470,7 @@ export default function CatalogPage() {
                 <button
                   type="button"
                   onClick={() => setMenuFiltrosAbierto(false)}
-                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1.5 rounded-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                   aria-label="Cerrar filtros"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -440,212 +480,571 @@ export default function CatalogPage() {
                 </button>
               </div>
 
-              {/* LISTA COMPLETA DE FILTROS CON DISEÑO COMPACTO */}
-              <div className="space-y-3.5">
-                {/* 1. Cerca de (localidades y barrios con 'No especificar' primero y 'Cerca de mí' segundo) */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-                    Cerca de
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {OPCIONES_CERCA_DE.map((loc) => (
-                      <button
-                        key={loc}
-                        type="button"
-                        onClick={() => setFiltroCercaDe(loc)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          filtroCercaDe === loc
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
-                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {loc}
-                      </button>
-                    ))}
+              {/* Acordeón de grupos de filtros (todas las secciones inician cerradas) */}
+              <div className="sr-filter-accordion">
+                {/* 1. Cerca de */}
+                <div className="sr-filter-accordion-item">
+                  <button
+                    type="button"
+                    id="filter-accordion-header-cerca-de"
+                    aria-expanded={seccionesAbiertas.cercaDe}
+                    aria-controls="filter-accordion-panel-cerca-de"
+                    onClick={() => toggleSeccion('cercaDe')}
+                    className="sr-filter-accordion-header"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Cerca de</span>
+                      {filtroCercaDe !== 'No especificar' && (
+                        <span className="sr-filter-badge">1</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`sr-filter-accordion-chevron ${seccionesAbiertas.cercaDe ? 'sr-filter-accordion-chevron--open' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div
+                    id="filter-accordion-panel-cerca-de"
+                    role="region"
+                    aria-labelledby="filter-accordion-header-cerca-de"
+                    className="sr-filter-accordion-body"
+                    data-open={seccionesAbiertas.cercaDe}
+                  >
+                    <div className="sr-filter-accordion-body-inner">
+                      <div className="sr-filter-chips-grid">
+                        {OPCIONES_CERCA_DE.map((loc) => {
+                          const isSelected = filtroCercaDe === loc
+                          const isDefault = loc === 'No especificar'
+                          return (
+                            <button
+                              key={loc}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => setFiltroCercaDe(isSelected && !isDefault ? 'No especificar' : loc)}
+                              className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                            >
+                              <span>{loc}</span>
+                              {isSelected && !isDefault && (
+                                <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* 2. Tipo de prenda */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-                    Tipo de prenda
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {TIPOS_PRENDA.map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setFiltroTipo(t)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          filtroTipo === t
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
-                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {t}
-                      </button>
-                    ))}
+                <div className="sr-filter-accordion-item">
+                  <button
+                    type="button"
+                    id="filter-accordion-header-tipo"
+                    aria-expanded={seccionesAbiertas.tipo}
+                    aria-controls="filter-accordion-panel-tipo"
+                    onClick={() => toggleSeccion('tipo')}
+                    className="sr-filter-accordion-header"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Tipo de prenda</span>
+                      {filtroTipo !== 'Todos' && (
+                        <span className="sr-filter-badge">1</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`sr-filter-accordion-chevron ${seccionesAbiertas.tipo ? 'sr-filter-accordion-chevron--open' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div
+                    id="filter-accordion-panel-tipo"
+                    role="region"
+                    aria-labelledby="filter-accordion-header-tipo"
+                    className="sr-filter-accordion-body"
+                    data-open={seccionesAbiertas.tipo}
+                  >
+                    <div className="sr-filter-accordion-body-inner">
+                      <div className="sr-filter-chips-grid">
+                        {TIPOS_PRENDA.map((t) => {
+                          const isSelected = filtroTipo === t
+                          const isDefault = t === 'Todos'
+                          return (
+                            <button
+                              key={t}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => setFiltroTipo(isSelected && !isDefault ? 'Todos' : t)}
+                              className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                            >
+                              <span>{t}</span>
+                              {isSelected && !isDefault && (
+                                <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* 3. Talla disponible */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-                    Talla disponible
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {TALLAS.map((sz) => (
-                      <button
-                        key={sz}
-                        type="button"
-                        onClick={() => setFiltroTalla(sz)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          filtroTalla === sz
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
-                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {sz}
-                      </button>
-                    ))}
+                <div className="sr-filter-accordion-item">
+                  <button
+                    type="button"
+                    id="filter-accordion-header-talla"
+                    aria-expanded={seccionesAbiertas.talla}
+                    aria-controls="filter-accordion-panel-talla"
+                    onClick={() => toggleSeccion('talla')}
+                    className="sr-filter-accordion-header"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Talla disponible</span>
+                      {filtroTalla !== 'Todas' && (
+                        <span className="sr-filter-badge">1</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`sr-filter-accordion-chevron ${seccionesAbiertas.talla ? 'sr-filter-accordion-chevron--open' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div
+                    id="filter-accordion-panel-talla"
+                    role="region"
+                    aria-labelledby="filter-accordion-header-talla"
+                    className="sr-filter-accordion-body"
+                    data-open={seccionesAbiertas.talla}
+                  >
+                    <div className="sr-filter-accordion-body-inner">
+                      <div className="sr-filter-chips-grid">
+                        {TALLAS.map((sz) => {
+                          const isSelected = filtroTalla === sz
+                          const isDefault = sz === 'Todas'
+                          return (
+                            <button
+                              key={sz}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => setFiltroTalla(isSelected && !isDefault ? 'Todas' : sz)}
+                              className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                            >
+                              <span>{sz}</span>
+                              {isSelected && !isDefault && (
+                                <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* 4. Rango de precio */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-                    Rango de precio
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {PRECIOS_PRESETS.map((preset, idx) => (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() => setFiltroPrecio(idx)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          filtroPrecio === idx
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
-                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
+                <div className="sr-filter-accordion-item">
+                  <button
+                    type="button"
+                    id="filter-accordion-header-precio"
+                    aria-expanded={seccionesAbiertas.precio}
+                    aria-controls="filter-accordion-panel-precio"
+                    onClick={() => toggleSeccion('precio')}
+                    className="sr-filter-accordion-header"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Rango de precio</span>
+                      {filtroPrecio !== 0 && (
+                        <span className="sr-filter-badge">1</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`sr-filter-accordion-chevron ${seccionesAbiertas.precio ? 'sr-filter-accordion-chevron--open' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div
+                    id="filter-accordion-panel-precio"
+                    role="region"
+                    aria-labelledby="filter-accordion-header-precio"
+                    className="sr-filter-accordion-body"
+                    data-open={seccionesAbiertas.precio}
+                  >
+                    <div className="sr-filter-accordion-body-inner">
+                      {/* Control de rango visual con barra de acento y dos manijas redondas */}
+                      <div className="px-2 pt-1 pb-1">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-semibold text-[var(--color-text-muted)]">Rango</span>
+                          <span className="font-bold text-[var(--sr-acento-primario,var(--color-accent))]">
+                            {PRECIOS_PRESETS[filtroPrecio]?.label ?? 'Cualquier precio'}
+                          </span>
+                        </div>
+                        <div className="sr-filter-range-track" aria-hidden="true">
+                          <div
+                            className="sr-filter-range-bar"
+                            style={{
+                              left: filtroPrecio === 0 ? '0%' : filtroPrecio === 1 ? '0%' : filtroPrecio === 2 ? '25%' : filtroPrecio === 3 ? '58%' : '78%',
+                              right: filtroPrecio === 0 ? '0%' : filtroPrecio === 1 ? '75%' : filtroPrecio === 2 ? '42%' : filtroPrecio === 3 ? '18%' : '0%',
+                            }}
+                          />
+                          <div
+                            className="sr-filter-range-thumb"
+                            style={{
+                              left: filtroPrecio === 0 ? '0%' : filtroPrecio === 1 ? '0%' : filtroPrecio === 2 ? '25%' : filtroPrecio === 3 ? '58%' : '78%',
+                            }}
+                          />
+                          <div
+                            className="sr-filter-range-thumb"
+                            style={{
+                              left: filtroPrecio === 0 ? '100%' : filtroPrecio === 1 ? '25%' : filtroPrecio === 2 ? '58%' : filtroPrecio === 3 ? '82%' : '100%',
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="sr-filter-chips-grid">
+                        {PRECIOS_PRESETS.map((preset, idx) => {
+                          const isSelected = filtroPrecio === idx
+                          const isDefault = idx === 0
+                          return (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => setFiltroPrecio(isSelected && !isDefault ? 0 : idx)}
+                              className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                            >
+                              <span>{preset.label}</span>
+                              {isSelected && !isDefault && (
+                                <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* 5. Origen */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-                    Origen
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {ORIGENES.map((orig) => (
-                      <button
-                        key={orig.id}
-                        type="button"
-                        onClick={() => setFiltroOrigen(orig.id)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          filtroOrigen === orig.id
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
-                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {orig.label}
-                      </button>
-                    ))}
+                <div className="sr-filter-accordion-item">
+                  <button
+                    type="button"
+                    id="filter-accordion-header-origen"
+                    aria-expanded={seccionesAbiertas.origen}
+                    aria-controls="filter-accordion-panel-origen"
+                    onClick={() => toggleSeccion('origen')}
+                    className="sr-filter-accordion-header"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Origen</span>
+                      {filtroOrigen !== 'Todos' && (
+                        <span className="sr-filter-badge">1</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`sr-filter-accordion-chevron ${seccionesAbiertas.origen ? 'sr-filter-accordion-chevron--open' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div
+                    id="filter-accordion-panel-origen"
+                    role="region"
+                    aria-labelledby="filter-accordion-header-origen"
+                    className="sr-filter-accordion-body"
+                    data-open={seccionesAbiertas.origen}
+                  >
+                    <div className="sr-filter-accordion-body-inner">
+                      <div className="sr-filter-chips-grid">
+                        {ORIGENES.map((orig) => {
+                          const isSelected = filtroOrigen === orig.id
+                          const isDefault = orig.id === 'Todos'
+                          return (
+                            <button
+                              key={orig.id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => setFiltroOrigen(isSelected && !isDefault ? 'Todos' : orig.id)}
+                              className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                            >
+                              <span>{orig.label}</span>
+                              {isSelected && !isDefault && (
+                                <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* 6. Marca */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-                    Marca
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {MARCAS.map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setFiltroMarca(m)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          filtroMarca === m
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
-                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
+                <div className="sr-filter-accordion-item">
+                  <button
+                    type="button"
+                    id="filter-accordion-header-marca"
+                    aria-expanded={seccionesAbiertas.marca}
+                    aria-controls="filter-accordion-panel-marca"
+                    onClick={() => toggleSeccion('marca')}
+                    className="sr-filter-accordion-header"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Marca</span>
+                      {filtroMarca !== 'Todas' && (
+                        <span className="sr-filter-badge">1</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`sr-filter-accordion-chevron ${seccionesAbiertas.marca ? 'sr-filter-accordion-chevron--open' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div
+                    id="filter-accordion-panel-marca"
+                    role="region"
+                    aria-labelledby="filter-accordion-header-marca"
+                    className="sr-filter-accordion-body"
+                    data-open={seccionesAbiertas.marca}
+                  >
+                    <div className="sr-filter-accordion-body-inner">
+                      <div className="sr-filter-chips-grid">
+                        {MARCAS.map((m) => {
+                          const isSelected = filtroMarca === m
+                          const isDefault = m === 'Todas'
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => setFiltroMarca(isSelected && !isDefault ? 'Todas' : m)}
+                              className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                            >
+                              <span>{m}</span>
+                              {isSelected && !isDefault && (
+                                <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* 7. Color (en la parte de abajo, mismo estilo) */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-                    Color
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {COLORES.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setFiltroColor(c)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          filtroColor === c
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
-                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
+                {/* 7. Color */}
+                <div className="sr-filter-accordion-item">
+                  <button
+                    type="button"
+                    id="filter-accordion-header-color"
+                    aria-expanded={seccionesAbiertas.color}
+                    aria-controls="filter-accordion-panel-color"
+                    onClick={() => toggleSeccion('color')}
+                    className="sr-filter-accordion-header"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Color</span>
+                      {filtroColor !== 'Todos' && (
+                        <span className="sr-filter-badge">1</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`sr-filter-accordion-chevron ${seccionesAbiertas.color ? 'sr-filter-accordion-chevron--open' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div
+                    id="filter-accordion-panel-color"
+                    role="region"
+                    aria-labelledby="filter-accordion-header-color"
+                    className="sr-filter-accordion-body"
+                    data-open={seccionesAbiertas.color}
+                  >
+                    <div className="sr-filter-accordion-body-inner">
+                      <div className="sr-filter-chips-grid">
+                        {COLORES.map((c) => {
+                          const isSelected = filtroColor === c
+                          const isDefault = c === 'Todos'
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => setFiltroColor(isSelected && !isDefault ? 'Todos' : c)}
+                              className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                            >
+                              <span>{c}</span>
+                              {isSelected && !isDefault && (
+                                <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* 8. Estilo (los 5 estilos del prototipo) */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-                    Estilo
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {ESTILOS.map((st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setFiltroEstilo(st)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          filtroEstilo === st
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] ring-1 ring-[var(--color-accent)] shadow-sm font-bold'
-                            : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {st}
-                      </button>
-                    ))}
+                {/* 8. Estilo */}
+                <div className="sr-filter-accordion-item">
+                  <button
+                    type="button"
+                    id="filter-accordion-header-estilo"
+                    aria-expanded={seccionesAbiertas.estilo}
+                    aria-controls="filter-accordion-panel-estilo"
+                    onClick={() => toggleSeccion('estilo')}
+                    className="sr-filter-accordion-header"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Estilo</span>
+                      {filtroEstilo !== 'Todos' && (
+                        <span className="sr-filter-badge">1</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`sr-filter-accordion-chevron ${seccionesAbiertas.estilo ? 'sr-filter-accordion-chevron--open' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div
+                    id="filter-accordion-panel-estilo"
+                    role="region"
+                    aria-labelledby="filter-accordion-header-estilo"
+                    className="sr-filter-accordion-body"
+                    data-open={seccionesAbiertas.estilo}
+                  >
+                    <div className="sr-filter-accordion-body-inner">
+                      <div className="sr-filter-chips-grid">
+                        {ESTILOS.map((st) => {
+                          const isSelected = filtroEstilo === st
+                          const isDefault = st === 'Todos'
+                          return (
+                            <button
+                              key={st}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => setFiltroEstilo(isSelected && !isDefault ? 'Todos' : st)}
+                              className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                            >
+                              <span>{st}</span>
+                              {isSelected && !isDefault && (
+                                <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Pie del menú */}
-              <div className="mt-4 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
+              {/* Pie del panel con acciones: Limpiar (secundario) y Aplicar filtros (primario) alineados a la derecha */}
+              <div className="sr-filter-footer">
                 <button
                   type="button"
                   onClick={handleResetFiltros}
-                  className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-danger-text,#ef4444)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded"
+                  className="sr-filter-btn-secondary"
                 >
-                  Restablecer filtros
+                  Limpiar
                 </button>
                 <button
                   type="button"
                   onClick={() => setMenuFiltrosAbierto(false)}
-                  className="rounded-xl bg-[var(--color-accent)] px-5 py-2 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                  className="sr-filter-btn-primary"
                 >
                   Aplicar filtros {filtrosActivosCount > 0 ? `(${filtrosActivosCount})` : ''}
                 </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* CHIPS DE FILTROS ACTIVOS (para remover rápido) */}
