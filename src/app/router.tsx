@@ -2,11 +2,11 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import type { Role } from '@/modules/core/types/roles'
 import { NotFound } from '@/modules/core/components/NotFound'
+import { SessionExpiredOverlay } from '@/modules/core/components/SessionExpiredOverlay'
 import { WelcomeOverlay } from '@/modules/core/components/WelcomeOverlay'
 import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
-import { SesionVencida } from './SesionVencida'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 import LandingPage from '@/modules/landing/pages/LandingPage'
@@ -55,7 +55,7 @@ const ANY: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION', 'A
 
 /** Raíz: la bienvenida al iniciar sesión vive aquí para verse aunque se pase del sitio al módulo de administración. */
 function RootLayout() {
-  return <><Outlet /><WelcomeOverlay /><SesionVencida /></>
+  return <><Outlet /><WelcomeOverlay /><SessionExpiredOverlay /></>
 }
 
 export const router = createBrowserRouter([{ element: <RootLayout />, children: [

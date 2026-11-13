@@ -2,7 +2,7 @@ import { ApiError } from './apiClient'
 
 /**
  * Escenarios de prueba para los datos simulados. Se activan con ?mock=<escenario> en la URL
- * (por ejemplo /probador?mock=job-falla) y duran lo que dura la pestaña. Sirven para grabar
+ * (por ejemplo /probador?mock=job-falla) mientras permanezca en la URL. Sirven para grabar
  * las evidencias de los casos negativos sin backend. No tienen efecto cuando VITE_USE_MOCKS=false.
  */
 export const MOCK_SCENARIOS = {
@@ -17,6 +17,8 @@ export const MOCK_SCENARIOS = {
   'catalogo-vacio': 'El catálogo del probador y de segunda mano llega vacío',
   'conflicto': 'Los cambios de estado responden 409',
   'duplicado': 'Crear una solicitud de donación responde 409 por duplicado',
+  'limite': 'Las peticiones simuladas responden 429',
+  'regla': 'Las peticiones simuladas responden 422 por regla de negocio',
   // Flujo de errores · experiencia del comprador (Daniel)
   'ubicacion-requerida': 'Ordenar o buscar por cercanía responde 400 por falta de ubicación',
   'busqueda-pendiente': 'Activar la alerta de una búsqueda recién guardada responde 422',
@@ -49,7 +51,16 @@ function read(): MockScenario[] {
   let raw = ''
   try {
     const q = new URLSearchParams(window.location.search).get('mock')
-    if (q !== null) sessionStorage.setItem(KEY, q)
+    const prev = sessionStorage.getItem(KEY)
+    if (q !== null) {
+      sessionStorage.setItem(KEY, q)
+      if (q !== prev) {
+        queueMicrotask(() => window.dispatchEvent(new Event('sr:mock-changed')))
+      }
+    } else if (import.meta.env.MODE !== 'test' && prev !== null) {
+      sessionStorage.removeItem(KEY)
+      queueMicrotask(() => window.dispatchEvent(new Event('sr:mock-changed')))
+    }
     raw = sessionStorage.getItem(KEY) ?? ''
   } catch { /* sin almacenamiento */ }
   return raw.split(',').map((s) => s.trim()).filter((s): s is MockScenario => s in MOCK_SCENARIOS)
@@ -57,6 +68,19 @@ function read(): MockScenario[] {
 
 export const mockScenarios = (): MockScenario[] => read()
 export const hasScenario = (s: MockScenario) => read().includes(s)
+
+/** Limpia la simulación ?mock activa en la pestaña y limpia la URL actual. */
+export function clearMockScenarios() {
+  try {
+    sessionStorage.removeItem(KEY)
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('mock')) {
+      url.searchParams.delete('mock')
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    }
+    window.dispatchEvent(new Event('sr:mock-changed'))
+  } catch { /* sin almacenamiento */ }
+}
 
 /** Lanza el error que corresponde a los escenarios globales (red, permisos, sesión). */
 export function failIfScenario(...own: MockScenario[]) {
@@ -67,7 +91,13 @@ export function failIfScenario(...own: MockScenario[]) {
     throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
   }
   if (active.includes('sin-permiso')) throw new ApiError(403, 'No tienes permiso para hacer esto.')
-  for (const s of own) if (active.includes(s)) throw new ApiError(s === 'conflicto' || s === 'duplicado' ? 409 : 500, MOCK_SCENARIOS[s])
+  if (active.includes('limite')) throw new ApiError(429, 'Hiciste demasiados intentos. Espera un momento e intenta de nuevo.')
+  for (const s of own) {
+    if (active.includes(s)) {
+      const status = s === 'conflicto' || s === 'duplicado' ? 409 : s === 'regla' ? 422 : 500
+      throw new ApiError(status, MOCK_SCENARIOS[s])
+    }
+  }
 }
 
 /**
