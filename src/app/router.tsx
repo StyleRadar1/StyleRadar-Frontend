@@ -6,6 +6,7 @@ import { WelcomeOverlay } from '@/modules/core/components/WelcomeOverlay'
 import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
+import { SesionVencida } from './SesionVencida'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 import LandingPage from '@/modules/landing/pages/LandingPage'
@@ -41,6 +42,8 @@ const AdminStoreDetail = lazy(() => import('@/modules/administracion/pages/Admin
 const AdminFoundations = lazy(() => import('@/modules/administracion/pages/AdminFoundationsPage'))
 const AdminFoundationDetail = lazy(() => import('@/modules/administracion/pages/AdminFoundationDetailPage'))
 const AdminPlaylists = lazy(() => import('@/modules/administracion/pages/AdminPlaylistsPage'))
+// Vitrina de las piezas de error: solo en desarrollo, no llega al build de QA ni producción.
+const ErroresDemo = import.meta.env.DEV ? lazy(() => import('@/modules/core/pages/ErroresDemo')) : null
 
 const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-white/60">Cargando…</p>}>{el}</Suspense>
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
@@ -52,7 +55,7 @@ const ANY: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION', 'A
 
 /** Raíz: la bienvenida al iniciar sesión vive aquí para verse aunque se pase del sitio al módulo de administración. */
 function RootLayout() {
-  return <><Outlet /><WelcomeOverlay /></>
+  return <><Outlet /><WelcomeOverlay /><SesionVencida /></>
 }
 
 export const router = createBrowserRouter([{ element: <RootLayout />, children: [
@@ -95,6 +98,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },
       { path: '/fundacion/estadisticas', element: only(FOUND, <Stats />) },
+      ...(ErroresDemo ? [{ path: '/dev/errores', element: page(<ErroresDemo />) }] : []),
       { path: '*', element: <NotFound /> },
     ],
   },
