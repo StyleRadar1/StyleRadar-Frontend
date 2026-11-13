@@ -10,6 +10,7 @@
   --sr-hanger-shoulder-muted: #3a3a40;
   --garment-h: clamp(14.375rem, 31vw, 20rem);
   position: relative;
+  z-index: 10;
   width: 100%;
   background: linear-gradient(180deg, #fcfbf9 0%, #f4eee4 55%, #faf8f5 100%);
   color: #262626;
@@ -699,6 +700,15 @@ html[data-cvd='on'] {
   --sr-acento-primario: var(--accent, #0072b2);
 }
 
+/* Espaciador dinámico que reserva el espacio exacto del panel para desplazar el contenido */
+.sr-filter-spacer {
+  height: 0;
+  transition: height 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  pointer-events: none;
+  will-change: height;
+}
+
 /* Panel flotante de vidrio: 28rem en escritorio, max 92vw, anclado a la izquierda */
 .sr-filter-panel-card {
   position: absolute;
@@ -1080,6 +1090,7 @@ html[data-cvd='on'] .sr-filter-cat-btn--active {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sr-filter-spacer,
   .sr-filter-panel-card,
   .sr-filter-tabpanel-content,
   .sr-filter-range-bar,

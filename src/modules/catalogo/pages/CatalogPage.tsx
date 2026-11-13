@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { ItemCard } from '../components/ItemCard'
@@ -109,6 +109,46 @@ export default function CatalogPage() {
   const [categoriaActiva, setCategoriaActiva] = useState<CategoriaId>('cercaDe')
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const prevMenuAbiertoRef = useRef(false)
+
+  // Altura del panel de filtros para reservar espacio dinámico y empujar el contenido
+  const [alturaPanel, setAlturaPanel] = useState(340)
+
+  // Sincroniza la altura real del panel con el espaciador mediante ResizeObserver
+  useLayoutEffect(() => {
+    if (!menuFiltrosAbierto || !menuRef.current) return
+
+    const panelNode = menuRef.current
+
+    const medir = () => {
+      const h = panelNode.offsetHeight
+      if (h > 0) {
+        setAlturaPanel(h)
+      }
+    }
+
+    medir()
+    window.addEventListener('resize', medir)
+
+    let observer: ResizeObserver | null = null
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect?.height ?? panelNode.offsetHeight
+          if (h > 0) {
+            setAlturaPanel(h)
+          }
+        }
+      })
+      observer.observe(panelNode)
+    }
+
+    return () => {
+      window.removeEventListener('resize', medir)
+      if (observer) {
+        observer.disconnect()
+      }
+    }
+  }, [menuFiltrosAbierto, categoriaActiva])
 
   // Filtros del catálogo
   const [filtroCercaDe, setFiltroCercaDe] = useState<string>(params.get('cerca') ?? 'No especificar')
@@ -617,7 +657,7 @@ export default function CatalogPage() {
         </form>
 
         {/* BARRA DE HERRAMIENTAS: Filtros (botón mediano) + Guardar búsqueda + Ordenar (diseño uniforme) */}
-        <div className="relative z-20 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)] mb-6">
+        <div className="relative z-30 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)] mb-6">
           {/* LADO IZQUIERDO: Botón Filtros mediano con badge y contenedor relativo para el panel flotante */}
           <div className="relative flex items-center gap-3">
             <button
@@ -867,6 +907,15 @@ export default function CatalogPage() {
           </div>
         </div>
 
+        {/* Espaciador dinámico que reserva el espacio exacto del panel de filtros para desplazar el contenido sin superposición */}
+        <div
+          className="sr-filter-spacer"
+          style={{
+            height: menuFiltrosAbierto ? `calc(${alturaPanel}px + 0.75rem)` : '0px',
+          }}
+          aria-hidden="true"
+        />
+
         {/* CHIPS DE FILTROS ACTIVOS (para remover rápido) */}
         {filtrosActivosCount > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
@@ -981,7 +1030,7 @@ export default function CatalogPage() {
         )}
 
         {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ESTILO REFERENCIA EDITORIAL) */}
-        <div className="mb-10">
+        <div className="relative z-10 mb-10">
           <HangingCollectionRack
             onApplyCollectionFilter={(tipo, estilo) => {
               setFiltroTipo(tipo)
