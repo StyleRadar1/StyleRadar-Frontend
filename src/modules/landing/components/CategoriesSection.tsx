@@ -24,7 +24,7 @@ export const STYLE_CATEGORIES: StyleCategory[] = [
     desc: 'Inspirado en la cultura urbana de Bogotá: hoodies oversized, pantalones cargo, prendas estampadas y tenis de autor. Marcas locales independientes que visten la ciudad real.',
     tags: ['Hoodies oversized', 'Pantalones Cargo', 'Tenis de autor', 'Gorras y Beanies', 'Chaquetas bomber'],
     catalogUrl: '/catalogo?estilo=Streetwear',
-    image: '/img/representantes/C2.jpeg',
+    image: '/img/representantes/C2.png',
   },
   {
     id: 'elegante',
@@ -35,7 +35,7 @@ export const STYLE_CATEGORIES: StyleCategory[] = [
     desc: 'Sastrería contemporánea hecha en Bogotá: blazers cruzados, pantalones de pinzas, abrigos de paño y marroquinería en cuero genuino. Siluetas nítidas para transitar de reuniones a planes nocturnos.',
     tags: ['Blazers sastre', 'Abrigos de paño', 'Pantalones de pinzas', 'Camisas lino/algodón', 'Marroquinería'],
     catalogUrl: '/catalogo?estilo=Elegante',
-    image: '/img/representantes/C1.jpeg',
+    image: '/img/representantes/C1.png',
   },
   {
     id: 'casual',
@@ -46,6 +46,7 @@ export const STYLE_CATEGORIES: StyleCategory[] = [
     desc: 'Prendas versátiles diseñadas para el día a día en Bogotá: denim resistente, camisetas de alto gramaje, cárdigans y sobrecamisas en tonos neutros. Elegancia sin esfuerzo para cualquier clima.',
     tags: ['Jeans rectos', 'Sobrecamisas', 'Camisetas pesadas', 'Cárdigans', 'Buzos de cuello alto'],
     catalogUrl: '/catalogo?estilo=Casual',
+    image: '/img/representantes/C5.png',
   },
   {
     id: 'vintage',
@@ -56,6 +57,7 @@ export const STYLE_CATEGORIES: StyleCategory[] = [
     desc: 'Moda rescatada de décadas pasadas: chaquetas de cuero desgastado, cortes noventeros, prendas de lana gruesa y estampados icónicos con calidad y durabilidad que ya no se fabrican hoy.',
     tags: ['Chaquetas de cuero', 'Jeans vintage 90s', 'Suéteres de lana', 'Camisas estampadas', 'Botas clásicas'],
     catalogUrl: '/catalogo?estilo=Vintage',
+    image: '/img/representantes/C4.png',
   },
   {
     id: 'techwear',
@@ -66,6 +68,7 @@ export const STYLE_CATEGORIES: StyleCategory[] = [
     desc: 'Prendas utilitarias para enfrentar los cambios de clima de Bogotá: telas impermeables, cortavientos ripstop, capas térmicas ligeras y bolsillos modulares. Moda pensada para caminar la ciudad.',
     tags: ['Cortavientos ripstop', 'Chaquetas impermeables', 'Joggers técnicos', 'Bolsos cruzados', 'Calzado repelente'],
     catalogUrl: '/catalogo?estilo=Techwear',
+    image: '/img/representantes/C3.png',
   },
 ]
 

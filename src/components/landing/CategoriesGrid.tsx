@@ -27,7 +27,7 @@ const categories: EditorialCategory[] = [
     tags: ['Hoodies oversized', 'Pantalones Cargo', 'Tenis de autor', 'Gorras y Beanies', 'Chaquetas bomber'],
     thumbnailSubtitle: 'Actitud de calle',
     artColor: '#30165c',
-    image: '/img/representantes/C2.jpeg',
+    image: '/img/representantes/C2.png',
   },
   {
     id: 'elegante',
@@ -40,7 +40,7 @@ const categories: EditorialCategory[] = [
     tags: ['Blazers sastre', 'Abrigos de paño', 'Pantalones de pinzas', 'Camisas lino/algodón', 'Marroquinería'],
     thumbnailSubtitle: 'Cortes estructurados',
     artColor: '#34204d',
-    image: '/img/representantes/C1.jpeg',
+    image: '/img/representantes/C1.png',
   },
   {
     id: 'casual',
@@ -53,6 +53,7 @@ const categories: EditorialCategory[] = [
     tags: ['Jeans rectos', 'Sobrecamisas', 'Camisetas pesadas', 'Cárdigans', 'Buzos de cuello alto'],
     thumbnailSubtitle: 'Básicos elevados',
     artColor: '#29203c',
+    image: '/img/representantes/C5.png',
   },
   {
     id: 'vintage',
@@ -65,6 +66,7 @@ const categories: EditorialCategory[] = [
     tags: ['Chaquetas de cuero', 'Jeans vintage 90s', 'Suéteres de lana', 'Camisas estampadas', 'Botas clásicas'],
     thumbnailSubtitle: 'Piezas con historia, carácter',
     artColor: '#37204c',
+    image: '/img/representantes/C4.png',
   },
   {
     id: 'techwear',
@@ -77,6 +79,7 @@ const categories: EditorialCategory[] = [
     tags: ['Cortavientos ripstop', 'Chaquetas impermeables', 'Joggers técnicos', 'Bolsos cruzados', 'Calzado repelente'],
     thumbnailSubtitle: 'Rendimiento técnico',
     artColor: '#28223f',
+    image: '/img/representantes/C3.png',
   },
 ]
 

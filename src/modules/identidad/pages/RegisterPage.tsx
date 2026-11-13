@@ -77,8 +77,8 @@ export default function RegisterPage() {
   return (
     <section className="relative min-h-[calc(100vh-72px)] overflow-hidden">
       <img
-        src="/img/crear-cuenta.jpg"
-        alt=""
+        src="/img/representantes/S2.png"
+        alt="Representantes caminando por calle comercial de Bogotá"
         className="absolute inset-0 h-full w-full object-cover object-[50%_40%]"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg)]/90 via-[var(--color-bg)]/40 to-[var(--color-bg)]/80" />
