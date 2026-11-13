@@ -4,6 +4,19 @@ Resumen de los errores implementados por rama (creadas desde `Flujo_De_Errores`)
 
 > Nota sobre `?mock=`: los escenarios de prueba se guardan en la pestaña actual (`sessionStorage`). En la barra superior de modo demostración aparece **`Simulación activa: ?mock=...`** con el botón **`Quitar simulación`** para limpiar el escenario antes de pasar a otra pantalla.
 
+## Orden recomendado para juntar las ramas en `Flujo_De_Errores`
+
+Las 4 ramas de pantallas nacen sobre `feature/carlos-core-errores-ui` (que ya incluye la base común de `origin/feature/Core_Errores_E` más los componentes compartidos de error). Para mantener los PRs limpios y evitar diffs repetidos:
+
+1. **Primero hacer merge/PR de `feature/carlos-core-errores-ui` → `Flujo_De_Errores`.**
+2. **Después hacer merge/PR de las otras 4 ramas → `Flujo_De_Errores`** (en cualquier orden):
+   - `feature/carlos-segunda-mano-donaciones-errores`
+   - `feature/carlos-perfil-fundacion-errores`
+   - `feature/carlos-perfil-tienda-errores`
+   - `feature/carlos-perfil-admin-errores`
+
+> Si alguna de las 4 ramas se integrara antes, igualmente arrastraría los commits de `feature/carlos-core-errores-ui` porque están en su historial, pero integrar `feature/carlos-core-errores-ui` primero deja cada PR revisable solo con los cambios de su módulo.
+
 ---
 
 ## 1. `feature/carlos-core-errores-ui` (base compartida)
