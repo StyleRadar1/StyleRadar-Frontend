@@ -57,6 +57,16 @@ export function useInventory(tiendaId?: string) {
     [tiendaId]
   )
 
+  const removeSize = useCallback(
+    async (prendaId: string, talla: string) => {
+      const updated = await inventoryService.removeSize(prendaId, talla)
+      setItems((prev) => prev.map((it) => (it.id === prendaId ? updated : it)))
+      const sum = await inventoryService.getSummary(tiendaId)
+      setSummary(sum)
+    },
+    [tiendaId]
+  )
+
   const addItem = useCallback(
     async (dto: CreateInventoryItemDto) => {
       const created = await inventoryService.addItem(dto)
@@ -74,6 +84,7 @@ export function useInventory(tiendaId?: string) {
     error,
     reload,
     updateStock,
+    removeSize,
     updatePrice,
     toggleActive,
     addItem,

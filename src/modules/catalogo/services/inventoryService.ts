@@ -1,5 +1,6 @@
-import { apiClient } from '@/modules/core/api/apiClient'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
+import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
 import type {
   InventoryItemDto,
@@ -13,6 +14,9 @@ const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== 'false'
 
 // Copia mutable en memoria para persistencia local de la sesión de prueba
 let memoryInventory: InventoryItemDto[] = structuredClone(INVENTORY_ITEMS)
+export const resetInventoryMock = () => {
+  memoryInventory = structuredClone(INVENTORY_ITEMS)
+}
 
 function computeStatus(total: number, retired: boolean): InventoryItemDto['estado'] {
   if (retired) return 'RETIRADO'
@@ -39,6 +43,7 @@ function computeSummary(items: InventoryItemDto[]): InventorySummaryDto {
 export const inventoryService = {
   async getStoreInventory(tiendaId?: string): Promise<InventoryItemDto[]> {
     if (USE_MOCKS) {
+      failIfScenario('sin-permiso')
       const list = tiendaId
         ? memoryInventory.filter((x) => x.tiendaId === tiendaId)
         : memoryInventory
@@ -50,6 +55,7 @@ export const inventoryService = {
 
   async getSummary(tiendaId?: string): Promise<InventorySummaryDto> {
     if (USE_MOCKS) {
+      failIfScenario('sin-permiso')
       const list = tiendaId
         ? memoryInventory.filter((x) => x.tiendaId === tiendaId)
         : memoryInventory
@@ -61,19 +67,28 @@ export const inventoryService = {
 
   async updateStock(dto: UpdateStockDto): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
+      failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === dto.prendaId)
-      if (idx === -1) throw new Error('Prenda no encontrada en el inventario.')
+      if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
 
       const item = memoryInventory[idx]
-      const newStock = { ...item.stockPorTalla, [dto.talla]: Math.max(0, dto.nuevoStock) }
+      if (item.tiendaId && item.tiendaId !== 't-1') throw new ApiError(403, 'No existe o no tienes acceso.')
+      if (item.estado === 'RETIRADO') throw new ApiError(422, 'Esta acción no está disponible por ahora.')
+      if (!(dto.talla in item.stockPorTalla)) {
+        throw new ApiError(400, 'La talla indicada no existe en esta prenda.', { talla: 'La talla indicada no existe en esta prenda.' })
+      }
+      if (!Number.isInteger(dto.nuevoStock) || dto.nuevoStock < 0) {
+        throw new ApiError(400, 'La cantidad debe ser un entero mayor o igual a 0.', { nuevoStock: 'La cantidad debe ser 0 o mayor.' })
+      }
+
+      const newStock = { ...item.stockPorTalla, [dto.talla]: dto.nuevoStock }
       const total = Object.values(newStock).reduce((a, b) => a + b, 0)
-      const retired = item.estado === 'RETIRADO'
 
       const updated: InventoryItemDto = {
         ...item,
         stockPorTalla: newStock,
         stockTotal: total,
-        estado: computeStatus(total, retired),
+        estado: computeStatus(total, false),
         actualizadoEn: new Date().toISOString(),
       }
       memoryInventory[idx] = updated
@@ -82,12 +97,57 @@ export const inventoryService = {
     return apiClient.patch<InventoryItemDto>(`/tienda/inventario/${dto.prendaId}/stock`, dto).then((r) => r.data)
   },
 
-  async updatePrice(dto: UpdatePriceDto): Promise<InventoryItemDto> {
+  async removeSize(prendaId: string, talla: string): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
-      const idx = memoryInventory.findIndex((x) => x.id === dto.prendaId)
-      if (idx === -1) throw new Error('Prenda no encontrada en el inventario.')
+      failIfScenario('sin-permiso', 'regla')
+      const idx = memoryInventory.findIndex((x) => x.id === prendaId)
+      if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
 
       const item = memoryInventory[idx]
+      if (item.tiendaId && item.tiendaId !== 't-1') throw new ApiError(403, 'No existe o no tienes acceso.')
+      if (item.estado === 'RETIRADO') throw new ApiError(422, 'Esta acción no está disponible por ahora.')
+      if (!(talla in item.stockPorTalla)) {
+        throw new ApiError(400, 'La talla indicada no existe en esta prenda.', { talla: 'La talla indicada no existe en esta prenda.' })
+      }
+      const current = item.stockPorTalla[talla] ?? 0
+      if (current > 0) {
+        const msg = `La talla ${talla} aún tiene ${current} ${current === 1 ? 'unidad' : 'unidades'}. Déjala en 0 para quitarla.`
+        throw new ApiError(422, msg, { talla: msg })
+      }
+      if (Object.keys(item.stockPorTalla).length <= 1) {
+        throw new ApiError(422, 'La prenda debe conservar al menos una talla.', { talla: 'La prenda debe conservar al menos una talla.' })
+      }
+
+      const nextStock = { ...item.stockPorTalla }
+      delete nextStock[talla]
+      const total = Object.values(nextStock).reduce((a, b) => a + b, 0)
+      const updated: InventoryItemDto = {
+        ...item,
+        tallasDisponibles: Object.keys(nextStock),
+        stockPorTalla: nextStock,
+        stockTotal: total,
+        estado: computeStatus(total, false),
+        actualizadoEn: new Date().toISOString(),
+      }
+      memoryInventory[idx] = updated
+      return mockDelay(updated)
+    }
+    return apiClient.delete<InventoryItemDto>(`/tienda/inventario/${prendaId}/tallas/${encodeURIComponent(talla)}`).then((r) => r.data)
+  },
+
+  async updatePrice(dto: UpdatePriceDto): Promise<InventoryItemDto> {
+    if (USE_MOCKS) {
+      failIfScenario('sin-permiso', 'regla')
+      const idx = memoryInventory.findIndex((x) => x.id === dto.prendaId)
+      if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
+
+      const item = memoryInventory[idx]
+      if (item.tiendaId && item.tiendaId !== 't-1') throw new ApiError(403, 'No existe o no tienes acceso.')
+      if (item.estado === 'RETIRADO') throw new ApiError(422, 'Esta acción no está disponible por ahora.')
+      if (!Number.isFinite(dto.nuevoPrecio) || dto.nuevoPrecio <= 0) {
+        throw new ApiError(400, 'El precio debe ser mayor a 0.', { precio: 'El precio debe ser mayor a 0.' })
+      }
+
       const updated: InventoryItemDto = {
         ...item,
         precio: dto.nuevoPrecio,
@@ -101,10 +161,12 @@ export const inventoryService = {
 
   async toggleActive(prendaId: string): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
+      failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === prendaId)
-      if (idx === -1) throw new Error('Prenda no encontrada en el inventario.')
+      if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
 
       const item = memoryInventory[idx]
+      if (item.tiendaId && item.tiendaId !== 't-1') throw new ApiError(403, 'No existe o no tienes acceso.')
       const willRetire = item.estado !== 'RETIRADO'
       const updated: InventoryItemDto = {
         ...item,
@@ -119,12 +181,21 @@ export const inventoryService = {
 
   async addItem(dto: CreateInventoryItemDto): Promise<InventoryItemDto> {
     if (USE_MOCKS) {
+      failIfScenario('sin-permiso', 'regla')
+      const fields: Record<string, string> = {}
+      if (!dto.nombre.trim()) fields.nombre = 'Indica el nombre de la prenda.'
+      if (!Number.isFinite(dto.precio) || dto.precio <= 0) fields.precio = 'El precio debe ser mayor a 0.'
+      if (Object.values(dto.stockPorTalla).some((v) => !Number.isInteger(v) || v < 0)) {
+        fields.tallas = 'Las cantidades por talla deben ser enteros mayores o iguales a 0.'
+      }
+      if (Object.keys(fields).length) throw new ApiError(400, 'Revisa los datos de la prenda.', fields)
+
       const total = Object.values(dto.stockPorTalla).reduce((a, b) => a + b, 0)
       const newItem: InventoryItemDto = {
         id: `inv-${Date.now()}`,
         tiendaId: 't-1',
         tiendaNombre: 'Luna Store',
-        nombre: dto.nombre,
+        nombre: dto.nombre.trim(),
         estilo: dto.estilo,
         categoria: dto.categoria,
         precio: dto.precio,

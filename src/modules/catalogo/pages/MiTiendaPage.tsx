@@ -1,6 +1,21 @@
-import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useContext, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { hasScenario } from '@/modules/core/api/mockScenario'
+import { ErrorCard } from '@/modules/core/components/ErrorScene'
+import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import './MiTiendaPage.css'
+
+const MAX_STORE_PHOTOS = 6
+const MAX_STORE_PHOTO_BYTES = 6 * 1024 * 1024
+const ALLOWED_STORE_PHOTO_TYPES = ['image/jpeg', 'image/png']
+
+function validateStoreImage(file: File): string {
+  if (!ALLOWED_STORE_PHOTO_TYPES.includes(file.type) || file.size === 0 || file.size > MAX_STORE_PHOTO_BYTES) {
+    return 'Sube una imagen JPG o PNG de máximo 6 MB.'
+  }
+  return ''
+}
 
 type CatalogTab = 'Todas' | 'Publicadas' | 'En revisión' | 'Agotadas' | 'Retiradas'
 
@@ -76,6 +91,8 @@ const FILTERS: CatalogTab[] = ['Todas', 'Publicadas', 'En revisión', 'Agotadas'
 const COP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
 
 export default function MiTiendaPage() {
+  const user = useContext(AuthContext)?.user ?? null
+  const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<CatalogTab>('Todas')
   const [query, setQuery] = useState('')
   const [notice, setNotice] = useState('')
@@ -105,6 +122,9 @@ export default function MiTiendaPage() {
   const [storeInfoDraft, setStoreInfoDraft] = useState<StoreProfile>(INITIAL_STORE_PROFILE)
   const [storeInfoDialogOpen, setStoreInfoDialogOpen] = useState(false)
   const [storeInfoError, setStoreInfoError] = useState('')
+  const [storeFieldErrors, setStoreFieldErrors] = useState<Partial<Record<'name' | 'category' | 'address' | 'hours' | 'phone', string>>>({})
+  const [verificationStatus, setVerificationStatus] = useState<'SIN_VERIFICAR' | 'EN_REVISION' | 'VERIFICADA'>('SIN_VERIFICAR')
+  const [verificationError, setVerificationError] = useState('')
   const [badgesDialogOpen, setBadgesDialogOpen] = useState(false)
   const [lastUnitsLimit, setLastUnitsLimit] = useState(3)
   const [newArrivalDays, setNewArrivalDays] = useState(14)
@@ -166,20 +186,27 @@ export default function MiTiendaPage() {
     event.currentTarget.value = ''
     setPhotoError('')
     if (!selected.length) return
-    const remaining = Math.max(0, 6 - storePhotos.length)
+    const remaining = Math.max(0, MAX_STORE_PHOTOS - storePhotos.length)
     if (!remaining) {
-      setPhotoError('Ya tienes el máximo de 6 fotos de la tienda.')
+      setPhotoError('Ya llegaste al máximo de 6 fotos.')
       return
     }
-    const valid = selected.filter((file) => file.type.startsWith('image/')).slice(0, remaining)
-    if (valid.length !== selected.length) setPhotoError('Solo puedes subir imágenes y el máximo es de 6 fotos.')
-    const dataUrls = await Promise.all(valid.map((file) => new Promise<string>((resolve, reject) => {
+    const invalidMsg = selected.map(validateStoreImage).find(Boolean)
+    if (invalidMsg) {
+      setPhotoError(invalidMsg)
+      return
+    }
+    if (selected.length > remaining) {
+      setPhotoError('Ya llegaste al máximo de 6 fotos.')
+    }
+    const allowed = selected.slice(0, remaining)
+    const dataUrls = await Promise.all(allowed.map((file) => new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('No se pudo leer la imagen.'))
       reader.onerror = () => reject(new Error('No se pudo leer una de las imágenes.'))
       reader.readAsDataURL(file)
     })))
-    setStorePhotos((current) => [...current, ...dataUrls].slice(0, 6))
+    setStorePhotos((current) => [...current, ...dataUrls].slice(0, MAX_STORE_PHOTOS))
   }
   const createCollection = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -206,17 +233,37 @@ export default function MiTiendaPage() {
   const openStoreInfo = () => {
     setStoreInfoDraft(storeInfo)
     setStoreInfoError('')
+    setStoreFieldErrors({})
     setStoreInfoDialogOpen(true)
   }
   const saveStoreInfo = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!storeInfoDraft.name.trim() || !storeInfoDraft.address.trim() || !storeInfoDraft.hours.trim() || !storeInfoDraft.phone.trim()) {
-      setStoreInfoError('Completa el nombre, la dirección, el horario y el teléfono.')
+    const errs: Partial<Record<'name' | 'category' | 'address' | 'hours' | 'phone', string>> = {}
+    if (!storeInfoDraft.name.trim()) errs.name = 'Escribe el nombre de la tienda.'
+    if (!storeInfoDraft.category.trim()) errs.category = 'Indica la categoría principal.'
+    if (!storeInfoDraft.address.trim()) errs.address = 'Escribe la dirección de la tienda.'
+    if (!storeInfoDraft.hours.trim()) errs.hours = 'Indica el horario de atención.'
+    if (storeInfoDraft.phone.replace(/\D/g, '').length < 7) errs.phone = 'Ingresa un teléfono válido (mínimo 7 dígitos).'
+    if (Object.keys(errs).length) {
+      setStoreFieldErrors(errs)
+      const order: Array<'name' | 'category' | 'address' | 'hours' | 'phone'> = ['name', 'category', 'address', 'hours', 'phone']
+      const first = order.find((k) => errs[k])
+      if (first) window.setTimeout(() => document.getElementById(`store-info-${first}`)?.focus(), 0)
       return
     }
+    setStoreFieldErrors({})
     setStoreInfo({ ...storeInfoDraft, name: storeInfoDraft.name.trim(), description: storeInfoDraft.description.trim() })
     setStoreInfoDialogOpen(false)
     setNotice('La información de la tienda se actualizó.')
+  }
+  const requestVerification = () => {
+    setVerificationError('')
+    if (verificationStatus === 'EN_REVISION' || hasScenario('regla')) {
+      setVerificationError('Tu solicitud ya está en revisión')
+      return
+    }
+    setVerificationStatus('EN_REVISION')
+    setNotice('Solicitud de verificación enviada. Quedó en revisión.')
   }
   const openBadgesSettings = () => {
     setLastUnitsDraft(String(lastUnitsLimit))
@@ -242,8 +289,9 @@ export default function MiTiendaPage() {
     event.currentTarget.value = ''
     if (!file) return
     setStoreInfoError('')
-    if (!file.type.startsWith('image/')) {
-      setStoreInfoError('Selecciona un archivo de imagen válido.')
+    const invalidMsg = validateStoreImage(file)
+    if (invalidMsg) {
+      setStoreInfoError(invalidMsg)
       return
     }
     const reader = new FileReader()
@@ -252,6 +300,32 @@ export default function MiTiendaPage() {
     }
     reader.onerror = () => setStoreInfoError('No se pudo leer la imagen seleccionada.')
     reader.readAsDataURL(file)
+  }
+
+  const requestedStoreId = searchParams.get('tiendaId')
+  const forbidden = (requestedStoreId !== null && requestedStoreId !== 't-1')
+    || hasScenario('sin-permiso')
+    || (user !== null && user.role !== 'ADMIN_ALMACEN')
+
+  if (forbidden) {
+    return (
+      <main className="my-store">
+        <div className="my-store__content">
+          <ErrorCard
+            variant="etiqueta"
+            tone="warn"
+            chip="Sin acceso"
+            title="No existe o no tienes acceso"
+            description="Solo puedes administrar tu propia tienda."
+            actions={
+              <Link className="my-store__button my-store__button--primary" to="/mi-tienda">
+                Ir a mi tienda
+              </Link>
+            }
+          />
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -273,13 +347,18 @@ export default function MiTiendaPage() {
         </div>
         <div className="my-store__trust-row">
           <span>◉ &nbsp;Así te ven tus clientes · Las herramientas de edición solo las ves tú</span>
-          <div><span className="my-store__pill my-store__pill--verified">Verificada</span><span className="my-store__pill">Suscripción activa</span></div>
+          <div>
+            <span className={`my-store__pill${verificationStatus === 'VERIFICADA' ? ' my-store__pill--verified' : ''}`}>
+              {verificationStatus === 'VERIFICADA' ? 'Verificada' : verificationStatus === 'EN_REVISION' ? 'En revisión' : 'Sin verificar'}
+            </span>
+            <span className="my-store__pill">Suscripción activa</span>
+          </div>
         </div>
 
         <section className="my-store__intro" aria-labelledby="store-title">
           <div className="my-store__identity">
             <h1 id="store-title">{storeInfo.name}</h1>
-            <div className="my-store__tags"><span>{storeInfo.category.toUpperCase()}</span><span className="my-store__verified">VERIFICADA</span></div>
+            <div className="my-store__tags"><span>{storeInfo.category.toUpperCase()}</span><span className="my-store__verified">{verificationStatus === 'VERIFICADA' ? 'VERIFICADA' : verificationStatus === 'EN_REVISION' ? 'EN REVISIÓN' : 'PENDIENTE'}</span></div>
             <p>{storeInfo.description}</p>
           </div>
           <dl className="my-store__facts">
@@ -291,11 +370,20 @@ export default function MiTiendaPage() {
           <div className="my-store__actions">
             <Link className="my-store__button my-store__button--primary" to="/tienda/inventario#catalogo">＋ Agregar prenda</Link>
             <button className="my-store__button" type="button" onClick={openStoreInfo}>Editar información</button>
+            {verificationStatus !== 'VERIFICADA' && (
+              <button className="my-store__button" type="button" onClick={requestVerification}>Solicitar verificación</button>
+            )}
             <button className="my-store__button" type="button" onClick={openBadgesSettings}>Distintivos</button>
             <a className="my-store__button" href="#fotos-tienda">Fotos de la tienda</a>
             <Link className="my-store__button" to="/tienda/estadisticas">Estadísticas</Link>
           </div>
         </section>
+
+        {verificationError && (
+          <ErrorBanner tone="warn" icon="info" title={verificationError}>
+            Nuestro equipo ya está revisando los documentos de tu tienda. Te avisaremos cuando finalice la revisión.
+          </ErrorBanner>
+        )}
 
         {notice ? <div className="my-store__notice" role="status">{notice}<button type="button" onClick={() => setNotice('')} aria-label="Cerrar aviso">×</button></div> : null}
 
@@ -332,12 +420,18 @@ export default function MiTiendaPage() {
         </section>
 
         <section className="my-store__photos" id="fotos-tienda" aria-labelledby="store-photos-title">
-          <div className="my-store__photos-head"><div><h2 id="store-photos-title">Fotos de la tienda</h2><p>Fachada, vitrina e interior. Salen en tu página para que la gente te reconozca al llegar. Hasta 6 fotos.</p></div>
-            <label className="my-store__upload-button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h3l1.3-2h5.4L14 6h3v10H3z" /><circle cx="10" cy="11" r="3" /></svg>Subir fotos<input type="file" accept="image/*" multiple onChange={uploadPhotos} /></label>
+          <div className="my-store__photos-head">
+            <div>
+              <h2 id="store-photos-title">Fotos de la tienda</h2>
+              <p>Fachada, vitrina e interior. Salen en tu página para que la gente te reconozca al llegar. {storePhotos.length}/6 fotos.</p>
+            </div>
+            {storePhotos.length < MAX_STORE_PHOTOS && (
+              <label className="my-store__upload-button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h3l1.3-2h5.4L14 6h3v10H3z" /><circle cx="10" cy="11" r="3" /></svg>Subir fotos<input type="file" accept="image/jpeg,image/png" multiple onChange={uploadPhotos} /></label>
+            )}
           </div>
-          {photoError ? <p className="my-store__photo-error" role="alert">{photoError}</p> : null}
+          <FieldError id="store-photos-err" message={photoError} />
           <div className="my-store__photo-grid">
-          {storePhotos.length ? storePhotos.map((photo, index) => <figure key={photo}><img src={photo} alt={`Foto ${index + 1} de Luna Store`} /><figcaption>FOTO {index + 1} · LUNA STORE</figcaption><button type="button" onClick={() => setStorePhotos((current) => current.filter((entry) => entry !== photo))} aria-label={`Quitar foto ${index + 1}`}>×</button></figure>) : <figure className="my-store__sample-photo"><img src={storeInfo.photo} alt="Fachada de ejemplo de Luna Store" loading="lazy" /><figcaption>FOTO DE EJEMPLO · SUBE LA TUYA PARA REEMPLAZARLA</figcaption></figure>}
+          {storePhotos.length ? storePhotos.map((photo, index) => <figure key={`${index}-${photo.slice(0, 32)}`}><img src={photo} alt={`Foto ${index + 1} de Luna Store`} /><figcaption>FOTO {index + 1} · LUNA STORE</figcaption><button type="button" onClick={() => setStorePhotos((current) => current.filter((_, idx) => idx !== index))} aria-label={`Quitar foto ${index + 1}`}>×</button></figure>) : <figure className="my-store__sample-photo"><img src={storeInfo.photo} alt="Fachada de ejemplo de Luna Store" loading="lazy" /><figcaption>FOTO DE EJEMPLO · SUBE LA TUYA PARA REEMPLAZARLA</figcaption></figure>}
           </div>
         </section>
 
@@ -380,22 +474,37 @@ export default function MiTiendaPage() {
       </div> : null}
 
       {storeInfoDialogOpen ? <div className="my-store__dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setStoreInfoDialogOpen(false) }}>
-        <form className="my-store__dialog my-store__dialog--store-info" role="dialog" aria-modal="true" aria-labelledby="store-info-title" onSubmit={saveStoreInfo}>
+        <form className="my-store__dialog my-store__dialog--store-info" role="dialog" aria-modal="true" aria-labelledby="store-info-title" noValidate onSubmit={saveStoreInfo}>
           <button className="my-store__dialog-close" type="button" onClick={() => setStoreInfoDialogOpen(false)} aria-label="Cerrar">×</button>
           <span className="my-store__eyebrow">{storeInfo.name.toUpperCase()}</span>
           <h2 id="store-info-title">Editar información</h2>
           <div className="my-store__store-fields">
-            <label>NOMBRE DE LA TIENDA<input value={storeInfoDraft.name} onChange={(event) => setStoreInfoDraft((current) => ({ ...current, name: event.target.value }))} required /></label>
-            <label>CATEGORÍA<input value={storeInfoDraft.category} onChange={(event) => setStoreInfoDraft((current) => ({ ...current, category: event.target.value }))} required /></label>
+            <label htmlFor="store-info-name">NOMBRE DE LA TIENDA
+              <input id="store-info-name" value={storeInfoDraft.name} onChange={(event) => { setStoreInfoDraft((current) => ({ ...current, name: event.target.value })); setStoreFieldErrors((e) => ({ ...e, name: undefined })) }} aria-invalid={Boolean(storeFieldErrors.name)} aria-describedby={storeFieldErrors.name ? 'store-info-name-err' : undefined} />
+              <FieldError id="store-info-name-err" message={storeFieldErrors.name} />
+            </label>
+            <label htmlFor="store-info-category">CATEGORÍA
+              <input id="store-info-category" value={storeInfoDraft.category} onChange={(event) => { setStoreInfoDraft((current) => ({ ...current, category: event.target.value })); setStoreFieldErrors((e) => ({ ...e, category: undefined })) }} aria-invalid={Boolean(storeFieldErrors.category)} aria-describedby={storeFieldErrors.category ? 'store-info-category-err' : undefined} />
+              <FieldError id="store-info-category-err" message={storeFieldErrors.category} />
+            </label>
             <label className="my-store__store-field-full">DESCRIPCIÓN<textarea value={storeInfoDraft.description} onChange={(event) => setStoreInfoDraft((current) => ({ ...current, description: event.target.value }))} maxLength={200} rows={4} /><small>Máximo 200 caracteres.</small></label>
-            <label>DIRECCIÓN<input value={storeInfoDraft.address} onChange={(event) => setStoreInfoDraft((current) => ({ ...current, address: event.target.value }))} required /></label>
+            <label htmlFor="store-info-address">DIRECCIÓN
+              <input id="store-info-address" value={storeInfoDraft.address} onChange={(event) => { setStoreInfoDraft((current) => ({ ...current, address: event.target.value })); setStoreFieldErrors((e) => ({ ...e, address: undefined })) }} aria-invalid={Boolean(storeFieldErrors.address)} aria-describedby={storeFieldErrors.address ? 'store-info-address-err' : undefined} />
+              <FieldError id="store-info-address-err" message={storeFieldErrors.address} />
+            </label>
             <label>BARRIO<input value={storeInfoDraft.neighborhood} onChange={(event) => setStoreInfoDraft((current) => ({ ...current, neighborhood: event.target.value }))} /></label>
-            <label>HORARIO<input value={storeInfoDraft.hours} onChange={(event) => setStoreInfoDraft((current) => ({ ...current, hours: event.target.value }))} required /></label>
-            <label>TELÉFONO<input value={storeInfoDraft.phone} onChange={(event) => setStoreInfoDraft((current) => ({ ...current, phone: event.target.value }))} required /></label>
+            <label htmlFor="store-info-hours">HORARIO
+              <input id="store-info-hours" value={storeInfoDraft.hours} onChange={(event) => { setStoreInfoDraft((current) => ({ ...current, hours: event.target.value })); setStoreFieldErrors((e) => ({ ...e, hours: undefined })) }} aria-invalid={Boolean(storeFieldErrors.hours)} aria-describedby={storeFieldErrors.hours ? 'store-info-hours-err' : undefined} />
+              <FieldError id="store-info-hours-err" message={storeFieldErrors.hours} />
+            </label>
+            <label htmlFor="store-info-phone">TELÉFONO
+              <input id="store-info-phone" value={storeInfoDraft.phone} onChange={(event) => { setStoreInfoDraft((current) => ({ ...current, phone: event.target.value })); setStoreFieldErrors((e) => ({ ...e, phone: undefined })) }} aria-invalid={Boolean(storeFieldErrors.phone)} aria-describedby={storeFieldErrors.phone ? 'store-info-phone-err' : undefined} />
+              <FieldError id="store-info-phone-err" message={storeFieldErrors.phone} />
+            </label>
             <label className="my-store__store-field-full">MÉTODOS DE PAGO<input value={storeInfoDraft.payments} onChange={(event) => setStoreInfoDraft((current) => ({ ...current, payments: event.target.value }))} /></label>
-            <label className="my-store__store-field-full my-store__facade-upload">FOTO DE LA FACHADA <span title="Se muestra en la cabecera y la ficha de tu tienda">ⓘ</span><span className="my-store__facade-drop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3m0 0L6 7m4-4 4 4M3 12v5h14v-5" /></svg>CAMBIAR FOTO<input type="file" accept="image/*" onChange={changeStorePhoto} /></span></label>
+            <label className="my-store__store-field-full my-store__facade-upload">FOTO DE LA FACHADA <span title="Se muestra en la cabecera y la ficha de tu tienda">ⓘ</span><span className="my-store__facade-drop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3m0 0L6 7m4-4 4 4M3 12v5h14v-5" /></svg>CAMBIAR FOTO<input type="file" accept="image/jpeg,image/png" onChange={changeStorePhoto} /></span></label>
           </div>
-          {storeInfoError ? <p className="my-store__photo-error" role="alert">{storeInfoError}</p> : null}
+          <FieldError id="store-info-photo-err" message={storeInfoError} />
           <div className="my-store__dialog-actions"><button type="button" onClick={() => setStoreInfoDialogOpen(false)}>Cancelar</button><button className="my-store__button--primary" type="submit">Guardar cambios</button></div>
         </form>
       </div> : null}
