@@ -25,7 +25,12 @@ export const donationService = {
     if (env.useMocks) {
       failIfScenario('duplicado')
       const u = mockSessionUser()
-      if (!u) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
+      if (!u) throw new ApiError(401, 'Tu sesión venció, vuelve a iniciar sesión.')
+      if (MOCK_FOUNDATION_OF[u.id] === data.fundacionId) {
+        throw new ApiError(400, 'Revisa los datos. La donación debe ir a una fundación, no a tu propia cuenta.', {
+          fundacionId: 'La donación debe ir a una fundación, no a tu propia cuenta.',
+        })
+      }
       const f = FOUNDATIONS.find((x) => x.id === data.fundacionId)
       if (!f || !f.activa) throw new ApiError(422, 'Esa fundación no está recibiendo donaciones.')
       if (!f.categorias.includes(data.prenda.categoria)) throw new ApiError(422, `${f.nombre} no recibe ${data.prenda.categoria.toLowerCase()}.`)

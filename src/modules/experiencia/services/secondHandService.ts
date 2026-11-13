@@ -13,13 +13,13 @@ export const resetSecondHandMock = () => { store = null }
 
 const me = () => {
   const u = mockSessionUser()
-  if (!u) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
+  if (!u) throw new ApiError(401, 'Tu sesión venció, vuelve a iniciar sesión.')
   return u
 }
 const owned = (id: string) => {
   const l = db().find((x) => x.id === id)
-  if (!l) throw new ApiError(404, 'Esa publicación ya no existe.')
-  if (l.vendedor.id !== me().id) throw new ApiError(403, 'Solo quien publicó la prenda puede cambiarla.')
+  if (!l) throw new ApiError(404, 'Esta publicación no está disponible.')
+  if (l.vendedor.id !== me().id) throw new ApiError(403, 'Esta publicación no está disponible.')
   return l
 }
 const multipart = (data: ListingRequestDto, files: File[]) => {
@@ -27,6 +27,14 @@ const multipart = (data: ListingRequestDto, files: File[]) => {
   form.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }))
   files.forEach((f) => form.append('files', f))
   return form
+}
+
+const toLong = (value: string | number): number | null => {
+  if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0 ? value : null
+  const clean = value.trim()
+  if (!/^\d+$/.test(clean)) return null
+  const parsed = Number(clean)
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null
 }
 
 export const secondHandService = {
@@ -58,8 +66,17 @@ export const secondHandService = {
     if (env.useMocks) {
       failIfScenario()
       const l = db().find((x) => x.id === id)
-      if (!l) throw new ApiError(404, 'Esa publicación ya no existe.')
+      if (!l) throw new ApiError(404, 'Esta publicación no está disponible.')
       return mockDelay(l)
+    }
+    return apiClient.get<ListingDto>(`/api/second-hand/listings/${encodeURIComponent(id)}`).then((r) => r.data)
+  },
+
+  /** Obtiene una publicación solo si pertenece al usuario actual (para edición). */
+  async getForEdit(id: string): Promise<ListingDto> {
+    if (env.useMocks) {
+      failIfScenario()
+      return mockDelay(owned(id))
     }
     return apiClient.get<ListingDto>(`/api/second-hand/listings/${encodeURIComponent(id)}`).then((r) => r.data)
   },
@@ -82,19 +99,50 @@ export const secondHandService = {
     if (env.useMocks) {
       failIfScenario('conflicto')
       const l = owned(id)
-      if (l.estado !== 'DISPONIBLE') throw new ApiError(409, 'Solo se pueden editar publicaciones disponibles.')
+      if (l.estado !== 'DISPONIBLE') throw new ApiError(409, 'Esta prenda ya se vendió o donó.')
       Object.assign(l, data, { fotos: [...(data.fotosConservadas ?? []), ...files.map((f) => URL.createObjectURL(f))] })
       return mockDelay(l, 600)
     }
     return apiClient.put<ListingDto>(`/api/second-hand/listings/${encodeURIComponent(id)}`, multipart(data, files)).then((r) => r.data)
   },
 
-  /** RF-38 (VENDIDA) y RF-39 (RETIRADA). */
+  /** RF-38: marcar como vendida indicando vendedor (userId) y comprador (compradorId) por query string. */
+  async sell(id: string, userId: string | number, compradorId: string | number): Promise<ListingDto> {
+    const compStr = String(compradorId ?? '').trim()
+    const userStr = String(userId ?? '').trim()
+    if (!compStr) {
+      throw new ApiError(400, 'Revisa los datos e intenta de nuevo.', { compradorId: 'Elige a la persona que te la compró.' })
+    }
+    if (compStr === userStr) {
+      throw new ApiError(400, 'Revisa los datos e intenta de nuevo.', { compradorId: 'No puedes venderte la prenda a ti mismo.' })
+    }
+
+    if (env.useMocks) {
+      failIfScenario('conflicto')
+      const l = owned(id)
+      if (l.estado !== 'DISPONIBLE') throw new ApiError(409, 'Esta prenda ya se vendió o donó.')
+      l.estado = 'VENDIDA'
+      return mockDelay(l, 500)
+    }
+
+    const uid = toLong(userStr)
+    const cid = toLong(compStr)
+    if (!uid || !cid) {
+      throw new ApiError(400, 'Revisa los datos e intenta de nuevo.', { compradorId: 'Elige un comprador válido.' })
+    }
+    return apiClient
+      .patch<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/sell`, null, {
+        params: { userId: uid, compradorId: cid },
+      })
+      .then((r) => r.data)
+  },
+
+  /** RF-39: retirar publicación. */
   async setStatus(id: string, body: ListingStatusRequestDto): Promise<ListingDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
       const l = owned(id)
-      if (l.estado !== 'DISPONIBLE') throw new ApiError(409, `La publicación ya está ${l.estado === 'VENDIDA' ? 'vendida' : 'retirada'}.`)
+      if (l.estado !== 'DISPONIBLE') throw new ApiError(409, 'Esta prenda ya se vendió o donó.')
       l.estado = body.estado
       return mockDelay(l, 500)
     }

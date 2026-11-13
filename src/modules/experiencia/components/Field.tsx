@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { FieldError } from '@/modules/core/components/ErrorFeedback'
 
 /** Campo con etiqueta, ayuda y error enlazados para lectores de pantalla. */
 export function Field({ id, label, error, hint, children }: { id: string; label: string; error?: string; hint?: string; children: ReactNode }) {
@@ -7,7 +8,7 @@ export function Field({ id, label, error, hint, children }: { id: string; label:
       <label htmlFor={id} className="text-sm font-semibold">{label}</label>
       {children}
       {hint && !error && <p id={`${id}-hint`} className="text-xs text-white/60">{hint}</p>}
-      {error && <p id={`${id}-err`} role="alert" className="text-xs text-[#ffb4b4]">{error}</p>}
+      <FieldError id={`${id}-err`} message={error} />
     </div>
   )
 }
@@ -25,7 +26,7 @@ export function ChoiceGroup<T extends string>({ label, options, value, onChange,
             className={`rounded-full border px-4 py-2 text-sm font-semibold ${value === o ? 'border-arena bg-arena text-grafito' : 'border-white/20'}`}>{labels?.[o] ?? o}</button>
         ))}
       </div>
-      {error && <p role="alert" className="mt-1.5 text-xs text-[#ffb4b4]">{error}</p>}
+      <FieldError message={error} />
     </fieldset>
   )
 }

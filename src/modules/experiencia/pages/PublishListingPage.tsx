@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { errorKind, fieldErrors } from '@/modules/core/api/errors'
+import { ErrorBanner } from '@/modules/core/components/ErrorFeedback'
+import { ErrorCard } from '@/modules/core/components/ErrorScene'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { Steps } from '@/modules/core/components/Steps'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -12,6 +14,27 @@ import { a11y, inputCls } from '../utils/form'
 import { emptyListing, priceValue, validateListingStep, type ListingErrors, type ListingForm } from '../utils/listingForm'
 
 const STEPS = ['Fotos y estado', 'Detalles', 'Precio y resumen']
+const VENDER_PHOTO_TYPES = ['image/jpeg', 'image/png'] as const
+
+const STEP_OF_FIELD: Record<keyof ListingForm, number> = {
+  fotos: 0,
+  conservacion: 0,
+  titulo: 1,
+  categoria: 1,
+  talla: 1,
+  marca: 1,
+  descripcion: 1,
+  precio: 2,
+}
+
+const FOCUS_ID: Partial<Record<keyof ListingForm, string>> = {
+  titulo: 'ltit',
+  categoria: 'lcat',
+  talla: 'ltal',
+  marca: 'lmar',
+  descripcion: 'ldes',
+  precio: 'lpre',
+}
 
 /**
  * RF-33 a RF-35 (y RF-37 al editar): asistente de publicación en 3 pantallas.
@@ -29,25 +52,47 @@ export default function PublishListingPage() {
   const [done, setDone] = useState<ListingDto | null>(null)
   const [loading, setLoading] = useState(editing)
   const [loadError, setLoadError] = useState<unknown>(null)
-  const [blocked, setBlocked] = useState('')
+  const [blocked, setBlocked] = useState<'vendida-o-donada' | 'sin-acceso' | ''>('')
   const heading = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
     if (!id) return
-    secondHandService.get(id).then((l) => {
-      if (l.estado !== 'DISPONIBLE') setBlocked(`Esta publicación está ${l.estado === 'VENDIDA' ? 'vendida' : 'retirada'} y ya no se puede editar.`)
-      setForm({ fotos: l.fotos.map((url, i) => ({ key: `old-${i}`, url })), conservacion: l.conservacion, titulo: l.titulo, categoria: l.categoria, talla: l.talla,
-        marca: l.marca, descripcion: l.descripcion, precio: l.precio.toLocaleString('es-CO').replace(/,/g, '.') })
+    secondHandService.getForEdit(id).then((l) => {
+      if (l.estado !== 'DISPONIBLE') setBlocked('vendida-o-donada')
+      setForm({
+        fotos: l.fotos.map((url, i) => ({ key: `old-${i}`, url })),
+        conservacion: l.conservacion,
+        titulo: l.titulo,
+        categoria: l.categoria,
+        talla: l.talla,
+        marca: l.marca,
+        descripcion: l.descripcion,
+        precio: l.precio.toLocaleString('es-CO').replace(/,/g, '.'),
+      })
     }).catch(setLoadError).finally(() => setLoading(false))
   }, [id])
 
   useEffect(() => { heading.current?.focus() }, [step, done])
 
-  const set = <K extends keyof ListingForm>(k: K, v: ListingForm[K]) => { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })) }
+  const focusFirstError = (e: ListingErrors) => {
+    const first = Object.keys(e)[0] as keyof ListingForm | undefined
+    if (first && FOCUS_ID[first]) {
+      window.setTimeout(() => document.getElementById(FOCUS_ID[first]!)?.focus(), 0)
+    }
+  }
+
+  const set = <K extends keyof ListingForm>(k: K, v: ListingForm[K]) => {
+    setForm((f) => ({ ...f, [k]: v }))
+    setErrors((e) => ({ ...e, [k]: undefined }))
+  }
+
   const next = () => {
     const e = validateListingStep(step, form)
     setErrors(e)
-    if (Object.keys(e).length) return
+    if (Object.keys(e).length) {
+      focusFirstError(e)
+      return
+    }
     setStep((s) => s + 1)
   }
   const back = () => { setErrors({}); setStep((s) => s - 1) }
@@ -55,27 +100,96 @@ export default function PublishListingPage() {
   const submit = async () => {
     const all = { ...validateListingStep(0, form), ...validateListingStep(1, form), ...validateListingStep(2, form) }
     setErrors(all)
-    if (Object.keys(all).length || sending) return
+    if (Object.keys(all).length || sending) {
+      const first = Object.keys(all)[0] as keyof ListingForm | undefined
+      if (first) setStep(STEP_OF_FIELD[first])
+      focusFirstError(all)
+      return
+    }
     setSending(true); setSendError(null)
-    const data = { titulo: form.titulo.trim(), categoria: form.categoria, talla: form.talla, conservacion: form.conservacion as ListingDto['conservacion'],
-      marca: form.marca.trim(), descripcion: form.descripcion.trim(), precio: priceValue(form.precio) }
+    const data = {
+      titulo: form.titulo.trim(),
+      categoria: form.categoria,
+      talla: form.talla,
+      conservacion: form.conservacion as ListingDto['conservacion'],
+      marca: form.marca.trim(),
+      descripcion: form.descripcion.trim(),
+      precio: priceValue(form.precio),
+    }
     const files = form.fotos.filter((p) => p.file).map((p) => p.file!)
     try {
       const res = id
         ? await secondHandService.update(id, { ...data, fotosConservadas: form.fotos.filter((p) => !p.file).map((p) => p.url) }, files)
         : await secondHandService.create(data, files)
       setDone(res)
-    } catch (e) { setSendError(e) } finally { setSending(false) }
+    } catch (e) {
+      const k = errorKind(e)
+      if (editing && k === 'conflicto') { setBlocked('vendida-o-donada'); return }
+      if (editing && (k === 'permiso' || k === 'no-existe')) { setBlocked('sin-acceso'); return }
+      const campos = fieldErrors(e)
+      if (Object.keys(campos).length) {
+        setErrors((prev) => ({ ...prev, ...(campos as ListingErrors) }))
+        const firstField = Object.keys(campos)[0] as keyof ListingForm
+        if (firstField in STEP_OF_FIELD) setStep(STEP_OF_FIELD[firstField])
+        focusFirstError(campos as ListingErrors)
+      }
+      setSendError(e)
+    } finally { setSending(false) }
   }
 
   if (loading) return <section className="mx-auto max-w-3xl px-4 py-12"><Loading label="Cargando tu publicación…" /></section>
-  if (loadError) return <section className="mx-auto max-w-3xl px-4 py-12"><ErrorState error={loadError} title="No pudimos abrir la publicación" /></section>
-  if (blocked) return (
-    <section className="mx-auto max-w-3xl px-4 py-12">
-      <div role="alert" className="rounded-2xl border border-arena/40 bg-arena/10 p-6"><p className="font-semibold">{blocked}</p>
-        <Link to="/segunda-mano?vista=mias" className="mt-4 inline-block rounded-xl bg-violeta px-4 py-2 text-sm font-semibold">Volver a mis publicaciones</Link></div>
-    </section>
-  )
+
+  if (loadError) {
+    const k = errorKind(loadError)
+    if (k === 'permiso' || k === 'no-existe') {
+      return (
+        <section className="mx-auto max-w-3xl px-4 py-12">
+          <ErrorCard
+            variant="perchero"
+            tone="warn"
+            chip="No disponible"
+            code={k === 'permiso' ? '403' : '404'}
+            title="Esta publicación no está disponible"
+            description="Vuelve a tus publicaciones para seguir."
+            actions={<Link to="/segunda-mano?vista=mias" className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold text-white">Mis publicaciones</Link>}
+          />
+        </section>
+      )
+    }
+    return <section className="mx-auto max-w-3xl px-4 py-12"><ErrorState error={loadError} title="No pudimos abrir la publicación" /></section>
+  }
+
+  if (blocked === 'vendida-o-donada') {
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-12">
+        <ErrorCard
+          variant="perchero"
+          tone="warn"
+          chip="Ya no disponible"
+          code="409"
+          title="Esta prenda ya se vendió o donó"
+          description="Por eso ya no se puede editar."
+          actions={<Link to="/segunda-mano?vista=mias" className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold text-white">Volver a mis publicaciones</Link>}
+        />
+      </section>
+    )
+  }
+
+  if (blocked === 'sin-acceso') {
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-12">
+        <ErrorCard
+          variant="perchero"
+          tone="warn"
+          chip="Acceso restringido"
+          code="403"
+          title="Esta publicación no está disponible"
+          description="Vuelve a tus publicaciones para continuar."
+          actions={<Link to="/segunda-mano?vista=mias" className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold text-white">Mis publicaciones</Link>}
+        />
+      </section>
+    )
+  }
 
   if (done) return (
     <section className="mx-auto max-w-3xl px-4 py-16 text-center">
@@ -100,7 +214,16 @@ export default function PublishListingPage() {
         {step === 0 && (<>
           <div>
             <p className="mb-2 text-sm font-semibold">Fotos (hasta {LISTING_RULES.maxFotos})</p>
-            <MultiPhotoInput id="lfotos" photos={form.fotos} onChange={(p) => set('fotos', p)} max={LISTING_RULES.maxFotos} error={errors.fotos} />
+            <MultiPhotoInput
+              id="lfotos"
+              photos={form.fotos}
+              onChange={(p) => set('fotos', p)}
+              max={LISTING_RULES.maxFotos}
+              maxMb={5}
+              allowedTypes={VENDER_PHOTO_TYPES}
+              hintText={`${form.fotos.length} de ${LISTING_RULES.maxFotos} fotos. JPG o PNG de máximo 5 MB.`}
+              error={errors.fotos}
+            />
           </div>
           <ChoiceGroup label="Estado de conservación" options={CONSERVACIONES} labels={CONSERVACION_LABEL} value={form.conservacion} onChange={(v) => set('conservacion', v)} error={errors.conservacion} />
         </>)}
@@ -147,7 +270,20 @@ export default function PublishListingPage() {
           </div>
         )}
 
-        {sendError != null && <p role="alert" className="rounded-xl bg-[#ff8a8a]/10 p-3 text-sm text-[#ffb4b4]">No pudimos {editing ? 'guardar los cambios' : 'publicar tu prenda'}. {errorMessage(sendError)} Tus datos siguen aquí; puedes intentarlo de nuevo.</p>}
+        {sendError != null && (
+          errorKind(sendError) === 'servidor' || errorKind(sendError) === 'sin-conexion' || errorKind(sendError) === 'limite' ? (
+            <ErrorState
+              compact
+              error={sendError}
+              title={`No pudimos ${editing ? 'guardar los cambios' : 'publicar tu prenda'}`}
+              onRetry={submit}
+            />
+          ) : (
+            <ErrorBanner tone="bad" title={`No pudimos ${editing ? 'guardar los cambios' : 'publicar tu prenda'}`}>
+              Revisa los campos marcados. Tus datos siguen aquí; puedes intentarlo de nuevo.
+            </ErrorBanner>
+          )
+        )}
 
         <div className="flex flex-wrap justify-between gap-2 border-t border-white/10 pt-5">
           {step > 0 ? <button type="button" onClick={back} disabled={sending} className="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold">Atrás</button>
