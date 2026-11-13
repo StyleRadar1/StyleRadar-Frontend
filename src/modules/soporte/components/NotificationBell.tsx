@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { ApiError } from '@/modules/core/api/apiClient'
 import { useUnreadCount } from '../hooks/useUnreadCount'
 import { notificationService } from '../services/notificationService'
 import type { NotificacionDto } from '../types/notification.dto'
@@ -13,6 +13,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [list, setList] = useState<NotificacionDto[] | null>(null)
   const [error, setError] = useState('')
+  const [aviso, setAviso] = useState('')
   const box = useRef<HTMLDivElement>(null)
   const panelId = useId()
   const navigate = useNavigate()
@@ -22,7 +23,7 @@ export function NotificationBell() {
     let active = true
     notificationService.list()
       .then((l) => { if (active) { setList(l); setError('') } })
-      .catch((e) => { if (active) setError(errorMessage(e, 'No pudimos cargar tus avisos.')) })
+      .catch(() => { if (active) setError('No pudimos cargar tus avisos. Intenta en unos minutos.') })
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
     const onClick = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false) }
     document.addEventListener('keydown', onKey)
@@ -32,14 +33,24 @@ export function NotificationBell() {
 
   const openItem = async (n: NotificacionDto) => {
     setOpen(false)
-    if (!n.leida) await notificationService.markRead(n.id).catch(() => {})
+    if (!n.leida) {
+      try { await notificationService.markRead(n.id) } catch (e) {
+        // 404 o 403: el aviso ya no está (o no es de esta persona). Se quita sin mostrar su ID
+        if (e instanceof ApiError && (e.status === 404 || e.status === 403)) {
+          setList((l) => l?.filter((x) => x.id !== n.id) ?? l)
+          setAviso('Ese aviso ya no está. Actualizamos la lista.')
+          setOpen(true)
+          return
+        }
+      }
+    }
     if (n.enlace) navigate(n.enlace)
   }
   const readAll = async () => {
     try {
       await notificationService.markAllRead()
       setList((l) => l?.map((n) => ({ ...n, leida: true })) ?? l)
-    } catch (e) { setError(errorMessage(e)) }
+    } catch { setError('No pudimos marcar tus avisos como leídos. Intenta de nuevo.') }
   }
 
   return (
@@ -63,6 +74,7 @@ export function NotificationBell() {
             <p className="font-semibold">Notificaciones</p>
             {!!list?.some((n) => !n.leida) && <button type="button" onClick={readAll} className="text-xs font-semibold underline">Marcar todo como leído</button>}
           </div>
+          {aviso && <p role="status" className="mb-2 rounded-lg bg-white/5 px-2 py-1.5 text-xs text-white/75">{aviso}</p>}
           {error ? <p role="alert" className="px-1 py-3 text-sm text-[#ffb4b4]">{error}</p>
             : !list ? <p role="status" className="px-1 py-3 text-sm text-white/60">Cargando…</p>
             : !list.length ? <p className="px-1 py-3 text-sm text-white/70">Sin notificaciones. Aquí te avisaremos cuando vuelva una prenda o llegue algo que buscas.</p>

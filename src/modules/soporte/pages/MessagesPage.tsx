@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO } from '@/modules/core/components/Aviso'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import type { Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { chatService } from '../services/chatService'
 import { CONTACTO_LABEL, MAX_MENSAJE, type ConversacionDto, type MensajeDto, type TipoContacto } from '../types/chat.dto'
+import { NO_DISPONIBLE, problemaEnvio, TEXTO_LARGO, type ProblemaChat } from '../utils/chatErrors'
 
 /** Mientras el squad de ms-chat confirma si habrá tiempo real, se consulta cada 15 s con la pestaña visible. */
 const REFRESH_MS = 15_000
@@ -87,12 +89,21 @@ export default function MessagesPage() {
 
             <div className={actual ? '' : 'hidden md:block'}>
               {conv && user ? <Thread key={conv.id} conv={conv} me={user.id} onBack={() => abrir(null)} onRead={leida} onSent={enviado} />
-                : actual ? <EmptyState title="Esa conversación no existe" action={<button type="button" onClick={() => abrir(null)} className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold">Ver mis mensajes</button>}>Puede que ya no tengas acceso a ella.</EmptyState>
+                : actual ? <NoDisponible onBack={() => abrir(null)} />
                 : <EmptyState title="Elige una conversación">Aquí coordinas entregas y respondes preguntas.</EmptyState>}
             </div>
           </div>
         )}
     </section>
+  )
+}
+
+/** 404 y 403 de una conversación: mismo texto, sin el número de la conversación. */
+function NoDisponible({ onBack }: { onBack: () => void }) {
+  return (
+    <Aviso tono="info" titulo={NO_DISPONIBLE.titulo} acciones={<button type="button" onClick={onBack} className={BTN_PRINCIPAL}>Volver a mensajes</button>}>
+      {NO_DISPONIBLE.texto}
+    </Aviso>
   )
 }
 
@@ -109,7 +120,11 @@ function Thread({ conv, me, onBack, onRead, onSent }: ThreadProps) {
   const { data: msgs, loading, error, reload, setData } = useResource(loader, [] as MensajeDto[])
   const [texto, setTexto] = useState('')
   const [sending, setSending] = useState(false)
-  const [sendError, setSendError] = useState('')
+  const [sendError, setSendError] = useState<ProblemaChat | null>(null)
+  /** La publicación se vendió o se retiró: el chat queda de solo lectura. */
+  const [cerrado, setCerrado] = useState<ProblemaChat | null>(null)
+  const largo = texto.length > MAX_MENSAJE
+  const noExiste = !!error && error instanceof ApiError && (error.status === 404 || error.status === 403)
   const end = useRef<HTMLLIElement>(null)
 
   useEffect(() => { if (!loading && !error) onRead(conv.id) }, [loading, error, conv.id, onRead])
@@ -121,15 +136,17 @@ function Thread({ conv, me, onBack, onRead, onSent }: ThreadProps) {
 
   const send = async (e: FormEvent) => {
     e.preventDefault()
-    if (sending || !texto.trim()) return
-    setSending(true); setSendError('')
+    if (sending || cerrado || !texto.trim() || largo) return
+    setSending(true); setSendError(null)
     try {
       const m = await chatService.send(conv.id, texto)
       setData((l) => [...l, m])
       onSent(m)
       setTexto('')
     } catch (err) {
-      setSendError(errorMessage(err, 'No pudimos enviar el mensaje. Intenta de nuevo.'))
+      // El texto no se borra: se conserva para reintentar
+      const p = problemaEnvio(err)
+      if (p.tipo === 'cerrado') setCerrado(p); else setSendError(p)
     } finally { setSending(false) }
   }
 
@@ -151,6 +168,7 @@ function Thread({ conv, me, onBack, onRead, onSent }: ThreadProps) {
 
       <div className="flex-1 overflow-y-auto p-4">
         {loading && !msgs.length ? <Loading label="Cargando mensajes…" />
+          : noExiste ? <NoDisponible onBack={onBack} />
           : error && !msgs.length ? <ErrorState error={error} onRetry={reload} title="No pudimos cargar la conversación" />
           : (
             <ol className="space-y-3" aria-label={`Mensajes con ${conv.contacto.nombre}`} aria-live="polite">
@@ -173,18 +191,29 @@ function Thread({ conv, me, onBack, onRead, onSent }: ThreadProps) {
       </div>
 
       <form onSubmit={send} className="border-t border-white/10 p-3">
-        {sendError && <p role="alert" className="mb-2 text-sm text-[#ffb4b4]">{sendError}</p>}
+        {cerrado && <Aviso tono="info" className="mb-2" titulo={cerrado.titulo}>{cerrado.texto}</Aviso>}
+        {sendError && sendError.tipo !== 'campo' && (
+          <Aviso tono="error" className="mb-2" titulo={sendError.titulo} onCerrar={() => setSendError(null)}
+            acciones={sendError.tipo === 'sesion' ? <Link to="/login" className={BTN_SECUNDARIO}>Iniciar sesión</Link>
+              : sendError.tipo === 'no-existe' ? <button type="button" onClick={onBack} className={BTN_SECUNDARIO}>Volver a mensajes</button>
+              : <button type="submit" disabled={sending} className={BTN_PRINCIPAL}>Reintentar</button>}>
+            {sendError.texto}
+          </Aviso>
+        )}
         <div className="flex items-end gap-2">
           <label htmlFor="chat-texto" className="sr-only">Escribe un mensaje</label>
-          <textarea id="chat-texto" rows={1} value={texto} maxLength={MAX_MENSAJE} onChange={(e) => setTexto(e.target.value)}
+          <textarea id="chat-texto" rows={1} value={texto} disabled={!!cerrado} aria-invalid={largo || sendError?.tipo === 'campo'} onChange={(e) => setTexto(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit() } }}
-            placeholder="Escribe un mensaje…" aria-describedby="chat-cuenta"
-            className="max-h-32 min-h-11 flex-1 resize-y rounded-xl border border-white/20 bg-black/20 px-4 py-3 text-sm outline-none focus:border-violeta-claro" />
-          <button type="submit" disabled={sending || !texto.trim()} className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold disabled:opacity-50">
+            placeholder={cerrado ? 'El chat está cerrado' : 'Escribe un mensaje…'} aria-describedby="chat-cuenta chat-error"
+            className={`max-h-32 min-h-11 flex-1 resize-y rounded-xl border bg-black/20 px-4 py-3 text-sm outline-none focus:border-violeta-claro disabled:opacity-50 ${largo ? 'border-[#ff8a8a]' : 'border-white/20'}`} />
+          <button type="submit" disabled={sending || !!cerrado || !texto.trim() || largo} className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold disabled:opacity-50">
             {sending ? 'Enviando…' : 'Enviar'}
           </button>
         </div>
-        <p id="chat-cuenta" className="mt-1 text-right text-[11px] text-white/45">{texto.length} / {MAX_MENSAJE}</p>
+        <div className="mt-1 flex justify-between gap-3 text-[11px]">
+          <p id="chat-error" role={largo || sendError?.tipo === 'campo' ? 'alert' : undefined} className="text-[#ffb4b4]">{largo || sendError?.tipo === 'campo' ? TEXTO_LARGO : ''}</p>
+          <p id="chat-cuenta" className={largo ? 'text-[#ffb4b4]' : 'text-white/45'}>{texto.length.toLocaleString('es-CO')} / {MAX_MENSAJE.toLocaleString('es-CO')}</p>
+        </div>
       </form>
     </div>
   )

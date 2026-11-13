@@ -1,6 +1,6 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
-import { failIfScenario } from '@/modules/core/api/mockScenario'
+import { failIfScenario, failWithScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { mockPlanOf } from '@/modules/transacciones/services/userPlanService'
 import { LIMITES_RADAR } from '@/modules/transacciones/types/plan.dto'
@@ -28,8 +28,17 @@ const mine = (): AlertasResumenDto => {
 /** P8: en el plan Radar no se puede activar una alerta más allá del límite. */
 const checkLimit = (r: AlertasResumenDto) => {
   if (r.limiteAlertas !== null && alertasActivas(r) >= r.limiteAlertas) {
-    throw new ApiError(422, `Con el plan Radar puedes tener hasta ${r.limiteAlertas} alertas activas. Apaga alguna o pásate a Radar+.`)
+    throw new ApiError(422, `Con el plan Radar puedes tener hasta ${r.limiteAlertas} alertas activas. Apaga alguna o pásate a Radar+.`, LIMITE_PLAN)
   }
+}
+
+/** Código propio del front para el límite del plan Radar: el backend no lo aplica (lo hace el React). */
+export const LIMITE_PLAN = 'LIMITE_PLAN'
+
+/** Escenarios de prueba para cambiar o borrar una alerta ajena o ya borrada. */
+const alertaAjenaOBorrada = () => {
+  failWithScenario('alerta-ajena', 403, 'FORBIDDEN')
+  failWithScenario('alerta-borrada', 404)
 }
 
 export const alertService = {
@@ -43,6 +52,7 @@ export const alertService = {
   async setAlert(id: string, activa: boolean): Promise<AlertaPrendaDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
+      alertaAjenaOBorrada()
       const r = mine()
       const a = r.alertas.find((x) => x.id === id)
       if (!a) throw new ApiError(404, 'Esa alerta ya no existe.')
@@ -56,6 +66,7 @@ export const alertService = {
   async removeAlert(id: string): Promise<void> {
     if (env.useMocks) {
       failIfScenario()
+      alertaAjenaOBorrada()
       const r = mine()
       r.alertas = r.alertas.filter((x) => x.id !== id)
       return mockDelay(undefined, 250)
@@ -67,6 +78,8 @@ export const alertService = {
   async setSearchAlert(id: string, alerta: boolean): Promise<BusquedaGuardadaDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
+      failWithScenario('busqueda-pendiente', 422)
+      alertaAjenaOBorrada()
       const r = mine()
       const s = r.busquedas.find((x) => x.id === id)
       if (!s) throw new ApiError(404, 'Esa búsqueda ya no existe.')
@@ -80,10 +93,45 @@ export const alertService = {
   async removeSearch(id: string): Promise<void> {
     if (env.useMocks) {
       failIfScenario()
+      alertaAjenaOBorrada()
       const r = mine()
       r.busquedas = r.busquedas.filter((x) => x.id !== id)
       return mockDelay(undefined, 250)
     }
     await apiClient.delete(`${BASE}/saved-searches/${encodeURIComponent(id)}`)
+  },
+
+  /** RF-28: guarda la búsqueda del catálogo (la guarda ms-usuarios; la alerta va aparte). */
+  async saveSearch(nombre: string, descripcion: string): Promise<BusquedaGuardadaDto> {
+    if (env.useMocks) {
+      failIfScenario()
+      const r = mine()
+      const ya = r.busquedas.find((x) => x.nombre.toLowerCase() === nombre.toLowerCase())
+      if (ya) return mockDelay(ya, 200)
+      const nueva: BusquedaGuardadaDto = { id: `b-${Date.now().toString(36)}`, nombre, descripcion, alerta: false, coincidenciasNuevas: 0, creadaEn: new Date().toISOString() }
+      r.busquedas.unshift(nueva)
+      return mockDelay(nueva, 250)
+    }
+    return apiClient.post<BusquedaGuardadaDto>(`${BASE}/saved-searches`, { nombre, descripcion }).then((r) => r.data)
+  },
+
+  /**
+   * RF-29: «Avisarme» en una prenda. El servidor responde 409 si ya hay una alerta, 422 si la prenda
+   * sí tiene unidades y 503 si no pudo consultar el catálogo.
+   */
+  async createAlert(prendaId: string, prenda: string, tienda: string, talla?: string): Promise<AlertaPrendaDto> {
+    if (env.useMocks) {
+      failIfScenario()
+      failWithScenario('alerta-duplicada', 409)
+      failWithScenario('alerta-con-stock', 422)
+      failWithScenario('catalogo-caido', 503)
+      const r = mine()
+      if (r.alertas.some((x) => x.prendaId === prendaId && x.activa)) throw new ApiError(409, 'Ya existe una alerta activa para esa prenda.')
+      checkLimit(r)
+      const nueva: AlertaPrendaDto = { id: `a-${Date.now().toString(36)}`, prendaId, prenda: talla ? `${prenda} · talla ${talla}` : prenda, tienda, activa: true, creadaEn: new Date().toISOString() }
+      r.alertas.unshift(nueva)
+      return mockDelay(nueva, 250)
+    }
+    return apiClient.post<AlertaPrendaDto>(`${BASE}/alerts`, { prendaId, talla }).then((r) => r.data)
   },
 }

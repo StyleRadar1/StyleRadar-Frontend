@@ -28,11 +28,19 @@ apiClient.interceptors.request.use((config) => {
 export class ApiError extends Error {
   readonly status: number
   readonly fields: CamposConError
-  constructor(status: number, message: string, fields: CamposConError = {}) {
+  /** Código de negocio del backend (errorCode), p. ej. CONSENT_REQUIRED. Sirve para elegir el texto, nunca se muestra. */
+  readonly code?: string
+  constructor(status: number, message: string, fieldsOrCode: CamposConError | string = {}, code?: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status
-    this.fields = fields
+    if (typeof fieldsOrCode === 'string') {
+      this.fields = {}
+      this.code = fieldsOrCode
+    } else {
+      this.fields = fieldsOrCode
+      this.code = code
+    }
   }
 }
 
@@ -50,7 +58,9 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
   if (import.meta.env.DEV) {
     console.warn(`[api] ${status || 'sin respuesta'} ${error.config?.method?.toUpperCase() ?? ''} ${error.config?.url ?? ''}`, data ?? error.message)
   }
-  return new ApiError(status, MENSAJES[kindFromStatus(status)], camposDelError(data))
+  const obj = typeof data === 'object' && data !== null ? (data as { errorCode?: unknown; code?: unknown }) : undefined
+  const code = typeof obj?.errorCode === 'string' ? obj.errorCode : typeof obj?.code === 'string' ? obj.code : undefined
+  return new ApiError(status, MENSAJES[kindFromStatus(status)], camposDelError(data), code)
 }
 
 apiClient.interceptors.response.use(

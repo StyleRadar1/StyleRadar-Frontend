@@ -19,7 +19,9 @@ describe('iniciar una conversación (RF-41 y RF-73)', () => {
 
     await screen.findByRole('heading', { name: 'Hoodie azul noche' }, { timeout: 3000 })
     const iconos = screen.getAllByRole('button', { name: /^Escribir a .+ sobre / })
-    expect(iconos.length).toBe(screen.getAllByRole('heading', { level: 3 }).length)
+    // Las tarjetas de prenda; el perchero editorial (sr-rack-title) no es una tarjeta del catálogo
+    const tarjetas = screen.getAllByRole('heading', { level: 3 }).filter((h) => !h.classList.contains('sr-rack-title'))
+    expect(iconos.length).toBe(tarjetas.length)
     await user.click(screen.getByRole('button', { name: 'Escribir a Luna Store sobre Hoodie azul noche' }))
 
     const hilo = await screen.findByRole('list', { name: 'Mensajes con Luna Store' }, { timeout: 3000 })
@@ -43,7 +45,7 @@ describe('iniciar una conversación (RF-41 y RF-73)', () => {
     const b = await chatService.start(req)
     expect(b.id).toBe(a.id)
     expect((await chatService.conversations()).filter((c) => c.referenciaId === 'l3')).toHaveLength(1)
-    await expect(chatService.start({ ...req, contacto: { id: 'u-1', nombre: 'Yo', tipo: 'VENDEDOR' } })).rejects.toThrow(/propia publicación/)
+    await expect(chatService.start({ ...req, contacto: { id: 'u-1', nombre: 'Yo', tipo: 'VENDEDOR' } })).rejects.toMatchObject({ status: 422 })
   })
 
   it('RF-73: el mensaje a la tienda le llega a la tienda con su contador', async () => {

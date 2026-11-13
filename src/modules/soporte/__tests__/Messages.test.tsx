@@ -43,13 +43,14 @@ describe('mensajes (RF-40, RF-41 y RF-73)', () => {
     sessionStorage.setItem('sr_mock', 'sin-red')
     await user.type(screen.getByLabelText('Escribe un mensaje'), '¿Tienen talla M?')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('No hay conexión')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Se perdió la conexión')
     expect(screen.getByLabelText('Escribe un mensaje')).toHaveValue('¿Tienen talla M?')
   })
 
   it('una conversación ajena no se muestra', async () => {
     renderAt('/mensajes?c=c4', routes)
-    expect(await screen.findByText('Esa conversación no existe', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(await screen.findByText('Esta conversación no está disponible', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(screen.queryByText(/c4/)).not.toBeInTheDocument()
   })
 
   it('la tienda ve las preguntas de sus clientes', async () => {
