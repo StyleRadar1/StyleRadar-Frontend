@@ -1,6 +1,8 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { env } from '@/configs/env'
+import { MENSAJES } from '@/modules/core/api/mensajes'
+import { fallarSiDemoPlaylist } from '../mocks/demoPlaylist'
 import { ITEMS } from '../mocks/items'
 import { MOCK_PLAYLISTS } from '../mocks/playlists'
 import { MAX_PLAYLIST_ITEMS, type CreatePlaylistDto, type PlaylistDto, type PlaylistItemDto } from '../types/playlist.dto'
@@ -31,7 +33,7 @@ export const playlistService = {
   create(dto: CreatePlaylistDto): Promise<PlaylistDto> {
     if ((dto.prendaIds?.length ?? 0) > MAX_PLAYLIST_ITEMS) {
       return Promise.reject(
-        new ApiError(400, `Una playlist no puede superar el límite de ${MAX_PLAYLIST_ITEMS} prendas (RNF-12).`)
+        new ApiError(422, MENSAJES.datos)
       )
     }
 
@@ -94,13 +96,10 @@ export const playlistService = {
     if (env.useMocks) {
       const pl = MOCK_PLAYLISTS.find((p) => p.id === playlistId)
       if (!pl) return Promise.reject(new ApiError(404, 'Playlist no encontrada.'))
-      if (pl.prendas.length >= MAX_PLAYLIST_ITEMS) {
-        return Promise.reject(
-          new ApiError(400, `Límite alcanzado: no puedes agregar más de ${MAX_PLAYLIST_ITEMS} prendas a esta playlist (RNF-12).`)
-        )
-      }
-      if (pl.prendas.some((it) => it.id === itemId)) {
-        return Promise.reject(new ApiError(400, 'La prenda ya está en la playlist.'))
+      // Plan de errores: más de 15 prendas o prenda repetida responden 422.
+      try { fallarSiDemoPlaylist() } catch (e) { return Promise.reject(e) }
+      if (pl.prendas.length >= MAX_PLAYLIST_ITEMS || pl.prendas.some((it) => it.id === itemId)) {
+        return Promise.reject(new ApiError(422, MENSAJES.datos))
       }
       const item = ITEMS.find((it) => it.id === itemId)
       if (!item) return Promise.reject(new ApiError(404, 'Prenda no encontrada.'))
