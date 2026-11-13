@@ -5,6 +5,9 @@
    ========================================================================== */
 
 .sr-rack-section {
+  --sr-hanger-wire: #262626;
+  --sr-hanger-shoulder: #262626;
+  --sr-hanger-shoulder-muted: #3a3a40;
   position: relative;
   width: 100%;
   background: linear-gradient(180deg, #fcfbf9 0%, #f4eee4 55%, #faf8f5 100%);
@@ -72,14 +75,14 @@
 /* Barra metálica horizontal fina de lado a lado con brillo sutil */
 .sr-rack-bar {
   position: absolute;
-  top: 22px;
+  top: 24px;
   left: 0;
   right: 0;
-  height: 5px;
-  z-index: 12;
+  height: 6px;
+  z-index: 15;
   background: linear-gradient(
     180deg,
-    #6b6b76 0%,
+    #7a7a85 0%,
     #262626 42%,
     #8c8c98 72%,
     #262626 100%
@@ -97,15 +100,27 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  z-index: 20;
 }
 
-/* Cada prenda colgada */
+/* Capa del tramo trasero de los ganchos que pasa por detrás de la barra */
+.sr-rack-stage--back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Cada prenda colgada: una sola línea de referencia anclada al centro de la barra */
 .sr-rack-item {
   position: absolute;
-  top: 11px;
+  top: 14px;
   left: 50%;
   width: clamp(210px, 22vw, 276px);
-  transform-origin: 50% 11px;
+  transform-origin: top center;
   transition:
     transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
     opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -118,12 +133,17 @@
   text-align: center;
 }
 
+.sr-rack-item--back {
+  pointer-events: none;
+  cursor: default;
+}
+
 .sr-rack-item:focus-visible .sr-rack-garment-frame {
   outline: 2px solid #48119a;
   outline-offset: 4px;
 }
 
-/* Posiciones por offset respecto a la prenda central (0) */
+/* Posiciones por offset respecto a la prenda central (0): sin translateY para que todos los ganchos apoyen en la barra */
 .sr-rack-item[data-offset='0'] {
   transform: translate3d(-50%, 0, 0) scale(1);
   z-index: 30;
@@ -132,57 +152,57 @@
 }
 
 .sr-rack-item[data-offset='-1'] {
-  transform: translate3d(calc(-50% - clamp(150px, 19.5vw, 245px)), 6px, 0) scale(0.76);
+  transform: translate3d(calc(-50% - clamp(150px, 19.5vw, 245px)), 0, 0) scale(0.78);
   z-index: 24;
   opacity: 0.86;
   filter: contrast(0.96) brightness(0.97);
 }
 
 .sr-rack-item[data-offset='1'] {
-  transform: translate3d(calc(-50% + clamp(150px, 19.5vw, 245px)), 6px, 0) scale(0.76);
+  transform: translate3d(calc(-50% + clamp(150px, 19.5vw, 245px)), 0, 0) scale(0.78);
   z-index: 24;
   opacity: 0.86;
   filter: contrast(0.96) brightness(0.97);
 }
 
 .sr-rack-item[data-offset='-2'] {
-  transform: translate3d(calc(-50% - clamp(275px, 35.5vw, 445px)), 12px, 0) scale(0.68);
+  transform: translate3d(calc(-50% - clamp(275px, 35.5vw, 445px)), 0, 0) scale(0.68);
   z-index: 18;
   opacity: 0.72;
   filter: contrast(0.93) brightness(0.95);
 }
 
 .sr-rack-item[data-offset='2'] {
-  transform: translate3d(calc(-50% + clamp(275px, 35.5vw, 445px)), 12px, 0) scale(0.68);
+  transform: translate3d(calc(-50% + clamp(275px, 35.5vw, 445px)), 0, 0) scale(0.68);
   z-index: 18;
   opacity: 0.72;
   filter: contrast(0.93) brightness(0.95);
 }
 
 .sr-rack-item[data-offset='-3'] {
-  transform: translate3d(calc(-50% - clamp(390px, 50vw, 635px)), 16px, 0) scale(0.62);
+  transform: translate3d(calc(-50% - clamp(390px, 50vw, 635px)), 0, 0) scale(0.62);
   z-index: 14;
   opacity: 0.5;
   filter: contrast(0.9) brightness(0.93);
 }
 
 .sr-rack-item[data-offset='3'] {
-  transform: translate3d(calc(-50% + clamp(390px, 50vw, 635px)), 16px, 0) scale(0.62);
+  transform: translate3d(calc(-50% + clamp(390px, 50vw, 635px)), 0, 0) scale(0.62);
   z-index: 14;
   opacity: 0.5;
   filter: contrast(0.9) brightness(0.93);
 }
 
-/* Balanceo sutil en el gancho al pasar el cursor */
+/* Balanceo sutil que rota desde el gancho (top center) */
 @keyframes sr-hanger-sway {
   0% {
     transform: rotate(0deg);
   }
   30% {
-    transform: rotate(-1.6deg);
+    transform: rotate(-1.2deg);
   }
-  65% {
-    transform: rotate(1.25deg);
+  70% {
+    transform: rotate(0.9deg);
   }
   100% {
     transform: rotate(0deg);
@@ -190,27 +210,32 @@
 }
 
 .sr-rack-sway {
-  transform-origin: 50% 10px;
+  transform-origin: top center;
   transition: transform 320ms ease;
 }
 
 .sr-rack-item:hover .sr-rack-sway {
-  animation: sr-hanger-sway 1.6s ease-in-out infinite;
+  animation: sr-hanger-sway 1.8s ease-in-out infinite;
 }
 
 /* Gancho minimalista (hanger) conectado a la barra */
 .sr-rack-hanger {
   display: block;
-  width: 96px;
-  height: 48px;
-  margin: 0 auto -6px;
+  width: 120px;
+  height: 60px;
+  margin: 0 auto;
   position: relative;
   z-index: 25;
   pointer-events: none;
   filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.14));
 }
 
-/* Marco de la prenda colgada */
+.sr-rack-hanger--back {
+  z-index: 10;
+  filter: none;
+}
+
+/* Marco de la prenda colgada: solapado 2px sobre los hombros del gancho sin hueco */
 .sr-rack-garment-frame {
   position: relative;
   width: 100%;
@@ -219,6 +244,7 @@
   align-items: flex-start;
   justify-content: center;
   padding: 0 0.5rem;
+  margin-top: -4px;
   transition: filter 360ms ease;
 }
 
@@ -285,25 +311,37 @@
   opacity: 0.55;
 }
 
-/* Etiquetas pequeñas en pill sobre las prendas */
+/* Etiquetas pequeñas en pill sujetas al gancho con hilo corto */
 .sr-rack-badge {
   position: absolute;
-  top: 34px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-5deg);
+  top: 42px;
+  left: 24%;
+  transform: rotate(-6deg);
   z-index: 35;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.26rem 0.72rem;
+  padding: 0.22rem 0.65rem;
   border-radius: 9999px;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
-  box-shadow: 0 6px 16px rgba(38, 38, 38, 0.18);
+  box-shadow: 0 4px 12px rgba(38, 38, 38, 0.18);
   pointer-events: none;
+}
+
+/* Hilo corto que ata la etiqueta al brazo del gancho */
+.sr-rack-badge::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 1px;
+  height: 8px;
+  background-color: var(--sr-hanger-wire, #262626);
+  opacity: 0.55;
 }
 
 /* "-20%" en grafito con texto blanco */
@@ -408,19 +446,19 @@
   }
 
   .sr-rack-item[data-offset='-1'] {
-    transform: translate3d(calc(-50% - 37vw), 8px, 0) scale(0.74);
+    transform: translate3d(calc(-50% - 37vw), 0, 0) scale(0.74);
   }
 
   .sr-rack-item[data-offset='1'] {
-    transform: translate3d(calc(-50% + 37vw), 8px, 0) scale(0.74);
+    transform: translate3d(calc(-50% + 37vw), 0, 0) scale(0.74);
   }
 
   .sr-rack-item[data-offset='-2'] {
-    transform: translate3d(calc(-50% - 68vw), 14px, 0) scale(0.62);
+    transform: translate3d(calc(-50% - 68vw), 0, 0) scale(0.62);
   }
 
   .sr-rack-item[data-offset='2'] {
-    transform: translate3d(calc(-50% + 68vw), 14px, 0) scale(0.62);
+    transform: translate3d(calc(-50% + 68vw), 0, 0) scale(0.62);
   }
 
   .sr-rack-item[data-offset='-3'],
@@ -452,6 +490,9 @@
    ========================================================================== */
 
 html[data-theme='dark'] .sr-rack-section {
+  --sr-hanger-wire: var(--color-text, #f5f3f7);
+  --sr-hanger-shoulder: var(--color-text, #f5f3f7);
+  --sr-hanger-shoulder-muted: var(--color-text-muted, #a39cae);
   background: var(--color-bg-elevated, #1c1827);
   color: var(--color-text, #f5f3f7);
   box-shadow:

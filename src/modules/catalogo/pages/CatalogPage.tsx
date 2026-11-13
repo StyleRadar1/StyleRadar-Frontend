@@ -884,41 +884,64 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = RACK_IDS.map((id) => {
   }
 })
 
-function HangerSvg({ isCenter }: { isCenter: boolean }) {
+function HangerBackSvg() {
   return (
     <svg
-      className="sr-rack-hanger"
-      viewBox="0 0 120 56"
+      className="sr-rack-hanger sr-rack-hanger--back"
+      viewBox="0 0 120 60"
       fill="none"
       aria-hidden="true"
     >
-      {/* Gancho metálico superior apoyado sobre la barra horizontal */}
+      {/* Tramo trasero del lazo metálico que pasa por detrás de la barra */}
       <path
-        d="M60 20 C60 12, 51 9, 54 3 C56 -1, 65 -1, 66 5 C67 9, 60 12, 60 16"
-        stroke="#262626"
-        strokeWidth="2.2"
+        d="M48 19 C48 12, 51 5, 60 4"
+        stroke="var(--sr-hanger-wire, #262626)"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function HangerFrontSvg({ isCenter }: { isCenter: boolean }) {
+  return (
+    <svg
+      className="sr-rack-hanger"
+      viewBox="0 0 120 60"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* Tramo frontal del lazo: corona sobre la barra y desciende por delante */}
+      <path
+        d="M60 4 C67 5, 68 12, 64 18 C62 21, 60 22, 60 26"
+        stroke="var(--sr-hanger-wire, #262626)"
+        strokeWidth="2.4"
         strokeLinecap="round"
       />
       {/* Cuello del gancho */}
       <line
         x1="60"
-        y1="16"
+        y1="26"
         x2="60"
-        y2="25"
-        stroke="#262626"
+        y2="32"
+        stroke="var(--sr-hanger-wire, #262626)"
         strokeWidth="2.4"
         strokeLinecap="round"
       />
-      {/* Hombros minimalistas en grafito */}
+      {/* Hombros del gancho apoyados directamente sobre la tarjeta */}
       <path
-        d="M10 50 L56 25 Q60 23 64 25 L110 50"
-        stroke={isCenter ? '#262626' : '#3a3a40'}
+        d="M8 58 L56 32 Q60 30 64 32 L112 58"
+        stroke={
+          isCenter
+            ? 'var(--sr-hanger-shoulder, #262626)'
+            : 'var(--sr-hanger-shoulder-muted, #3a3a40)'
+        }
         strokeWidth={isCenter ? '4' : '3.4'}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Detalle central sutil */}
-      <circle cx="60" cy="25" r="2.2" fill="#48119A" />
+      {/* Remache central sutil */}
+      <circle cx="60" cy="31" r="2.2" fill="var(--color-accent, #48119A)" />
     </svg>
   )
 }
@@ -1017,6 +1040,19 @@ function HangingCollectionRack({
         onPointerCancel={handlePointerEnd}
         onPointerLeave={handlePointerEnd}
       >
+        {/* Tramo trasero de los lazos de los ganchos (z-index por detrás de la barra) */}
+        <div className="sr-rack-stage sr-rack-stage--back" aria-hidden="true">
+          {visibleGarments.map(({ garment, offset }) => (
+            <div
+              key={`back-${garment.id}`}
+              data-offset={offset}
+              className="sr-rack-item sr-rack-item--back"
+            >
+              <HangerBackSvg />
+            </div>
+          ))}
+        </div>
+
         {/* Barra metálica horizontal de lado a lado */}
         <div className="sr-rack-bar" aria-hidden="true" />
 
@@ -1043,7 +1079,7 @@ function HangingCollectionRack({
               >
                 <div className="sr-rack-sway">
                   {/* Gancho minimalista apoyado en la barra */}
-                  <HangerSvg isCenter={isCenter} />
+                  <HangerFrontSvg isCenter={isCenter} />
 
                   {/* Etiqueta en pill sobre algunas prendas */}
                   {garment.badge && (
