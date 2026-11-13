@@ -543,7 +543,7 @@ html[data-theme='light'] .sr-vinyl-meta-desc-btn {
   position: relative;
   width: 100%;
   max-width: 1400px;
-  height: clamp(380px, 56vh, 600px);
+  height: clamp(400px, 58vh, 620px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -671,35 +671,7 @@ html[data-theme='light'] .sr-vinyl-slot__lateral-caption {
   color: #1c1926;
 }
 
-.sr-vinyl-slot__hint-pill {
-  position: absolute;
-  bottom: -32px;
-  padding: 4px 14px;
-  border-radius: 999px;
-  background: rgba(72, 17, 154, 0.35);
-  border: 1px solid rgba(139, 92, 246, 0.6);
-  color: #c4b5fd;
-  font-family: "Poppins", sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  backdrop-filter: blur(8px);
-  pointer-events: none;
-  box-shadow: 0 4px 16px rgba(72, 17, 154, 0.3);
-  animation: srPulseHint 2.4s ease infinite;
-}
 
-@keyframes srPulseHint {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.04); opacity: 1; }
-}
-
-html[data-theme='light'] .sr-vinyl-slot__hint-pill {
-  background: rgba(72, 17, 154, 0.12);
-  border-color: rgba(72, 17, 154, 0.3);
-  color: #48119A;
-}
 
 /* ---- Disco de Vinilo Realista ---- */
 .sr-vinyl-disc-idle {
@@ -1098,9 +1070,9 @@ html[data-theme='light'] .sr-vinyl-desc-popover__footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   z-index: 40;
-  margin-top: clamp(6px, 1.2vh, 14px);
+  margin-top: clamp(16px, 2.5vh, 28px);
 }
 
 .sr-vinyl-controls__hint {

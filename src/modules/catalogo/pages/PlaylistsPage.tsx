@@ -1198,10 +1198,6 @@ export default function PlaylistsPage() {
                             </div>
                           </div>
                         </div>
-
-                        <span className="sr-vinyl-slot__hint-pill">
-                          Toca el vinilo para ver la colección →
-                        </span>
                       </div>
                     )
                   }
