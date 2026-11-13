@@ -1,11 +1,11 @@
 .my-store {
-  --store-bg: var(--color-bg, #262626);
-  --store-surface: var(--color-surface, #302d34);
-  --store-border: var(--color-border, rgba(185,185,202,.24));
-  --store-muted: var(--color-text-muted, #b9b9ca);
-  --store-text: var(--color-text, #fff);
-  --store-accent: var(--color-accent, #48119a);
-  background: var(--store-bg);
+  --store-bg: transparent;
+  --store-surface: var(--sr-surface, #262626);
+  --store-border: var(--sr-border-subtle, rgba(185,185,202,.24));
+  --store-muted: var(--sr-text-secondary, #b9b9ca);
+  --store-text: var(--sr-text-primary, #fff);
+  --store-accent: var(--sr-accent, #48119a);
+  background: transparent;
   color: var(--store-text);
   min-height: 100vh;
   padding: 0 clamp(20px, 4vw, 64px) 88px;
@@ -259,19 +259,19 @@
 html[data-theme="light"] .my-store,
 html[data-theme="claro"] .my-store,
 html[data-tema="claro"] .my-store {
-  --store-bg: var(--color-bg, #ffffff);
-  --store-surface: var(--color-surface, #f4efe6);
-  --store-border: var(--color-border, #d4c7b5);
-  --store-muted: var(--color-text-muted, #595959);
-  --store-text: var(--color-text, #262626);
-  --store-accent: var(--color-accent, #48119a);
+  --store-bg: transparent;
+  --store-surface: var(--sr-surface, #f7f1e6);
+  --store-border: var(--sr-border-subtle, #d9cbb2);
+  --store-muted: var(--sr-text-secondary, #5c4d3c);
+  --store-text: var(--sr-text-primary, #2b2118);
+  --store-accent: var(--sr-accent, #48119a);
 }
 
 html[data-theme="light"] .my-store__product,
 html[data-theme="claro"] .my-store__product,
 html[data-tema="claro"] .my-store__product {
-  background: var(--color-surface, #f4efe6);
-  border-color: var(--color-border, #d4c7b5);
+  background: var(--sr-surface, #f7f1e6);
+  border-color: var(--sr-border-subtle, #d9cbb2);
 }
 
 html[data-theme="light"] .my-store__card-actions button,
@@ -280,17 +280,17 @@ html[data-tema="claro"] .my-store__card-actions button,
 html[data-theme="light"] .my-store__card-tools button,
 html[data-theme="claro"] .my-store__card-tools button,
 html[data-tema="claro"] .my-store__card-tools button {
-  background: var(--color-surface-muted, #eae2d5);
-  color: var(--color-text, #262626);
-  border-color: var(--color-border, #d4c7b5);
+  background: var(--sr-surface-raised, #fbf7ef);
+  color: var(--sr-text-primary, #2b2118);
+  border-color: var(--sr-border-subtle, #d9cbb2);
 }
 
 html[data-theme="light"] .my-store__dialog,
 html[data-theme="claro"] .my-store__dialog,
 html[data-tema="claro"] .my-store__dialog {
-  background: var(--color-bg, #ffffff);
-  color: var(--color-text, #262626);
-  border-color: var(--color-border, #d4c7b5);
+  background: var(--sr-surface, #f7f1e6);
+  color: var(--sr-text-primary, #2b2118);
+  border-color: var(--sr-border-subtle, #d9cbb2);
 }
 
 html[data-theme="light"] .my-store__dialog input,
@@ -299,8 +299,8 @@ html[data-theme="claro"] .my-store__dialog input,
 html[data-theme="claro"] .my-store__dialog select,
 html[data-tema="claro"] .my-store__dialog input,
 html[data-tema="claro"] .my-store__dialog select {
-  background: var(--color-surface, #f4efe6);
-  color: var(--color-text, #262626);
-  border-color: var(--color-border, #d4c7b5);
+  background: var(--sr-surface-raised, #fbf7ef);
+  color: var(--sr-text-primary, #2b2118);
+  border-color: var(--sr-border-control, #857458);
 }
 

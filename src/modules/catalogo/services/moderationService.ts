@@ -17,12 +17,12 @@ export interface ModerationBatchDecisionDto {
 export const moderationService = {
   getPending(): Promise<ModerationItemDto[]> {
     if (env.useMocks) return mockDelay([...MOCK_MODERATION_ITEMS])
-    return apiClient.get<ModerationItemDto[]>('/api/moderacion/pendientes').then((r) => r.data)
+    return apiClient.get<ModerationItemDto[]>('/api/v1/prendas/pendientes').then((r) => r.data)
   },
 
   getHistory(): Promise<ModerationHistoryItemDto[]> {
     if (env.useMocks) return mockDelay([...MOCK_MODERATION_HISTORY])
-    return apiClient.get<ModerationHistoryItemDto[]>('/api/moderacion/historial').then((r) => r.data)
+    return apiClient.get<ModerationHistoryItemDto[]>('/api/v1/prendas/historial').then((r) => r.data)
   },
 
   decide(decision: ModerationDecisionDto): Promise<void> {
@@ -43,7 +43,7 @@ export const moderationService = {
       }
       return mockDelay(undefined, 250)
     }
-    return apiClient.post('/api/moderacion/decidir', decision).then(() => undefined)
+    return apiClient.put(`/api/v1/prendas/${decision.itemId}/moderacion`, decision).then(() => undefined)
   },
 
   decidePublisherBatch(batch: ModerationBatchDecisionDto): Promise<void> {
@@ -64,7 +64,7 @@ export const moderationService = {
       }
       return mockDelay(undefined, 350)
     }
-    return apiClient.post('/api/moderacion/decidir-lote', batch).then(() => undefined)
+    return apiClient.put(`/api/v1/prendas/pendientes/almacenes/${encodeURIComponent(batch.publicador)}/moderacion`, batch).then(() => undefined)
   },
 }
 

@@ -112,7 +112,10 @@ export function applyThemeToDom(
 
   // Sincronizar data-theme, data-tema, data-cvd y data-contrast
   root.setAttribute('data-theme', cvd ? 'colorblind' : resolved)
-  root.setAttribute('data-tema', resolved === 'light' ? 'claro' : 'oscuro')
+  root.setAttribute(
+    'data-tema',
+    themeOrMode === 'daltonico' ? 'daltonico' : (resolved === 'light' ? 'claro' : 'oscuro'),
+  )
   root.setAttribute('data-cvd', cvd ? 'on' : 'off')
   root.setAttribute('data-contrast', cvd ? 'on' : 'off')
   root.style.colorScheme = resolved

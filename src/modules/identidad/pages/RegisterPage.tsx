@@ -59,6 +59,7 @@ export default function RegisterPage() {
         password,
         maniqui,
         aceptaTerminos: terminos,
+        aceptaHabeasData: terminos,
       })
       navigate(ROLE_HOME[user.role], { replace: true })
     } catch (err) {

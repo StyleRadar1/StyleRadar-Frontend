@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useId, type KeyboardEvent } from 'react'
 import { useTheme, type ThemeMode } from './ThemeContext'
+import { executeThemeTransition } from './themeTransition'
 
 interface AppearancePickerProps {
   className?: string
@@ -59,7 +60,15 @@ export function AppearancePicker({ className = '', align = 'right' }: Appearance
   }
 
   const selectMode = (newMode: ThemeMode) => {
-    setMode(newMode)
+    executeThemeTransition(() => {
+      setMode(newMode)
+    }, buttonRef.current)
+  }
+
+  const handleToggleColorblind = () => {
+    executeThemeTransition(() => {
+      toggleColorblind()
+    }, buttonRef.current)
   }
 
   return (
@@ -279,7 +288,7 @@ export function AppearancePicker({ className = '', align = 'right' }: Appearance
               type="button"
               role="switch"
               aria-checked={colorblind}
-              onClick={toggleColorblind}
+              onClick={handleToggleColorblind}
               className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-left text-xs font-medium text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
             >
               <div className="flex flex-col">

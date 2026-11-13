@@ -3,7 +3,16 @@ import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../mocks/demoAccounts'
-import type { GoogleLoginRequestDto, LoginRequestDto, LoginResponseDto, RegisterRequestDto, UserSessionDto } from '../types/auth.dto'
+import type {
+  GoogleLoginRequestDto,
+  LoginRequestDto,
+  LoginResponseDto,
+  RegisterRequestDto,
+  ResendOtpRequestDto,
+  ResendOtpResponseDto,
+  UserSessionDto,
+  VerifyOtpRequestDto,
+} from '../types/auth.dto'
 import { agregarUsuarioMock } from './usuarioService'
 
 /* Cuentas creadas con el registro mientras se usan datos de prueba. */
@@ -28,10 +37,10 @@ export const authService = {
       if (payload.password !== DEMO_PASSWORD) throw new ApiError(401, 'La contraseña no coincide.')
       return mockDelay({ token: `demo-${user.id}`, user })
     }
-    return apiClient.post<LoginResponseDto>('/api/auth/login', payload).then((res) => res.data)
+    return apiClient.post<LoginResponseDto>('/api/v1/auth/login', payload).then((res) => res.data)
   },
 
-  /** RF-01: crea la cuenta y devuelve la sesión iniciada. */
+  /** RF-01: crea la cuenta y devuelve la sesión iniciada o pide verificación OTP. */
   async register(payload: RegisterRequestDto): Promise<LoginResponseDto> {
     if (env.useMocks) {
       failIfScenario()
@@ -47,10 +56,52 @@ export const authService = {
       })
       return mockDelay({ token: `demo-${user.id}`, user }, 500)
     }
-    return apiClient.post<LoginResponseDto>('/api/auth/registro', payload).then((res) => res.data)
+
+    // Backend real: registro en ms-usuarios (aceptaHabeasData) y luego autenticación
+    const userPayload = {
+      nombre: payload.nombre.trim(),
+      email: payload.email.trim(),
+      password: payload.password,
+      telefono: payload.telefono?.trim() || '3000000000',
+      aceptaHabeasData: payload.aceptaHabeasData ?? payload.aceptaTerminos ?? true,
+    }
+    await apiClient.post('/api/v1/usuarios', userPayload)
+    return this.login({ email: payload.email, password: payload.password })
   },
 
-  /** P14: reemplaza la verificación con código OTP. Ruta provisional hasta tener el Swagger de ms-auth. */
+  /** P1: Verificación de código OTP tras registro o inicio de sesión */
+  async verifyOtp(payload: VerifyOtpRequestDto): Promise<LoginResponseDto> {
+    if (env.useMocks) {
+      if (payload.codigoOtp === '000000') {
+        throw new ApiError(400, 'Código de verificación incorrecto.')
+      }
+      const email = payload.email.trim().toLowerCase()
+      const user = registradas.find((a) => a.email === email) || DEMO_ACCOUNTS[0]
+      return mockDelay({ token: `demo-${user.id}`, user })
+    }
+    return apiClient.post<LoginResponseDto>('/api/v1/auth/otp/verificar', payload).then((res) => res.data)
+  },
+
+  /** Reenviar código OTP con espera de 60s */
+  async resendOtp(payload: ResendOtpRequestDto): Promise<ResendOtpResponseDto> {
+    if (env.useMocks) {
+      return mockDelay({
+        email: payload.email,
+        mensaje: 'Código enviado de nuevo a tu correo.',
+        expiraEnSegundos: 300,
+        intentosRestantes: 3,
+      })
+    }
+    return apiClient.post<ResendOtpResponseDto>('/api/v1/auth/otp/reenviar', payload).then((res) => res.data)
+  },
+
+  /** Cierre formal de sesión en ms-auth */
+  async logout(): Promise<void> {
+    if (env.useMocks) return
+    return apiClient.post('/api/v1/auth/logout').then(() => undefined).catch(() => undefined)
+  },
+
+  /** P14: ingreso con Google */
   async google(payload: GoogleLoginRequestDto): Promise<LoginResponseDto> {
     if (env.useMocks) {
       const email = payload.idToken.startsWith(DEMO_GOOGLE_PREFIX) ? payload.idToken.slice(DEMO_GOOGLE_PREFIX.length).trim().toLowerCase() : ''
@@ -58,6 +109,6 @@ export const authService = {
       if (!user) throw new ApiError(404, 'Esa cuenta de Google todavía no está registrada en StyleRadar. Crea tu cuenta primero.')
       return mockDelay({ token: `demo-${user.id}`, user })
     }
-    return apiClient.post<LoginResponseDto>('/api/auth/google', payload).then((res) => res.data)
+    return apiClient.post<LoginResponseDto>('/api/v1/auth/oauth2/google', payload).then((res) => res.data)
   },
 }

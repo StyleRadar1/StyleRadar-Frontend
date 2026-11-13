@@ -8,7 +8,7 @@ import { MAX_PLAYLIST_ITEMS, type CreatePlaylistDto, type PlaylistDto, type Play
 export const playlistService = {
   getAll(): Promise<PlaylistDto[]> {
     if (env.useMocks) return mockDelay([...MOCK_PLAYLISTS])
-    return apiClient.get<PlaylistDto[]>('/api/playlists').then((r) => r.data)
+    return apiClient.get<PlaylistDto[]>('/api/v1/playlists').then((r) => r.data)
   },
 
   getById(id: string): Promise<PlaylistDto> {
@@ -25,7 +25,7 @@ export const playlistService = {
       )
       return pl ? mockDelay(pl) : Promise.reject(new ApiError(404, 'La playlist no existe.'))
     }
-    return apiClient.get<PlaylistDto>(`/api/playlists/${id}`).then((r) => r.data)
+    return apiClient.get<PlaylistDto>(`/api/v1/playlists/${id}`).then((r) => r.data)
   },
 
   create(dto: CreatePlaylistDto): Promise<PlaylistDto> {
@@ -63,7 +63,7 @@ export const playlistService = {
       return mockDelay(nueva)
     }
 
-    return apiClient.post<PlaylistDto>('/api/playlists', dto).then((r) => r.data)
+    return apiClient.post<PlaylistDto>('/api/v1/playlists', dto).then((r) => r.data)
   },
 
   update(id: string, dto: Partial<CreatePlaylistDto>): Promise<PlaylistDto> {
@@ -76,7 +76,7 @@ export const playlistService = {
       pl.actualizada = 'ahora'
       return mockDelay(pl)
     }
-    return apiClient.patch<PlaylistDto>(`/api/playlists/${id}`, dto).then((r) => r.data)
+    return apiClient.put<PlaylistDto>(`/api/v1/playlists/${id}`, dto).then((r) => r.data)
   },
 
   delete(id: string): Promise<boolean> {
@@ -87,7 +87,7 @@ export const playlistService = {
       }
       return mockDelay(true)
     }
-    return apiClient.delete(`/api/playlists/${id}`).then(() => true)
+    return apiClient.delete(`/api/v1/playlists/${id}`).then(() => true)
   },
 
   addItem(playlistId: string, itemId: string): Promise<PlaylistDto> {
@@ -113,7 +113,7 @@ export const playlistService = {
       return mockDelay(pl)
     }
 
-    return apiClient.post<PlaylistDto>(`/api/playlists/${playlistId}/items`, { itemId }).then((r) => r.data)
+    return apiClient.post<PlaylistDto>(`/api/v1/playlists/${playlistId}/prendas`, { prendaId: itemId }).then((r) => r.data)
   },
 
   removeItem(playlistId: string, itemId: string): Promise<PlaylistDto> {
@@ -125,7 +125,7 @@ export const playlistService = {
       return mockDelay(pl)
     }
 
-    return apiClient.delete<PlaylistDto>(`/api/playlists/${playlistId}/items/${itemId}`).then((r) => r.data)
+    return apiClient.delete<PlaylistDto>(`/api/v1/playlists/${playlistId}/prendas/${itemId}`).then((r) => r.data)
   },
 
   toggleLike(playlistId: string): Promise<{ likes: number }> {
@@ -135,7 +135,7 @@ export const playlistService = {
       pl.likes += 1
       return mockDelay({ likes: pl.likes })
     }
-    return apiClient.post<{ likes: number }>(`/api/playlists/${playlistId}/like`).then((r) => r.data)
+    return apiClient.post<{ likes: number }>(`/api/v1/playlists/${playlistId}/like`).then((r) => r.data)
   },
 
   toggleSave(playlistId: string): Promise<{ esGuardada: boolean; guardados: number }> {
@@ -146,6 +146,6 @@ export const playlistService = {
       pl.guardados += pl.esGuardada ? 1 : -1
       return mockDelay({ esGuardada: pl.esGuardada, guardados: pl.guardados })
     }
-    return apiClient.post<{ esGuardada: boolean; guardados: number }>(`/api/playlists/${playlistId}/save`).then((r) => r.data)
+    return apiClient.post<{ esGuardada: boolean; guardados: number }>(`/api/v1/playlists/${playlistId}/guardar`).then((r) => r.data)
   },
 }

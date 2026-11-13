@@ -54,6 +54,20 @@ const INITIAL_LEGAL_INFO: LegalStoreInfo = {
 
 const STORAGE_LEGAL_KEY = 'styleradar-store-legal-info'
 const GALLERY_STORAGE_KEY = 'styleradar-store-gallery'
+const COLLECTIONS_STORAGE_KEY = 'styleradar-store-collections'
+
+const DEFAULT_COLLECTIONS: StoreCollection[] = [
+  { id: 'running-city', title: 'Running de ciudad', description: 'Lo esencial para correr Bogotá.', visibility: 'Pública', items: 4, likes: 188, image: '/prototipo/assets/img/productos/r1c3-tenis-running.jpg' },
+]
+
+function readCollections(): StoreCollection[] {
+  try {
+    const saved = localStorage.getItem(COLLECTIONS_STORAGE_KEY)
+    return saved ? JSON.parse(saved) as StoreCollection[] : DEFAULT_COLLECTIONS
+  } catch {
+    return DEFAULT_COLLECTIONS
+  }
+}
 
 function readLegalInfo(): LegalStoreInfo {
   try {
@@ -125,9 +139,7 @@ export default function MiTiendaPage() {
   const [photoError, setPhotoError] = useState('')
 
   /* Colecciones */
-  const [collections, setCollections] = useState<StoreCollection[]>([
-    { id: 'running-city', title: 'Running de ciudad', description: 'Lo esencial para correr Bogotá.', visibility: 'Pública', items: 4, likes: 188, image: '/prototipo/assets/img/productos/r1c3-tenis-running.jpg' },
-  ])
+  const [collections, setCollections] = useState<StoreCollection[]>(readCollections)
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false)
   const [collectionTitle, setCollectionTitle] = useState('')
   const [collectionDescription, setCollectionDescription] = useState('')
@@ -225,7 +237,7 @@ export default function MiTiendaPage() {
       setCollectionError('Escribe un título para la colección.')
       return
     }
-    setCollections((current) => [{
+    const nextCol: StoreCollection = {
       id: `collection-${Date.now()}`,
       title,
       description: collectionDescription.trim(),
@@ -233,12 +245,18 @@ export default function MiTiendaPage() {
       items: 0,
       likes: 0,
       image: '/prototipo/assets/img/productos/r1c3-tenis-running.jpg',
-    }, ...current])
+    }
+    const next = [nextCol, ...collections]
+    setCollections(next)
+    try {
+      localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(next))
+    } catch {}
     setCollectionTitle('')
     setCollectionDescription('')
     setCollectionVisibility('Pública')
     setCollectionError('')
     setCollectionDialogOpen(false)
+    setNotice(`Colección «${title}» creada con éxito.`)
   }
 
   /* Distintivos */
@@ -283,6 +301,7 @@ export default function MiTiendaPage() {
           </div>
           <div className="msd-hero__actions">
             <Link className="msd-btn msd-btn--primary" to="/tienda/inventario">＋ Nueva prenda</Link>
+            <Link className="msd-btn msd-btn--ghost" to="/tiendas/luna" target="_blank" rel="noopener noreferrer">Ver tienda pública (como comprador) ↗</Link>
             <Link className="msd-btn msd-btn--ghost" to="/tienda/estadisticas">Ver estadísticas</Link>
           </div>
 
@@ -326,7 +345,7 @@ export default function MiTiendaPage() {
             <header className="msd-card__head">
               <div>
                 <h2 id="store-info-title">Información de la tienda</h2>
-                <p className="text-xs text-[#727282] mt-1">Datos legales, de contacto y comerciales de tu tienda en Bogotá.</p>
+                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-1">Datos legales, de contacto y comerciales de tu tienda en Bogotá.</p>
               </div>
               {!editingInfo ? (
                 <button type="button" className="msd-link font-semibold" onClick={() => setEditingInfo(true)}>
@@ -455,7 +474,7 @@ export default function MiTiendaPage() {
             <header className="msd-card__head">
               <div>
                 <h2 id="collections-title">Colecciones</h2>
-                <p className="text-xs text-[#727282] mt-0.5">Agrupa tus prendas por temporada o estilo.</p>
+                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Agrupa tus prendas por temporada o estilo.</p>
               </div>
             </header>
             <div className="msd-collections">
@@ -487,7 +506,7 @@ export default function MiTiendaPage() {
             <header className="msd-card__head">
               <div>
                 <h2 id="store-photos-title">Fotos de la tienda</h2>
-                <p className="text-xs text-[#727282] mt-0.5">Fachada, vitrina e interior (hasta 6 fotos).</p>
+                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Fachada, vitrina e interior (hasta 6 fotos).</p>
               </div>
             </header>
             {photoError ? <p className="text-xs text-rose-500 mb-2 font-medium" role="alert">{photoError}</p> : null}
@@ -531,7 +550,7 @@ export default function MiTiendaPage() {
             <header className="msd-card__head">
               <div>
                 <h2 id="msd-badges-title">Distintivos de la tienda</h2>
-                <p className="text-xs text-[#727282] mt-0.5">Insignias automáticas que se muestran en el radar y en tus prendas.</p>
+                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Insignias automáticas que se muestran en el radar y en tus prendas.</p>
               </div>
               <button type="button" className="msd-link font-semibold" onClick={openBadgesSettings}>Configurar</button>
             </header>

@@ -115,8 +115,8 @@ export function RackCarousel({
   return (
     <section
       aria-label="Perchero de colección"
-      className={`w-full py-12 font-sans text-[#262626] ${
-        variant === 'arena' ? 'bg-[#E8DCCB]' : 'bg-white'
+      className={`w-full py-12 font-sans text-[var(--sr-text-primary,#262626)] ${
+        variant === 'arena' ? 'bg-[var(--sr-surface,#E8DCCB)]' : 'bg-transparent'
       }`}
     >
       {/* 1. NAVEGACIÓN / FILTROS SUPERIORES MINIMALISTAS */}
@@ -129,7 +129,7 @@ export function RackCarousel({
           return (
             <div key={cat.id} className="flex items-center gap-3">
               {index > 0 && (
-                <span className="text-gray-300 select-none" aria-hidden="true">
+                <span className="text-gray-400 select-none opacity-40" aria-hidden="true">
                   |
                 </span>
               )}
@@ -138,8 +138,8 @@ export function RackCarousel({
                 onClick={() => handleSelectCategory(cat.id)}
                 className={`cursor-pointer transition-colors duration-200 focus:outline-none ${
                   isActive
-                    ? 'font-semibold text-[#48119A]'
-                    : 'font-normal text-gray-400 hover:text-[#262626]'
+                    ? 'font-semibold text-[var(--sr-accent,#48119A)]'
+                    : 'font-normal text-[var(--sr-text-muted,#8e8e9f)] hover:text-[var(--sr-text-primary,#262626)]'
                 }`}
               >
                 {cat.label}
@@ -154,7 +154,7 @@ export function RackCarousel({
         {/* Línea horizontal continua y muy delgada de lado a lado */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-0 right-0 top-6 z-10 h-px w-full bg-gray-300"
+          className="pointer-events-none absolute left-0 right-0 top-6 z-10 h-px w-full bg-[var(--sr-border-subtle,rgba(185,185,202,0.3))]"
         />
 
         {/* Contenedor con scroll horizontal suave sin barra de scroll */}
@@ -192,13 +192,13 @@ export function RackCarousel({
                   <div
                     className={`relative w-full bg-transparent p-2 transition-colors duration-150 ${
                       isSelected
-                        ? 'border border-[#48119A]'
-                        : 'border border-transparent hover:border-[#48119A]/50'
+                        ? 'border border-[var(--sr-accent,#48119A)]'
+                        : 'border border-transparent hover:border-[var(--sr-accent,#48119A)]/50'
                     }`}
                   >
                     {/* Pestaña superior plana en violeta (#48119A) */}
                     {isSelected && (
-                      <div className="absolute -top-6 -left-px bg-[#48119A] px-2.5 py-0.5 text-[0.625rem] font-medium tracking-wide text-white">
+                      <div className="absolute -top-6 -left-px bg-[var(--sr-accent,#48119A)] px-2.5 py-0.5 text-[0.625rem] font-medium tracking-wide text-white">
                         Prenda
                       </div>
                     )}
@@ -231,7 +231,7 @@ export function RackCarousel({
                           className="h-full w-full object-contain object-top"
                         />
                       ) : (
-                        <div className="h-full w-24 bg-gray-100" />
+                        <div className="h-full w-24 bg-black/10 dark:bg-white/10" />
                       )}
                     </div>
                   </div>
@@ -245,16 +245,16 @@ export function RackCarousel({
       {/* 3. DETALLE INFERIOR MINIMALISTA DE LA PRENDA SELECCIONADA */}
       {selectedItem && (
         <div className="mt-6 flex flex-col items-center justify-center px-4 text-center">
-          <p className="text-sm sm:text-base font-medium text-[#262626]">
+          <p className="text-sm sm:text-base font-medium text-[var(--sr-text-primary,#262626)]">
             {selectedItem.name}
           </p>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <p className="mt-0.5 text-xs text-[var(--sr-text-muted,#727282)]">
             {formatCOP(selectedItem.price)}
           </p>
 
           <Link
             to={`/catalogo/${selectedItem.id}`}
-            className="mt-4 inline-block rounded-full border border-gray-300 bg-[#E8DCCB]/50 px-6 py-2 text-xs font-medium text-[#262626] transition-colors duration-150 hover:border-[#48119A] hover:text-[#48119A]"
+            className="mt-4 inline-block rounded-full border border-[var(--sr-border-subtle,#d9cbb2)] bg-[var(--sr-surface-raised,rgba(255,255,255,0.08))] px-6 py-2 text-xs font-medium text-[var(--sr-text-primary,#262626)] transition-colors duration-150 hover:border-[var(--sr-accent,#48119A)] hover:text-[var(--sr-accent,#48119A)]"
           >
             Ver en Tienda
           </Link>

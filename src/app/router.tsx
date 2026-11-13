@@ -84,6 +84,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/catalogo/:id', element: page(<ItemDetail />) },
       { path: '/mapa', element: page(<MapPage />) },
       { path: '/tiendas/:id', element: page(<Store />) },
+      { path: '/tienda/:id', element: page(<Store />) },
       { path: '/playlists', element: page(<Playlists />) },
       { path: '/playlists/:id', element: page(<Playlists />) },
       { path: '/playlist/:id', element: page(<Playlists />) },

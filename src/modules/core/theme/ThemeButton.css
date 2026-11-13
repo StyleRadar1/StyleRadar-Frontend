@@ -1,0 +1,111 @@
+/* ==========================================================================
+   ThemeButton.css · Botón de cambio de tema con animación de transición
+   Variables existentes StyleRadar:
+     --btn:     color de texto principal (--sr-text-primary)
+     --btn-ink: color de fondo (--sr-bg)
+   ========================================================================== */
+
+.theme-btn {
+  --btn: var(--sr-text-primary, #ffffff);
+  --btn-ink: var(--sr-bg, #1d1d1d);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .7rem;
+  cursor: pointer;
+  padding: .5rem 1.1rem .5rem .6rem;
+  border-radius: 999px;
+  border: 0;
+  background: var(--btn);
+  color: var(--btn-ink);
+  font: 600 .95rem inherit;
+  outline: 2px dashed var(--btn-ink);
+  outline-offset: -5px;
+  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), background .5s, color .5s;
+}
+
+.theme-btn:hover {
+  transform: translateY(-2px) rotate(-1.5deg);
+}
+
+.theme-btn:active {
+  transform: scale(.95);
+}
+
+.theme-btn:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.hanger {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--btn-ink);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.hanger svg {
+  width: 26px;
+  height: 26px;
+  transform-origin: 50% 8%;
+  overflow: visible;
+}
+
+.theme-btn.swing svg {
+  animation: swing .8s cubic-bezier(.3, 1.4, .5, 1);
+}
+
+@keyframes swing {
+  0% { transform: rotate(0); }
+  25% { transform: rotate(28deg); }
+  55% { transform: rotate(-18deg); }
+  80% { transform: rotate(7deg); }
+  100% { transform: rotate(0); }
+}
+
+.mini-shirt {
+  fill: var(--btn);
+  stroke: var(--btn);
+  transition: fill .5s, stroke .5s;
+}
+
+.dots {
+  display: flex;
+  gap: 4px;
+}
+
+.dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  transition: background .3s, transform .3s;
+}
+
+.dots i.on {
+  background: currentColor;
+  transform: scale(1.25);
+}
+
+/* Animación de transición circular (tela que se extiende) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-btn,
+  .theme-btn.swing svg {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+

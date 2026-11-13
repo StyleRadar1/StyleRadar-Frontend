@@ -6,6 +6,7 @@ import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAccounts'
 import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
 import { ApiError } from '@/modules/core/api/apiClient'
+import { authService } from '@/modules/identidad/services/authService'
 import './AuthModal.css'
 
 type DemoAccountRole = (typeof DEMO_ACCOUNTS)[number]['role']
@@ -97,7 +98,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
-  const { login } = useAuth()
+  const { login, register: authRegister, verifyOtp } = useAuth()
   const navigate = useNavigate()
 
   const [rendered, setRendered] = useState(isOpen)
@@ -467,14 +468,32 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setPreviewRole(account?.role ?? null)
   }
 
-  const handleRegisterSubmit = (e: FormEvent) => {
+  const handleRegisterSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!email || password.length < 4 || !fullName) {
-      setError('Por favor completa todos los campos requeridos.')
+    if (!email || password.length < 8 || !fullName) {
+      setError(
+        password.length < 8
+          ? 'La contraseña debe tener al menos 8 caracteres.'
+          : 'Por favor completa todos los campos requeridos.',
+      )
       return
     }
     setError('')
-    setStep('otp')
+    setLoading(true)
+    try {
+      await authRegister({
+        nombre: fullName.trim(),
+        email: email.trim(),
+        password,
+        aceptaHabeasData: true,
+        aceptaTerminos: true,
+      })
+      setStep('otp')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al registrar la cuenta.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleOtpChange = (index: number, val: string) => {
@@ -500,10 +519,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setLoading(true)
     setError('')
     try {
-      const user = await login({ email: 'usuario@styleradar.co', password: DEMO_PASSWORD })
+      const user = await verifyOtp({ email: email.trim() || 'usuario@styleradar.co', codigoOtp: code })
       finishAuthAndNavigate(ROLE_HOME[user.role])
-    } catch {
-      setError('Código inválido o expirado. Intenta de nuevo.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Código inválido o expirado. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -881,6 +900,25 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               <button type="submit" disabled={loading} className="sr-auth-submit">
                 {loading ? 'Verificando…' : 'Confirmar y entrar'}
               </button>
+
+              <div className="flex items-center justify-between text-xs text-white/70 py-1">
+                <span>¿No recibiste el código?</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const targetEmail = email.trim() || 'usuario@styleradar.co'
+                    try {
+                      await authService.resendOtp({ email: targetEmail })
+                      setError('')
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : 'Error al reenviar código.')
+                    }
+                  }}
+                  className="font-semibold text-[#E8DCCB] hover:underline"
+                >
+                  Reenviar código
+                </button>
+              </div>
 
               <button
                 type="button"

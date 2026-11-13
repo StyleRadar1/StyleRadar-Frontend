@@ -566,7 +566,7 @@ export default function InventoryPage() {
 
         {/* Estado sin resultados */}
         {!loading && !error && itemsFiltrados.length === 0 && (
-          <div className="mt-12 rounded-[22px] border border-black/[0.06] bg-white p-8 shadow-sm">
+          <div className="mt-12 rounded-[22px] border border-[var(--inv-card-border)] bg-[var(--inv-card-bg)] p-8 shadow-sm text-[var(--inv-text)]">
             <EmptyState
               title="No se encontraron prendas en el inventario"
               action={
@@ -699,10 +699,10 @@ export default function InventoryPage() {
                       <img src={item.imagenUrl} alt={item.nombre} className="inv-list-item__img" loading="lazy" />
                       <div>
                         <h3 className="font-bold text-sm text-grafito">{item.nombre}</h3>
-                        <p className="text-xs text-[#64748b]">{item.categoria} · {item.estilo}</p>
+                        <p className="text-xs text-[var(--inv-text-muted)]">{item.categoria} · {item.estilo}</p>
                       </div>
                       <span className="font-bold text-sm text-grafito">{formatCOP(item.precio)}</span>
-                      <span className="text-xs text-[#64748b]">Tallas: {tallasTexto} | {item.stockTotal} uds</span>
+                      <span className="text-xs text-[var(--inv-text-muted)]">Tallas: {tallasTexto} | {item.stockTotal} uds</span>
                       <div>
                         {item.estado === 'DISPONIBLE' && (
                           <span className="inv-status inv-status--ok"><i className="inv-status__dot" /> Disponible</span>

@@ -22,6 +22,25 @@ export interface GoogleLoginRequestDto {
 export interface LoginResponseDto {
   token: string
   user: UserSessionDto
+  requiereOtp?: boolean
+  otpExpiraEnSegundos?: number
+  intentosOtpRestantes?: number
+}
+
+export interface VerifyOtpRequestDto {
+  email: string
+  codigoOtp: string
+}
+
+export interface ResendOtpRequestDto {
+  email: string
+}
+
+export interface ResendOtpResponseDto {
+  email?: string
+  mensaje?: string
+  expiraEnSegundos?: number
+  intentosRestantes?: number
 }
 
 /**
@@ -32,8 +51,11 @@ export interface RegisterRequestDto {
   nombre: string
   email: string
   password: string
-  maniqui: Maniqui
-  aceptaTerminos: boolean
+  maniqui?: Maniqui
+  aceptaTerminos?: boolean
+  aceptaHabeasData?: boolean
+  telefono?: string
 }
 
 export const PASSWORD_MIN = 6
+export const PASSWORD_MIN_BACKEND = 8

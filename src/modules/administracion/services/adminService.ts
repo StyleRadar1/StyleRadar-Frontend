@@ -6,8 +6,8 @@ import { seedFoundations, seedPlaylists, seedStores } from '../mocks/admin'
 import { MAX_DESTACADAS, interaccion, type AdminFoundationDto, type AdminPlaylistDto, type AdminStoreDto, type FoundationFormDto, type Verificacion } from '../types/admin.dto'
 import { erroresFundacion } from '../utils/validation'
 
-/** Rutas del API Gateway para el administrador. Provisionales hasta tener el Swagger. */
-const API = { tiendas: '/api/admin/tiendas', fundaciones: '/api/admin/fundaciones', playlists: '/api/admin/playlists' }
+/** Rutas del API Gateway para el administrador (/api/v1) */
+const API = { tiendas: '/api/v1/admin/almacenes', fundaciones: '/api/v1/admin/fundaciones', playlists: '/api/v1/admin/playlists' }
 
 /** Se dispara cuando cambia algo que mueve las insignias de la barra lateral del admin. */
 export const ADMIN_CHANGED = 'sr:admin'
@@ -55,7 +55,7 @@ export const adminStoreService = {
       t.motivoRechazo = verificacion === 'Rechazada' ? motivo!.trim() : undefined
       return mockDelay(t).then(avisar)
     }
-    return apiClient.put<AdminStoreDto>(`${API.tiendas}/${encodeURIComponent(id)}/verificacion`, { verificacion, motivo }).then((r) => avisar(r.data))
+    return apiClient.patch<AdminStoreDto>(`${API.tiendas}/${encodeURIComponent(id)}/verificacion`, { verificacion, motivo }).then((r) => avisar(r.data))
   },
   /** Extiende 15 días el periodo gratuito. */
   async extendTrial(id: string): Promise<AdminStoreDto> {

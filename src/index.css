@@ -515,3 +515,14 @@ html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
     transition: none !important;
   }
 }
+
+/* Transición de tema circular (tela que se extiende) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}

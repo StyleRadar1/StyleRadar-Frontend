@@ -85,6 +85,8 @@ const sortItems = (list: ItemResponseDto[], orden?: string) => {
   return copy
 }
 
+import { getInventoryItemByIdSync } from './inventoryService'
+
 export const itemService = {
   search(filters: ItemFiltersDto): Promise<ItemResponseDto[]> {
     if (env.useMocks) {
@@ -108,7 +110,7 @@ export const itemService = {
       const filtered = Array.from(map.values()).filter((it) => matches(it, filters))
       return mockDelay(sortItems(filtered, filters.orden))
     }
-    return apiClient.get<ItemResponseDto[]>('/api/items', { params: filters }).then((r) => {
+    return apiClient.get<ItemResponseDto[]>('/api/v1/prendas', { params: filters }).then((r) => {
       const map = new Map<string, ItemResponseDto>()
       const imageToId = new Map<string, string>()
       for (const it of r.data) {
@@ -131,9 +133,12 @@ export const itemService = {
   },
   getById(id: string): Promise<ItemResponseDto> {
     if (env.useMocks) {
-      const it = ITEMS.find((x) => x.id === id)
+      let it = ITEMS.find((x) => x.id === id)
+      if (!it) {
+        it = getInventoryItemByIdSync(id) ?? undefined
+      }
       return it ? mockDelay(it) : Promise.reject(new ApiError(404, 'La prenda no existe.'))
     }
-    return apiClient.get<ItemResponseDto>(`/api/items/${id}`).then((r) => r.data)
+    return apiClient.get<ItemResponseDto>(`/api/v1/prendas/${id}`).then((r) => r.data)
   },
 }
