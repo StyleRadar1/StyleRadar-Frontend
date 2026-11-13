@@ -1,0 +1,87 @@
+/* =====================================================================
+   StyleRadar — Hero de Detalle de Prenda (/catalogo/:id)
+   Inspirado en layout de 3 columnas: Info (izq) | Prenda (centro) | Selectores (der)
+   ===================================================================== */
+
+.sr-detail-hero-card {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--sr-border-subtle, var(--color-border));
+  background: linear-gradient(180deg, var(--sr-surface-raised, #fcfbf9) 0%, var(--sr-superficie, #f4efe6) 100%);
+  box-shadow: 0 10px 30px var(--sr-sombra, rgba(38, 38, 38, 0.08));
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+html[data-theme='dark'] .sr-detail-hero-card,
+html[data-theme='oscuro'] .sr-detail-hero-card,
+html[data-tema='oscuro'] .sr-detail-hero-card {
+  background: linear-gradient(180deg, var(--sr-surface, #242031) 0%, var(--sr-fondo-oscuro, #15131c) 100%);
+}
+
+html[data-theme='colorblind'] .sr-detail-hero-card,
+html[data-theme='daltonico'] .sr-detail-hero-card,
+html[data-tema='daltonico'] .sr-detail-hero-card,
+html[data-cvd='on'] .sr-detail-hero-card {
+  background: linear-gradient(180deg, var(--sr-surface, #1f232d) 0%, var(--sr-fondo-oscuro, #14171f) 100%);
+}
+
+/* Sombra elíptica en el suelo */
+.sr-hero-shadow {
+  width: 58%;
+  height: 18px;
+  margin: -6px auto 14px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, var(--sr-sombra, rgba(0, 0, 0, 0.38)) 0%, transparent 75%);
+  filter: blur(6px);
+}
+
+/* Animaciones */
+@keyframes sr-hero-enter-img {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sr-hero-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sr-hero-image-animate {
+  animation: sr-hero-enter-img 200ms cubic-bezier(0.2, 0, 0.2, 1) forwards;
+}
+
+.sr-hero-col-left {
+  animation: sr-hero-fade-in 200ms ease forwards;
+  animation-delay: 50ms;
+}
+
+.sr-hero-col-right {
+  animation: sr-hero-fade-in 200ms ease forwards;
+  animation-delay: 100ms;
+}
+
+.sr-hero-image-fade {
+  transition: opacity 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-hero-image-animate,
+  .sr-hero-col-left,
+  .sr-hero-col-right,
+  .sr-hero-image-fade {
+    animation: none !important;
+    transition: none !important;
+  }
+}
