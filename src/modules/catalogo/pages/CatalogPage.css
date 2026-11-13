@@ -72,7 +72,7 @@
   box-shadow: inset 0 0 0 2px #48119a;
 }
 
-/* Barra metálica horizontal fina de lado a lado con brillo sutil */
+/* Barra metálica horizontal fina de lado a lado con brillo sutil y topes en los extremos */
 .sr-rack-bar {
   position: absolute;
   top: 24px;
@@ -82,14 +82,36 @@
   z-index: 15;
   background: linear-gradient(
     180deg,
-    #7a7a85 0%,
-    #262626 42%,
-    #8c8c98 72%,
-    #262626 100%
+    #d8d8e2 0%,
+    #ffffff 20%,
+    #8e8e99 50%,
+    #4a4a52 80%,
+    #2a2a30 100%
   );
   box-shadow:
-    0 2px 5px rgba(38, 38, 38, 0.2),
-    0 1px 0 rgba(255, 255, 255, 0.65) inset;
+    0 4px 10px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+.sr-rack-bar::before,
+.sr-rack-bar::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #9a9aa5 55%, #3a3a42 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.sr-rack-bar::before {
+  left: 0;
+}
+
+.sr-rack-bar::after {
+  right: 0;
 }
 
 /* Contenedor relativo centrado donde se posicionan las prendas por offset */
@@ -117,9 +139,9 @@
 /* Cada prenda colgada: una sola línea de referencia anclada al centro de la barra */
 .sr-rack-item {
   position: absolute;
-  top: 14px;
+  top: 11px;
   left: 50%;
-  width: clamp(210px, 22vw, 276px);
+  width: clamp(200px, 21vw, 230px);
   transform-origin: top center;
   transition:
     transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -131,6 +153,7 @@
   padding: 0;
   cursor: pointer;
   text-align: center;
+  outline: none;
 }
 
 .sr-rack-item--back {
@@ -138,71 +161,74 @@
   cursor: default;
 }
 
-.sr-rack-item:focus-visible .sr-rack-garment-frame {
-  outline: 2px solid #48119a;
+.sr-rack-item:focus-visible .sr-rack-cutout-img {
+  outline: 2px solid var(--color-focus-ring, #48119a);
   outline-offset: 4px;
 }
 
 /* Posiciones por offset respecto a la prenda central (0): sin translateY para que todos los ganchos apoyen en la barra */
 .sr-rack-item[data-offset='0'] {
-  transform: translate3d(-50%, 0, 0) scale(1);
+  transform: translate3d(-50%, 0, 0) scale(1.04);
   z-index: 30;
   opacity: 1;
   filter: none;
 }
 
 .sr-rack-item[data-offset='-1'] {
-  transform: translate3d(calc(-50% - clamp(150px, 19.5vw, 245px)), 0, 0) scale(0.78);
+  transform: translate3d(calc(-50% - clamp(150px, 19.5vw, 245px)), 0, 0) scale(0.82);
   z-index: 24;
-  opacity: 0.86;
+  opacity: 0.88;
   filter: contrast(0.96) brightness(0.97);
 }
 
 .sr-rack-item[data-offset='1'] {
-  transform: translate3d(calc(-50% + clamp(150px, 19.5vw, 245px)), 0, 0) scale(0.78);
+  transform: translate3d(calc(-50% + clamp(150px, 19.5vw, 245px)), 0, 0) scale(0.82);
   z-index: 24;
-  opacity: 0.86;
+  opacity: 0.88;
   filter: contrast(0.96) brightness(0.97);
 }
 
 .sr-rack-item[data-offset='-2'] {
-  transform: translate3d(calc(-50% - clamp(275px, 35.5vw, 445px)), 0, 0) scale(0.68);
+  transform: translate3d(calc(-50% - clamp(275px, 35.5vw, 445px)), 0, 0) scale(0.72);
   z-index: 18;
   opacity: 0.72;
   filter: contrast(0.93) brightness(0.95);
 }
 
 .sr-rack-item[data-offset='2'] {
-  transform: translate3d(calc(-50% + clamp(275px, 35.5vw, 445px)), 0, 0) scale(0.68);
+  transform: translate3d(calc(-50% + clamp(275px, 35.5vw, 445px)), 0, 0) scale(0.72);
   z-index: 18;
   opacity: 0.72;
   filter: contrast(0.93) brightness(0.95);
 }
 
 .sr-rack-item[data-offset='-3'] {
-  transform: translate3d(calc(-50% - clamp(390px, 50vw, 635px)), 0, 0) scale(0.62);
+  transform: translate3d(calc(-50% - clamp(390px, 50vw, 635px)), 0, 0) scale(0.64);
   z-index: 14;
   opacity: 0.5;
   filter: contrast(0.9) brightness(0.93);
 }
 
 .sr-rack-item[data-offset='3'] {
-  transform: translate3d(calc(-50% + clamp(390px, 50vw, 635px)), 0, 0) scale(0.62);
+  transform: translate3d(calc(-50% + clamp(390px, 50vw, 635px)), 0, 0) scale(0.64);
   z-index: 14;
   opacity: 0.5;
   filter: contrast(0.9) brightness(0.93);
 }
 
-/* Balanceo sutil que rota desde el gancho (top center) */
+/* Balanceo sutil de péndulo colgado de la barra (±1.6 deg) con desfase individual */
 @keyframes sr-hanger-sway {
   0% {
     transform: rotate(0deg);
   }
-  30% {
-    transform: rotate(-1.2deg);
+  25% {
+    transform: rotate(1.6deg);
   }
-  70% {
-    transform: rotate(0.9deg);
+  50% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(-1.6deg);
   }
   100% {
     transform: rotate(0deg);
@@ -211,23 +237,31 @@
 
 .sr-rack-sway {
   transform-origin: top center;
-  transition: transform 320ms ease;
+  animation: sr-hanger-sway 3.8s ease-in-out infinite;
+  animation-delay: var(--rack-delay, 0s);
 }
 
-.sr-rack-item:hover .sr-rack-sway {
-  animation: sr-hanger-sway 1.8s ease-in-out infinite;
+/* Elevación de descolgar (~8px) al hover o focus-visible */
+.sr-rack-sway-inner {
+  position: relative;
+  transform-origin: top center;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Gancho minimalista (hanger) conectado a la barra */
+.sr-rack-item:hover .sr-rack-sway-inner,
+.sr-rack-item:focus-visible .sr-rack-sway-inner {
+  transform: translateY(-8px);
+}
+
+/* Gancho (hanger) conectado a la barra: ~0.78 del ancho de la prenda */
 .sr-rack-hanger {
   display: block;
-  width: 120px;
-  height: 60px;
+  width: 78%;
+  height: auto;
+  max-height: 58px;
   margin: 0 auto;
   position: relative;
-  z-index: 25;
   pointer-events: none;
-  filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.14));
 }
 
 .sr-rack-hanger--back {
@@ -235,58 +269,96 @@
   filter: none;
 }
 
-/* Marco de la prenda colgada: solapado 2px sobre los hombros del gancho sin hueco */
-.sr-rack-garment-frame {
+.sr-rack-hanger--shoulder {
+  z-index: 15;
+  filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.2));
+}
+
+.sr-rack-hanger--clips {
+  z-index: 15;
+  filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.2));
+}
+
+/* Prenda recortada sola, sin marco rectangular ni fondo */
+.sr-rack-garment-cutout {
   position: relative;
   width: 100%;
-  height: clamp(230px, 31vw, 325px);
+  height: clamp(230px, 31vw, 320px);
+  margin-top: -26px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 0 0.5rem;
-  margin-top: -4px;
-  transition: filter 360ms ease;
+  z-index: 20;
 }
 
-.sr-rack-item[data-offset='0'] .sr-rack-garment-frame {
-  filter: drop-shadow(0 22px 28px rgba(38, 38, 38, 0.22));
-}
-
-.sr-rack-item:not([data-offset='0']) .sr-rack-garment-frame {
-  filter: drop-shadow(0 12px 18px rgba(38, 38, 38, 0.14));
-}
-
-/* Imagen de la prenda con recorte editorial de hombros/caída que preserva proporción sin deformar */
-.sr-rack-garment-card {
-  position: relative;
-  width: 100%;
+.sr-rack-cutout-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: 100%;
-  border-radius: 22px 22px 14px 14px;
-  overflow: hidden;
-  background-color: #ece6dc;
-  border: 1px solid rgba(38, 38, 38, 0.08);
-  transition:
-    border-color 320ms ease,
-    box-shadow 320ms ease;
-}
-
-.sr-rack-item[data-offset='0'] .sr-rack-garment-card {
-  border-color: rgba(72, 17, 154, 0.32);
-  box-shadow: 0 4px 18px rgba(72, 17, 154, 0.1);
-}
-
-.sr-rack-garment-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
   display: block;
   pointer-events: none;
-  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(8px 12px 9px var(--sr-sombra));
+  user-select: none;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.sr-rack-item:hover .sr-rack-garment-img {
-  transform: scale(1.025);
+/* Pinzas metálicas para pantalones / jeans (por delante de la tela) */
+.sr-rack-clips-layer {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 30px;
+  pointer-events: none;
+  z-index: 30;
+}
+
+.sr-rack-clip {
+  position: absolute;
+  width: 16px;
+  height: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+
+.sr-rack-clip--left {
+  left: 25%;
+}
+
+.sr-rack-clip--right {
+  right: 25%;
+}
+
+/* Pill flotante que se muestra en hover / focus-visible */
+.sr-rack-hover-title {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.28rem 0.75rem;
+  border-radius: 9999px;
+  background-color: var(--color-surface-raised, rgba(38, 38, 38, 0.92));
+  color: var(--color-text, #ffffff);
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.18));
+  box-shadow: 0 6px 16px var(--sr-sombra);
+  transition:
+    opacity 240ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 40;
+}
+
+.sr-rack-item:hover .sr-rack-hover-title,
+.sr-rack-item:focus-visible .sr-rack-hover-title {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* Sombra elíptica suave bajo cada prenda para dar profundidad sobre el piso claro */
@@ -441,24 +513,24 @@
     min-width: 150px;
   }
 
-  .sr-rack-garment-frame {
+  .sr-rack-garment-cutout {
     height: 215px;
   }
 
   .sr-rack-item[data-offset='-1'] {
-    transform: translate3d(calc(-50% - 37vw), 0, 0) scale(0.74);
+    transform: translate3d(calc(-50% - 37vw), 0, 0) scale(0.76);
   }
 
   .sr-rack-item[data-offset='1'] {
-    transform: translate3d(calc(-50% + 37vw), 0, 0) scale(0.74);
+    transform: translate3d(calc(-50% + 37vw), 0, 0) scale(0.76);
   }
 
   .sr-rack-item[data-offset='-2'] {
-    transform: translate3d(calc(-50% - 68vw), 0, 0) scale(0.62);
+    transform: translate3d(calc(-50% - 68vw), 0, 0) scale(0.64);
   }
 
   .sr-rack-item[data-offset='2'] {
-    transform: translate3d(calc(-50% + 68vw), 0, 0) scale(0.62);
+    transform: translate3d(calc(-50% + 68vw), 0, 0) scale(0.64);
   }
 
   .sr-rack-item[data-offset='-3'],
@@ -472,16 +544,19 @@
 @media (prefers-reduced-motion: reduce) {
   .sr-rack-item,
   .sr-rack-sway,
-  .sr-rack-garment-card,
-  .sr-rack-garment-img,
+  .sr-rack-sway-inner,
+  .sr-rack-cutout-img,
   .sr-rack-shadow,
+  .sr-rack-hover-title,
   .sr-rack-cta {
     transition: none !important;
     animation: none !important;
   }
 
-  .sr-rack-item:hover .sr-rack-sway {
+  .sr-rack-item:hover .sr-rack-sway,
+  .sr-rack-item:hover .sr-rack-sway-inner {
     animation: none !important;
+    transform: none !important;
   }
 }
 
@@ -512,11 +587,6 @@ html[data-theme='dark'] .sr-rack-divider {
   background-color: var(--color-border, rgba(255, 255, 255, 0.18));
 }
 
-html[data-theme='dark'] .sr-rack-garment-card {
-  background-color: var(--color-surface, #231e32);
-  border-color: var(--color-border, rgba(255, 255, 255, 0.14));
-}
-
 html[data-theme='dark'] .sr-rack-title {
   color: var(--color-text, #f5f3f7);
 }
@@ -538,7 +608,7 @@ html[data-theme='dark'] .sr-rack-cta:hover {
 }
 
 html[data-theme='dark'] .sr-rack-viewport:focus-visible,
-html[data-theme='dark'] .sr-rack-item:focus-visible .sr-rack-garment-frame,
+html[data-theme='dark'] .sr-rack-item:focus-visible .sr-rack-cutout-img,
 html[data-theme='dark'] .sr-rack-cta:focus-visible {
   outline-color: var(--color-focus-ring, #a78bfa);
 }
@@ -558,10 +628,10 @@ html[data-cvd='on'] .sr-rack-cta:hover {
 }
 
 html[data-theme='colorblind'] .sr-rack-viewport:focus-visible,
-html[data-theme='colorblind'] .sr-rack-item:focus-visible .sr-rack-garment-frame,
+html[data-theme='colorblind'] .sr-rack-item:focus-visible .sr-rack-cutout-img,
 html[data-theme='colorblind'] .sr-rack-cta:focus-visible,
 html[data-cvd='on'] .sr-rack-viewport:focus-visible,
-html[data-cvd='on'] .sr-rack-item:focus-visible .sr-rack-garment-frame,
+html[data-cvd='on'] .sr-rack-item:focus-visible .sr-rack-cutout-img,
 html[data-cvd='on'] .sr-rack-cta:focus-visible {
   outline-color: var(--color-focus-ring, #0072b2);
 }

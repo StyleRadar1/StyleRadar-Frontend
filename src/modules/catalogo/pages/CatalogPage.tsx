@@ -5,7 +5,7 @@ import { ItemCard } from '../components/ItemCard'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
-import type { ItemFiltersDto } from '../types/item.dto'
+import type { ItemFiltersDto, ItemResponseDto } from '../types/item.dto'
 import './CatalogPage.css'
 
 // Tipos de prenda
@@ -839,6 +839,8 @@ interface HangingRackGarment {
   barrio: string
   precio: number
   imagen: string
+  recorte?: string
+  tipoGancho: 'hombros' | 'pinzas'
   tipoFiltro: string
   estilo: string
   badge?: {
@@ -853,96 +855,184 @@ const LOW_STOCK_INV =
 
 const LOW_STOCK_COUNT = LOW_STOCK_INV?.stockTotal ?? 2
 
-const RACK_IDS = ['p1', 'p3', 'p5', 'p6', 'p8', 'p13', 'p2', 'p4'] as const
+const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
+  .filter((it): it is ItemResponseDto & { recorte: string } => Boolean(it.recorte))
+  .map((found) => {
+    const tipoNorm = found.tipo === 'Suéter' ? 'Saco' : found.tipo
+    let badge: HangingRackGarment['badge']
 
-const HANGING_RACK_GARMENTS: HangingRackGarment[] = RACK_IDS.map((id) => {
-  const found = ITEMS.find((it) => it.id === id) ?? ITEMS[0]
-  const tipoNorm = found.tipo === 'Suéter' ? 'Saco' : found.tipo
-  let badge: HangingRackGarment['badge']
-
-  if (id === 'p3') {
-    badge = { text: '-20%', variant: 'discount' }
-  } else if (id === 'p6') {
-    badge = {
-      text: `SOLO ${LOW_STOCK_COUNT} ${LOW_STOCK_COUNT === 1 ? 'UNIDAD' : 'UNIDADES'}`,
-      variant: 'stock',
+    if (found.id === 'p19') {
+      badge = { text: '-20%', variant: 'discount' }
+    } else if (found.id === 'p27') {
+      badge = {
+        text: `SOLO ${LOW_STOCK_COUNT} ${LOW_STOCK_COUNT === 1 ? 'UNIDAD' : 'UNIDADES'}`,
+        variant: 'stock',
+      }
+    } else if (found.id === 'p22') {
+      badge = { text: 'NUEVO', variant: 'new' }
     }
-  } else if (id === 'p13') {
-    badge = { text: 'NUEVO', variant: 'new' }
-  }
 
-  return {
-    id: found.id,
-    nombre: found.nombre,
-    tienda: found.tienda,
-    barrio: found.barrio,
-    precio: found.precio,
-    imagen: found.imagen,
-    tipoFiltro: tipoNorm,
-    estilo: found.estilo,
-    badge,
-  }
-})
+    return {
+      id: found.id,
+      nombre: found.nombre,
+      tienda: found.tienda,
+      barrio: found.barrio,
+      precio: found.precio,
+      imagen: found.imagen,
+      recorte: found.recorte,
+      tipoGancho: found.tipoGancho ?? 'hombros',
+      tipoFiltro: tipoNorm,
+      estilo: found.estilo,
+      badge,
+    }
+  })
 
 function HangerBackSvg() {
   return (
     <svg
       className="sr-rack-hanger sr-rack-hanger--back"
-      viewBox="0 0 120 60"
+      viewBox="0 0 160 60"
       fill="none"
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient id="sr-wire-grad-back" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#e2e2ea" />
+          <stop offset="45%" stopColor="#8c8c98" />
+          <stop offset="100%" stopColor="#26262e" />
+        </linearGradient>
+      </defs>
       {/* Tramo trasero del lazo metálico que pasa por detrás de la barra */}
       <path
-        d="M48 19 C48 12, 51 5, 60 4"
-        stroke="var(--sr-hanger-wire, #262626)"
-        strokeWidth="2.4"
+        d="M68 20 C68 12, 71 5, 80 4"
+        stroke="url(#sr-wire-grad-back)"
+        strokeWidth="2.6"
         strokeLinecap="round"
       />
     </svg>
   )
 }
 
-function HangerFrontSvg({ isCenter }: { isCenter: boolean }) {
+function ShoulderHangerFrontSvg() {
   return (
     <svg
-      className="sr-rack-hanger"
-      viewBox="0 0 120 60"
+      className="sr-rack-hanger sr-rack-hanger--shoulder"
+      viewBox="0 0 160 60"
       fill="none"
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient id="sr-wire-grad-front" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="35%" stopColor="#b4b4c0" />
+          <stop offset="70%" stopColor="#5a5a66" />
+          <stop offset="100%" stopColor="#1a1a20" />
+        </linearGradient>
+        <linearGradient id="sr-wood-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#7a4620" />
+          <stop offset="25%" stopColor="#b87b44" />
+          <stop offset="50%" stopColor="#d49458" />
+          <stop offset="75%" stopColor="#b87b44" />
+          <stop offset="100%" stopColor="#7a4620" />
+        </linearGradient>
+      </defs>
       {/* Tramo frontal del lazo: corona sobre la barra y desciende por delante */}
       <path
-        d="M60 4 C67 5, 68 12, 64 18 C62 21, 60 22, 60 26"
-        stroke="var(--sr-hanger-wire, #262626)"
-        strokeWidth="2.4"
+        d="M80 4 C88 5, 89 13, 85 19 C82 22, 80 23, 80 27"
+        stroke="url(#sr-wire-grad-front)"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+      {/* Cuello del gancho que entra en la madera */}
+      <line
+        x1="80"
+        y1="26"
+        x2="80"
+        y2="31"
+        stroke="url(#sr-wire-grad-front)"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+      {/* Hombros de madera curvos (van DETRÁS de la prenda) */}
+      <path
+        d="M16 48 C40 40, 64 30, 80 28 C96 30, 120 40, 144 48 C146 49, 144 53, 141 53 C118 46, 96 37, 80 36 C64 37, 42 46, 19 53 C16 53, 14 49, 16 48 Z"
+        fill="url(#sr-wood-grad)"
+        stroke="#4a250a"
+        strokeWidth="0.8"
+      />
+      {/* Detalle de remache central en el cuello */}
+      <circle cx="80" cy="30" r="2.2" fill="#d4d4dc" stroke="#262626" strokeWidth="0.6" />
+    </svg>
+  )
+}
+
+function ClipsHangerFrontSvg() {
+  return (
+    <svg
+      className="sr-rack-hanger sr-rack-hanger--clips"
+      viewBox="0 0 160 60"
+      fill="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="sr-clips-rod-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="30%" stopColor="#c8c8d2" />
+          <stop offset="70%" stopColor="#5a5a66" />
+          <stop offset="100%" stopColor="#222228" />
+        </linearGradient>
+      </defs>
+      {/* Tramo frontal del lazo */}
+      <path
+        d="M80 4 C88 5, 89 13, 85 19 C82 22, 80 23, 80 27"
+        stroke="url(#sr-wire-grad-front)"
+        strokeWidth="2.6"
         strokeLinecap="round"
       />
       {/* Cuello del gancho */}
       <line
-        x1="60"
+        x1="80"
         y1="26"
-        x2="60"
-        y2="32"
-        stroke="var(--sr-hanger-wire, #262626)"
-        strokeWidth="2.4"
+        x2="80"
+        y2="31"
+        stroke="url(#sr-wire-grad-front)"
+        strokeWidth="2.6"
         strokeLinecap="round"
       />
-      {/* Hombros del gancho apoyados directamente sobre la tarjeta */}
-      <path
-        d="M8 58 L56 32 Q60 30 64 32 L112 58"
-        stroke={
-          isCenter
-            ? 'var(--sr-hanger-shoulder, #262626)'
-            : 'var(--sr-hanger-shoulder-muted, #3a3a40)'
-        }
-        strokeWidth={isCenter ? '4' : '3.4'}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      {/* Barra horizontal metálica con topes */}
+      <rect
+        x="24"
+        y="29"
+        width="112"
+        height="4"
+        rx="2"
+        fill="url(#sr-clips-rod-grad)"
+        stroke="#33333a"
+        strokeWidth="0.6"
       />
-      {/* Remache central sutil */}
-      <circle cx="60" cy="31" r="2.2" fill="var(--color-accent, #48119A)" />
+      {/* Topes en los extremos de la barra */}
+      <circle cx="24" cy="31" r="2.5" fill="#44444e" />
+      <circle cx="136" cy="31" r="2.5" fill="#44444e" />
     </svg>
+  )
+}
+
+function HangerClipsFront() {
+  return (
+    <div className="sr-rack-clips-layer" aria-hidden="true">
+      {/* Pinza izquierda */}
+      <svg className="sr-rack-clip sr-rack-clip--left" viewBox="0 0 16 28" fill="none">
+        <rect x="3" y="1" width="10" height="26" rx="2" fill="#a0a0ab" stroke="#222228" strokeWidth="1" />
+        <line x1="4" y1="12" x2="12" y2="12" stroke="#222228" strokeWidth="1.5" />
+        <rect x="2" y="18" width="12" height="8" rx="1.5" fill="#44444e" stroke="#111116" strokeWidth="0.8" />
+      </svg>
+      {/* Pinza derecha */}
+      <svg className="sr-rack-clip sr-rack-clip--right" viewBox="0 0 16 28" fill="none">
+        <rect x="3" y="1" width="10" height="26" rx="2" fill="#a0a0ab" stroke="#222228" strokeWidth="1" />
+        <line x1="4" y1="12" x2="12" y2="12" stroke="#222228" strokeWidth="1.5" />
+        <rect x="2" y="18" width="12" height="8" rx="1.5" fill="#44444e" stroke="#111116" strokeWidth="0.8" />
+      </svg>
+    </div>
   )
 }
 
@@ -1042,13 +1132,18 @@ function HangingCollectionRack({
       >
         {/* Tramo trasero de los lazos de los ganchos (z-index por detrás de la barra) */}
         <div className="sr-rack-stage sr-rack-stage--back" aria-hidden="true">
-          {visibleGarments.map(({ garment, offset }) => (
+          {visibleGarments.map(({ garment, offset, index }) => (
             <div
               key={`back-${garment.id}`}
               data-offset={offset}
               className="sr-rack-item sr-rack-item--back"
+              style={{ '--rack-delay': `${(index * 0.42) % 2.5}s` } as React.CSSProperties}
             >
-              <HangerBackSvg />
+              <div className="sr-rack-sway">
+                <div className="sr-rack-sway-inner">
+                  <HangerBackSvg />
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -1060,6 +1155,7 @@ function HangingCollectionRack({
         <div className="sr-rack-stage">
           {visibleGarments.map(({ garment, index, offset }) => {
             const isCenter = offset === 0
+            const isClips = garment.tipoGancho === 'pinzas'
 
             return (
               <button
@@ -1076,30 +1172,38 @@ function HangingCollectionRack({
                   setActiveIndex(index)
                 }}
                 className="sr-rack-item"
+                style={{ '--rack-delay': `${(index * 0.42) % 2.5}s` } as React.CSSProperties}
               >
                 <div className="sr-rack-sway">
-                  {/* Gancho minimalista apoyado en la barra */}
-                  <HangerFrontSvg isCenter={isCenter} />
+                  <div className="sr-rack-sway-inner">
+                    {/* Gancho: hombros de madera o barra de pinzas */}
+                    {isClips ? <ClipsHangerFrontSvg /> : <ShoulderHangerFrontSvg />}
 
-                  {/* Etiqueta en pill sobre algunas prendas */}
-                  {garment.badge && (
-                    <span
-                      className={`sr-rack-badge sr-rack-badge--${garment.badge.variant}`}
-                    >
-                      {garment.badge.text}
-                    </span>
-                  )}
+                    {/* Etiqueta en pill sujeta al gancho con hilo */}
+                    {garment.badge && (
+                      <span
+                        className={`sr-rack-badge sr-rack-badge--${garment.badge.variant}`}
+                      >
+                        {garment.badge.text}
+                      </span>
+                    )}
 
-                  {/* Foto de la prenda */}
-                  <div className="sr-rack-garment-frame">
-                    <div className="sr-rack-garment-card">
+                    {/* Prenda recortada sola, sin marco rectangular ni fondo */}
+                    <div className="sr-rack-garment-cutout">
                       <img
-                        src={garment.imagen}
+                        src={garment.recorte}
                         alt={garment.nombre}
                         draggable={false}
-                        className="sr-rack-garment-img"
+                        className="sr-rack-cutout-img"
                       />
+                      {/* Si es jean con pinzas, se muestran por delante de la tela */}
+                      {isClips && <HangerClipsFront />}
                     </div>
+
+                    {/* Pill flotante que se muestra en hover / focus-visible */}
+                    <span className="sr-rack-hover-title" aria-hidden="true">
+                      {garment.nombre}
+                    </span>
                   </div>
                 </div>
 

@@ -23,6 +23,8 @@ export interface ItemResponseDto {
   tallas: string[]
   imagen: string
   distanciaKm: number
+  recorte?: string
+  tipoGancho?: 'hombros' | 'pinzas'
 }
 
 export interface ItemFiltersDto {
