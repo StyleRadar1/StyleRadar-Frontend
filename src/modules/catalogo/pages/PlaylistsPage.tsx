@@ -132,7 +132,6 @@ export default function PlaylistsPage() {
   // Navegación por teclado y en el vinilo interactivo
   const STEP_DEGREES = 45
   const [vinylStepIndex, setVinylStepIndex] = useState(0)
-  const [stepDirection, setStepDirection] = useState<1 | -1>(1)
   const [vinylRotation, setVinylRotation] = useState(0)
   const [isDraggingVinyl, setIsDraggingVinyl] = useState(false)
   const [isSnappingVinyl, setIsSnappingVinyl] = useState(false)
@@ -162,9 +161,8 @@ export default function PlaylistsPage() {
   }, [])
 
   const stepVinylPlaylist = useCallback(
-    (dir: 1 | -1) => {
-      if (carouselPlaylists.length === 0) return
-      setStepDirection(dir)
+    (dir: number) => {
+      if (carouselPlaylists.length === 0 || dir === 0) return
       setIsSnappingVinyl(true)
       setVinylRotation((prev) => prev + dir * STEP_DEGREES)
       setVinylStepIndex((prev) => {
@@ -183,7 +181,6 @@ export default function PlaylistsPage() {
       const currentNorm = ((vinylStepIndex % total) + total) % total
       const diff = targetIdx - currentNorm
       if (diff === 0) return
-      setStepDirection(diff > 0 ? 1 : -1)
       setIsSnappingVinyl(true)
       setVinylRotation((prev) => prev + diff * STEP_DEGREES)
       setVinylStepIndex(((targetIdx % total) + total) % total)
@@ -248,8 +245,6 @@ export default function PlaylistsPage() {
       stepDelta !== dragSessionRef.current.lastStepDelta &&
       carouselPlaylists.length > 0
     ) {
-      const diff = stepDelta - dragSessionRef.current.lastStepDelta
-      setStepDirection(diff >= 0 ? 1 : -1)
       dragSessionRef.current.lastStepDelta = stepDelta
       const total = carouselPlaylists.length
       const nextIndex =
@@ -281,8 +276,6 @@ export default function PlaylistsPage() {
       snappedStepDelta !== dragSessionRef.current.lastStepDelta &&
       carouselPlaylists.length > 0
     ) {
-      const diff = snappedStepDelta - dragSessionRef.current.lastStepDelta
-      setStepDirection(diff >= 0 ? 1 : -1)
       const total = carouselPlaylists.length
       const nextIndex =
         (((dragSessionRef.current.baseStepIndex + snappedStepDelta) % total) +
@@ -330,29 +323,21 @@ export default function PlaylistsPage() {
       .slice(0, 4)
   }, [playlists, selectedPlaylist?.id])
 
-  // Grupo de 3 polaroids visibles que rota en loop por la lista filtrada (Todas / Creadas por ti / Guardadas)
-  const polaroidSlots = useMemo(() => {
+  // Ranuras del carrusel de vinilos tipo Coverflow (central y laterales)
+  const vinylCoverflowSlots = useMemo(() => {
     const total = carouselPlaylists.length
     if (total === 0) return []
-    const count = Math.min(3, total)
-    const items: { playlist: PlaylistDto; slot: 0 | 1 | 2; baseRotate: number }[] = []
-    const rotations = [-13, 14, -10] as const
-    for (let i = 0; i < count; i++) {
-      const idx = (((vinylStepIndex + i) % total) + total) % total
-      items.push({
+    const currentNorm = ((vinylStepIndex % total) + total) % total
+    const offsets = total >= 5 ? [-2, -1, 0, 1, 2] : total >= 3 ? [-1, 0, 1] : [0]
+    return offsets.map((offset) => {
+      const idx = (((currentNorm + offset) % total) + total) % total
+      return {
         playlist: carouselPlaylists[idx],
-        slot: i as 0 | 1 | 2,
-        baseRotate: rotations[i],
-      })
-    }
-    return items
+        offset,
+        isCenter: offset === 0,
+      }
+    })
   }, [carouselPlaylists, vinylStepIndex])
-
-  const polaroidSlotClasses = [
-    'sr-polaroid-card sr-polaroid-card--slot-0',
-    'sr-polaroid-card sr-polaroid-card--slot-1',
-    'sr-polaroid-card sr-polaroid-card--slot-2',
-  ] as const
 
   // Playlist activa actual sobre el disco de vinilo
   const currentVinylPlaylist = useMemo(() => {
@@ -363,6 +348,9 @@ export default function PlaylistsPage() {
         carouselPlaylists.length)
     return carouselPlaylists[idx] ?? null
   }, [carouselPlaylists, vinylStepIndex])
+
+  // Mostrar u ocultar la descripción al oprimir en el disco
+  const [showVinylDesc, setShowVinylDesc] = useState(false)
 
   // Edición interactiva de la descripción de la playlist activa
   const [isEditingVinylDesc, setIsEditingVinylDesc] = useState(false)
@@ -1198,27 +1186,26 @@ export default function PlaylistsPage() {
         )}
 
         {/* ========================================================== */}
-        {/* SECCIÓN FULL-SCREEN: VINILO GIRATORIO + 3 POLAROIDS SOBRE DISCO */}
+        {/* SECCIÓN FULL-SCREEN: CARRUSEL 3D COVERFLOW DE VINILOS */}
         {/* ========================================================== */}
-        {polaroidSlots.length > 0 && (
+        {carouselPlaylists.length > 0 && (
           <section
             aria-label="Selección editorial en vinilo y polaroids"
             className="sr-vinyl-showcase"
           >
             <div className="sr-vinyl-showcase__stage">
-              {/* Sello editorial + Pestañas (Todas / Creadas por ti / Guardadas) arriba a la derecha */}
-              <div className="sr-vinyl-showcase__kicker">
-                <div>
+              {/* Barra superior centrada: Sello editorial + Pestañas */}
+              <div className="sr-vinyl-showcase__top">
+                <div className="sr-vinyl-top-kicker">
                   <span>EDICIÓN VINILO · BOGOTÁ</span>
                   <p>
                     {carouselPlaylists.length}{' '}
                     {carouselPlaylists.length === 1
-                      ? 'colección destacada para explorar'
+                      ? 'colección destacada'
                       : 'colecciones destacadas para explorar'}
                   </p>
                 </div>
 
-                {/* Selector de pestañas integrado en el vinilo nuevo */}
                 <div
                   className="sr-vinyl-tabs"
                   role="tablist"
@@ -1269,172 +1256,32 @@ export default function PlaylistsPage() {
                 </div>
               </div>
 
-              {/* Disco de vinilo grande a la izquierda, recortado por el borde e interactivo */}
-              <div className="sr-vinyl-disc-wrap">
-                <div
-                  className={`sr-vinyl-disc-idle ${
-                    isDraggingVinyl ? 'is-paused' : ''
-                  }`}
-                >
-                  <div
-                    ref={discRef}
-                    role="slider"
-                    tabIndex={0}
-                    aria-label="Disco de vinilo interactivo: arrastra o gira para explorar las playlists"
-                    aria-valuemin={1}
-                    aria-valuemax={carouselPlaylists.length}
-                    aria-valuenow={
-                      (((vinylStepIndex % carouselPlaylists.length) +
-                        carouselPlaylists.length) %
-                        carouselPlaylists.length) +
-                      1
-                    }
-                    onPointerDown={handleVinylPointerDown}
-                    onPointerMove={handleVinylPointerMove}
-                    onPointerUp={handleVinylPointerUp}
-                    onPointerCancel={handleVinylPointerUp}
-                    onWheel={handleVinylWheel}
-                    style={{
-                      transform: `rotate(${vinylRotation}deg)`,
-                      transition:
-                        isSnappingVinyl && !prefersReducedMotion
-                          ? 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)'
-                          : 'none',
-                    }}
-                    className={`sr-vinyl-disc-interactive ${
-                      isDraggingVinyl ? 'is-dragging' : ''
-                    }`}
-                  >
-                    <div className="sr-vinyl-label">
-                      <img
-                        src={
-                          currentVinylPlaylist?.portadaUrl ||
-                          '/img/productos/sueter-de-canale-crudo.jpg'
-                        }
-                        alt={currentVinylPlaylist?.nombre || 'Portada del vinilo'}
-                        className="sr-vinyl-label__art"
-                        draggable={false}
-                      />
-                      <div className="sr-vinyl-label__art-overlay" />
-                      <div className="sr-vinyl-label__ring" />
-                      <div className="sr-vinyl-spindle" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tres polaroids sobre la superficie y el borde derecho del disco */}
-              <div className="sr-polaroids-stack">
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {polaroidSlots.map(({ playlist: pl, slot, baseRotate }) => {
-                    const count = pl.prendas.length
-                    const prendasLabel = `${count} ${
-                      count === 1 ? 'prenda' : 'prendas'
-                    }`
-
-                    return (
-                      <motion.div
-                        layout={!prefersReducedMotion}
-                        key={pl.id}
-                        initial={
-                          prefersReducedMotion
-                            ? { opacity: 0, rotate: baseRotate }
-                            : {
-                                opacity: 0,
-                                x: stepDirection > 0 ? 34 : -34,
-                                y: stepDirection > 0 ? 26 : -26,
-                                rotate: baseRotate + (stepDirection > 0 ? 7 : -7),
-                              }
-                        }
-                        animate={{
-                          opacity: 1,
-                          x: 0,
-                          y: 0,
-                          rotate: baseRotate,
-                        }}
-                        exit={
-                          prefersReducedMotion
-                            ? { opacity: 0, rotate: baseRotate }
-                            : {
-                                opacity: 0,
-                                x: stepDirection > 0 ? -34 : 34,
-                                y: stepDirection > 0 ? -26 : 26,
-                                rotate: baseRotate + (stepDirection > 0 ? -7 : 7),
-                              }
-                        }
-                        whileHover={
-                          prefersReducedMotion
-                            ? undefined
-                            : {
-                                y: -8,
-                                rotate: baseRotate * 0.35,
-                                scale: 1.03,
-                              }
-                        }
-                        transition={{
-                          duration: prefersReducedMotion ? 0.18 : 0.48,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
-                        className={polaroidSlotClasses[slot]}
-                      >
-                        <Link
-                          to={`/playlists/${pl.id}`}
-                          onClick={(e) => {
-                            if (didDragVinylRef.current) {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              return
-                            }
-                            setSelectedLocalId(pl.id)
-                          }}
-                          className="block h-full w-full text-inherit no-underline focus:outline-none"
-                          aria-label={`Ver playlist ${pl.nombre} (${prendasLabel})`}
-                        >
-                          <div className="sr-polaroid-card__photo">
-                            <img
-                              src={
-                                pl.portadaUrl ||
-                                '/img/productos/sueter-de-canale-crudo.jpg'
-                              }
-                              alt={pl.nombre}
-                              loading="lazy"
-                              draggable={false}
-                            />
-                          </div>
-                          <div className="sr-polaroid-card__caption">
-                            <span className="sr-polaroid-card__title">
-                              {pl.nombre}
-                            </span>
-                            <span className="sr-polaroid-card__tag">
-                              {prendasLabel}
-                            </span>
-                          </div>
-                        </Link>
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
-              </div>
-
-              {/* Panel editorial interactivo de la playlist activa al lado derecho del vinilo */}
+              {/* Título de póster gigante y centrado */}
               {currentVinylPlaylist && (
-                <div className="sr-vinyl-active-details">
+                <div className="sr-vinyl-center-hero">
                   <div className="sr-vinyl-active-badge">
                     <span>● Colección activa</span>
                   </div>
 
-                  <AnimatePresence mode="wait">
-                    <motion.h2
-                      key={currentVinylPlaylist.id}
-                      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={prefersReducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.97 }}
-                      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                      className="sr-vinyl-active-title"
-                    >
-                      {currentVinylPlaylist.nombre}
-                    </motion.h2>
-                  </AnimatePresence>
+                  <Link
+                    to={`/playlists/${currentVinylPlaylist.id}`}
+                    onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
+                    className="sr-vinyl-center-title-link"
+                    title={`Ver colección ${currentVinylPlaylist.nombre}`}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.h2
+                        key={currentVinylPlaylist.id}
+                        initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={prefersReducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.97 }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                        className="sr-vinyl-active-title"
+                      >
+                        {currentVinylPlaylist.nombre}
+                      </motion.h2>
+                    </AnimatePresence>
+                  </Link>
 
                   <div className="sr-vinyl-active-meta">
                     <span>
@@ -1446,101 +1293,236 @@ export default function PlaylistsPage() {
                     <span className="sr-vinyl-active-meta__chip">
                       {currentVinylPlaylist.visibilidad || 'Pública'}
                     </span>
-                  </div>
-
-                  <div className="sr-vinyl-active-desc-wrap">
-                    {!isEditingVinylDesc ? (
-                      <div className="sr-vinyl-desc-display">
-                        <p className="sr-vinyl-desc-text">
-                          {currentVinylPlaylist.descripcion ||
-                            'Añade una descripción para inspirar tu estilo...'}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setVinylDescDraft(currentVinylPlaylist.descripcion || '')
-                            setIsEditingVinylDesc(true)
-                          }}
-                          className="sr-vinyl-desc-edit-btn"
-                          aria-label="Editar descripción de la playlist"
-                        >
-                          <svg
-                            className="w-3.5 h-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                            />
-                          </svg>
-                          <span>Editar descripción</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="sr-vinyl-desc-edit-box">
-                        <textarea
-                          value={vinylDescDraft}
-                          onChange={(e) => setVinylDescDraft(e.target.value)}
-                          placeholder="Escribe una pequeña descripción para esta playlist..."
-                          rows={3}
-                          maxLength={280}
-                          className="sr-vinyl-desc-textarea"
-                          autoFocus
-                        />
-                        <div className="sr-vinyl-desc-actions">
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingVinylDesc(false)}
-                            className="sr-vinyl-desc-cancel-btn"
-                            disabled={isSavingVinylDesc}
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSaveVinylDesc}
-                            className="sr-vinyl-desc-save-btn"
-                            disabled={isSavingVinylDesc}
-                          >
-                            {isSavingVinylDesc ? 'Guardando...' : 'Guardar'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <Link
-                    to={`/playlists/${currentVinylPlaylist.id}`}
-                    className="sr-vinyl-active-cta"
-                    onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
-                  >
-                    <span>Explorar colección</span>
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    <span>·</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowVinylDesc((prev) => !prev)}
+                      className="sr-vinyl-meta-desc-btn"
+                      aria-expanded={showVinylDesc}
+                      aria-label={showVinylDesc ? 'Cerrar descripción' : 'Ver descripción'}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                      />
-                    </svg>
-                  </Link>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>{showVinylDesc ? 'Ocultar descripción' : 'Ver descripción'}</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
-              {/* Controles discretos e indicador de posición en violeta #48119A */}
-              <div className="sr-vinyl-controls">
-                <span className="sr-vinyl-controls__hint">
-                  Arrastra el vinilo para girar
-                </span>
+              {/* Pista 3D con disco central y discos laterales en perspectiva */}
+              <div className="sr-vinyl-coverflow-track">
+                {vinylCoverflowSlots.map(({ playlist: pl, offset, isCenter }) => {
+                  if (isCenter) {
+                    return (
+                      <div
+                        key={pl.id}
+                        className="sr-vinyl-slot sr-vinyl-slot--center"
+                        onClick={() => setShowVinylDesc((prev) => !prev)}
+                        title="Toca para ver o modificar la descripción"
+                      >
+                        <div
+                          className={`sr-vinyl-disc-idle ${
+                            isDraggingVinyl ? 'is-paused' : ''
+                          }`}
+                        >
+                          <div
+                            ref={discRef}
+                            role="slider"
+                            tabIndex={0}
+                            aria-label="Disco de vinilo central: arrastra o pulsa para ver la descripción"
+                            aria-valuemin={1}
+                            aria-valuemax={carouselPlaylists.length}
+                            aria-valuenow={
+                              (((vinylStepIndex % carouselPlaylists.length) +
+                                carouselPlaylists.length) %
+                                carouselPlaylists.length) +
+                              1
+                            }
+                            onPointerDown={handleVinylPointerDown}
+                            onPointerMove={handleVinylPointerMove}
+                            onPointerUp={handleVinylPointerUp}
+                            onPointerCancel={handleVinylPointerUp}
+                            onWheel={handleVinylWheel}
+                            style={{
+                              transform: `rotate(${vinylRotation}deg)`,
+                              transition:
+                                isSnappingVinyl && !prefersReducedMotion
+                                  ? 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)'
+                                  : 'none',
+                            }}
+                            className={`sr-vinyl-disc-interactive ${
+                              isDraggingVinyl ? 'is-dragging' : ''
+                            }`}
+                          >
+                            <div className="sr-vinyl-label">
+                              <img
+                                src={
+                                  pl.portadaUrl ||
+                                  '/img/productos/sueter-de-canale-crudo.jpg'
+                                }
+                                alt={pl.nombre}
+                                className="sr-vinyl-label__art"
+                                draggable={false}
+                              />
+                              <div className="sr-vinyl-label__art-overlay" />
+                              <div className="sr-vinyl-label__ring" />
+                              <div className="sr-vinyl-spindle" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="sr-vinyl-slot__hint-pill">
+                          {showVinylDesc ? 'Cerrar descripción ✕' : 'Toca el disco para ver descripción ℹ'}
+                        </span>
+                      </div>
+                    )
+                  }
+
+                  // Discos laterales
+                  return (
+                    <div
+                      key={`${pl.id}-${offset}`}
+                      className={`sr-vinyl-slot sr-vinyl-slot--lateral sr-vinyl-slot--offset-${offset}`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => stepVinylPlaylist(offset)}
+                        className="sr-vinyl-disc-interactive sr-vinyl-disc--lateral"
+                        aria-label={`Girar a playlist ${pl.nombre}`}
+                        title={`Girar a ${pl.nombre}`}
+                      >
+                        <div className="sr-vinyl-label">
+                          <img
+                            src={
+                              pl.portadaUrl ||
+                              '/img/productos/sueter-de-canale-crudo.jpg'
+                            }
+                            alt={pl.nombre}
+                            className="sr-vinyl-label__art"
+                            draggable={false}
+                          />
+                          <div className="sr-vinyl-label__art-overlay" />
+                          <div className="sr-vinyl-label__ring" />
+                          <div className="sr-vinyl-spindle" />
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedLocalId(pl.id)
+                          navigate(`/playlists/${pl.id}`)
+                        }}
+                        className="sr-vinyl-slot__lateral-caption"
+                        title={`Ver colección ${pl.nombre}`}
+                      >
+                        {pl.nombre}
+                      </button>
+                    </div>
+                  )
+                })}
+
+                {/* Popover / Tarjeta flotante interactiva con la descripción al oprimir */}
+                <AnimatePresence>
+                  {showVinylDesc && currentVinylPlaylist && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, y: 14 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: 14 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                      className="sr-vinyl-desc-popover"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="sr-vinyl-desc-popover__header">
+                        <div className="sr-vinyl-desc-popover__heading">
+                          <span className="sr-vinyl-desc-popover__eyebrow">Descripción de la playlist</span>
+                          <h3 className="sr-vinyl-desc-popover__title">{currentVinylPlaylist.nombre}</h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowVinylDesc(false)}
+                          className="sr-vinyl-desc-popover__close"
+                          aria-label="Cerrar descripción"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="sr-vinyl-desc-popover__body">
+                        {!isEditingVinylDesc ? (
+                          <div className="sr-vinyl-desc-display">
+                            <p className="sr-vinyl-desc-text">
+                              {currentVinylPlaylist.descripcion ||
+                                'Esta playlist aún no tiene una descripción. Pulsa abajo para agregar una.'}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVinylDescDraft(currentVinylPlaylist.descripcion || '')
+                                setIsEditingVinylDesc(true)
+                              }}
+                              className="sr-vinyl-desc-edit-btn"
+                              aria-label="Editar descripción de la playlist"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                              <span>Editar descripción</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="sr-vinyl-desc-edit-box">
+                            <textarea
+                              value={vinylDescDraft}
+                              onChange={(e) => setVinylDescDraft(e.target.value)}
+                              placeholder="Escribe una pequeña descripción para esta playlist..."
+                              rows={3}
+                              maxLength={280}
+                              className="sr-vinyl-desc-textarea"
+                              autoFocus
+                            />
+                            <div className="sr-vinyl-desc-actions">
+                              <button
+                                type="button"
+                                onClick={() => setIsEditingVinylDesc(false)}
+                                className="sr-vinyl-desc-cancel-btn"
+                                disabled={isSavingVinylDesc}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleSaveVinylDesc}
+                                className="sr-vinyl-desc-save-btn"
+                                disabled={isSavingVinylDesc}
+                              >
+                                {isSavingVinylDesc ? 'Guardando...' : 'Guardar'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="sr-vinyl-desc-popover__footer">
+                        <Link
+                          to={`/playlists/${currentVinylPlaylist.id}`}
+                          onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
+                          className="sr-vinyl-desc-popover__cta"
+                        >
+                          <span>Ver prendas de la colección</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        </Link>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Controles discretos e indicador de posición centrados */}
+              <div className="sr-vinyl-controls-center">
                 <div className="sr-vinyl-controls__bar">
                   <button
                     type="button"
@@ -1590,6 +1572,9 @@ export default function PlaylistsPage() {
                     ›
                   </button>
                 </div>
+                <span className="sr-vinyl-controls__hint">
+                  Toca el disco para ver o editar la descripción · Usa las flechas o arrastra para girar
+                </span>
               </div>
             </div>
           </section>
