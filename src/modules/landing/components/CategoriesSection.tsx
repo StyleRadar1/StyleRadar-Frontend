@@ -1,4 +1,4 @@
-﻿import { useState, type KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge, Button, Logo } from '@/modules/core/design-system'
 
