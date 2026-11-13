@@ -198,7 +198,7 @@ export function RackCarousel({
                   >
                     {/* Pestaña superior plana en violeta (#48119A) */}
                     {isSelected && (
-                      <div className="absolute -top-6 -left-px bg-[#48119A] px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-white">
+                      <div className="absolute -top-6 -left-px bg-[#48119A] px-2.5 py-0.5 text-[0.625rem] font-medium tracking-wide text-white">
                         Prenda
                       </div>
                     )}
@@ -206,7 +206,7 @@ export function RackCarousel({
                     {/* Etiqueta flotante superpuesta ("-20%", "QUEDAN 2", "NUEVO") */}
                     {item.badge && (
                       <span
-                        className={`absolute top-3 left-1/2 z-20 -translate-x-1/2 -rotate-6 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                        className={`absolute top-3 left-1/2 z-20 -translate-x-1/2 -rotate-6 px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wider ${
                           item.badge === 'NUEVO'
                             ? 'bg-[#E8DCCB] text-[#262626]'
                             : 'bg-[#262626] text-white'

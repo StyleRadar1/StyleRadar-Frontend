@@ -1,525 +1,87 @@
-/* ==========================================================================
-   Hero Editorial de Detalle de Prenda (StyleRadar)
-   Inspirado en composición de vitrina flotante de 3 columnas
-   ========================================================================== */
+/* =====================================================================
+   StyleRadar — Hero de Detalle de Prenda (/catalogo/:id)
+   Inspirado en layout de 3 columnas: Info (izq) | Prenda (centro) | Selectores (der)
+   ===================================================================== */
 
-:root {
-  --sr-item-hero-radius: 32px;
-  --sr-item-hero-bg: radial-gradient(circle at 50% 46%, #3d0e85 0%, #280a56 38%, #1c1524 75%, #131018 100%);
-  --sr-item-hero-border: rgba(139, 92, 246, 0.28);
-  --sr-item-glow-color: rgba(167, 139, 250, 0.42);
-  --sr-item-shadow-color: rgba(0, 0, 0, 0.65);
-}
-
-html[data-theme='light'] {
-  --sr-item-hero-bg: radial-gradient(circle at 50% 46%, #5013b8 0%, #350c7c 40%, #1f142b 80%, #160e20 100%);
-  --sr-item-hero-border: rgba(167, 139, 250, 0.35);
-  --sr-item-glow-color: rgba(200, 180, 255, 0.38);
-  --sr-item-shadow-color: rgba(0, 0, 0, 0.55);
-}
-
-html[data-theme='colorblind'],
-html[data-cvd='on'] {
-  --sr-item-hero-bg: radial-gradient(circle at 50% 46%, #005a8f 0%, #003b60 40%, #111a22 80%, #0a1118 100%);
-  --sr-item-hero-border: rgba(86, 180, 233, 0.35);
-  --sr-item-glow-color: rgba(86, 180, 233, 0.4);
-}
-
-/* Contenedor principal del Hero */
-.sr-item-hero {
+.sr-detail-hero-card {
   position: relative;
   width: 100%;
-  border-radius: var(--sr-item-hero-radius);
-  background: var(--sr-item-hero-bg);
-  border: 1px solid var(--sr-item-hero-border);
-  box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.55),
-    0 0 80px rgba(72, 17, 154, 0.32);
+  border-radius: 1rem;
+  border: 1px solid var(--sr-border-subtle, var(--color-border));
+  background: linear-gradient(180deg, var(--sr-surface-raised, #fcfbf9) 0%, var(--sr-superficie, #f4efe6) 100%);
+  box-shadow: 0 10px 30px var(--sr-sombra, rgba(38, 38, 38, 0.08));
+  color: var(--color-text);
   overflow: hidden;
-  padding: clamp(20px, 3.2vw, 36px);
-  color: #ffffff;
-  font-family: "Poppins", var(--font-sans, system-ui, sans-serif);
 }
 
-/* Halo luminoso ambiental centrado detrás de la prenda */
-.sr-item-hero__ambient-glow {
-  position: absolute;
-  top: 48%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: clamp(260px, 40vw, 480px);
-  height: clamp(260px, 40vw, 480px);
+html[data-theme='dark'] .sr-detail-hero-card,
+html[data-theme='oscuro'] .sr-detail-hero-card,
+html[data-tema='oscuro'] .sr-detail-hero-card {
+  background: linear-gradient(180deg, var(--sr-surface, #242031) 0%, var(--sr-fondo-oscuro, #15131c) 100%);
+}
+
+html[data-theme='colorblind'] .sr-detail-hero-card,
+html[data-theme='daltonico'] .sr-detail-hero-card,
+html[data-tema='daltonico'] .sr-detail-hero-card,
+html[data-cvd='on'] .sr-detail-hero-card {
+  background: linear-gradient(180deg, var(--sr-surface, #1f232d) 0%, var(--sr-fondo-oscuro, #14171f) 100%);
+}
+
+/* Sombra elíptica en el suelo */
+.sr-hero-shadow {
+  width: 58%;
+  height: 1.125rem;
+  margin: -0.375rem auto 0.875rem;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--sr-item-glow-color) 0%, rgba(72, 17, 154, 0.18) 45%, transparent 70%);
-  filter: blur(44px);
-  pointer-events: none;
-  z-index: 1;
+  background: radial-gradient(ellipse at center, var(--sr-sombra, rgba(0, 0, 0, 0.38)) 0%, transparent 75%);
+  filter: blur(6px);
 }
 
-/* Barra superior interna del Hero */
-.sr-item-hero__topbar {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: clamp(16px, 2.5vh, 28px);
-}
-
-.sr-item-hero__badge-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.sr-item-hero__actions-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sr-item-hero__action-btn {
-  height: 40px;
-  width: 40px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  backdrop-filter: blur(8px);
-  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-  cursor: pointer;
-}
-
-.sr-item-hero__action-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.45);
-}
-
-.sr-item-hero__action-btn.is-active {
-  background: #ffffff;
-  color: #48119a;
-  border-color: #ffffff;
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.3);
-}
-
-/* Rejilla de 3 columnas estilo referencia */
-.sr-item-hero__grid {
-  position: relative;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(24px, 3.5vw, 44px);
-  align-items: center;
-}
-
-@media (min-width: 1024px) {
-  .sr-item-hero__grid {
-    grid-template-columns: 1.15fr 1.05fr 1fr;
+/* Animaciones */
+@keyframes sr-hero-enter-img {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
   }
-}
-
-/* ==========================================================================
-   Columna Izquierda: Flechas, Título, Frase, Descripción, Botón Principal
-   ========================================================================== */
-.sr-item-hero__col-left {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* Flechas de navegación entre prendas */
-.sr-item-hero__arrows {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: clamp(12px, 2vh, 20px);
-}
-
-.sr-item-hero__arrow-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  width: 36px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
-  text-decoration: none;
-  backdrop-filter: blur(6px);
-  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.sr-item-hero__arrow-btn:hover {
-  background: #ffffff;
-  color: #262626;
-  border-color: #ffffff;
-  transform: scale(1.08);
-  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.25);
-}
-
-.sr-item-hero__title {
-  font-size: clamp(28px, 3.6vw, 46px);
-  font-weight: 900;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  color: #ffffff;
-  margin: 0;
-  text-wrap: balance;
-}
-
-.sr-item-hero__subtitle {
-  margin: 10px 0 0;
-  font-size: clamp(13px, 1.3vw, 15px);
-  font-weight: 600;
-  color: #e8dccb;
-  letter-spacing: 0.02em;
-}
-
-.sr-item-hero__desc {
-  margin: 16px 0 0;
-  font-size: clamp(12.5px, 1.15vw, 14px);
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.82);
-  max-width: 440px;
-}
-
-.sr-item-hero__cta-wrap {
-  margin-top: clamp(20px, 3vh, 32px);
-}
-
-/* Botón píldora blanca destacado */
-.sr-item-hero__cta-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 13px 28px;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #262626;
-  font-family: "Poppins", sans-serif;
-  font-size: 13.5px;
-  font-weight: 800;
-  text-decoration: none;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-  transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.sr-item-hero__cta-btn:hover {
-  background: #e8dccb;
-  transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
-}
-
-.sr-item-hero__cta-btn:active {
-  transform: translateY(0);
-}
-
-/* ==========================================================================
-   Columna Central: Prenda Flotante, Sombra Elíptica, Tienda
-   ========================================================================== */
-.sr-item-hero__col-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  padding: clamp(8px, 1.5vh, 16px) 0;
-}
-
-.sr-item-hero__stage {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 380px;
-}
-
-/* Superficie con la foto de la prenda y animación de flotación */
-.sr-item-hero__floating-card {
-  position: relative;
-  z-index: 5;
-  width: clamp(230px, 28vw, 340px);
-  aspect-ratio: 4 / 5;
-  border-radius: 24px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 20px 45px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  animation: srItemFloat 4.6s ease-in-out infinite;
-}
-
-.sr-item-hero__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* Sombra elíptica suave debajo de la prenda que reacciona a la flotación */
-.sr-item-hero__shadow {
-  width: clamp(140px, 20vw, 240px);
-  height: 18px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, var(--sr-item-shadow-color) 0%, rgba(0, 0, 0, 0) 70%);
-  margin-top: 14px;
-  animation: srItemShadowPulse 4.6s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* Caption de la tienda debajo de la sombra */
-.sr-item-hero__store-caption {
-  margin-top: 14px;
-  text-align: center;
-}
-
-.sr-item-hero__store-name {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #ffffff;
-  display: block;
-}
-
-.sr-item-hero__store-meta {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.65);
-  margin-top: 2px;
-}
-
-/* Animaciones de flotación suave */
-@keyframes srItemFloat {
-  0%, 100% {
+  to {
+    opacity: 1;
     transform: translateY(0);
   }
-  50% {
-    transform: translateY(-6px);
+}
+
+@keyframes sr-hero-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
-@keyframes srItemShadowPulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  50% {
-    transform: scale(0.9);
-    opacity: 0.45;
-  }
+.sr-hero-image-animate {
+  animation: sr-hero-enter-img 200ms cubic-bezier(0.2, 0, 0.2, 1) forwards;
 }
 
-/* ==========================================================================
-   Columna Derecha: Precio, Tallas Circulares, Stock, Contacto
-   ========================================================================== */
-.sr-item-hero__col-right {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.sr-hero-col-left {
+  animation: sr-hero-fade-in 200ms ease forwards;
+  animation-delay: 50ms;
 }
 
-.sr-item-hero__price-box {
-  margin-bottom: clamp(18px, 2.5vh, 26px);
+.sr-hero-col-right {
+  animation: sr-hero-fade-in 200ms ease forwards;
+  animation-delay: 100ms;
 }
 
-.sr-item-hero__price-main {
-  font-size: clamp(30px, 3.8vw, 48px);
-  font-weight: 900;
-  line-height: 1;
-  color: #ffffff;
-  letter-spacing: -0.02em;
+.sr-hero-image-fade {
+  transition: opacity 150ms ease;
 }
 
-.sr-item-hero__price-prev {
-  display: block;
-  margin-top: 4px;
-  font-size: 15px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
-  text-decoration: line-through;
-}
-
-/* Selector de tallas con chips circulares */
-.sr-item-hero__sizes-section {
-  margin-bottom: clamp(16px, 2vh, 24px);
-}
-
-.sr-item-hero__sizes-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
-  margin-bottom: 10px;
-}
-
-.sr-item-hero__sizes-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.sr-item-hero__size-circle {
-  height: 44px;
-  width: 44px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Poppins", sans-serif;
-  font-size: 12.5px;
-  font-weight: 800;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-  padding: 0;
-}
-
-.sr-item-hero__size-circle:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
-}
-
-/* Talla seleccionada: círculo blanco con texto grafito */
-.sr-item-hero__size-circle.is-selected {
-  background: #ffffff;
-  color: #262626;
-  border-color: #ffffff;
-  transform: scale(1.1);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.35);
-}
-
-/* Talla agotada / sin stock: deshabilitada, tachada */
-.sr-item-hero__size-circle:disabled {
-  opacity: 0.35;
-  text-decoration: line-through;
-  cursor: not-allowed;
-  border-style: dashed;
-  background: rgba(0, 0, 0, 0.25);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-/* Indicador de unidades disponibles */
-.sr-item-hero__stock-info {
-  margin-top: 10px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #c4b5fd;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sr-item-hero__stock-info.is-out {
-  color: #ffb4b4;
-}
-
-/* Caja de disponibilidad local y contacto */
-.sr-item-hero__local-box {
-  border-radius: 18px;
-  background: rgba(0, 0, 0, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  padding: 14px 16px;
-  backdrop-filter: blur(10px);
-}
-
-.sr-item-hero__local-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.sr-item-hero__rf22-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border-radius: 999px;
-  padding: 2px 8px;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.45);
-  color: #6ee7b7;
-  font-size: 10.5px;
-  font-weight: 700;
-}
-
-.sr-item-hero__local-text {
-  font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.72);
-  line-height: 1.45;
-  margin: 0;
-}
-
-/* ==========================================================================
-   Adaptación Responsive
-   ========================================================================== */
-@media (max-width: 1023px) {
-  /* Tablet: imagen arriba, texto y tallas/precio en 2 columnas */
-  .sr-item-hero__grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .sr-item-hero__col-center {
-    grid-column: 1 / -1;
-    order: -1;
-    margin-bottom: 8px;
-  }
-  .sr-item-hero__floating-card {
-    width: clamp(200px, 34vw, 280px);
-  }
-}
-
-@media (max-width: 640px) {
-  /* Móvil: 1 columna, foto arriba, contenido apilado, sin scroll horizontal */
-  .sr-item-hero {
-    padding: 18px 16px;
-    border-radius: 24px;
-  }
-  .sr-item-hero__grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  .sr-item-hero__col-center {
-    grid-column: 1;
-    order: -1;
-  }
-  .sr-item-hero__floating-card {
-    width: min(72vw, 240px);
-  }
-  .sr-item-hero__cta-btn {
-    width: 100%;
-  }
-}
-
-/* Respeta prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  .sr-item-hero__floating-card,
-  .sr-item-hero__shadow {
+  .sr-hero-image-animate,
+  .sr-hero-col-left,
+  .sr-hero-col-right,
+  .sr-hero-image-fade {
     animation: none !important;
-  }
-  .sr-item-hero__action-btn,
-  .sr-item-hero__arrow-btn,
-  .sr-item-hero__size-circle,
-  .sr-item-hero__cta-btn {
     transition: none !important;
   }
 }
-

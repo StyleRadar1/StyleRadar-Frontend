@@ -5,7 +5,12 @@
    ========================================================================== */
 
 .sr-rack-section {
+  --sr-hanger-wire: #262626;
+  --sr-hanger-shoulder: #262626;
+  --sr-hanger-shoulder-muted: #3a3a40;
+  --garment-h: clamp(14.375rem, 31vw, 20rem);
   position: relative;
+  z-index: 10;
   width: 100%;
   background: linear-gradient(180deg, #fcfbf9 0%, #f4eee4 55%, #faf8f5 100%);
   color: #262626;
@@ -46,7 +51,7 @@
 .sr-rack-divider {
   display: inline-block;
   width: 1px;
-  height: 14px;
+  height: 0.875rem;
   background-color: rgba(38, 38, 38, 0.32);
   flex-shrink: 0;
 }
@@ -55,7 +60,7 @@
 .sr-rack-viewport {
   position: relative;
   width: 100%;
-  height: clamp(320px, 44vw, 450px);
+  height: clamp(20rem, 44vw, 28.125rem);
   touch-action: pan-y;
   cursor: grab;
   outline: none;
@@ -65,28 +70,52 @@
   cursor: grabbing;
 }
 
+.sr-rack-viewport:focus,
 .sr-rack-viewport:focus-visible {
-  box-shadow: inset 0 0 0 2px #48119a;
+  outline: none;
+  box-shadow: none;
 }
 
-/* Barra metálica horizontal fina de lado a lado con brillo sutil */
+/* Barra metálica horizontal fina de lado a lado con brillo sutil y topes en los extremos */
 .sr-rack-bar {
   position: absolute;
-  top: 22px;
+  top: 1.5rem;
   left: 0;
   right: 0;
-  height: 5px;
-  z-index: 12;
+  height: 0.375rem;
+  z-index: 15;
   background: linear-gradient(
     180deg,
-    #6b6b76 0%,
-    #262626 42%,
-    #8c8c98 72%,
-    #262626 100%
+    #d8d8e2 0%,
+    #ffffff 20%,
+    #8e8e99 50%,
+    #4a4a52 80%,
+    #2a2a30 100%
   );
   box-shadow:
-    0 2px 5px rgba(38, 38, 38, 0.2),
-    0 1px 0 rgba(255, 255, 255, 0.65) inset;
+    0 4px 10px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+.sr-rack-bar::before,
+.sr-rack-bar::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #9a9aa5 55%, #3a3a42 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.sr-rack-bar::before {
+  left: 0;
+}
+
+.sr-rack-bar::after {
+  right: 0;
 }
 
 /* Contenedor relativo centrado donde se posicionan las prendas por offset */
@@ -97,92 +126,121 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  z-index: 20;
 }
 
-/* Cada prenda colgada */
+/* Capa del tramo trasero de los ganchos que pasa por detrás de la barra */
+.sr-rack-stage--back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Cada prenda colgada: una sola línea de referencia anclada al centro de la barra */
 .sr-rack-item {
   position: absolute;
-  top: 11px;
+  top: 0.6875rem;
   left: 50%;
-  width: clamp(210px, 22vw, 276px);
-  transform-origin: 50% 11px;
-  transition:
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform, opacity;
+  width: clamp(12.5rem, 21vw, 14.375rem);
+  transform-origin: top center;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
   background: transparent;
   border: 0;
   padding: 0;
   cursor: pointer;
   text-align: center;
+  outline: none;
+  border-radius: 1rem;
 }
 
-.sr-rack-item:focus-visible .sr-rack-garment-frame {
-  outline: 2px solid #48119a;
-  outline-offset: 4px;
+.sr-rack-item--back {
+  pointer-events: none;
+  cursor: default;
 }
 
-/* Posiciones por offset respecto a la prenda central (0) */
+.sr-rack-item:focus {
+  outline: none;
+}
+
+.sr-rack-item:hover,
+.sr-rack-item:active {
+  outline: none;
+}
+
+.sr-rack-item:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #48119a);
+  outline-offset: 6px;
+  border-radius: 1rem;
+}
+
+/* Posiciones por offset respecto a la prenda central (0): sin filtros que alteren los colores de las prendas */
 .sr-rack-item[data-offset='0'] {
-  transform: translate3d(-50%, 0, 0) scale(1);
+  transform: translate3d(-50%, 0, 0) scale(1.04);
   z-index: 30;
   opacity: 1;
   filter: none;
 }
 
 .sr-rack-item[data-offset='-1'] {
-  transform: translate3d(calc(-50% - clamp(150px, 19.5vw, 245px)), 6px, 0) scale(0.76);
+  transform: translate3d(calc(-50% - clamp(9.375rem, 19.5vw, 15.3125rem)), 0, 0) scale(0.82);
   z-index: 24;
-  opacity: 0.86;
-  filter: contrast(0.96) brightness(0.97);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='1'] {
-  transform: translate3d(calc(-50% + clamp(150px, 19.5vw, 245px)), 6px, 0) scale(0.76);
+  transform: translate3d(calc(-50% + clamp(9.375rem, 19.5vw, 15.3125rem)), 0, 0) scale(0.82);
   z-index: 24;
-  opacity: 0.86;
-  filter: contrast(0.96) brightness(0.97);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='-2'] {
-  transform: translate3d(calc(-50% - clamp(275px, 35.5vw, 445px)), 12px, 0) scale(0.68);
+  transform: translate3d(calc(-50% - clamp(17.1875rem, 35.5vw, 27.8125rem)), 0, 0) scale(0.72);
   z-index: 18;
-  opacity: 0.72;
-  filter: contrast(0.93) brightness(0.95);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='2'] {
-  transform: translate3d(calc(-50% + clamp(275px, 35.5vw, 445px)), 12px, 0) scale(0.68);
+  transform: translate3d(calc(-50% + clamp(17.1875rem, 35.5vw, 27.8125rem)), 0, 0) scale(0.72);
   z-index: 18;
-  opacity: 0.72;
-  filter: contrast(0.93) brightness(0.95);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='-3'] {
-  transform: translate3d(calc(-50% - clamp(390px, 50vw, 635px)), 16px, 0) scale(0.62);
+  transform: translate3d(calc(-50% - clamp(24.375rem, 50vw, 39.6875rem)), 0, 0) scale(0.64);
   z-index: 14;
-  opacity: 0.5;
-  filter: contrast(0.9) brightness(0.93);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='3'] {
-  transform: translate3d(calc(-50% + clamp(390px, 50vw, 635px)), 16px, 0) scale(0.62);
+  transform: translate3d(calc(-50% + clamp(24.375rem, 50vw, 39.6875rem)), 0, 0) scale(0.64);
   z-index: 14;
-  opacity: 0.5;
-  filter: contrast(0.9) brightness(0.93);
+  opacity: 1;
+  filter: none;
 }
 
-/* Balanceo sutil en el gancho al pasar el cursor */
+/* Balanceo sutil de péndulo colgado de la barra (±1.6 deg) con desfase individual */
 @keyframes sr-hanger-sway {
   0% {
     transform: rotate(0deg);
   }
-  30% {
-    transform: rotate(-1.6deg);
+  25% {
+    transform: rotate(1.6deg);
   }
-  65% {
-    transform: rotate(1.25deg);
+  50% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(-1.6deg);
   }
   100% {
     transform: rotate(0deg);
@@ -190,84 +248,138 @@
 }
 
 .sr-rack-sway {
-  transform-origin: 50% 10px;
-  transition: transform 320ms ease;
+  transform-origin: top center;
+  animation: sr-hanger-sway 3.8s ease-in-out infinite;
+  animation-delay: var(--rack-delay, 0s);
 }
 
-.sr-rack-item:hover .sr-rack-sway {
-  animation: sr-hanger-sway 1.6s ease-in-out infinite;
+/* Elevación de descolgar (~0.5rem) al hover o focus-visible */
+.sr-rack-sway-inner {
+  position: relative;
+  transform-origin: top center;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Gancho minimalista (hanger) conectado a la barra */
+.sr-rack-item:hover .sr-rack-sway-inner,
+.sr-rack-item:focus-visible .sr-rack-sway-inner {
+  transform: translateY(-0.5rem);
+}
+
+/* Gancho (hanger) conectado a la barra: ~0.62 del ancho de la prenda y detrás de la tela */
 .sr-rack-hanger {
   display: block;
-  width: 96px;
-  height: 48px;
-  margin: 0 auto -6px;
+  width: 62%;
+  height: calc(3.125rem + var(--bajada, 0rem));
+  margin: 0 auto;
   position: relative;
-  z-index: 25;
   pointer-events: none;
-  filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.14));
 }
 
-/* Marco de la prenda colgada */
-.sr-rack-garment-frame {
+.sr-rack-hanger--back {
+  z-index: 10;
+  filter: none;
+}
+
+.sr-rack-hanger--shoulder {
+  z-index: 12;
+  filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.2));
+}
+
+.sr-rack-hanger--clips {
+  z-index: 12;
+  filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.2));
+}
+
+/* Prenda recortada sola, sin marco rectangular ni fondo, anclada en cuello/hombros */
+.sr-rack-garment-cutout {
   position: relative;
   width: 100%;
-  height: clamp(230px, 31vw, 325px);
+  height: var(--garment-h);
+  margin-top: calc(-1.6875rem - (var(--ancla-y, 0) * var(--garment-h)));
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 0 0.5rem;
-  transition: filter 360ms ease;
+  z-index: 20;
 }
 
-.sr-rack-item[data-offset='0'] .sr-rack-garment-frame {
-  filter: drop-shadow(0 22px 28px rgba(38, 38, 38, 0.22));
-}
-
-.sr-rack-item:not([data-offset='0']) .sr-rack-garment-frame {
-  filter: drop-shadow(0 12px 18px rgba(38, 38, 38, 0.14));
-}
-
-/* Imagen de la prenda con recorte editorial de hombros/caída que preserva proporción sin deformar */
-.sr-rack-garment-card {
-  position: relative;
-  width: 100%;
+.sr-rack-cutout-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: 100%;
-  border-radius: 22px 22px 14px 14px;
-  overflow: hidden;
-  background-color: #ece6dc;
-  border: 1px solid rgba(38, 38, 38, 0.08);
-  transition:
-    border-color 320ms ease,
-    box-shadow 320ms ease;
-}
-
-.sr-rack-item[data-offset='0'] .sr-rack-garment-card {
-  border-color: rgba(72, 17, 154, 0.32);
-  box-shadow: 0 4px 18px rgba(72, 17, 154, 0.1);
-}
-
-.sr-rack-garment-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
   display: block;
   pointer-events: none;
-  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(8px 12px 9px var(--sr-sombra));
+  user-select: none;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.sr-rack-item:hover .sr-rack-garment-img {
-  transform: scale(1.025);
+/* Pinzas metálicas para pantalones / jeans (por delante de la tela) */
+.sr-rack-clips-layer {
+  position: absolute;
+  top: -0.375rem;
+  left: 0;
+  right: 0;
+  height: 1.75rem;
+  pointer-events: none;
+  z-index: 30;
+}
+
+.sr-rack-clip {
+  position: absolute;
+  width: 1rem;
+  height: 1.625rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+
+.sr-rack-clip--left {
+  left: 24%;
+}
+
+.sr-rack-clip--right {
+  right: 24%;
+}
+
+/* Pill flotante que se muestra en hover / focus-visible: texto claro sobre fondo oscuro accesible */
+.sr-rack-hover-title {
+  position: absolute;
+  bottom: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(0.25rem);
+  width: fit-content;
+  max-width: max-content;
+  white-space: nowrap;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.32rem 0.85rem;
+  border-radius: 9999px;
+  background-color: var(--sr-fondo-oscuro, #1c1827);
+  color: var(--sr-texto-sobre-oscuro, #ffffff);
+  border: 1px solid var(--sr-borde-oscuro, rgba(255, 255, 255, 0.2));
+  box-shadow: 0 8px 18px var(--sr-sombra);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 220ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 45;
+}
+
+.sr-rack-item:hover .sr-rack-hover-title,
+.sr-rack-item:focus-visible .sr-rack-hover-title {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* Sombra elíptica suave bajo cada prenda para dar profundidad sobre el piso claro */
 .sr-rack-shadow {
   width: 68%;
-  height: 14px;
-  margin: 12px auto 0;
+  height: 0.875rem;
+  margin: 0.75rem auto 0;
   border-radius: 9999px;
   background: radial-gradient(
     ellipse at center,
@@ -285,32 +397,57 @@
   opacity: 0.55;
 }
 
-/* Etiquetas pequeñas en pill sobre las prendas */
+/* Balanceo propio de la etiqueta colgante */
+@keyframes sr-badge-sway {
+  0% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+  100% {
+    transform: rotate(-7deg);
+  }
+}
+
+/* Etiquetas pequeñas en pill sujetas al brazo izquierdo del gancho con hilo de ~0.875rem */
 .sr-rack-badge {
   position: absolute;
-  top: 34px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-5deg);
+  top: calc(3.125rem + var(--bajada, 0rem));
+  left: 0;
   z-index: 35;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.26rem 0.72rem;
+  padding: 0.22rem 0.65rem;
   border-radius: 9999px;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  box-shadow: 0 6px 16px rgba(38, 38, 38, 0.18);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   pointer-events: none;
+  transform-origin: 50% -0.875rem;
+  animation: sr-badge-sway 2.6s ease-in-out infinite;
+}
+
+/* Hilo de 0.875rem que ata la etiqueta al brazo izquierdo del gancho */
+.sr-rack-badge::before {
+  content: '';
+  position: absolute;
+  top: -0.875rem;
+  left: 50%;
+  width: 1px;
+  height: 0.875rem;
+  background-color: var(--sr-hanger-wire, #6b6b78);
+  opacity: 0.85;
 }
 
 /* "-20%" en grafito con texto blanco */
 .sr-rack-badge--discount {
   background-color: #262626;
   color: #ffffff;
-  transform: translateX(-50%) rotate(-7deg);
 }
 
 /* "NUEVO" en blanco con borde grafito */
@@ -318,14 +455,12 @@
   background-color: #ffffff;
   color: #262626;
   border: 1.5px solid #262626;
-  transform: translateX(-50%) rotate(5deg);
 }
 
 /* "SOLO N UNIDADES" en violeta con texto blanco */
 .sr-rack-badge--stock {
   background-color: #48119a;
   color: #ffffff;
-  transform: translateX(-50%) rotate(-3deg);
 }
 
 /* Pie de la prenda destacada: nombre en Poppins y botón pill outline suave */
@@ -383,7 +518,7 @@
   border-color: #48119a;
   background-color: #48119a;
   color: #ffffff;
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .sr-rack-cta:focus-visible {
@@ -393,34 +528,34 @@
 
 /* Responsive móvil: la prenda destacada ocupa ~50% del ancho y se asoman las vecinas */
 @media (max-width: 640px) {
+  .sr-rack-section {
+    --garment-h: 13.4375rem;
+  }
+
   .sr-rack-viewport {
-    height: 315px;
+    height: 19.6875rem;
   }
 
   .sr-rack-item {
     width: 48vw;
-    max-width: 205px;
-    min-width: 150px;
-  }
-
-  .sr-rack-garment-frame {
-    height: 215px;
+    max-width: 12.8125rem;
+    min-width: 9.375rem;
   }
 
   .sr-rack-item[data-offset='-1'] {
-    transform: translate3d(calc(-50% - 37vw), 8px, 0) scale(0.74);
+    transform: translate3d(calc(-50% - 37vw), 0, 0) scale(0.76);
   }
 
   .sr-rack-item[data-offset='1'] {
-    transform: translate3d(calc(-50% + 37vw), 8px, 0) scale(0.74);
+    transform: translate3d(calc(-50% + 37vw), 0, 0) scale(0.76);
   }
 
   .sr-rack-item[data-offset='-2'] {
-    transform: translate3d(calc(-50% - 68vw), 14px, 0) scale(0.62);
+    transform: translate3d(calc(-50% - 68vw), 0, 0) scale(0.64);
   }
 
   .sr-rack-item[data-offset='2'] {
-    transform: translate3d(calc(-50% + 68vw), 14px, 0) scale(0.62);
+    transform: translate3d(calc(-50% + 68vw), 0, 0) scale(0.64);
   }
 
   .sr-rack-item[data-offset='-3'],
@@ -434,16 +569,20 @@
 @media (prefers-reduced-motion: reduce) {
   .sr-rack-item,
   .sr-rack-sway,
-  .sr-rack-garment-card,
-  .sr-rack-garment-img,
+  .sr-rack-sway-inner,
+  .sr-rack-cutout-img,
   .sr-rack-shadow,
+  .sr-rack-badge,
+  .sr-rack-hover-title,
   .sr-rack-cta {
     transition: none !important;
     animation: none !important;
   }
 
-  .sr-rack-item:hover .sr-rack-sway {
+  .sr-rack-item:hover .sr-rack-sway,
+  .sr-rack-item:hover .sr-rack-sway-inner {
     animation: none !important;
+    transform: none !important;
   }
 }
 
@@ -452,6 +591,9 @@
    ========================================================================== */
 
 html[data-theme='dark'] .sr-rack-section {
+  --sr-hanger-wire: var(--color-text, #f5f3f7);
+  --sr-hanger-shoulder: var(--color-text, #f5f3f7);
+  --sr-hanger-shoulder-muted: var(--color-text-muted, #a39cae);
   background: var(--color-bg-elevated, #1c1827);
   color: var(--color-text, #f5f3f7);
   box-shadow:
@@ -469,11 +611,6 @@ html[data-theme='dark'] .sr-rack-kicker--muted {
 
 html[data-theme='dark'] .sr-rack-divider {
   background-color: var(--color-border, rgba(255, 255, 255, 0.18));
-}
-
-html[data-theme='dark'] .sr-rack-garment-card {
-  background-color: var(--color-surface, #231e32);
-  border-color: var(--color-border, rgba(255, 255, 255, 0.14));
 }
 
 html[data-theme='dark'] .sr-rack-title {
@@ -496,8 +633,7 @@ html[data-theme='dark'] .sr-rack-cta:hover {
   color: var(--color-text-on-accent, #ffffff);
 }
 
-html[data-theme='dark'] .sr-rack-viewport:focus-visible,
-html[data-theme='dark'] .sr-rack-item:focus-visible .sr-rack-garment-frame,
+html[data-theme='dark'] .sr-rack-item:focus-visible,
 html[data-theme='dark'] .sr-rack-cta:focus-visible {
   outline-color: var(--color-focus-ring, #a78bfa);
 }
@@ -516,12 +652,451 @@ html[data-cvd='on'] .sr-rack-cta:hover {
   color: #ffffff;
 }
 
-html[data-theme='colorblind'] .sr-rack-viewport:focus-visible,
-html[data-theme='colorblind'] .sr-rack-item:focus-visible .sr-rack-garment-frame,
+html[data-theme='colorblind'] .sr-rack-item:focus-visible,
 html[data-theme='colorblind'] .sr-rack-cta:focus-visible,
-html[data-cvd='on'] .sr-rack-viewport:focus-visible,
-html[data-cvd='on'] .sr-rack-item:focus-visible .sr-rack-garment-frame,
+html[data-cvd='on'] .sr-rack-item:focus-visible,
 html[data-cvd='on'] .sr-rack-cta:focus-visible {
   outline-color: var(--color-focus-ring, #0072b2);
+}
+
+/* ==========================================================================
+   StyleRadar — Panel de Filtros Flotante de Vidrio en Dos Columnas
+   Selector compacto: Categorías (izq) y Opciones (der), sólo 1 activa a la vez.
+   Anclado al botón "Filtros", sin desplazar contenido.
+   ========================================================================== */
+
+:root,
+html[data-theme='light'],
+html[data-theme='claro'],
+html[data-tema='claro'] {
+  --sr-vidrio-fondo: rgba(255, 255, 255, 0.88);
+  --sr-vidrio-borde: rgba(255, 255, 255, 0.55);
+  --sr-vidrio-col-izq: rgba(255, 255, 255, 0.25);
+  --sr-acento-12: rgba(72, 17, 154, 0.12);
+  --sr-superficie: var(--surface, #f4efe6);
+  --sr-acento-primario: var(--accent, #48119a);
+}
+
+html[data-theme='dark'],
+html[data-theme='oscuro'],
+html[data-tema='oscuro'] {
+  --sr-vidrio-fondo: rgba(26, 22, 34, 0.92);
+  --sr-vidrio-borde: rgba(255, 255, 255, 0.14);
+  --sr-vidrio-col-izq: rgba(255, 255, 255, 0.05);
+  --sr-acento-12: rgba(169, 139, 234, 0.16);
+  --sr-superficie: var(--surface, #242031);
+  --sr-acento-primario: var(--accent, #a98bea);
+}
+
+html[data-theme='colorblind'],
+html[data-theme='daltonico'],
+html[data-tema='daltonico'],
+html[data-cvd='on'] {
+  --sr-vidrio-fondo: rgba(24, 28, 38, 0.94);
+  --sr-vidrio-borde: rgba(255, 255, 255, 0.18);
+  --sr-vidrio-col-izq: rgba(255, 255, 255, 0.06);
+  --sr-acento-12: rgba(0, 114, 178, 0.18);
+  --sr-superficie: var(--surface, #1f232d);
+  --sr-acento-primario: var(--accent, #0072b2);
+}
+
+/* Espaciador dinámico que reserva el espacio exacto del panel para desplazar el contenido */
+.sr-filter-spacer {
+  height: 0;
+  transition: height 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  pointer-events: none;
+  will-change: height;
+}
+
+/* Panel flotante de vidrio: 28rem en escritorio, max 92vw, anclado a la izquierda */
+.sr-filter-panel-card {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 50;
+  width: 28rem;
+  max-width: 92vw;
+  box-sizing: border-box;
+  padding: 0.875rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--sr-vidrio-borde, var(--color-border));
+  background-color: var(--sr-vidrio-fondo);
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  box-shadow: 0 1rem 2.5rem -0.5rem rgba(0, 0, 0, 0.25), 0 0.25rem 0.75rem -0.25rem rgba(0, 0, 0, 0.12);
+  color: var(--color-text);
+  animation: sr-panel-pop 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sr-panel-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sr-filter-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.625rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--sr-vidrio-borde, var(--color-border));
+}
+
+/* Cuerpo en dos columnas con altura fija de 17rem */
+.sr-filter-two-col {
+  display: flex;
+  height: 17rem;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid var(--sr-vidrio-borde, var(--color-border));
+}
+
+/* Columna izquierda: categorías (~7.5rem de ancho) */
+.sr-filter-categories-col {
+  width: 7.5rem;
+  flex: 0 0 7.5rem;
+  background-color: var(--sr-vidrio-col-izq, rgba(255, 255, 255, 0.25));
+  border-right: 1px solid var(--sr-vidrio-borde, var(--color-border));
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sr-border-subtle, rgba(0, 0, 0, 0.15)) transparent;
+}
+
+.sr-filter-categories-col::-webkit-scrollbar {
+  width: 0.25rem;
+}
+.sr-filter-categories-col::-webkit-scrollbar-thumb {
+  background: var(--sr-border-subtle, rgba(0, 0, 0, 0.15));
+  border-radius: 9999px;
+}
+
+/* Fila de categoría (2.25rem de alto, texto 12px / 0.75rem) */
+.sr-filter-cat-btn {
+  width: 100%;
+  height: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  white-space: nowrap;
+}
+
+.sr-filter-cat-btn:hover {
+  background-color: var(--sr-surface-raised, var(--color-surface-raised, rgba(0, 0, 0, 0.04)));
+}
+
+.sr-filter-cat-btn:focus-visible {
+  outline: 2px solid var(--sr-focus, var(--color-focus-ring, #48119a));
+  outline-offset: -2px;
+}
+
+/* Categoría activa */
+.sr-filter-cat-btn--active {
+  border-left: 3px solid var(--sr-acento-primario, var(--color-accent));
+  background-color: var(--sr-acento-12, rgba(72, 17, 154, 0.12));
+  color: var(--sr-acento-primario, var(--color-accent));
+  font-weight: 700;
+}
+
+html[data-theme='colorblind'] .sr-filter-cat-btn--active,
+html[data-theme='daltonico'] .sr-filter-cat-btn--active,
+html[data-tema='daltonico'] .sr-filter-cat-btn--active,
+html[data-cvd='on'] .sr-filter-cat-btn--active {
+  border-left: 3px solid var(--sr-acento-primario, var(--color-accent));
+  font-weight: 800;
+}
+
+/* Insignia de categoría */
+.sr-filter-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  background-color: var(--sr-acento-primario, var(--color-accent));
+  color: var(--sr-texto-sobre-oscuro, var(--color-text-on-accent, #ffffff));
+  flex-shrink: 0;
+}
+
+/* Columna derecha: opciones (scroll fino) */
+.sr-filter-options-col {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0.75rem;
+  overflow-y: auto;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sr-border-subtle, rgba(0, 0, 0, 0.15)) transparent;
+}
+
+.sr-filter-options-col::-webkit-scrollbar {
+  width: 0.25rem;
+}
+.sr-filter-options-col::-webkit-scrollbar-thumb {
+  background: var(--sr-border-subtle, rgba(0, 0, 0, 0.15));
+  border-radius: 9999px;
+}
+
+/* Fade de 120ms para el contenido al cambiar de categoría */
+.sr-filter-tabpanel-content {
+  animation: sr-fade-in 120ms ease;
+}
+
+@keyframes sr-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.125rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chips con flex-wrap y gap de 0.4rem, altura 1.75rem, texto 12px (0.75rem) */
+.sr-filter-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sr-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  border-radius: 9999px;
+  padding: 0 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  border: 1px solid var(--sr-vidrio-borde, var(--color-border));
+  background-color: var(--sr-surface-raised, var(--color-surface-raised, #f8f6f2));
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 140ms ease,
+              border-color 140ms ease,
+              color 140ms ease,
+              filter 140ms ease;
+}
+
+.sr-filter-chip:hover {
+  background-color: var(--sr-surface, var(--color-surface));
+  border-color: var(--sr-acento-primario, var(--color-accent));
+}
+
+.sr-filter-chip:focus-visible {
+  outline: 2px solid var(--sr-focus, var(--color-focus-ring, #48119a));
+  outline-offset: 2px;
+}
+
+.sr-filter-chip--selected {
+  border-color: var(--sr-acento-primario, var(--sr-accent, var(--color-accent, #48119a)));
+  background-color: var(--sr-acento-primario, var(--sr-accent, var(--color-accent, #48119a)));
+  color: var(--sr-texto-sobre-oscuro, var(--color-text-on-accent, #ffffff));
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.sr-filter-chip--selected:hover {
+  filter: brightness(0.9);
+}
+
+.sr-filter-chip-remove {
+  width: 0.6875rem;
+  height: 0.6875rem;
+  flex-shrink: 0;
+  stroke-width: 2.5;
+}
+
+/* Rango visual en precio */
+.sr-filter-range-track {
+  position: relative;
+  width: 100%;
+  height: 0.3125rem;
+  border-radius: 9999px;
+  background-color: var(--sr-border-subtle, var(--color-border, #e2e8f0));
+  margin: 0.5rem 0 0.75rem 0;
+}
+
+.sr-filter-range-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 9999px;
+  background-color: var(--sr-acento-primario, var(--color-accent, #48119a));
+  transition: left 160ms ease, right 160ms ease;
+}
+
+.sr-filter-range-thumb {
+  position: absolute;
+  top: 50%;
+  width: 0.9375rem;
+  height: 0.9375rem;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--sr-superficie, #ffffff);
+  border: 2px solid var(--sr-acento-primario, var(--color-accent, #48119a));
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: left 160ms ease;
+  pointer-events: none;
+}
+
+/* Pie del panel con acciones: Limpiar y Aplicar filtros */
+.sr-filter-footer {
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--sr-vidrio-borde, var(--color-border));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.625rem;
+}
+
+.sr-filter-btn-secondary {
+  border-radius: 0.5rem;
+  border: 1px solid var(--sr-vidrio-borde, var(--color-border));
+  background: transparent;
+  padding: 0.4rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.sr-filter-btn-secondary:hover {
+  background-color: var(--sr-surface-raised, var(--color-surface-raised));
+  color: var(--color-danger, #ef4444);
+  border-color: var(--color-danger, #ef4444);
+}
+
+.sr-filter-btn-secondary:focus-visible {
+  outline: 2px solid var(--sr-focus, var(--color-focus-ring, #48119a));
+  outline-offset: 2px;
+}
+
+.sr-filter-btn-primary {
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  background-color: var(--sr-acento-primario, var(--sr-accent, var(--color-accent, #48119a)));
+  color: var(--sr-texto-sobre-oscuro, var(--color-text-on-accent, #ffffff));
+  padding: 0.4rem 1.125rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(72, 17, 154, 0.25);
+  transition: all 140ms ease;
+}
+
+.sr-filter-btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 10px rgba(72, 17, 154, 0.35);
+}
+
+.sr-filter-btn-primary:focus-visible {
+  outline: 2px solid var(--sr-focus, var(--color-focus-ring, #48119a));
+  outline-offset: 2px;
+}
+
+/* Móvil (<640px): ancho completo con margen, categorías horizontales arriba, opciones debajo con altura ~15rem */
+@media (max-width: 640px) {
+  .sr-filter-panel-card {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: min(28rem, calc(100vw - 2.5rem));
+    max-width: calc(100vw - 2.5rem);
+    margin: 0;
+    padding: 0.75rem;
+    border-radius: 1rem;
+    z-index: 60;
+  }
+
+  .sr-filter-two-col {
+    flex-direction: column;
+    height: 15rem;
+  }
+
+  .sr-filter-categories-col {
+    width: 100%;
+    flex: 0 0 2.5rem;
+    height: 2.5rem;
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--sr-vidrio-borde, var(--color-border));
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .sr-filter-cat-btn {
+    width: auto;
+    height: 100%;
+    min-height: auto;
+    padding: 0 0.75rem;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    flex-shrink: 0;
+  }
+
+  .sr-filter-cat-btn--active {
+    border-left: none;
+    border-bottom: 3px solid var(--sr-acento-primario, var(--color-accent));
+  }
+
+  html[data-theme='colorblind'] .sr-filter-cat-btn--active,
+  html[data-theme='daltonico'] .sr-filter-cat-btn--active,
+  html[data-tema='daltonico'] .sr-filter-cat-btn--active,
+  html[data-cvd='on'] .sr-filter-cat-btn--active {
+    border-left: none;
+    border-bottom: 3px solid var(--sr-acento-primario, var(--color-accent));
+  }
+
+  .sr-filter-options-col {
+    height: calc(15rem - 2.5rem);
+    padding: 0.625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-filter-spacer,
+  .sr-filter-panel-card,
+  .sr-filter-tabpanel-content,
+  .sr-filter-range-bar,
+  .sr-filter-range-thumb {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 

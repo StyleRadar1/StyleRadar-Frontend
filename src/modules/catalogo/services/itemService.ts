@@ -88,10 +88,46 @@ const sortItems = (list: ItemResponseDto[], orden?: string) => {
 export const itemService = {
   search(filters: ItemFiltersDto): Promise<ItemResponseDto[]> {
     if (env.useMocks) {
-      const filtered = ITEMS.filter((it) => matches(it, filters))
+      const map = new Map<string, ItemResponseDto>()
+      const imageToId = new Map<string, string>()
+      for (const it of ITEMS) {
+        if (it.imagen && imageToId.has(it.imagen)) {
+          const originalId = imageToId.get(it.imagen)
+          if (import.meta.env.DEV) {
+            console.warn(
+              `[StyleRadar Catálogo] Prenda descartada por imagen duplicada: ID "${it.id}" ("${it.nombre}") comparte imagen con ID "${originalId}" ("${it.imagen}").`
+            )
+          }
+          continue
+        }
+        if (!map.has(it.id)) {
+          map.set(it.id, it)
+          if (it.imagen) imageToId.set(it.imagen, it.id)
+        }
+      }
+      const filtered = Array.from(map.values()).filter((it) => matches(it, filters))
       return mockDelay(sortItems(filtered, filters.orden))
     }
-    return apiClient.get<ItemResponseDto[]>('/api/items', { params: filters }).then((r) => r.data)
+    return apiClient.get<ItemResponseDto[]>('/api/items', { params: filters }).then((r) => {
+      const map = new Map<string, ItemResponseDto>()
+      const imageToId = new Map<string, string>()
+      for (const it of r.data) {
+        if (it.imagen && imageToId.has(it.imagen)) {
+          const originalId = imageToId.get(it.imagen)
+          if (import.meta.env.DEV) {
+            console.warn(
+              `[StyleRadar Catálogo] Prenda descartada por imagen duplicada: ID "${it.id}" ("${it.nombre}") comparte imagen con ID "${originalId}" ("${it.imagen}").`
+            )
+          }
+          continue
+        }
+        if (!map.has(it.id)) {
+          map.set(it.id, it)
+          if (it.imagen) imageToId.set(it.imagen, it.id)
+        }
+      }
+      return Array.from(map.values())
+    })
   },
   getById(id: string): Promise<ItemResponseDto> {
     if (env.useMocks) {

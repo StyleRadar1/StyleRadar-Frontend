@@ -67,7 +67,7 @@ describe('CatalogPage - Filtros compactos, Cerca de y Ordenar rediseñado', () =
     expect(screen.getByRole('heading', { level: 3, name: /Filtrar catálogo/i })).toBeInTheDocument()
 
     // Sección Cerca de
-    expect(screen.getByText(/^Cerca de$/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/^Cerca de$/i).length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: /^No especificar$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Cerca de mí$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Chapinero$/i })).toBeInTheDocument()
