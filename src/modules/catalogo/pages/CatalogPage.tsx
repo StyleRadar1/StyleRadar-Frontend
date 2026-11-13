@@ -321,7 +321,7 @@ export default function CatalogPage() {
         </form>
 
         {/* BARRA DE HERRAMIENTAS: Filtros (botón mediano) + Guardar búsqueda + Ordenar (diseño uniforme) */}
-        <div className="relative z-20 mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)]">
+        <div className={`relative z-20 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)] transition-[margin-bottom] duration-200 ${menuFiltrosAbierto ? 'mb-2' : 'mb-6'}`}>
           {/* LADO IZQUIERDO: Botón Filtros mediano con badge */}
           <div className="flex items-center gap-3">
             <button
