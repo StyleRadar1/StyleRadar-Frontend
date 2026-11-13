@@ -190,12 +190,25 @@ export default function CatalogPage() {
 
   const { items, loading, error } = useItems(activeFilters)
 
-  // Deduplicación garantizada por ID al construir la lista (Map por id, queda el primero)
+  // Deduplicación garantizada por ID e imagen al construir la lista de la grilla (queda el primero)
   const uniqueItems = useMemo(() => {
     const map = new Map<string, ItemResponseDto>()
+    const imageToId = new Map<string, string>()
     for (const it of items) {
+      if (it.imagen && imageToId.has(it.imagen)) {
+        const originalId = imageToId.get(it.imagen)
+        if (import.meta.env.DEV) {
+          console.warn(
+            `[StyleRadar Catálogo] Prenda excluida de la grilla por imagen duplicada: ID "${it.id}" ("${it.nombre}") comparte imagen con ID "${originalId}" ("${it.imagen}").`
+          )
+        }
+        continue
+      }
       if (!map.has(it.id)) {
         map.set(it.id, it)
+        if (it.imagen) {
+          imageToId.set(it.imagen, it.id)
+        }
       }
     }
     return Array.from(map.values())
