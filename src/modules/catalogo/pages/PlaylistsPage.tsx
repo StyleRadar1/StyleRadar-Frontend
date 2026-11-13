@@ -1423,9 +1423,18 @@ export default function PlaylistsPage() {
                     <span>● Colección activa</span>
                   </div>
 
-                  <h2 className="sr-vinyl-active-title">
-                    {currentVinylPlaylist.nombre}
-                  </h2>
+                  <AnimatePresence mode="wait">
+                    <motion.h2
+                      key={currentVinylPlaylist.id}
+                      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.97 }}
+                      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                      className="sr-vinyl-active-title"
+                    >
+                      {currentVinylPlaylist.nombre}
+                    </motion.h2>
+                  </AnimatePresence>
 
                   <div className="sr-vinyl-active-meta">
                     <span>
