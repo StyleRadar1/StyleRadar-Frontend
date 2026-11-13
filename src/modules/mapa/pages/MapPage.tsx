@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useCallback, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { useMapData } from '../hooks/useMapData'
 import MapaBogota from '../components/MapaBogota'
@@ -9,10 +9,19 @@ import type { MapPinDto, MapFilter } from '../types/map.dto'
 import { filterPins } from '../utils/mapUtils'
 
 export default function MapPage() {
+  const [searchParams] = useSearchParams()
+  const tiendaParam = searchParams.get('tienda')
   const { data: pins, loading, error, reload } = useMapData()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [filter, setFilter] = useState<MapFilter>('todos')
+
+  useEffect(() => {
+    if (tiendaParam && pins.length) {
+      const match = pins.find((p) => p.id.toLowerCase() === tiendaParam.toLowerCase())
+      if (match) setSelectedId(match.id)
+    }
+  }, [tiendaParam, pins])
 
   const selectedPin = pins.find((p) => p.id === selectedId) ?? null
   const visiblePins = filterPins(pins, filter)

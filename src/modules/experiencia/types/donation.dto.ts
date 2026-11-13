@@ -1,16 +1,21 @@
 import type { Conservacion } from './secondhand.dto'
 
-/** DTOs de ms-segunda-vida-donaciones (8093), parte de donaciones. Provisionales hasta el Swagger. */
+/**
+ * DTOs oficiales de ms-segunda-vida-donaciones: /api/v1/donaciones
+ */
 
-export interface PuntoAcopioDto { id: string; nombre: string; direccion: string }
+export interface PuntoAcopioDto {
+  id: string
+  nombre: string
+  direccion: string
+}
 
-/** GET /api/donations/foundations: fundaciones activas, ordenadas por cercanía (RF-44). */
+/** GET /api/donations/foundations: fundaciones activas */
 export interface FoundationDto {
   id: string
   nombre: string
   barrio: string
   distanciaKm: number
-  /** Categorías de prenda que recibe. */
   categorias: string[]
   activa: boolean
   puntos: PuntoAcopioDto[]
@@ -21,12 +26,9 @@ export const FRANJAS = ['8:00 a 12:00', '12:00 a 15:00', '15:00 a 18:00'] as con
 
 export interface LogisticaDto {
   modalidad: Modalidad
-  /** Fecha ISO (AAAA-MM-DD). */
   fecha: string
   franja: string
-  /** Con ENTREGA_EN_PUNTO. */
   puntoId?: string
-  /** Con RECOGIDA. */
   direccion?: string
 }
 
@@ -39,43 +41,108 @@ export interface PrendaDonadaDto {
   descripcion: string
 }
 
-/** POST /api/donations (multipart: "data" en JSON y hasta 4 "files"). 409 si ya existe la misma solicitud (RF-42, 45, 48). */
+/** Payload directo oficial: POST /api/v1/donaciones */
+export interface DirectDonationRequestDto {
+  publicationId: string | number
+  donorId: string | number
+  foundationId: string | number
+  message?: string
+}
+
+/** Payload oficial: POST /api/v1/donaciones/claim */
+export interface ClaimDonationRequestDto {
+  publicationId: string | number
+  foundationId: string | number
+  message?: string
+}
+
+/** Payload oficial: PATCH /api/v1/donaciones/{id}/decide */
+export interface DecideDonationRequestDto {
+  foundationId: string | number
+  approve: boolean
+  reason?: string | null
+}
+
+/** Payload oficial: PATCH /api/v1/donaciones/{id}/pickup */
+export interface PickupDonationRequestDto {
+  userId: string | number
+  deliveryPoint: string
+  startTime: string
+  endTime: string
+}
+
+/** Payload oficial: PATCH /api/v1/donaciones/{id}/confirm */
+export interface ConfirmDonationRequestDto {
+  foundationId: string | number
+}
+
+/** Creación tradicional / formulario frontend */
 export interface DonationRequestDto {
   fundacionId: string
   prenda: PrendaDonadaDto
   logistica: LogisticaDto
+  publicationId?: string | number
+  donorId?: string | number
+  message?: string
 }
 
-export type EstadoDonacion = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'EN_RECOGIDA' | 'ENTREGADA'
-export const ESTADO_DONACION_LABEL: Record<EstadoDonacion, string> = {
-  PENDIENTE: 'Pendiente', APROBADA: 'Aprobada', RECHAZADA: 'Rechazada', EN_RECOGIDA: 'En recogida', ENTREGADA: 'Entregada',
+export type EstadoDonacion = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'EN_RECOGIDA' | 'ENTREGADA' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'IN_PICKUP' | 'DELIVERED'
+
+export const ESTADO_DONACION_LABEL: Record<string, string> = {
+  PENDIENTE: 'Pendiente',
+  PENDING: 'Pendiente',
+  APROBADA: 'Aprobada',
+  APPROVED: 'Aprobada',
+  RECHAZADA: 'Rechazada',
+  REJECTED: 'Rechazada',
+  EN_RECOGIDA: 'En recogida',
+  IN_PICKUP: 'En recogida',
+  ENTREGADA: 'Entregada',
+  DELIVERED: 'Entregada',
 }
 
-/** Transiciones que permite el backend. La interfaz solo ofrece estas (RF-46, 47, 49). */
-export const SIGUIENTE: Record<EstadoDonacion, EstadoDonacion[]> = {
+export const SIGUIENTE: Record<string, EstadoDonacion[]> = {
   PENDIENTE: ['APROBADA', 'RECHAZADA'],
+  PENDING: ['APROBADA', 'RECHAZADA'],
   APROBADA: ['EN_RECOGIDA'],
+  APPROVED: ['EN_RECOGIDA'],
   EN_RECOGIDA: ['ENTREGADA'],
+  IN_PICKUP: ['ENTREGADA'],
   RECHAZADA: [],
+  REJECTED: [],
   ENTREGADA: [],
+  DELIVERED: [],
 }
 
 export interface DonationDto {
   id: string
+  publicationId?: string | number
+  donorId?: string | number
+  foundationId?: string | number
+  message?: string
   fundacion: { id: string; nombre: string }
   donante: { id: string; nombre: string }
   prenda: PrendaDonadaDto
   fotos: string[]
   logistica: LogisticaDto & { puntoNombre?: string }
   estado: EstadoDonacion
+  status?: string
   justificacion?: string
-  /** Comprobante simbólico al confirmar la recepción (RF-49). */
+  rejectionReason?: string | null
+  deliveryPoint?: string
+  slotStart?: string
+  slotEnd?: string
+  receptionDate?: string
   comprobante?: { codigo: string; emitidoEn: string }
   creadaEn: string
 }
 
-/** PATCH /api/donations/{id}/status. RECHAZADA exige justificación. */
 export interface DonationStatusRequestDto {
-  estado: Exclude<EstadoDonacion, 'PENDIENTE'>
+  estado: Exclude<EstadoDonacion, 'PENDIENTE' | 'PENDING'>
   justificacion?: string
+}
+
+/** Formateador oficial del comprobante simbólico sugerido por Backend */
+export function formatReceiptCode(id: string | number): string {
+  return `SR-DON-${String(id).replace(/\D/g, '').padStart(4, '0')}`
 }

@@ -12,12 +12,17 @@ import './FoundationDashboard.css'
 
 const FILTROS: (EstadoDonacion | 'TODAS')[] = ['TODAS', 'PENDIENTE', 'APROBADA', 'EN_RECOGIDA', 'ENTREGADA', 'RECHAZADA']
 
-const TONE: Record<EstadoDonacion, string> = {
+const TONE: Record<string, string> = {
   PENDIENTE: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30',
+  PENDING: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30',
   APROBADA: 'bg-violeta/15 text-violeta dark:text-violeta-claro border border-violeta/30',
+  APPROVED: 'bg-violeta/15 text-violeta dark:text-violeta-claro border border-violeta/30',
   EN_RECOGIDA: 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border border-sky-500/30',
+  IN_PICKUP: 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border border-sky-500/30',
   ENTREGADA: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30',
+  DELIVERED: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30',
   RECHAZADA: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30',
+  REJECTED: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30',
 }
 
 const ACCION: Partial<Record<EstadoDonacion, string>> = {
@@ -66,8 +71,8 @@ export default function FoundationPage() {
     setMsg(null)
     try {
       const upd = await donationService.setStatus(pending.d.id, {
-        estado: pending.to as Exclude<EstadoDonacion, 'PENDIENTE'>,
-        justificacion: pending.to === 'RECHAZADA' ? just.trim() : undefined,
+        estado: pending.to as any,
+        justificacion: pending.to === 'RECHAZADA' || pending.to === 'REJECTED' ? just.trim() : undefined,
       })
       setList((l) => l.map((x) => (x.id === upd.id ? upd : x)))
       setMsg({

@@ -100,6 +100,7 @@ describe('bienvenida al iniciar sesión', () => {
     const hola = await screen.findByRole('status', {}, slow)
     expect(hola).toHaveTextContent(/Hola de nuevo,\s*Valentina/)
     expect(hola).toHaveTextContent('Usuario')
+    expect(hola.querySelector('img')).toHaveAttribute('src', '/img/representantes/R1.png')
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
@@ -111,13 +112,16 @@ describe('bienvenida al iniciar sesión', () => {
     const hola = await screen.findByRole('status', {}, slow)
     expect(hola).toHaveTextContent(/Hola de nuevo,\s*Mariana/)
     expect(hola).toHaveTextContent('Administrador')
+    expect(hola.querySelector('img')).toHaveAttribute('src', '/img/representantes/R4.png')
   })
 
   it('a la tienda la saluda con el nombre completo', async () => {
     const user = userEvent.setup()
     renderApp(<><WelcomeOverlay /><EntrarComo email="luna@styleradar.co" /></>)
     await user.click(screen.getByRole('button', { name: 'Entrar de prueba' }))
-    expect(await screen.findByRole('status', {}, slow)).toHaveTextContent(/Hola de nuevo,\s*Luna Store/)
+    const hola = await screen.findByRole('status', {}, slow)
+    expect(hola).toHaveTextContent(/Hola de nuevo,\s*Luna Store/)
+    expect(hola.querySelector('img')).toHaveAttribute('src', '/img/representantes/R2.png')
   })
 
   it('no aparece al recargar una sesión que ya existía', () => {

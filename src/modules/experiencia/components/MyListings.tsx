@@ -9,8 +9,16 @@ import { secondHandService } from '../services/secondHandService'
 import { ESTADO_PUBLICACION_LABEL, type ListingDto } from '../types/secondhand.dto'
 
 type Action = { listing: ListingDto; to: 'VENDIDA' | 'RETIRADA' }
-const STATUS_BADGE = {
+const STATUS_BADGE: Record<string, { cls: string; icon: React.ReactNode }> = {
   DISPONIBLE: {
+    cls: 'bg-[var(--color-success-bg,rgba(30,107,58,0.15))] text-[var(--color-success-text,#144a27)] border border-[var(--color-success-border,#1e6b3a)]',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  AVAILABLE: {
     cls: 'bg-[var(--color-success-bg,rgba(30,107,58,0.15))] text-[var(--color-success-text,#144a27)] border border-[var(--color-success-border,#1e6b3a)]',
     icon: (
       <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
@@ -26,7 +34,23 @@ const STATUS_BADGE = {
       </svg>
     ),
   },
+  SOLD: {
+    cls: 'bg-[var(--color-warning-bg,rgba(217,119,6,0.15))] text-[var(--color-warning-text,#92400e)] border border-[var(--color-warning-border,#d97706)]',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
+        <path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
   RETIRADA: {
+    cls: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)] border border-[var(--color-border)]',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  RETIRED: {
     cls: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)] border border-[var(--color-border)]',
     icon: (
       <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
@@ -56,6 +80,23 @@ export function MyListings() {
       setMsg({ ok: false, text: errorMessage(e) })
       if (errorKind(e) === 'conflicto') load()
     } finally { inFlight.current = false; setBusy(false); setAction(null) }
+  }
+
+  const handlePassToDonation = async (listing: ListingDto) => {
+    if (inFlight.current) return
+    inFlight.current = true
+    setBusy(true)
+    setMsg(null)
+    try {
+      const upd = await secondHandService.passToDonation(listing.id)
+      setList((l) => l.map((x) => (x.id === upd.id ? upd : x)))
+      setMsg({ ok: true, text: `«${upd.titulo}» pasó a la Vitrina de Donaciones ($0 COP).` })
+    } catch (e) {
+      setMsg({ ok: false, text: errorMessage(e) })
+    } finally {
+      inFlight.current = false
+      setBusy(false)
+    }
   }
 
   if (loading) return <Loading label="Cargando tus publicaciones…" />
@@ -92,9 +133,9 @@ export function MyListings() {
             <div className="min-w-40 flex-1">
               <p className="font-semibold text-[var(--color-text)]">{l.titulo}</p>
               <p className="text-sm text-[var(--color-text-muted)]">{formatCOP(l.precio)} · Talla {l.talla}</p>
-              <span className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[l.estado].cls}`}>
-                {STATUS_BADGE[l.estado].icon}
-                <span>{ESTADO_PUBLICACION_LABEL[l.estado]}</span>
+              <span className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${(STATUS_BADGE[l.estado] || STATUS_BADGE.DISPONIBLE).cls}`}>
+                {(STATUS_BADGE[l.estado] || STATUS_BADGE.DISPONIBLE).icon}
+                <span>{ESTADO_PUBLICACION_LABEL[l.estado] || l.estado}</span>
               </span>
             </div>
             {l.estado === 'DISPONIBLE' ? (
@@ -115,6 +156,17 @@ export function MyListings() {
                 >
                   Marcar vendida
                 </button>
+                {!l.esDonacion && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handlePassToDonation(l)}
+                    className="rounded-xl border border-emerald-600/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 px-3 py-2 text-sm font-semibold transition-colors"
+                    aria-label={`Pasar ${l.titulo} a donación`}
+                  >
+                    Pasar a donación
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={busy}

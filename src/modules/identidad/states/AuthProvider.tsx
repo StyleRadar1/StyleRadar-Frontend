@@ -26,6 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tokenStorage.set(res.token)
     saveUser(res.user)
     setUser(res.user)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sr:login-success', { detail: res.user }))
+    }
     return res.user
   }, [])
 

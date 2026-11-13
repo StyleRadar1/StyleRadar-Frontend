@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
@@ -62,12 +63,31 @@ async function runAnim(
 }
 
 function cancelAnims(el: Element | null) {
-  if (!el || typeof (el as HTMLElement).getAnimations !== 'function') return
+  if (!el) return
   try {
-    ;(el as HTMLElement).getAnimations().forEach((a) => a.cancel())
+    const targets = [el, ...Array.from(el.querySelectorAll('*'))]
+    targets.forEach((target) => {
+      if (typeof (target as HTMLElement).getAnimations === 'function') {
+        ;(target as HTMLElement).getAnimations().forEach((a) => a.cancel())
+      }
+    })
   } catch {
     // Ignorar en entornos de prueba sin Web Animations API
   }
+}
+
+function resetCard(card: HTMLElement | null) {
+  if (!card) return
+  cancelAnims(card)
+  card.style.opacity = ''
+  card.style.transform = ''
+  card.style.filter = ''
+  card.scrollTop = 0
+  const kids = Array.from(card.children) as HTMLElement[]
+  kids.forEach((k) => {
+    k.style.opacity = ''
+    k.style.transform = ''
+  })
 }
 
 interface AuthModalProps {
@@ -108,6 +128,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   const metaRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const busyRef = useRef(false)
+  const swappingRef = useRef(false)
   const prevSrcRef = useRef<string>('')
 
   const getPicKey = (
@@ -210,68 +231,70 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
     const openSequence = async () => {
       busyRef.current = true
-      if (!canAnimate(ph)) {
-        if (bg) bg.style.opacity = '1'
-        if (ph) {
-          ph.style.opacity = '1'
-          ph.style.clipPath = 'inset(0% 0% round 18px)'
+      try {
+        if (!canAnimate(ph)) {
+          if (bg) bg.style.opacity = '1'
+          if (ph) {
+            ph.style.opacity = '1'
+            ph.style.clipPath = 'inset(0% 0% round 18px)'
+          }
+          if (meta) meta.style.opacity = '1'
+          await animateCardIn(card)
+          return
         }
-        if (meta) meta.style.opacity = '1'
+
+        void runAnim(bg, [{ opacity: 0 }, { opacity: 1 }], { duration: 320 })
+        await runAnim(
+          ph,
+          [
+            {
+              opacity: 0,
+              clipPath: 'inset(41% 44% round 12px)',
+              transform: 'scale(.55) rotate(-4deg)',
+            },
+            {
+              opacity: 1,
+              clipPath: 'inset(38% 41% round 14px)',
+              transform: 'scale(1) rotate(0deg)',
+            },
+          ],
+          { duration: 520, easing: 'cubic-bezier(.34,1.56,.64,1)' },
+        )
+        if (cancelled) return
+
+        void runAnim(
+          img,
+          [{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
+          { duration: 950, easing: 'cubic-bezier(.65,0,.35,1)' },
+        )
+        await runAnim(
+          ph,
+          [
+            { clipPath: 'inset(38% 41% round 14px)' },
+            { clipPath: 'inset(0% 0% round 18px)' },
+          ],
+          { duration: 900, easing: 'cubic-bezier(.65,0,.35,1)' },
+        )
+        if (cancelled) return
+
+        void runAnim(
+          meta,
+          [
+            { opacity: 0, transform: 'translateY(-8px)' },
+            { opacity: 1, transform: 'none' },
+          ],
+          { duration: 420 },
+        )
         await animateCardIn(card)
+
+        if (!cancelled) {
+          window.setTimeout(() => {
+            const firstInput = card?.querySelector<HTMLElement>('input')
+            firstInput?.focus({ preventScroll: true })
+          }, 120)
+        }
+      } finally {
         busyRef.current = false
-        return
-      }
-
-      void runAnim(bg, [{ opacity: 0 }, { opacity: 1 }], { duration: 320 })
-      await runAnim(
-        ph,
-        [
-          {
-            opacity: 0,
-            clipPath: 'inset(41% 44% round 12px)',
-            transform: 'scale(.55) rotate(-4deg)',
-          },
-          {
-            opacity: 1,
-            clipPath: 'inset(38% 41% round 14px)',
-            transform: 'scale(1) rotate(0deg)',
-          },
-        ],
-        { duration: 520, easing: 'cubic-bezier(.34,1.56,.64,1)' },
-      )
-      if (cancelled) return
-
-      void runAnim(
-        img,
-        [{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
-        { duration: 950, easing: 'cubic-bezier(.65,0,.35,1)' },
-      )
-      await runAnim(
-        ph,
-        [
-          { clipPath: 'inset(38% 41% round 14px)' },
-          { clipPath: 'inset(0% 0% round 18px)' },
-        ],
-        { duration: 900, easing: 'cubic-bezier(.65,0,.35,1)' },
-      )
-      if (cancelled) return
-
-      void runAnim(
-        meta,
-        [
-          { opacity: 0, transform: 'translateY(-8px)' },
-          { opacity: 1, transform: 'none' },
-        ],
-        { duration: 420 },
-      )
-      await animateCardIn(card)
-      busyRef.current = false
-
-      if (!cancelled) {
-        window.setTimeout(() => {
-          const firstInput = card?.querySelector<HTMLElement>('input')
-          firstInput?.focus({ preventScroll: true })
-        }, 120)
       }
     }
 
@@ -279,6 +302,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
     return () => {
       cancelled = true
+      busyRef.current = false
       document.documentElement.classList.remove('lock')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -364,26 +388,32 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   }
 
   const handleSwapTab = async (targetTab: 'login' | 'register') => {
-    if (busyRef.current || (targetTab === activeTab && step === 'form')) return
-    busyRef.current = true
-    const card = cardRef.current
-    await animateCardOut(card)
-    cancelAnims(card)
-    setError('')
-    setStep('form')
-    if (targetTab === 'login') {
+    if (swappingRef.current || (targetTab === activeTab && step === 'form')) return
+    swappingRef.current = true
+    try {
+      const card = cardRef.current
+      await animateCardOut(card)
+      resetCard(card)
+      setError('')
+      setStep('form')
       setPreviewRole(null)
-    } else {
-      setPreviewRole(null)
+      try {
+        flushSync(() => {
+          setActiveTab(targetTab)
+        })
+      } catch {
+        setActiveTab(targetTab)
+      }
+      const nextCard = cardRef.current
+      if (nextCard) {
+        nextCard.scrollTop = 0
+      }
+      await animateCardIn(nextCard)
+      const firstInput = nextCard?.querySelector<HTMLElement>('input')
+      firstInput?.focus({ preventScroll: true })
+    } finally {
+      swappingRef.current = false
     }
-    setActiveTab(targetTab)
-    requestAnimationFrame(() => {
-      void animateCardIn(cardRef.current).then(() => {
-        busyRef.current = false
-        const firstInput = cardRef.current?.querySelector<HTMLElement>('input')
-        firstInput?.focus({ preventScroll: true })
-      })
-    })
   }
 
   useEffect(() => {
