@@ -165,6 +165,17 @@ export default function CatalogPage() {
 
   const { items, loading, error } = useItems(activeFilters)
 
+  // Deduplicación garantizada por ID al construir la lista (Map por id, queda el primero)
+  const uniqueItems = useMemo(() => {
+    const map = new Map<string, ItemResponseDto>()
+    for (const it of items) {
+      if (!map.has(it.id)) {
+        map.set(it.id, it)
+      }
+    }
+    return Array.from(map.values())
+  }, [items])
+
   // Manejo de búsqueda
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -770,7 +781,7 @@ export default function CatalogPage() {
         <div>
           <div className="mb-6 flex items-center justify-between border-b border-[var(--color-border)] pb-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text)]">
-              Prendas encontradas ({items.length})
+              Prendas encontradas ({uniqueItems.length})
             </h2>
             <span className="text-xs text-[var(--color-text-muted)] font-mono">
               {orden === 'cerca' ? 'Ordenado por cercanía' : `Orden: ${opcionOrdenActual?.label}`}
@@ -793,9 +804,9 @@ export default function CatalogPage() {
               <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-accent)]" />
               <p className="text-sm">Buscando prendas en el catálogo…</p>
             </div>
-          ) : items.length ? (
+          ) : uniqueItems.length ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
-              {items.map((it) => (
+              {uniqueItems.map((it) => (
                 <ItemCard key={it.id} item={it} />
               ))}
             </div>

@@ -88,7 +88,13 @@ const sortItems = (list: ItemResponseDto[], orden?: string) => {
 export const itemService = {
   search(filters: ItemFiltersDto): Promise<ItemResponseDto[]> {
     if (env.useMocks) {
-      const filtered = ITEMS.filter((it) => matches(it, filters))
+      const map = new Map<string, ItemResponseDto>()
+      for (const it of ITEMS) {
+        if (!map.has(it.id)) {
+          map.set(it.id, it)
+        }
+      }
+      const filtered = Array.from(map.values()).filter((it) => matches(it, filters))
       return mockDelay(sortItems(filtered, filters.orden))
     }
     return apiClient.get<ItemResponseDto[]>('/api/items', { params: filters }).then((r) => r.data)
