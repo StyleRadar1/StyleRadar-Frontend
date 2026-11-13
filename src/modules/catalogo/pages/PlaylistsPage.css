@@ -334,7 +334,7 @@
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  min-height: calc(100vh - 64px);
+  min-height: auto;
   overflow: hidden;
   user-select: none;
   font-family: "Poppins", var(--font-sans, system-ui, sans-serif);
@@ -358,40 +358,20 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: clamp(14px, 2vh, 24px) clamp(16px, 3vw, 40px) clamp(18px, 2.5vh, 32px);
+  padding: clamp(10px, 1.5vh, 20px) clamp(16px, 3vw, 40px) clamp(16px, 2.5vh, 28px);
   max-width: 1500px;
   margin: 0 auto;
 }
 
-/* ---- Barra superior centrada: Kicker + Pestañas ---- */
+/* ---- Barra superior centrada: Pestañas ---- */
 .sr-vinyl-showcase__top {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  z-index: 40;
+  z-index: 10;
   text-align: center;
   margin-bottom: clamp(6px, 1.2vh, 14px);
-}
-
-.sr-vinyl-top-kicker span {
-  display: block;
-  font-size: clamp(10px, 1.1vw, 12px);
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #48119A;
-}
-
-.sr-vinyl-top-kicker p {
-  margin: 2px 0 0;
-  font-size: clamp(11px, 1.15vw, 13px);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-html[data-theme='light'] .sr-vinyl-top-kicker p {
-  color: #555;
 }
 
 .sr-vinyl-tabs {
@@ -1071,7 +1051,7 @@ html[data-theme='light'] .sr-vinyl-desc-popover__footer {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  z-index: 40;
+  z-index: 10;
   margin-top: clamp(16px, 2.5vh, 28px);
 }
 
@@ -1242,26 +1222,12 @@ html[data-theme='dark'] .sr-vinyl-showcase {
   background: transparent;
 }
 
-html[data-theme='dark'] .sr-vinyl-showcase__kicker span {
-  color: var(--color-accent, #a78bfa);
-}
-
-html[data-theme='dark'] .sr-vinyl-showcase__kicker p {
-  color: var(--color-text, #f5f3f7);
-  opacity: 0.9;
-}
-
 /* Modo Daltónico (CVD Okabe-Ito) */
 html[data-theme='colorblind'] .plx-page,
 html[data-cvd='on'] .plx-page {
   --sand: #0072b2;
   --lav: #0072b2;
   --tx-sand: #0072b2;
-}
-
-html[data-theme='colorblind'] .sr-vinyl-showcase__kicker span,
-html[data-cvd='on'] .sr-vinyl-showcase__kicker span {
-  color: var(--color-accent, #0072b2);
 }
 
 html[data-theme='colorblind'] .sr-vinyl-tabs__btn.is-active,

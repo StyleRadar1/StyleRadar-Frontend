@@ -29,7 +29,7 @@ export function Navbar() {
     }`
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/85 backdrop-blur-xl transition-colors duration-300">
+    <header className="sticky top-0 z-50 border-b border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/85 backdrop-blur-xl transition-colors duration-300">
       {esAdmin && (
         <p className="bg-arena px-4 py-1.5 text-center text-xs font-semibold tracking-wide text-grafito">
           <span aria-hidden="true">● </span><b className="uppercase tracking-[.12em]">Modo administrador</b>

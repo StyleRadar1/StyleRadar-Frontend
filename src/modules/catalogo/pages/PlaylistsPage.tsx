@@ -1021,22 +1021,12 @@ export default function PlaylistsPage() {
         {/* ========================================================== */}
         {carouselPlaylists.length > 0 && (
           <section
-            aria-label="Selección editorial en vinilo y polaroids"
+            aria-label="Selección en vinilo"
             className="sr-vinyl-showcase"
           >
             <div className="sr-vinyl-showcase__stage">
-              {/* Barra superior centrada: Sello editorial + Pestañas */}
+              {/* Barra superior centrada: Pestañas de filtrado */}
               <div className="sr-vinyl-showcase__top">
-                <div className="sr-vinyl-top-kicker">
-                  <span>EDICIÓN VINILO · BOGOTÁ</span>
-                  <p>
-                    {carouselPlaylists.length}{' '}
-                    {carouselPlaylists.length === 1
-                      ? 'colección destacada'
-                      : 'colecciones destacadas para explorar'}
-                  </p>
-                </div>
-
                 <div
                   className="sr-vinyl-tabs"
                   role="tablist"
