@@ -2,6 +2,7 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import type { MiPlanDto, PlanUsuario } from '../types/plan.dto'
 
 /** Rutas del API Gateway hacia ms-pagos-suscripciones. Provisionales hasta tener el Swagger (Julian). */
@@ -41,6 +42,7 @@ export const userPlanService = {
   async change(plan: PlanUsuario): Promise<MiPlanDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
+      fallarSiDemoPlan()
       setMockPlan(me().id, plan)
       const r = await mockDelay(mio(plan), 500)
       window.dispatchEvent(new Event(PLAN_CHANGED))

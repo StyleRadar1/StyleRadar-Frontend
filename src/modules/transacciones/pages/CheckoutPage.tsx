@@ -3,12 +3,17 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { errorKind } from '@/modules/core/api/errors'
+import { Aviso } from '@/modules/core/components/errores'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { usePlans } from '../hooks/usePlans'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { planService } from '../services/planService'
 import { userPlanService } from '../services/userPlanService'
 import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
+import { PagoRechazado } from '../components/PagoRechazado'
+import { PLAN_CHANGED } from '../services/userPlanService'
+import { avisoDePlan, TEXTOS_PLAN, type AvisoPlan } from '../utils/erroresPlan'
 
 /* ─── Subcomponente: resultado del pago ─── */
 function CheckoutResult() {
@@ -30,8 +35,33 @@ function CheckoutResult() {
   }, [orderId])
 
   if (loading) return <Loading label="Consultando el estado del pago…" />
+  // 404: no hay suscripción ni orden con ese número.
+  if (error && errorKind(error) === 'no-existe') {
+    return (
+      <section className="mx-auto max-w-lg px-4 py-16">
+        <Aviso tono="info" titulo={TEXTOS_PLAN.sinSuscripcion.titulo}
+          accion={<Link to="/planes" className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold text-blanco">Ver planes</Link>}>
+          {TEXTOS_PLAN.sinSuscripcion.texto}
+        </Aviso>
+      </section>
+    )
+  }
   if (error) return <ErrorState error={error} title="No pudimos consultar el pago" />
   if (!result) return <EmptyState title="Sin resultado" />
+
+  // Mercado Pago no aprobó el pago: pantalla del plan con Reintentar. No se muestran datos del medio de pago.
+  if (result.status === 'rechazado') {
+    const reintentar = result.planName === 'Tienda aliada' ? '/tienda/suscripcion' : '/suscripcion'
+    return (
+      <PagoRechazado
+        detalle={<p className="text-xs text-[var(--sr-tx-2)]">{result.planName} · {formatCOP(result.amount)} · cobro $0</p>}
+        acciones={<>
+          <Link to={reintentar} className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco">Reintentar pago</Link>
+          <Link to="/planes" className="rounded-xl border border-[color-mix(in_srgb,var(--sr-tx)_25%,transparent)] px-5 py-3 text-sm font-semibold text-[var(--sr-tx)]">Ver planes</Link>
+        </>}
+      />
+    )
+  }
 
   const icons: Record<string, string> = { aprobado: '✅', pendiente: '⏳', rechazado: '❌' }
   const messages: Record<string, string> = {
@@ -106,6 +136,7 @@ function PlansSelector() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
+  const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
   // El plan de la persona se lee de un único lugar: useUserPlan (el mismo que usan /planes y los candados).
   const { plan: userPlan } = useUserPlan(user?.role === 'COMPRADOR')
@@ -126,14 +157,17 @@ function PlansSelector() {
     }
 
     // Con sesión: crear checkout mock
-    setBusy(true)
+    setBusy(true); setAviso(null)
     try {
       await planService.createCheckout(plan.id)
       // En producción aquí se redirige al initPoint de Mercado Pago.
       // En mock mostramos el resultado simulado.
       navigate(`/pago/resultado?orden=MOCK_ORDER_OK`)
-    } catch {
-      // El error lo maneja el servicio
+    } catch (e) {
+      const a = avisoDePlan(e, 'No pudimos iniciar el pago. Intenta de nuevo.')
+      setAviso(a)
+      // 409: se vuelve a leer el plan para que la pantalla muestre el estado real.
+      if (a.refrescar) window.dispatchEvent(new Event(PLAN_CHANGED))
     } finally {
       setBusy(false)
     }
@@ -159,6 +193,12 @@ function PlansSelector() {
           Descubre moda local en Bogotá. Empieza gratis o desbloquea todo con Radar+.
         </p>
       </div>
+
+      {aviso && (
+        <div className="mx-auto mt-8 max-w-xl">
+          <Aviso tono={aviso.tono} titulo={aviso.titulo}>{aviso.texto}</Aviso>
+        </div>
+      )}
 
       {loading ? (
         <Loading label="Cargando planes…" />
