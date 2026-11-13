@@ -566,7 +566,7 @@ export default function InventoryPage() {
 
         {/* Estado sin resultados */}
         {!loading && !error && itemsFiltrados.length === 0 && (
-          <div className="mt-12 rounded-[22px] border border-black/[0.06] bg-white p-8 shadow-sm">
+          <div className="mt-12 rounded-[1.375rem] border border-black/[0.06] bg-white p-8 shadow-sm">
             <EmptyState
               title="No se encontraron prendas en el inventario"
               action={
@@ -938,7 +938,7 @@ export default function InventoryPage() {
                   <button
                     type="button"
                     onClick={() => setNuevaImagen('')}
-                    className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/75 text-[10px] text-white hover:bg-rose-600"
+                    className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/75 text-[0.625rem] text-white hover:bg-rose-600"
                     title="Quitar foto"
                     aria-label="Quitar foto"
                   >
@@ -954,7 +954,7 @@ export default function InventoryPage() {
                 <span className="text-xs font-medium text-white/90">
                   {nuevaImagen ? 'Cambiar foto seleccionada' : '📷 Subir foto de la prenda'}
                 </span>
-                <span className="text-[10px] text-white/50">PNG, JPG o WEBP (instantáneo)</span>
+                <span className="text-[0.625rem] text-white/50">PNG, JPG o WEBP (instantáneo)</span>
               </label>
 
               <input
@@ -1037,7 +1037,7 @@ export default function InventoryPage() {
             <span className="block text-xs font-semibold text-white/80">Stock inicial por tallas</span>
             <div className="mt-2 grid grid-cols-3 gap-3">
               <div>
-                <label htmlFor="tallaS" className="text-[11px] text-white/60">Talla S</label>
+                <label htmlFor="tallaS" className="text-[0.6875rem] text-white/60">Talla S</label>
                 <input
                   id="tallaS"
                   type="number"
@@ -1048,7 +1048,7 @@ export default function InventoryPage() {
                 />
               </div>
               <div>
-                <label htmlFor="tallaM" className="text-[11px] text-white/60">Talla M</label>
+                <label htmlFor="tallaM" className="text-[0.6875rem] text-white/60">Talla M</label>
                 <input
                   id="tallaM"
                   type="number"
@@ -1059,7 +1059,7 @@ export default function InventoryPage() {
                 />
               </div>
               <div>
-                <label htmlFor="tallaL" className="text-[11px] text-white/60">Talla L</label>
+                <label htmlFor="tallaL" className="text-[0.6875rem] text-white/60">Talla L</label>
                 <input
                   id="tallaL"
                   type="number"
@@ -1139,7 +1139,7 @@ export default function InventoryPage() {
             <p className="text-xs text-white/80">
               ¿Estás seguro de que deseas eliminar permanentemente <strong>«{itemParaEliminar.nombre}»</strong>?
             </p>
-            <p className="text-[11px] text-white/50">
+            <p className="text-[0.6875rem] text-white/50">
               Esta prenda se retirará de tu inventario y de la vitrina pública. Esta acción no se puede deshacer.
             </p>
           </div>

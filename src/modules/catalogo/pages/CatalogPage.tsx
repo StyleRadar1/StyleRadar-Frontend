@@ -266,7 +266,7 @@ export default function CatalogPage() {
 
         {/* Encabezado del catálogo */}
         <div className="mb-6">
-          <span className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)]">
+          <span className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)]">
             Catálogo
           </span>
           <h1 className="mt-1 text-3xl font-black tracking-tight text-[var(--color-text)] md:text-5xl">
@@ -350,7 +350,7 @@ export default function CatalogPage() {
               </svg>
               <span>Filtros</span>
               {filtrosActivosCount > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-[10px] font-black text-[var(--color-text-on-accent)]">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-[0.625rem] font-black text-[var(--color-text-on-accent)]">
                   {filtrosActivosCount}
                 </span>
               )}
@@ -392,7 +392,7 @@ export default function CatalogPage() {
                 aria-expanded={menuOrdenAbierto}
                 aria-label="Ordenar resultados"
               >
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
                   Ordenar:
                 </span>
                 <span className="text-[var(--color-text)] text-xs">
@@ -475,7 +475,7 @@ export default function CatalogPage() {
                     Filtrar catálogo
                   </h3>
                   {filtrosActivosCount > 0 && (
-                    <span className="rounded-full bg-[var(--sr-surface-raised,var(--color-surface-raised))] border border-[var(--sr-acento-primario,var(--color-accent))] px-2 py-0.5 text-[10px] font-bold text-[var(--sr-acento-primario,var(--color-accent))]">
+                    <span className="rounded-full bg-[var(--sr-surface-raised,var(--color-surface-raised))] border border-[var(--sr-acento-primario,var(--color-accent))] px-2 py-0.5 text-[0.625rem] font-bold text-[var(--sr-acento-primario,var(--color-accent))]">
                       {filtrosActivosCount} activos
                     </span>
                   )}
@@ -483,7 +483,7 @@ export default function CatalogPage() {
                 <button
                   type="button"
                   onClick={() => setMenuFiltrosAbierto(false)}
-                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1.5 rounded-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1.5 rounded-[0.625rem] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                   aria-label="Cerrar filtros"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1063,7 +1063,7 @@ export default function CatalogPage() {
         {/* CHIPS DE FILTROS ACTIVOS (para remover rápido) */}
         {filtrosActivosCount > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-[11px] text-[var(--color-text-muted)]">Filtros aplicados:</span>
+            <span className="text-[0.6875rem] text-[var(--color-text-muted)]">Filtros aplicados:</span>
             {filtroCercaDe !== 'No especificar' && (
               <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Cerca de: {filtroCercaDe}
@@ -1217,7 +1217,7 @@ export default function CatalogPage() {
               <p className="text-sm">Buscando prendas en el catálogo…</p>
             </div>
           ) : uniqueItems.length ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(10.625rem,1fr))]">
               {uniqueItems.map((it) => (
                 <ItemCard key={it.id} item={it} />
               ))}
@@ -1315,7 +1315,7 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
   })
 
 function HangerBackSvg({ bajada = 0 }: { bajada?: number }) {
-  const bajadaSvg = bajada * 1.2
+  const bajadaSvg = (bajada ?? 0) * 19.2
   const vbHeight = 60 + bajadaSvg
 
   return (
@@ -1344,7 +1344,7 @@ function HangerBackSvg({ bajada = 0 }: { bajada?: number }) {
 }
 
 function ShoulderHangerFrontSvg({ bajada = 0 }: { bajada?: number }) {
-  const bajadaSvg = bajada * 1.2
+  const bajadaSvg = (bajada ?? 0) * 19.2
   const vbHeight = 60 + bajadaSvg
 
   return (
@@ -1402,7 +1402,7 @@ function ShoulderHangerFrontSvg({ bajada = 0 }: { bajada?: number }) {
 }
 
 function ClipsHangerFrontSvg({ bajada = 0 }: { bajada?: number }) {
-  const bajadaSvg = bajada * 1.2
+  const bajadaSvg = (bajada ?? 0) * 19.2
   const vbHeight = 60 + bajadaSvg
 
   return (
@@ -1580,7 +1580,7 @@ function HangingCollectionRack({
               style={
                 {
                   '--rack-delay': `${(index * 0.42) % 2.5}s`,
-                  '--bajada': `${garment.bajada ?? 0}px`,
+                  '--bajada': `${garment.bajada ?? 0}rem`,
                 } as React.CSSProperties
               }
             >
@@ -1621,7 +1621,7 @@ function HangingCollectionRack({
                   {
                     '--rack-delay': `${(index * 0.42) % 2.5}s`,
                     '--ancla-y': garment.anclaY ?? 0,
-                    '--bajada': `${garment.bajada ?? 0}px`,
+                    '--bajada': `${garment.bajada ?? 0}rem`,
                   } as React.CSSProperties
                 }
               >

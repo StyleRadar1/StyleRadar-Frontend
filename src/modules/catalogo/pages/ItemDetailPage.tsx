@@ -134,7 +134,7 @@ export default function ItemDetailPage() {
               {/* Mobile: Primero en el orden visual (order-1)         */}
               {/* ---------------------------------------------------- */}
               <div className="flex flex-col items-center justify-center md:col-span-2 lg:col-span-6 md:order-1 lg:order-2 order-1">
-                <div className="relative w-full max-w-[380px] sm:max-w-[420px] aspect-[3/4] flex items-center justify-center overflow-hidden rounded-2xl">
+                <div className="relative w-full max-w-[23.75rem] sm:max-w-[26.25rem] aspect-[3/4] flex items-center justify-center overflow-hidden rounded-2xl">
                   {/* Fondo difuminado de la misma imagen con máscara lateral */}
                   <img
                     src={imagenActiva || prenda.imagen}
@@ -159,7 +159,7 @@ export default function ItemDetailPage() {
 
                 {/* Texto de etiqueta entre la prenda y la sombra */}
                 <div className="mt-4 text-center z-10">
-                  <p className="text-[10px] font-bold uppercase tracking-[.24em] text-[var(--sr-acento-primario,var(--color-accent))]">
+                  <p className="text-[0.625rem] font-bold uppercase tracking-[.24em] text-[var(--sr-acento-primario,var(--color-accent))]">
                     {prenda.tienda === 'Segunda mano' ? 'MODA CIRCULAR BOGOTÁ' : 'DISEÑO LOCAL BOGOTÁ'}
                   </p>
                   <p className="mt-0.5 text-xs font-black uppercase tracking-wider text-[var(--color-text)]">
@@ -183,7 +183,7 @@ export default function ItemDetailPage() {
                   </p>
 
                   {/* b) Nombre del producto grande, en mayúsculas, en 2 líneas como máximo */}
-                  <h1 className="mt-1.5 text-2xl sm:text-3xl lg:text-[28px] font-black uppercase tracking-tight text-[var(--color-text)] leading-tight line-clamp-2">
+                  <h1 className="mt-1.5 text-2xl sm:text-3xl lg:text-[1.75rem] font-black uppercase tracking-tight text-[var(--color-text)] leading-tight line-clamp-2">
                     {prenda.nombre}
                   </h1>
 
@@ -211,7 +211,7 @@ export default function ItemDetailPage() {
                   {/* d) Miniaturas de la prenda (solo si tiene más de una imagen) */}
                   {imagenesDisponibles.length > 1 && (
                     <div className="mt-6">
-                      <span className="block text-[10px] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)] mb-2">
+                      <span className="block text-[0.625rem] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)] mb-2">
                         VISTAS
                       </span>
                       <div className="flex gap-2.5 overflow-x-auto pb-1">
@@ -237,7 +237,7 @@ export default function ItemDetailPage() {
                   {/* Tarjeta de disponibilidad en tienda real (RF-22) */}
                   <div className="mt-6 rounded-2xl border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] p-4 text-xs text-[var(--color-text)]">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-success-bg,rgba(16,185,129,0.15))] border border-[var(--color-success-border,rgba(16,185,129,0.3))] px-2.5 py-0.5 text-[10px] font-bold text-[var(--color-success-text,#10b981)]">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-success-bg,rgba(16,185,129,0.15))] border border-[var(--color-success-border,rgba(16,185,129,0.3))] px-2.5 py-0.5 text-[0.625rem] font-bold text-[var(--color-success-text,#10b981)]">
                         <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
@@ -245,7 +245,7 @@ export default function ItemDetailPage() {
                       </span>
                       <span className="font-semibold text-[var(--color-text)]">Disponibilidad en tienda real</span>
                     </div>
-                    <p className="mt-1 text-[var(--color-text-muted)] text-[11px] leading-relaxed">
+                    <p className="mt-1 text-[var(--color-text-muted)] text-[0.6875rem] leading-relaxed">
                       Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong> ({prenda.barrio}).
                     </p>
                     {/* RF-73: Contactar a la tienda */}
@@ -269,7 +269,7 @@ export default function ItemDetailPage() {
                   {/* a) TALLA como título con letter-spacing y chips redondos */}
                   {prenda.tallas && prenda.tallas.length > 0 && (
                     <div>
-                      <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
+                      <div className="flex items-center justify-between text-[0.6875rem] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
                         <span>TALLA</span>
                         {tallaSeleccionada && (
                           <span className="text-[var(--sr-acento-primario,var(--color-accent))] font-bold text-xs lowercase first-letter:uppercase">
@@ -305,7 +305,7 @@ export default function ItemDetailPage() {
                   {/* b) COLOR como título y muestra de color */}
                   {prenda.color && (
                     <div className="mt-6">
-                      <span className="block text-[11px] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
+                      <span className="block text-[0.6875rem] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
                         COLOR
                       </span>
                       <div className="mt-2.5 flex items-center gap-3">
@@ -317,7 +317,7 @@ export default function ItemDetailPage() {
                               className="h-full w-full object-contain"
                             />
                           </div>
-                          <span className="text-[10px] font-semibold text-[var(--color-text)]">
+                          <span className="text-[0.625rem] font-semibold text-[var(--color-text)]">
                             {prenda.color}
                           </span>
                         </div>
@@ -388,8 +388,8 @@ export default function ItemDetailPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">TIENDA</p>
-                    <p className="text-xs font-bold text-[var(--color-text)] truncate max-w-[130px]">{prenda.tienda}</p>
+                    <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">TIENDA</p>
+                    <p className="text-xs font-bold text-[var(--color-text)] truncate max-w-[8.125rem]">{prenda.tienda}</p>
                   </div>
                 </div>
 
@@ -402,7 +402,7 @@ export default function ItemDetailPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">SECTOR</p>
+                    <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">SECTOR</p>
                     <p className="text-xs font-bold text-[var(--color-text)]">{prenda.barrio}</p>
                   </div>
                 </div>
@@ -416,7 +416,7 @@ export default function ItemDetailPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">CERCANÍA</p>
+                    <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">CERCANÍA</p>
                     <p className="text-xs font-bold text-[var(--color-text)]">a {prenda.distanciaKm} km</p>
                   </div>
                 </div>
@@ -429,7 +429,7 @@ export default function ItemDetailPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">ESTILO</p>
+                    <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">ESTILO</p>
                     <p className="text-xs font-bold text-[var(--color-text)]">{prenda.estilo}</p>
                   </div>
                 </div>
@@ -455,7 +455,7 @@ export default function ItemDetailPage() {
                 </Link>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(10.625rem,1fr))]">
                 {similares.map((sim) => (
                   <ItemCard key={sim.id} item={sim} />
                 ))}

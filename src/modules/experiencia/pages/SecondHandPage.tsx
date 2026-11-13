@@ -15,7 +15,7 @@ export default function SecondHandPage() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Segunda vida</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Segunda vida</p>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-text)] md:text-5xl">Ropa usada de gente de Bogotá</h1>
         <div className="flex gap-2">
@@ -127,7 +127,7 @@ function Explore() {
                 <li key={l.id} className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
                   <div className="aspect-[4/5] bg-[var(--color-surface-subtle)]"><img src={l.fotos[0]} alt={l.titulo} loading="lazy" className="h-full w-full object-cover" /></div>
                   <div className="p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">{CONSERVACION_LABEL[l.conservacion]} · Talla {l.talla}</p>
+                    <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">{CONSERVACION_LABEL[l.conservacion]} · Talla {l.talla}</p>
                     <h3 className="mt-1 font-semibold text-[var(--color-text)]">{l.titulo}</h3>
                     <p className="text-xs text-[var(--color-text-muted)]">{l.marca} · {l.vendedor.nombre} · {l.barrio}</p>
                     <p className="mt-2 font-semibold text-[var(--color-text)]">{formatCOP(l.precio)}</p>

@@ -10,11 +10,11 @@
   --fnd-lavanda: #b9b9ca;
   --fnd-violeta: #48119a;
   --fnd-violeta-hover: #5a1fb8;
-  --fnd-radius: 20px;
+  --fnd-radius: 1.25rem;
   --fnd-shadow: 0 10px 30px rgba(38, 38, 38, 0.07), 0 2px 6px rgba(38, 38, 38, 0.04);
 
   min-height: 100vh;
-  padding-bottom: 72px;
+  padding-bottom: 4.5rem;
   background: linear-gradient(180deg, #efe6d9 0%, #f6f1ea 32%, #ffffff 100%);
   color: var(--fnd-grafito);
   font-family: 'Poppins', system-ui, sans-serif;
@@ -41,7 +41,7 @@ html[data-theme='dark'] .fnd-donations {
   overflow: hidden;
   background: #16121b;
   color: #fff;
-  min-height: clamp(520px, 66vh, 680px);
+  min-height: clamp(32.5rem, 66vh, 42.5rem);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -49,7 +49,7 @@ html[data-theme='dark'] .fnd-donations {
 }
 
 @keyframes fndFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(0.375rem); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -63,7 +63,7 @@ html[data-theme='dark'] .fnd-donations {
   position: absolute;
   inset: 0 0 0 auto;
   z-index: -2;
-  width: min(68%, 1000px);
+  width: min(68%, 62.5rem);
 }
 
 .fnd-hero__media img {
@@ -83,18 +83,18 @@ html[data-theme='dark'] .fnd-donations {
 }
 
 .fnd-hero__inner {
-  width: min(100% - 2 * clamp(16px, 4vw, 48px), 1320px);
+  width: min(100% - 2 * clamp(1rem, 4vw, 3rem), 82.5rem);
   margin: 0 auto;
-  padding: clamp(24px, 3.2vw, 36px) 0 clamp(80px, 8vw, 110px);
+  padding: clamp(1.5rem, 3.2vw, 2.25rem) 0 clamp(5rem, 8vw, 6.875rem);
 }
 
 .fnd-hero__crumbs {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: clamp(14px, 2.4vw, 24px);
+  gap: 0.5rem;
+  margin-bottom: clamp(0.875rem, 2.4vw, 1.5rem);
   color: rgba(255, 255, 255, 0.7);
-  font-size: 11.5px;
+  font-size: 0.7188rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -105,20 +105,20 @@ html[data-theme='dark'] .fnd-donations {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 8px 16px;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 1rem;
   background: rgba(38, 38, 38, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   backdrop-filter: blur(8px);
 }
 
 .fnd-hero__preview-text {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11.5px;
+  gap: 0.5rem;
+  font-size: 0.7188rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -128,15 +128,15 @@ html[data-theme='dark'] .fnd-donations {
 .fnd-hero__eyebrow {
   display: block;
   color: var(--fnd-lavanda);
-  font-size: 11.5px;
+  font-size: 0.7188rem;
   font-weight: 700;
   letter-spacing: 0.24em;
   text-transform: uppercase;
 }
 
 .fnd-hero__title {
-  margin: 6px 0 0;
-  font-size: clamp(38px, 5.5vw, 68px);
+  margin: 0.375rem 0 0;
+  font-size: clamp(2.375rem, 5.5vw, 4.25rem);
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.03em;
@@ -145,8 +145,8 @@ html[data-theme='dark'] .fnd-donations {
 
 .fnd-hero__subtitle {
   display: block;
-  margin: 4px 0 14px;
-  font-size: clamp(14px, 1.6vw, 18px);
+  margin: 0.25rem 0 0.875rem;
+  font-size: clamp(0.875rem, 1.6vw, 1.125rem);
   font-weight: 500;
   letter-spacing: 0.26em;
   text-transform: uppercase;
@@ -157,7 +157,7 @@ html[data-theme='dark'] .fnd-donations {
   max-width: 48ch;
   margin: 0;
   color: #d6d6e2;
-  font-size: clamp(14px, 1.25vw, 16px);
+  font-size: clamp(0.875rem, 1.25vw, 1rem);
   line-height: 1.5;
 }
 
@@ -165,17 +165,17 @@ html[data-theme='dark'] .fnd-donations {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-top: clamp(20px, 2.8vw, 32px);
+  gap: 0.75rem;
+  margin-top: clamp(1.25rem, 2.8vw, 2rem);
 }
 
 /* ── Fila de dos tarjetas montadas sobre el borde inferior del Hero ── */
 .fnd-hero-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: clamp(18px, 2.5vw, 32px);
-  margin-top: clamp(-65px, -7vw, -90px);
-  margin-bottom: clamp(28px, 3.5vw, 40px);
+  gap: clamp(1.125rem, 2.5vw, 2rem);
+  margin-top: clamp(-4.0625rem, -7vw, -5.625rem);
+  margin-bottom: clamp(1.75rem, 3.5vw, 2.5rem);
   position: relative;
   z-index: 10;
 }
@@ -188,25 +188,25 @@ html[data-theme='dark'] .fnd-donations {
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  border-radius: 20px;
+  border-radius: 1.25rem;
   background: #191422;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
   overflow: hidden;
-  min-height: 150px;
+  min-height: 9.375rem;
   height: 100%;
   color: #fff;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .fnd-hero-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
   box-shadow: 0 20px 42px rgba(0, 0, 0, 0.45);
 }
 
 .fnd-hero-card__body {
   flex: 1;
-  padding: clamp(18px, 2.2vw, 24px);
+  padding: clamp(1.125rem, 2.2vw, 1.5rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -214,29 +214,29 @@ html[data-theme='dark'] .fnd-donations {
 }
 
 .fnd-hero-card__title {
-  margin: 0 0 8px;
-  font-size: clamp(17px, 1.6vw, 20px);
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.0625rem, 1.6vw, 1.25rem);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: #ffffff;
 }
 
 .fnd-hero-card__desc {
-  margin: 0 0 14px;
-  font-size: 13px;
+  margin: 0 0 0.875rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #c8c5d6;
 }
 
 .fnd-hero-card__link {
   align-self: flex-start;
-  font-size: 11.5px;
+  font-size: 0.7188rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #ffffff;
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: 0.25rem;
   transition: color 0.15s ease;
 }
 
@@ -245,7 +245,7 @@ html[data-theme='dark'] .fnd-donations {
 }
 
 .fnd-hero-card__media {
-  width: clamp(120px, 15vw, 160px);
+  width: clamp(7.5rem, 15vw, 10rem);
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -265,11 +265,11 @@ html[data-theme='dark'] .fnd-donations {
 /* Detalle de marca: Cuadrado de acento violeta decorativo detrás de la tarjeta */
 .fnd-hero-card__accent-box {
   position: absolute;
-  right: -16px;
-  bottom: -16px;
-  width: 100px;
-  height: 100px;
-  border-radius: 22px;
+  right: -1rem;
+  bottom: -1rem;
+  width: 6.25rem;
+  height: 6.25rem;
+  border-radius: 1.375rem;
   background: linear-gradient(135deg, var(--fnd-violeta) 0%, #7038c7 100%);
   box-shadow: 0 10px 28px rgba(72, 17, 154, 0.45);
   z-index: -1;
@@ -280,10 +280,10 @@ html[data-theme='dark'] .fnd-donations {
 @media (max-width: 840px) {
   .fnd-hero-cards {
     grid-template-columns: 1fr;
-    margin-top: -50px;
+    margin-top: -3.125rem;
   }
   .fnd-hero-card__media {
-    width: 120px;
+    width: 7.5rem;
   }
 }
 
@@ -302,7 +302,7 @@ html[data-theme='dark'] .fnd-donations {
   }
   .fnd-hero-card__media {
     width: 100%;
-    height: 140px;
+    height: 8.75rem;
   }
 }
 
@@ -310,11 +310,11 @@ html[data-theme='dark'] .fnd-donations {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 24px;
-  border-radius: 999px;
-  font-size: 13.5px;
+  gap: 0.5rem;
+  height: 2.75rem;
+  padding: 0 1.5rem;
+  border-radius: 62.4375rem;
+  font-size: 0.8438rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -332,7 +332,7 @@ html[data-theme='dark'] .fnd-donations {
 .fnd-btn--primary:hover {
   background: var(--fnd-violeta-hover);
   border-color: var(--fnd-violeta-hover);
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .fnd-btn--outline {
@@ -345,23 +345,23 @@ html[data-theme='dark'] .fnd-donations {
 .fnd-btn--outline:hover {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.6);
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 /* ── Fila de KPIs del Hero ── */
 .fnd-hero-kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: clamp(12px, 1.8vw, 18px);
-  margin-top: clamp(24px, 3.4vw, 36px);
+  grid-template-columns: repeat(auto-fit, minmax(13.125rem, 1fr));
+  gap: clamp(0.75rem, 1.8vw, 1.125rem);
+  margin-top: clamp(1.5rem, 3.4vw, 2.25rem);
 }
 
 .fnd-kpi-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-radius: 18px;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1.125rem;
   background: rgba(38, 38, 38, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(14px);
@@ -371,9 +371,9 @@ html[data-theme='dark'] .fnd-donations {
 .fnd-kpi-card__icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
   background: rgba(255, 255, 255, 0.1);
   color: var(--fnd-arena);
   flex-shrink: 0;
@@ -381,7 +381,7 @@ html[data-theme='dark'] .fnd-donations {
 
 .fnd-kpi-card__value {
   display: block;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 800;
   line-height: 1.1;
   color: #fff;
@@ -389,16 +389,16 @@ html[data-theme='dark'] .fnd-donations {
 
 .fnd-kpi-card__label {
   display: block;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--fnd-lavanda);
   font-weight: 500;
 }
 
 /* ── Contenedor principal de contenido ── */
 .fnd-container {
-  width: min(100% - 2 * clamp(16px, 4vw, 48px), 1320px);
+  width: min(100% - 2 * clamp(1rem, 4vw, 3rem), 82.5rem);
   margin: 0 auto;
-  padding-top: clamp(24px, 3.5vw, 38px);
+  padding-top: clamp(1.5rem, 3.5vw, 2.375rem);
 }
 
 /* ── Alerta de pendientes ── */
@@ -407,9 +407,9 @@ html[data-theme='dark'] .fnd-donations {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 18px 24px;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.125rem 1.5rem;
   border-radius: var(--fnd-radius);
   background: #ffffff;
   border: 1px solid rgba(72, 17, 154, 0.18);
@@ -424,7 +424,7 @@ html[data-theme='dark'] .fnd-alert {
 .fnd-alert__left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 1rem;
   min-width: 0;
   flex: 1;
 }
@@ -432,9 +432,9 @@ html[data-theme='dark'] .fnd-alert {
 .fnd-alert__icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.875rem;
   background: rgba(72, 17, 154, 0.1);
   color: var(--fnd-violeta);
   flex-shrink: 0;
@@ -447,13 +447,13 @@ html[data-theme='dark'] .fnd-alert__icon {
 
 .fnd-alert__title {
   margin: 0;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 700;
 }
 
 .fnd-alert__desc {
-  margin: 2px 0 0;
-  font-size: 13px;
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
   color: rgba(38, 38, 38, 0.7);
 }
 
@@ -463,7 +463,7 @@ html[data-theme='dark'] .fnd-alert__desc {
 
 /* ── Tarjetas editoriales de la fundación ── */
 .fnd-card {
-  padding: clamp(20px, 2.6vw, 28px);
+  padding: clamp(1.25rem, 2.6vw, 1.75rem);
   border-radius: var(--fnd-radius);
   background: #ffffff;
   border: 1px solid rgba(38, 38, 38, 0.08);
@@ -478,15 +478,15 @@ html[data-theme='dark'] .fnd-card {
 }
 
 .fnd-card__heading {
-  margin: 0 0 14px;
-  font-size: clamp(20px, 2.2vw, 24px);
+  margin: 0 0 0.875rem;
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 .fnd-card__text {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.6;
   color: rgba(38, 38, 38, 0.85);
 }
@@ -496,8 +496,8 @@ html[data-theme='dark'] .fnd-card__text {
 }
 
 .fnd-card__eyebrow {
-  margin: 20px 0 8px;
-  font-size: 11px;
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -515,14 +515,14 @@ html[data-theme='dark'] .fnd-card__eyebrow {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .fnd-check-list li {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 13.5px;
+  gap: 0.625rem;
+  font-size: 0.8438rem;
   color: rgba(38, 38, 38, 0.82);
 }
 
@@ -533,15 +533,15 @@ html[data-theme='dark'] .fnd-check-list li {
 .fnd-check-list .fnd-check-icon {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 62.4375rem;
   background: rgba(72, 17, 154, 0.12);
   color: var(--fnd-violeta);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 800;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 0.125rem;
 }
 
 html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
@@ -552,7 +552,7 @@ html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
 /* Fotos de la fundación */
 .fnd-figure {
   position: relative;
-  min-height: 220px;
+  min-height: 13.75rem;
   border-radius: var(--fnd-radius);
   overflow: hidden;
   box-shadow: var(--fnd-shadow);
@@ -574,14 +574,14 @@ html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
 
 .fnd-figure__cap {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
-  padding: 5px 12px;
-  border-radius: 999px;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  padding: 0.3125rem 0.75rem;
+  border-radius: 62.4375rem;
   background: rgba(38, 38, 38, 0.82);
   backdrop-filter: blur(6px);
   color: #fff;
-  font-size: 10.5px;
+  font-size: 0.6563rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -592,7 +592,7 @@ html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
 .fnd-pill-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -601,11 +601,11 @@ html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
 .fnd-pill-tag {
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
-  border-radius: 999px;
+  padding: 0.375rem 0.875rem;
+  border-radius: 62.4375rem;
   background: #f4eee5;
   border: 1px solid rgba(38, 38, 38, 0.12);
-  font-size: 11.5px;
+  font-size: 0.7188rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -620,7 +620,7 @@ html[data-theme='dark'] .fnd-pill-tag {
 
 /* Barras de progreso de necesidades */
 .fnd-progress-item {
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .fnd-progress-item:last-child {
@@ -630,14 +630,14 @@ html[data-theme='dark'] .fnd-pill-tag {
 .fnd-progress-header {
   display: flex;
   justify-content: space-between;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 0.375rem;
 }
 
 .fnd-progress-bar {
-  height: 8px;
-  border-radius: 999px;
+  height: 0.5rem;
+  border-radius: 62.4375rem;
   background: #eae2d6;
   overflow: hidden;
 }
@@ -648,7 +648,7 @@ html[data-theme='dark'] .fnd-progress-bar {
 
 .fnd-progress-fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   background: linear-gradient(90deg, var(--fnd-violeta) 0%, #7038c7 100%);
   transition: width 0.4s ease;
 }
@@ -657,13 +657,13 @@ html[data-theme='dark'] .fnd-progress-bar {
 .fnd-contact-dl {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px 16px;
+  gap: 0.875rem 1rem;
   margin: 0;
 }
 
 .fnd-contact-item {
   border-bottom: 1px solid rgba(38, 38, 38, 0.08);
-  padding-bottom: 8px;
+  padding-bottom: 0.5rem;
 }
 
 html[data-theme='dark'] .fnd-contact-item {
@@ -675,7 +675,7 @@ html[data-theme='dark'] .fnd-contact-item {
 }
 
 .fnd-contact-dt {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -687,8 +687,8 @@ html[data-theme='dark'] .fnd-contact-dt {
 }
 
 .fnd-contact-dd {
-  margin: 3px 0 0;
-  font-size: 13.5px;
+  margin: 0.1875rem 0 0;
+  font-size: 0.8438rem;
   font-weight: 500;
   word-break: break-word;
 }
@@ -698,17 +698,17 @@ html[data-theme='dark'] .fnd-contact-dt {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin: 24px 0 20px;
+  gap: 0.5rem;
+  margin: 1.5rem 0 1.25rem;
 }
 
 .fnd-filter-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  border-radius: 999px;
-  font-size: 13px;
+  gap: 0.375rem;
+  padding: 0.5rem 1.125rem;
+  border-radius: 62.4375rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   border: 1px solid rgba(38, 38, 38, 0.12);
   background: #ffffff;
@@ -725,7 +725,7 @@ html[data-theme='dark'] .fnd-filter-btn {
 
 .fnd-filter-btn:hover {
   border-color: var(--fnd-violeta);
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .fnd-filter-btn[aria-pressed='true'] {
@@ -737,9 +737,9 @@ html[data-theme='dark'] .fnd-filter-btn {
 
 .fnd-filter-badge {
   display: inline-block;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 11px;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 62.4375rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   background: rgba(0, 0, 0, 0.08);
 }
@@ -752,7 +752,7 @@ html[data-theme='dark'] .fnd-filter-btn {
 .fnd-donation-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -761,8 +761,8 @@ html[data-theme='dark'] .fnd-filter-btn {
 .fnd-donation-card {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  padding: 20px 24px;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
   border-radius: var(--fnd-radius);
   background: #ffffff;
   border: 1px solid rgba(38, 38, 38, 0.08);
@@ -776,9 +776,9 @@ html[data-theme='dark'] .fnd-donation-card {
 }
 
 .fnd-donation-card__img {
-  width: 90px;
-  height: 104px;
-  border-radius: 14px;
+  width: 5.625rem;
+  height: 6.5rem;
+  border-radius: 0.875rem;
   object-fit: cover;
   background: #e8dccb;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -787,27 +787,27 @@ html[data-theme='dark'] .fnd-donation-card {
 
 .fnd-donation-card__main {
   flex: 1;
-  min-width: 240px;
+  min-width: 15rem;
 }
 
 .fnd-donation-card__title-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
+  gap: 0.625rem;
+  margin-bottom: 0.375rem;
 }
 
 .fnd-donation-card__title {
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 700;
   margin: 0;
 }
 
 .fnd-donation-card__meta {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: rgba(38, 38, 38, 0.72);
-  margin: 3px 0;
+  margin: 0.1875rem 0;
 }
 
 html[data-theme='dark'] .fnd-donation-card__meta {
@@ -815,12 +815,12 @@ html[data-theme='dark'] .fnd-donation-card__meta {
 }
 
 .fnd-donation-card__logistics {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: rgba(38, 38, 38, 0.85);
-  margin: 4px 0;
+  margin: 0.25rem 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 html[data-theme='dark'] .fnd-donation-card__logistics {
@@ -831,8 +831,8 @@ html[data-theme='dark'] .fnd-donation-card__logistics {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
-  min-width: 170px;
+  gap: 0.625rem;
+  min-width: 10.625rem;
 }
 
 @media (max-width: 640px) {
@@ -840,7 +840,7 @@ html[data-theme='dark'] .fnd-donation-card__logistics {
     align-items: flex-start;
     width: 100%;
     border-top: 1px solid rgba(38, 38, 38, 0.08);
-    padding-top: 14px;
+    padding-top: 0.875rem;
   }
 }
 

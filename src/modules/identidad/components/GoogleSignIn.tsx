@@ -108,10 +108,10 @@ function AccountPicker({ onPick, onClose }: { onPick: (email: string) => void; o
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-[430px] rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 text-[var(--color-text)] shadow-2xl backdrop-blur-xl"
+        className="relative w-full max-w-[26.875rem] rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 text-[var(--color-text)] shadow-2xl backdrop-blur-xl"
       >
         <div className="pr-10">
-          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
             Continuar con Google
           </p>
           <h2 id={titleId} className="mt-1 text-3xl font-extrabold tracking-tight text-[var(--color-text)]">
@@ -153,7 +153,7 @@ function AccountPicker({ onPick, onClose }: { onPick: (email: string) => void; o
         <form onSubmit={submit} className="mt-4">
           <label
             htmlFor="g-otra"
-            className="inline-flex items-center text-xs font-semibold text-[var(--color-text)] before:mr-1.5 before:text-[10px] before:content-['▸']"
+            className="inline-flex items-center text-xs font-semibold text-[var(--color-text)] before:mr-1.5 before:text-[0.625rem] before:content-['▸']"
           >
             Usar otra cuenta
           </label>
@@ -205,7 +205,7 @@ function AccountPicker({ onPick, onClose }: { onPick: (email: string) => void; o
 /** Logo oficial de Google: sus colores son obligatorios en los botones de ingreso. */
 function GoogleLogo() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 48 48" className="h-[18px] w-[18px]">
+    <svg aria-hidden="true" viewBox="0 0 48 48" className="h-[1.125rem] w-[1.125rem]">
       <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
       <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
       <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />

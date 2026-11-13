@@ -62,7 +62,7 @@ export default function FoundationHomePage() {
               </svg>
               Así ven tu página las personas que quieren donar
             </span>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[.12em] ${f.activa ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'}`}>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-[.12em] ${f.activa ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'}`}>
               <span aria-hidden="true">● </span>{f.activa ? 'Activa' : 'Inactiva'}
             </span>
           </div>

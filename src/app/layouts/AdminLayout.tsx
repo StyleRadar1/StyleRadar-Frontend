@@ -80,11 +80,11 @@ function AdminShell() {
         return s.to ? (
           <NavLink key={s.label} to={s.to} className={enlace}>
             {ICONOS[s.icon]}<span className="flex-1">{s.label}</span>
-            {badge && <span className="rounded-full bg-violeta px-2 text-[11px] font-bold text-blanco">{badge}<span className="sr-only"> pendientes</span></span>}
+            {badge && <span className="rounded-full bg-violeta px-2 text-[0.6875rem] font-bold text-blanco">{badge}<span className="sr-only"> pendientes</span></span>}
           </NavLink>
         ) : (
           <span key={s.label} aria-disabled="true" className="flex cursor-default items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/35">
-            {ICONOS[s.icon]}<span className="flex-1">{s.label}</span><span className="text-[10px] font-bold uppercase tracking-[.12em]">Pronto</span>
+            {ICONOS[s.icon]}<span className="flex-1">{s.label}</span><span className="text-[0.625rem] font-bold uppercase tracking-[.12em]">Pronto</span>
           </span>
         )
       })}
@@ -100,11 +100,11 @@ function AdminShell() {
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-[#181520]/80 backdrop-blur-xl lg:flex">
           <Link to="/admin/estadisticas" className="flex items-center gap-2.5 border-b border-white/10 px-5 py-4">
             <Logo className="h-8 w-auto" />
-            <span><b className="block leading-tight">StyleRadar</b><span className="block text-[10px] font-bold uppercase tracking-[.16em] text-white/55">Módulo de administración</span></span>
+            <span><b className="block leading-tight">StyleRadar</b><span className="block text-[0.625rem] font-bold uppercase tracking-[.16em] text-white/55">Módulo de administración</span></span>
           </Link>
           <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
             <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violeta text-xs font-bold text-blanco shadow-[0_0_18px_rgba(72,17,154,0.55)]">{iniciales(user.name)}</span>
-            <span className="min-w-0"><b className="block truncate text-sm">{user.name}</b><span className="block text-[10px] font-bold uppercase tracking-[.16em] text-white/55">Administrador</span></span>
+            <span className="min-w-0"><b className="block truncate text-sm">{user.name}</b><span className="block text-[0.625rem] font-bold uppercase tracking-[.16em] text-white/55">Administrador</span></span>
           </div>
           <nav aria-label="Administración" className="flex-1 space-y-1 overflow-y-auto p-3">{nav}</nav>
           <div className="space-y-1 border-t border-white/10 p-3">
@@ -118,14 +118,14 @@ function AdminShell() {
           <header className="sticky top-0 z-30 border-b border-white/10 bg-[#181520]/75 backdrop-blur-xl">
             <div className="flex h-14 items-center gap-3 px-4 md:px-8">
               <Link to="/admin/estadisticas" className="lg:hidden" aria-label="StyleRadar, administración"><Logo className="h-7 w-auto" /></Link>
-              <p className="text-[11px] font-bold uppercase tracking-[.16em] text-white/60">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-white/60">
                 <span className="max-sm:hidden">Administración <span aria-hidden="true">/</span> </span><span className="text-blanco">{actual}</span>
               </p>
               <div className="ml-auto flex items-center gap-2">
                 <AppearancePicker />
                 <span className="flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-3">
-                  <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-violeta text-[10px] font-bold text-blanco">{iniciales(user.name)}</span>
-                  <span className="text-[11px] font-bold uppercase tracking-[.14em]">Admin</span>
+                  <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-violeta text-[0.625rem] font-bold text-blanco">{iniciales(user.name)}</span>
+                  <span className="text-[0.6875rem] font-bold uppercase tracking-[.14em]">Admin</span>
                 </span>
               </div>
               <button type="button" onClick={() => setSalir(true)} className="rounded-lg px-2 py-1.5 text-sm text-white/70 hover:text-blanco lg:hidden">Salir</button>

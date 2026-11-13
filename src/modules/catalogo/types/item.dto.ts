@@ -27,6 +27,7 @@ export interface ItemResponseDto {
   tipoGancho?: 'hombros' | 'pinzas'
   anclaY?: number
   bajada?: number
+  descripcion?: string
 }
 
 export interface ItemFiltersDto {

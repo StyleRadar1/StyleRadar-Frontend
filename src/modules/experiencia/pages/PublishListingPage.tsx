@@ -81,7 +81,7 @@ export default function PublishListingPage() {
 
   if (done) return (
     <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">{editing ? 'Cambios guardados' : 'Publicación creada'}</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">{editing ? 'Cambios guardados' : 'Publicación creada'}</p>
       <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">{editing ? 'Listo, actualizamos tu prenda' : '¡Tu prenda ya está en Segunda vida!'}</h1>
       <p className="mt-3 text-[var(--color-text-muted)]">«{done.titulo}» por {formatCOP(done.precio)}. Te avisaremos cuando alguien te escriba.</p>
       <div className="mt-8 flex flex-wrap justify-center gap-2">
@@ -93,7 +93,7 @@ export default function PublishListingPage() {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Segunda vida · {editing ? 'Editar publicación' : 'Vender una prenda'}</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Segunda vida · {editing ? 'Editar publicación' : 'Vender una prenda'}</p>
       <h1 ref={heading} tabIndex={-1} className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-text)] outline-none md:text-4xl">{STEPS[step]}</h1>
       <div className="mt-5"><Steps steps={STEPS} current={step} /></div>
 
@@ -133,7 +133,7 @@ export default function PublishListingPage() {
                 <input {...a11y('lpre', errors.precio, true)} inputMode="numeric" className={`${inputCls} pl-8`} value={form.precio} onChange={(e) => set('precio', e.target.value)} placeholder="85.000" /></div>
             </Field>
             <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4" aria-label="Resumen de la publicación">
-              <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">Resumen</p>
+              <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">Resumen</p>
               <div className="mt-3 flex gap-3">
                 {form.fotos[0] && <img src={form.fotos[0].url} alt="" className="h-24 w-20 rounded-lg object-cover bg-[var(--color-surface)]" />}
                 <div className="text-sm">

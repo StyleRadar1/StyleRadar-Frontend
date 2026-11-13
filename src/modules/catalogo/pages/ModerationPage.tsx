@@ -215,7 +215,7 @@ export default function ModerationPage() {
                     ;(e.currentTarget as HTMLElement).style.display = 'none'
                   }}
                 />
-                <span className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur">
+                <span className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-1 text-[0.6875rem] font-semibold text-white backdrop-blur">
                   {item.tipo}
                 </span>
                 <span className="absolute bottom-3 right-3 rounded-md bg-violeta/90 px-2.5 py-1 text-xs font-bold text-white shadow">
@@ -225,7 +225,7 @@ export default function ModerationPage() {
 
               <div className="p-5">
                 <div className="flex items-center gap-2">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider ${item.tipoPublicador === 'Tienda' ? 'text-violeta-claro' : 'text-arena'}`}>
+                  <span className={`text-[0.6875rem] font-bold uppercase tracking-wider ${item.tipoPublicador === 'Tienda' ? 'text-violeta-claro' : 'text-arena'}`}>
                     {item.tipoPublicador}
                   </span>
                   <span className="text-xs text-white/40">·</span>
@@ -235,10 +235,10 @@ export default function ModerationPage() {
                 <h3 className="mt-1.5 line-clamp-1 font-bold text-white">{item.titulo}</h3>
 
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  <span className="rounded bg-white/5 px-2 py-0.5 text-[11px] text-white/70">
+                  <span className="rounded bg-white/5 px-2 py-0.5 text-[0.6875rem] text-white/70">
                     Cat: {item.categoria}
                   </span>
-                  <span className="rounded bg-white/5 px-2 py-0.5 text-[11px] text-white/70">
+                  <span className="rounded bg-white/5 px-2 py-0.5 text-[0.6875rem] text-white/70">
                     Tallas: {item.tallas.join(', ')}
                   </span>
                 </div>
@@ -249,7 +249,7 @@ export default function ModerationPage() {
                   </p>
                 )}
 
-                <p className="mt-3 text-[11px] text-white/50">{item.fecha}</p>
+                <p className="mt-3 text-[0.6875rem] text-white/50">{item.fecha}</p>
 
                 {/* Acciones */}
                 <div className="mt-5 flex items-center justify-end gap-2 border-t border-white/10 pt-4">
@@ -287,7 +287,7 @@ export default function ModerationPage() {
               <div className="flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded bg-white/10 px-2 py-0.5 text-[11px] font-bold uppercase text-white/80">
+                    <span className="rounded bg-white/10 px-2 py-0.5 text-[0.6875rem] font-bold uppercase text-white/80">
                       {grupo.tipoPublicador}
                     </span>
                     <span className="text-xs text-white/50">{grupo.tipo}</span>
@@ -365,7 +365,7 @@ export default function ModerationPage() {
             history.map((h) => (
               <li key={h.id} className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <span className={`mr-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${h.aprobado ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                  <span className={`mr-2 inline-block rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${h.aprobado ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
                     {h.aprobado ? 'APROBADA' : 'RECHAZADA'}
                   </span>
                   <span className="font-semibold text-white">{h.titulo}</span>

@@ -66,7 +66,7 @@ export default function AdminStoreDetailPage() {
               <li key={d.nombre} className="flex items-center gap-2 px-3 py-2.5 text-sm">
                 <span aria-hidden="true" className={d.recibido ? 'text-[#9be3b4]' : 'text-arena'}>{d.recibido ? '✓' : '⚠'}</span>
                 <span className="flex-1">{d.nombre}</span>
-                <span className="text-[10px] font-bold uppercase tracking-[.14em] text-white/60">{d.recibido ? 'Recibido' : 'Falta'}</span>
+                <span className="text-[0.625rem] font-bold uppercase tracking-[.14em] text-white/60">{d.recibido ? 'Recibido' : 'Falta'}</span>
               </li>
             ))}
           </ul>
@@ -98,9 +98,9 @@ export default function AdminStoreDetailPage() {
         <AdminCard title="Transacciones" className="lg:col-span-2">
           {!data.pagos.length ? <EmptyState title="Sin transacciones">Aún no hay pagos registrados.</EmptyState> : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[480px] text-left text-sm">
+              <table className="w-full min-w-[30rem] text-left text-sm">
                 <caption className="sr-only">Pagos de {t.nombre}</caption>
-                <thead className="text-[11px] uppercase tracking-[.12em] text-white/55"><tr><th scope="col" className="py-2">Referencia</th><th scope="col" className="py-2">Fecha</th><th scope="col" className="py-2">Método</th><th scope="col" className="py-2 text-right">Monto</th><th scope="col" className="py-2 text-right">Estado</th></tr></thead>
+                <thead className="text-[0.6875rem] uppercase tracking-[.12em] text-white/55"><tr><th scope="col" className="py-2">Referencia</th><th scope="col" className="py-2">Fecha</th><th scope="col" className="py-2">Método</th><th scope="col" className="py-2 text-right">Monto</th><th scope="col" className="py-2 text-right">Estado</th></tr></thead>
                 <tbody>{data.pagos.map((p) => (
                   <tr key={p.id} className="border-t border-white/10"><td className="py-2">{p.id}</td><td className="py-2">{p.date}</td><td className="py-2">{p.method}</td><td className="py-2 text-right tabular-nums">{formatCOP(p.amount)}</td><td className="py-2 text-right capitalize">{p.status}</td></tr>
                 ))}</tbody>

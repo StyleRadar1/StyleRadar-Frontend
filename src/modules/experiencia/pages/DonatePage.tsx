@@ -52,7 +52,7 @@ export default function DonatePage() {
 
   if (done) return (
     <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Solicitud enviada</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Solicitud enviada</p>
       <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">Gracias por donar</h1>
       <p className="mt-3 text-[var(--color-text-muted)]">{done.fundacion.nombre} revisará «{done.prenda.titulo}». Propusiste {formatDay(done.logistica.fecha)}, de {done.logistica.franja}. Te avisaremos cuando la acepten.</p>
       <div className="mt-8 flex flex-wrap justify-center gap-2">
@@ -66,7 +66,7 @@ export default function DonatePage() {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Donar una prenda</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Donar una prenda</p>
       <h1 ref={heading} tabIndex={-1} className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-text)] outline-none md:text-4xl">{STEPS[step]}</h1>
       <div className="mt-5"><Steps steps={STEPS} current={step} /></div>
 
@@ -123,7 +123,7 @@ export default function DonatePage() {
               <div className="sm:col-span-2"><Field id="ddir" label="Dirección de recogida" error={errors.direccion}><input {...a11y('ddir', errors.direccion)} className={inputCls} value={form.direccion} onChange={(e) => set('direccion', e.target.value)} placeholder="Ej. Cra. 7 #54-20, Chapinero" /></Field></div>)}
           </div>
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4 text-sm" aria-label="Resumen de la donación">
-            <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">Resumen</p>
+            <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">Resumen</p>
             <p className="mt-2 text-[var(--color-text)]"><b>{form.cantidad} × {form.titulo}</b> · {form.categoria} · Talla {form.talla}{form.conservacion ? ` · ${CONSERVACION_LABEL[form.conservacion]}` : ''}</p>
             <p className="text-[var(--color-text-muted)]">Para {fd?.nombre}</p>
             <p className="text-[var(--color-text-muted)]">{form.modalidad ? MODALIDAD_LABEL[form.modalidad as Modalidad] : 'Entrega por definir'}{form.fecha ? ` · ${formatDay(form.fecha)}` : ''}{form.franja ? ` · ${form.franja}` : ''}</p>

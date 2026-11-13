@@ -588,7 +588,7 @@ export default function PlaylistsPage() {
                   <span className="text-xs font-bold tracking-widest uppercase text-white/50">
                     PLAYLIST DE ESTILO · {selectedPlaylist.visibilidad === 'PRIVADA' ? '🔒 PRIVADA' : '👁️ PÚBLICA'}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violeta/20 border border-violeta/40 px-2.5 py-0.5 text-[10px] font-bold text-violeta-claro">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violeta/20 border border-violeta/40 px-2.5 py-0.5 text-[0.625rem] font-bold text-violeta-claro">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     En tornamesa
                   </span>
@@ -600,7 +600,7 @@ export default function PlaylistsPage() {
 
                 {/* Creador / Curador */}
                 <div className="flex items-center gap-2.5 text-sm font-semibold text-white/80 mb-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violeta text-[11px] font-bold text-white shadow-sm">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violeta text-[0.6875rem] font-bold text-white shadow-sm">
                     {selectedPlaylist.creador.nombre
                       .split(' ')
                       .map((n) => n[0])
@@ -749,7 +749,7 @@ export default function PlaylistsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-wider text-white/40">
+                    <tr className="border-b border-white/10 text-[0.6875rem] font-bold uppercase tracking-wider text-white/40">
                       <th className="py-3.5 pl-6 pr-2 w-12 text-center">#</th>
                       <th className="py-3.5 px-4">Prenda</th>
                       <th className="py-3.5 px-4">Tienda</th>
@@ -767,7 +767,7 @@ export default function PlaylistsPage() {
                         }`}
                       >
                         {/* Índice o Play */}
-                        <td className="py-3 pl-6 pr-2 text-center text-white/40 font-mono text-[11px]">
+                        <td className="py-3 pl-6 pr-2 text-center text-white/40 font-mono text-[0.6875rem]">
                           <span className="group-hover:hidden">{idx + 1}</span>
                           <span className="hidden group-hover:inline text-white font-bold">▶</span>
                         </td>
@@ -782,9 +782,9 @@ export default function PlaylistsPage() {
                             />
                             <div className="min-w-0">
                               <p className="font-semibold text-[var(--color-text,#fff)] truncate text-xs">{p.nombre}</p>
-                              <p className="text-[11px] text-[var(--color-text-muted,#b9b9ca)] truncate">
+                              <p className="text-[0.6875rem] text-[var(--color-text-muted,#b9b9ca)] truncate">
                                 {p.noDisponible ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-warning-bg,rgba(245,158,11,0.15))] border border-[var(--color-warning-border,rgba(245,158,11,0.3))] px-2 py-0.5 text-[10px] font-bold text-[var(--color-warning-text,#f59e0b)]">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-warning-bg,rgba(245,158,11,0.15))] border border-[var(--color-warning-border,rgba(245,158,11,0.3))] px-2 py-0.5 text-[0.625rem] font-bold text-[var(--color-warning-text,#f59e0b)]">
                                     <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                     Agotado · no disponible
                                   </span>
@@ -802,7 +802,7 @@ export default function PlaylistsPage() {
                         {/* Agregada por */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2 text-white/70">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white/90">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[0.625rem] font-bold text-white/90">
                               {(p.agregadaPor || selectedPlaylist.creador.nombre)
                                 .split(' ')
                                 .map((n) => n[0])
@@ -893,7 +893,7 @@ export default function PlaylistsPage() {
                     <span className="font-bold text-white text-xs truncate w-full group-hover:text-violeta-claro">
                       {pl.nombre}
                     </span>
-                    <span className="text-[11px] text-white/50 truncate w-full mt-0.5">
+                    <span className="text-[0.6875rem] text-white/50 truncate w-full mt-0.5">
                       {pl.creador.nombre} · {pl.likes.toLocaleString('es-CO')} me gusta
                     </span>
                   </button>
@@ -914,7 +914,7 @@ export default function PlaylistsPage() {
             <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-[#181520] p-6 text-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-white/50 block">
+                  <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-white/50 block">
                     {selectedPlaylist.nombre}
                   </span>
                   <h3 className="text-lg font-bold text-white">Agregar prendas</h3>
@@ -953,7 +953,7 @@ export default function PlaylistsPage() {
                       ))}
                     </select>
                   </div>
-                  <p className="text-[11px] text-white/40">
+                  <p className="text-[0.6875rem] text-white/40">
                     Límite del sistema: hasta 15 prendas por playlist (RNF-12).
                   </p>
                 </div>
@@ -1129,7 +1129,7 @@ export default function PlaylistsPage() {
         {/* Encabezado de la sección */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-[var(--sr-border-subtle)] pb-6">
           <div>
-            <span className="text-[11px] font-bold tracking-widest uppercase text-violeta-claro block mb-1">
+            <span className="text-[0.6875rem] font-bold tracking-widest uppercase text-violeta-claro block mb-1">
               Colecciones en vinilo
             </span>
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
@@ -1442,7 +1442,7 @@ export default function PlaylistsPage() {
           <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#181520] p-6 text-white shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white/40 block">
+                <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-white/40 block">
                   Playlist de estilo
                 </span>
                 <h3 id="modal-crear-title" className="text-xl font-extrabold text-white">
@@ -1475,7 +1475,7 @@ export default function PlaylistsPage() {
                   onChange={(e) => setNombre(e.target.value)}
                   className="w-full rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-xs text-white outline-none focus:border-violeta"
                 />
-                <span className="mt-1 block text-[11px] text-white/40">Máximo 40 caracteres</span>
+                <span className="mt-1 block text-[0.6875rem] text-white/40">Máximo 40 caracteres</span>
               </div>
 
               <div>
@@ -1522,7 +1522,7 @@ export default function PlaylistsPage() {
                 </div>
               </div>
 
-              <p className="text-[11px] text-white/50">
+              <p className="text-[0.6875rem] text-white/50">
                 Puedes agregar hasta {MAX_PLAYLIST_ITEMS} prendas (RNF-12).
               </p>
 

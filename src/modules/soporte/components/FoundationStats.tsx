@@ -82,7 +82,7 @@ function ByStatus({ data }: { data: FoundationStatsDto['porEstado'] }) {
           </svg>
           <div aria-hidden="true" className="absolute inset-0 grid place-content-center text-center">
             <p className="text-3xl font-extrabold">{total}</p>
-            <p className="text-[11px] text-white/60">Solicitudes</p>
+            <p className="text-[0.6875rem] text-white/60">Solicitudes</p>
           </div>
         </div>
         <ul className="min-w-44 flex-1 space-y-3 text-sm" aria-label="Solicitudes por estado">

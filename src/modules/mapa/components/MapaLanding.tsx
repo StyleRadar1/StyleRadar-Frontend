@@ -33,7 +33,7 @@ export default function MapaLanding() {
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <p className="max-w-[460px] text-sm leading-relaxed text-[var(--sr-hero-text-muted)]">
+            <p className="max-w-[28.75rem] text-sm leading-relaxed text-[var(--sr-hero-text-muted)]">
               Toca una tienda o fundación para ver sus detalles sin salir del mapa.
             </p>
             <Link
@@ -47,7 +47,7 @@ export default function MapaLanding() {
 
         {hasError || pins.length === 0 ? (
           <div
-            className="sr-store-map flex min-h-[260px] items-center justify-center rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-xl text-[var(--color-text)]"
+            className="sr-store-map flex min-h-[16.25rem] items-center justify-center rounded-[1.375rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-xl text-[var(--color-text)]"
             role={hasError ? 'alert' : 'status'}
           >
             <div className="max-w-lg">
@@ -83,7 +83,7 @@ export default function MapaLanding() {
             </div>
           </div>
         ) : (
-          <div className="sr-store-map relative overflow-hidden rounded-[22px] border border-white/[.14] shadow-[0_20px_50px_rgba(0,0,0,.55)]">
+          <div className="sr-store-map relative overflow-hidden rounded-[1.375rem] border border-white/[.14] shadow-[0_20px_50px_rgba(0,0,0,.55)]">
             <MapaBogota
               pins={pins}
               selectedId={selectedId}
@@ -91,7 +91,7 @@ export default function MapaLanding() {
               onSelect={handleSelect}
               onHover={handleHover}
               showControls={true}
-              className="h-[min(calc(100dvh-195px),700px)] min-h-[420px] w-full"
+              className="h-[min(calc(100dvh-12.1875rem),43.75rem)] min-h-[26.25rem] w-full"
             />
             {selectedPin && <MapCard pin={selectedPin} onClose={() => setSelectedId(null)} />}
           </div>

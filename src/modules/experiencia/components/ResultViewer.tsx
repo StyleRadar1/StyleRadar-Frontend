@@ -39,9 +39,9 @@ export function ResultViewer({ result, garmentName, onRegenerate, onOtherGarment
   return (
     <figure className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
       <div className="relative bg-[var(--color-surface-subtle)]">
-        <img src={result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} onError={() => setBroken(true)} className="mx-auto max-h-[520px] w-full object-contain" />
+        <img src={result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} onError={() => setBroken(true)} className="mx-auto max-h-[32.5rem] w-full object-contain" />
         {env.useMocks && (
-          <span className="absolute left-3 top-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-3 py-1 text-[11px] font-bold text-[var(--color-text)] backdrop-blur-sm shadow-sm">
+          <span className="absolute left-3 top-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-3 py-1 text-[0.6875rem] font-bold text-[var(--color-text)] backdrop-blur-sm shadow-sm">
             Simulado: no es un resultado real del probador
           </span>
         )}

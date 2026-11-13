@@ -44,7 +44,7 @@ export function MultiPhotoInput({ photos, onChange, max, error, id }: { photos: 
               ✕
             </button>
             {i === 0 && (
-              <span className="absolute bottom-1.5 left-1.5 rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[11px] font-bold text-[var(--color-accent-contrast,#ffffff)] shadow-sm">
+              <span className="absolute bottom-1.5 left-1.5 rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[0.6875rem] font-bold text-[var(--color-accent-contrast,#ffffff)] shadow-sm">
                 Portada
               </span>
             )}

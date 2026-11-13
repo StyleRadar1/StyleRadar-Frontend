@@ -13,7 +13,7 @@
 
 .sr-map-layout-wrap {
   width: 100%;
-  max-width: 1400px;
+  max-width: 87.5rem;
   margin-inline: auto;
   display: flex;
   flex-direction: column;
@@ -24,23 +24,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 0.875rem;
   z-index: 10;
 }
 
 .sr-map-back-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  border-radius: 999px;
+  gap: 0.5rem;
+  padding: 0.5rem 1.125rem;
+  border-radius: 62.4375rem;
   border: 1px solid rgba(255, 255, 255, 0.22);
   color: #FFFFFF;
   cursor: pointer;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03)), rgba(38, 38, 38, 0.55);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  font: 700 11px/1 'Poppins', sans-serif;
+  font: 700 0.6875rem/1 'Poppins', sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
@@ -52,28 +52,28 @@
   background: #FFFFFF;
   color: #121214;
   border-color: #FFFFFF;
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .sr-map-hero {
   display: flex;
   align-items: stretch;
   width: 100%;
-  min-height: 500px;
-  height: min(calc(100dvh - 155px), 700px);
-  gap: 24px;
+  min-height: 31.25rem;
+  height: min(calc(100dvh - 9.6875rem), 43.75rem);
+  gap: 1.5rem;
   position: relative;
   box-sizing: border-box;
 }
 
 /* Columna Izquierda: Mapa (~63% del ancho disponible) */
 .sr-map-hero-main {
-  flex: 0 0 calc(63% - 12px);
-  max-width: calc(63% - 12px);
+  flex: 0 0 calc(63% - 0.75rem);
+  max-width: calc(63% - 0.75rem);
   min-width: 0;
   height: 100%;
   position: relative;
-  border-radius: 24px;
+  border-radius: 1.5rem;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
@@ -83,25 +83,25 @@
 /* ── Barra de controles superior izquierda (Vista 3D y Ver toda Bogotá) ── */
 .sr-map-top-bar {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 1rem;
+  left: 1rem;
   z-index: 15;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .sr-map-ctrl-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border-radius: 100px;
+  gap: 0.4375rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 6.25rem;
   background: rgba(38, 38, 38, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #FFFFFF;
-  font: 600 12px/1 'Poppins', sans-serif;
+  font: 600 0.75rem/1 'Poppins', sans-serif;
   letter-spacing: 0.02em;
   cursor: pointer;
   backdrop-filter: blur(10px);
@@ -114,7 +114,7 @@
 .sr-map-ctrl-pill:hover {
   background: #48119A;
   border-color: #E8DCCB;
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .sr-map-ctrl-pill.is-3d {
@@ -161,12 +161,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 1.625rem;
+  height: 1.625rem;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   background: #48119A;
-  border: 2.5px solid #FFFFFF;
+  border: 0.1563rem solid #FFFFFF;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
   transition: transform 0.25s cubic-bezier(0.2, 1, 0.3, 1), background 0.25s ease, box-shadow 0.25s ease;
 }
@@ -183,12 +183,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 1.625rem;
+  height: 1.625rem;
   border-radius: 50%;
   transform: none;
   background: #E8DCCB;
-  border: 2.5px solid #FFFFFF;
+  border: 0.1563rem solid #FFFFFF;
   outline: 2px dashed rgba(255, 255, 255, 0.85);
   outline-offset: 1.5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
@@ -206,7 +206,7 @@
 .sr-mb-pin.is-hovered,
 .sr-mb-pin.is-selected,
 .sr-mb-pin:focus-visible {
-  transform: translateY(-3px) scale(1.22);
+  transform: translateY(-0.1875rem) scale(1.22);
   z-index: 100 !important;
   outline: none;
 }
@@ -225,7 +225,7 @@
 .sr-mb-pin i.sr-pin-shape.store::after {
   content: '';
   position: absolute;
-  inset: -6px;
+  inset: -0.375rem;
   border-radius: 50% 50% 50% 0;
   border: 2px solid rgba(72, 17, 154, 0.75);
   opacity: 0;
@@ -248,7 +248,7 @@
 .sr-mb-pin.found i.sr-pin-shape.found::after {
   content: '';
   position: absolute;
-  inset: -6px;
+  inset: -0.375rem;
   border-radius: 50%;
   border: 2px solid rgba(232, 220, 203, 0.9);
   opacity: 0;
@@ -271,7 +271,7 @@
 .sr-mb-mini-popup .mapboxgl-popup-content {
   background: rgba(30, 30, 34, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 14px;
+  border-radius: 0.875rem;
   padding: 0;
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(16px);
@@ -284,14 +284,14 @@
 }
 
 @keyframes sr-mini-pop-in {
-  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  from { opacity: 0; transform: translateY(0.375rem) scale(0.96); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .sr-mini-card {
-  padding: 12px 14px 11px;
-  min-width: 180px;
-  max-width: 260px;
+  padding: 0.75rem 0.875rem 0.6875rem;
+  min-width: 11.25rem;
+  max-width: 16.25rem;
   font-family: 'Poppins', sans-serif;
   color: #FFFFFF;
 }
@@ -300,17 +300,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 0.375rem;
+  margin-bottom: 0.375rem;
 }
 
 .sr-mc-badge {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 100px;
+  padding: 0.125rem 0.5rem;
+  border-radius: 6.25rem;
 }
 
 .sr-mc-badge.tienda {
@@ -324,33 +324,33 @@
 }
 
 .sr-mc-barrio {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: #B9B9CA;
   font-weight: 500;
 }
 
 .sr-mc-title {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.25;
   margin: 0;
 }
 
 .sr-mc-sub {
-  font-size: 11.5px;
+  font-size: 0.7188rem;
   color: #E8DCCB;
-  margin: 3px 0 0;
+  margin: 0.1875rem 0 0;
 }
 
 .sr-mc-hint {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
-  margin-top: 6px;
-  padding-top: 6px;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
+  padding-top: 0.375rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 10.5px;
+  font-size: 0.6563rem;
   font-weight: 600;
   color: #B9B9CA;
 }
@@ -360,7 +360,7 @@
 }
 
 .sr-mini-card:hover .sr-mc-hint svg {
-  transform: translateX(3px);
+  transform: translateX(0.1875rem);
   color: #FFFFFF;
 }
 
@@ -371,15 +371,15 @@
 
 .sr-store-map .lm-pane {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 1rem;
+  right: 1rem;
   bottom: auto;
-  width: min(320px, calc(100% - 32px));
-  max-height: calc(100% - 32px);
+  width: min(20rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
   overflow-y: auto;
   z-index: 25;
-  padding: 16px;
-  border-radius: 18px;
+  padding: 1rem;
+  border-radius: 1.125rem;
   background: rgba(30, 30, 34, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(20px);
@@ -388,7 +388,7 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateX(24px) scale(0.97);
+  transform: translateX(1.5rem) scale(0.97);
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
 }
 
@@ -402,13 +402,13 @@
 
 .lm-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 0.875rem;
+  right: 0.875rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   background: rgba(38, 38, 38, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -426,19 +426,19 @@
 /* ── Leyenda y Filtro (Esquina inferior izquierda, como en el prototipo) ── */
 .sr-map-legend {
   position: absolute;
-  bottom: 42px;
-  left: 16px;
+  bottom: 2.625rem;
+  left: 1rem;
   z-index: 15;
   background: rgba(30, 30, 34, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 16px;
-  padding: 9px 13px 10px;
+  border-radius: 1rem;
+  padding: 0.5625rem 0.8125rem 0.625rem;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
   font-family: 'Poppins', sans-serif;
   color: #FFFFFF;
-  max-width: calc(100% - 32px);
+  max-width: calc(100% - 2rem);
 }
 
 .sr-leg-toggle-btn {
@@ -447,31 +447,31 @@
 
 .sr-leg-caption {
   display: block;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #B9B9CA;
-  margin-bottom: 6px;
+  margin-bottom: 0.375rem;
 }
 
 .sr-leg-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .sr-leg-item {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 11px 5px 8px;
-  border-radius: 100px;
+  gap: 0.4375rem;
+  padding: 0.3125rem 0.6875rem 0.3125rem 0.5rem;
+  border-radius: 6.25rem;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
   color: #FFFFFF;
-  font: 600 11.5px/1.2 'Poppins', sans-serif;
+  font: 600 0.7188rem/1.2 'Poppins', sans-serif;
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
@@ -496,8 +496,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 1.125rem;
+  height: 1.125rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -515,10 +515,10 @@
 }
 
 .sr-leg-check {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 800;
   color: #E8DCCB;
-  margin-left: 2px;
+  margin-left: 0.125rem;
 }
 
 .sr-leg-item:not(.is-active) .sr-leg-check {
@@ -528,12 +528,12 @@
 /* ── Controles nativos de Mapbox (zoom, brújula, atribución) ── */
 .mapboxgl-ctrl-attrib.mapboxgl-compact {
   background-color: rgba(30, 30, 34, 0.75) !important;
-  border-radius: 100px !important;
+  border-radius: 6.25rem !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   opacity: 0.75;
   transition: opacity 0.2s ease;
-  margin-right: 14px !important;
-  margin-bottom: 14px !important;
+  margin-right: 0.875rem !important;
+  margin-bottom: 0.875rem !important;
 }
 
 .mapboxgl-ctrl-attrib.mapboxgl-compact:hover {
@@ -542,25 +542,25 @@
 
 .mapboxgl-ctrl-logo {
   opacity: 0.75;
-  margin-left: 14px !important;
-  margin-bottom: 10px !important;
+  margin-left: 0.875rem !important;
+  margin-bottom: 0.625rem !important;
 }
 
 .mapboxgl-ctrl-group {
   background: rgba(38, 38, 38, 0.88) !important;
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  border-radius: 12px !important;
+  border-radius: 0.75rem !important;
   backdrop-filter: blur(8px) !important;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
-  margin-top: 16px !important;
-  margin-right: 16px !important;
+  margin-top: 1rem !important;
+  margin-right: 1rem !important;
 }
 
 .mapboxgl-ctrl-group button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  width: 32px !important;
-  height: 32px !important;
+  width: 2rem !important;
+  height: 2rem !important;
 }
 
 .mapboxgl-ctrl-group button:hover {
@@ -573,37 +573,37 @@
 
 /* ── Columna Derecha: Hero de burbujas en arco (~37%) ── */
 .sr-map-hero-side {
-  flex: 0 0 calc(37% - 12px);
-  max-width: calc(37% - 12px);
-  min-width: 280px;
+  flex: 0 0 calc(37% - 0.75rem);
+  max-width: calc(37% - 0.75rem);
+  min-width: 17.5rem;
   height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   justify-content: center;
-  padding: 8px 32px 8px 0;
+  padding: 0.5rem 2rem 0.5rem 0;
   box-sizing: border-box;
 }
 
 .sr-bubbles-header {
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
   text-align: right;
-  padding-right: 14px;
+  padding-right: 0.875rem;
 }
 
 .sr-bubbles-kicker {
   display: block;
-  font: 700 10.5px/1.2 'Poppins', sans-serif;
+  font: 700 0.6563rem/1.2 'Poppins', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: #B9B9CA;
-  margin-bottom: 4px;
+  margin-bottom: 0.25rem;
 }
 
 .sr-bubbles-title {
   margin: 0;
-  font: 700 clamp(20px, 2.3vw, 26px)/1.18 'Poppins', sans-serif;
+  font: 700 clamp(1.25rem, 2.3vw, 1.625rem)/1.18 'Poppins', sans-serif;
   color: #FFFFFF;
   letter-spacing: -0.02em;
 }
@@ -611,8 +611,8 @@
 /* Viewport y Track del Carrusel en Arco */
 .sr-bubbles-viewport {
   position: relative;
-  height: 460px;
-  max-height: calc(100% - 64px);
+  height: 28.75rem;
+  max-height: calc(100% - 4rem);
   overflow: hidden;
   outline: none;
   cursor: grab;
@@ -640,10 +640,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
-  height: 92px;
+  gap: 1rem;
+  height: 5.75rem;
   width: 100%;
-  padding: 6px 14px;
+  padding: 0.375rem 0.875rem;
   box-sizing: border-box;
   cursor: pointer;
   background: transparent;
@@ -665,13 +665,13 @@
   flex-direction: column;
   align-items: flex-end;
   text-align: right;
-  max-width: 230px;
+  max-width: 14.375rem;
   pointer-events: none;
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
 .sr-bubble-name {
-  font: 700 15px/1.25 'Poppins', sans-serif;
+  font: 700 0.9375rem/1.25 'Poppins', sans-serif;
   color: #FFFFFF;
   white-space: nowrap;
   overflow: hidden;
@@ -685,16 +685,16 @@
 .sr-bubble-sub {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font: 500 12px/1.3 'Poppins', sans-serif;
+  gap: 0.3125rem;
+  font: 500 0.75rem/1.3 'Poppins', sans-serif;
   color: #B9B9CA;
-  margin-top: 2px;
+  margin-top: 0.125rem;
   white-space: nowrap;
 }
 
 .sr-bubble-type-tag {
   font-weight: 700;
-  font-size: 10.5px;
+  font-size: 0.6563rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -726,13 +726,13 @@
 }
 
 .sr-bubble-avatar {
-  width: 74px;
-  height: 74px;
+  width: 4.625rem;
+  height: 4.625rem;
   border-radius: 50%;
   overflow: hidden;
   position: relative;
   background: #262626;
-  border: 3px solid rgba(255, 255, 255, 0.22);
+  border: 0.1875rem solid rgba(255, 255, 255, 0.22);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
   transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
 }
@@ -758,7 +758,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 700 20px/1 'Poppins', sans-serif;
+  font: 700 1.25rem/1 'Poppins', sans-serif;
   text-transform: uppercase;
 }
 
@@ -775,10 +775,10 @@
 /* Insignia / Badge de tipo en la esquina de la burbuja */
 .sr-bubble-badge {
   position: absolute;
-  bottom: 0px;
-  right: 0px;
-  width: 23px;
-  height: 23px;
+  bottom: 0rem;
+  right: 0rem;
+  width: 1.4375rem;
+  height: 1.4375rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -804,12 +804,12 @@
 
 .sr-bubble-item.is-active .sr-bubble-name {
   color: #FFFFFF;
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 
 .sr-bubble-item.is-active .sr-bubble-avatar {
-  width: 96px;
-  height: 96px;
+  width: 6rem;
+  height: 6rem;
 }
 
 .sr-bubble-item.is-active .sr-bubble-avatar.tienda {
@@ -841,21 +841,21 @@
 /* Indicador de Puntos (Dots) a la derecha */
 .sr-bubbles-dots {
   position: absolute;
-  right: 6px;
+  right: 0.375rem;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
   z-index: 12;
   pointer-events: auto;
 }
 
 .sr-bubble-dot-indicator {
   display: block;
-  width: 7px;
-  height: 7px;
-  border-radius: 100px;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 6.25rem;
   background: rgba(255, 255, 255, 0.26);
   border: none;
   padding: 0;
@@ -869,7 +869,7 @@
 }
 
 .sr-bubble-dot-indicator.is-active {
-  height: 20px;
+  height: 1.25rem;
   background: #FFFFFF;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 }
@@ -877,35 +877,35 @@
 /* ── Foto de la tarjeta ── */
 .sr-store-map .lm-photo {
   position: relative;
-  height: 110px;
-  margin: -16px -16px 12px;
+  height: 6.875rem;
+  margin: -1rem -1rem 0.75rem;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
 }
-.sr-store-map .lm-photo.is-tall { height: 140px; }
+.sr-store-map .lm-photo.is-tall { height: 8.75rem; }
 .sr-store-map .lm-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .sr-store-map .lm-photo-empty {
   display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 100%; font-size: 48px; font-weight: 800; color: rgba(255, 255, 255, 0.35);
+  width: 100%; height: 100%; font-size: 3rem; font-weight: 800; color: rgba(255, 255, 255, 0.35);
 }
 .sr-store-map .lm-photo-fade {
   position: absolute; inset: 0;
   background: linear-gradient(to top, rgba(30, 30, 34, 0.92) 0%, rgba(30, 30, 34, 0) 55%);
 }
 .sr-store-map .lm-photo-badge {
-  position: absolute; left: 16px; bottom: 12px;
-  padding: 4px 11px; border-radius: 999px;
-  font: 700 11px/1.2 'Poppins', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
+  position: absolute; left: 1rem; bottom: 0.75rem;
+  padding: 0.25rem 0.6875rem; border-radius: 62.4375rem;
+  font: 700 0.6875rem/1.2 'Poppins', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
   background: rgba(72, 17, 154, 0.85); color: #fff;
 }
 .sr-store-map .lm-photo-badge.is-found { background: #E8DCCB; color: #262626; }
 .sr-store-map .lm-close { z-index: 2; }
 
-/* ── Responsive Móvil / Tablet (<= 900px) ── */
+/* ── Responsive Móvil / Tablet (<= 56.25rem) ── */
 @media (max-width: 900px) {
   .sr-map-hero {
     flex-direction: column;
-    gap: 14px;
+    gap: 0.875rem;
     height: auto;
     min-height: 0;
   }
@@ -915,7 +915,7 @@
     max-width: 100%;
     width: 100%;
     height: 54dvh;
-    min-height: 360px;
+    min-height: 22.5rem;
   }
 
   .sr-map-hero-side {
@@ -929,7 +929,7 @@
   .sr-bubbles-header {
     text-align: left;
     padding-right: 0;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
   }
 
   .sr-bubbles-viewport {
@@ -941,7 +941,7 @@
     -webkit-overflow-scrolling: touch;
     display: flex;
     align-items: center;
-    padding: 8px 0;
+    padding: 0.5rem 0;
   }
 
   .sr-bubbles-track {
@@ -951,8 +951,8 @@
     right: auto;
     flex-direction: row;
     align-items: center;
-    gap: 16px;
-    padding: 0 16px;
+    gap: 1rem;
+    padding: 0 1rem;
     height: 100%;
     transform: none !important;
     transition: none;
@@ -963,9 +963,9 @@
     justify-content: center;
     width: auto;
     height: auto;
-    gap: 8px;
+    gap: 0.5rem;
     scroll-snap-align: center;
-    padding: 4px;
+    padding: 0.25rem;
     transform: none !important;
     opacity: 0.7;
   }
@@ -978,25 +978,25 @@
   .sr-bubble-info {
     align-items: center;
     text-align: center;
-    max-width: 130px;
+    max-width: 8.125rem;
   }
 
   .sr-bubble-name {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 
   .sr-bubble-sub {
-    font-size: 10.5px;
+    font-size: 0.6563rem;
   }
 
   .sr-bubble-avatar {
-    width: 62px;
-    height: 62px;
+    width: 3.875rem;
+    height: 3.875rem;
   }
 
   .sr-bubble-item.is-active .sr-bubble-avatar {
-    width: 74px;
-    height: 74px;
+    width: 4.625rem;
+    height: 4.625rem;
   }
 
   .sr-bubbles-dots {
@@ -1012,11 +1012,11 @@
     bottom: 0;
     width: 100%;
     max-height: 70%;
-    border-radius: 22px 22px 0 0;
+    border-radius: 1.375rem 1.375rem 0 0;
     border-bottom: 0;
     border-left: 0;
     border-right: 0;
-    padding: 14px 18px 24px;
+    padding: 0.875rem 1.125rem 1.5rem;
     transform: translateY(100%);
     box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.7);
   }
@@ -1026,19 +1026,19 @@
   }
 
   .lm-close {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    top: 10px;
-    right: 14px;
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    top: 0.625rem;
+    right: 0.875rem;
   }
 
   .sr-map-legend {
-    bottom: 34px;
-    left: 10px;
+    bottom: 2.125rem;
+    left: 0.625rem;
     padding: 0;
-    border-radius: 100px;
+    border-radius: 6.25rem;
     background: transparent;
     border: none;
     box-shadow: none;
@@ -1047,13 +1047,13 @@
   .sr-leg-toggle-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 12px;
-    border-radius: 100px;
+    gap: 0.375rem;
+    padding: 0.4375rem 0.75rem;
+    border-radius: 6.25rem;
     background: rgba(30, 30, 34, 0.94);
     border: 1px solid rgba(255, 255, 255, 0.22);
     color: #FFFFFF;
-    font: 600 11px/1 'Poppins', sans-serif;
+    font: 600 0.6875rem/1 'Poppins', sans-serif;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
@@ -1062,24 +1062,24 @@
   .sr-leg-badge-count {
     background: #48119A;
     color: #FFFFFF;
-    font-size: 9.5px;
-    padding: 2px 5px;
-    border-radius: 100px;
+    font-size: 0.5938rem;
+    padding: 0.125rem 0.3125rem;
+    border-radius: 6.25rem;
     font-weight: 700;
   }
 
   .sr-leg-content {
     display: none;
     position: absolute;
-    bottom: 38px;
+    bottom: 2.375rem;
     left: 0;
     background: rgba(30, 30, 34, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
-    padding: 12px 14px;
+    border-radius: 1rem;
+    padding: 0.75rem 0.875rem;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(14px);
-    min-width: 230px;
+    min-width: 14.375rem;
   }
 
   .sr-map-legend.is-expanded .sr-leg-content {
@@ -1087,8 +1087,8 @@
     animation: sr-mini-pop-in 0.2s ease both;
   }
 
-  .sr-store-map .lm-photo { margin: -14px -18px 12px; height: 120px; }
-  .sr-store-map .lm-photo.is-tall { height: 150px; }
+  .sr-store-map .lm-photo { margin: -0.875rem -1.125rem 0.75rem; height: 7.5rem; }
+  .sr-store-map .lm-photo.is-tall { height: 9.375rem; }
   .sr-map-coord-tag { display: none; }
 }
 

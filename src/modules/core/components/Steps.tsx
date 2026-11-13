@@ -16,7 +16,7 @@ export function Steps({ steps, current }: { steps: string[]; current: number }) 
         >
           <span
             aria-hidden="true"
-            className={`grid h-5 w-5 place-items-center rounded-full text-[11px] font-bold ${
+            className={`grid h-5 w-5 place-items-center rounded-full text-[0.6875rem] font-bold ${
               i === current
                 ? 'bg-[var(--color-surface)] text-[var(--color-text)]'
                 : i < current

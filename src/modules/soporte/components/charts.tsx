@@ -13,11 +13,11 @@ export function Kpi({ label, value, hint, delta }: { label: string; value: React
       <p className={kicker}>{label}</p>
       <p className="mt-1 text-3xl font-extrabold tabular-nums">{value}</p>
       {delta && (
-        <p className={`mt-1 inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${delta.up ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]'}`}>
+        <p className={`mt-1 inline-flex rounded-md px-1.5 py-0.5 text-[0.6875rem] font-semibold ${delta.up ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]'}`}>
           <span aria-hidden="true">{delta.up ? '▲' : '▼'}&nbsp;</span><span className="sr-only">{delta.up ? 'Subió' : 'Bajó'} </span>{delta.pct}% vs. {delta.vs}
         </p>
       )}
-      {hint && <p className="mt-1 text-[11px] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">{hint}</p>}
+      {hint && <p className="mt-1 text-[0.6875rem] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">{hint}</p>}
     </div>
   )
 }
@@ -65,7 +65,7 @@ export function DataTable({ caption, head, rows }: { caption: string; head: stri
     <div className="max-h-80 overflow-auto">
       <table className="w-full text-left text-sm text-[var(--color-text)]">
         <caption className="sr-only">{caption}</caption>
-        <thead className="sticky top-0 bg-[var(--color-surface)] text-[11px] uppercase tracking-[.12em] text-[var(--color-text-muted)]">
+        <thead className="sticky top-0 bg-[var(--color-surface)] text-[0.6875rem] uppercase tracking-[.12em] text-[var(--color-text-muted)]">
           <tr>{head.map((h, i) => <th key={h} scope="col" className={`py-2 font-bold ${i ? 'text-right' : ''}`}>{h}</th>)}</tr>
         </thead>
         <tbody>
@@ -94,10 +94,10 @@ export function GroupedBars({ grupos, series, fmt = (n) => n.toLocaleString('es-
     <>
       <Legend items={series} />
       <div className={`relative mt-3 grid ${alto} grid-cols-[auto_1fr] gap-2`}>
-        <div aria-hidden="true" className="flex flex-col justify-between pb-5 text-right text-[10px] tabular-nums text-[var(--color-text-muted)]"><span>{fmt(max)}</span><span>{fmt(max / 2)}</span><span>0</span></div>
+        <div aria-hidden="true" className="flex flex-col justify-between pb-5 text-right text-[0.625rem] tabular-nums text-[var(--color-text-muted)]"><span>{fmt(max)}</span><span>{fmt(max / 2)}</span><span>0</span></div>
         <div className="relative">
           <div aria-hidden="true" className="absolute inset-x-0 top-0 border-t border-dashed border-[var(--color-border)]" />
-          <div aria-hidden="true" className="absolute inset-x-0 top-[calc(50%-10px)] border-t border-dashed border-[var(--color-border)]" />
+          <div aria-hidden="true" className="absolute inset-x-0 top-[calc(50%-0.625rem)] border-t border-dashed border-[var(--color-border)]" />
           <ol className="absolute inset-0 flex items-stretch" aria-label={label}>
             {grupos.map((g, i) => (
               <li key={g.key} tabIndex={0} className="relative flex flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
@@ -110,7 +110,7 @@ export function GroupedBars({ grupos, series, fmt = (n) => n.toLocaleString('es-
                     </span>
                   ))}
                 </div>
-                <span aria-hidden="true" className="h-5 pt-1 text-center text-[10px] text-[var(--color-text-muted)]">{g.eje}</span>
+                <span aria-hidden="true" className="h-5 pt-1 text-center text-[0.625rem] text-[var(--color-text-muted)]">{g.eje}</span>
                 {hover === i && (
                   <span role="tooltip" className={`pointer-events-none absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-3 py-2 text-xs shadow-lg ${i > grupos.length / 2 ? 'right-0' : 'left-0'}`}>
                     <b className="block">{g.titulo}</b>
@@ -143,7 +143,7 @@ export function Gauge({ value, label, caption }: { value: number; label: string;
       </svg>
       <div aria-hidden="true" className="absolute inset-0 grid place-content-center text-center text-[var(--color-text)]">
         <p className="text-4xl font-extrabold">{value}%</p>
-        <p className="mx-auto mt-1 max-w-28 text-[11px] leading-tight text-[var(--color-text-muted)]">{caption}</p>
+        <p className="mx-auto mt-1 max-w-28 text-[0.6875rem] leading-tight text-[var(--color-text-muted)]">{caption}</p>
       </div>
     </div>
   )

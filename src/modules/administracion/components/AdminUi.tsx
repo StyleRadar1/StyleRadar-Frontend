@@ -9,12 +9,12 @@ export function AdminHeader({ kicker, title, back, children }: { kicker: string;
     <div className="mb-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-white/60">{kicker}</p>
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-white/60">{kicker}</p>
           <h1 className="mt-1 break-words text-5xl font-extrabold tracking-tight md:text-7xl">{title}</h1>
         </div>
-        <p aria-hidden="true" className="text-right text-xl font-extrabold leading-none max-sm:hidden">StyleRadar<sup className="text-[10px]">®</sup><span className="mt-1 block border-t border-white/40 pt-1 text-[10px] font-bold uppercase tracking-[.2em] text-white/60">Bogotá</span></p>
+        <p aria-hidden="true" className="text-right text-xl font-extrabold leading-none max-sm:hidden">StyleRadar<sup className="text-[0.625rem]">®</sup><span className="mt-1 block border-t border-white/40 pt-1 text-[0.625rem] font-bold uppercase tracking-[.2em] text-white/60">Bogotá</span></p>
       </div>
-      {back && <Link to={back.to} className="mt-5 inline-block text-[11px] font-bold uppercase tracking-[.16em] text-white/65 hover:text-blanco"><span aria-hidden="true">← </span>{back.label}</Link>}
+      {back && <Link to={back.to} className="mt-5 inline-block text-[0.6875rem] font-bold uppercase tracking-[.16em] text-white/65 hover:text-blanco"><span aria-hidden="true">← </span>{back.label}</Link>}
       {children}
     </div>
   )
@@ -29,7 +29,7 @@ const TONO: Record<string, string> = {
 /** Estado con punto y texto (nunca solo color). */
 export function StatusBadge({ value }: { value: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.12em] ${TONO[value] ?? 'border-white/25 text-white/70'}`}>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-[.12em] ${TONO[value] ?? 'border-white/25 text-white/70'}`}>
       <i aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />{value}
     </span>
   )
@@ -38,7 +38,7 @@ export function StatusBadge({ value }: { value: string }) {
 export function Who({ name, sub }: { name: string; sub?: string }) {
   return (
     <span className="flex min-w-0 items-center gap-3">
-      <span aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violeta text-[11px] font-bold text-blanco">{iniciales(name)}</span>
+      <span aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violeta text-[0.6875rem] font-bold text-blanco">{iniciales(name)}</span>
       <span className="min-w-0"><b className="block truncate text-sm">{name}</b>{sub && <span className="block truncate text-xs text-white/55">{sub}</span>}</span>
     </span>
   )
@@ -57,7 +57,7 @@ export function Dl({ items }: { items: [string, ReactNode][] }) {
   return (
     <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
       {items.map(([k, v]) => (
-        <div key={k}><dt className="text-[10px] font-bold uppercase tracking-[.14em] text-white/55">{k}</dt><dd className="mt-0.5 break-words">{v}</dd></div>
+        <div key={k}><dt className="text-[0.625rem] font-bold uppercase tracking-[.14em] text-white/55">{k}</dt><dd className="mt-0.5 break-words">{v}</dd></div>
       ))}
     </dl>
   )
@@ -130,7 +130,7 @@ export function AdminTable<T>({ rows, columnas, keyOf, titulo, buscar, filtros =
           </label>
         )}
         {filtros.map((f, i) => (
-          <label key={f.label} className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-white/60">
+          <label key={f.label} className="flex items-center gap-2 text-[0.6875rem] font-bold uppercase tracking-[.12em] text-white/60">
             {f.label}
             <select value={sel[i]} onChange={(e) => { setSel((s) => s.map((x, j) => (j === i ? e.target.value : x))); setPagina(0) }}
               className="rounded-lg border border-white/20 bg-grafito px-2 py-2 text-xs font-semibold normal-case tracking-normal text-blanco">
@@ -144,7 +144,7 @@ export function AdminTable<T>({ rows, columnas, keyOf, titulo, buscar, filtros =
         <>
           {/* Escritorio: tabla */}
           <table className="w-full text-left text-sm max-md:hidden">
-            <thead className="text-[11px] uppercase tracking-[.14em] text-white/55">
+            <thead className="text-[0.6875rem] uppercase tracking-[.14em] text-white/55">
               <tr>
                 {columnas.map((c, i) => (
                   <th key={c.label} scope="col" aria-sort={orden?.col === i ? (orden.asc ? 'ascending' : 'descending') : undefined}
@@ -170,7 +170,7 @@ export function AdminTable<T>({ rows, columnas, keyOf, titulo, buscar, filtros =
               <li key={keyOf(r)} aria-label={titulo(r)} className="space-y-3 p-4">
                 {columnas[0].render(r)}
                 <dl className="grid grid-cols-2 gap-3 text-sm">
-                  {columnas.slice(1).map((c) => <div key={c.label}><dt className="text-[10px] font-bold uppercase tracking-[.14em] text-white/55">{c.label}</dt><dd className="mt-0.5">{c.render(r)}</dd></div>)}
+                  {columnas.slice(1).map((c) => <div key={c.label}><dt className="text-[0.625rem] font-bold uppercase tracking-[.14em] text-white/55">{c.label}</dt><dd className="mt-0.5">{c.render(r)}</dd></div>)}
                 </dl>
                 {acciones && <div>{acciones(r)}</div>}
               </li>
@@ -216,7 +216,7 @@ export function Modal({ open, kicker, title, onClose, children }: { open: boolea
   return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId} className="w-full max-w-2xl rounded-2xl border border-white/15 bg-grafito p-6 shadow-2xl">
-        {kicker && <p className="text-[11px] font-bold uppercase tracking-[.16em] text-white/60">{kicker}</p>}
+        {kicker && <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-white/60">{kicker}</p>}
         <h2 id={titleId} className="mt-1 text-2xl font-bold">{title}</h2>
         <div className="mt-5">{children}</div>
       </div>

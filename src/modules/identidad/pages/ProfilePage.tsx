@@ -26,7 +26,7 @@ export default function ProfilePage() {
       <header className="flex flex-wrap items-center gap-5 border-b border-white/10 pb-8">
         <span aria-hidden="true" className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-violeta text-3xl font-extrabold text-blanco md:h-24 md:w-24 md:text-4xl">{iniciales(profile.nombre)}</span>
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Mi perfil</p>
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-arena">Mi perfil</p>
           <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl">Hola, {profile.nombre.split(' ')[0]}</h1>
           <p className="mt-2 break-words text-xs font-semibold uppercase tracking-[.14em] text-white/65">
             {[profile.correo, profile.barrio && `Bogotá, ${profile.barrio}`, `Miembro desde ${mesAnio(profile.miembroDesde)}`, `Plan ${PLAN_LABEL[profile.plan]}`].filter(Boolean).join(' · ')}

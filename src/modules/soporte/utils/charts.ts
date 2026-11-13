@@ -4,7 +4,7 @@ export const SERIE = ['var(--color-arena)', 'var(--color-violeta-claro)', 'var(-
 export const TEXTURA = [null, null, 'diag', 'cruz'] as const
 
 export const card = 'sr-verdelo-panel rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] p-5'
-export const kicker = 'text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-sand)]'
+export const kicker = 'text-[0.6875rem] font-bold uppercase tracking-[.16em] text-[var(--color-sand)]'
 export const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0)
 /** Tope «redondo» del eje para que las marcas sean números enteros. */
 export const tope = (max: number) => {

@@ -6,7 +6,7 @@
 .sr-detail-hero-card {
   position: relative;
   width: 100%;
-  border-radius: 16px;
+  border-radius: 1rem;
   border: 1px solid var(--sr-border-subtle, var(--color-border));
   background: linear-gradient(180deg, var(--sr-surface-raised, #fcfbf9) 0%, var(--sr-superficie, #f4efe6) 100%);
   box-shadow: 0 10px 30px var(--sr-sombra, rgba(38, 38, 38, 0.08));
@@ -30,8 +30,8 @@ html[data-cvd='on'] .sr-detail-hero-card {
 /* Sombra elíptica en el suelo */
 .sr-hero-shadow {
   width: 58%;
-  height: 18px;
-  margin: -6px auto 14px;
+  height: 1.125rem;
+  margin: -0.375rem auto 0.875rem;
   border-radius: 50%;
   background: radial-gradient(ellipse at center, var(--sr-sombra, rgba(0, 0, 0, 0.38)) 0%, transparent 75%);
   filter: blur(6px);
@@ -41,7 +41,7 @@ html[data-cvd='on'] .sr-detail-hero-card {
 @keyframes sr-hero-enter-img {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(0.75rem);
   }
   to {
     opacity: 1;

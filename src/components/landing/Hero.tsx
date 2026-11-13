@@ -158,7 +158,7 @@ export function Hero() {
           </span>
           <button
             type="button"
-            className="rounded-full border border-[var(--hero-sub-border)] bg-black/25 px-3 py-2 text-[10px] font-bold tracking-[.12em] text-[var(--hero-fg)] transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
+            className="rounded-full border border-[var(--hero-sub-border)] bg-black/25 px-3 py-2 text-[0.625rem] font-bold tracking-[.12em] text-[var(--hero-fg)] transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
             aria-label={isPaused ? 'Reanudar carrusel de imágenes' : 'Pausar carrusel de imágenes'}
             aria-pressed={isPaused}
             onClick={() => setIsPaused((paused) => !paused)}

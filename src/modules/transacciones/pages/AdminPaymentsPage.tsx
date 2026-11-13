@@ -194,14 +194,14 @@ export default function AdminPaymentsPage() {
       {/* Encabezado principal */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[.18em] text-lavanda">
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[.18em] text-lavanda">
             Resumen financiero · StyleRadar Bogotá
           </p>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight md:text-5xl">Pagos</h1>
           <p className="mt-1 text-sm text-white/70">Estado de los pagos, pasarelas activas, reintentos y reembolsos.</p>
         </div>
         <Card className="sr-verdelo-panel text-right">
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Ingresos netos</p>
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-arena">Ingresos netos</p>
           <p className="mt-1 text-2xl font-extrabold tabular-nums">{formatCOP(revenue)}</p>
           <p className="text-xs text-white/55">Aprobados − reembolsos</p>
         </Card>
@@ -268,19 +268,19 @@ export default function AdminPaymentsPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <span className="inline-block rounded-full border border-white/20 bg-black/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-arena">
+                          <span className="inline-block rounded-full border border-white/20 bg-black/25 px-2.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-[.14em] text-arena">
                             {card.subtitle}
                           </span>
                           <p className="mt-1.5 text-base font-extrabold tracking-tight">{card.title}</p>
                         </div>
                         <span className="text-xs font-extrabold tracking-[.15em] text-white/80">
-                          StyleRadar<sup className="text-[9px]">®</sup>
+                          StyleRadar<sup className="text-[0.5625rem]">®</sup>
                         </span>
                       </div>
 
                       <div className="my-auto flex items-center justify-between pt-2">
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-white/65">
+                          <p className="text-[0.625rem] font-semibold uppercase tracking-[.14em] text-white/65">
                             Recaudado activo
                           </p>
                           <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blanco">
@@ -299,11 +299,11 @@ export default function AdminPaymentsPage() {
                           <p className="font-mono text-xs tracking-[.18em] text-white/90">
                             •••• •••• •••• {card.last4}
                           </p>
-                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-white/65">
+                          <p className="mt-0.5 text-[0.625rem] font-bold uppercase tracking-[.14em] text-white/65">
                             {card.holder}
                           </p>
                         </div>
-                        <span className="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[.12em] text-arena">
+                        <span className="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-[0.625rem] font-bold uppercase tracking-[.12em] text-arena">
                           Girar ↻
                         </span>
                       </div>
@@ -315,14 +315,14 @@ export default function AdminPaymentsPage() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between rounded-lg bg-white/10 px-3 py-1.5 font-mono text-xs">
                           <span className="tracking-widest text-arena">{card.fullNumber}</span>
-                          <span className="rounded bg-violeta px-2 py-0.5 text-[10px] font-bold">CVV {card.cvv}</span>
+                          <span className="rounded bg-violeta px-2 py-0.5 text-[0.625rem] font-bold">CVV {card.cvv}</span>
                         </div>
-                        <div className="flex justify-between text-[11px] text-lavanda">
+                        <div className="flex justify-between text-[0.6875rem] text-lavanda">
                           <span>Vence: <b className="text-blanco">{card.expiry}</b></span>
                           <span> Meta mensual: <b className="text-arena">{formatCOP(card.targetAmount)}</b></span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[11px] text-white/60">
+                      <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[0.6875rem] text-white/60">
                         <span>Pasarela cifrada · TLS 1.3</span>
                         <span className="font-semibold text-arena">Toca para volver ↺</span>
                       </div>
@@ -364,7 +364,7 @@ export default function AdminPaymentsPage() {
                   />
                 ))}
               </div>
-              <span className="text-[11px] text-white/55">
+              <span className="text-[0.6875rem] text-white/55">
                 {activeProgress}% de la meta del canal
               </span>
             </div>
@@ -379,7 +379,7 @@ export default function AdminPaymentsPage() {
               <div>
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-lg font-bold text-blanco">Balance consolidado</h2>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-[#9be3b4]/35 bg-[#9be3b4]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#9be3b4]">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#9be3b4]/35 bg-[#9be3b4]/15 px-2.5 py-0.5 text-[0.6875rem] font-bold text-[#9be3b4]">
                     ▲ 14.8%
                   </span>
                 </div>
@@ -411,7 +411,7 @@ export default function AdminPaymentsPage() {
                   key={pill.label}
                   className="rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 transition hover:border-white/20 hover:bg-white/[0.05]"
                 >
-                  <div className="flex items-center justify-between text-[11px] text-lavanda">
+                  <div className="flex items-center justify-between text-[0.6875rem] text-lavanda">
                     <span>{pill.label}</span>
                     <span className={pill.up ? 'font-bold text-[#9be3b4]' : 'font-bold text-arena'}>
                       {pill.delta}
@@ -500,7 +500,7 @@ export default function AdminPaymentsPage() {
                 </div>
               )}
 
-              <div className="mt-1 flex justify-between text-[11px] font-semibold text-white/50">
+              <div className="mt-1 flex justify-between text-[0.6875rem] font-semibold text-white/50">
                 {BALANCE_SERIES.map((b) => (
                   <span key={b.mes}>{b.mes}</span>
                 ))}
@@ -549,7 +549,7 @@ export default function AdminPaymentsPage() {
                         />
                       </div>
                     </div>
-                    <span className="mt-1.5 text-[11px] font-semibold text-white/60">{bar.mes}</span>
+                    <span className="mt-1.5 text-[0.6875rem] font-semibold text-white/60">{bar.mes}</span>
                   </div>
                 )
               })}
@@ -612,7 +612,7 @@ export default function AdminPaymentsPage() {
         <div className="sr-verdelo-panel mt-6 overflow-x-auto rounded-3xl p-5">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-[.16em] text-arena">
+              <tr className="border-b border-white/10 text-[0.6875rem] font-bold uppercase tracking-[.16em] text-arena">
                 <th className="pb-3 pr-4">ID</th>
                 <th className="pb-3 pr-4">Usuario</th>
                 <th className="pb-3 pr-4">Plan</th>

@@ -475,13 +475,13 @@ export default function MapaBogota({
       {/* Contenedor del mapa */}
       <div
         ref={containerRef}
-        className="h-full w-full rounded-[24px] bg-[#171a20]"
+        className="h-full w-full rounded-[1.5rem] bg-[#171a20]"
         style={{ minHeight: 380 }}
       />
 
       {mapLoadError && (
         <div
-          className="absolute inset-0 z-30 flex items-center justify-center rounded-[24px] border border-white/10 bg-[#171a20] p-8 text-center"
+          className="absolute inset-0 z-30 flex items-center justify-center rounded-[1.5rem] border border-white/10 bg-[#171a20] p-8 text-center"
           role="alert"
         >
           <div className="max-w-md">

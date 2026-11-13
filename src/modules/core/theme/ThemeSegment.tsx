@@ -6,7 +6,7 @@ export function ThemeSegment({ onPick }: { onPick?: () => void }) {
   const { tema, setTema } = useTema()
   return (
     <div role="group" aria-label="Tema" className="px-3 pb-2 pt-1">
-      <p aria-hidden="true" className="pb-2 text-[10.5px] font-bold uppercase tracking-[.16em] text-white/60">Tema</p>
+      <p aria-hidden="true" className="pb-2 text-[0.6563rem] font-bold uppercase tracking-[.16em] text-white/60">Tema</p>
       <div className="flex rounded-lg bg-black/20 p-0.5">
         {TEMAS.map((t) => (
           <button key={t} type="button" role="menuitemradio" aria-checked={tema === t}

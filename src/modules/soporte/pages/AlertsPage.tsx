@@ -68,7 +68,7 @@ export default function AlertsPage() {
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-12 text-[var(--color-text)]">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-sand)]">Tu cuenta</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-[var(--color-sand)]">Tu cuenta</p>
       <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl text-[var(--color-text)]">Búsquedas y alertas</h1>
       <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">Guarda búsquedas desde el catálogo y activa avisos. Te notificamos cuando una tienda tenga disponible lo que esperas.</p>
 

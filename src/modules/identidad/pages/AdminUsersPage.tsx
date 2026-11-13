@@ -22,7 +22,7 @@ const ROLES_FILTRO: [FiltroRol, string][] = [
 ]
 
 /* RNF-07: en celular cada fila de la tabla se ve como una tarjeta con sus etiquetas. */
-const tdCls = 'px-4 py-3 align-middle max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-0 max-md:py-1.5 max-md:before:text-[11px] max-md:before:font-bold max-md:before:uppercase max-md:before:tracking-[.14em] max-md:before:text-white/55 max-md:before:content-[attr(data-label)]'
+const tdCls = 'px-4 py-3 align-middle max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-0 max-md:py-1.5 max-md:before:text-[0.6875rem] max-md:before:font-bold max-md:before:uppercase max-md:before:tracking-[.14em] max-md:before:text-white/55 max-md:before:content-[attr(data-label)]'
 
 /** RF-66: el administrador busca cuentas, las filtra por estado y las pasa a Activa, Inactiva o Bloqueada. */
 export default function AdminUsersPage() {
@@ -69,7 +69,7 @@ export default function AdminUsersPage() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Administración</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-arena">Administración</p>
       <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Usuarios</h1>
       <p className="mt-2 max-w-2xl text-sm text-white/70">Busca una cuenta y cambia su estado. Activa: puede usar StyleRadar. Inactiva: sin uso reciente. Bloqueada: no puede iniciar sesión.</p>
 
@@ -116,7 +116,7 @@ export default function AdminUsersPage() {
               <p className="mb-3 text-sm text-white/60" aria-live="polite">{visibles.length} {visibles.length === 1 ? 'cuenta' : 'cuentas'}</p>
               <table className="w-full text-left text-sm max-md:block">
                 <caption className="sr-only">Cuentas de StyleRadar</caption>
-                <thead className="border-b border-white/15 text-[11px] uppercase tracking-[.14em] text-white/60 max-md:sr-only">
+                <thead className="border-b border-white/15 text-[0.6875rem] uppercase tracking-[.14em] text-white/60 max-md:sr-only">
                   <tr>
                     <th scope="col" className="px-4 py-3 font-bold">Nombre</th>
                     <th scope="col" className="px-4 py-3 font-bold">Rol</th>

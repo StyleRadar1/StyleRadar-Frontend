@@ -179,7 +179,7 @@ export function ClothingCycleSection({ onSelectPhase }: ClothingCycleSectionProp
     <section id="ciclo" aria-labelledby="cicloSectionTitle" className="relative overflow-hidden bg-[var(--sr-bg)] py-20 md:py-28">
       {/* Halo ambiental */}
       <div
-        className="pointer-events-none absolute -right-36 -top-36 h-[500px] w-[500px] rounded-full bg-violeta/25 blur-3xl"
+        className="pointer-events-none absolute -right-36 -top-36 h-[31.25rem] w-[31.25rem] rounded-full bg-violeta/25 blur-3xl"
         aria-hidden="true"
       />
 
@@ -284,7 +284,7 @@ export function ClothingCycleSection({ onSelectPhase }: ClothingCycleSectionProp
                 <div className="min-w-0 flex-1">
                   <h4 className="truncate text-sm font-bold text-[var(--sr-hero-text)]">{card.title}</h4>
                   <p className="truncate text-xs text-[var(--sr-hero-text-muted)]">{card.subtitle}</p>
-                  <span className="mt-2 inline-block rounded border border-[var(--sr-border-subtle)] bg-[var(--sr-surface-raised)] px-2 py-0.5 text-[10px] font-semibold text-[var(--sr-accent-text)]">
+                  <span className="mt-2 inline-block rounded border border-[var(--sr-border-subtle)] bg-[var(--sr-surface-raised)] px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--sr-accent-text)]">
                     {card.tag}
                   </span>
                 </div>

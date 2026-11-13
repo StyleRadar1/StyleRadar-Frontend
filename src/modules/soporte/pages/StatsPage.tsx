@@ -16,7 +16,7 @@ function KpiCard({ label, kpi }: { label: string; kpi: KpiDto }) {
   const color = kpi.direccion === 'up' ? 'text-[var(--color-success)]' : kpi.direccion === 'down' ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-muted)]'
   return (
     <Card>
-      <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-sand)]">{label}</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-[var(--color-sand)]">{label}</p>
       <p className="mt-1 text-2xl font-extrabold text-[var(--color-text)]">{kpi.valor.toLocaleString('es-CO')}</p>
       <p className={`mt-1 text-xs ${color}`}>
         {arrow} {kpi.variacionPct}% vs. periodo anterior

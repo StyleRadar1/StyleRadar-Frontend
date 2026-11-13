@@ -314,7 +314,7 @@ export function MapPreview() {
 
             {/* Cuadrícula de 4 prendas destacadas de la tienda */}
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#a98be0] block mb-2">
+              <span className="text-[0.625rem] font-extrabold uppercase tracking-widest text-[#a98be0] block mb-2">
                 {selectedPlace.type === 'tienda' ? 'Prendas destacadas en el radar' : 'Iniciativas activas'}
               </span>
 

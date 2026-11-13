@@ -91,7 +91,7 @@ export default function MessagesPage() {
         <div className="relative w-full bg-transparent border-0 shadow-none overflow-visible">
           {/* Cabecera idéntica a la referencia aprobada */}
           <header className="mb-4">
-            <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--s-ink2,#CFC6E0)] mb-1">
+            <p className="text-[0.625rem] font-bold uppercase tracking-[.18em] text-[var(--s-ink2,#CFC6E0)] mb-1">
               Comunicación
             </p>
             <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl text-[var(--s-ink,#F4EEE3)]">

@@ -47,7 +47,7 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
         <div className="flex flex-wrap items-center gap-4 pt-2">
           <Link
             to="/catalogo"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-[var(--sr-accent)]/30 hover:translate-y-[-2px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-[var(--sr-accent)]/30 hover:translate-y-[-0.125rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             <span>Entrar a StyleRadar</span>
             <svg
@@ -94,7 +94,7 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
             onClick={scrollToTop}
             className="flex items-center gap-2 hover:text-[var(--sr-hero-text)] transition-colors cursor-pointer group"
           >
-            <span className="font-bold uppercase tracking-wider text-[11px]">Volver arriba</span>
+            <span className="font-bold uppercase tracking-wider text-[0.6875rem]">Volver arriba</span>
             <svg
               viewBox="0 0 24 24"
               className="w-4 h-4 stroke-[2.5] group-hover:-translate-y-1 transition-transform"

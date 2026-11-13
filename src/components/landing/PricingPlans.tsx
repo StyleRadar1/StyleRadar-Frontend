@@ -74,14 +74,14 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                 }`}
               >
                 {isFeatured && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[var(--sr-accent)] text-[var(--sr-text-on-accent)] text-[10px] font-black tracking-widest uppercase shadow-md">
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[var(--sr-accent)] text-[var(--sr-text-on-accent)] text-[0.625rem] font-black tracking-widest uppercase shadow-md">
                     Más elegido
                   </span>
                 )}
 
                 <div className="space-y-6">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--sr-accent)]">
+                    <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--sr-accent)]">
                       {plan.audience}
                     </span>
                     <h3 className="text-2xl font-black text-[var(--sr-hero-text)] tracking-tight mt-1">

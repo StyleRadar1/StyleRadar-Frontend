@@ -35,10 +35,10 @@ export function AdminStatsView() {
     <div className="text-[var(--color-text)]">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-text-muted)]">Resumen general · {mes}</p>
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[.16em] text-[var(--color-text-muted)]">Resumen general · {mes}</p>
           <h1 className="mt-1 text-5xl font-extrabold tracking-tight md:text-7xl text-[var(--color-text)]">Estadísticas</h1>
         </div>
-        <p aria-hidden="true" className="text-right text-xl font-extrabold leading-none">StyleRadar<sup className="text-[10px]">®</sup><span className="mt-1 block border-t border-[var(--color-border)] pt-1 text-[10px] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)]">Bogotá</span></p>
+        <p aria-hidden="true" className="text-right text-xl font-extrabold leading-none">StyleRadar<sup className="text-[0.625rem]">®</sup><span className="mt-1 block border-t border-[var(--color-border)] pt-1 text-[0.625rem] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)]">Bogotá</span></p>
       </div>
 
       <div className="mt-10 flex flex-wrap items-start justify-between gap-4">
@@ -124,9 +124,9 @@ function DailyActivity({ data }: { data: AdminDailyDto }) {
       ) : (
         <div className="relative grid grid-cols-[2.75rem_1fr] gap-x-2">
           {/* Búsquedas */}
-          <div aria-hidden="true" className="flex h-32 flex-col justify-between text-right text-[10px] tabular-nums text-white/45"><span>{num(maxB)}</span><span>{num(maxB / 2)}</span><span>0</span></div>
+          <div aria-hidden="true" className="flex h-32 flex-col justify-between text-right text-[0.625rem] tabular-nums text-white/45"><span>{num(maxB)}</span><span>{num(maxB / 2)}</span><span>0</span></div>
           <div className="relative h-32">
-            <p className="absolute left-2 top-0 z-[1] flex items-center gap-1.5 text-[11px] font-semibold text-white/70"><i aria-hidden="true" className="h-0.5 w-3 shrink-0 rounded-full" style={{ background: BUSQ }} />Búsquedas</p>
+            <p className="absolute left-2 top-0 z-[1] flex items-center gap-1.5 text-[0.6875rem] font-semibold text-white/70"><i aria-hidden="true" className="h-0.5 w-3 shrink-0 rounded-full" style={{ background: BUSQ }} />Búsquedas</p>
             <svg viewBox="0 0 1000 120" preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
               <defs>
                 <linearGradient id="srDailyAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -142,21 +142,21 @@ function DailyActivity({ data }: { data: AdminDailyDto }) {
             </svg>
           </div>
           {/* Registros y publicaciones */}
-          <div aria-hidden="true" className="mt-3 flex h-24 flex-col justify-between text-right text-[10px] tabular-nums text-white/45"><span>{maxRP}</span><span>{maxRP / 2}</span><span>0</span></div>
+          <div aria-hidden="true" className="mt-3 flex h-24 flex-col justify-between text-right text-[0.625rem] tabular-nums text-white/45"><span>{maxRP}</span><span>{maxRP / 2}</span><span>0</span></div>
           <div className="relative mt-3 h-24">
-            <ul className="absolute left-2 top-0 z-[1] flex gap-3 text-[11px] font-semibold text-white/70"><li className="flex items-center gap-1.5"><Swatch i={1} />Registros</li><li className="flex items-center gap-1.5"><Swatch i={0} />Publicaciones</li></ul>
+            <ul className="absolute left-2 top-0 z-[1] flex gap-3 text-[0.6875rem] font-semibold text-white/70"><li className="flex items-center gap-1.5"><Swatch i={1} />Registros</li><li className="flex items-center gap-1.5"><Swatch i={0} />Publicaciones</li></ul>
             <div aria-hidden="true" className="flex h-full items-end border-b border-white/25">
               {dias.map((d, i) => (
-                <div key={d.etiqueta} className={`flex h-full flex-1 items-end justify-center gap-[2px] ${hover === i ? 'bg-white/[.04]' : ''}`}>
-                  <span className="w-[30%] max-w-2 rounded-t-[3px]" style={{ height: `${(d.registros / maxRP) * 100}%`, background: SERIE[1] }} />
-                  <span className="w-[30%] max-w-2 rounded-t-[3px]" style={{ height: `${(d.publicaciones / maxRP) * 100}%`, background: SERIE[0] }} />
+                <div key={d.etiqueta} className={`flex h-full flex-1 items-end justify-center gap-[0.125rem] ${hover === i ? 'bg-white/[.04]' : ''}`}>
+                  <span className="w-[30%] max-w-2 rounded-t-[0.1875rem]" style={{ height: `${(d.registros / maxRP) * 100}%`, background: SERIE[1] }} />
+                  <span className="w-[30%] max-w-2 rounded-t-[0.1875rem]" style={{ height: `${(d.publicaciones / maxRP) * 100}%`, background: SERIE[0] }} />
                 </div>
               ))}
             </div>
           </div>
           {/* Eje de días */}
           <span />
-          <div aria-hidden="true" className="flex pt-1 text-[10px] text-white/55">
+          <div aria-hidden="true" className="flex pt-1 text-[0.625rem] text-white/55">
             {dias.map((d, i) => <span key={d.etiqueta} className="flex-1 text-center">{i % 3 === 0 ? d.etiqueta : ''}</span>)}
           </div>
           {/* Zona de interacción: una columna por día, cubre los dos gráficos */}
@@ -215,11 +215,11 @@ function LiveUsers() {
 
   return (
     <Panel title="Usuarios conectados ahora" text="Sesiones activas en la plataforma en tiempo real."
-      action={<span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#9be3b4]/40 px-2.5 py-1 text-[11px] font-semibold text-[#9be3b4]"><i aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full bg-[#9be3b4] motion-reduce:animate-none" />En vivo</span>}>
+      action={<span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#9be3b4]/40 px-2.5 py-1 text-[0.6875rem] font-semibold text-[#9be3b4]"><i aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full bg-[#9be3b4] motion-reduce:animate-none" />En vivo</span>}>
       {error && sesiones === null ? <p role="alert" className="text-sm text-[#ffb4b4]">No pudimos consultar las sesiones abiertas.</p> : (
         <>
           <p className="text-4xl font-extrabold tabular-nums" aria-live="polite">{sesiones === null ? '—' : num(sesiones)}</p>
-          <p className="mt-2 text-[11px] font-bold uppercase tracking-[.14em] text-white/60">Actualizado cada 15 s · Se pausa automáticamente en segundo plano.</p>
+          <p className="mt-2 text-[0.6875rem] font-bold uppercase tracking-[.14em] text-white/60">Actualizado cada 15 s · Se pausa automáticamente en segundo plano.</p>
         </>
       )}
     </Panel>
@@ -276,18 +276,18 @@ function GoalCapsules({ ind, income }: { ind: AdminIndicatorsDto; income: AdminI
     <div className="grid grid-cols-3 gap-3 pt-1">
       {capsules.map((cap) => (
         <div key={cap.title} className="flex flex-col items-center text-center">
-          <div className="sr-goal-capsule w-full max-w-[112px]">
+          <div className="sr-goal-capsule w-full max-w-[7rem]">
             <div
               className="sr-goal-fill"
               style={{ height: `${cap.pct}%`, background: cap.fill }}
             />
             <div className="relative z-10 flex h-full flex-col justify-between p-3 text-left">
-              <span className="inline-flex w-fit rounded-full border border-white/20 bg-black/35 px-2 py-0.5 text-[10px] font-extrabold text-blanco">
+              <span className="inline-flex w-fit rounded-full border border-white/20 bg-black/35 px-2 py-0.5 text-[0.625rem] font-extrabold text-blanco">
                 {cap.pct}%
               </span>
               <div>
                 <p className="text-xs font-extrabold leading-tight text-blanco drop-shadow">{cap.current}</p>
-                <p className="text-[10px] text-white/70">Meta: {cap.target}</p>
+                <p className="text-[0.625rem] text-white/70">Meta: {cap.target}</p>
               </div>
             </div>
           </div>
@@ -328,7 +328,7 @@ function ActivityHeatmap({ dias }: { dias: AdminDailyDto['dias'] }) {
 
   return (
     <div>
-      <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[11px] font-bold uppercase tracking-wider text-lavanda/75">
+      <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[0.6875rem] font-bold uppercase tracking-wider text-lavanda/75">
         {DIAS_SEMANA.map((d) => (
           <span key={d}>{d}</span>
         ))}
@@ -344,13 +344,13 @@ function ActivityHeatmap({ dias }: { dias: AdminDailyDto['dias'] }) {
             }}
             title={`${c.label}: ${num(c.val)} interacciones`}
           >
-            <span className="text-[10px] font-bold tabular-nums text-white/85">
+            <span className="text-[0.625rem] font-bold tabular-nums text-white/85">
               {Math.round(c.val / 100) / 10}k
             </span>
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-center justify-between text-[11px] text-lavanda/75">
+      <div className="mt-3 flex items-center justify-between text-[0.6875rem] text-lavanda/75">
         <span>Menor actividad</span>
         <div className="flex items-center gap-1.5">
           {levelBg.map((bg, i) => (

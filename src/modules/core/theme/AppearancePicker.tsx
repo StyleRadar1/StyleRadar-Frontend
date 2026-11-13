@@ -145,7 +145,7 @@ export function AppearancePicker({ className = '', align = 'right' }: Appearance
             align === 'right' ? 'right-0' : 'left-0'
           }`}
         >
-          <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-white/50">
+          <div className="px-2 py-1.5 text-[0.625rem] font-bold uppercase tracking-[.14em] text-white/50">
             Modo de color
           </div>
 
@@ -284,7 +284,7 @@ export function AppearancePicker({ className = '', align = 'right' }: Appearance
             >
               <div className="flex flex-col">
                 <span className="font-semibold text-white">Modo daltónico</span>
-                <span className="text-[10.5px] text-white/60">Paleta Okabe-Ito (azul/naranja)</span>
+                <span className="text-[0.6563rem] text-white/60">Paleta Okabe-Ito (azul/naranja)</span>
               </div>
               <span
                 aria-hidden="true"

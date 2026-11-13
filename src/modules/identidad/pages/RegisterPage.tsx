@@ -75,7 +75,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <section className="relative min-h-[calc(100vh-72px)] overflow-hidden">
+    <section className="relative min-h-[calc(100vh-4.5rem)] overflow-hidden">
       <img
         src="/img/crear-cuenta.jpg"
         alt=""

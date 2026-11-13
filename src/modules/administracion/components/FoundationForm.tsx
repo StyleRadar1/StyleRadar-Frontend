@@ -25,7 +25,7 @@ export function FoundationForm({ id, inicial, otrosNits, onSubmit, children }: {
     <form id={id} onSubmit={enviar} noValidate className="grid gap-4 sm:grid-cols-2">
       {CAMPOS.map(([k, label, type = 'text', ph]) => (
         <div key={k} className={k === 'representante' ? 'sm:col-span-2' : ''}>
-          <label htmlFor={`${id}-${k}`} className="text-[11px] font-bold uppercase tracking-[.14em] text-white/70">{label}</label>
+          <label htmlFor={`${id}-${k}`} className="text-[0.6875rem] font-bold uppercase tracking-[.14em] text-white/70">{label}</label>
           <input id={`${id}-${k}`} type={type} value={d[k]} placeholder={ph} aria-invalid={!!err[k]} aria-describedby={err[k] ? `${id}-${k}-err` : undefined}
             onChange={(e) => { setD({ ...d, [k]: e.target.value }); setErr({ ...err, [k]: undefined }) }}
             className={`mt-1 w-full rounded-lg border bg-black/20 px-3 py-2.5 text-sm font-normal normal-case tracking-normal text-blanco outline-none focus:border-violeta-claro ${err[k] ? 'border-[#ffb4b4]' : 'border-white/20'}`} />

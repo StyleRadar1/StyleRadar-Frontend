@@ -108,8 +108,8 @@ export function AuroraBackground({
           style={{
             width: '52vw',
             height: '52vw',
-            minWidth: '380px',
-            minHeight: '380px',
+            minWidth: '23.75rem',
+            minHeight: '23.75rem',
             left: '-12vw',
             top: '-15vw',
             backgroundColor: 'var(--aurora-c1)',
@@ -126,8 +126,8 @@ export function AuroraBackground({
           style={{
             width: '60vw',
             height: '60vw',
-            minWidth: '420px',
-            minHeight: '420px',
+            minWidth: '26.25rem',
+            minHeight: '26.25rem',
             left: '-14vw',
             top: '15vh',
             backgroundColor: 'var(--aurora-c2)',
@@ -144,8 +144,8 @@ export function AuroraBackground({
           style={{
             width: '56vw',
             height: '56vw',
-            minWidth: '400px',
-            minHeight: '400px',
+            minWidth: '25rem',
+            minHeight: '25rem',
             right: '-12vw',
             bottom: '-15vh',
             backgroundColor: 'var(--aurora-c3)',
@@ -162,8 +162,8 @@ export function AuroraBackground({
           style={{
             width: '45vw',
             height: '45vw',
-            minWidth: '320px',
-            minHeight: '320px',
+            minWidth: '20rem',
+            minHeight: '20rem',
             right: '8vw',
             top: '-18vw',
             backgroundColor: 'var(--aurora-c4)',

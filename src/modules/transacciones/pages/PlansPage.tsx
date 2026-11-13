@@ -57,7 +57,7 @@ export default function PlansPage() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 bg-transparent text-[var(--sr-hero-text)]">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Planes</p>
+      <p className="text-[0.6875rem] font-bold uppercase tracking-[.2em] text-violeta-claro">Planes</p>
         <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
           Un plan para cada quien
         </h1>
@@ -78,9 +78,9 @@ export default function PlansPage() {
                   : 'border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/60'
               }`}
             >
-              {p.destacado && !(comprador && plan === p.id) && <span className="absolute right-4 top-4 rounded-full bg-violeta px-3 py-1 text-[11px] font-semibold text-white">Más elegido</span>}
-              {comprador && plan === p.id && <span className="absolute right-4 top-4 rounded-full bg-arena px-3 py-1 text-[11px] font-semibold text-grafito">Tu plan</span>}
-              <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[var(--sr-hero-text-muted)]">{p.para}</p>
+              {p.destacado && !(comprador && plan === p.id) && <span className="absolute right-4 top-4 rounded-full bg-violeta px-3 py-1 text-[0.6875rem] font-semibold text-white">Más elegido</span>}
+              {comprador && plan === p.id && <span className="absolute right-4 top-4 rounded-full bg-arena px-3 py-1 text-[0.6875rem] font-semibold text-grafito">Tu plan</span>}
+              <p className="text-[0.6875rem] font-bold uppercase tracking-[.18em] text-[var(--sr-hero-text-muted)]">{p.para}</p>
               <h2 className="mt-2 text-2xl font-bold text-[var(--sr-hero-text)]">{p.nombre}</h2>
               <p className="mt-3 text-3xl font-extrabold text-[var(--sr-hero-text)]">
                 {p.precio ? formatCOP(p.precio) : '$0'}{' '}
@@ -98,9 +98,9 @@ export default function PlansPage() {
 
         <h2 className="mt-14 text-2xl font-bold text-[var(--sr-hero-text)]">Radar y Radar+, lado a lado</h2>
         <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/40 backdrop-blur-xl">
-          <table className="w-full min-w-[520px] text-left text-sm">
+          <table className="w-full min-w-[32.5rem] text-left text-sm">
             <caption className="sr-only">Comparación de los planes Radar y Radar+</caption>
-            <thead className="bg-[var(--sr-surface-raised)]/60 text-[11px] uppercase tracking-[.14em] text-[var(--sr-hero-text-muted)]">
+            <thead className="bg-[var(--sr-surface-raised)]/60 text-[0.6875rem] uppercase tracking-[.14em] text-[var(--sr-hero-text-muted)]">
               <tr><th scope="col" className="p-4 font-bold">Qué incluye</th><th scope="col" className="p-4 font-bold">Radar</th><th scope="col" className="p-4 font-bold text-[var(--sr-accent)]">Radar+</th></tr>
             </thead>
             <tbody>

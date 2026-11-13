@@ -89,7 +89,7 @@ export default function MapCard({ pin, onClose }: Props) {
       {/* Tienda: vista previa de productos */}
       {!isFound && pin.products && pin.products.length > 0 && (
         <div className="mt-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Lo que ofrece</p>
+          <p className="text-[0.625rem] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Lo que ofrece</p>
           <ul className="mt-2 grid grid-cols-3 gap-2">
             {pin.products.slice(0, 3).map((p) => (
               <li key={p.id} className="min-w-0">
@@ -99,8 +99,8 @@ export default function MapCard({ pin, onClose }: Props) {
                   loading="lazy"
                   className="aspect-[4/5] w-full rounded-lg object-cover bg-[var(--color-surface)] border border-[var(--color-border)]"
                 />
-                <p className="mt-1 truncate text-[11px] font-semibold text-[var(--color-text)]">{p.nombre}</p>
-                <p className="text-[11px] text-[var(--color-text-muted)]">{formatCOP(p.precio)}</p>
+                <p className="mt-1 truncate text-[0.6875rem] font-semibold text-[var(--color-text)]">{p.nombre}</p>
+                <p className="text-[0.6875rem] text-[var(--color-text-muted)]">{formatCOP(p.precio)}</p>
               </li>
             ))}
           </ul>

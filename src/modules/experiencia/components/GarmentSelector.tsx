@@ -55,12 +55,12 @@ export function GarmentSelector({ garments, loading, error, onRetry, selected, o
                 <div className="relative aspect-[4/5] bg-[var(--color-surface-subtle)]">
                   <img src={g.imagen} alt="" loading="lazy" className="h-full w-full object-cover" />
                   {problem && (
-                    <span className="absolute left-2 top-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-2 py-1 text-[11px] font-semibold text-[var(--color-text)] backdrop-blur-sm shadow-sm">
+                    <span className="absolute left-2 top-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-2 py-1 text-[0.6875rem] font-semibold text-[var(--color-text)] backdrop-blur-sm shadow-sm">
                       {problem}
                     </span>
                   )}
                   {on && (
-                    <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)] px-2 py-1 text-[11px] font-bold text-[var(--color-accent-contrast,#ffffff)] shadow-sm">
+                    <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)] px-2 py-1 text-[0.6875rem] font-bold text-[var(--color-accent-contrast,#ffffff)] shadow-sm">
                       <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>

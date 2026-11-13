@@ -45,7 +45,7 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="relative min-h-[calc(100vh-72px)] overflow-hidden">
+    <section className="relative min-h-[calc(100vh-4.5rem)] overflow-hidden">
       <img
         src="/img/iniciar-sesion.jpg"
         alt=""
@@ -91,10 +91,10 @@ export default function LoginPage() {
               </Link>
             </p>
             <GoogleSignIn onSignedIn={(u) => navigate(ROLE_HOME[u.role], { replace: true })} />
-            <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)] before:h-px before:flex-1 before:bg-[var(--color-border)] after:h-px after:flex-1 after:bg-[var(--color-border)]">
+            <p className="flex items-center gap-3 text-[0.6875rem] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)] before:h-px before:flex-1 before:bg-[var(--color-border)] after:h-px after:flex-1 after:bg-[var(--color-border)]">
               o con tu correo
             </p>
-            <label className="text-[11px] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">
+            <label className="text-[0.6875rem] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">
               Correo
               <input
                 type="email"
@@ -105,7 +105,7 @@ export default function LoginPage() {
                 className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm font-normal normal-case tracking-normal text-[var(--color-text)] outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/20 transition-colors"
               />
             </label>
-            <label className="text-[11px] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">
+            <label className="text-[0.6875rem] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">
               Contraseña
               <input
                 type="password"
@@ -141,7 +141,7 @@ export default function LoginPage() {
             </Button>
             {!jurado && (
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">
+                <p className="text-[0.6875rem] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">
                   Cuentas de prueba
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -150,7 +150,7 @@ export default function LoginPage() {
                       key={account.email}
                       type="button"
                       onClick={() => selectDemoAccount(account.email)}
-                      className="rounded-full border border-[var(--color-border)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text)] hover:bg-[var(--color-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] transition-colors"
+                      className="rounded-full border border-[var(--color-border)] px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--color-text)] hover:bg-[var(--color-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] transition-colors"
                     >
                       {ROLE_LABEL[account.role]}
                     </button>

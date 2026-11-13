@@ -357,7 +357,7 @@ html[data-tema="daltonico"] {
 html[data-theme="daltonico"] main a:not([class*="rounded"]),
 html[data-tema="daltonico"] main a:not([class*="rounded"]) {
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: 0.1875rem;
 }
 
 /* =====================================================================
@@ -402,8 +402,24 @@ html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/
 }
 
 html {
+  font-size: 100%;
   background: var(--sr-bg);
   color: var(--sr-text-primary);
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 80%;
+  }
+}
+
+/* En móvil (<768px) los inputs conservan al menos 16px para evitar auto-zoom en iOS Safari */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 body {
@@ -503,7 +519,7 @@ html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .sr-card-hover:hover {
-  transform: translateY(-4px);
+  transform: translateY(-0.25rem);
   box-shadow: 0 16px 32px -8px rgba(75, 31, 168, 0.18);
 }
 

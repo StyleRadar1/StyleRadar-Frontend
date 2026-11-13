@@ -104,11 +104,11 @@ export function CategoriesSection({ categories = STYLE_CATEGORIES, onSelectCateg
     <section id="categorias" aria-labelledby="catSectionTitle" className="relative overflow-hidden bg-[var(--sr-bg,transparent)] py-20 md:py-28">
       {/* Halos visuales de ambientación */}
       <div
-        className="pointer-events-none absolute -left-36 top-1/4 h-[500px] w-[500px] rounded-full bg-violeta/25 blur-3xl"
+        className="pointer-events-none absolute -left-36 top-1/4 h-[31.25rem] w-[31.25rem] rounded-full bg-violeta/25 blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -right-32 bottom-1/4 h-[480px] w-[480px] rounded-full bg-arena/5 blur-3xl"
+        className="pointer-events-none absolute -right-32 bottom-1/4 h-[30rem] w-[30rem] rounded-full bg-arena/5 blur-3xl"
         aria-hidden="true"
       />
 
@@ -125,9 +125,9 @@ export function CategoriesSection({ categories = STYLE_CATEGORIES, onSelectCateg
         </div>
 
         {/* Showcase principal (2 columnas: Izquierda imagen 4:5, Derecha explicación) */}
-        <div className="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(320px,440px)_minmax(0,1fr)] lg:gap-14">
+        <div className="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(20rem,27.5rem)_minmax(0,1fr)] lg:gap-14">
           {/* Columna Izquierda: Imagen grande o placeholder preparado para Kevin */}
-          <div className="relative mx-auto aspect-[4/5] w-full max-w-[420px] overflow-hidden rounded-[22px] border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] shadow-[0_20px_50px_var(--color-shadow-color,rgba(0,0,0,0.65))]">
+          <div className="relative mx-auto aspect-[4/5] w-full max-w-[26.25rem] overflow-hidden rounded-[1.375rem] border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] shadow-[0_20px_50px_var(--color-shadow-color,rgba(0,0,0,0.65))]">
             {activeCategory.image ? (
               <img
                 src={activeCategory.image}
@@ -159,7 +159,7 @@ export function CategoriesSection({ categories = STYLE_CATEGORIES, onSelectCateg
             <p className="text-sm leading-relaxed text-[var(--sr-hero-text-muted)]">{activeCategory.desc}</p>
 
             <div className="mt-2 flex flex-col gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">Prendas clave en el radar:</span>
+              <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--sr-hero-text-muted)]">Prendas clave en el radar:</span>
               <div className="flex flex-wrap gap-2">
                 {activeCategory.tags.map((tag, i) => (
                   <span key={i} className="rounded-lg border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] px-3 py-1 text-xs text-[var(--sr-hero-text)]">
@@ -219,9 +219,9 @@ export function CategoriesSection({ categories = STYLE_CATEGORIES, onSelectCateg
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-extrabold text-[var(--sr-hero-text-muted)]">Estilo {cat.num}</span>
+                    <span className="text-[0.625rem] font-extrabold text-[var(--sr-hero-text-muted)]">Estilo {cat.num}</span>
                     <b className={`text-sm font-bold leading-tight ${isActive ? 'text-[var(--sr-accent-text)]' : 'text-[var(--sr-hero-text)]'}`}>{cat.name}</b>
-                    <span className="mt-0.5 truncate text-[11px] text-[var(--sr-hero-text-muted)]">{cat.subtitle}</span>
+                    <span className="mt-0.5 truncate text-[0.6875rem] text-[var(--sr-hero-text-muted)]">{cat.subtitle}</span>
                   </div>
                 </button>
               )

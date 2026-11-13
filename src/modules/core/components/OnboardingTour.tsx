@@ -162,7 +162,7 @@ export function OnboardingTour({ steps = DEFAULT_TOUR_STEPS, isOpen, onClose }: 
         aria-modal="true"
         aria-labelledby="tourTitle"
         aria-describedby="tourDesc"
-        className="fixed z-[10000] w-[min(400px,calc(100vw-32px))] rounded-[18px] border border-violeta/40 bg-[#140d22] p-5 text-blanco shadow-[0_20px_48px_rgba(0,0,0,0.75)] max-sm:bottom-5 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:w-auto"
+        className="fixed z-[10000] w-[min(25rem,calc(100vw-2rem))] rounded-[1.125rem] border border-violeta/40 bg-[#140d22] p-5 text-blanco shadow-[0_20px_48px_rgba(0,0,0,0.75)] max-sm:bottom-5 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:w-auto"
         style={window.innerWidth > 600 ? { top: `${position.top}px`, left: `${position.left}px` } : undefined}
       >
         <div className="flex items-center justify-between gap-2.5">
@@ -177,7 +177,7 @@ export function OnboardingTour({ steps = DEFAULT_TOUR_STEPS, isOpen, onClose }: 
           </button>
         </div>
 
-        <h3 id="tourTitle" className="mt-3 text-[17px] font-bold tracking-tight text-blanco">
+        <h3 id="tourTitle" className="mt-3 text-[1.0625rem] font-bold tracking-tight text-blanco">
           {step.title}
         </h3>
         <p id="tourDesc" className="mt-1 text-xs leading-relaxed text-[#B9B9CA]">

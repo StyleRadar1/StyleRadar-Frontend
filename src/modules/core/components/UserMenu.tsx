@@ -54,10 +54,10 @@ export function UserMenu() {
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-2.5 rounded-full border py-1 pl-1 pr-3 text-sm hover:bg-white/10 ${user.role === 'ADMIN_STYLERADAR' ? 'border-arena/60' : 'border-white/20'}`}
       >
-        <span aria-hidden="true" className={`grid h-8 w-8 flex-none place-items-center rounded-full text-[11px] font-bold ${avatarCls(user.role)}`}>{iniciales(user.name)}</span>
+        <span aria-hidden="true" className={`grid h-8 w-8 flex-none place-items-center rounded-full text-[0.6875rem] font-bold ${avatarCls(user.role)}`}>{iniciales(user.name)}</span>
         <span aria-hidden="true" className="hidden min-w-0 text-left leading-tight sm:block">
           <span className="block max-w-28 truncate font-semibold">{firstName}</span>
-          <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-white/70">
+          <span className="flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-[.12em] text-white/70">
             <i className="h-1.5 w-1.5 rounded-full" style={{ background: ROLE_DOT[user.role] }} />{ROLE_LABEL[user.role]}
           </span>
         </span>
@@ -86,7 +86,7 @@ export function UserMenu() {
             <div className="min-w-0">
               <p className="truncate font-semibold">{user.name}</p>
               <p className="truncate text-xs text-white/70">{user.email}</p>
-              <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[.12em]">
+              <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2 py-0.5 text-[0.6563rem] font-bold uppercase tracking-[.12em]">
                 <i aria-hidden="true" className="h-1.5 w-1.5 rounded-full" style={{ background: ROLE_DOT[user.role] }} />{ROLE_LABEL[user.role]}
               </p>
             </div>

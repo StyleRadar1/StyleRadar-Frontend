@@ -51,7 +51,7 @@ export function NotificationBell() {
           <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0" />
         </svg>
         {count > 0 && (
-          <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-violeta px-1 text-[11px] font-bold">
+          <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-violeta px-1 text-[0.6875rem] font-bold">
             {count > 9 ? '9+' : count}
           </span>
         )}
@@ -76,7 +76,7 @@ export function NotificationBell() {
                         {n.titulo}{!n.leida && <span className="sr-only"> (sin leer)</span>}
                       </span>
                       <span className="mt-0.5 block text-xs text-white/70">{n.detalle}</span>
-                      <span className="mt-1 block text-[11px] text-white/45">{hora.format(new Date(n.creadaEn))}</span>
+                      <span className="mt-1 block text-[0.6875rem] text-white/45">{hora.format(new Date(n.creadaEn))}</span>
                     </button>
                   </li>
                 ))}

@@ -9,11 +9,11 @@
   --inv-lavanda: #b9b9ca;
   --inv-violeta: #48119a;
   --inv-violeta-hover: #5a1fb8;
-  --inv-radius: 20px;
+  --inv-radius: 1.25rem;
   --inv-shadow: 0 8px 24px rgba(38, 38, 38, 0.05), 0 2px 6px rgba(38, 38, 38, 0.03);
 
   min-height: 100vh;
-  padding-bottom: 72px;
+  padding-bottom: 4.5rem;
   background: linear-gradient(180deg, #efe6d9 0%, #f6f1ea 28%, #ffffff 100%);
   color: var(--inv-grafito);
   font-family: 'Poppins', system-ui, sans-serif;
@@ -38,7 +38,7 @@
   position: absolute;
   inset: 0 0 0 auto;
   z-index: -2;
-  width: min(65%, 980px);
+  width: min(65%, 61.25rem);
 }
 
 .inv-hero__media img {
@@ -58,23 +58,23 @@
 }
 
 .inv-hero__inner {
-  width: min(100% - 2 * clamp(16px, 4vw, 48px), 1320px);
+  width: min(100% - 2 * clamp(1rem, 4vw, 3rem), 82.5rem);
   margin: 0 auto;
-  padding: clamp(26px, 3.5vw, 40px) 0 clamp(28px, 3vw, 42px);
+  padding: clamp(1.625rem, 3.5vw, 2.5rem) 0 clamp(1.75rem, 3vw, 2.625rem);
 }
 
 .inv-hero__eyebrow {
   display: block;
   color: var(--inv-lavanda);
-  font-size: 11.5px;
+  font-size: 0.7188rem;
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
 .inv-hero__title {
-  margin: 6px 0 8px;
-  font-size: clamp(38px, 5.5vw, 68px);
+  margin: 0.375rem 0 0.5rem;
+  font-size: clamp(2.375rem, 5.5vw, 4.25rem);
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.03em;
@@ -85,7 +85,7 @@
   max-width: 45ch;
   margin: 0;
   color: #d6d6e2;
-  font-size: clamp(14px, 1.4vw, 17px);
+  font-size: clamp(0.875rem, 1.4vw, 1.0625rem);
   font-weight: 500;
   line-height: 1.4;
 }
@@ -93,8 +93,8 @@
 .inv-hero__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 22px;
+  gap: 0.75rem;
+  margin-top: 1.375rem;
 }
 
 /* ── Botones principales ── */
@@ -102,12 +102,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 22px;
-  border-radius: 999px;
+  gap: 0.5rem;
+  min-height: 2.625rem;
+  padding: 0 1.375rem;
+  border-radius: 62.4375rem;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -115,8 +115,8 @@
 }
 
 .inv-btn svg {
-  width: 15px;
-  height: 15px;
+  width: 0.9375rem;
+  height: 0.9375rem;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -133,7 +133,7 @@
 
 .inv-btn--primary:hover {
   background: var(--inv-violeta-hover);
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .inv-btn--ghost {
@@ -154,7 +154,7 @@
 
 /* ── Contenedor general del cuerpo ── */
 .inv-container {
-  width: min(100% - 2 * clamp(16px, 4vw, 48px), 1320px);
+  width: min(100% - 2 * clamp(1rem, 4vw, 3rem), 82.5rem);
   margin: 0 auto;
 }
 
@@ -162,8 +162,8 @@
 .inv-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: -24px;
+  gap: 1rem;
+  margin-top: -1.5rem;
   position: relative;
   z-index: 10;
   padding: 0;
@@ -173,8 +173,8 @@
 .inv-kpi {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
   border: 1px solid rgba(38, 38, 38, 0.06);
   border-radius: var(--inv-radius);
   background: #ffffff;
@@ -183,10 +183,10 @@
 
 .inv-kpi__icon {
   display: grid;
-  flex: 0 0 44px;
+  flex: 0 0 2.75rem;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   background: rgba(72, 17, 154, 0.1);
   color: var(--inv-violeta);
@@ -198,8 +198,8 @@
 }
 
 .inv-kpi__icon svg {
-  width: 22px;
-  height: 22px;
+  width: 1.375rem;
+  height: 1.375rem;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -209,14 +209,14 @@
 
 .inv-kpi__body b {
   display: block;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 800;
   line-height: 1.1;
   color: var(--inv-grafito);
 }
 
 .inv-kpi__body span {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #64748b;
 }
@@ -227,47 +227,47 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  margin-top: 28px;
-  margin-bottom: 22px;
+  gap: 0.875rem;
+  margin-top: 1.75rem;
+  margin-bottom: 1.375rem;
 }
 
 .inv-toolbar__left {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   flex: 1 1 auto;
 }
 
 .inv-search {
   position: relative;
-  min-width: 240px;
-  max-width: 340px;
+  min-width: 15rem;
+  max-width: 21.25rem;
   flex: 1 1 auto;
 }
 
 .inv-search svg {
   position: absolute;
-  left: 14px;
+  left: 0.875rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 17px;
-  height: 17px;
+  width: 1.0625rem;
+  height: 1.0625rem;
   color: #94a3b8;
   pointer-events: none;
 }
 
 .inv-search input {
   width: 100%;
-  height: 40px;
-  padding: 0 16px 0 40px;
+  height: 2.5rem;
+  padding: 0 1rem 0 2.5rem;
   border: 1px solid rgba(38, 38, 38, 0.08);
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   background: #ffffff;
   color: var(--inv-grafito);
   font: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -281,19 +281,19 @@
 .inv-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.375rem;
   align-items: center;
 }
 
 .inv-pill {
-  height: 38px;
-  padding: 0 16px;
+  height: 2.375rem;
+  padding: 0 1rem;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   background: rgba(185, 185, 202, 0.22);
   color: #475569;
   font: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -313,7 +313,7 @@
 .inv-toolbar__right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 /* Selectores desplegables estilizados */
@@ -324,14 +324,14 @@
 }
 
 .inv-select-wrap select {
-  height: 40px;
-  padding: 0 34px 0 16px;
+  height: 2.5rem;
+  padding: 0 2.125rem 0 1rem;
   border: 1px solid rgba(38, 38, 38, 0.08);
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   background: #ffffff;
   color: var(--inv-grafito);
   font: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   appearance: none;
@@ -345,9 +345,9 @@
 
 .inv-select-wrap svg {
   position: absolute;
-  right: 12px;
-  width: 14px;
-  height: 14px;
+  right: 0.75rem;
+  width: 0.875rem;
+  height: 0.875rem;
   color: #64748b;
   pointer-events: none;
 }
@@ -356,8 +356,8 @@
 .inv-view-toggle {
   display: inline-flex;
   align-items: center;
-  padding: 3px;
-  border-radius: 999px;
+  padding: 0.1875rem;
+  border-radius: 62.4375rem;
   background: #ffffff;
   border: 1px solid rgba(38, 38, 38, 0.08);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
@@ -366,10 +366,10 @@
 .inv-view-btn {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 2.125rem;
+  height: 2.125rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   background: transparent;
   color: #94a3b8;
   cursor: pointer;
@@ -386,8 +386,8 @@
 }
 
 .inv-view-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* ── Layout de la cuadrícula con panel lateral ── */
@@ -395,18 +395,18 @@
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
+  gap: 1.25rem;
 }
 
 .inv-main-layout.has-panel {
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 1fr 21.25rem;
 }
 
 /* ── Cuadrícula de Productos ── */
 .inv-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 1rem;
 }
 
 .inv-main-layout.has-panel .inv-grid {
@@ -416,25 +416,25 @@
 .inv-card {
   display: flex;
   flex-direction: column;
-  padding: 12px;
+  padding: 0.75rem;
   border: 1px solid rgba(38, 38, 38, 0.06);
-  border-radius: 18px;
+  border-radius: 1.125rem;
   background: #ffffff;
   box-shadow: var(--inv-shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .inv-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
   box-shadow: 0 12px 28px rgba(38, 38, 38, 0.08);
 }
 
 .inv-card__media {
   aspect-ratio: 4 / 3.4;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 0.875rem;
   background: #f1ede6;
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 .inv-card__media img {
@@ -450,7 +450,7 @@
 
 .inv-card__title {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--inv-grafito);
   overflow: hidden;
@@ -459,15 +459,15 @@
 }
 
 .inv-card__price {
-  margin: 3px 0 2px;
-  font-size: 14px;
+  margin: 0.1875rem 0 0.125rem;
+  font-size: 0.875rem;
   font-weight: 800;
   color: var(--inv-grafito);
 }
 
 .inv-card__meta {
   color: #64748b;
-  font-size: 11.5px;
+  font-size: 0.7188rem;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -478,8 +478,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 0.75rem;
+  padding-top: 0.625rem;
   border-top: 1px solid rgba(38, 38, 38, 0.05);
 }
 
@@ -487,16 +487,16 @@
 .inv-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
+  gap: 0.375rem;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 62.4375rem;
+  font-size: 0.6875rem;
   font-weight: 600;
 }
 
 .inv-status__dot {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
 }
 
@@ -536,16 +536,16 @@
 .inv-card__actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .inv-icon-btn {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   border: 1px solid rgba(72, 17, 154, 0.2);
-  border-radius: 10px;
+  border-radius: 0.625rem;
   background: #ffffff;
   color: var(--inv-violeta);
   cursor: pointer;
@@ -570,8 +570,8 @@
 }
 
 .inv-icon-btn svg {
-  width: 15px;
-  height: 15px;
+  width: 0.9375rem;
+  height: 0.9375rem;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -583,36 +583,36 @@
 .inv-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .inv-list-item {
   display: grid;
-  grid-template-columns: 60px 1.5fr 1fr 1.2fr auto auto;
+  grid-template-columns: 3.75rem 1.5fr 1fr 1.2fr auto auto;
   align-items: center;
-  gap: 16px;
-  padding: 10px 16px;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
   border: 1px solid rgba(38, 38, 38, 0.06);
-  border-radius: 16px;
+  border-radius: 1rem;
   background: #ffffff;
   box-shadow: var(--inv-shadow);
 }
 
 .inv-list-item__img {
-  width: 60px;
-  height: 60px;
-  border-radius: 10px;
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 0.625rem;
   object-fit: cover;
 }
 
 /* ── Panel "Actualizar unidades" ── */
 .inv-unit-panel {
   position: sticky;
-  top: 90px;
+  top: 5.625rem;
   height: fit-content;
-  padding: 22px;
+  padding: 1.375rem;
   border: 1px solid rgba(38, 38, 38, 0.08);
-  border-radius: 20px;
+  border-radius: 1.25rem;
   background: #ffffff;
   box-shadow: 0 12px 32px rgba(38, 38, 38, 0.08);
   animation: invSlideIn 0.25s ease-out;
@@ -621,7 +621,7 @@
 @keyframes invSlideIn {
   from {
     opacity: 0;
-    transform: translateX(12px);
+    transform: translateX(0.75rem);
   }
   to {
     opacity: 1;
@@ -633,12 +633,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .inv-unit-panel__head h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 800;
   color: var(--inv-grafito);
 }
@@ -646,13 +646,13 @@
 .inv-unit-panel__close {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   border: 0;
   border-radius: 50%;
   background: rgba(38, 38, 38, 0.06);
   color: #64748b;
-  font-size: 18px;
+  font-size: 1.125rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -665,59 +665,59 @@
 .inv-unit-panel__preview {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 16px;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid rgba(38, 38, 38, 0.06);
 }
 
 .inv-unit-panel__preview img {
-  width: 68px;
-  height: 68px;
-  border-radius: 12px;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 0.75rem;
   object-fit: cover;
   background: #f1ede6;
 }
 
 .inv-unit-panel__preview-info h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--inv-grafito);
 }
 
 .inv-unit-panel__preview-info strong {
   display: block;
-  margin-top: 3px;
-  font-size: 14px;
+  margin-top: 0.1875rem;
+  font-size: 0.875rem;
   font-weight: 800;
   color: var(--inv-grafito);
 }
 
 .inv-unit-panel__form {
-  margin-top: 16px;
+  margin-top: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1rem;
 }
 
 .inv-unit-panel__field label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 12.5px;
+  margin-bottom: 0.375rem;
+  font-size: 0.7813rem;
   font-weight: 700;
   color: var(--inv-grafito);
 }
 
 .inv-unit-panel__field select {
   width: 100%;
-  height: 44px;
-  padding: 0 14px;
+  height: 2.75rem;
+  padding: 0 0.875rem;
   border: 1px solid rgba(38, 38, 38, 0.15);
-  border-radius: 12px;
+  border-radius: 0.75rem;
   background: #ffffff;
   color: var(--inv-grafito);
   font: inherit;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -727,22 +727,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 44px;
-  padding: 0 4px;
-  border-radius: 12px;
+  height: 2.75rem;
+  padding: 0 0.25rem;
+  border-radius: 0.75rem;
   background: rgba(185, 185, 202, 0.2);
 }
 
 .inv-stepper__btn {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border: 0;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background: transparent;
   color: var(--inv-violeta);
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -758,17 +758,17 @@
 }
 
 .inv-stepper__val {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
   color: var(--inv-grafito);
   text-align: center;
-  width: 50px;
+  width: 3.125rem;
 }
 
 .inv-unit-panel__actions {
   display: flex;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 0.625rem;
+  margin-top: 0.5rem;
 }
 
 .inv-unit-panel__actions button {
@@ -791,22 +791,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 36px;
+  gap: 0.5rem;
+  margin-top: 2.25rem;
 }
 
 .inv-page-btn {
   display: grid;
   place-items: center;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 8px;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.5rem;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 0.625rem;
   background: transparent;
   color: #475569;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -830,14 +830,14 @@
 
 .inv-page-dots {
   color: #94a3b8;
-  padding: 0 4px;
+  padding: 0 0.25rem;
 }
 
 /* ── Responsive ── */
 @media (max-width: 1100px) {
   .inv-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   .inv-grid {
@@ -851,9 +851,9 @@
   /* En tablet/móvil el panel de unidades se muestra como modal flotante */
   .inv-unit-panel {
     position: fixed;
-    inset: auto 20px 20px 20px;
+    inset: auto 1.25rem 1.25rem 1.25rem;
     z-index: 50;
-    max-width: 440px;
+    max-width: 27.5rem;
     margin: 0 auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   }
@@ -862,7 +862,7 @@
 @media (max-width: 768px) {
   .inv-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   .inv-toolbar {
@@ -876,7 +876,7 @@
 
   .inv-pills {
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding-bottom: 0.25rem;
     flex-wrap: nowrap;
   }
 
@@ -896,22 +896,22 @@
 
   .inv-kpis {
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 0.625rem;
   }
 
   .inv-kpi {
-    padding: 12px;
-    gap: 10px;
+    padding: 0.75rem;
+    gap: 0.625rem;
   }
 
   .inv-kpi__icon {
-    width: 36px;
-    height: 36px;
-    flex-basis: 36px;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-basis: 2.25rem;
   }
 
   .inv-kpi__body b {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
 }
 

@@ -294,7 +294,7 @@ export default function FoundationPage() {
                               {ACCION[to]}
                             </button>
                             {why && (
-                              <span className="mt-1 max-w-44 text-right text-[11px] text-gray-500 dark:text-white/55">
+                              <span className="mt-1 max-w-44 text-right text-[0.6875rem] text-gray-500 dark:text-white/55">
                                 {why}
                               </span>
                             )}

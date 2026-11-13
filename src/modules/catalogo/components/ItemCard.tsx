@@ -45,7 +45,7 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         {/* Información compacta con padding reducido y espacio lateral para el botón flotante */}
         <div className="flex flex-1 flex-col justify-between p-3.5 pb-3.5 pr-13">
           <div>
-            <p className="line-clamp-1 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--color-accent)]">
+            <p className="line-clamp-1 text-[0.625rem] font-bold uppercase tracking-[.14em] text-[var(--color-accent)]">
               {item.estilo} · {item.tienda}
             </p>
             <h3
@@ -59,7 +59,7 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
             <span className="text-sm font-semibold text-[var(--color-text)]">
               {formatCOP(item.precio)}
             </span>
-            <span className="text-[11px] text-[var(--color-text-muted)]">
+            <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
               a {item.distanciaKm.toLocaleString('es-CO')} km
             </span>
           </div>
