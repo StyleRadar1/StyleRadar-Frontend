@@ -130,6 +130,19 @@ describe('panel de fundación (RF-46, 47 y 49)', () => {
   it('una cuenta que no representa una fundación recibe 403 controlado', async () => {
     loginAs('u-1', 'Valentina Rojas')
     open()
-    expect(await screen.findByText('Tu cuenta no representa a ninguna fundación.', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(await screen.findByText('No tienes permiso para hacer esto', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(screen.getByText('Solo la persona representante puede reclamar donaciones.')).toBeInTheDocument()
+  })
+
+  it('si otra fundación reclamó primero (409) muestra el aviso y actualiza la lista', async () => {
+    loginAs('f-1', 'Fundación Abrigo Bogotá')
+    const user = userEvent.setup({ applyAccept: false })
+    open()
+    const list = await screen.findByRole('list', { name: 'Solicitudes' }, { timeout: 3000 })
+    sessionStorage.setItem('sr_mock', 'conflicto')
+    await user.click(within(list).getByRole('button', { name: 'Aceptar: Suéter trenzado crudo' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Aceptar' }))
+    expect(await screen.findByText('Otra fundación ya la reclamó')).toBeInTheDocument()
+    expect(screen.getByText('Actualizamos la lista.')).toBeInTheDocument()
   })
 })

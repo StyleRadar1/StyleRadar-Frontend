@@ -51,7 +51,7 @@ export const donationService = {
   /** RF-46: solicitudes de la fundación del representante (el backend filtra por token). */
   async forMyFoundation(): Promise<DonationDto[]> {
     if (env.useMocks) {
-      failIfScenario()
+      failIfScenario('sin-permiso')
       const fid = MOCK_FOUNDATION_OF[mockSessionUser()?.id ?? '']
       if (!fid) throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
       return mockDelay(db().filter((d) => d.fundacion.id === fid))
@@ -62,7 +62,7 @@ export const donationService = {
   /** RF-47 y RF-49: aprobar, rechazar, iniciar recogida o confirmar recepción. */
   async setStatus(id: string, body: DonationStatusRequestDto): Promise<DonationDto> {
     if (env.useMocks) {
-      failIfScenario('conflicto')
+      failIfScenario('conflicto', 'sin-permiso')
       const d = db().find((x) => x.id === id)
       if (!d) throw new ApiError(404, 'Esa solicitud ya no existe.')
       if (d.fundacion.id !== MOCK_FOUNDATION_OF[mockSessionUser()?.id ?? '']) throw new ApiError(403, 'Esta solicitud es de otra fundación.')
