@@ -129,27 +129,10 @@ export default function PlaylistsPage() {
     setCarouselIndex((prev) => (prev < carouselPlaylists.length - 1 ? prev + 1 : 0))
   }, [carouselPlaylists.length])
 
-  // Navegación por teclado y en el vinilo interactivo
-  const STEP_DEGREES = 45
+  // Navegación en el vinilo interactivo
   const [vinylStepIndex, setVinylStepIndex] = useState(0)
-  const [vinylRotation, setVinylRotation] = useState(0)
-  const [isDraggingVinyl, setIsDraggingVinyl] = useState(false)
-  const [isSnappingVinyl, setIsSnappingVinyl] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
-
   const discRef = useRef<HTMLDivElement | null>(null)
-  const didDragVinylRef = useRef(false)
-  const lastWheelTimeRef = useRef(0)
-  const dragSessionRef = useRef({
-    active: false,
-    lastAngle: 0,
-    startRotation: 0,
-    currentRotation: 0,
-    baseStepIndex: 0,
-    lastStepDelta: 0,
-    velocity: 0,
-    lastTime: 0,
-  })
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return
@@ -163,13 +146,10 @@ export default function PlaylistsPage() {
   const stepVinylPlaylist = useCallback(
     (dir: number) => {
       if (carouselPlaylists.length === 0 || dir === 0) return
-      setIsSnappingVinyl(true)
-      setVinylRotation((prev) => prev + dir * STEP_DEGREES)
       setVinylStepIndex((prev) => {
         const total = carouselPlaylists.length
         return ((prev + dir) % total + total) % total
       })
-      window.setTimeout(() => setIsSnappingVinyl(false), 500)
     },
     [carouselPlaylists.length]
   )
@@ -178,126 +158,10 @@ export default function PlaylistsPage() {
     (targetIdx: number) => {
       if (carouselPlaylists.length === 0) return
       const total = carouselPlaylists.length
-      const currentNorm = ((vinylStepIndex % total) + total) % total
-      const diff = targetIdx - currentNorm
-      if (diff === 0) return
-      setIsSnappingVinyl(true)
-      setVinylRotation((prev) => prev + diff * STEP_DEGREES)
       setVinylStepIndex(((targetIdx % total) + total) % total)
-      window.setTimeout(() => setIsSnappingVinyl(false), 500)
     },
-    [carouselPlaylists.length, vinylStepIndex]
+    [carouselPlaylists.length]
   )
-
-  const getAngleFromDiscCenter = (clientX: number, clientY: number) => {
-    const rect = discRef.current?.getBoundingClientRect()
-    if (!rect) return 0
-    const cx = rect.left + rect.width / 2
-    const cy = rect.top + rect.height / 2
-    return Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI)
-  }
-
-  const handleVinylPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return
-    e.currentTarget.setPointerCapture?.(e.pointerId)
-    const startAngle = getAngleFromDiscCenter(e.clientX, e.clientY)
-    didDragVinylRef.current = false
-    setIsSnappingVinyl(false)
-    setIsDraggingVinyl(true)
-    dragSessionRef.current = {
-      active: true,
-      lastAngle: startAngle,
-      startRotation: vinylRotation,
-      currentRotation: vinylRotation,
-      baseStepIndex: vinylStepIndex,
-      lastStepDelta: 0,
-      velocity: 0,
-      lastTime: performance.now(),
-    }
-  }
-
-  const handleVinylPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragSessionRef.current.active) return
-    const angle = getAngleFromDiscCenter(e.clientX, e.clientY)
-    let delta = angle - dragSessionRef.current.lastAngle
-    if (delta > 180) delta -= 360
-    if (delta < -180) delta += 360
-
-    const now = performance.now()
-    const dt = Math.max(8, now - dragSessionRef.current.lastTime)
-    dragSessionRef.current.velocity = delta / dt
-    dragSessionRef.current.lastAngle = angle
-    dragSessionRef.current.lastTime = now
-
-    const nextRotation = dragSessionRef.current.currentRotation + delta
-    dragSessionRef.current.currentRotation = nextRotation
-
-    if (Math.abs(nextRotation - dragSessionRef.current.startRotation) > 2.5) {
-      didDragVinylRef.current = true
-    }
-
-    setVinylRotation(nextRotation)
-
-    const stepDelta = Math.round(
-      (nextRotation - dragSessionRef.current.startRotation) / STEP_DEGREES
-    )
-    if (
-      stepDelta !== dragSessionRef.current.lastStepDelta &&
-      carouselPlaylists.length > 0
-    ) {
-      dragSessionRef.current.lastStepDelta = stepDelta
-      const total = carouselPlaylists.length
-      const nextIndex =
-        (((dragSessionRef.current.baseStepIndex + stepDelta) % total) + total) %
-        total
-      setVinylStepIndex(nextIndex)
-    }
-  }
-
-  const handleVinylPointerUp = () => {
-    if (!dragSessionRef.current.active) return
-    dragSessionRef.current.active = false
-    setIsDraggingVinyl(false)
-
-    const inertia = prefersReducedMotion
-      ? 0
-      : Math.max(-90, Math.min(90, dragSessionRef.current.velocity * 135))
-    const projected = dragSessionRef.current.currentRotation + inertia
-    const snappedStepDelta = Math.round(
-      (projected - dragSessionRef.current.startRotation) / STEP_DEGREES
-    )
-    const snappedRotation =
-      dragSessionRef.current.startRotation + snappedStepDelta * STEP_DEGREES
-
-    setIsSnappingVinyl(true)
-    setVinylRotation(snappedRotation)
-
-    if (
-      snappedStepDelta !== dragSessionRef.current.lastStepDelta &&
-      carouselPlaylists.length > 0
-    ) {
-      const total = carouselPlaylists.length
-      const nextIndex =
-        (((dragSessionRef.current.baseStepIndex + snappedStepDelta) % total) +
-          total) %
-        total
-      setVinylStepIndex(nextIndex)
-    }
-
-    window.setTimeout(() => {
-      didDragVinylRef.current = false
-      setIsSnappingVinyl(false)
-    }, 520)
-  }
-
-  const handleVinylWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    const now = performance.now()
-    if (now - lastWheelTimeRef.current < 240) return
-    const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX
-    if (Math.abs(delta) < 6) return
-    lastWheelTimeRef.current = now
-    stepVinylPlaylist(delta > 0 ? 1 : -1)
-  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1321,16 +1185,12 @@ export default function PlaylistsPage() {
                         onClick={() => setShowVinylDesc((prev) => !prev)}
                         title="Toca para ver o modificar la descripción"
                       >
-                        <div
-                          className={`sr-vinyl-disc-idle ${
-                            isDraggingVinyl ? 'is-paused' : ''
-                          }`}
-                        >
+                        <div className="sr-vinyl-disc-idle">
                           <div
                             ref={discRef}
                             role="slider"
                             tabIndex={0}
-                            aria-label="Disco de vinilo central: arrastra o pulsa para ver la descripción"
+                            aria-label="Disco de vinilo central: pulsa para ver la descripción"
                             aria-valuemin={1}
                             aria-valuemax={carouselPlaylists.length}
                             aria-valuenow={
@@ -1339,21 +1199,15 @@ export default function PlaylistsPage() {
                                 carouselPlaylists.length) +
                               1
                             }
-                            onPointerDown={handleVinylPointerDown}
-                            onPointerMove={handleVinylPointerMove}
-                            onPointerUp={handleVinylPointerUp}
-                            onPointerCancel={handleVinylPointerUp}
-                            onWheel={handleVinylWheel}
-                            style={{
-                              transform: `rotate(${vinylRotation}deg)`,
-                              transition:
-                                isSnappingVinyl && !prefersReducedMotion
-                                  ? 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)'
-                                  : 'none',
+                            onKeyDown={(e) => {
+                              if (e.key === 'ArrowLeft') stepVinylPlaylist(-1)
+                              if (e.key === 'ArrowRight') stepVinylPlaylist(1)
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                setShowVinylDesc((prev) => !prev)
+                              }
                             }}
-                            className={`sr-vinyl-disc-interactive ${
-                              isDraggingVinyl ? 'is-dragging' : ''
-                            }`}
+                            className="sr-vinyl-disc-interactive"
                           >
                             <div className="sr-vinyl-label">
                               <img

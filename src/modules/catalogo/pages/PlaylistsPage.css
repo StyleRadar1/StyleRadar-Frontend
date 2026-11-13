@@ -542,8 +542,8 @@ html[data-theme='light'] .sr-vinyl-meta-desc-btn {
 .sr-vinyl-coverflow-track {
   position: relative;
   width: 100%;
-  max-width: 1300px;
-  height: clamp(320px, 46vh, 480px);
+  max-width: 1400px;
+  height: clamp(380px, 56vh, 600px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -557,8 +557,8 @@ html[data-theme='light'] .sr-vinyl-meta-desc-btn {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(260px, 42vh, 440px);
-  height: clamp(260px, 42vh, 440px);
+  width: clamp(320px, 50vh, 520px);
+  height: clamp(320px, 50vh, 520px);
   border-radius: 50%;
   transform-style: preserve-3d;
   transition:
@@ -577,7 +577,7 @@ html[data-theme='light'] .sr-vinyl-meta-desc-btn {
 
 /* Lateral Lejano Izquierda (offset -2) */
 .sr-vinyl-slot--offset--2 {
-  transform: translate(calc(-50% - clamp(280px, 36vw, 480px)), -50%) perspective(1000px) rotateY(36deg) scale(0.62);
+  transform: translate(calc(-50% - clamp(320px, 44vw, 620px)), -50%) perspective(1000px) rotateY(34deg) scale(0.68);
   opacity: 0.28;
   z-index: 10;
   filter: blur(1.5px) brightness(0.65);
@@ -586,22 +586,21 @@ html[data-theme='light'] .sr-vinyl-meta-desc-btn {
 
 /* Lateral Izquierda (offset -1) */
 .sr-vinyl-slot--offset--1 {
-  transform: translate(calc(-50% - clamp(160px, 22vw, 290px)), -50%) perspective(1000px) rotateY(26deg) scale(0.78);
-  opacity: 0.68;
+  transform: translate(calc(-50% - clamp(180px, 25vw, 340px)), -50%) perspective(1000px) rotateY(25deg) scale(0.85);
+  opacity: 0.72;
   z-index: 15;
-  filter: brightness(0.82);
+  filter: brightness(0.85);
   cursor: pointer;
 }
 
 .sr-vinyl-slot--offset--1:hover {
   opacity: 0.95;
-  filter: brightness(1);
-  transform: translate(calc(-50% - clamp(160px, 22vw, 290px)), -50%) perspective(1000px) rotateY(18deg) scale(0.83);
+  filter: brightness(1.06);
 }
 
 /* Disco Central Activo (offset 0) */
 .sr-vinyl-slot--center {
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate(-50%, -50%) scale(1.08);
   opacity: 1;
   z-index: 25;
   filter: none;
@@ -611,29 +610,28 @@ html[data-theme='light'] .sr-vinyl-meta-desc-btn {
 .sr-vinyl-slot--center .sr-vinyl-disc-interactive {
   box-shadow:
     0 0 0 3px rgba(139, 92, 246, 0.75),
-    0 0 45px 10px rgba(80, 19, 184, 0.78),
-    0 0 95px 26px rgba(72, 17, 154, 0.52),
-    0 24px 60px rgba(0, 0, 0, 0.75);
+    0 0 55px 14px rgba(80, 19, 184, 0.82),
+    0 0 110px 30px rgba(72, 17, 154, 0.55),
+    0 28px 70px rgba(0, 0, 0, 0.85);
 }
 
 /* Lateral Derecha (offset 1) */
 .sr-vinyl-slot--offset-1 {
-  transform: translate(calc(-50% + clamp(160px, 22vw, 290px)), -50%) perspective(1000px) rotateY(-26deg) scale(0.78);
-  opacity: 0.68;
+  transform: translate(calc(-50% + clamp(180px, 25vw, 340px)), -50%) perspective(1000px) rotateY(-25deg) scale(0.85);
+  opacity: 0.72;
   z-index: 15;
-  filter: brightness(0.82);
+  filter: brightness(0.85);
   cursor: pointer;
 }
 
 .sr-vinyl-slot--offset-1:hover {
   opacity: 0.95;
-  filter: brightness(1);
-  transform: translate(calc(-50% + clamp(160px, 22vw, 290px)), -50%) perspective(1000px) rotateY(-18deg) scale(0.83);
+  filter: brightness(1.06);
 }
 
 /* Lateral Lejano Derecha (offset 2) */
 .sr-vinyl-slot--offset-2 {
-  transform: translate(calc(-50% + clamp(280px, 36vw, 480px)), -50%) perspective(1000px) rotateY(-36deg) scale(0.62);
+  transform: translate(calc(-50% + clamp(320px, 44vw, 620px)), -50%) perspective(1000px) rotateY(-34deg) scale(0.68);
   opacity: 0.28;
   z-index: 10;
   filter: blur(1.5px) brightness(0.65);
@@ -1210,17 +1208,17 @@ html[data-theme='light'] .sr-vinyl-controls__counter {
     font-size: clamp(28px, 8vw, 44px);
   }
   .sr-vinyl-coverflow-track {
-    height: clamp(280px, 42vh, 360px);
+    height: clamp(320px, 46vh, 420px);
   }
   .sr-vinyl-slot {
-    width: clamp(230px, 38vh, 320px);
-    height: clamp(230px, 38vh, 320px);
+    width: clamp(260px, 42vh, 360px);
+    height: clamp(260px, 42vh, 360px);
   }
   .sr-vinyl-slot--offset--1 {
-    transform: translate(calc(-50% - clamp(90px, 24vw, 150px)), -50%) perspective(800px) rotateY(24deg) scale(0.72);
+    transform: translate(calc(-50% - clamp(90px, 22vw, 150px)), -50%) perspective(800px) rotateY(24deg) scale(0.75);
   }
   .sr-vinyl-slot--offset-1 {
-    transform: translate(calc(-50% + clamp(90px, 24vw, 150px)), -50%) perspective(800px) rotateY(-24deg) scale(0.72);
+    transform: translate(calc(-50% + clamp(90px, 22vw, 150px)), -50%) perspective(800px) rotateY(-24deg) scale(0.75);
   }
   .sr-vinyl-slot--offset--2,
   .sr-vinyl-slot--offset-2 {
