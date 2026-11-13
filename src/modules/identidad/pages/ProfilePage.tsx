@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { errorMessage } from '@/modules/core/api/errors'
+import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { Button } from '@/modules/core/design-system'
 import { Campo, Opciones } from '../components/Campo'
@@ -11,6 +11,7 @@ import {
   type ActualizarPerfilDto, type Estilo, type Maniqui, type PerfilDto, type TallasDto,
 } from '../types/usuario.dto'
 import { celularValido, iniciales, mesAnio } from '../utils/formato'
+import { ORDEN, TEXTOS_PERFIL, erroresDelServidor, type Errores } from '../utils/erroresPerfil'
 
 /** RF-03 a RF-06: datos de la persona, tallas por tipo de prenda y estilos favoritos. */
 export default function ProfilePage() {
@@ -40,7 +41,10 @@ export default function ProfilePage() {
 }
 
 type Aviso = { ok: boolean; text: string }
-type Errores = Partial<Record<'nombre' | 'celular' | 'estilos', string>>
+const enfocar = (e: Errores) => {
+  const primero = ORDEN.find((c) => e[c])
+  if (primero) document.getElementById(`pf-${primero}`)?.focus()
+}
 
 function ProfileForm({ profile, onSave, aviso, setAviso }: {
   profile: PerfilDto; onSave: (b: ActualizarPerfilDto) => Promise<PerfilDto>; aviso: Aviso | null; setAviso: (a: Aviso | null) => void
@@ -80,16 +84,22 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
   const onSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
     const e = validar(); setErrores(e); setAviso(null)
-    if (Object.keys(e).length) {
-      document.getElementById(e.nombre ? 'pf-nombre' : e.celular ? 'pf-celular' : 'pf-estilos')?.focus()
-      return
-    }
+    if (Object.keys(e).length) { enfocar(e); return }
     setSaving(true)
     try {
       const upd = await onSave({ nombre: nombre.trim(), celular: celular.trim(), barrio: barrio.trim(), maniqui, tallas, estilos })
       updateUser({ name: upd.nombre })
       setAviso({ ok: true, text: 'Cambios guardados.' })
     } catch (err) {
+      // 400: los datos quedan como la persona los escribió (el formulario no se reinicia).
+      if (errorKind(err) === 'datos') {
+        const delServidor = erroresDelServidor(fieldErrors(err))
+        const hay = Object.keys(delServidor).length > 0
+        setErrores(delServidor)
+        setAviso({ ok: false, text: hay ? TEXTOS_PERFIL.campos : TEXTOS_PERFIL.general })
+        if (hay) enfocar(delServidor)
+        return
+      }
       setAviso({ ok: false, text: errorMessage(err, 'No se pudieron guardar los cambios.') })
     } finally {
       setSaving(false)
@@ -118,26 +128,26 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
         <Campo id="pf-correo" label="Correo" hint="Para cambiar tu correo escríbenos a soporte." className="md:col-span-2">
           <input {...a11y('pf-correo', undefined, true)} value={profile.correo} disabled className={inputCls} />
         </Campo>
-        <Campo id="pf-barrio" label="Barrio">
-          <input id="pf-barrio" value={barrio} onChange={(e) => setBarrio(e.target.value)} placeholder="Ej. Chapinero" maxLength={40} className={inputCls} />
+        <Campo id="pf-barrio" label="Barrio" error={errores.barrio}>
+          <input {...a11y('pf-barrio', errores.barrio)} value={barrio} onChange={(e) => setBarrio(e.target.value)} placeholder="Ej. Chapinero" maxLength={40} className={inputCls} />
         </Campo>
 
         <div>
           <Opciones label="Maniquí del probador" options={['MUJER', 'HOMBRE'] as const} value={maniqui} onChange={setManiqui} labels={MANIQUI_LABEL} />
           <p className="mt-1.5 text-xs text-white/60">El probador usa un maniquí de mujer o de hombre según lo que elijas.</p>
         </div>
-        <Campo id="pf-superior" label="Talla superior">
-          <select id="pf-superior" value={tallas.superior} onChange={(e) => setTalla('superior', e.target.value as TallasDto['superior'])} className={inputCls}>
+        <Campo id="pf-superior" label="Talla superior" error={errores.superior}>
+          <select {...a11y('pf-superior', errores.superior)} value={tallas.superior} onChange={(e) => setTalla('superior', e.target.value as TallasDto['superior'])} className={inputCls}>
             {TALLAS_SUPERIOR.map((t) => <option key={t}>{t}</option>)}
           </select>
         </Campo>
-        <Campo id="pf-inferior" label="Talla inferior">
-          <select id="pf-inferior" value={tallas.inferior} onChange={(e) => setTalla('inferior', e.target.value as TallasDto['inferior'])} className={inputCls}>
+        <Campo id="pf-inferior" label="Talla inferior" error={errores.inferior}>
+          <select {...a11y('pf-inferior', errores.inferior)} value={tallas.inferior} onChange={(e) => setTalla('inferior', e.target.value as TallasDto['inferior'])} className={inputCls}>
             {TALLAS_INFERIOR.map((t) => <option key={t}>{t}</option>)}
           </select>
         </Campo>
-        <Campo id="pf-calzado" label="Calzado">
-          <select id="pf-calzado" value={tallas.calzado} onChange={(e) => setTalla('calzado', e.target.value as TallasDto['calzado'])} className={inputCls}>
+        <Campo id="pf-calzado" label="Calzado" error={errores.calzado}>
+          <select {...a11y('pf-calzado', errores.calzado)} value={tallas.calzado} onChange={(e) => setTalla('calzado', e.target.value as TallasDto['calzado'])} className={inputCls}>
             {TALLAS_CALZADO.map((t) => <option key={t}>{t}</option>)}
           </select>
         </Campo>
