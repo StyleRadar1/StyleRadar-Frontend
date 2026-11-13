@@ -22,7 +22,6 @@ export default function PlaylistsPage() {
     error,
     reload,
     createPlaylist,
-    updatePlaylist,
     addItem,
     removeItem,
     like,
@@ -213,39 +212,7 @@ export default function PlaylistsPage() {
     return carouselPlaylists[idx] ?? null
   }, [carouselPlaylists, vinylStepIndex])
 
-  // Mostrar u ocultar la descripción al oprimir en el disco
-  const [showVinylDesc, setShowVinylDesc] = useState(false)
 
-  // Edición interactiva de la descripción de la playlist activa
-  const [isEditingVinylDesc, setIsEditingVinylDesc] = useState(false)
-  const [vinylDescDraft, setVinylDescDraft] = useState('')
-  const [isSavingVinylDesc, setIsSavingVinylDesc] = useState(false)
-
-  useEffect(() => {
-    if (currentVinylPlaylist) {
-      setVinylDescDraft(currentVinylPlaylist.descripcion || '')
-      setIsEditingVinylDesc(false)
-    }
-  }, [currentVinylPlaylist?.id])
-
-  const handleSaveVinylDesc = async () => {
-    if (!currentVinylPlaylist) return
-    try {
-      setIsSavingVinylDesc(true)
-      await updatePlaylist(currentVinylPlaylist.id, {
-        descripcion: vinylDescDraft.trim(),
-      })
-      setIsEditingVinylDesc(false)
-      setMensajeExito('Descripción actualizada')
-      setTimeout(() => setMensajeExito(null), 3000)
-    } catch (e) {
-      console.error(e)
-      setErrorAccion('Error al guardar la descripción')
-      setTimeout(() => setErrorAccion(null), 3000)
-    } finally {
-      setIsSavingVinylDesc(false)
-    }
-  }
 
   const esMia = useMemo(() => {
     if (!selectedPlaylist) return false
@@ -1157,19 +1124,6 @@ export default function PlaylistsPage() {
                     <span className="sr-vinyl-active-meta__chip">
                       {currentVinylPlaylist.visibilidad || 'Pública'}
                     </span>
-                    <span>·</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowVinylDesc((prev) => !prev)}
-                      className="sr-vinyl-meta-desc-btn"
-                      aria-expanded={showVinylDesc}
-                      aria-label={showVinylDesc ? 'Cerrar descripción' : 'Ver descripción'}
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>{showVinylDesc ? 'Ocultar descripción' : 'Ver descripción'}</span>
-                    </button>
                   </div>
                 </div>
               )}
@@ -1181,16 +1135,28 @@ export default function PlaylistsPage() {
                     return (
                       <div
                         key={pl.id}
-                        className="sr-vinyl-slot sr-vinyl-slot--center"
-                        onClick={() => setShowVinylDesc((prev) => !prev)}
-                        title="Toca para ver o modificar la descripción"
+                        className="sr-vinyl-slot sr-vinyl-slot--center cursor-pointer"
+                        onClick={() => {
+                          setSelectedLocalId(pl.id)
+                          navigate(`/playlists/${pl.id}`)
+                        }}
+                        title={`Ver prendas de ${pl.nombre}`}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setSelectedLocalId(pl.id)
+                            navigate(`/playlists/${pl.id}`)
+                          }
+                        }}
                       >
                         <div className="sr-vinyl-disc-idle">
                           <div
                             ref={discRef}
                             role="slider"
                             tabIndex={0}
-                            aria-label="Disco de vinilo central: pulsa para ver la descripción"
+                            aria-label={`Disco de vinilo central: ${pl.nombre}. Pulsa para abrir la colección`}
                             aria-valuemin={1}
                             aria-valuemax={carouselPlaylists.length}
                             aria-valuenow={
@@ -1200,11 +1166,18 @@ export default function PlaylistsPage() {
                               1
                             }
                             onKeyDown={(e) => {
-                              if (e.key === 'ArrowLeft') stepVinylPlaylist(-1)
-                              if (e.key === 'ArrowRight') stepVinylPlaylist(1)
+                              if (e.key === 'ArrowLeft') {
+                                e.stopPropagation()
+                                stepVinylPlaylist(-1)
+                              }
+                              if (e.key === 'ArrowRight') {
+                                e.stopPropagation()
+                                stepVinylPlaylist(1)
+                              }
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault()
-                                setShowVinylDesc((prev) => !prev)
+                                setSelectedLocalId(pl.id)
+                                navigate(`/playlists/${pl.id}`)
                               }
                             }}
                             className="sr-vinyl-disc-interactive"
@@ -1227,7 +1200,7 @@ export default function PlaylistsPage() {
                         </div>
 
                         <span className="sr-vinyl-slot__hint-pill">
-                          {showVinylDesc ? 'Cerrar descripción ✕' : 'Toca el disco para ver descripción ℹ'}
+                          Toca el vinilo para ver la colección →
                         </span>
                       </div>
                     )
@@ -1276,103 +1249,6 @@ export default function PlaylistsPage() {
                     </div>
                   )
                 })}
-
-                {/* Popover / Tarjeta flotante interactiva con la descripción al oprimir */}
-                <AnimatePresence>
-                  {showVinylDesc && currentVinylPlaylist && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9, y: 14 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: 14 }}
-                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                      className="sr-vinyl-desc-popover"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="sr-vinyl-desc-popover__header">
-                        <div className="sr-vinyl-desc-popover__heading">
-                          <span className="sr-vinyl-desc-popover__eyebrow">Descripción de la playlist</span>
-                          <h3 className="sr-vinyl-desc-popover__title">{currentVinylPlaylist.nombre}</h3>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowVinylDesc(false)}
-                          className="sr-vinyl-desc-popover__close"
-                          aria-label="Cerrar descripción"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      <div className="sr-vinyl-desc-popover__body">
-                        {!isEditingVinylDesc ? (
-                          <div className="sr-vinyl-desc-display">
-                            <p className="sr-vinyl-desc-text">
-                              {currentVinylPlaylist.descripcion ||
-                                'Esta playlist aún no tiene una descripción. Pulsa abajo para agregar una.'}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setVinylDescDraft(currentVinylPlaylist.descripcion || '')
-                                setIsEditingVinylDesc(true)
-                              }}
-                              className="sr-vinyl-desc-edit-btn"
-                              aria-label="Editar descripción de la playlist"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                              <span>Editar descripción</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="sr-vinyl-desc-edit-box">
-                            <textarea
-                              value={vinylDescDraft}
-                              onChange={(e) => setVinylDescDraft(e.target.value)}
-                              placeholder="Escribe una pequeña descripción para esta playlist..."
-                              rows={3}
-                              maxLength={280}
-                              className="sr-vinyl-desc-textarea"
-                              autoFocus
-                            />
-                            <div className="sr-vinyl-desc-actions">
-                              <button
-                                type="button"
-                                onClick={() => setIsEditingVinylDesc(false)}
-                                className="sr-vinyl-desc-cancel-btn"
-                                disabled={isSavingVinylDesc}
-                              >
-                                Cancelar
-                              </button>
-                              <button
-                                type="button"
-                                onClick={handleSaveVinylDesc}
-                                className="sr-vinyl-desc-save-btn"
-                                disabled={isSavingVinylDesc}
-                              >
-                                {isSavingVinylDesc ? 'Guardando...' : 'Guardar'}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="sr-vinyl-desc-popover__footer">
-                        <Link
-                          to={`/playlists/${currentVinylPlaylist.id}`}
-                          onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
-                          className="sr-vinyl-desc-popover__cta"
-                        >
-                          <span>Ver prendas de la colección</span>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                          </svg>
-                        </Link>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
 
               {/* Controles discretos e indicador de posición centrados */}
@@ -1427,7 +1303,7 @@ export default function PlaylistsPage() {
                   </button>
                 </div>
                 <span className="sr-vinyl-controls__hint">
-                  Toca el disco para ver o editar la descripción · Usa las flechas o arrastra para girar
+                  Toca el vinilo para ver la colección · Usa las flechas o los discos laterales para navegar
                 </span>
               </div>
             </div>
