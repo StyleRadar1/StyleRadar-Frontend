@@ -22,6 +22,7 @@ export default function PlaylistsPage() {
     error,
     reload,
     createPlaylist,
+    updatePlaylist,
     addItem,
     removeItem,
     like,
@@ -352,6 +353,47 @@ export default function PlaylistsPage() {
     'sr-polaroid-card sr-polaroid-card--slot-1',
     'sr-polaroid-card sr-polaroid-card--slot-2',
   ] as const
+
+  // Playlist activa actual sobre el disco de vinilo
+  const currentVinylPlaylist = useMemo(() => {
+    if (carouselPlaylists.length === 0) return null
+    const idx =
+      (((vinylStepIndex % carouselPlaylists.length) +
+        carouselPlaylists.length) %
+        carouselPlaylists.length)
+    return carouselPlaylists[idx] ?? null
+  }, [carouselPlaylists, vinylStepIndex])
+
+  // Edición interactiva de la descripción de la playlist activa
+  const [isEditingVinylDesc, setIsEditingVinylDesc] = useState(false)
+  const [vinylDescDraft, setVinylDescDraft] = useState('')
+  const [isSavingVinylDesc, setIsSavingVinylDesc] = useState(false)
+
+  useEffect(() => {
+    if (currentVinylPlaylist) {
+      setVinylDescDraft(currentVinylPlaylist.descripcion || '')
+      setIsEditingVinylDesc(false)
+    }
+  }, [currentVinylPlaylist?.id])
+
+  const handleSaveVinylDesc = async () => {
+    if (!currentVinylPlaylist) return
+    try {
+      setIsSavingVinylDesc(true)
+      await updatePlaylist(currentVinylPlaylist.id, {
+        descripcion: vinylDescDraft.trim(),
+      })
+      setIsEditingVinylDesc(false)
+      setMensajeExito('Descripción actualizada')
+      setTimeout(() => setMensajeExito(null), 3000)
+    } catch (e) {
+      console.error(e)
+      setErrorAccion('Error al guardar la descripción')
+      setTimeout(() => setErrorAccion(null), 3000)
+    } finally {
+      setIsSavingVinylDesc(false)
+    }
+  }
 
   const esMia = useMemo(() => {
     if (!selectedPlaylist) return false
@@ -1264,14 +1306,17 @@ export default function PlaylistsPage() {
                     }`}
                   >
                     <div className="sr-vinyl-label">
+                      <img
+                        src={
+                          currentVinylPlaylist?.portadaUrl ||
+                          '/img/productos/sueter-de-canale-crudo.jpg'
+                        }
+                        alt={currentVinylPlaylist?.nombre || 'Portada del vinilo'}
+                        className="sr-vinyl-label__art"
+                        draggable={false}
+                      />
+                      <div className="sr-vinyl-label__art-overlay" />
                       <div className="sr-vinyl-label__ring" />
-                      <div className="sr-vinyl-label__lines" />
-                      <div className="sr-vinyl-label__bottom-rule" />
-                      <div className="sr-vinyl-label__stereo-box">
-                        <span className="sr-vinyl-label__stereo-text">
-                          STYLERADAR
-                        </span>
-                      </div>
                       <div className="sr-vinyl-spindle" />
                     </div>
                   </div>
@@ -1370,6 +1415,117 @@ export default function PlaylistsPage() {
                   })}
                 </AnimatePresence>
               </div>
+
+              {/* Panel editorial interactivo de la playlist activa al lado derecho del vinilo */}
+              {currentVinylPlaylist && (
+                <div className="sr-vinyl-active-details">
+                  <div className="sr-vinyl-active-badge">
+                    <span>● Colección activa</span>
+                  </div>
+
+                  <h2 className="sr-vinyl-active-title">
+                    {currentVinylPlaylist.nombre}
+                  </h2>
+
+                  <div className="sr-vinyl-active-meta">
+                    <span>
+                      {currentVinylPlaylist.prendas.length}{' '}
+                      {currentVinylPlaylist.prendas.length === 1 ? 'prenda' : 'prendas'}
+                    </span>
+                    <span>·</span>
+                    <span>Por {currentVinylPlaylist.creador?.nombre || 'Valentina'}</span>
+                    <span className="sr-vinyl-active-meta__chip">
+                      {currentVinylPlaylist.visibilidad || 'Pública'}
+                    </span>
+                  </div>
+
+                  <div className="sr-vinyl-active-desc-wrap">
+                    {!isEditingVinylDesc ? (
+                      <div className="sr-vinyl-desc-display">
+                        <p className="sr-vinyl-desc-text">
+                          {currentVinylPlaylist.descripcion ||
+                            'Añade una descripción para inspirar tu estilo...'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVinylDescDraft(currentVinylPlaylist.descripcion || '')
+                            setIsEditingVinylDesc(true)
+                          }}
+                          className="sr-vinyl-desc-edit-btn"
+                          aria-label="Editar descripción de la playlist"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                          <span>Editar descripción</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="sr-vinyl-desc-edit-box">
+                        <textarea
+                          value={vinylDescDraft}
+                          onChange={(e) => setVinylDescDraft(e.target.value)}
+                          placeholder="Escribe una pequeña descripción para esta playlist..."
+                          rows={3}
+                          maxLength={280}
+                          className="sr-vinyl-desc-textarea"
+                          autoFocus
+                        />
+                        <div className="sr-vinyl-desc-actions">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingVinylDesc(false)}
+                            className="sr-vinyl-desc-cancel-btn"
+                            disabled={isSavingVinylDesc}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveVinylDesc}
+                            className="sr-vinyl-desc-save-btn"
+                            disabled={isSavingVinylDesc}
+                          >
+                            {isSavingVinylDesc ? 'Guardando...' : 'Guardar'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <Link
+                    to={`/playlists/${currentVinylPlaylist.id}`}
+                    className="sr-vinyl-active-cta"
+                    onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
+                  >
+                    <span>Explorar colección</span>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M14 5l7 7m0 0l-7 7m7-7H3"
+                      />
+                    </svg>
+                  </Link>
+                </div>
+              )}
 
               {/* Controles discretos e indicador de posición en violeta #48119A */}
               <div className="sr-vinyl-controls">

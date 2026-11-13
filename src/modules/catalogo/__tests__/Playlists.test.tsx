@@ -17,8 +17,8 @@ describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
 
     await waitFor(() => {
       expect(screen.getAllByText(/Hasta 15 prendas/i).length).toBeGreaterThanOrEqual(1)
-      expect(screen.getByText(/Fin de semana en Usaquén/i)).toBeInTheDocument()
-      expect(screen.getByText(/Oficina con Estilo/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/Fin de semana en Usaquén/i).length).toBeGreaterThanOrEqual(1)
+      expect(screen.getAllByText(/Oficina con Estilo/i).length).toBeGreaterThanOrEqual(1)
     })
   })
 
@@ -50,10 +50,10 @@ describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
     renderAt('/playlists', routes)
 
     await waitFor(() => {
-      expect(screen.getByText(/Fin de semana en Usaquén/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/Fin de semana en Usaquén/i).length).toBeGreaterThanOrEqual(1)
     })
 
-    const playlistCard = screen.getByText(/Fin de semana en Usaquén/i)
+    const playlistCard = screen.getAllByText(/Fin de semana en Usaquén/i)[0]
     await user.click(playlistCard)
 
     expect(screen.getByRole('dialog')).toBeInTheDocument()

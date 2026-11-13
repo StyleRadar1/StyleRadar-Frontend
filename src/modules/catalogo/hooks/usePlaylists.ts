@@ -42,12 +42,22 @@ export function usePlaylists() {
     [setData]
   )
 
+  const updatePlaylist = useCallback(
+    async (id: string, dto: Partial<CreatePlaylistDto>) => {
+      const updated = await playlistService.update(id, dto)
+      setData((prev) => prev.map((p) => (p.id === id ? updated : p)))
+      return updated
+    },
+    [setData]
+  )
+
   return {
     playlists,
     loading,
     error,
     reload,
     createPlaylist,
+    updatePlaylist,
     addItem,
     removeItem,
     like,

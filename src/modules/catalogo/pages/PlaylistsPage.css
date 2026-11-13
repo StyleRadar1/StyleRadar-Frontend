@@ -341,15 +341,7 @@
   overflow: hidden;
   user-select: none;
   font-family: "Poppins", var(--font-sans, system-ui, sans-serif);
-  /* Fondo continuo en degradado lavanda #B9B9CA -> arena #E8DCCB sin bordes visibles */
-  background:
-    radial-gradient(
-      circle at 8% 50%,
-      rgba(72, 17, 154, 0.24) 0%,
-      rgba(185, 185, 202, 0.18) 38%,
-      transparent 68%
-    ),
-    linear-gradient(125deg, #B9B9CA 0%, #d2cad8 46%, #E8DCCB 100%);
+  background: transparent;
 }
 
 .sr-vinyl-showcase:focus-visible {
@@ -529,109 +521,66 @@
   pointer-events: none;
 }
 
-/* Etiqueta central del vinilo en Arena (#E8DCCB) con detalles en Violeta (#48119A) */
+/* Etiqueta central del vinilo con la portada del álbum activa */
 .sr-vinyl-label {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 34%;
-  height: 34%;
+  width: 36%;
+  height: 36%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 42% 38%,
-    #E8DCCB 0%,
-    #dacab6 74%,
-    #cbb8a1 100%
-  );
-  border: 2px solid rgba(72, 17, 154, 0.5);
+  background: #18151f;
+  border: 3px solid rgba(232, 220, 203, 0.45);
   box-shadow:
-    0 0 0 7px #141218,
-    inset 0 0 16px rgba(72, 17, 154, 0.16);
+    0 0 0 6px #121017,
+    0 0 24px rgba(0, 0, 0, 0.65),
+    inset 0 0 12px rgba(0, 0, 0, 0.6);
   overflow: hidden;
+  pointer-events: none;
+}
+
+.sr-vinyl-label__art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.sr-vinyl-label__art-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.18) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
   pointer-events: none;
 }
 
 .sr-vinyl-label__ring {
   position: absolute;
-  inset: 5%;
+  inset: 4%;
   border-radius: 50%;
-  border: 1px solid rgba(72, 17, 154, 0.58);
-}
-
-.sr-vinyl-label__lines {
-  position: absolute;
-  inset: 0;
-}
-
-.sr-vinyl-label__lines::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 52%;
-  width: 1px;
-  background: rgba(72, 17, 154, 0.58);
-  box-shadow: 9px 0 0 rgba(72, 17, 154, 0.58);
-}
-
-.sr-vinyl-label__lines::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 48%;
-  top: 28%;
-  height: 7px;
-  border-top: 1px solid rgba(72, 17, 154, 0.58);
-  border-bottom: 1px solid rgba(72, 17, 154, 0.58);
-}
-
-.sr-vinyl-label__bottom-rule {
-  position: absolute;
-  left: 0;
-  right: 48%;
-  bottom: 28%;
-  height: 1px;
-  background: rgba(72, 17, 154, 0.58);
-}
-
-/* Caja vertical con el texto "STYLERADAR" */
-.sr-vinyl-label__stereo-box {
-  position: absolute;
-  top: 50%;
-  left: 63.5%;
-  transform: translate(-50%, -50%);
-  border: 1.5px solid #48119A;
-  padding: 7px 3.5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(232, 220, 203, 0.94);
-}
-
-.sr-vinyl-label__stereo-text {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-family: "Poppins", sans-serif;
-  font-size: clamp(7.5px, 1.15vh, 12px);
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  color: #48119A;
-  line-height: 1;
-  user-select: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
 }
 
 .sr-vinyl-spindle {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 7%;
-  height: 7%;
+  width: 8%;
+  height: 8%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: #262626;
-  border: 2px solid rgba(232, 220, 203, 0.55);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.85);
+  background: #0d0b10;
+  border: 2px solid rgba(232, 220, 203, 0.85);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95);
+  z-index: 5;
 }
 
 /* ---- Grupo de 3 Polaroids colocadas ENCIMA del disco y su borde derecho ---- */
@@ -938,14 +887,7 @@ html[data-theme='dark'] .plx-page {
 }
 
 html[data-theme='dark'] .sr-vinyl-showcase {
-  background:
-    radial-gradient(
-      circle at 8% 50%,
-      rgba(123, 77, 216, 0.28) 0%,
-      rgba(25, 20, 36, 0.5) 45%,
-      transparent 70%
-    ),
-    linear-gradient(125deg, #120f1a 0%, #1a1526 50%, #130f1c 100%);
+  background: transparent;
 }
 
 html[data-theme='dark'] .sr-vinyl-showcase__kicker span {
@@ -980,6 +922,279 @@ html[data-cvd='on'] .sr-vinyl-tabs__btn.is-active {
 html[data-theme='colorblind'] .sr-vinyl-controls__btn:focus-visible,
 html[data-cvd='on'] .sr-vinyl-controls__btn:focus-visible {
   outline-color: var(--color-focus-ring, #0072b2);
+}
+
+/* ==========================================================================
+   Panel editorial de la playlist activa al lado derecho del vinilo
+   ========================================================================== */
+.sr-vinyl-active-details {
+  position: absolute;
+  top: 50%;
+  right: clamp(20px, 5.5vw, 76px);
+  transform: translateY(-50%);
+  width: min(90vw, 440px);
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.8vh, 18px);
+  pointer-events: auto;
+}
+
+.sr-vinyl-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(72, 17, 154, 0.22);
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  color: #c4b5fd;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  align-self: flex-start;
+  backdrop-filter: blur(8px);
+}
+
+html[data-theme='light'] .sr-vinyl-active-badge {
+  background: rgba(72, 17, 154, 0.08);
+  border-color: rgba(72, 17, 154, 0.25);
+  color: #48119A;
+}
+
+.sr-vinyl-active-title {
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(26px, 3.4vw, 44px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='light'] .sr-vinyl-active-title {
+  color: #1c1926;
+  text-shadow: none;
+}
+
+.sr-vinyl-active-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+html[data-theme='light'] .sr-vinyl-active-meta {
+  color: #5f5a6b;
+}
+
+.sr-vinyl-active-meta__chip {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+html[data-theme='light'] .sr-vinyl-active-meta__chip {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.sr-vinyl-active-desc-wrap {
+  position: relative;
+  background: rgba(25, 20, 36, 0.65);
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  border-radius: 14px;
+  padding: 14px 16px;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html[data-theme='light'] .sr-vinyl-active-desc-wrap {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(72, 17, 154, 0.16);
+  box-shadow: 0 4px 20px rgba(72, 17, 154, 0.06);
+}
+
+.sr-vinyl-desc-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sr-vinyl-desc-text {
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(243, 239, 250, 0.9);
+  margin: 0;
+}
+
+html[data-theme='light'] .sr-vinyl-desc-text {
+  color: #3b354d;
+}
+
+.sr-vinyl-desc-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: #a78bfa;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.18s ease;
+}
+
+html[data-theme='light'] .sr-vinyl-desc-edit-btn {
+  color: #48119A;
+}
+
+.sr-vinyl-desc-edit-btn:hover {
+  text-decoration: underline;
+}
+
+.sr-vinyl-desc-edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sr-vinyl-desc-textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(15, 12, 22, 0.85);
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html[data-theme='light'] .sr-vinyl-desc-textarea {
+  background: #ffffff;
+  border-color: rgba(72, 17, 154, 0.35);
+  color: #1c1926;
+}
+
+.sr-vinyl-desc-textarea:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+.sr-vinyl-desc-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.sr-vinyl-desc-cancel-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+}
+
+html[data-theme='light'] .sr-vinyl-desc-cancel-btn {
+  border-color: rgba(0, 0, 0, 0.18);
+  color: #555;
+}
+
+.sr-vinyl-desc-save-btn {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: none;
+  background: #48119A;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.sr-vinyl-desc-save-btn:hover {
+  background: #5b17c2;
+  transform: scale(1.02);
+}
+
+.sr-vinyl-desc-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sr-vinyl-active-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: #48119A;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  box-shadow: 0 6px 20px rgba(72, 17, 154, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  align-self: flex-start;
+}
+
+.sr-vinyl-active-cta:hover {
+  background: #5c18c4;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(72, 17, 154, 0.6);
+}
+
+@media (max-width: 1024px) {
+  .sr-vinyl-active-details {
+    width: clamp(260px, 38vw, 360px);
+  }
+  .sr-vinyl-active-title {
+    font-size: clamp(22px, 3vw, 34px);
+  }
+}
+
+@media (max-width: 768px) {
+  .sr-vinyl-active-details {
+    position: static;
+    transform: none;
+    width: 100%;
+    padding: 16px 20px 32px;
+    margin-top: 480px;
+  }
+  .sr-vinyl-showcase__stage {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 64px);
+  }
+  .sr-vinyl-showcase {
+    height: auto;
+    min-height: auto;
+  }
 }
 
 
