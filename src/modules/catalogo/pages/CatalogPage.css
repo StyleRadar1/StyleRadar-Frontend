@@ -8,6 +8,7 @@
   --sr-hanger-wire: #262626;
   --sr-hanger-shoulder: #262626;
   --sr-hanger-shoulder-muted: #3a3a40;
+  --garment-h: clamp(230px, 31vw, 320px);
   position: relative;
   width: 100%;
   background: linear-gradient(180deg, #fcfbf9 0%, #f4eee4 55%, #faf8f5 100%);
@@ -68,8 +69,10 @@
   cursor: grabbing;
 }
 
+.sr-rack-viewport:focus,
 .sr-rack-viewport:focus-visible {
-  box-shadow: inset 0 0 0 2px #48119a;
+  outline: none;
+  box-shadow: none;
 }
 
 /* Barra metálica horizontal fina de lado a lado con brillo sutil y topes en los extremos */
@@ -143,17 +146,15 @@
   left: 50%;
   width: clamp(200px, 21vw, 230px);
   transform-origin: top center;
-  transition:
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform, opacity;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
   background: transparent;
   border: 0;
   padding: 0;
   cursor: pointer;
   text-align: center;
   outline: none;
+  border-radius: 1rem;
 }
 
 .sr-rack-item--back {
@@ -161,12 +162,22 @@
   cursor: default;
 }
 
-.sr-rack-item:focus-visible .sr-rack-cutout-img {
-  outline: 2px solid var(--color-focus-ring, #48119a);
-  outline-offset: 4px;
+.sr-rack-item:focus {
+  outline: none;
 }
 
-/* Posiciones por offset respecto a la prenda central (0): sin translateY para que todos los ganchos apoyen en la barra */
+.sr-rack-item:hover,
+.sr-rack-item:active {
+  outline: none;
+}
+
+.sr-rack-item:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #48119a);
+  outline-offset: 6px;
+  border-radius: 1rem;
+}
+
+/* Posiciones por offset respecto a la prenda central (0): sin filtros que alteren los colores de las prendas */
 .sr-rack-item[data-offset='0'] {
   transform: translate3d(-50%, 0, 0) scale(1.04);
   z-index: 30;
@@ -177,43 +188,43 @@
 .sr-rack-item[data-offset='-1'] {
   transform: translate3d(calc(-50% - clamp(150px, 19.5vw, 245px)), 0, 0) scale(0.82);
   z-index: 24;
-  opacity: 0.88;
-  filter: contrast(0.96) brightness(0.97);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='1'] {
   transform: translate3d(calc(-50% + clamp(150px, 19.5vw, 245px)), 0, 0) scale(0.82);
   z-index: 24;
-  opacity: 0.88;
-  filter: contrast(0.96) brightness(0.97);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='-2'] {
   transform: translate3d(calc(-50% - clamp(275px, 35.5vw, 445px)), 0, 0) scale(0.72);
   z-index: 18;
-  opacity: 0.72;
-  filter: contrast(0.93) brightness(0.95);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='2'] {
   transform: translate3d(calc(-50% + clamp(275px, 35.5vw, 445px)), 0, 0) scale(0.72);
   z-index: 18;
-  opacity: 0.72;
-  filter: contrast(0.93) brightness(0.95);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='-3'] {
   transform: translate3d(calc(-50% - clamp(390px, 50vw, 635px)), 0, 0) scale(0.64);
   z-index: 14;
-  opacity: 0.5;
-  filter: contrast(0.9) brightness(0.93);
+  opacity: 1;
+  filter: none;
 }
 
 .sr-rack-item[data-offset='3'] {
   transform: translate3d(calc(-50% + clamp(390px, 50vw, 635px)), 0, 0) scale(0.64);
   z-index: 14;
-  opacity: 0.5;
-  filter: contrast(0.9) brightness(0.93);
+  opacity: 1;
+  filter: none;
 }
 
 /* Balanceo sutil de péndulo colgado de la barra (±1.6 deg) con desfase individual */
@@ -253,12 +264,11 @@
   transform: translateY(-8px);
 }
 
-/* Gancho (hanger) conectado a la barra: ~0.78 del ancho de la prenda */
+/* Gancho (hanger) conectado a la barra: ~0.62 del ancho de la prenda y detrás de la tela */
 .sr-rack-hanger {
   display: block;
-  width: 78%;
-  height: auto;
-  max-height: 58px;
+  width: 62%;
+  height: 50px;
   margin: 0 auto;
   position: relative;
   pointer-events: none;
@@ -270,21 +280,21 @@
 }
 
 .sr-rack-hanger--shoulder {
-  z-index: 15;
+  z-index: 12;
   filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.2));
 }
 
 .sr-rack-hanger--clips {
-  z-index: 15;
+  z-index: 12;
   filter: drop-shadow(0 2px 3px rgba(38, 38, 38, 0.2));
 }
 
-/* Prenda recortada sola, sin marco rectangular ni fondo */
+/* Prenda recortada sola, sin marco rectangular ni fondo, anclada en cuello/hombros */
 .sr-rack-garment-cutout {
   position: relative;
   width: 100%;
-  height: clamp(230px, 31vw, 320px);
-  margin-top: -26px;
+  height: var(--garment-h);
+  margin-top: calc(-27px - (var(--ancla-y, 0) * var(--garment-h)));
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -307,10 +317,10 @@
 /* Pinzas metálicas para pantalones / jeans (por delante de la tela) */
 .sr-rack-clips-layer {
   position: absolute;
-  top: -8px;
+  top: -6px;
   left: 0;
   right: 0;
-  height: 30px;
+  height: 28px;
   pointer-events: none;
   z-index: 30;
 }
@@ -318,46 +328,49 @@
 .sr-rack-clip {
   position: absolute;
   width: 16px;
-  height: 28px;
+  height: 26px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
 .sr-rack-clip--left {
-  left: 25%;
+  left: 24%;
 }
 
 .sr-rack-clip--right {
-  right: 25%;
+  right: 24%;
 }
 
-/* Pill flotante que se muestra en hover / focus-visible */
+/* Pill flotante que se muestra en hover / focus-visible: texto claro sobre fondo oscuro accesible */
 .sr-rack-hover-title {
   position: absolute;
-  bottom: -22px;
+  bottom: -24px;
   left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  opacity: 0;
-  pointer-events: none;
+  transform: translateX(-50%) translateY(4px);
+  width: fit-content;
+  max-width: max-content;
   white-space: nowrap;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  padding: 0.28rem 0.75rem;
+  padding: 0.32rem 0.85rem;
   border-radius: 9999px;
-  background-color: var(--color-surface-raised, rgba(38, 38, 38, 0.92));
-  color: var(--color-text, #ffffff);
-  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.18));
-  box-shadow: 0 6px 16px var(--sr-sombra);
+  background-color: var(--sr-fondo-oscuro, #1c1827);
+  color: var(--sr-texto-sobre-oscuro, #ffffff);
+  border: 1px solid var(--sr-borde-oscuro, rgba(255, 255, 255, 0.2));
+  box-shadow: 0 8px 18px var(--sr-sombra);
+  opacity: 0;
+  pointer-events: none;
   transition:
-    opacity 240ms ease,
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
-  z-index: 40;
+    opacity 220ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 45;
 }
 
 .sr-rack-item:hover .sr-rack-hover-title,
 .sr-rack-item:focus-visible .sr-rack-hover-title {
   opacity: 1;
+  pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
 
@@ -383,44 +396,57 @@
   opacity: 0.55;
 }
 
-/* Etiquetas pequeñas en pill sujetas al gancho con hilo corto */
+/* Balanceo propio de la etiqueta colgante */
+@keyframes sr-badge-sway {
+  0% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+  100% {
+    transform: rotate(-7deg);
+  }
+}
+
+/* Etiquetas pequeñas en pill sujetas al brazo izquierdo del gancho con hilo de ~14px */
 .sr-rack-badge {
   position: absolute;
-  top: 42px;
-  left: 24%;
-  transform: rotate(-6deg);
+  top: 50px;
+  left: 0;
   z-index: 35;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.22rem 0.65rem;
   border-radius: 9999px;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(38, 38, 38, 0.18);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   pointer-events: none;
+  transform-origin: 50% -14px;
+  animation: sr-badge-sway 2.6s ease-in-out infinite;
 }
 
-/* Hilo corto que ata la etiqueta al brazo del gancho */
+/* Hilo de 14px que ata la etiqueta al brazo izquierdo del gancho */
 .sr-rack-badge::before {
   content: '';
   position: absolute;
-  top: -8px;
+  top: -14px;
   left: 50%;
   width: 1px;
-  height: 8px;
-  background-color: var(--sr-hanger-wire, #262626);
-  opacity: 0.55;
+  height: 14px;
+  background-color: var(--sr-hanger-wire, #6b6b78);
+  opacity: 0.85;
 }
 
 /* "-20%" en grafito con texto blanco */
 .sr-rack-badge--discount {
   background-color: #262626;
   color: #ffffff;
-  transform: translateX(-50%) rotate(-7deg);
 }
 
 /* "NUEVO" en blanco con borde grafito */
@@ -428,14 +454,12 @@
   background-color: #ffffff;
   color: #262626;
   border: 1.5px solid #262626;
-  transform: translateX(-50%) rotate(5deg);
 }
 
 /* "SOLO N UNIDADES" en violeta con texto blanco */
 .sr-rack-badge--stock {
   background-color: #48119a;
   color: #ffffff;
-  transform: translateX(-50%) rotate(-3deg);
 }
 
 /* Pie de la prenda destacada: nombre en Poppins y botón pill outline suave */
@@ -503,6 +527,10 @@
 
 /* Responsive móvil: la prenda destacada ocupa ~50% del ancho y se asoman las vecinas */
 @media (max-width: 640px) {
+  .sr-rack-section {
+    --garment-h: 215px;
+  }
+
   .sr-rack-viewport {
     height: 315px;
   }
@@ -511,10 +539,6 @@
     width: 48vw;
     max-width: 205px;
     min-width: 150px;
-  }
-
-  .sr-rack-garment-cutout {
-    height: 215px;
   }
 
   .sr-rack-item[data-offset='-1'] {
@@ -547,6 +571,7 @@
   .sr-rack-sway-inner,
   .sr-rack-cutout-img,
   .sr-rack-shadow,
+  .sr-rack-badge,
   .sr-rack-hover-title,
   .sr-rack-cta {
     transition: none !important;
@@ -607,8 +632,7 @@ html[data-theme='dark'] .sr-rack-cta:hover {
   color: var(--color-text-on-accent, #ffffff);
 }
 
-html[data-theme='dark'] .sr-rack-viewport:focus-visible,
-html[data-theme='dark'] .sr-rack-item:focus-visible .sr-rack-cutout-img,
+html[data-theme='dark'] .sr-rack-item:focus-visible,
 html[data-theme='dark'] .sr-rack-cta:focus-visible {
   outline-color: var(--color-focus-ring, #a78bfa);
 }
@@ -627,11 +651,9 @@ html[data-cvd='on'] .sr-rack-cta:hover {
   color: #ffffff;
 }
 
-html[data-theme='colorblind'] .sr-rack-viewport:focus-visible,
-html[data-theme='colorblind'] .sr-rack-item:focus-visible .sr-rack-cutout-img,
+html[data-theme='colorblind'] .sr-rack-item:focus-visible,
 html[data-theme='colorblind'] .sr-rack-cta:focus-visible,
-html[data-cvd='on'] .sr-rack-viewport:focus-visible,
-html[data-cvd='on'] .sr-rack-item:focus-visible .sr-rack-cutout-img,
+html[data-cvd='on'] .sr-rack-item:focus-visible,
 html[data-cvd='on'] .sr-rack-cta:focus-visible {
   outline-color: var(--color-focus-ring, #0072b2);
 }

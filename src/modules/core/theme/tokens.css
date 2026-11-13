@@ -66,6 +66,9 @@ html[data-tema="claro"] {
   --overlay: rgba(38, 38, 38, 0.6);
   --shadow-color: rgba(38, 38, 38, 0.12);
   --sr-sombra: rgba(38, 38, 38, 0.22);
+  --sr-fondo-oscuro: #1c1827;
+  --sr-texto-sobre-oscuro: #ffffff;
+  --sr-borde-oscuro: rgba(255, 255, 255, 0.2);
 
   /* Estados accesibles (WCAG AA) */
   --success: #1e6b3a;
@@ -118,6 +121,9 @@ html[data-tema="oscuro"] {
   --overlay: rgba(0, 0, 0, 0.75);
   --shadow-color: rgba(0, 0, 0, 0.5);
   --sr-sombra: rgba(0, 0, 0, 0.65);
+  --sr-fondo-oscuro: #120f1d;
+  --sr-texto-sobre-oscuro: #ffffff;
+  --sr-borde-oscuro: rgba(255, 255, 255, 0.25);
 
   /* Estados accesibles (WCAG AA) */
   --success: #56d38e;
@@ -171,6 +177,9 @@ html[data-tema="claro"][data-contrast="on"] {
 
   --focus-ring: #0072b2;
   --sr-sombra: rgba(0, 0, 0, 0.35);
+  --sr-fondo-oscuro: #14171f;
+  --sr-texto-sobre-oscuro: #ffffff;
+  --sr-borde-oscuro: rgba(255, 255, 255, 0.22);
 }
 
 /* Daltónico sobre Modo Oscuro o modo colorblind autónomo */

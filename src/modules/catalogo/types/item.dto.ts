@@ -25,6 +25,7 @@ export interface ItemResponseDto {
   distanciaKm: number
   recorte?: string
   tipoGancho?: 'hombros' | 'pinzas'
+  anclaY?: number
 }
 
 export interface ItemFiltersDto {

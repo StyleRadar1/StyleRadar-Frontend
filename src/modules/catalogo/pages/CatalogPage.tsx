@@ -843,6 +843,7 @@ interface HangingRackGarment {
   tipoGancho: 'hombros' | 'pinzas'
   tipoFiltro: string
   estilo: string
+  anclaY?: number
   badge?: {
     text: string
     variant: RackBadgeVariant
@@ -881,6 +882,7 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
       imagen: found.imagen,
       recorte: found.recorte,
       tipoGancho: found.tipoGancho ?? 'hombros',
+      anclaY: found.anclaY ?? (found.tipoGancho === 'pinzas' ? 0 : 0.05),
       tipoFiltro: tipoNorm,
       estilo: found.estilo,
       badge,
@@ -1172,7 +1174,12 @@ function HangingCollectionRack({
                   setActiveIndex(index)
                 }}
                 className="sr-rack-item"
-                style={{ '--rack-delay': `${(index * 0.42) % 2.5}s` } as React.CSSProperties}
+                style={
+                  {
+                    '--rack-delay': `${(index * 0.42) % 2.5}s`,
+                    '--ancla-y': garment.anclaY ?? 0,
+                  } as React.CSSProperties
+                }
               >
                 <div className="sr-rack-sway">
                   <div className="sr-rack-sway-inner">
