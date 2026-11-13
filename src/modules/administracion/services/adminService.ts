@@ -148,7 +148,8 @@ export const adminPlaylistService = {
   /** Destaca o quita del inicio. Máximo tres destacadas. */
   async setFeatured(id: string, destacada: boolean): Promise<AdminPlaylistDto> {
     if (env.useMocks) {
-      failIfScenario('conflicto')
+      if (destacada) failIfScenario('conflicto')
+      else failIfScenario()
       const p = db().playlists.find((x) => x.id === id)
       if (!p) throw new ApiError(404, 'Esa playlist no existe.')
       if (destacada && !p.destacada && db().playlists.filter((x) => x.destacada).length >= MAX_DESTACADAS) {
