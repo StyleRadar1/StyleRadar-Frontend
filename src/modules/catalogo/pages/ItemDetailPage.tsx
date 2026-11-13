@@ -205,7 +205,7 @@ export default function ItemDetailPage() {
                 </Link>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
                 {similares.map((sim) => (
                   <ItemCard key={sim.id} item={sim} />
                 ))}

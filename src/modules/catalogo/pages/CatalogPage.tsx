@@ -787,7 +787,7 @@ export default function CatalogPage() {
               <p className="text-sm">Buscando prendas en el catálogo…</p>
             </div>
           ) : items.length ? (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 sm:gap-6">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
               {items.map((it) => (
                 <ItemCard key={it.id} item={it} />
               ))}
