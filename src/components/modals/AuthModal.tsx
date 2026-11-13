@@ -149,7 +149,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       void runAnim(
         k,
         [
-          { opacity: 0, transform: 'translateY(12px)' },
+          { opacity: 0, transform: 'translateY(0.75rem)' },
           { opacity: 1, transform: 'none' },
         ],
         { duration: 440, delay: i * 45, easing: 'cubic-bezier(.2,.7,.1,1)' },
@@ -169,7 +169,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
             k,
             [
               { opacity: 1, transform: 'none' },
-              { opacity: 0, transform: 'translateY(-8px)' },
+              { opacity: 0, transform: 'translateY(-0.5rem)' },
             ],
             { duration: 200, delay: i * 18 },
           ),
@@ -214,7 +214,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         if (bg) bg.style.opacity = '1'
         if (ph) {
           ph.style.opacity = '1'
-          ph.style.clipPath = 'inset(0% 0% round 18px)'
+          ph.style.clipPath = 'inset(0% 0% round 1.125rem)'
         }
         if (meta) meta.style.opacity = '1'
         await animateCardIn(card)
@@ -228,12 +228,12 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         [
           {
             opacity: 0,
-            clipPath: 'inset(41% 44% round 12px)',
+            clipPath: 'inset(41% 44% round 0.75rem)',
             transform: 'scale(.55) rotate(-4deg)',
           },
           {
             opacity: 1,
-            clipPath: 'inset(38% 41% round 14px)',
+            clipPath: 'inset(38% 41% round 0.875rem)',
             transform: 'scale(1) rotate(0deg)',
           },
         ],
@@ -249,8 +249,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       await runAnim(
         ph,
         [
-          { clipPath: 'inset(38% 41% round 14px)' },
-          { clipPath: 'inset(0% 0% round 18px)' },
+          { clipPath: 'inset(38% 41% round 0.875rem)' },
+          { clipPath: 'inset(0% 0% round 1.125rem)' },
         ],
         { duration: 900, easing: 'cubic-bezier(.65,0,.35,1)' },
       )
@@ -259,7 +259,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       void runAnim(
         meta,
         [
-          { opacity: 0, transform: 'translateY(-8px)' },
+          { opacity: 0, transform: 'translateY(-0.5rem)' },
           { opacity: 1, transform: 'none' },
         ],
         { duration: 420 },
@@ -296,7 +296,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       void runAnim(
         cap,
         [
-          { opacity: 0, transform: 'translateY(10px)' },
+          { opacity: 0, transform: 'translateY(0.625rem)' },
           { opacity: 1, transform: 'none' },
         ],
         { duration: 520, easing: 'cubic-bezier(.2,.7,.1,1)' },
@@ -340,8 +340,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       await runAnim(
         ph,
         [
-          { clipPath: 'inset(0% 0% round 18px)' },
-          { clipPath: 'inset(38% 41% round 14px)' },
+          { clipPath: 'inset(0% 0% round 1.125rem)' },
+          { clipPath: 'inset(38% 41% round 0.875rem)' },
         ],
         { duration: 780, easing: 'cubic-bezier(.65,0,.35,1)' },
       )

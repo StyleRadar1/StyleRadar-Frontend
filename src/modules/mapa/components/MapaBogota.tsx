@@ -327,7 +327,7 @@ export default function MapaBogota({
           closeOnClick: false,
           offset: [0, -30],
           className: 'sr-mb-mini-popup',
-          maxWidth: '280px',
+          maxWidth: '17.5rem',
         })
           .setLngLat(pin.lngLat)
           .setHTML(miniCardHTML(pin))

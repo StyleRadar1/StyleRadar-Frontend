@@ -338,7 +338,7 @@
   box-shadow: 0 6px 22px rgba(232, 220, 203, .95), 0 0 14px rgba(255, 255, 255, .7);
 }
 
-.lm-pin:focus-visible { outline: 2px solid #e8dccb; outline-offset: 6px; border-radius: 4px; }
+.lm-pin:focus-visible { outline: 2px solid #e8dccb; outline-offset: 6px; border-radius: 0.25rem; }
 
 /* ── Panel lateral derecho (.lm-pane) ── */
 .lm-pane {

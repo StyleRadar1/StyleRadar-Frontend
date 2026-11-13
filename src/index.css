@@ -401,34 +401,34 @@ html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/
   color: #fbf7ef;
 }
 
-html {
-  font-size: 100%;
-  background: var(--sr-bg);
-  color: var(--sr-text-primary);
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 80%;
-  }
-}
-
-/* En móvil (<768px) los inputs conservan al menos 16px para evitar auto-zoom en iOS Safari */
-@media (max-width: 767px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
-}
-
-body {
-  @apply font-sans antialiased;
-  background-color: var(--sr-bg);
-  color: var(--sr-text-primary);
-}
-
 @layer base {
+  html {
+    font-size: 100%;
+    background: var(--sr-bg);
+    color: var(--sr-text-primary);
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 80%;
+    }
+  }
+
+  /* En móvil (<768px) los inputs conservan al menos 16px para evitar auto-zoom en iOS Safari */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  body {
+    @apply font-sans antialiased;
+    background-color: var(--sr-bg);
+    color: var(--sr-text-primary);
+  }
+
   :focus-visible {
     outline: 2px solid var(--sr-focus);
     outline-offset: 2px;

@@ -47,7 +47,7 @@
 .my-store__facts dd { margin: 0.3125rem 0 0; font-size: 0.8125rem; line-height: 1.5; }
 .my-store__actions { grid-column: 1 / -1; display: flex; gap: 0.5625rem; flex-wrap: wrap; margin-top: 0.25rem; }
 .my-store__button { border: 1px solid rgba(185,185,202,.38); border-radius: 62.4375rem; padding: 0.6875rem 0.9375rem; color: #fff; background: transparent; font: inherit; font-size: 0.75rem; text-decoration: none; cursor: pointer; transition: background .2s ease, border-color .2s ease, transform .2s ease; }
-.my-store__button:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.72); transform: translateY(-1px); }
+.my-store__button:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.72); transform: translateY(-0.0625rem); }
 .my-store__button:focus-visible,.my-store__filters button:focus-visible,.my-store__search:focus-within { outline: 2px solid #b9b9ca; outline-offset: 3px; }
 .my-store__button--primary { background: var(--store-accent); border-color: #7040ba; box-shadow: 0 10px 30px rgba(72,17,154,.28); }
 .my-store__notice { margin-top: 1.375rem; padding: 0.8125rem 1rem; border: 1px solid rgba(185,185,202,.26); border-radius: 0.625rem; color: #f0edf5; background: rgba(255,255,255,.045); display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.8125rem; }
@@ -56,9 +56,9 @@
 .my-store__stats b { color: #fff; font-weight: 600; font-size: 0.9375rem; margin-right: 0.3125rem; }
 .my-store__section-head { display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; margin-bottom: 1.25rem; }
 .my-store__section-head h2,.my-store__photos h2 { font-family: var(--serif, Georgia, serif); font-size: clamp(2rem, 4vw, 3.375rem); line-height: .95; margin: 0.5rem 0 0; letter-spacing: -.035em; }
-.my-store__search { display: flex; align-items: center; gap: 0.5625rem; min-width: min(19.375rem, 100%); border-bottom: 1px solid rgba(185,185,202,.4); padding: 0.5625rem 2px; color: var(--store-muted); }
+.my-store__search { display: flex; align-items: center; gap: 0.5625rem; min-width: min(19.375rem, 100%); border-bottom: 1px solid rgba(185,185,202,.4); padding: 0.5625rem 0.125rem; color: var(--store-muted); }
 .my-store__search > span { font-size: 1.4375rem; }
-.my-store__search input { min-width: 0; width: 100%; border: 0; outline: 0; color: #fff; background: transparent; font: inherit; font-size: 13px; }
+.my-store__search input { min-width: 0; width: 100%; border: 0; outline: 0; color: #fff; background: transparent; font: inherit; font-size: 0.8125rem; }
 .my-store__search input::placeholder { color: #b9b9ca; opacity: .8; }
 .my-store__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; margin-bottom: 1.375rem; border-bottom: 1px solid rgba(185,185,202,.18); padding-bottom: 0.875rem; }
 .my-store__filters { display: flex; flex-wrap: wrap; gap: 0.4375rem; }
@@ -116,8 +116,8 @@
 .my-store__collection-card:hover > img { filter: brightness(1.06); transform: translateY(-0.125rem); }
 .my-store__collection-name { margin-top: 0.625rem; font-size: 1rem; font-weight: 700; }
 .my-store__collection-meta { margin-top: 0.5rem; color: var(--store-muted); font-size: 0.6875rem; font-weight: 700; letter-spacing: .13em; }
-.my-store__dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(10,9,12,.7); backdrop-filter: blur(8px); }
-.my-store__dialog { position: relative; width: min(100%, 440px); padding: 27px; border: 1px solid rgba(185,185,202,.24); border-radius: 14px; color: #fff; background: #262329; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
+.my-store__dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1.25rem; background: rgba(10,9,12,.7); backdrop-filter: blur(8px); }
+.my-store__dialog { position: relative; width: min(100%, 27.5rem); padding: 1.6875rem; border: 1px solid rgba(185,185,202,.24); border-radius: 0.875rem; color: #fff; background: #262329; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
 .my-store__dialog h2 { margin: 0.5rem 0; font: 700 1.875rem/1 var(--serif,Georgia,serif); }
 .my-store__dialog > p { color: var(--store-muted); font-size: 0.8125rem; }
 .my-store__dialog label { display: grid; gap: 0.4375rem; margin-top: 1.0625rem; color: var(--store-muted); font-size: 0.6875rem; }
@@ -143,7 +143,7 @@
 .my-store__flag-field button.is-selected { border-color: #b9b9ca; color: #29282f; background: #b9b9ca; }
 .my-store__dialog--edit .my-store__dialog-actions { justify-content: space-between; margin: 0 -1.75rem; padding: 1.0625rem 1.75rem 1.25rem; border-top: 1px solid rgba(185,185,202,.16); }
 .my-store__dialog--edit .my-store__dialog-actions button { min-width: 8.875rem; min-height: 3.25rem; border-radius: 0.9375rem; font-size: 0.875rem; font-weight: 700; }
-.my-store__dialog--edit .my-store__dialog-actions .my-store__button--primary { min-width: 220px; box-shadow: 0 7px 24px rgba(72,17,154,.38); }
+.my-store__dialog--edit .my-store__dialog-actions .my-store__button--primary { min-width: 13.75rem; box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 .my-store__dialog--stock { width: min(100%, 34.375rem); padding: 1.875rem 1.75rem 0; border-radius: 1.125rem; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.13),transparent 58%),#29282a; }
 .my-store__dialog--stock .my-store__eyebrow { font-size: 0.75rem; letter-spacing: .18em; }
 .my-store__dialog--stock h2 { max-width: 20.625rem; margin: 0.5rem 0 1.375rem; font: 700 clamp(2.375rem,6vw,3rem)/.94 var(--serif,Georgia,serif); letter-spacing: -.045em; }
@@ -154,7 +154,7 @@
 .my-store__stock-size input:focus { outline: 2px solid #b9b9ca; outline-offset: 1px; }
 .my-store__dialog-actions--stock { justify-content: space-between; margin: 0 -1.75rem; padding: 1.0625rem 1.75rem 1.25rem; border-top: 1px solid rgba(185,185,202,.16); }
 .my-store__dialog-actions--stock button { min-width: 8.875rem; min-height: 3.25rem; border-radius: 0.9375rem; font-size: 0.875rem; font-weight: 700; }
-.my-store__dialog-actions--stock .my-store__button--primary { min-width: 188px; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
+.my-store__dialog-actions--stock .my-store__button--primary { min-width: 11.75rem; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 .my-store__dialog--collection { width: min(100%, 34.375rem); padding: 1.875rem 1.75rem 0; border-radius: 1.125rem; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.13),transparent 58%),#29282a; }
 .my-store__dialog--collection .my-store__eyebrow { font-size: 0.75rem; letter-spacing: .18em; }
 .my-store__dialog--collection h2 { margin: 0.5rem 0 1.5rem; font: 700 clamp(2.375rem,6vw,3rem)/.98 var(--serif,Georgia,serif); letter-spacing: -.045em; }
@@ -171,7 +171,7 @@
 .my-store__visibility-field button svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .my-store__dialog--collection .my-store__dialog-actions { justify-content: space-between; margin: 0 -1.75rem; padding: 1.0625rem 1.75rem 1.25rem; border-top: 1px solid rgba(185,185,202,.16); }
 .my-store__dialog--collection .my-store__dialog-actions button { min-width: 8.875rem; min-height: 3.25rem; border-radius: 0.9375rem; font-size: 0.875rem; font-weight: 700; }
-.my-store__dialog--collection .my-store__dialog-actions .my-store__button--primary { min-width: 202px; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
+.my-store__dialog--collection .my-store__dialog-actions .my-store__button--primary { min-width: 12.625rem; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 .my-store__dialog--store-info { width: min(100%, 57.8125rem); max-height: calc(100svh - 3rem); overflow-y: auto; padding: 1.6875rem 1.5625rem 0; border-radius: 1.125rem; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.11),transparent 58%),#29282a; }
 .my-store__dialog--store-info .my-store__eyebrow { font-size: 0.75rem; letter-spacing: .18em; }
 .my-store__dialog--store-info h2 { margin: 0.375rem 0 1.125rem; font: 700 clamp(2.25rem,5vw,2.75rem)/1 var(--serif,Georgia,serif); letter-spacing: -.045em; }
@@ -189,7 +189,7 @@
 .my-store__facade-drop input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; opacity: 0; cursor: pointer; }
 .my-store__dialog--store-info .my-store__dialog-actions { justify-content: space-between; margin: 0 -1.5625rem; padding: 0.875rem 1.5625rem 1.0625rem; border-top: 1px solid rgba(185,185,202,.16); }
 .my-store__dialog--store-info .my-store__dialog-actions button { min-width: 8rem; min-height: 3rem; border-radius: 0.875rem; font-size: 0.8125rem; font-weight: 700; }
-.my-store__dialog--store-info .my-store__dialog-actions .my-store__button--primary { min-width: 198px; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
+.my-store__dialog--store-info .my-store__dialog-actions .my-store__button--primary { min-width: 12.375rem; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 .my-store__dialog--badges { width: min(100%, 30.9375rem); padding: 1.75rem 1.5625rem 0; border-radius: 1.125rem; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.11),transparent 58%),#29282a; }
 .my-store__dialog--badges .my-store__eyebrow { font-size: 0.75rem; letter-spacing: .18em; }
 .my-store__dialog--badges h2 { max-width: 22.1875rem; margin: 0.4375rem 0 1.25rem; font: 700 clamp(2.375rem,6vw,2.75rem)/.95 var(--serif,Georgia,serif); letter-spacing: -.045em; }
@@ -201,7 +201,7 @@
 .my-store__dialog--badges .my-store__badge-rule > select { display: block; width: 100%; height: 3.125rem; margin-top: 0.4375rem; padding: 0 0.8125rem; border: 1px solid rgba(185,185,202,.34); border-radius: 0.9375rem; color: #fff; background: #343238; font: inherit; font-size: 0.8125rem; letter-spacing: normal; }
 .my-store__dialog--badges .my-store__dialog-actions { justify-content: space-between; margin: 1.25rem -1.5625rem 0; padding: 0.875rem 1.5625rem 1.0625rem; border-top: 1px solid rgba(185,185,202,.16); }
 .my-store__dialog--badges .my-store__dialog-actions button { min-width: 8rem; min-height: 3rem; border-radius: 0.875rem; font-size: 0.8125rem; font-weight: 700; }
-.my-store__dialog--badges .my-store__dialog-actions .my-store__button--primary { min-width: 168px; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
+.my-store__dialog--badges .my-store__dialog-actions .my-store__button--primary { min-width: 10.5rem; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 
 @media (max-width: 900px) {
   .my-store__grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
