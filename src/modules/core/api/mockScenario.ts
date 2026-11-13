@@ -2,7 +2,7 @@ import { ApiError } from './apiClient'
 
 /**
  * Escenarios de prueba para los datos simulados. Se activan con ?mock=<escenario> en la URL
- * (por ejemplo /probador?mock=job-falla) y duran lo que dura la pestaña. Sirven para grabar
+ * (por ejemplo /probador?mock=job-falla) mientras permanezca en la URL. Sirven para grabar
  * las evidencias de los casos negativos sin backend. No tienen efecto cuando VITE_USE_MOCKS=false.
  */
 export const MOCK_SCENARIOS = {
@@ -34,6 +34,9 @@ function read(): MockScenario[] {
       if (q !== prev) {
         queueMicrotask(() => window.dispatchEvent(new Event('sr:mock-changed')))
       }
+    } else if (import.meta.env.MODE !== 'test' && prev !== null) {
+      sessionStorage.removeItem(KEY)
+      queueMicrotask(() => window.dispatchEvent(new Event('sr:mock-changed')))
     }
     raw = sessionStorage.getItem(KEY) ?? ''
   } catch { /* sin almacenamiento */ }

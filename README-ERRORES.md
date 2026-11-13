@@ -2,7 +2,7 @@
 
 Resumen de los errores implementados por rama (creadas desde `Flujo_De_Errores`), qué se hizo en cada una y dónde verificarlos en el frontend (con `?mock=...` cuando `VITE_USE_MOCKS=true`) y contra el API Gateway.
 
-> Nota sobre `?mock=`: los escenarios de prueba se guardan en la pestaña actual (`sessionStorage`). En la barra superior de modo demostración aparece **`Simulación activa: ?mock=...`** con el botón **`Quitar simulación`** para limpiar el escenario antes de pasar a otra pantalla.
+> Nota sobre `?mock=`: los escenarios de prueba aplican únicamente mientras `?mock=...` esté en la URL actual (en la barra superior aparece **`Simulación activa: ?mock=...`** con el botón **`Quitar simulación`** para limpiarlo). Al navegar a una URL sin `?mock=` la simulación se desactiva automáticamente.
 
 ## Orden recomendado para juntar las ramas en `Flujo_De_Errores`
 
