@@ -1267,6 +1267,7 @@ interface HangingRackGarment {
   tipoFiltro: string
   estilo: string
   anclaY?: number
+  bajada?: number
   badge?: {
     text: string
     variant: RackBadgeVariant
@@ -1306,17 +1307,21 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
       recorte: found.recorte,
       tipoGancho: found.tipoGancho ?? 'hombros',
       anclaY: found.anclaY ?? (found.tipoGancho === 'pinzas' ? 0 : 0.05),
+      bajada: found.bajada ?? 0,
       tipoFiltro: tipoNorm,
       estilo: found.estilo,
       badge,
     }
   })
 
-function HangerBackSvg() {
+function HangerBackSvg({ bajada = 0 }: { bajada?: number }) {
+  const bajadaSvg = bajada * 1.2
+  const vbHeight = 60 + bajadaSvg
+
   return (
     <svg
       className="sr-rack-hanger sr-rack-hanger--back"
-      viewBox="0 0 160 60"
+      viewBox={`0 0 160 ${vbHeight}`}
       fill="none"
       aria-hidden="true"
     >
@@ -1338,11 +1343,14 @@ function HangerBackSvg() {
   )
 }
 
-function ShoulderHangerFrontSvg() {
+function ShoulderHangerFrontSvg({ bajada = 0 }: { bajada?: number }) {
+  const bajadaSvg = bajada * 1.2
+  const vbHeight = 60 + bajadaSvg
+
   return (
     <svg
       className="sr-rack-hanger sr-rack-hanger--shoulder"
-      viewBox="0 0 160 60"
+      viewBox={`0 0 160 ${vbHeight}`}
       fill="none"
       aria-hidden="true"
     >
@@ -1368,34 +1376,39 @@ function ShoulderHangerFrontSvg() {
         strokeWidth="2.6"
         strokeLinecap="round"
       />
-      {/* Cuello del gancho que entra en la madera */}
+      {/* Cuello del gancho que entra en la madera: se alarga con la bajada */}
       <line
         x1="80"
         y1="26"
         x2="80"
-        y2="31"
+        y2={31 + bajadaSvg}
         stroke="url(#sr-wire-grad-front)"
         strokeWidth="2.6"
         strokeLinecap="round"
       />
-      {/* Hombros de madera curvos (van DETRÁS de la prenda) */}
-      <path
-        d="M16 48 C40 40, 64 30, 80 28 C96 30, 120 40, 144 48 C146 49, 144 53, 141 53 C118 46, 96 37, 80 36 C64 37, 42 46, 19 53 C16 53, 14 49, 16 48 Z"
-        fill="url(#sr-wood-grad)"
-        stroke="#4a250a"
-        strokeWidth="0.8"
-      />
-      {/* Detalle de remache central en el cuello */}
-      <circle cx="80" cy="30" r="2.2" fill="#d4d4dc" stroke="#262626" strokeWidth="0.6" />
+      {/* Hombros de madera curvos y remache: bajan juntos */}
+      <g transform={`translate(0, ${bajadaSvg})`}>
+        <path
+          d="M16 48 C40 40, 64 30, 80 28 C96 30, 120 40, 144 48 C146 49, 144 53, 141 53 C118 46, 96 37, 80 36 C64 37, 42 46, 19 53 C16 53, 14 49, 16 48 Z"
+          fill="url(#sr-wood-grad)"
+          stroke="#4a250a"
+          strokeWidth="0.8"
+        />
+        {/* Detalle de remache central en el cuello */}
+        <circle cx="80" cy="30" r="2.2" fill="#d4d4dc" stroke="#262626" strokeWidth="0.6" />
+      </g>
     </svg>
   )
 }
 
-function ClipsHangerFrontSvg() {
+function ClipsHangerFrontSvg({ bajada = 0 }: { bajada?: number }) {
+  const bajadaSvg = bajada * 1.2
+  const vbHeight = 60 + bajadaSvg
+
   return (
     <svg
       className="sr-rack-hanger sr-rack-hanger--clips"
-      viewBox="0 0 160 60"
+      viewBox={`0 0 160 ${vbHeight}`}
       fill="none"
       aria-hidden="true"
     >
@@ -1419,25 +1432,27 @@ function ClipsHangerFrontSvg() {
         x1="80"
         y1="26"
         x2="80"
-        y2="31"
+        y2={31 + bajadaSvg}
         stroke="url(#sr-wire-grad-front)"
         strokeWidth="2.6"
         strokeLinecap="round"
       />
       {/* Barra horizontal metálica con topes */}
-      <rect
-        x="24"
-        y="29"
-        width="112"
-        height="4"
-        rx="2"
-        fill="url(#sr-clips-rod-grad)"
-        stroke="#33333a"
-        strokeWidth="0.6"
-      />
-      {/* Topes en los extremos de la barra */}
-      <circle cx="24" cy="31" r="2.5" fill="#44444e" />
-      <circle cx="136" cy="31" r="2.5" fill="#44444e" />
+      <g transform={`translate(0, ${bajadaSvg})`}>
+        <rect
+          x="24"
+          y="29"
+          width="112"
+          height="4"
+          rx="2"
+          fill="url(#sr-clips-rod-grad)"
+          stroke="#33333a"
+          strokeWidth="0.6"
+        />
+        {/* Topes en los extremos de la barra */}
+        <circle cx="24" cy="31" r="2.5" fill="#44444e" />
+        <circle cx="136" cy="31" r="2.5" fill="#44444e" />
+      </g>
     </svg>
   )
 }
@@ -1562,11 +1577,16 @@ function HangingCollectionRack({
               key={`back-${garment.id}`}
               data-offset={offset}
               className="sr-rack-item sr-rack-item--back"
-              style={{ '--rack-delay': `${(index * 0.42) % 2.5}s` } as React.CSSProperties}
+              style={
+                {
+                  '--rack-delay': `${(index * 0.42) % 2.5}s`,
+                  '--bajada': `${garment.bajada ?? 0}px`,
+                } as React.CSSProperties
+              }
             >
               <div className="sr-rack-sway">
                 <div className="sr-rack-sway-inner">
-                  <HangerBackSvg />
+                  <HangerBackSvg bajada={garment.bajada} />
                 </div>
               </div>
             </div>
@@ -1601,13 +1621,18 @@ function HangingCollectionRack({
                   {
                     '--rack-delay': `${(index * 0.42) % 2.5}s`,
                     '--ancla-y': garment.anclaY ?? 0,
+                    '--bajada': `${garment.bajada ?? 0}px`,
                   } as React.CSSProperties
                 }
               >
                 <div className="sr-rack-sway">
                   <div className="sr-rack-sway-inner">
                     {/* Gancho: hombros de madera o barra de pinzas */}
-                    {isClips ? <ClipsHangerFrontSvg /> : <ShoulderHangerFrontSvg />}
+                    {isClips ? (
+                      <ClipsHangerFrontSvg bajada={garment.bajada} />
+                    ) : (
+                      <ShoulderHangerFrontSvg bajada={garment.bajada} />
+                    )}
 
                     {/* Etiqueta en pill sujeta al gancho con hilo */}
                     {garment.badge && (

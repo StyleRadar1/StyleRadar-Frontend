@@ -268,7 +268,7 @@
 .sr-rack-hanger {
   display: block;
   width: 62%;
-  height: 50px;
+  height: calc(50px + var(--bajada, 0px));
   margin: 0 auto;
   position: relative;
   pointer-events: none;
@@ -412,7 +412,7 @@
 /* Etiquetas pequeñas en pill sujetas al brazo izquierdo del gancho con hilo de ~14px */
 .sr-rack-badge {
   position: absolute;
-  top: 50px;
+  top: calc(50px + var(--bajada, 0px));
   left: 0;
   z-index: 35;
   display: inline-flex;
