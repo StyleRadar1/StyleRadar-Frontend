@@ -1,0 +1,39 @@
+/* Tokens de color para CursorHanger según el tema activo de StyleRadar */
+:root {
+  --accent: #8b5cf6;
+  --accent-soft: #b9b9ca;
+  --shadow-color: rgba(0, 0, 0, 0.45);
+}
+
+html[data-tema="oscuro"],
+html[data-theme="dark"],
+html[data-theme="oscuro"] {
+  --accent: #8b5cf6; /* violeta aclarado para alto contraste sobre fondo oscuro */
+  --accent-soft: #b9b9ca;
+  --shadow-color: rgba(0, 0, 0, 0.55);
+}
+
+html[data-tema="claro"],
+html[data-theme="light"],
+html[data-theme="claro"] {
+  --accent: #48119a; /* violeta principal de marca */
+  --accent-soft: #7b4dd8;
+  --shadow-color: rgba(38, 38, 38, 0.25);
+}
+
+html[data-tema="daltonico"],
+html[data-theme="daltonico"] {
+  --accent: #a78bfa;
+  --accent-soft: #e8dccb;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+.cursor-hanger-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15;
+}
+

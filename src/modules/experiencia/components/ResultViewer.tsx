@@ -25,26 +25,30 @@ export function ResultViewer({ result, garmentName, onRegenerate, onOtherGarment
 
   if (expired || broken) {
     return (
-      <div role="alert" className="rounded-2xl border border-arena/40 bg-arena/10 p-5">
+      <div role="alert" className="rounded-2xl border border-[var(--color-warning-border,#d97706)] bg-[var(--color-warning-bg,rgba(217,119,6,0.1))] text-[var(--color-warning-text,#92400e)] p-5">
         <p className="font-semibold">El resultado ya no está disponible</p>
-        <p className="mt-1 text-sm text-white/75">Por privacidad, el enlace del resultado vence a los pocos minutos. Puedes generarlo otra vez con la misma foto.</p>
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">Por privacidad, el enlace del resultado vence a los pocos minutos. Puedes generarlo otra vez con la misma foto.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" onClick={onRegenerate} className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold">Generar de nuevo</button>
-          <button type="button" onClick={onOtherGarment} className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold">Probar otra prenda</button>
+          <button type="button" onClick={onRegenerate} className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-4 py-2 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm">Generar de nuevo</button>
+          <button type="button" onClick={onOtherGarment} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Probar otra prenda</button>
         </div>
       </div>
     )
   }
 
   return (
-    <figure className="overflow-hidden rounded-2xl border border-white/10">
-      <div className="relative bg-black/30">
+    <figure className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+      <div className="relative bg-[var(--color-surface-subtle)]">
         <img src={result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} onError={() => setBroken(true)} className="mx-auto max-h-[520px] w-full object-contain" />
-        {env.useMocks && <span className="absolute left-3 top-3 rounded-full bg-arena px-3 py-1 text-[11px] font-bold text-grafito">Simulado: no es un resultado real del probador</span>}
+        {env.useMocks && (
+          <span className="absolute left-3 top-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-3 py-1 text-[11px] font-bold text-[var(--color-text)] backdrop-blur-sm shadow-sm">
+            Simulado: no es un resultado real del probador
+          </span>
+        )}
       </div>
-      <figcaption className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+      <figcaption className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm text-[var(--color-text)]">
         <span>{garmentName} · disponible hasta las {until}</span>
-        <button type="button" onClick={onOtherGarment} className="rounded-xl border border-white/20 px-4 py-2 font-semibold">Probar otra prenda</button>
+        <button type="button" onClick={onOtherGarment} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-4 py-2 font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Probar otra prenda</button>
       </figcaption>
     </figure>
   )

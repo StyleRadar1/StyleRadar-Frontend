@@ -1,0 +1,846 @@
+/* =============================================================
+   StyleRadar · Módulo de Fundación (/fundacion y /fundacion/donaciones)
+   Rediseño visual editorial adaptado a la identidad de marca
+   ============================================================= */
+
+.fnd-dashboard,
+.fnd-donations {
+  --fnd-grafito: #262626;
+  --fnd-arena: #e8dccb;
+  --fnd-lavanda: #b9b9ca;
+  --fnd-violeta: #48119a;
+  --fnd-violeta-hover: #5a1fb8;
+  --fnd-radius: 20px;
+  --fnd-shadow: 0 10px 30px rgba(38, 38, 38, 0.07), 0 2px 6px rgba(38, 38, 38, 0.04);
+
+  min-height: 100vh;
+  padding-bottom: 72px;
+  background: linear-gradient(180deg, #efe6d9 0%, #f6f1ea 32%, #ffffff 100%);
+  color: var(--fnd-grafito);
+  font-family: 'Poppins', system-ui, sans-serif;
+  overflow-x: clip;
+}
+
+/* Modo oscuro */
+html[data-theme='dark'] .fnd-dashboard,
+html[data-theme='dark'] .fnd-donations {
+  background: linear-gradient(180deg, #1b1622 0%, #16121c 45%, #100d14 100%);
+  color: #f3eff9;
+}
+
+.fnd-dashboard :focus-visible,
+.fnd-donations :focus-visible {
+  outline: 2px solid var(--fnd-violeta);
+  outline-offset: 3px;
+}
+
+/* ── Hero / Banner superior estilo editorial ── */
+.fnd-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #16121b;
+  color: #fff;
+  min-height: clamp(520px, 66vh, 680px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  animation: fndFadeIn 0.35s ease-out;
+}
+
+@keyframes fndFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fnd-hero {
+    animation: none;
+  }
+}
+
+.fnd-hero__media {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: -2;
+  width: min(68%, 1000px);
+}
+
+.fnd-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 35%;
+}
+
+.fnd-hero__shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, #16121b 0%, #16121b 36%, rgba(22, 18, 27, 0.88) 52%, rgba(22, 18, 27, 0.35) 76%, rgba(22, 18, 27, 0.12) 100%),
+    linear-gradient(0deg, rgba(22, 18, 27, 0.85) 0%, rgba(22, 18, 27, 0) 38%);
+}
+
+.fnd-hero__inner {
+  width: min(100% - 2 * clamp(16px, 4vw, 48px), 1320px);
+  margin: 0 auto;
+  padding: clamp(24px, 3.2vw, 36px) 0 clamp(80px, 8vw, 110px);
+}
+
+.fnd-hero__crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: clamp(14px, 2.4vw, 24px);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.fnd-hero__preview-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background: rgba(38, 38, 38, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+.fnd-hero__preview-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.fnd-hero__eyebrow {
+  display: block;
+  color: var(--fnd-lavanda);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.fnd-hero__title {
+  margin: 6px 0 0;
+  font-size: clamp(38px, 5.5vw, 68px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.45);
+}
+
+.fnd-hero__subtitle {
+  display: block;
+  margin: 4px 0 14px;
+  font-size: clamp(14px, 1.6vw, 18px);
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--fnd-lavanda);
+}
+
+.fnd-hero__lead {
+  max-width: 48ch;
+  margin: 0;
+  color: #d6d6e2;
+  font-size: clamp(14px, 1.25vw, 16px);
+  line-height: 1.5;
+}
+
+.fnd-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: clamp(20px, 2.8vw, 32px);
+}
+
+/* ── Fila de dos tarjetas montadas sobre el borde inferior del Hero ── */
+.fnd-hero-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(18px, 2.5vw, 32px);
+  margin-top: clamp(-65px, -7vw, -90px);
+  margin-bottom: clamp(28px, 3.5vw, 40px);
+  position: relative;
+  z-index: 10;
+}
+
+.fnd-hero-card-wrap {
+  position: relative;
+}
+
+.fnd-hero-card {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  border-radius: 20px;
+  background: #191422;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  min-height: 150px;
+  height: 100%;
+  color: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fnd-hero-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.45);
+}
+
+.fnd-hero-card__body {
+  flex: 1;
+  padding: clamp(18px, 2.2vw, 24px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.fnd-hero-card__title {
+  margin: 0 0 8px;
+  font-size: clamp(17px, 1.6vw, 20px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.fnd-hero-card__desc {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #c8c5d6;
+}
+
+.fnd-hero-card__link {
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.15s ease;
+}
+
+.fnd-hero-card__link:hover {
+  color: var(--fnd-arena);
+}
+
+.fnd-hero-card__media {
+  width: clamp(120px, 15vw, 160px);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.fnd-hero-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.fnd-hero-card:hover .fnd-hero-card__media img {
+  transform: scale(1.05);
+}
+
+/* Detalle de marca: Cuadrado de acento violeta decorativo detrás de la tarjeta */
+.fnd-hero-card__accent-box {
+  position: absolute;
+  right: -16px;
+  bottom: -16px;
+  width: 100px;
+  height: 100px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--fnd-violeta) 0%, #7038c7 100%);
+  box-shadow: 0 10px 28px rgba(72, 17, 154, 0.45);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 840px) {
+  .fnd-hero-cards {
+    grid-template-columns: 1fr;
+    margin-top: -50px;
+  }
+  .fnd-hero-card__media {
+    width: 120px;
+  }
+}
+
+@media (max-width: 640px) {
+  .fnd-hero {
+    min-height: 52vh;
+  }
+  .fnd-hero__actions {
+    width: 100%;
+  }
+  .fnd-hero__actions .fnd-btn {
+    width: 100%;
+  }
+  .fnd-hero-card {
+    flex-direction: column;
+  }
+  .fnd-hero-card__media {
+    width: 100%;
+    height: 140px;
+  }
+}
+
+.fnd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.fnd-btn--primary {
+  background: var(--fnd-violeta);
+  color: #fff;
+  border: 1px solid var(--fnd-violeta);
+  box-shadow: 0 4px 14px rgba(72, 17, 154, 0.35);
+}
+
+.fnd-btn--primary:hover {
+  background: var(--fnd-violeta-hover);
+  border-color: var(--fnd-violeta-hover);
+  transform: translateY(-1px);
+}
+
+.fnd-btn--outline {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(4px);
+}
+
+.fnd-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+/* ── Fila de KPIs del Hero ── */
+.fnd-hero-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: clamp(12px, 1.8vw, 18px);
+  margin-top: clamp(24px, 3.4vw, 36px);
+}
+
+.fnd-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: rgba(38, 38, 38, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.fnd-kpi-card__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fnd-arena);
+  flex-shrink: 0;
+}
+
+.fnd-kpi-card__value {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.fnd-kpi-card__label {
+  display: block;
+  font-size: 12px;
+  color: var(--fnd-lavanda);
+  font-weight: 500;
+}
+
+/* ── Contenedor principal de contenido ── */
+.fnd-container {
+  width: min(100% - 2 * clamp(16px, 4vw, 48px), 1320px);
+  margin: 0 auto;
+  padding-top: clamp(24px, 3.5vw, 38px);
+}
+
+/* ── Alerta de pendientes ── */
+.fnd-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 18px 24px;
+  border-radius: var(--fnd-radius);
+  background: #ffffff;
+  border: 1px solid rgba(72, 17, 154, 0.18);
+  box-shadow: var(--fnd-shadow);
+}
+
+html[data-theme='dark'] .fnd-alert {
+  background: rgba(38, 32, 48, 0.85);
+  border-color: rgba(185, 185, 202, 0.18);
+}
+
+.fnd-alert__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+.fnd-alert__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(72, 17, 154, 0.1);
+  color: var(--fnd-violeta);
+  flex-shrink: 0;
+}
+
+html[data-theme='dark'] .fnd-alert__icon {
+  background: rgba(185, 185, 202, 0.15);
+  color: var(--fnd-lavanda);
+}
+
+.fnd-alert__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.fnd-alert__desc {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: rgba(38, 38, 38, 0.7);
+}
+
+html[data-theme='dark'] .fnd-alert__desc {
+  color: rgba(243, 239, 249, 0.7);
+}
+
+/* ── Tarjetas editoriales de la fundación ── */
+.fnd-card {
+  padding: clamp(20px, 2.6vw, 28px);
+  border-radius: var(--fnd-radius);
+  background: #ffffff;
+  border: 1px solid rgba(38, 38, 38, 0.08);
+  box-shadow: var(--fnd-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+html[data-theme='dark'] .fnd-card {
+  background: rgba(32, 26, 40, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.fnd-card__heading {
+  margin: 0 0 14px;
+  font-size: clamp(20px, 2.2vw, 24px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.fnd-card__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(38, 38, 38, 0.85);
+}
+
+html[data-theme='dark'] .fnd-card__text {
+  color: rgba(243, 239, 249, 0.85);
+}
+
+.fnd-card__eyebrow {
+  margin: 20px 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fnd-violeta);
+}
+
+html[data-theme='dark'] .fnd-card__eyebrow {
+  color: var(--fnd-lavanda);
+}
+
+/* Listas con checkmark */
+.fnd-check-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fnd-check-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: rgba(38, 38, 38, 0.82);
+}
+
+html[data-theme='dark'] .fnd-check-list li {
+  color: rgba(243, 239, 249, 0.82);
+}
+
+.fnd-check-list .fnd-check-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(72, 17, 154, 0.12);
+  color: var(--fnd-violeta);
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
+  background: rgba(185, 185, 202, 0.2);
+  color: #fff;
+}
+
+/* Fotos de la fundación */
+.fnd-figure {
+  position: relative;
+  min-height: 220px;
+  border-radius: var(--fnd-radius);
+  overflow: hidden;
+  box-shadow: var(--fnd-shadow);
+  border: 1px solid rgba(38, 38, 38, 0.08);
+}
+
+.fnd-figure img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.fnd-figure:hover img {
+  transform: scale(1.03);
+}
+
+.fnd-figure__cap {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(38, 38, 38, 0.82);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Píldoras de qué recibimos */
+.fnd-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fnd-pill-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #f4eee5;
+  border: 1px solid rgba(38, 38, 38, 0.12);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fnd-grafito);
+}
+
+html[data-theme='dark'] .fnd-pill-tag {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f3eff9;
+}
+
+/* Barras de progreso de necesidades */
+.fnd-progress-item {
+  margin-bottom: 16px;
+}
+
+.fnd-progress-item:last-child {
+  margin-bottom: 0;
+}
+
+.fnd-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.fnd-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #eae2d6;
+  overflow: hidden;
+}
+
+html[data-theme='dark'] .fnd-progress-bar {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.fnd-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--fnd-violeta) 0%, #7038c7 100%);
+  transition: width 0.4s ease;
+}
+
+/* Lista de contacto */
+.fnd-contact-dl {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 16px;
+  margin: 0;
+}
+
+.fnd-contact-item {
+  border-bottom: 1px solid rgba(38, 38, 38, 0.08);
+  padding-bottom: 8px;
+}
+
+html[data-theme='dark'] .fnd-contact-item {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.fnd-contact-item.full-width {
+  grid-column: span 2;
+}
+
+.fnd-contact-dt {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(38, 38, 38, 0.55);
+}
+
+html[data-theme='dark'] .fnd-contact-dt {
+  color: rgba(243, 239, 249, 0.55);
+}
+
+.fnd-contact-dd {
+  margin: 3px 0 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* ── Página de solicitudes de donación (/fundacion/donaciones) ── */
+.fnd-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 20px;
+}
+
+.fnd-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(38, 38, 38, 0.12);
+  background: #ffffff;
+  color: var(--fnd-grafito);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+html[data-theme='dark'] .fnd-filter-btn {
+  background: rgba(38, 32, 48, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f3eff9;
+}
+
+.fnd-filter-btn:hover {
+  border-color: var(--fnd-violeta);
+  transform: translateY(-1px);
+}
+
+.fnd-filter-btn[aria-pressed='true'] {
+  background: var(--fnd-violeta);
+  border-color: var(--fnd-violeta);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(72, 17, 154, 0.28);
+}
+
+.fnd-filter-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.fnd-filter-btn[aria-pressed='true'] .fnd-filter-badge {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Lista de solicitudes */
+.fnd-donation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fnd-donation-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px 24px;
+  border-radius: var(--fnd-radius);
+  background: #ffffff;
+  border: 1px solid rgba(38, 38, 38, 0.08);
+  box-shadow: var(--fnd-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+html[data-theme='dark'] .fnd-donation-card {
+  background: rgba(32, 26, 40, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.fnd-donation-card__img {
+  width: 90px;
+  height: 104px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #e8dccb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.fnd-donation-card__main {
+  flex: 1;
+  min-width: 240px;
+}
+
+.fnd-donation-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.fnd-donation-card__title {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.fnd-donation-card__meta {
+  font-size: 13px;
+  color: rgba(38, 38, 38, 0.72);
+  margin: 3px 0;
+}
+
+html[data-theme='dark'] .fnd-donation-card__meta {
+  color: rgba(243, 239, 249, 0.72);
+}
+
+.fnd-donation-card__logistics {
+  font-size: 13px;
+  color: rgba(38, 38, 38, 0.85);
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+html[data-theme='dark'] .fnd-donation-card__logistics {
+  color: rgba(243, 239, 249, 0.85);
+}
+
+.fnd-donation-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 170px;
+}
+
+@media (max-width: 640px) {
+  .fnd-donation-card__actions {
+    align-items: flex-start;
+    width: 100%;
+    border-top: 1px solid rgba(38, 38, 38, 0.08);
+    padding-top: 14px;
+  }
+}
+

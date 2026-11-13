@@ -40,7 +40,7 @@
 .sr-auth-bg {
   position: absolute;
   inset: 0;
-  background: rgba(20, 14, 32, 0.86);
+  background: var(--color-overlay, rgba(20, 14, 32, 0.86));
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   opacity: 0;
@@ -422,8 +422,9 @@
 
 .sr-field input:focus,
 .sr-field select:focus {
-  border-color: #E8DCCB;
+  border-color: var(--color-focus-ring, #E8DCCB);
   background: rgba(38, 38, 38, 0.65);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-focus-ring, #a98bea) 35%, transparent);
 }
 
 .sr-pw {
@@ -639,9 +640,9 @@
 .sr-auth-err {
   padding: 9px 12px;
   border-radius: 10px;
-  background: rgba(127, 29, 29, 0.55);
-  border: 1px solid rgba(248, 113, 113, 0.45);
-  color: #fecaca;
+  background: var(--color-danger-bg, rgba(127, 29, 29, 0.55));
+  border: 1px solid var(--color-danger, rgba(248, 113, 113, 0.45));
+  color: var(--color-danger-text, #fecaca);
   font-size: 12px;
   line-height: 1.35;
 }

@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EnvironmentBanner, MockBanner } from '@/modules/core/components/Status'
 import { iniciales } from '@/modules/core/components/UserMenu'
 import { Logo } from '@/modules/core/design-system'
+import { AppearancePicker } from '@/modules/core/theme'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 import { env } from '@/configs/env'
@@ -120,10 +121,13 @@ function AdminShell() {
               <p className="text-[11px] font-bold uppercase tracking-[.16em] text-white/60">
                 <span className="max-sm:hidden">Administración <span aria-hidden="true">/</span> </span><span className="text-blanco">{actual}</span>
               </p>
-              <span className="ml-auto flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-3">
-                <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-violeta text-[10px] font-bold text-blanco">{iniciales(user.name)}</span>
-                <span className="text-[11px] font-bold uppercase tracking-[.14em]">Admin</span>
-              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <AppearancePicker />
+                <span className="flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-3">
+                  <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-violeta text-[10px] font-bold text-blanco">{iniciales(user.name)}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-[.14em]">Admin</span>
+                </span>
+              </div>
               <button type="button" onClick={() => setSalir(true)} className="rounded-lg px-2 py-1.5 text-sm text-white/70 hover:text-blanco lg:hidden">Salir</button>
             </div>
             {/* En pantallas pequeñas las secciones van en una fila desplazable */}

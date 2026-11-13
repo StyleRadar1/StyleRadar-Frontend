@@ -32,21 +32,21 @@ export function AdminStatsView() {
   const mesCorto = income ? MES_LARGO[income.mesActual.mes] ?? income.mesActual.mes : 'este mes'
 
   return (
-    <>
+    <div className="text-[var(--color-text)]">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className={'text-[11px] font-bold uppercase tracking-[.16em] text-white/60'}>Resumen general · {mes}</p>
-          <h1 className="mt-1 text-5xl font-extrabold tracking-tight md:text-7xl">Estadísticas</h1>
+          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-text-muted)]">Resumen general · {mes}</p>
+          <h1 className="mt-1 text-5xl font-extrabold tracking-tight md:text-7xl text-[var(--color-text)]">Estadísticas</h1>
         </div>
-        <p aria-hidden="true" className="text-right text-xl font-extrabold leading-none">StyleRadar<sup className="text-[10px]">®</sup><span className="mt-1 block border-t border-white/40 pt-1 text-[10px] font-bold uppercase tracking-[.2em] text-white/60">Bogotá</span></p>
+        <p aria-hidden="true" className="text-right text-xl font-extrabold leading-none">StyleRadar<sup className="text-[10px]">®</sup><span className="mt-1 block border-t border-[var(--color-border)] pt-1 text-[10px] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)]">Bogotá</span></p>
       </div>
 
       <div className="mt-10 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Estadísticas generales</h2>
-          <p className="mt-1 text-sm text-white/70">Indicadores globales de StyleRadar · {mes}</p>
+          <h2 className="text-2xl font-bold text-[var(--color-text)]">Estadísticas generales</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Indicadores globales de StyleRadar · {mes}</p>
         </div>
-        <button type="button" onClick={() => exportar(ind, daily.data, income, accounts)} className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10">Exportar a Excel</button>
+        <button type="button" onClick={() => exportar(ind, daily.data, income, accounts)} className="rounded-xl border border-[var(--color-border)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface)] text-[var(--color-text)]">Exportar a Excel</button>
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -99,7 +99,7 @@ export function AdminStatsView() {
           <ActivityHeatmap dias={daily.data?.dias ?? []} />
         </Panel>
       </div>
-    </>
+    </div>
   )
 }
 

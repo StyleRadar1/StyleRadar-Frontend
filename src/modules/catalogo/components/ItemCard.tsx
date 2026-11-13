@@ -9,10 +9,10 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
     <div className="relative h-full">
       <Link
         to={`/catalogo/${item.id}`}
-        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[.04] transition duration-200 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-violeta-claro/60 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-foco,#e8dccb)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--sr-bg,#1d1d1d)]"
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm transition duration-200 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
       >
         {/* Contenedor de foto con aspect-ratio fijo 4/5 y altura máxima acotada en desktop (~220-240px) */}
-        <div className="relative aspect-[4/5] max-h-[230px] w-full shrink-0 overflow-hidden bg-[var(--sr-bg-2,#262626)]">
+        <div className="relative aspect-[4/5] max-h-[230px] w-full shrink-0 overflow-hidden bg-[var(--color-surface-raised,var(--color-surface))]">
           {/* Fondo difuminado (blur ~20px, scale ~1.2, baja opacidad) sobre token del tema para rellenar bandas laterales armónicamente */}
           <img
             src={item.imagen}
@@ -35,21 +35,21 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         {/* Información compacta con padding reducido y espacio lateral para el botón flotante */}
         <div className="flex flex-1 flex-col justify-between p-3.5 pb-3.5 pr-13">
           <div>
-            <p className="line-clamp-1 text-[10px] font-bold uppercase tracking-[.14em] text-arena">
+            <p className="line-clamp-1 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--color-accent)]">
               {item.estilo} · {item.tienda}
             </p>
             <h3
-              className="mt-1 line-clamp-2 text-xs font-semibold leading-snug text-blanco transition-colors group-hover:text-violeta-claro"
+              className="mt-1 line-clamp-2 text-xs font-semibold leading-snug text-[var(--color-text)] transition-colors group-hover:text-[var(--color-accent)]"
               title={item.nombre}
             >
               {item.nombre}
             </h3>
           </div>
-          <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5 text-xs text-white/70">
-            <span className="text-sm font-semibold text-blanco">
+          <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
+            <span className="text-sm font-semibold text-[var(--color-text)]">
               {formatCOP(item.precio)}
             </span>
-            <span className="text-[11px] text-white/60">
+            <span className="text-[11px] text-[var(--color-text-muted)]">
               a {item.distanciaKm.toLocaleString('es-CO')} km
             </span>
           </div>
@@ -58,7 +58,7 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
       {/* RF-73: escribirle a la tienda desde cualquier prenda. Va fuera del enlace para no anidar elementos interactivos */}
       <ContactButton
         icon
-        className="absolute bottom-3 right-3"
+        className="absolute bottom-3 right-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         label={`Escribir a ${item.tienda} sobre ${item.nombre}`}
         contacto={tiendaContacto(item.tienda)}
         asunto={item.nombre}

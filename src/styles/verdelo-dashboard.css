@@ -266,3 +266,33 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
+/* =====================================================================
+   Adaptación de temas: Claro, Oscuro y Daltónico
+   ===================================================================== */
+html[data-theme="light"] .sr-verdelo-shell,
+html[data-theme="claro"] .sr-verdelo-shell,
+html[data-tema="claro"] .sr-verdelo-shell {
+  background-color: var(--color-bg, #ffffff);
+  background-image:
+    radial-gradient(760px 540px at 12% 10%, rgba(72, 17, 154, 0.08) 0%, transparent 70%),
+    radial-gradient(680px 500px at 88% 22%, rgba(123, 77, 216, 0.06) 0%, transparent 72%),
+    linear-gradient(180deg, #ffffff 0%, #fbf9f6 50%, #f4efe6 100%);
+  color: var(--color-text, #262626);
+}
+
+html[data-theme="light"] .sr-verdelo-panel,
+html[data-theme="claro"] .sr-verdelo-panel,
+html[data-tema="claro"] .sr-verdelo-panel {
+  border-color: var(--color-border, #d4c7b5);
+  background: var(--color-surface, #f4efe6);
+  box-shadow: 0 10px 30px rgba(38, 38, 38, 0.06);
+  color: var(--color-text, #262626);
+}
+
+html[data-theme="light"] .sr-verdelo-page::before,
+html[data-theme="claro"] .sr-verdelo-page::before,
+html[data-tema="claro"] .sr-verdelo-page::before {
+  opacity: 0.3;
+}
+
+

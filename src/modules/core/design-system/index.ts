@@ -1,4 +1,7 @@
 export { Button } from './Button'
 export { Card } from './Card'
 export { Badge } from './Badge'
+export { StatusBadge, type StatusType } from './StatusBadge'
 export { Logo } from './Logo'
+export { AuroraBackground, type AuroraBackgroundProps } from './AuroraBackground'
+export { AURORA_EXCLUDED_ROUTES, isAuroraExcluded } from './auroraRoutes'

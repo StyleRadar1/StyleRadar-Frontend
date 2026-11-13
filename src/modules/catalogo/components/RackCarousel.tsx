@@ -245,9 +245,9 @@ export function RackCarousel({
       {/* 3. DETALLE INFERIOR MINIMALISTA DE LA PRENDA SELECCIONADA */}
       {selectedItem && (
         <div className="mt-6 flex flex-col items-center justify-center px-4 text-center">
-          <h3 className="text-sm sm:text-base font-medium text-[#262626]">
+          <p className="text-sm sm:text-base font-medium text-[#262626]">
             {selectedItem.name}
-          </h3>
+          </p>
           <p className="mt-0.5 text-xs text-gray-500">
             {formatCOP(selectedItem.price)}
           </p>

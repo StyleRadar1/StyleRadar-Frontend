@@ -41,20 +41,20 @@ function CheckoutResult() {
   }
 
   return (
-    <section className="mx-auto max-w-lg px-4 py-16 text-center">
+    <section className="mx-auto max-w-lg px-4 py-16 text-center text-[var(--color-text)]">
       <span className="text-5xl">{icons[result.status]}</span>
-      <h1 className="mt-4 text-3xl font-extrabold">{result.status === 'aprobado' ? '¡Listo!' : result.status === 'pendiente' ? 'Pago pendiente' : 'Pago rechazado'}</h1>
-      <p className="mt-2 text-white/70">{messages[result.status]}</p>
+      <h1 className="mt-4 text-3xl font-extrabold text-[var(--color-text)]">{result.status === 'aprobado' ? '¡Listo!' : result.status === 'pendiente' ? 'Pago pendiente' : 'Pago rechazado'}</h1>
+      <p className="mt-2 text-[var(--color-text-muted)]">{messages[result.status]}</p>
       <Card className="mx-auto mt-8 max-w-sm text-left">
         <dl className="grid grid-cols-2 gap-2 text-sm">
-          <dt className="text-white/50">Orden</dt><dd className="font-mono">{result.orderId}</dd>
-          <dt className="text-white/50">Plan</dt><dd>{result.planName}</dd>
-          <dt className="text-white/50">Monto</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
-          {result.method && <><dt className="text-white/50">Método</dt><dd>{result.method}</dd></>}
-          <dt className="text-white/50">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
+          <dt className="text-[var(--color-text-muted)]">Orden</dt><dd className="font-mono">{result.orderId}</dd>
+          <dt className="text-[var(--color-text-muted)]">Plan</dt><dd>{result.planName}</dd>
+          <dt className="text-[var(--color-text-muted)]">Monto</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
+          {result.method && <><dt className="text-[var(--color-text-muted)]">Método</dt><dd>{result.method}</dd></>}
+          <dt className="text-[var(--color-text-muted)]">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
         </dl>
       </Card>
-      <Link to="/planes" className="mt-6 inline-block text-sm font-semibold text-arena underline">Ver mis planes</Link>
+      <Link to="/planes" className="mt-6 inline-block text-sm font-semibold text-[var(--color-sand)] underline">Ver mis planes</Link>
     </section>
   )
 }
@@ -63,18 +63,18 @@ function CheckoutResult() {
 function PlanCard({ plan, currentPlan, onSelect }: { plan: PlanDto; currentPlan: string | null; onSelect: (p: PlanDto) => void }) {
   const isCurrent = currentPlan === plan.id
   return (
-    <Card className={`relative flex flex-col ${plan.highlighted ? 'border-violeta ring-2 ring-violeta/30' : ''}`}>
+    <Card className={`relative flex flex-col text-[var(--color-text)] ${plan.highlighted ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/30' : ''}`}>
       {plan.highlighted && (
         <Badge tone="violeta" >Recomendado</Badge>
       )}
-      <h3 className="mt-3 text-2xl font-extrabold">{plan.name}</h3>
-      <p className="mt-1 text-3xl font-extrabold">
-        {plan.price === 0 ? 'Gratis' : <>{formatCOP(plan.price)}<span className="text-base font-normal text-white/50">/mes</span></>}
+      <h3 className="mt-3 text-2xl font-extrabold text-[var(--color-text)]">{plan.name}</h3>
+      <p className="mt-1 text-3xl font-extrabold text-[var(--color-text)]">
+        {plan.price === 0 ? 'Gratis' : <>{formatCOP(plan.price)}<span className="text-base font-normal text-[var(--color-text-muted)]">/mes</span></>}
       </p>
-      <ul className="mt-4 flex-1 space-y-2 text-sm text-white/80">
+      <ul className="mt-4 flex-1 space-y-2 text-sm text-[var(--color-text-muted)]">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2">
-            <span className="mt-0.5 text-green-400">✓</span>{f}
+            <span className="mt-0.5 text-[var(--color-success)]">✓</span>{f}
           </li>
         ))}
       </ul>

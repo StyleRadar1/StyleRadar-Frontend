@@ -3,23 +3,26 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AdminLayout } from '@/app/layouts/AdminLayout'
+import { ThemeProvider } from '@/modules/core/theme'
 import { AuthProvider } from '@/modules/identidad/states/AuthProvider'
 import StatsPage from '../pages/StatsPage'
 import { loginAs } from './helpers'
 
 const renderAdmin = (path = '/admin/estadisticas') => render(
-  <AuthProvider>
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route element={<AdminLayout />}>
-          <Route path="/admin/estadisticas" element={<StatsPage />} />
-          <Route path="/admin/usuarios" element={<p>Página de usuarios</p>} />
-        </Route>
-        <Route path="/" element={<p>Inicio del landing</p>} />
-        <Route path="/catalogo" element={<p>Catálogo</p>} />
-      </Routes>
-    </MemoryRouter>
-  </AuthProvider>,
+  <ThemeProvider>
+    <AuthProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/estadisticas" element={<StatsPage />} />
+            <Route path="/admin/usuarios" element={<p>Página de usuarios</p>} />
+          </Route>
+          <Route path="/" element={<p>Inicio del landing</p>} />
+          <Route path="/catalogo" element={<p>Catálogo</p>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>
+  </ThemeProvider>,
 )
 
 beforeEach(() => { localStorage.clear(); sessionStorage.clear() })

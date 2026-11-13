@@ -40,7 +40,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="sr-landing relative min-h-screen bg-[#15121b] text-white selection:bg-[#48119a] selection:text-white">
+    <div className="sr-landing relative min-h-screen bg-transparent text-[var(--sr-hero-text,#fff)] selection:bg-[#48119a] selection:text-white">
       {/* Efectos sensoriales: grano analógico y cursor interactivo */}
       <NoiseGrain />
       <CustomCursor />

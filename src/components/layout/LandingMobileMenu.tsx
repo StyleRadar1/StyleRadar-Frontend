@@ -20,7 +20,7 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
 
   return (
     <div
-      className="fixed inset-0 z-40 bg-[#15121b]/95 backdrop-blur-xl flex flex-col justify-between p-8 pt-28 xl:hidden transition-all"
+      className="fixed inset-0 z-40 bg-[var(--color-bg-elevated,var(--sr-surface-raised))]/95 backdrop-blur-xl flex flex-col justify-between p-8 pt-28 xl:hidden transition-all text-[var(--color-text,#ffffff)]"
       id="landing-mobile-menu"
       role="dialog"
       aria-modal="true"
@@ -32,14 +32,14 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
             key={item.targetId}
             type="button"
             onClick={() => handleScrollTo(item.targetId)}
-            className="text-left text-2xl font-black text-white/90 hover:text-white uppercase tracking-tight py-2 border-b border-white/10 transition-colors"
+            className="text-left text-2xl font-black text-[var(--color-text)] hover:text-[var(--color-accent)] uppercase tracking-tight py-2 border-b border-[var(--color-border)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             {item.label}
           </button>
         ))}
       </nav>
 
-      <div className="flex flex-col gap-3 pt-6 border-t border-white/15">
+      <div className="flex flex-col gap-3 pt-6 border-t border-[var(--color-border)]">
         {onOpenLogin ? (
           <button
             type="button"
@@ -47,7 +47,7 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
               onClose()
               onOpenLogin()
             }}
-            className="w-full py-4 text-center rounded-full border border-white/30 text-white font-bold text-sm tracking-wider uppercase bg-white/5"
+            className="w-full py-4 text-center rounded-full border border-[var(--color-border)] text-[var(--color-text)] font-bold text-sm tracking-wider uppercase bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             Iniciar sesión
           </button>
@@ -55,7 +55,7 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
           <Link
             to="/login"
             onClick={onClose}
-            className="w-full py-4 text-center rounded-full border border-white/30 text-white font-bold text-sm tracking-wider uppercase bg-white/5"
+            className="w-full py-4 text-center rounded-full border border-[var(--color-border)] text-[var(--color-text)] font-bold text-sm tracking-wider uppercase bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             Iniciar sesión
           </Link>
@@ -64,7 +64,7 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
         <Link
           to="/catalogo"
           onClick={onClose}
-          className="w-full py-4 text-center rounded-full bg-[#48119a] text-white font-black text-sm tracking-wider uppercase shadow-[0_8px_25px_#48119a77]"
+          className="w-full py-4 text-center rounded-full bg-[var(--color-accent)] text-[var(--color-text-on-accent)] font-black text-sm tracking-wider uppercase shadow-lg shadow-[var(--color-accent)]/30 hover:opacity-90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
           Entrar a StyleRadar ↗
         </Link>
@@ -72,4 +72,3 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
     </div>
   )
 }
-

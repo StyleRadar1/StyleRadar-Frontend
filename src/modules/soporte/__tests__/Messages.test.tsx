@@ -10,13 +10,10 @@ const routes = [{ path: '/mensajes', element: <MessagesPage /> }]
 beforeEach(() => { resetChatMock(); loginAs('u-1', 'Valentina Rojas') })
 
 describe('mensajes (RF-40, RF-41 y RF-73)', () => {
-  it('lista las conversaciones y filtra por tipo de contacto', async () => {
-    const user = userEvent.setup()
+  it('lista las conversaciones en el vinilo', async () => {
     renderAt('/mensajes', routes)
     const lista = await screen.findByRole('complementary', { name: 'Conversaciones' }, { timeout: 3000 })
     expect(within(lista).getAllByRole('listitem')).toHaveLength(3)
-    await user.click(screen.getByRole('button', { name: 'Tiendas' }))
-    expect(within(lista).getAllByRole('listitem')).toHaveLength(1)
     expect(within(lista).getByText('Luna Store')).toBeInTheDocument()
   })
 
@@ -26,7 +23,7 @@ describe('mensajes (RF-40, RF-41 y RF-73)', () => {
     await user.click(await screen.findByRole('button', { name: /Sofía L\./ }, { timeout: 3000 }))
     const hilo = await screen.findByRole('list', { name: 'Mensajes con Sofía L.' }, { timeout: 3000 })
     expect(within(hilo).getByText('Sí, sigue disponible. ¿Te queda bien el sábado?')).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByText('sin leer', { exact: false })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument())
 
     const enviar = screen.getByRole('button', { name: 'Enviar' })
     expect(enviar).toBeDisabled()

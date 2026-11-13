@@ -1,6 +1,4 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
-import { cerrarSesionYVolverAlInicio } from '@/modules/identidad/states/salida'
 import './StoreInfoPage.css'
 
 type LegalStoreInfo = {
@@ -22,6 +20,8 @@ const INITIAL_INFO: LegalStoreInfo = {
 }
 
 const STORAGE_KEY = 'styleradar-store-legal-info'
+const PHOTO_KEY = 'styleradar-store-photo'
+const DEFAULT_PHOTO = '/img/sesion/rol-tienda.jpg'
 
 function readInfo(): LegalStoreInfo {
   try {
@@ -36,10 +36,42 @@ export default function StoreInfoPage() {
   const [info, setInfo] = useState<LegalStoreInfo>(readInfo)
   const [draft, setDraft] = useState<LegalStoreInfo>(() => readInfo())
   const [notice, setNotice] = useState('')
+  const [storePhoto, setStorePhoto] = useState<string>(() => {
+    try {
+      return localStorage.getItem(PHOTO_KEY) || DEFAULT_PHOTO
+    } catch {
+      return DEFAULT_PHOTO
+    }
+  })
 
   const discard = () => {
     setDraft(info)
     setNotice('')
+  }
+
+  const handleCambiarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setNotice('Por favor selecciona una imagen válida.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        const dataUrl = reader.result
+        setStorePhoto(dataUrl)
+        try { localStorage.setItem(PHOTO_KEY, dataUrl) } catch {}
+        setNotice('Foto de la tienda actualizada con éxito.')
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRestaurarFoto = () => {
+    setStorePhoto(DEFAULT_PHOTO)
+    try { localStorage.setItem(PHOTO_KEY, DEFAULT_PHOTO) } catch {}
+    setNotice('Se restauró la foto predeterminada de la tienda.')
   }
 
   const save = (event: FormEvent<HTMLFormElement>) => {
@@ -54,10 +86,37 @@ export default function StoreInfoPage() {
   const update = (key: keyof LegalStoreInfo, value: string) => setDraft((current) => ({ ...current, [key]: value }))
 
   return <main className="store-info">
-    <header className="store-info__store-head"><div className="store-info__identity"><span className="store-info__avatar">LS</span><div><h1>Luna Store</h1><p>TIENDA ALIADA · LUNA@STYLERADAR.CO · DESDE FEB 2026</p></div></div><div className="store-info__status"><div><strong>Verificada</strong><span>VERIFICACIÓN</span></div><div><strong>Activa</strong><span>SUSCRIPCIÓN</span></div></div></header>
-    <div className="store-info__layout"><aside className="store-info__side"><Link className="is-current" to="/tienda/informacion">Información de la tienda</Link><Link to="/tienda/estadisticas">Estadísticas</Link><Link to="/tienda/suscripcion">Suscripción</Link><button type="button" onClick={cerrarSesionYVolverAlInicio}>↪ <span>Cerrar sesión</span></button></aside>
-      <section className="store-info__main"><header className="store-info__heading"><h2>Información de la tienda</h2><p>Datos legales y de contacto de la tienda. StyleRadar los usa para<br className="store-info__wide-break" /> verificarla y facturar; no se muestran al público.</p></header>
+    <div className="store-info__layout">
+      <section className="store-info__main">
+        <header className="store-info__heading">
+          <h2>Información de la tienda</h2>
+          <p>Datos legales, imagen y de contacto de la tienda. Gestiona cómo te ven tus clientes y tu radar local.</p>
+        </header>
+
         {notice && <p className="store-info__notice" role="status">{notice}</p>}
+
+        {/* ── Sección para cambiar la foto de la tienda ── */}
+        <div className="store-info__photo-card">
+          <div className="store-info__photo-preview">
+            <img src={storePhoto} alt="Foto actual de la tienda" />
+          </div>
+          <div className="store-info__photo-info">
+            <h3>Foto de la tienda</h3>
+            <p>Se muestra en el radar de Bogotá, en el hero de tu panel y en tu perfil de tienda.</p>
+            <div className="store-info__photo-actions">
+              <label className="store-info__button store-info__button--primary cursor-pointer inline-flex items-center justify-center gap-2">
+                <span>📷 Cambiar foto</span>
+                <input type="file" accept="image/*" className="sr-only" onChange={handleCambiarFoto} />
+              </label>
+              {storePhoto !== DEFAULT_PHOTO && (
+                <button type="button" className="store-info__button" onClick={handleRestaurarFoto}>
+                  Restaurar original
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
         <form className="store-info__form" onSubmit={save}>
           <label className="store-info__field store-info__field--wide"><span>Razón social</span><input value={draft.legalName} onChange={(event) => update('legalName', event.target.value)} autoComplete="organization" /></label>
           <label className="store-info__field"><span>NIT <button type="button" className="store-info__help" title="Número de identificación tributaria asociado a la tienda." aria-label="Ayuda sobre el NIT">?</button></span><input value={draft.nit} onChange={(event) => update('nit', event.target.value)} inputMode="numeric" /></label>

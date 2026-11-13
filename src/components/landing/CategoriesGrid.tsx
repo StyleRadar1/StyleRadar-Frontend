@@ -155,7 +155,7 @@ export function CategoriesGrid() {
             <div className="cat-actions">
               <Link
                 to={`/catalogo?estilo=${encodeURIComponent(current.name)}`}
-                className="pe-explore-btn pe-big"
+                className="pe-explore-btn pe-big focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
                 <span>Ver prendas {current.name} en el catálogo</span>
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -181,7 +181,7 @@ export function CategoriesGrid() {
               const isActive = selectedCategory === index
               return (
                 <button
-                  className={`cat-thumb${isActive ? ' is-active' : ''}`}
+                  className={`cat-thumb${isActive ? ' is-active' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]`}
                   key={category.id}
                   type="button"
                   id={`cat-tab-${category.id}`}
