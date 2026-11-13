@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { errorKind, errorMessage } from '@/modules/core/api/errors'
+import { errorKind, errorMessage, fieldErrors, MENSAJES } from '@/modules/core/api/errors'
+import { Aviso } from '@/modules/core/components/errores'
+import { camposDeRegistro, TEXTOS_ACCESO } from '../utils/erroresAcceso'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { ROLE_HOME } from '@/modules/core/types/roles'
 import { Campo, Opciones } from '../components/Campo'
@@ -24,6 +26,7 @@ export default function RegisterPage() {
   const [terminos, setTerminos] = useState(false)
   const [errores, setErrores] = useState<Errores>({})
   const [general, setGeneral] = useState('')
+  const [noSePudo, setNoSePudo] = useState(false)
   const [loading, setLoading] = useState(false)
   const inFlight = useRef(false)
 
@@ -39,7 +42,7 @@ export default function RegisterPage() {
   const onSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
     if (inFlight.current) return
-    const e = validar(); setErrores(e); setGeneral('')
+    const e = validar(); setErrores(e); setGeneral(''); setNoSePudo(false)
     const primero = (['nombre', 'email', 'password', 'terminos'] as const).find((k) => e[k])
     if (primero) { document.getElementById(`su-${primero}`)?.focus(); return }
     inFlight.current = true; setLoading(true)
@@ -47,8 +50,16 @@ export default function RegisterPage() {
       const user = await register({ nombre: nombre.trim(), email: email.trim(), password, maniqui, aceptaTerminos: terminos })
       navigate(ROLE_HOME[user.role], { replace: true })
     } catch (err) {
-      if (errorKind(err) === 'conflicto') { setErrores({ email: errorMessage(err) }); document.getElementById('su-email')?.focus() }
-      else setGeneral(errorMessage(err, 'No se pudo crear la cuenta. Intenta de nuevo.'))
+      const kind = errorKind(err)
+      const campos = camposDeRegistro(fieldErrors(err))
+      const primero = (['nombre', 'email', 'password'] as const).find((k) => campos[k])
+      if (primero) {
+        // 400 · 422 con campos: el mensaje del servidor va debajo de cada campo y el cursor al primero.
+        setErrores(campos); document.getElementById(`su-${primero}`)?.focus()
+      } else if (kind === 'conflicto' || kind === 'datos') {
+        // 409 · 422 «el correo ya tiene cuenta»: nunca se confirma que el correo existe.
+        setNoSePudo(true)
+      } else setGeneral(kind === 'servidor' ? MENSAJES.servidor : errorMessage(err, 'No se pudo crear la cuenta. Intenta de nuevo.'))
     } finally {
       inFlight.current = false; setLoading(false)
     }
@@ -94,6 +105,15 @@ export default function RegisterPage() {
               {errores.terminos && <p id="su-terminos-err" role="alert" className="mt-1.5 text-xs text-[var(--sr-bad,#ffb4b4)]">{errores.terminos}</p>}
             </div>
 
+            {noSePudo && (
+              <Aviso tono="error" titulo={TEXTOS_ACCESO.registro}
+                accion={<>
+                  <Link to="/login" className="rounded-lg bg-violeta px-3 py-1.5 text-xs font-semibold text-white">Iniciar sesión</Link>
+                  <Link to="/login" className="rounded-lg border border-white/25 px-3 py-1.5 text-xs font-semibold">Recuperar contraseña</Link>
+                </>}>
+                Si ya tienes una cuenta, inicia sesión o recupera tu contraseña.
+              </Aviso>
+            )}
             {general && <p role="alert" className="rounded-xl bg-[var(--sr-bad,#ff8a8a)]/10 p-3 text-sm text-[var(--sr-bad,#ffb4b4)]">{general}</p>}
             <Button type="submit" disabled={loading}>{loading ? 'Creando cuenta…' : 'Crear cuenta'}</Button>
             <p className="text-xs text-white/65">¿Tienes una tienda o una fundación? Se unen a StyleRadar como aliadas, no con este formulario. Mira los <Link to="/planes" className="font-semibold text-arena underline underline-offset-4">planes para comercios</Link>.</p>

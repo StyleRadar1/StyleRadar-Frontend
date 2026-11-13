@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { ApiError } from '@/modules/core/api/apiClient'
+import { errorDeGoogle } from '../utils/erroresAcceso'
 import { ROLE_LABEL } from '@/modules/core/types/roles'
 import { env } from '@/configs/env'
 import { useAuth } from '../hooks/useAuth'
@@ -22,13 +22,14 @@ export function GoogleSignIn({ onSignedIn }: { onSignedIn: (user: UserSessionDto
   const enter = async (idToken: string) => {
     setBusy(true); setError('')
     try { onSignedIn(await loginWithGoogle(idToken)) }
-    catch (e) { setError(e instanceof ApiError || e instanceof Error ? e.message : 'No pudimos iniciar sesión con Google.') }
+    catch (e) { setError(errorDeGoogle(e)) }
     finally { setBusy(false) }
   }
   const start = async () => {
     if (env.useMocks) { setPicking(true); return }
     setError('')
-    try { await enter(await googleIdToken()) } catch (e) { setError(e instanceof Error ? e.message : 'No pudimos conectar con Google.') }
+    // Si la persona cierra la ventana de Google o algo falla: «No pudimos entrar con Google».
+    try { await enter(await googleIdToken()) } catch (e) { setError(errorDeGoogle(e)) }
   }
 
   return (
@@ -37,7 +38,7 @@ export function GoogleSignIn({ onSignedIn }: { onSignedIn: (user: UserSessionDto
         className="flex w-full items-center justify-center gap-3 rounded-xl border border-lavanda bg-blanco px-5 py-3 text-sm font-semibold text-grafito hover:bg-arena disabled:opacity-60">
         <GoogleLogo />{busy ? 'Entrando…' : 'Continuar con Google'}
       </button>
-      {error && <p role="alert" className="mt-2 text-sm text-[#ffb4b4]">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-sm text-[var(--sr-bad,#ffb4b4)]">{error}</p>}
       {/* El selector va fuera del formulario de login (portal) para no anidar formularios */}
       {picking && createPortal(<AccountPicker onClose={() => setPicking(false)} onPick={(email) => { setPicking(false); enter(`${DEMO_GOOGLE_PREFIX}${email}`) }} />, document.body)}
     </div>

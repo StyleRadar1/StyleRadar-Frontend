@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
-import { ApiError } from '@/modules/core/api/apiClient'
+import { tomarRetorno } from '@/modules/core/api/retorno'
+import { errorDeLogin } from '../utils/erroresAcceso'
 import { GoogleSignIn } from '../components/GoogleSignIn'
 import { useAuth } from '../hooks/useAuth'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../mocks/demoAccounts'
@@ -22,9 +23,10 @@ export default function LoginPage() {
     setError(''); setLoading(true)
     try {
       const user = await login({ email: mail, password: pass })
-      navigate(ROLE_HOME[user.role], { replace: true })
+      navigate(tomarRetorno() ?? ROLE_HOME[user.role], { replace: true })
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'No se pudo iniciar sesión.')
+      // Mismo criterio que el modal del inicio: nunca dice si el correo tiene cuenta.
+      setError(errorDeLogin(e).mensaje || 'Revisa el correo y la contraseña.')
     } finally {
       setLoading(false)
     }

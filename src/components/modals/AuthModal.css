@@ -267,6 +267,20 @@
   opacity: 0;
 }
 
+/* Los avisos de error aparecen después de la animación de entrada de la tarjeta:
+   sin esto quedaban con opacity 0 y la persona no veía el mensaje. */
+.sr-auth-card > .sr-auth-err {
+  opacity: 1;
+  animation: sr-auth-err-in .25s ease-out;
+}
+@keyframes sr-auth-err-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sr-auth-card > .sr-auth-err { animation: none; }
+}
+
 @media (min-width: 901px) {
   .sr-auth-stack {
     justify-items: end;
