@@ -30,10 +30,28 @@ const fundacion = (id: string) => {
   if (!f) throw new ApiError(404, 'Esa fundación no existe.')
   return f
 }
-const validar = (data: FoundationFormDto, selfId?: string) => {
-  const errores = erroresFundacion(data, db().fundaciones.filter((f) => f.id !== selfId).map((f) => f.nit))
-  const primero = Object.values(errores)[0]
-  if (primero) throw new ApiError(errores.nit?.startsWith('Ya hay') ? 409 : 400, primero)
+const validar = (data: FoundationFormDto, selfId?: string, requireCertificado = false) => {
+  const otras = db().fundaciones.filter((f) => f.id !== selfId)
+  const errores = erroresFundacion(
+    data,
+    {
+      nits: otras.map((f) => f.nit),
+      nombres: otras.map((f) => f.nombre),
+      representantes: otras.map((f) => f.representante),
+    },
+    { requireCertificado },
+  )
+  const fields: Record<string, string> = {}
+  for (const [k, msg] of Object.entries(errores)) {
+    if (msg) fields[k] = msg
+  }
+  const primero = Object.values(fields)[0]
+  const duplicated = Boolean(
+    errores.nit?.startsWith('Ya hay') ||
+    errores.nombre?.startsWith('Ya hay') ||
+    errores.representante?.startsWith('Esta persona'),
+  )
+  if (primero) throw new ApiError(duplicated ? 409 : 400, primero, fields)
 }
 
 export const adminStoreService = {
@@ -47,10 +65,20 @@ export const adminStoreService = {
   },
   /** Aprobar, rechazar (con motivo) o retirar la verificación. Solo una tienda verificada aparece en el radar. */
   async setVerification(id: string, verificacion: Verificacion, motivo?: string): Promise<AdminStoreDto> {
-    if (verificacion === 'Rechazada' && (motivo ?? '').trim().length < 10) throw new ApiError(400, 'Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.')
+    if (verificacion === 'Rechazada' && (motivo ?? '').trim().length < 10) {
+      throw new ApiError(400, 'Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.', {
+        motivo: 'Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.',
+      })
+    }
     if (env.useMocks) {
       failIfScenario('conflicto')
       const t = tienda(id)
+      if (t.verificacion === verificacion && verificacion !== 'Pendiente') {
+        throw new ApiError(409, 'Esta tienda ya fue revisada.')
+      }
+      if (verificacion === 'Verificada' && !t.documentos.some((d) => d.nombre.toUpperCase() === 'RUT' && d.recibido)) {
+        throw new ApiError(422, 'Falta el RUT para aprobar.')
+      }
       t.verificacion = verificacion
       t.motivoRechazo = verificacion === 'Rechazada' ? motivo!.trim() : undefined
       return mockDelay(t).then(avisar)
@@ -83,7 +111,7 @@ export const adminFoundationService = {
   async create(data: FoundationFormDto): Promise<AdminFoundationDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
-      validar(data)
+      validar(data, undefined, true)
       const f: AdminFoundationDto = { ...trim(data), id: `fd-${Date.now().toString(36)}`, estado: 'Activa', aliadaDesde: 'nov 2026', donaciones: { pendientes: 0, enProceso: 0, recibidas: 0, rechazadas: 0 } }
       db().fundaciones.push(f)
       return mockDelay(f, 600)
@@ -100,7 +128,13 @@ export const adminFoundationService = {
   },
   /** Una fundación inactiva no recibe donaciones nuevas ni aparece en el radar; su historial se conserva. */
   async setState(id: string, estado: AdminFoundationDto['estado']): Promise<AdminFoundationDto> {
-    if (env.useMocks) { failIfScenario('conflicto'); const f = fundacion(id); f.estado = estado; return mockDelay(f) }
+    if (env.useMocks) {
+      failIfScenario('conflicto')
+      const f = fundacion(id)
+      if (f.estado === estado && estado === 'Inactiva') throw new ApiError(409, 'Esta fundación ya está inactiva.')
+      f.estado = estado
+      return mockDelay(f)
+    }
     return apiClient.put<AdminFoundationDto>(`${API.fundaciones}/${encodeURIComponent(id)}/estado`, { estado }).then((r) => r.data)
   },
 }
@@ -114,7 +148,8 @@ export const adminPlaylistService = {
   /** Destaca o quita del inicio. Máximo tres destacadas. */
   async setFeatured(id: string, destacada: boolean): Promise<AdminPlaylistDto> {
     if (env.useMocks) {
-      failIfScenario('conflicto')
+      if (destacada) failIfScenario('conflicto')
+      else failIfScenario()
       const p = db().playlists.find((x) => x.id === id)
       if (!p) throw new ApiError(404, 'Esa playlist no existe.')
       if (destacada && !p.destacada && db().playlists.filter((x) => x.destacada).length >= MAX_DESTACADAS) {

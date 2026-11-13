@@ -1,12 +1,15 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import ModerationPage from '../pages/ModerationPage'
 import { renderAt } from '../../experiencia/__tests__/helpers'
 
 const routes = [{ path: '/admin/moderacion', element: <ModerationPage /> }]
 
 describe('ModerationPage (RF-61)', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+  })
   it('renderiza la página de moderación con sus filtros y lista inicial', async () => {
     renderAt('/admin/moderacion', routes)
     expect(screen.getByRole('heading', { name: /Moderación de publicaciones/i })).toBeInTheDocument()
@@ -65,6 +68,20 @@ describe('ModerationPage (RF-61)', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
+  })
+
+  it('si alguien ya moderó la prenda (422) muestra aviso y recarga la lista', async () => {
+    const user = userEvent.setup()
+    renderAt('/admin/moderacion', routes)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Pantalón cargo ripstop beige/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getAllByRole('button', { name: /Aprobar/i })[0])
+    sessionStorage.setItem('sr_mock', 'regla')
+    await user.click(screen.getByRole('button', { name: /Aprobar prenda/i }))
+    expect(await screen.findByText('Ya fue moderado — actualizamos la lista')).toBeInTheDocument()
   })
 })
 

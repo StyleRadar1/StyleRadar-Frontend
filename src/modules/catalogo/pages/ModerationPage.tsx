@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
 import { Card, Button, Badge } from '@/modules/core/design-system'
 import { Loading, EmptyState, ErrorState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { ErrorToast, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useModeration } from '../hooks/useModeration'
 import { REJECTION_REASONS, type ModerationItemDto, type ModerationType } from '../types/moderation.dto'
@@ -21,7 +24,7 @@ export default function ModerationPage() {
 
   const [filtroTipo, setFiltroTipo] = useState<ModerationType | 'TODAS'>('TODAS')
   const [vista, setVista] = useState<'item' | 'pub'>('item')
-  const [mensajeExito, setMensajeExito] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ tone: 'ok' | 'warn' | 'bad'; text: string } | null>(null)
 
   // Estados para diálogos
   const [itemParaAprobar, setItemParaAprobar] = useState<ModerationItemDto | null>(null)
@@ -54,56 +57,92 @@ export default function ModerationPage() {
     }))
   }, [itemsFiltrados])
 
+  const handleModerationError = (err: unknown, selectId?: string): boolean => {
+    const kind = errorKind(err)
+    const fields = fieldErrors(err)
+    if (selectId && (fields.motivo || (err instanceof ApiError && err.status === 400))) {
+      setErrorMotivo(fields.motivo ?? 'Selecciona el motivo de rechazo.')
+      window.setTimeout(() => document.getElementById(selectId)?.focus(), 0)
+      return true
+    }
+    if ((err instanceof ApiError && err.status === 422) || kind === 'conflicto') {
+      setItemParaAprobar(null)
+      setItemParaRechazar(null)
+      setLoteParaAprobar(null)
+      setLoteParaRechazar(null)
+      setErrorMotivo(null)
+      setToast({ tone: 'warn', text: 'Ya fue moderado — actualizamos la lista' })
+      void reload()
+      return true
+    }
+    setToast({ tone: 'bad', text: errorMessage(err, 'No pudimos completar la moderación.') })
+    return false
+  }
+
   const handleConfirmApprove = async () => {
     if (!itemParaAprobar) return
     const titulo = itemParaAprobar.titulo
-    await approve(itemParaAprobar.id)
-    setItemParaAprobar(null)
-    setMensajeExito(`«${titulo}» fue aprobada y ya está disponible en el catálogo.`)
-    setTimeout(() => setMensajeExito(null), 4000)
+    try {
+      await approve(itemParaAprobar.id)
+      setItemParaAprobar(null)
+      setToast({ tone: 'ok', text: `«${titulo}» fue aprobada y ya está disponible en el catálogo.` })
+    } catch (err) {
+      if (!handleModerationError(err)) setItemParaAprobar(null)
+    }
   }
 
   const handleConfirmReject = async () => {
     if (!itemParaRechazar) return
     if (!motivoRechazo) {
       setErrorMotivo('Selecciona el motivo de rechazo (obligatorio según RF-61).')
+      window.setTimeout(() => document.getElementById('motivoRechazo')?.focus(), 0)
       return
     }
     const titulo = itemParaRechazar.titulo
     const motivoFinal = motivoRechazo === 'Otro' && detalleRechazo.trim() ? detalleRechazo.trim() : motivoRechazo
-    await reject(itemParaRechazar.id, motivoFinal, detalleRechazo)
-    setItemParaRechazar(null)
-    setMotivoRechazo('')
-    setDetalleRechazo('')
-    setErrorMotivo(null)
-    setMensajeExito(`«${titulo}» fue rechazada. Se notificó al publicador.`)
-    setTimeout(() => setMensajeExito(null), 4000)
+    try {
+      await reject(itemParaRechazar.id, motivoFinal, detalleRechazo)
+      setItemParaRechazar(null)
+      setMotivoRechazo('')
+      setDetalleRechazo('')
+      setErrorMotivo(null)
+      setToast({ tone: 'ok', text: `«${titulo}» fue rechazada. Se notificó al publicador.` })
+    } catch (err) {
+      if (!handleModerationError(err, 'motivoRechazo')) setItemParaRechazar(null)
+    }
   }
 
   const handleConfirmBatchApprove = async () => {
     if (!loteParaAprobar) return
     const pub = loteParaAprobar.publicador
-    await approvePublisher(pub)
-    setLoteParaAprobar(null)
-    setMensajeExito(`Se aprobaron todas las publicaciones de ${pub}.`)
-    setTimeout(() => setMensajeExito(null), 4000)
+    try {
+      await approvePublisher(pub)
+      setLoteParaAprobar(null)
+      setToast({ tone: 'ok', text: `Se aprobaron todas las publicaciones de ${pub}.` })
+    } catch (err) {
+      if (!handleModerationError(err)) setLoteParaAprobar(null)
+    }
   }
 
   const handleConfirmBatchReject = async () => {
     if (!loteParaRechazar) return
     if (!motivoRechazo) {
       setErrorMotivo('Selecciona el motivo de rechazo en lote.')
+      window.setTimeout(() => document.getElementById('motivoLote')?.focus(), 0)
       return
     }
     const pub = loteParaRechazar.publicador
     const motivoFinal = motivoRechazo === 'Otro' && detalleRechazo.trim() ? detalleRechazo.trim() : motivoRechazo
-    await rejectPublisher(pub, motivoFinal)
-    setLoteParaRechazar(null)
-    setMotivoRechazo('')
-    setDetalleRechazo('')
-    setErrorMotivo(null)
-    setMensajeExito(`Se rechazaron las publicaciones de ${pub}.`)
-    setTimeout(() => setMensajeExito(null), 4000)
+    try {
+      await rejectPublisher(pub, motivoFinal)
+      setLoteParaRechazar(null)
+      setMotivoRechazo('')
+      setDetalleRechazo('')
+      setErrorMotivo(null)
+      setToast({ tone: 'ok', text: `Se rechazaron las publicaciones de ${pub}.` })
+    } catch (err) {
+      if (!handleModerationError(err, 'motivoLote')) setLoteParaRechazar(null)
+    }
   }
 
   return (
@@ -126,11 +165,13 @@ export default function ModerationPage() {
       </div>
 
       {/* Alerta de acción reciente */}
-      {mensajeExito && (
-        <div role="status" className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
-          {mensajeExito}
-        </div>
-      )}
+      <ErrorToast
+        open={Boolean(toast)}
+        tone={toast?.tone ?? 'ok'}
+        icon={toast?.tone === 'warn' ? 'refresh' : toast?.tone === 'bad' ? 'warn' : 'ok'}
+        title={toast?.text ?? ''}
+        onClose={() => setToast(null)}
+      />
 
       {/* Barra de filtros y visualización */}
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
@@ -421,6 +462,8 @@ export default function ModerationPage() {
                 setMotivoRechazo(e.target.value)
                 setErrorMotivo(null)
               }}
+              aria-invalid={Boolean(errorMotivo)}
+              aria-describedby={errorMotivo ? 'motivoRechazo-err' : undefined}
               className="mt-1.5 w-full rounded-xl border border-white/20 bg-grafito px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
             >
               <option value="">Selecciona un motivo</option>
@@ -430,7 +473,7 @@ export default function ModerationPage() {
                 </option>
               ))}
             </select>
-            {errorMotivo && <p className="mt-1 text-xs text-rose-400">{errorMotivo}</p>}
+            <FieldError id="motivoRechazo-err" message={errorMotivo ?? undefined} />
           </div>
 
           <div>
@@ -487,6 +530,8 @@ export default function ModerationPage() {
                 setMotivoRechazo(e.target.value)
                 setErrorMotivo(null)
               }}
+              aria-invalid={Boolean(errorMotivo)}
+              aria-describedby={errorMotivo ? 'motivoLote-err' : undefined}
               className="mt-1.5 w-full rounded-xl border border-white/20 bg-grafito px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
             >
               <option value="">Selecciona un motivo</option>
@@ -496,7 +541,7 @@ export default function ModerationPage() {
                 </option>
               ))}
             </select>
-            {errorMotivo && <p className="mt-1 text-xs text-rose-400">{errorMotivo}</p>}
+            <FieldError id="motivoLote-err" message={errorMotivo ?? undefined} />
           </div>
         </div>
       </ConfirmDialog>

@@ -43,8 +43,10 @@ export interface AdminFoundationDto {
 }
 
 /** Datos editables al registrar o actualizar una fundación. */
-export type FoundationFormDto = Pick<AdminFoundationDto, 'nombre' | 'nit' | 'correo' | 'telefono' | 'barrio' | 'direccion' | 'representante'>
-export const FUNDACION_VACIA: FoundationFormDto = { nombre: '', nit: '', correo: '', telefono: '', barrio: '', direccion: '', representante: '' }
+export type FoundationFormDto = Pick<AdminFoundationDto, 'nombre' | 'nit' | 'correo' | 'telefono' | 'barrio' | 'direccion' | 'representante'> & {
+  certificado?: string
+}
+export const FUNDACION_VACIA: FoundationFormDto = { nombre: '', nit: '', correo: '', telefono: '', barrio: '', direccion: '', representante: '', certificado: '' }
 
 export interface AdminPlaylistDto {
   id: string
