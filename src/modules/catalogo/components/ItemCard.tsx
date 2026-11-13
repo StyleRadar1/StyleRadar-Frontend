@@ -4,6 +4,15 @@ import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
 import type { ItemResponseDto } from '../types/item.dto'
 
+const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
+  maskImage:
+    'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+  WebkitMaskImage:
+    'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+  maskComposite: 'intersect',
+  WebkitMaskComposite: 'source-in',
+}
+
 export function ItemCard({ item }: { item: ItemResponseDto }) {
   return (
     <div className="relative h-full">
@@ -11,24 +20,25 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         to={`/catalogo/${item.id}`}
         className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm transition duration-200 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
       >
-        {/* Contenedor de foto con aspect-ratio fijo 4/5 y altura máxima acotada en desktop (~220-240px) */}
-        <div className="relative aspect-[4/5] max-h-[230px] w-full shrink-0 overflow-hidden bg-[var(--color-surface-raised,var(--color-surface))]">
-          {/* Fondo difuminado (blur ~20px, scale ~1.2, baja opacidad) sobre token del tema para rellenar bandas laterales armónicamente */}
+        {/* Recuadro de foto con aspect-ratio 3/4 unificado y overflow-hidden sin línea divisoria */}
+        <div className="relative aspect-[3/4] w-full shrink-0 overflow-hidden rounded-t-2xl">
+          {/* Fondo uniforme: copia de la misma foto con blur fuerte (32px), scale 1.4, saturate 1.15 y opacidad 1 */}
           <img
             src={item.imagen}
             alt=""
             aria-hidden="true"
             loading="lazy"
             decoding="async"
-            className="pointer-events-none absolute inset-0 h-full w-full scale-125 object-cover opacity-25 blur-[20px]"
+            className="pointer-events-none absolute inset-0 h-full w-full scale-[1.4] object-cover opacity-100 blur-[32px] saturate-[1.15]"
           />
-          {/* Imagen principal completa sin recorte (object-contain) */}
+          {/* Foto principal completa (object-contain) con máscara de degradado en los 4 bordes para fundirse con el fondo */}
           <img
             src={item.imagen}
             alt={item.nombre}
             loading="lazy"
             decoding="async"
-            className="relative z-10 h-full w-full object-contain p-1.5 transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.03]"
+            style={MAIN_PHOTO_MASK_STYLE}
+            className="relative z-10 h-full w-full object-contain transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.03]"
           />
         </div>
 
