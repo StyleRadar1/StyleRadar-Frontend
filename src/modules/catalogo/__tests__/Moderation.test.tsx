@@ -58,7 +58,7 @@ describe('ModerationPage (RF-61)', () => {
 
     // Intentar rechazar sin seleccionar motivo
     await user.click(screen.getByRole('button', { name: /Rechazar con motivo/i }))
-    expect(screen.getByText(/Selecciona el motivo de rechazo \(obligatorio según RF-61\)/i)).toBeInTheDocument()
+    expect(screen.getByText(/Selecciona el motivo de rechazo\./i)).toBeInTheDocument()
 
     // Seleccionar un motivo válido
     await user.selectOptions(screen.getByLabelText(/Motivo de rechazo/i), 'Las fotos no muestran bien la prenda')

@@ -7,6 +7,7 @@ export function NotFound() {
     <div className="flex min-h-[70vh] items-center">
       <EscenaError
         escena="perchero"
+        grande
         codigo="404"
         etiqueta="No encontrada"
         nivel="h1"

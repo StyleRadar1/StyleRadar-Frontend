@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import type { Role } from '@/modules/core/types/roles'
 import { NotFound } from '@/modules/core/components/NotFound'
 import { SessionExpiredOverlay } from '@/modules/core/components/SessionExpiredOverlay'
+import { SinConexion } from '@/modules/core/components/SinConexion'
 import { WelcomeOverlay } from '@/modules/core/components/WelcomeOverlay'
 import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
@@ -55,7 +56,7 @@ const ANY: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION', 'A
 
 /** Raíz: la bienvenida al iniciar sesión vive aquí para verse aunque se pase del sitio al módulo de administración. */
 function RootLayout() {
-  return <><Outlet /><WelcomeOverlay /><SessionExpiredOverlay /></>
+  return <><Outlet /><WelcomeOverlay /><SessionExpiredOverlay /><SinConexion /></>
 }
 
 export const router = createBrowserRouter([{ element: <RootLayout />, children: [

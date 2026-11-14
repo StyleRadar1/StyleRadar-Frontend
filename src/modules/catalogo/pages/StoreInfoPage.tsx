@@ -76,6 +76,7 @@ export default function StoreInfoPage() {
     return (
       <main className="store-info">
         <ErrorCard
+          grande
           variant="etiqueta"
           tone="warn"
           chip="Sin acceso"

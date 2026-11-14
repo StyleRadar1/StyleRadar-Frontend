@@ -46,6 +46,7 @@ export function ErrorCard({
   title,
   description,
   actions,
+  grande = false,
 }: {
   variant: SceneVariant
   tone?: ErrorTone
@@ -54,6 +55,8 @@ export function ErrorCard({
   title: string
   description: string
   actions?: ReactNode
+  /** Escena más grande, para cuando la tarjeta es toda la página. */
+  grande?: boolean
 }) {
   return (
     <div role="alert" className="rounded-2xl border border-white/15 bg-grafito/70">
@@ -65,6 +68,7 @@ export function ErrorCard({
         texto={description}
         descripcion={SCENE_META[variant].label}
         acciones={actions}
+        grande={grande}
       />
     </div>
   )
