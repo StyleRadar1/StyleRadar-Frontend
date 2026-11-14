@@ -3,6 +3,7 @@ import { env } from '@/configs/env'
 import { tokenStorage } from './tokenStorage'
 import { camposDelError, kindFromStatus, MENSAJES, type CamposConError } from './mensajes'
 import { guardarRetorno } from './retorno'
+import { avisarSinConexion } from './conexion'
 
 /**
  * Cliente HTTP único. Todas las peticiones van al API Gateway;
@@ -54,6 +55,8 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
     tokenStorage.clear()
     window.dispatchEvent(new Event('sr:sesion-expirada'))
   }
+  // La petición no llegó al servidor (sin internet o servidor caído sin respuesta): pantalla única de sin conexión.
+  if (!error.response && error.code !== 'ERR_CANCELED') avisarSinConexion()
   // El detalle técnico solo se ve en la consola y solo en desarrollo.
   if (import.meta.env.DEV) {
     console.warn(`[api] ${status || 'sin respuesta'} ${error.config?.method?.toUpperCase() ?? ''} ${error.config?.url ?? ''}`, data ?? error.message)

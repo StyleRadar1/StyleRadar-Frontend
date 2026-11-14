@@ -32,18 +32,23 @@ type Props = {
   nivel?: 'h1' | 'h2'
   /** Texto para lectores de pantalla que describe la animación. */
   descripcion?: string
+  /** Escena más grande, para cuando el error ocupa toda la página (404, sin acceso, sin conexión). */
+  grande?: boolean
 }
 
 /**
  * Pantalla de error con escena animada a la izquierda y el mensaje a la derecha.
  * El código va arriba a la derecha de la escena, en tamaño mediano, sin tapar la animación.
  */
-export function EscenaError({ escena, codigo, etiqueta, titulo, texto, acciones, segundos, intento = 0, nivel = 'h2', descripcion }: Props) {
+export function EscenaError({ escena, codigo, etiqueta, titulo, texto, acciones, segundos, intento = 0, nivel = 'h2', descripcion, grande = false }: Props) {
   const restante = useCuentaRegresiva(segundos)
   const Titulo = nivel
   const k = ACENTO[escena]
   return (
-    <section className="mx-auto grid w-full max-w-5xl items-center gap-7 px-4 py-10 md:grid-cols-[1.2fr_1fr]" style={{ ['--k' as string]: k }}>
+    <section
+      className={`mx-auto grid w-full items-center px-4 py-10 ${grande ? 'max-w-7xl gap-10 md:grid-cols-[1.6fr_1fr]' : 'max-w-5xl gap-7 md:grid-cols-[1.2fr_1fr]'}`}
+      data-tamano={grande ? 'grande' : 'normal'}
+      style={{ ['--k' as string]: k }}>
       <div
         role="img"
         aria-label={descripcion ?? `Ilustración: ${etiqueta}`}
@@ -66,8 +71,8 @@ export function EscenaError({ escena, codigo, etiqueta, titulo, texto, acciones,
           <i aria-hidden="true" className="h-2 w-2 rounded-full bg-[var(--k)] shadow-[0_0_0_4px_color-mix(in_srgb,var(--k)_22%,transparent)]" />
           {etiqueta}
         </span>
-        <Titulo className="text-3xl font-extrabold leading-tight text-[var(--sr-tx)] md:text-4xl">{titulo}</Titulo>
-        <div className="max-w-[46ch] text-sm leading-relaxed text-[var(--sr-tx-2)]">{texto}</div>
+        <Titulo className={`font-extrabold leading-tight text-[var(--sr-tx)] ${grande ? 'text-4xl md:text-5xl' : 'text-3xl md:text-4xl'}`}>{titulo}</Titulo>
+        <div className={`max-w-[46ch] leading-relaxed text-[var(--sr-tx-2)] ${grande ? 'text-base' : 'text-sm'}`}>{texto}</div>
         {acciones && <div className="flex flex-wrap gap-2">{typeof acciones === 'function' ? acciones(restante) : acciones}</div>}
       </div>
     </section>

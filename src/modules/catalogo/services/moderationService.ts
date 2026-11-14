@@ -28,8 +28,8 @@ export const moderationService = {
 
   decide(decision: ModerationDecisionDto): Promise<void> {
     if (!decision.aprobado && !(decision.motivo ?? '').trim()) {
-      throw new ApiError(400, 'Selecciona el motivo de rechazo (obligatorio según RF-61).', {
-        motivo: 'Selecciona el motivo de rechazo (obligatorio según RF-61).',
+      throw new ApiError(400, 'Selecciona el motivo de rechazo.', {
+        motivo: 'Selecciona el motivo de rechazo.',
       })
     }
     if (env.useMocks) {

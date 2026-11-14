@@ -312,6 +312,7 @@ export default function MiTiendaPage() {
       <main className="my-store">
         <div className="my-store__content">
           <ErrorCard
+            grande
             variant="etiqueta"
             tone="warn"
             chip="Sin acceso"

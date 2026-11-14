@@ -1,4 +1,5 @@
 import { ApiError } from './apiClient'
+import { avisarSinConexion } from './conexion'
 
 /**
  * Escenarios de prueba para los datos simulados. Se activan con ?mock=<escenario> en la URL
@@ -85,7 +86,10 @@ export function clearMockScenarios() {
 /** Lanza el error que corresponde a los escenarios globales (red, permisos, sesión). */
 export function failIfScenario(...own: MockScenario[]) {
   const active = read()
-  if (active.includes('sin-red')) throw new ApiError(0, 'No hay conexión con el servidor. Intenta de nuevo.')
+  if (active.includes('sin-red')) {
+    avisarSinConexion()
+    throw new ApiError(0, 'No hay conexión con el servidor. Intenta de nuevo.')
+  }
   if (active.includes('sesion-vencida')) {
     window.dispatchEvent(new Event('sr:sesion-expirada'))
     throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')

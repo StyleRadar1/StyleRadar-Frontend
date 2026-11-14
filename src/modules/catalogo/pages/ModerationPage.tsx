@@ -94,7 +94,7 @@ export default function ModerationPage() {
   const handleConfirmReject = async () => {
     if (!itemParaRechazar) return
     if (!motivoRechazo) {
-      setErrorMotivo('Selecciona el motivo de rechazo (obligatorio según RF-61).')
+      setErrorMotivo('Selecciona el motivo de rechazo.')
       window.setTimeout(() => document.getElementById('motivoRechazo')?.focus(), 0)
       return
     }
