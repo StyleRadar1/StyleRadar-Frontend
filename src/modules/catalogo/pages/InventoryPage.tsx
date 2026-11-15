@@ -1,7 +1,11 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/modules/core/design-system'
 import { Loading, EmptyState, ErrorState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { ErrorBanner, ErrorToast, FieldError } from '@/modules/core/components/ErrorFeedback'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind, errorMessage, errorMessageAjeno, fieldErrors } from '@/modules/core/api/errors'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useInventory } from '../hooks/useInventory'
 import type { InventoryItemDto, InventoryItemStatus } from '../types/inventory.dto'
@@ -19,6 +23,7 @@ export default function InventoryPage() {
     error,
     reload,
     updateStock,
+    removeSize,
     updatePrice,
     toggleActive,
     addItem,
@@ -32,7 +37,9 @@ export default function InventoryPage() {
   const [ordenPor, setOrdenPor] = useState<'recientes' | 'precio_menor' | 'precio_mayor' | 'menos_unidades'>('recientes')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [paginaActual, setPaginaActual] = useState(1)
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ tone: 'ok' | 'warn' | 'bad'; text: string; sub?: string } | null>(null)
+  const [suspendedByAction, setSuspendedByAction] = useState(false)
+  const [stockErrors, setStockErrors] = useState<Record<string, string>>({})
 
   // Diálogo para asignar a colección
   const [itemParaColeccion, setItemParaColeccion] = useState<InventoryItemDto | null>(null)
@@ -55,7 +62,7 @@ export default function InventoryPage() {
   const [stockM, setStockM] = useState(4)
   const [stockL, setStockL] = useState(2)
   const [guardando, setGuardando] = useState(false)
-  const [errorCrear, setErrorCrear] = useState<string | null>(null)
+  const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
 
   // Diálogo para eliminar prenda
   const [itemParaEliminar, setItemParaEliminar] = useState<InventoryItemDto | null>(null)
@@ -64,6 +71,7 @@ export default function InventoryPage() {
   // Diálogo para editar precio
   const [itemParaPrecio, setItemParaPrecio] = useState<InventoryItemDto | null>(null)
   const [precioEditado, setPrecioEditado] = useState<number>(0)
+  const [priceError, setPriceError] = useState('')
 
   // Diálogo para retirar / reactivar prenda en vitrina
   const [itemParaToggle, setItemParaToggle] = useState<InventoryItemDto | null>(null)
@@ -82,6 +90,20 @@ export default function InventoryPage() {
     })
     return Array.from(set)
   }, [items])
+
+  const isLoadPermError = Boolean(error) && errorKind(error) === 'permiso'
+  const isSuspended = isLoadPermError || suspendedByAction
+
+  const [searchParams] = useSearchParams()
+  const mockParam = searchParams.get('mock')
+  const prevMock = useRef(mockParam)
+  useEffect(() => {
+    if (prevMock.current !== mockParam) {
+      prevMock.current = mockParam
+      setSuspendedByAction(false)
+      void reload()
+    }
+  }, [mockParam, reload])
 
   // Filtrado reactivo de prendas
   const itemsFiltrados = useMemo(() => {
@@ -146,9 +168,26 @@ export default function InventoryPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [itemParaUnidades])
 
-  const showToast = (msg: string) => {
-    setFeedback(msg)
-    setTimeout(() => setFeedback(null), 3500)
+  const showToast = (text: string, tone: 'ok' | 'warn' | 'bad' = 'ok', sub?: string) => {
+    setToast({ tone, text, sub })
+  }
+
+  const handleActionFailure = (err: unknown): boolean => {
+    const kind = errorKind(err)
+    if (kind === 'permiso') {
+      if (err instanceof ApiError && !err.message.toLowerCase().includes('no existe')) {
+        setSuspendedByAction(true)
+      } else {
+        showToast(errorMessageAjeno(err), 'warn')
+      }
+      return true
+    }
+    if ((err instanceof ApiError && err.status === 422 && !Object.keys(err.fields).length) || kind === 'conflicto') {
+      showToast('Esta acción no está disponible por ahora', 'warn', 'Actualizamos el inventario.')
+      void reload()
+      return true
+    }
+    return false
   }
 
   // Abrir panel lateral de unidades
@@ -176,8 +215,10 @@ export default function InventoryPage() {
       await updateStock(itemParaUnidades.id, tallaUnidades, cantidadUnidades)
       setItemParaUnidades(null)
       showToast(`Unidades de «${itemParaUnidades.nombre}» actualizadas a ${cantidadUnidades}.`)
-    } catch {
-      showToast('Error al actualizar las unidades.')
+    } catch (err) {
+      if (!handleActionFailure(err)) {
+        showToast(errorMessage(err, 'Error al actualizar las unidades.'), 'bad')
+      }
     } finally {
       setGuardandoUnidades(false)
     }
@@ -186,7 +227,7 @@ export default function InventoryPage() {
   const handleCerrarAgregar = useCallback(() => {
     setMostrarAgregar(false)
     setNuevaImagen('')
-    setErrorCrear(null)
+    setCreateErrors({})
   }, [])
 
   // Subir foto para la nueva prenda
@@ -194,7 +235,7 @@ export default function InventoryPage() {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      setErrorCrear('Por favor selecciona un archivo de imagen válido.')
+      setCreateErrors((prev) => ({ ...prev, _global: 'Por favor selecciona un archivo de imagen válido.' }))
       return
     }
     const reader = new FileReader()
@@ -209,17 +250,25 @@ export default function InventoryPage() {
   // Crear prenda nueva
   const handleCrearPrenda = async (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!nuevoNombre.trim()) {
-      setErrorCrear('Indica el nombre de la prenda.')
-      return
+    const errs: Record<string, string> = {}
+    if (!nuevoNombre.trim()) errs.nombre = 'Indica el nombre de la prenda.'
+    if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) errs.precio = 'El precio debe ser mayor a 0.'
+    if (
+      !Number.isInteger(stockS) || stockS < 0 ||
+      !Number.isInteger(stockM) || stockM < 0 ||
+      !Number.isInteger(stockL) || stockL < 0
+    ) {
+      errs.tallas = 'Las cantidades por talla deben ser enteros mayores o iguales a 0.'
     }
-    if (nuevoPrecio <= 0) {
-      setErrorCrear('El precio debe ser mayor a 0.')
+    if (Object.keys(errs).length) {
+      setCreateErrors(errs)
+      const firstId = errs.nombre ? 'nombrePrenda' : errs.precio ? 'precioPrenda' : 'tallaS'
+      window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
       return
     }
 
     setGuardando(true)
-    setErrorCrear(null)
+    setCreateErrors({})
     try {
       await addItem({
         nombre: nuevoNombre.trim(),
@@ -228,9 +277,9 @@ export default function InventoryPage() {
         precio: nuevoPrecio,
         imagenUrl: nuevaImagen || undefined,
         stockPorTalla: {
-          S: Number(stockS) || 0,
-          M: Number(stockM) || 0,
-          L: Number(stockL) || 0,
+          S: Number(stockS),
+          M: Number(stockM),
+          L: Number(stockL),
         },
       })
       setMostrarAgregar(false)
@@ -238,7 +287,14 @@ export default function InventoryPage() {
       setNuevaImagen('')
       showToast('¡Prenda incorporada al inventario del almacén!')
     } catch (err) {
-      setErrorCrear(err instanceof Error ? err.message : 'Error al registrar prenda.')
+      const fields = fieldErrors(err)
+      if (Object.keys(fields).length) {
+        setCreateErrors(fields)
+        const firstId = fields.nombre ? 'nombrePrenda' : fields.precio ? 'precioPrenda' : 'tallaS'
+        window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
+      } else if (!handleActionFailure(err)) {
+        setCreateErrors({ _global: errorMessage(err, 'Error al registrar prenda.') })
+      }
     } finally {
       setGuardando(false)
     }
@@ -253,22 +309,81 @@ export default function InventoryPage() {
       const nombre = itemParaEliminar.nombre
       setItemParaEliminar(null)
       showToast(`Prenda «${nombre}» eliminada del inventario.`)
-    } catch {
-      showToast('Error al eliminar la prenda del inventario.')
+    } catch (err) {
+      if (!handleActionFailure(err)) {
+        showToast(errorMessage(err, 'Error al eliminar la prenda del inventario.'), 'bad')
+      }
     } finally {
       setEliminando(false)
     }
   }
 
+  const handleUpdateStock = async (item: InventoryItemDto, talla: string, nuevoStock: number) => {
+    setStockErrors((prev) => ({ ...prev, [item.id]: '' }))
+    if (!(talla in item.stockPorTalla)) {
+      setStockErrors((prev) => ({ ...prev, [item.id]: 'La talla indicada no existe en esta prenda.' }))
+      return
+    }
+    if (!Number.isInteger(nuevoStock) || nuevoStock < 0) {
+      setStockErrors((prev) => ({ ...prev, [item.id]: 'La cantidad debe ser 0 o mayor.' }))
+      return
+    }
+    try {
+      await updateStock(item.id, talla, nuevoStock)
+    } catch (err) {
+      const fields = fieldErrors(err)
+      const fieldMsg = fields.nuevoStock || fields.talla
+      if (fieldMsg) {
+        setStockErrors((prev) => ({ ...prev, [item.id]: fieldMsg }))
+      } else if (!handleActionFailure(err)) {
+        setStockErrors((prev) => ({ ...prev, [item.id]: errorMessage(err) }))
+      }
+    }
+  }
+
+  const handleRemoveSize = async (item: InventoryItemDto, talla: string) => {
+    setStockErrors((prev) => ({ ...prev, [item.id]: '' }))
+    try {
+      await removeSize(item.id, talla)
+      showToast(`Talla ${talla} quitada de «${item.nombre}».`)
+    } catch (err) {
+      const fields = fieldErrors(err)
+      if (fields.talla) {
+        setStockErrors((prev) => ({ ...prev, [item.id]: fields.talla }))
+      } else if (err instanceof ApiError && err.status === 422 && (item.stockPorTalla[talla] ?? 0) > 0) {
+        setStockErrors((prev) => ({
+          ...prev,
+          [item.id]: `La talla ${talla} aún tiene ${item.stockPorTalla[talla]} unidades. Déjala en 0 para quitarla.`,
+        }))
+      } else if (!handleActionFailure(err)) {
+        setStockErrors((prev) => ({ ...prev, [item.id]: errorMessage(err) }))
+      }
+    }
+  }
+
   // Modificar precio
   const handleConfirmarPrecio = async () => {
-    if (!itemParaPrecio || precioEditado <= 0) return
+    if (!itemParaPrecio) return
+    if (!Number.isFinite(precioEditado) || precioEditado <= 0) {
+      setPriceError('El precio debe ser mayor a 0.')
+      window.setTimeout(() => document.getElementById('nuevoPrecioInput')?.focus(), 0)
+      return
+    }
+    setPriceError('')
     try {
       await updatePrice(itemParaPrecio.id, precioEditado)
       setItemParaPrecio(null)
       showToast('Precio actualizado correctamente.')
-    } catch {
-      showToast('Error al actualizar el precio.')
+    } catch (err) {
+      const fields = fieldErrors(err)
+      if (fields.precio) {
+        setPriceError(fields.precio)
+        window.setTimeout(() => document.getElementById('nuevoPrecioInput')?.focus(), 0)
+      } else if (handleActionFailure(err)) {
+        setItemParaPrecio(null)
+      } else {
+        setPriceError(errorMessage(err, 'Error al actualizar el precio.'))
+      }
     }
   }
 
@@ -280,8 +395,11 @@ export default function InventoryPage() {
       const eraRetirado = itemParaToggle.estado === 'RETIRADO'
       setItemParaToggle(null)
       showToast(eraRetirado ? 'Prenda devuelta a vitrina activa.' : 'Prenda retirada de vitrina pública.')
-    } catch {
-      showToast('Error al modificar estado de la prenda.')
+    } catch (err) {
+      setItemParaToggle(null)
+      if (!handleActionFailure(err)) {
+        showToast(errorMessage(err, 'Error al modificar estado de la prenda.'), 'bad')
+      }
     }
   }
 
@@ -323,8 +441,9 @@ export default function InventoryPage() {
               type="button"
               className="inv-btn inv-btn--primary"
               aria-label="+ Nueva prenda en inventario"
+              disabled={isSuspended}
               onClick={() => {
-                setErrorCrear(null)
+                setCreateErrors({})
                 setNuevaImagen('')
                 setMostrarAgregar(true)
               }}
@@ -345,15 +464,35 @@ export default function InventoryPage() {
       </header>
 
       <div className="inv-container">
-        {/* Toast de retroalimentación */}
-        {feedback && (
-          <div
-            role="status"
-            className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800 shadow-sm"
+        {/* Aviso de inventario suspendido (403) */}
+        {isSuspended && (
+          <ErrorBanner
+            className="mt-4"
+            tone="warn"
+            icon="lock"
+            title="Tu inventario está suspendido"
+            actions={
+              <Link
+                to="/tienda/suscripcion"
+                className="inline-flex items-center rounded-xl bg-violeta px-3.5 py-2 text-xs font-semibold text-white transition hover:brightness-110"
+              >
+                Revisar suscripción
+              </Link>
+            }
           >
-            {feedback}
-          </div>
+            No puedes crear, editar ni cambiar existencias mientras tu tienda esté suspendida.
+          </ErrorBanner>
         )}
+
+        {/* Alerta toast */}
+        <ErrorToast
+          open={Boolean(toast)}
+          tone={toast?.tone ?? 'ok'}
+          icon={toast?.tone === 'warn' ? 'refresh' : toast?.tone === 'bad' ? 'warn' : 'ok'}
+          title={toast?.text ?? ''}
+          subtitle={toast?.sub}
+          onClose={() => setToast(null)}
+        />
 
         {/* ── Fila de 4 tarjetas de resumen con números calculados del inventario ── */}
         <ul className="inv-kpis" aria-label="Resumen de inventario">
@@ -512,7 +651,7 @@ export default function InventoryPage() {
               <select
                 aria-label="Ordenar prendas"
                 value={ordenPor}
-                onChange={(e) => setOrdenPor(e.target.value as any)}
+                onChange={(e) => setOrdenPor(e.target.value as 'recientes' | 'precio_menor' | 'precio_mayor' | 'menos_unidades')}
               >
                 <option value="recientes">Recientes</option>
                 <option value="precio_menor">Precio menor</option>
@@ -561,11 +700,11 @@ export default function InventoryPage() {
         </section>
 
         {/* Estados de carga y error */}
-        {loading && <Loading label="Cargando inventario de la tienda..." />}
-        {Boolean(error) && <ErrorState error={error} onRetry={reload} title="No se pudo cargar el inventario" />}
+        {loading && !items.length && <Loading label="Cargando inventario de la tienda..." />}
+        {Boolean(error) && !isLoadPermError && <ErrorState error={error} onRetry={reload} title="No se pudo cargar el inventario" />}
 
         {/* Estado sin resultados */}
-        {!loading && !error && itemsFiltrados.length === 0 && (
+        {(!loading || items.length > 0) && !error && itemsFiltrados.length === 0 && (
           <div className="mt-12 rounded-[22px] border border-[var(--inv-card-border)] bg-[var(--inv-card-bg)] p-8 shadow-sm text-[var(--inv-text)]">
             <EmptyState
               title="No se encontraron prendas en el inventario"
@@ -589,7 +728,7 @@ export default function InventoryPage() {
         )}
 
         {/* ── Cuadrícula / Lista de productos y Panel lateral ── */}
-        {!loading && !error && itemsFiltrados.length > 0 && (
+        {(!loading || items.length > 0) && !error && itemsFiltrados.length > 0 && (
           <div className={`inv-main-layout ${itemParaUnidades ? 'has-panel' : ''}`}>
             {viewMode === 'grid' ? (
               <div className="inv-grid">
@@ -610,6 +749,66 @@ export default function InventoryPage() {
                       <p className="inv-card__meta">
                         Tallas: {tallasTexto || 'Única'} | Unidades: {item.stockTotal}
                       </p>
+
+                      {/* Desglose y edición rápida de existencias por talla */}
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        {Object.entries(item.stockPorTalla).map(([talla, cantidad]) => (
+                          <div
+                            key={talla}
+                            className="flex items-center gap-1 rounded-lg border border-[var(--inv-card-border)] px-2 py-1 text-xs"
+                          >
+                            <span className="font-bold text-[var(--inv-text)]">{talla}:</span>
+                            <input
+                              type="number"
+                              aria-label={`Cantidad talla ${talla} de ${item.nombre}`}
+                              value={cantidad}
+                              disabled={isSuspended}
+                              onChange={(e) => {
+                                const raw = e.target.value
+                                const n = Number(raw)
+                                if (raw === '' || !Number.isInteger(n) || n < 0) {
+                                  setStockErrors((prev) => ({
+                                    ...prev,
+                                    [item.id]: 'La cantidad debe ser un entero mayor o igual a 0.',
+                                  }))
+                                  return
+                                }
+                                void handleUpdateStock(item, talla, n)
+                              }}
+                              className="w-10 rounded border border-[var(--inv-card-border)] bg-transparent px-1 py-0.5 text-center font-mono text-xs font-semibold text-[var(--inv-text)] outline-none disabled:opacity-40"
+                            />
+                            <button
+                              type="button"
+                              aria-label={`Reducir stock talla ${talla}`}
+                              disabled={isSuspended || cantidad <= 0}
+                              onClick={() => { void handleUpdateStock(item, talla, cantidad - 1) }}
+                              className="flex h-5 w-5 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text)] transition hover:opacity-80 disabled:opacity-30"
+                            >
+                              −
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Aumentar stock talla ${talla}`}
+                              disabled={isSuspended}
+                              onClick={() => { void handleUpdateStock(item, talla, cantidad + 1) }}
+                              className="flex h-5 w-5 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text)] transition hover:opacity-80 disabled:opacity-30"
+                            >
+                              +
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Quitar talla ${talla} de ${item.nombre}`}
+                              title={`Quitar talla ${talla}`}
+                              disabled={isSuspended}
+                              onClick={() => { void handleRemoveSize(item, talla) }}
+                              className="flex h-5 w-5 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text-muted)] transition hover:text-[var(--inv-text)] disabled:opacity-30"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <FieldError id={`stock-err-${item.id}`} message={stockErrors[item.id]} />
 
                       <div className="inv-card__foot">
                         {item.estado === 'DISPONIBLE' && (
@@ -639,7 +838,9 @@ export default function InventoryPage() {
                             className="inv-icon-btn"
                             aria-label={`Editar precio de ${item.nombre}`}
                             title="Editar precio"
+                            disabled={isSuspended}
                             onClick={() => {
+                              setPriceError('')
                               setItemParaPrecio(item)
                               setPrecioEditado(item.precio)
                             }}
@@ -653,6 +854,7 @@ export default function InventoryPage() {
                             className="inv-icon-btn"
                             aria-label={`Actualizar unidades de ${item.nombre}`}
                             title="Actualizar unidades"
+                            disabled={isSuspended}
                             onClick={() => openUnidadesPanel(item)}
                           >
                             <svg viewBox="0 0 20 20">
@@ -672,9 +874,22 @@ export default function InventoryPage() {
                           </button>
                           <button
                             type="button"
+                            disabled={isSuspended}
+                            onClick={() => setItemParaToggle(item)}
+                            className={`text-xs font-semibold transition disabled:opacity-40 ${
+                              item.estado === 'RETIRADO'
+                                ? 'text-emerald-500 hover:underline'
+                                : 'text-amber-500 hover:underline'
+                            }`}
+                          >
+                            {item.estado === 'RETIRADO' ? 'Reactivar' : 'Retirar'}
+                          </button>
+                          <button
+                            type="button"
                             className="inv-icon-btn inv-icon-btn--danger"
                             aria-label={`Eliminar prenda ${item.nombre}`}
                             title="Eliminar prenda"
+                            disabled={isSuspended}
                             onClick={() => setItemParaEliminar(item)}
                           >
                             <svg viewBox="0 0 20 20">
@@ -723,7 +938,9 @@ export default function InventoryPage() {
                           className="inv-icon-btn"
                           aria-label={`Editar precio de ${item.nombre}`}
                           title="Editar precio"
+                          disabled={isSuspended}
                           onClick={() => {
+                            setPriceError('')
                             setItemParaPrecio(item)
                             setPrecioEditado(item.precio)
                           }}
@@ -737,6 +954,7 @@ export default function InventoryPage() {
                           className="inv-icon-btn"
                           aria-label={`Actualizar unidades de ${item.nombre}`}
                           title="Actualizar unidades"
+                          disabled={isSuspended}
                           onClick={() => openUnidadesPanel(item)}
                         >
                           <svg viewBox="0 0 20 20">
@@ -756,9 +974,22 @@ export default function InventoryPage() {
                         </button>
                         <button
                           type="button"
+                          disabled={isSuspended}
+                          onClick={() => setItemParaToggle(item)}
+                          className={`text-xs font-semibold transition disabled:opacity-40 ${
+                            item.estado === 'RETIRADO'
+                              ? 'text-emerald-500 hover:underline'
+                              : 'text-amber-500 hover:underline'
+                          }`}
+                        >
+                          {item.estado === 'RETIRADO' ? 'Reactivar' : 'Retirar'}
+                        </button>
+                        <button
+                          type="button"
                           className="inv-icon-btn inv-icon-btn--danger"
                           aria-label={`Eliminar prenda ${item.nombre}`}
                           title="Eliminar prenda"
+                          disabled={isSuspended}
                           onClick={() => setItemParaEliminar(item)}
                         >
                           <svg viewBox="0 0 20 20">
@@ -975,10 +1206,16 @@ export default function InventoryPage() {
               id="nombrePrenda"
               type="text"
               value={nuevoNombre}
-              onChange={(e) => setNuevoNombre(e.target.value)}
+              onChange={(e) => {
+                setNuevoNombre(e.target.value)
+                setCreateErrors((prev) => ({ ...prev, nombre: '' }))
+              }}
+              aria-invalid={Boolean(createErrors.nombre)}
+              aria-describedby={createErrors.nombre ? 'nombrePrenda-err' : undefined}
               placeholder="Ej. Sobrecamisa Pana Marfil"
               className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
             />
+            <FieldError id="nombrePrenda-err" message={createErrors.nombre} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -1026,11 +1263,17 @@ export default function InventoryPage() {
               id="precioPrenda"
               type="number"
               value={nuevoPrecio}
-              onChange={(e) => setNuevoPrecio(Number(e.target.value))}
+              onChange={(e) => {
+                setNuevoPrecio(Number(e.target.value))
+                setCreateErrors((prev) => ({ ...prev, precio: '' }))
+              }}
+              aria-invalid={Boolean(createErrors.precio)}
+              aria-describedby={createErrors.precio ? 'precioPrenda-err' : undefined}
               min={1000}
               step={1000}
               className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
             />
+            <FieldError id="precioPrenda-err" message={createErrors.precio} />
           </div>
 
           <div>
@@ -1043,7 +1286,10 @@ export default function InventoryPage() {
                   type="number"
                   min={0}
                   value={stockS}
-                  onChange={(e) => setStockS(Number(e.target.value))}
+                  onChange={(e) => {
+                    setStockS(Number(e.target.value))
+                    setCreateErrors((prev) => ({ ...prev, tallas: '' }))
+                  }}
                   className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
                 />
               </div>
@@ -1054,7 +1300,10 @@ export default function InventoryPage() {
                   type="number"
                   min={0}
                   value={stockM}
-                  onChange={(e) => setStockM(Number(e.target.value))}
+                  onChange={(e) => {
+                    setStockM(Number(e.target.value))
+                    setCreateErrors((prev) => ({ ...prev, tallas: '' }))
+                  }}
                   className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
                 />
               </div>
@@ -1065,14 +1314,18 @@ export default function InventoryPage() {
                   type="number"
                   min={0}
                   value={stockL}
-                  onChange={(e) => setStockL(Number(e.target.value))}
+                  onChange={(e) => {
+                    setStockL(Number(e.target.value))
+                    setCreateErrors((prev) => ({ ...prev, tallas: '' }))
+                  }}
                   className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
                 />
               </div>
             </div>
+            <FieldError id="tallasPrenda-err" message={createErrors.tallas} />
           </div>
 
-          {errorCrear && <p className="text-xs text-rose-400">{errorCrear}</p>}
+          <FieldError id="crearPrenda-err" message={createErrors._global} />
         </form>
       </ConfirmDialog>
 
@@ -1081,8 +1334,11 @@ export default function InventoryPage() {
         open={Boolean(itemParaPrecio)}
         title="Modificar precio de la prenda"
         confirmLabel="Actualizar precio"
-        onConfirm={handleConfirmarPrecio}
-        onCancel={() => setItemParaPrecio(null)}
+        onConfirm={() => { void handleConfirmarPrecio() }}
+        onCancel={() => {
+          setPriceError('')
+          setItemParaPrecio(null)
+        }}
       >
         {itemParaPrecio && (
           <div className="space-y-4">
@@ -1099,9 +1355,15 @@ export default function InventoryPage() {
                 min={1000}
                 step={1000}
                 value={precioEditado}
-                onChange={(e) => setPrecioEditado(Number(e.target.value))}
+                onChange={(e) => {
+                  setPrecioEditado(Number(e.target.value))
+                  setPriceError('')
+                }}
+                aria-invalid={Boolean(priceError)}
+                aria-describedby={priceError ? 'nuevoPrecioInput-err' : undefined}
                 className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
               />
+              <FieldError id="nuevoPrecioInput-err" message={priceError} />
             </div>
           </div>
         )}

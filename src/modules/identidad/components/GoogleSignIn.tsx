@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { ApiError } from '@/modules/core/api/apiClient'
+import { errorDeGoogle } from '../utils/erroresAcceso'
 import { ROLE_LABEL } from '@/modules/core/types/roles'
 import { env } from '@/configs/env'
 import { useAuth } from '../hooks/useAuth'
@@ -22,13 +22,14 @@ export function GoogleSignIn({ onSignedIn }: { onSignedIn: (user: UserSessionDto
   const enter = async (idToken: string) => {
     setBusy(true); setError('')
     try { onSignedIn(await loginWithGoogle(idToken)) }
-    catch (e) { setError(e instanceof ApiError || e instanceof Error ? e.message : 'No pudimos iniciar sesión con Google.') }
+    catch (e) { setError(errorDeGoogle(e)) }
     finally { setBusy(false) }
   }
   const start = async () => {
     if (env.useMocks) { setPicking(true); return }
     setError('')
-    try { await enter(await googleIdToken()) } catch (e) { setError(e instanceof Error ? e.message : 'No pudimos conectar con Google.') }
+    // Si la persona cierra la ventana de Google o algo falla: «No pudimos entrar con Google».
+    try { await enter(await googleIdToken()) } catch (e) { setError(errorDeGoogle(e)) }
   }
 
   return (

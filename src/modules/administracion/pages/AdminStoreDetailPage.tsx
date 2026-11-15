@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { ErrorBanner, ErrorToast, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -25,23 +27,50 @@ export default function AdminStoreDetailPage() {
   const [accion, setAccion] = useState<Accion | null>(null)
   const [motivo, setMotivo] = useState('')
   const [errMotivo, setErrMotivo] = useState('')
+  const [rutError, setRutError] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'warn' | 'bad'; text: string; sub?: string } | null>(null)
   const t = data.t
 
   if (loading && !t) return <Loading label="Cargando la tienda…" />
   if (error || !t) return <><AdminHeader kicker="Tiendas · detalle" title="Tienda" back={{ to: '/admin/tiendas', label: 'Volver a tiendas' }} /><ErrorState error={error} onRetry={reload} title="No pudimos cargar la tienda" /></>
 
   const ejecutar = async (fn: () => Promise<AdminStoreDto>, ok: string) => {
-    setBusy(true); setMsg(null)
-    try { const n = await fn(); setData((d) => ({ ...d, t: { ...n } })); setMsg({ ok: true, text: ok }); setAccion(null); setMotivo('') }
-    catch (e) { setMsg({ ok: false, text: errorMessage(e, 'No pudimos guardar el cambio. Intenta de nuevo.') }); if (accion?.verificacion !== 'Rechazada') setAccion(null) }
+    setBusy(true); setMsg(null); setRutError(false)
+    try { const n = await fn(); setData((d) => ({ ...d, t: { ...n } })); setMsg({ tone: 'ok', text: ok }); setAccion(null); setMotivo(''); setErrMotivo('') }
+    catch (e) {
+      const kind = errorKind(e)
+      const fields = fieldErrors(e)
+      if (accion?.verificacion === 'Rechazada' && (fields.motivo || kind === 'datos')) {
+        setErrMotivo(fields.motivo ?? 'Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.')
+        window.setTimeout(() => document.getElementById('motivo-rechazo')?.focus(), 0)
+      } else if (e instanceof ApiError && e.status === 422 && accion?.verificacion === 'Verificada') {
+        setRutError(true)
+        setAccion(null)
+      } else if (kind === 'conflicto') {
+        setMsg({ tone: 'warn', text: 'Esta tienda ya fue revisada', sub: 'Actualizamos la información.' })
+        setAccion(null)
+        reload()
+      } else {
+        setMsg({ tone: 'bad', text: errorMessage(e, 'No pudimos guardar el cambio. Intenta de nuevo.') })
+        if (accion?.verificacion !== 'Rechazada') setAccion(null)
+      }
+    }
     finally { setBusy(false) }
   }
   const confirmar = () => {
     if (!accion) return
+    if (accion.verificacion === 'Verificada' && !t.documentos.some((d) => d.nombre.toUpperCase() === 'RUT' && d.recibido)) {
+      setRutError(true)
+      setAccion(null)
+      return
+    }
     // El motivo se valida aquí para mostrar el error dentro del diálogo
-    if (accion.verificacion === 'Rechazada' && motivo.trim().length < 10) { setErrMotivo('Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.'); return }
+    if (accion.verificacion === 'Rechazada' && motivo.trim().length < 10) {
+      setErrMotivo('Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.')
+      window.setTimeout(() => document.getElementById('motivo-rechazo')?.focus(), 0)
+      return
+    }
     ejecutar(() => adminStoreService.setVerification(t.id, accion.verificacion, motivo),
     accion.verificacion === 'Verificada' ? `${t.nombre} quedó verificada y aparece en el radar.` : accion.verificacion === 'Rechazada' ? 'Verificación rechazada. Le enviamos el motivo a la tienda.' : 'Verificación retirada.')
   }
@@ -49,7 +78,19 @@ export default function AdminStoreDetailPage() {
   return (
     <>
       <AdminHeader kicker="Tiendas · detalle" title={t.nombre} back={{ to: '/admin/tiendas', label: 'Volver a tiendas' }} />
-      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mb-4 rounded-xl p-3 text-sm ${msg.ok ? 'bg-[#9be3b4]/10 text-[#9be3b4]' : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'}`}>{msg.text}</p>}
+      <ErrorToast
+        open={!!msg}
+        tone={msg?.tone ?? 'ok'}
+        icon={msg?.tone === 'warn' ? 'refresh' : msg?.tone === 'ok' ? 'ok' : 'warn'}
+        title={msg?.text ?? ''}
+        subtitle={msg?.sub}
+        onClose={() => setMsg(null)}
+      />
+      {rutError && (
+        <ErrorBanner className="mb-4" tone="warn" icon="warn" title="Falta el RUT para aprobar">
+          Verifica que la tienda haya cargado su documento RUT antes de aprobar la verificación.
+        </ErrorBanner>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <AdminCard title="Información general">
@@ -113,11 +154,11 @@ export default function AdminStoreDetailPage() {
       <ConfirmDialog open={!!accion} title={accion?.titulo ?? ''} confirmLabel={accion?.boton ?? ''} danger={accion?.danger} busy={busy}
         onConfirm={confirmar} onCancel={() => { setAccion(null); setMotivo(''); setErrMotivo('') }}>
         {accion?.verificacion === 'Rechazada' ? (
-          <label className="block text-sm">Motivo (se lo enviaremos a la tienda)
-            <textarea value={motivo} onChange={(e) => { setMotivo(e.target.value); setErrMotivo('') }} maxLength={200} rows={3} placeholder="Ej. La cámara de comercio está vencida."
+          <label className="block text-sm" htmlFor="motivo-rechazo">Motivo (se lo enviaremos a la tienda)
+            <textarea id="motivo-rechazo" value={motivo} onChange={(e) => { setMotivo(e.target.value); setErrMotivo('') }} maxLength={200} rows={3} placeholder="Ej. La cámara de comercio está vencida."
               aria-invalid={!!errMotivo} aria-describedby={errMotivo ? 'motivo-err' : undefined}
               className="mt-1 w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm outline-none focus:border-violeta-claro" />
-            {errMotivo && <span id="motivo-err" role="alert" className="mt-1 block text-xs text-[#ffb4b4]">{errMotivo}</span>}
+            <FieldError id="motivo-err" message={errMotivo} />
           </label>
         ) : accion?.texto}
       </ConfirmDialog>

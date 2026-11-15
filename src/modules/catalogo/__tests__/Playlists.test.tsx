@@ -34,7 +34,7 @@ describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
 
     // Intentar crear sin nombre
     await user.click(screen.getByRole('button', { name: /^Crear playlist$/i }))
-    expect(screen.getByText(/Escribe el nombre de la playlist/i)).toBeInTheDocument()
+    expect(screen.getByText(/Ponle un nombre a tu playlist/i)).toBeInTheDocument()
 
     // Escribir nombre válido
     await user.type(screen.getByLabelText(/Nombre de la playlist/i), 'Nueva Colección Festiva')

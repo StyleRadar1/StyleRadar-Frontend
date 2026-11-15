@@ -38,7 +38,7 @@ describe('RegisterPage (RF-01)', () => {
     expect(localStorage.getItem('sr_token')).toBeTruthy()
   })
 
-  it('avisa si el correo ya tiene cuenta (409)', async () => {
+  it('si el correo ya tiene cuenta (409) no lo confirma y ofrece entrar o recuperar', async () => {
     const user = userEvent.setup()
     abrir()
     await user.type(screen.getByLabelText('Nombre completo'), 'Otra Persona')
@@ -46,8 +46,10 @@ describe('RegisterPage (RF-01)', () => {
     await user.type(screen.getByLabelText('Contraseña'), 'secreta1')
     await user.click(screen.getByRole('checkbox'))
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(await screen.findByText(/Ya existe una cuenta con ese correo/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Correo')).toHaveFocus()
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos crear la cuenta con esos datos.')
+    expect(screen.queryByText(/ya existe|ya tiene cuenta|ya está registrad/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Recuperar contraseña' })).toBeInTheDocument()
   })
 
   it('muestra u oculta la contraseña', async () => {

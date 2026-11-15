@@ -46,7 +46,7 @@ export function Campo({
               clipRule="evenodd"
             />
           </svg>
-          <span>{error}</span>
+          {error}
         </p>
       )}
     </div>
@@ -112,7 +112,7 @@ export function Opciones<T extends string>({
               clipRule="evenodd"
             />
           </svg>
-          <span>{error}</span>
+          {error}
         </p>
       )}
     </fieldset>

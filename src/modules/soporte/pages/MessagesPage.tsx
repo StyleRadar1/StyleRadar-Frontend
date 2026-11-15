@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { Aviso, BTN_PRINCIPAL } from '@/modules/core/components/Aviso'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import type { Role } from '@/modules/core/types/roles'
@@ -10,6 +11,7 @@ import {
   type ConversacionDto,
   type MensajeDto,
 } from '../types/chat.dto'
+import { NO_DISPONIBLE } from '../utils/chatErrors'
 
 const VACIO: Record<Role, string> = {
   COMPRADOR: 'Cuando le escribas a quien vende, a una tienda o a una fundación, la conversación aparecerá aquí.',
@@ -72,20 +74,17 @@ export default function MessagesPage() {
         </div>
       ) : actual && !conv ? (
         <div className="mt-8">
-          <EmptyState
-            title="Esa conversación no existe"
-            action={
-              <button
-                type="button"
-                onClick={() => abrir(null)}
-                className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
-              >
-                Ver mis mensajes
+          <Aviso
+            tono="info"
+            titulo={NO_DISPONIBLE.titulo}
+            acciones={
+              <button type="button" onClick={() => abrir(null)} className={BTN_PRINCIPAL}>
+                Volver a mensajes
               </button>
             }
           >
-            Puede que ya no tengas acceso a ella.
-          </EmptyState>
+            {NO_DISPONIBLE.texto}
+          </Aviso>
         </div>
       ) : (
         <div className="relative w-full bg-transparent border-0 shadow-none overflow-visible">

@@ -1,8 +1,9 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
+import { failIfScenario, failWithScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { ITEMS } from '../mocks/items'
-import type { ItemFiltersDto, ItemResponseDto } from '../types/item.dto'
+import type { ItemFiltersDto, ItemResponseDto, ReservaDto } from '../types/item.dto'
 
 const matches = (it: ItemResponseDto, f: ItemFiltersDto) => {
   if (f.texto) {
@@ -88,8 +89,10 @@ const sortItems = (list: ItemResponseDto[], orden?: string) => {
 import { getInventoryItemByIdSync } from './inventoryService'
 
 export const itemService = {
-  search(filters: ItemFiltersDto): Promise<ItemResponseDto[]> {
+  async search(filters: ItemFiltersDto): Promise<ItemResponseDto[]> {
     if (env.useMocks) {
+      // Ordenar por cercanía sin ubicación: el catálogo responde 400 (no sabe desde dónde medir)
+      if (filters.orden === 'cerca' && !filters.cercaDe) failWithScenario('ubicacion-requerida', 400)
       const map = new Map<string, ItemResponseDto>()
       const imageToId = new Map<string, string>()
       for (const it of ITEMS) {
@@ -140,5 +143,18 @@ export const itemService = {
       return it ? mockDelay(it) : Promise.reject(new ApiError(404, 'La prenda no existe.'))
     }
     return apiClient.get<ItemResponseDto>(`/api/v1/prendas/${id}`).then((r) => r.data)
+  },
+
+  /**
+   * Reserva una unidad de la talla en la tienda por 15 minutos (ms-inventario, POST /api/v1/inventario/reserva).
+   * Responde 409 si ya no quedan unidades de esa talla. Ruta provisional como las demás del catálogo.
+   */
+  async reserve(prendaId: string, talla: string): Promise<ReservaDto> {
+    if (env.useMocks) {
+      failIfScenario()
+      failWithScenario('sin-unidades', 409)
+      return mockDelay({ prendaId, talla, expiracionReserva: new Date(Date.now() + 15 * 60 * 1000).toISOString() }, 300)
+    }
+    return apiClient.post<ReservaDto>('/api/v1/inventario/reserva', { prendaId, talla }).then((r) => r.data)
   },
 }

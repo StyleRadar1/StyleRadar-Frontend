@@ -1,6 +1,8 @@
-import { apiClient } from '@/modules/core/api/apiClient'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
+import { MENSAJES } from '@/modules/core/api/mensajes'
 import { mockDelay } from '@/modules/core/api/mock'
 import { env } from '@/configs/env'
+import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import { PLANS, MOCK_CHECKOUT_RESPONSE, MOCK_CHECKOUT_RESULTS } from '../mocks/plans'
 import type { PlanDto, PlanIntentDto, CheckoutResponseDto, CheckoutResultDto } from '../types/plan.dto'
 
@@ -44,14 +46,16 @@ export const planService = {
 
   /** Crea una preferencia de pago (mock: devuelve un initPoint simulado). */
   createCheckout(planId: string): Promise<CheckoutResponseDto> {
-    if (env.useMocks) return mockDelay(MOCK_CHECKOUT_RESPONSE)
+    if (env.useMocks) { fallarSiDemoPlan(); return mockDelay(MOCK_CHECKOUT_RESPONSE) }
     return apiClient.post<CheckoutResponseDto>('/api/pagos/checkout', { planId }).then((r) => r.data)
   },
 
   /** Consulta el estado del pago al backend (ignora el status de la query de MP). */
   getCheckoutResult(orderId: string): Promise<CheckoutResultDto> {
     if (env.useMocks) {
-      const result = MOCK_CHECKOUT_RESULTS[orderId] ?? MOCK_CHECKOUT_RESULTS['MOCK_ORDER_OK']
+      const result = MOCK_CHECKOUT_RESULTS[orderId]
+      // Una orden que no existe responde 404, como el backend.
+      if (!result) return Promise.reject(new ApiError(404, MENSAJES['no-existe']))
       return mockDelay(result)
     }
     return apiClient.get<CheckoutResultDto>(`/api/pagos/resultado/${orderId}`).then((r) => r.data)

@@ -1,7 +1,22 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useContext, useState, type ChangeEvent, type FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { hasScenario } from '@/modules/core/api/mockScenario'
+import { ErrorCard } from '@/modules/core/components/ErrorScene'
+import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import './MiTiendaPage.css'
 import './MiTiendaDashboard.css'
+
+const MAX_STORE_PHOTOS = 6
+const MAX_STORE_PHOTO_BYTES = 6 * 1024 * 1024
+const ALLOWED_STORE_PHOTO_TYPES = ['image/jpeg', 'image/png']
+
+function validateStoreImage(file: File): string {
+  if (!ALLOWED_STORE_PHOTO_TYPES.includes(file.type) || file.size === 0 || file.size > MAX_STORE_PHOTO_BYTES) {
+    return 'Sube una imagen JPG o PNG de máximo 6 MB.'
+  }
+  return ''
+}
 
 type StoreItem = {
   id: string
@@ -126,6 +141,8 @@ const WEEKLY_VISITS = 445
 const WEEKLY_GOAL = 500
 
 export default function MiTiendaPage() {
+  const user = useContext(AuthContext)?.user ?? null
+  const [searchParams] = useSearchParams()
   const [notice, setNotice] = useState('')
   const [items, setItems] = useState(ITEMS)
 
@@ -146,7 +163,9 @@ export default function MiTiendaPage() {
   const [collectionVisibility, setCollectionVisibility] = useState<'Pública' | 'Borrador'>('Pública')
   const [collectionError, setCollectionError] = useState('')
 
-  /* Distintivos */
+  /* Verificación y distintivos */
+  const [verificationStatus, setVerificationStatus] = useState<'SIN_VERIFICAR' | 'EN_REVISION' | 'VERIFICADA'>('SIN_VERIFICAR')
+  const [verificationError, setVerificationError] = useState('')
   const [badgesDialogOpen, setBadgesDialogOpen] = useState(false)
   const [lastUnitsLimit, setLastUnitsLimit] = useState(3)
   const [newArrivalDays, setNewArrivalDays] = useState(14)
@@ -192,27 +211,33 @@ export default function MiTiendaPage() {
     event.currentTarget.value = ''
     setPhotoError('')
     if (!selected.length) return
-    const remaining = Math.max(0, 6 - storeGallery.length)
+    const remaining = Math.max(0, MAX_STORE_PHOTOS - storeGallery.length)
     if (!remaining) {
-      setPhotoError('Ya tienes el máximo de 6 fotos de la tienda.')
+      setPhotoError('Ya llegaste al máximo de 6 fotos.')
       return
     }
-    const valid = selected.filter((file) => file.type.startsWith('image/')).slice(0, remaining)
-    if (valid.length !== selected.length) setPhotoError('Solo puedes subir imágenes y el máximo es de 6 fotos.')
-    const dataUrls = await Promise.all(valid.map((file) => new Promise<string>((resolve, reject) => {
+    const invalidMsg = selected.map(validateStoreImage).find(Boolean)
+    if (invalidMsg) {
+      setPhotoError(invalidMsg)
+      return
+    }
+    if (selected.length > remaining) {
+      setPhotoError('Ya llegaste al máximo de 6 fotos.')
+    }
+    const allowed = selected.slice(0, remaining)
+    const dataUrls = await Promise.all(allowed.map((file) => new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('No se pudo leer la imagen.'))
       reader.onerror = () => reject(new Error('No se pudo leer una de las imágenes.'))
       reader.readAsDataURL(file)
     })))
-
     const newEntries: StoreGalleryPhoto[] = dataUrls.map((url, i) => ({
       id: `photo-${Date.now()}-${i}`,
       url,
       tag: `Foto ${storeGallery.length + i + 1}`,
     }))
 
-    const next = [...storeGallery, ...newEntries].slice(0, 6)
+    const next = [...storeGallery, ...newEntries].slice(0, MAX_STORE_PHOTOS)
     setStoreGallery(next)
     try {
       localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(next))
@@ -258,6 +283,15 @@ export default function MiTiendaPage() {
     setCollectionDialogOpen(false)
     setNotice(`Colección «${title}» creada con éxito.`)
   }
+  const requestVerification = () => {
+    setVerificationError('')
+    if (verificationStatus === 'EN_REVISION' || hasScenario('regla')) {
+      setVerificationError('Tu solicitud ya está en revisión')
+      return
+    }
+    setVerificationStatus('EN_REVISION')
+    setNotice('Solicitud de verificación enviada. Quedó en revisión.')
+  }
 
   /* Distintivos */
   const openBadgesSettings = () => {
@@ -280,6 +314,33 @@ export default function MiTiendaPage() {
     setNotice('Se guardaron las reglas de distintivos automáticos.')
   }
 
+  const requestedStoreId = searchParams.get('tiendaId')
+  const forbidden = (requestedStoreId !== null && requestedStoreId !== 't-1')
+    || hasScenario('sin-permiso')
+    || (user !== null && user.role !== 'ADMIN_ALMACEN')
+
+  if (forbidden) {
+    return (
+      <main className="my-store">
+        <div className="my-store__content">
+          <ErrorCard
+            grande
+            variant="etiqueta"
+            tone="warn"
+            chip="Sin acceso"
+            title="No existe o no tienes acceso"
+            description="Solo puedes administrar tu propia tienda."
+            actions={
+              <Link className="my-store__button my-store__button--primary" to="/mi-tienda">
+                Ir a mi tienda
+              </Link>
+            }
+          />
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="my-store msd">
       {/* ── Hero a todo el ancho ── */}
@@ -296,12 +357,15 @@ export default function MiTiendaPage() {
           <div className="msd-hero__pills">
             <span className="msd-pill msd-pill--glass">◉ Así te ven tus clientes · Las herramientas de edición solo las ves tú</span>
             <span className="msd-pill msd-pill--glass">SPORT & URBANA</span>
-            <span className="msd-pill msd-pill--verified">Verificada</span>
+            <span className="msd-pill msd-pill--verified">{verificationStatus === 'VERIFICADA' ? 'Verificada' : verificationStatus === 'EN_REVISION' ? 'En revisión' : 'Sin verificar'}</span>
             <span className="msd-pill msd-pill--glass">Suscripción activa</span>
           </div>
           <div className="msd-hero__actions">
             <Link className="msd-btn msd-btn--primary" to="/tienda/inventario">＋ Nueva prenda</Link>
             <Link className="msd-btn msd-btn--ghost" to="/tiendas/luna" target="_blank" rel="noopener noreferrer">Ver tienda pública (como comprador) ↗</Link>
+            {verificationStatus !== 'VERIFICADA' && (
+              <button className="msd-btn msd-btn--ghost" type="button" onClick={requestVerification}>Solicitar verificación</button>
+            )}
             <Link className="msd-btn msd-btn--ghost" to="/tienda/estadisticas">Ver estadísticas</Link>
           </div>
 
@@ -336,6 +400,11 @@ export default function MiTiendaPage() {
           <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para pagar con otro medio y mantener tu tienda visible.</p></div>
           <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
         </div>
+        {verificationError && (
+          <ErrorBanner tone="warn" icon="info" title={verificationError}>
+            Nuestro equipo ya está revisando los documentos de tu tienda. Te avisaremos cuando finalice la revisión.
+          </ErrorBanner>
+        )}
 
         {notice ? <div className="msd-notice" role="status">{notice}<button type="button" onClick={() => setNotice('')} aria-label="Cerrar aviso">×</button></div> : null}
 
@@ -506,10 +575,10 @@ export default function MiTiendaPage() {
             <header className="msd-card__head">
               <div>
                 <h2 id="store-photos-title">Fotos de la tienda</h2>
-                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Fachada, vitrina e interior (hasta 6 fotos).</p>
+                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Fachada, vitrina e interior (hasta 6 fotos). {storeGallery.length}/6 fotos.</p>
               </div>
             </header>
-            {photoError ? <p className="text-xs text-rose-500 mb-2 font-medium" role="alert">{photoError}</p> : null}
+            <FieldError id="store-photos-err" message={photoError} />
             <div className="msd-collections">
               {storeGallery.map((photo, index) => (
                 <div key={photo.id} className="msd-collection">
@@ -528,12 +597,12 @@ export default function MiTiendaPage() {
                   </button>
                 </div>
               ))}
-              {storeGallery.length < 6 && (
+              {storeGallery.length < MAX_STORE_PHOTOS && (
                 <label className="msd-collection msd-collection--new cursor-pointer">
                   <span>＋ Subir foto</span>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png"
                     multiple
                     className="sr-only"
                     onChange={handleUploadPhotos}

@@ -1,14 +1,20 @@
-import { useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { Link } from 'react-router-dom'
-import { errorKind, errorMessage } from '@/modules/core/api/errors'
+import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
+import { mockSessionUser } from '@/modules/core/api/mock'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { ErrorToast, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { AuthContext } from '@/modules/identidad/states/authContext'
+import { chatService } from '@/modules/soporte/services/chatService'
 import { secondHandService } from '../services/secondHandService'
 import { ESTADO_PUBLICACION_LABEL, type ListingDto } from '../types/secondhand.dto'
 
 type Action = { listing: ListingDto; to: 'VENDIDA' | 'RETIRADA' }
+type BuyerOption = { id: string; nombre: string }
+
 const STATUS_BADGE: Record<string, { cls: string; icon: React.ReactNode }> = {
   DISPONIBLE: {
     cls: 'bg-[var(--color-success-bg,rgba(30,107,58,0.15))] text-[var(--color-success-text,#144a27)] border border-[var(--color-success-border,#1e6b3a)]',
@@ -62,24 +68,98 @@ const STATUS_BADGE: Record<string, { cls: string; icon: React.ReactNode }> = {
 
 /** RF-37 a RF-39: el dueño ve solo las acciones que permite el estado de cada prenda. */
 export function MyListings() {
+  const user = useContext(AuthContext)?.user ?? null
   const { data: list, loading, error, reload: load, setData: setList } = useResource(secondHandService.mine, [] as ListingDto[])
+  const [buyers, setBuyers] = useState<BuyerOption[]>([])
   const [action, setAction] = useState<Action | null>(null)
+  const [selectedBuyer, setSelectedBuyer] = useState('')
+  const [customBuyerId, setCustomBuyerId] = useState('')
+  const [buyerError, setBuyerError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'warn' | 'bad'; text: string; sub?: string } | null>(null)
   const inFlight = useRef(false)
 
+  useEffect(() => {
+    let active = true
+    chatService.conversations().then((convs) => {
+      if (!active) return
+      const seen = new Map<string, BuyerOption>()
+      for (const c of convs) {
+        if ((c.contacto.tipo === 'COMPRADOR' || c.contacto.tipo === 'VENDEDOR') && !seen.has(c.contacto.id)) {
+          seen.set(c.contacto.id, { id: c.contacto.id, nombre: c.contacto.nombre })
+        }
+      }
+      setBuyers([...seen.values()])
+    }).catch(() => { /* si falla la carga de chats, igual puede ingresar el ID numérico del comprador */ })
+    return () => { active = false }
+  }, [])
+
+  const openAction = (listing: ListingDto, to: 'VENDIDA' | 'RETIRADA') => {
+    setSelectedBuyer('')
+    setCustomBuyerId('')
+    setBuyerError('')
+    setAction({ listing, to })
+  }
 
   const run = async () => {
     if (!action || inFlight.current) return
+    const sellerId = user?.id ?? mockSessionUser()?.id ?? ''
+    if (action.to === 'VENDIDA') {
+      const compradorId = selectedBuyer === '__otro__' || !buyers.length ? customBuyerId.trim() : selectedBuyer.trim()
+      if (!compradorId) {
+        setBuyerError('Elige a la persona que te la compró.')
+        const targetId = selectedBuyer === '__otro__' || !buyers.length ? 'sell-buyer-id' : 'sell-buyer'
+        window.setTimeout(() => document.getElementById(targetId)?.focus(), 0)
+        return
+      }
+      if (compradorId === sellerId) {
+        setBuyerError('No puedes seleccionarte a ti mismo como comprador.')
+        return
+      }
+
+      inFlight.current = true; setBusy(true); setMsg(null); setBuyerError('')
+      try {
+        const upd = await secondHandService.sell(action.listing.id, sellerId, compradorId)
+        setList((l) => l.map((x) => (x.id === upd.id ? upd : x)))
+        setMsg({ tone: 'ok', text: `«${upd.titulo}» quedó como vendida.` })
+        setAction(null)
+      } catch (e) {
+        const k = errorKind(e)
+        const campos = fieldErrors(e)
+        if (k === 'datos' || campos.compradorId) {
+          setBuyerError(campos.compradorId ?? 'Elige a la persona que te la compró.')
+        } else if (k === 'conflicto') {
+          setMsg({ tone: 'warn', text: 'Esta prenda ya se vendió o donó.', sub: 'Actualizamos tus publicaciones.' })
+          setAction(null)
+          load()
+        } else {
+          setMsg({ tone: 'bad', text: errorMessage(e) })
+          setAction(null)
+        }
+      } finally {
+        inFlight.current = false; setBusy(false)
+      }
+      return
+    }
+
     inFlight.current = true; setBusy(true); setMsg(null)
     try {
       const upd = await secondHandService.setStatus(action.listing.id, { estado: action.to })
       setList((l) => l.map((x) => (x.id === upd.id ? upd : x)))
-      setMsg({ ok: true, text: action.to === 'VENDIDA' ? `«${upd.titulo}» quedó como vendida.` : `Retiraste «${upd.titulo}» de Segunda vida.` })
+      setMsg({ tone: 'ok', text: `Retiraste «${upd.titulo}» de Segunda vida.` })
+      setAction(null)
     } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e) })
-      if (errorKind(e) === 'conflicto') load()
-    } finally { inFlight.current = false; setBusy(false); setAction(null) }
+      const k = errorKind(e)
+      if (k === 'conflicto') {
+        setMsg({ tone: 'warn', text: 'Esta prenda ya no estaba disponible.', sub: 'Actualizamos tus publicaciones.' })
+        load()
+      } else {
+        setMsg({ tone: 'bad', text: errorMessage(e) })
+      }
+      setAction(null)
+    } finally {
+      inFlight.current = false; setBusy(false)
+    }
   }
 
   const handlePassToDonation = async (listing: ListingDto) => {
@@ -90,9 +170,9 @@ export function MyListings() {
     try {
       const upd = await secondHandService.passToDonation(listing.id)
       setList((l) => l.map((x) => (x.id === upd.id ? upd : x)))
-      setMsg({ ok: true, text: `«${upd.titulo}» pasó a la Vitrina de Donaciones ($0 COP).` })
+      setMsg({ tone: 'ok', text: `«${upd.titulo}» pasó a la Vitrina de Donaciones ($0 COP).` })
     } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e) })
+      setMsg({ tone: 'bad', text: errorMessage(e) })
     } finally {
       inFlight.current = false
       setBusy(false)
@@ -105,27 +185,16 @@ export function MyListings() {
 
   return (
     <div>
-      {msg && (
-        <p
-          role={msg.ok ? 'status' : 'alert'}
-          className={`mb-4 flex items-center gap-2 rounded-xl p-3 text-sm border ${
-            msg.ok
-              ? 'bg-[var(--color-success-bg,rgba(30,107,58,0.12))] text-[var(--color-success-text,#144a27)] border-[var(--color-success-border,#1e6b3a)]'
-              : 'bg-[var(--color-danger-bg,rgba(220,38,38,0.12))] text-[var(--color-danger-text,#ff8a8a)] border-[var(--color-danger-border,#ff8a8a)]'
-          }`}
-        >
-          {msg.ok ? (
-            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-            </svg>
-          )}
-          <span>{msg.text}</span>
-        </p>
-      )}
+      <div className="mb-4">
+        <ErrorToast
+          open={!!msg}
+          tone={msg?.tone === 'ok' ? 'ok' : msg?.tone === 'warn' ? 'warn' : 'bad'}
+          icon={msg?.tone === 'ok' ? 'ok' : msg?.tone === 'warn' ? 'refresh' : undefined}
+          title={msg?.text ?? ''}
+          subtitle={msg?.sub}
+          onClose={() => setMsg(null)}
+        />
+      </div>
       <ul className="space-y-3" aria-label="Mis publicaciones">
         {list.map((l) => (
           <li key={l.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
@@ -150,7 +219,7 @@ export function MyListings() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => setAction({ listing: l, to: 'VENDIDA' })}
+                  onClick={() => openAction(l, 'VENDIDA')}
                   className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-3 py-2 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]"
                   aria-label={`Marcar ${l.titulo} como vendida`}
                 >
@@ -170,7 +239,7 @@ export function MyListings() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => setAction({ listing: l, to: 'RETIRADA' })}
+                  onClick={() => openAction(l, 'RETIRADA')}
                   className="rounded-xl border border-[var(--color-border-subtle,transparent)] px-3 py-2 text-sm font-semibold text-[var(--color-danger-text,#ff8a8a)] hover:bg-[var(--color-danger-bg,rgba(220,38,38,0.1))] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]"
                   aria-label={`Retirar ${l.titulo}`}
                 >
@@ -181,9 +250,57 @@ export function MyListings() {
           </li>
         ))}
       </ul>
-      <ConfirmDialog open={!!action} busy={busy} danger={action?.to === 'RETIRADA'} onCancel={() => setAction(null)} onConfirm={run}
-        title={action?.to === 'VENDIDA' ? '¿Marcar como vendida?' : '¿Retirar la publicación?'} confirmLabel={action?.to === 'VENDIDA' ? 'Marcar vendida' : 'Retirar'}>
-        {action?.to === 'VENDIDA' ? `«${action?.listing.titulo}» dejará de aparecer como disponible. No se puede deshacer.` : `«${action?.listing.titulo}» dejará de verse en Segunda vida.`}
+
+      <ConfirmDialog
+        open={!!action}
+        busy={busy}
+        danger={action?.to === 'RETIRADA'}
+        onCancel={() => setAction(null)}
+        onConfirm={run}
+        title={action?.to === 'VENDIDA' ? 'Marcar como vendida' : '¿Retirar la publicación?'}
+        confirmLabel={action?.to === 'VENDIDA' ? 'Confirmar venta' : 'Retirar'}
+      >
+        {action?.to === 'VENDIDA' ? (
+          <div className="space-y-3">
+            <p>«{action.listing.titulo}» ({formatCOP(action.listing.precio)}) dejará de aparecer como disponible. No se puede deshacer.</p>
+            <div>
+              <label htmlFor={buyers.length ? 'sell-buyer' : 'sell-buyer-id'} className="block text-sm font-semibold text-[var(--color-text)]">
+                ¿A quién se la vendiste?
+              </label>
+              {buyers.length > 0 && (
+                <select
+                  id="sell-buyer"
+                  value={selectedBuyer}
+                  aria-invalid={!!buyerError}
+                  aria-describedby={buyerError ? 'sell-buyer-err' : undefined}
+                  onChange={(e) => { setSelectedBuyer(e.target.value); setBuyerError('') }}
+                  className="mt-1.5 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+                >
+                  <option value="">Elige la persona compradora</option>
+                  {buyers.map((b) => (
+                    <option key={b.id} value={b.id}>{b.nombre}</option>
+                  ))}
+                  <option value="__otro__">Otro comprador (ingresar ID)</option>
+                </select>
+              )}
+              {(selectedBuyer === '__otro__' || buyers.length === 0) && (
+                <input
+                  id="sell-buyer-id"
+                  inputMode="numeric"
+                  value={customBuyerId}
+                  placeholder="ID numérico de quien te compró"
+                  aria-invalid={!!buyerError}
+                  aria-describedby={buyerError ? 'sell-buyer-err' : undefined}
+                  onChange={(e) => { setCustomBuyerId(e.target.value); setBuyerError('') }}
+                  className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+                />
+              )}
+              <FieldError id="sell-buyer-err" message={buyerError} />
+            </div>
+          </div>
+        ) : (
+          `«${action?.listing.titulo}» dejará de verse en Segunda vida.`
+        )}
       </ConfirmDialog>
     </div>
   )

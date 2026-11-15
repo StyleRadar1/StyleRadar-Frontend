@@ -2,6 +2,8 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import type { Role } from '@/modules/core/types/roles'
 import { NotFound } from '@/modules/core/components/NotFound'
+import { SessionExpiredOverlay } from '@/modules/core/components/SessionExpiredOverlay'
+import { SinConexion } from '@/modules/core/components/SinConexion'
 import { WelcomeOverlay } from '@/modules/core/components/WelcomeOverlay'
 import { AuroraBackground, isAuroraExcluded } from '@/modules/core/design-system'
 import { AdminLayout } from './layouts/AdminLayout'
@@ -42,6 +44,8 @@ const AdminStoreDetail = lazy(() => import('@/modules/administracion/pages/Admin
 const AdminFoundations = lazy(() => import('@/modules/administracion/pages/AdminFoundationsPage'))
 const AdminFoundationDetail = lazy(() => import('@/modules/administracion/pages/AdminFoundationDetailPage'))
 const AdminPlaylists = lazy(() => import('@/modules/administracion/pages/AdminPlaylistsPage'))
+// Vitrina de las piezas de error: solo en desarrollo, no llega al build de QA ni producción.
+const ErroresDemo = import.meta.env.DEV ? lazy(() => import('@/modules/core/pages/ErroresDemo')) : null
 
 const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-white/60">Cargando…</p>}>{el}</Suspense>
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
@@ -67,6 +71,8 @@ function RootLayout() {
         <Outlet />
       </div>
       <WelcomeOverlay />
+      <SessionExpiredOverlay />
+      <SinConexion />
     </div>
   )
 }
@@ -112,6 +118,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },
       { path: '/fundacion/estadisticas', element: only(FOUND, <Stats />) },
+      ...(ErroresDemo ? [{ path: '/dev/errores', element: page(<ErroresDemo />) }] : []),
       { path: '*', element: <NotFound /> },
     ],
   },

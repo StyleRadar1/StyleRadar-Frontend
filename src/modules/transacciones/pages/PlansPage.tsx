@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { Aviso } from '@/modules/core/components/errores'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { useUserPlan } from '../hooks/useUserPlan'
-import { userPlanService } from '../services/userPlanService'
+import { PLAN_CHANGED, userPlanService } from '../services/userPlanService'
+import { avisoDePlan, type AvisoPlan } from '../utils/erroresPlan'
 import { COMPARATIVA, PLAN_LABEL, PLANES, REGLAS, type PlanInfo, type PlanUsuario } from '../types/plan.dto'
 
 const REGISTRO: Record<string, [string, string]> = {
@@ -25,16 +26,26 @@ export default function PlansPage() {
   const [cambio, setCambio] = useState<PlanUsuario | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
   const cambiar = async () => {
     if (!cambio || busy) return
-    setBusy(true); setMsg(null)
+    setBusy(true); setMsg(null); setAviso(null)
     try {
       const r = await userPlanService.change(cambio)
       setMsg({ ok: true, text: r.plan === 'RADAR_PLUS' ? 'Listo: ya tienes Radar+. Los candados desaparecen.' : 'Volviste al plan Radar. Los beneficios de Radar+ quedan con candado.' })
     } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e, 'No pudimos cambiar tu plan. Intenta de nuevo.') })
+      const a = avisoDePlan(e, 'No pudimos cambiar tu plan. Intenta de nuevo.')
+      setAviso(a)
+      // 409: se vuelve a leer el plan para mostrar el estado real.
+      if (a.refrescar) window.dispatchEvent(new Event(PLAN_CHANGED))
     } finally { setBusy(false); setCambio(null) }
+  }
+
+  /** Lleva a la tarjeta del plan que la persona tiene ahora. */
+  const verMiPlan = () => {
+    const el = document.querySelector<HTMLElement>('[data-plan-actual="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.focus()
   }
 
   const accion = (p: PlanInfo) => {
@@ -65,6 +76,14 @@ export default function PlansPage() {
           Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras.
         </p>
         {comprador && plan && <p className="mt-4 text-sm text-[var(--sr-hero-text)]">Tu plan actual: <b>{PLAN_LABEL[plan]}</b></p>}
+        {aviso && (
+          <div className="mt-4 max-w-xl">
+            <Aviso tono={aviso.tono} titulo={aviso.titulo}
+              accion={aviso.refrescar ? <button type="button" onClick={verMiPlan} className="rounded-lg border border-current px-3 py-1 text-sm font-semibold text-[var(--sr-hero-text)]">Ver mi plan</button> : undefined}>
+              {aviso.texto}
+            </Aviso>
+          </div>
+        )}
         {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-4 rounded-xl p-3 text-sm ${msg.ok ? 'bg-[#9be3b4]/10 text-[#9be3b4]' : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'}`}>{msg.text}</p>}
 
         <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Planes">
@@ -72,6 +91,8 @@ export default function PlansPage() {
             <li
               key={p.id}
               aria-label={p.nombre}
+              data-plan-actual={comprador && plan === p.id}
+              tabIndex={-1}
               className={`relative flex flex-col rounded-2xl border p-6 backdrop-blur-xl ${
                 p.destacado
                   ? 'border-violeta bg-[var(--sr-surface)]/80 shadow-lg shadow-purple-900/20'

@@ -1,6 +1,11 @@
 import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind } from '@/modules/core/api/errors'
+import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
+import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
+import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
 import { ItemCard } from '../components/ItemCard'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
@@ -88,6 +93,24 @@ const OPCIONES_ORDEN = [
   { id: 'asc', label: 'Precio: menor a mayor' },
   { id: 'desc', label: 'Precio: mayor a menor' },
 ]
+
+/** Aviso al guardar la búsqueda: qué pasó y qué botón lo resuelve. */
+interface AvisoBusqueda { tono: TonoAviso; titulo: string; texto: string; accion?: 'reintentar' | 'planes' | 'login' | 'ver' }
+
+/** Texto seguro para un error al guardar la búsqueda o activar su alerta. */
+function avisoDeError(e: unknown): AvisoBusqueda {
+  const status = e instanceof ApiError ? e.status : 0
+  if (status === 422 && e instanceof ApiError && e.code === LIMITE_PLAN) {
+    return { tono: 'alerta', titulo: 'Guardamos tu búsqueda, pero sin alerta', texto: 'Con el plan Radar puedes tener hasta 3 alertas activas. Con Radar+ no hay límite.', accion: 'planes' }
+  }
+  // ms-notificaciones todavía no recibe la búsqueda recién creada en ms-usuarios
+  if (status === 422) return { tono: 'alerta', titulo: 'Tu búsqueda todavía se está guardando', texto: 'Intenta crear la alerta en unos segundos.', accion: 'reintentar' }
+  if (status === 409) return { tono: 'info', titulo: 'Ya tienes una alerta para esto', texto: 'La encuentras en «Mis búsquedas y alertas».', accion: 'ver' }
+  const kind = errorKind(e)
+  if (kind === 'sesion') return { tono: 'info', titulo: 'Inicia sesión para guardar tus búsquedas', texto: 'Así te avisamos cuando llegue lo que buscas.', accion: 'login' }
+  if (kind === 'sin-conexion') return { tono: 'error', titulo: 'Se perdió la conexión', texto: 'Revisa tu internet e intenta de nuevo.', accion: 'reintentar' }
+  return { tono: 'error', titulo: 'No pudimos guardar la búsqueda', texto: 'Intenta en unos minutos.', accion: 'reintentar' }
+}
 
 export default function CatalogPage() {
   const [params, setParams] = useSearchParams()
@@ -180,8 +203,14 @@ export default function CatalogPage() {
     prevMenuAbiertoRef.current = menuFiltrosAbierto
   }, [menuFiltrosAbierto, CATEGORIAS_CONFIG])
 
-  // Feedback toast
-  const [toastMsg, setToastMsg] = useState<string | null>(null)
+  // Guardar búsqueda y su alerta (RF-28 y RF-30)
+  const [busqueda, setBusqueda] = useState<BusquedaGuardadaDto | null>(null)
+  const [avisoBusqueda, setAvisoBusqueda] = useState<AvisoBusqueda | null>(null)
+  const [guardando, setGuardando] = useState(false)
+
+  // Ordenar por cercanía necesita saber desde dónde (400 del catálogo si no hay ubicación)
+  const [pideUbicacion, setPideUbicacion] = useState(false)
+  const [ubicacionError, setUbicacionError] = useState('')
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
@@ -280,7 +309,9 @@ export default function CatalogPage() {
     }
   }, [texto, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroCercaDe, filtroColor, filtroEstilo, orden])
 
-  const { items, loading, error } = useItems(activeFilters)
+  const { items, loading, error, status } = useItems(activeFilters)
+  const sinUbicacion = filtroCercaDe === 'No especificar'
+  const mostrarPideUbicacion = sinUbicacion && (pideUbicacion || (orden === 'cerca' && status === 400))
 
   // Deduplicación garantizada por ID e imagen al construir la lista de la grilla (queda el primero)
   const uniqueItems = useMemo(() => {
@@ -315,17 +346,60 @@ export default function CatalogPage() {
   }
 
   const handleCambiarOrden = (nuevoOrden: string) => {
+    // Sin ubicación no hay desde dónde medir: se pide antes de ordenar
+    if (nuevoOrden === 'cerca' && sinUbicacion) { setPideUbicacion(true); setUbicacionError(''); return }
+    setPideUbicacion(false)
     setOrden(nuevoOrden)
     const next = new URLSearchParams(params)
     if (nuevoOrden && nuevoOrden !== 'rel') next.set('orden', nuevoOrden); else next.delete('orden')
     setParams(next)
   }
 
-  // Guardar búsqueda
-  const handleGuardarBusqueda = () => {
-    const queryTerm = texto.trim() || 'Catálogo completo'
-    setToastMsg(`Búsqueda «${queryTerm}» guardada en «Mis búsquedas y alertas».`)
-    setTimeout(() => setToastMsg(null), 3500)
+  const elegirCercaDe = (loc: string) => {
+    setFiltroCercaDe(loc)
+    if (pideUbicacion && loc !== 'No especificar') {
+      setPideUbicacion(false)
+      setOrden('cerca')
+      const next = new URLSearchParams(params); next.set('orden', 'cerca'); setParams(next)
+    }
+  }
+
+  const usarMiUbicacion = () => {
+    setUbicacionError('')
+    if (!('geolocation' in navigator)) { setUbicacionError('Tu navegador no comparte la ubicación. Elige tu barrio.'); return }
+    navigator.geolocation.getCurrentPosition(
+      () => elegirCercaDe('Mi ubicación'),
+      () => { setUbicacionError('No pudimos usar tu ubicación. Elige tu barrio.'); setMenuFiltrosAbierto(true) },
+      { timeout: 10000, maximumAge: 300000 },
+    )
+  }
+
+  // Guardar búsqueda y activar su alerta
+  const activarAlerta = async (b: BusquedaGuardadaDto) => {
+    try {
+      const actual = b.alerta ? b : await alertService.setSearchAlert(b.id, true)
+      setBusqueda(actual)
+      setAvisoBusqueda({ tono: 'exito', titulo: `Guardamos «${actual.nombre}»`, texto: 'Te avisaremos cuando llegue una prenda que coincida.', accion: 'ver' })
+    } catch (e) {
+      setAvisoBusqueda(avisoDeError(e))
+    }
+  }
+
+  const guardar = async () => {
+    const nombre = texto.trim() || 'Catálogo completo'
+    try {
+      const b = busqueda?.nombre === nombre ? busqueda : await alertService.saveSearch(nombre, `${filtrosActivosCount} filtros · orden ${orden}`)
+      setBusqueda(b)
+      await activarAlerta(b)
+    } catch (e) {
+      setAvisoBusqueda(avisoDeError(e))
+    }
+  }
+
+  const handleGuardarBusqueda = async () => {
+    if (guardando) return
+    setGuardando(true); setAvisoBusqueda(null)
+    try { await guardar() } finally { setGuardando(false) }
   }
 
   // Limpiar todos los filtros
@@ -357,7 +431,7 @@ export default function CatalogPage() {
                   key={loc}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => setFiltroCercaDe(isSelected && !isDefault ? 'No especificar' : loc)}
+                  onClick={() => elegirCercaDe(isSelected && !isDefault ? 'No especificar' : loc)}
                   className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                 >
                   <span>{loc}</span>
@@ -832,13 +906,14 @@ export default function CatalogPage() {
             <button
               type="button"
               onClick={handleGuardarBusqueda}
-              className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+              disabled={guardando}
+              className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-60"
               title="Guardar esta búsqueda en tu perfil para recibir avisos"
             >
               <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
               </svg>
-              <span>Guardar búsqueda</span>
+              <span>{guardando ? 'Guardando…' : 'Guardar búsqueda'}</span>
             </button>
 
             {/* Selector Ordenar rediseñado */}
@@ -1018,15 +1093,27 @@ export default function CatalogPage() {
           </div>
         )}
 
-        {/* Feedback toast */}
-        {toastMsg && (
-          <div role="status" className="mb-6 rounded-xl border border-[var(--color-success-border,rgba(16,185,129,0.3))] bg-[var(--color-success-bg,rgba(16,185,129,0.1))] p-4 text-sm text-[var(--color-success-text,#10b981)] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
-            <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            <span>{toastMsg}</span>
-          </div>
+        {/* 400 · ordenar por cercanía sin ubicación: se pide antes, sin error técnico */}
+        {mostrarPideUbicacion && (
+          <Aviso tono="info" className="mb-6" titulo="Activa tu ubicación para ordenar por cercanía" onCerrar={() => setPideUbicacion(false)}
+            acciones={<>
+              <button type="button" onClick={usarMiUbicacion} className={BTN_PRINCIPAL}>Usar mi ubicación</button>
+              <button type="button" onClick={() => { setMenuFiltrosAbierto(true); menuRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }} className={BTN_SECUNDARIO}>Elegir barrio</button>
+            </>}>
+            <p>También puedes elegir tu barrio.</p>
+            {ubicacionError && <p className="mt-1 text-[var(--color-danger-text,#ffb4b4)]">{ubicacionError}</p>}
+          </Aviso>
+        )}
+
+        {/* Guardar búsqueda: éxito, 409, 422 (aún se guarda o límite del plan) y fallas del servicio */}
+        {avisoBusqueda && (
+          <Aviso tono={avisoBusqueda.tono} className="mb-6" titulo={avisoBusqueda.titulo} onCerrar={() => setAvisoBusqueda(null)}
+            acciones={avisoBusqueda.accion === 'reintentar' ? <button type="button" disabled={guardando} onClick={handleGuardarBusqueda} className={BTN_PRINCIPAL}>Reintentar</button>
+              : avisoBusqueda.accion === 'planes' ? <Link to="/planes" className={BTN_PRINCIPAL}>Ver Radar+</Link>
+              : avisoBusqueda.accion === 'login' ? <Link to="/login" className={BTN_PRINCIPAL}>Iniciar sesión</Link>
+              : avisoBusqueda.accion === 'ver' ? <Link to="/alertas" className={BTN_SECUNDARIO}>Ver mis búsquedas</Link> : undefined}>
+            {avisoBusqueda.texto}
+          </Aviso>
         )}
 
         {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ESTILO REFERENCIA EDITORIAL) */}
@@ -1056,7 +1143,7 @@ export default function CatalogPage() {
             </span>
           </div>
 
-          {error && (
+          {error && !mostrarPideUbicacion && (
             <div role="alert" className="my-8 rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.3))] bg-[var(--color-danger-bg,rgba(239,68,68,0.1))] p-4 text-sm text-[var(--color-danger-text,#ef4444)] flex items-center gap-2">
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />

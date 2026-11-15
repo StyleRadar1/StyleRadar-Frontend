@@ -1,6 +1,10 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Loading, ErrorState } from '@/modules/core/components/Status'
+import { Loading } from '@/modules/core/components/Status'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind } from '@/modules/core/api/errors'
+import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
+import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
@@ -12,6 +16,34 @@ import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
 import './ItemDetailPage.css'
 
+type Accion = 'reintentar-alerta' | 'reservar' | 'planes' | 'login' | 'ver-alertas'
+interface AvisoPrenda { tono: TonoAviso; titulo: string; texto: string; accion?: Accion }
+
+/** Error al crear la alerta de una prenda (ms-notificaciones): texto fijo, nunca el del servidor. */
+function avisoAlerta(e: unknown): AvisoPrenda {
+  const status = e instanceof ApiError ? e.status : 0
+  if (status === 409) return { tono: 'info', titulo: 'Ya tienes una alerta para esta prenda', texto: 'Te avisamos cuando llegue.', accion: 'ver-alertas' }
+  if (status === 422 && e instanceof ApiError && e.code === LIMITE_PLAN) {
+    return { tono: 'alerta', titulo: 'Llegaste al límite de alertas', texto: 'Con el plan Radar puedes tener hasta 3 alertas activas. Con Radar+ no hay límite.', accion: 'planes' }
+  }
+  if (status === 422) return { tono: 'info', titulo: 'Esta prenda ya tiene unidades', texto: 'Puedes reservarla ahora.', accion: 'reservar' }
+  return general(e, 'No pudimos crear la alerta', 'reintentar-alerta')
+}
+
+/** Error al reservar (ms-inventario): 409 es que ya no hay unidades de esa talla. */
+function avisoReserva(e: unknown): AvisoPrenda {
+  const status = e instanceof ApiError ? e.status : 0
+  if (status === 409) return { tono: 'error', titulo: 'Ya no quedan unidades en esa talla', texto: 'Prueba con otra.' }
+  return general(e, 'No pudimos reservar la prenda')
+}
+
+function general(e: unknown, titulo: string, accion?: Accion): AvisoPrenda {
+  const kind = errorKind(e)
+  if (kind === 'sesion') return { tono: 'info', titulo: 'Inicia sesión para continuar', texto: 'Así guardamos tu alerta o tu reserva.', accion: 'login' }
+  if (kind === 'sin-conexion') return { tono: 'error', titulo: 'Se perdió la conexión', texto: 'Revisa tu internet e intenta de nuevo.', accion }
+  return { tono: 'error', titulo, texto: 'Intenta más tarde.', accion }
+}
+
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -22,6 +54,10 @@ export default function ItemDetailPage() {
   const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null)
   const [prevId, setPrevId] = useState(id)
   const [descripcionExpandida, setDescripcionExpandida] = useState(false)
+  const [aviso, setAviso] = useState<AvisoPrenda | null>(null)
+  const [ocupado, setOcupado] = useState<'alerta' | 'reserva' | null>(null)
+  /** Tallas que el inventario dijo que se agotaron (409 al reservar). */
+  const [agotadas, setAgotadas] = useState<string[]>([])
 
   if (id !== prevId) {
     setPrevId(id)
@@ -30,7 +66,7 @@ export default function ItemDetailPage() {
 
   // Carga de la prenda principal y similares
   const loader = useCallback(async () => {
-    if (!id) throw new Error('ID de prenda no especificado.')
+    if (!id) throw new ApiError(404, 'Prenda no especificada.')
     const prendaData = await itemService.getById(id)
     const similaresData = await itemService.search({ estilo: prendaData.estilo })
     return {
@@ -39,7 +75,7 @@ export default function ItemDetailPage() {
     }
   }, [id])
 
-  const { data, loading, error, reload } = useResource<{
+  const { data, loading, error, reload: recargar } = useResource<{
     prenda: ItemResponseDto | null
     similares: ItemResponseDto[]
   }>(loader, { prenda: null, similares: [] })
@@ -58,6 +94,45 @@ export default function ItemDetailPage() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [navigate])
+
+  // 403 y 404 se ven igual: la prenda no existe o no está disponible para esta persona
+  const noExiste = !!error && (errorKind(error) === 'no-existe' || errorKind(error) === 'permiso')
+
+  const crearAlerta = async () => {
+    if (!prenda || ocupado) return
+    setOcupado('alerta'); setAviso(null)
+    try {
+      await alertService.createAlert(prenda.id, prenda.nombre, prenda.tienda, tallaSeleccionada || undefined)
+      setAviso({ tono: 'exito', titulo: 'Te avisaremos cuando llegue', texto: 'La encuentras en «Mis búsquedas y alertas».', accion: 'ver-alertas' })
+    } catch (e) {
+      setAviso(avisoAlerta(e))
+    } finally { setOcupado(null) }
+  }
+
+  const reservar = async () => {
+    if (!prenda || ocupado) return
+    if (!tallaSeleccionada) { setAviso({ tono: 'info', titulo: 'Elige tu talla', texto: 'Así reservamos la unidad correcta en la tienda.' }); return }
+    setOcupado('reserva'); setAviso(null)
+    try {
+      await itemService.reserve(prenda.id, tallaSeleccionada)
+      setAviso({ tono: 'exito', titulo: `Reservamos tu talla ${tallaSeleccionada}`, texto: `Tienes 15 minutos para recogerla en ${prenda.tienda}.` })
+    } catch (e) {
+      const a = avisoReserva(e)
+      if (e instanceof ApiError && e.status === 409) { setAgotadas((l) => [...l, tallaSeleccionada]); setTallaSeleccionada('') }
+      setAviso(a)
+    } finally { setOcupado(null) }
+  }
+
+  const accionAviso = (a: AvisoPrenda) => {
+    switch (a.accion) {
+      case 'reintentar-alerta': return <button type="button" disabled={!!ocupado} onClick={crearAlerta} className={BTN_PRINCIPAL}>Reintentar</button>
+      case 'reservar': return <button type="button" disabled={!!ocupado} onClick={reservar} className={BTN_PRINCIPAL}>Reservar en tienda</button>
+      case 'planes': return <Link to="/planes" className={BTN_PRINCIPAL}>Ver Radar+</Link>
+      case 'login': return <Link to="/login" className={BTN_PRINCIPAL}>Iniciar sesión</Link>
+      case 'ver-alertas': return <Link to="/alertas" className={BTN_SECUNDARIO}>Ver mis alertas</Link>
+      default: return undefined
+    }
+  }
 
   const handleGuardar = () => {
     setGuardado((prev) => !prev)
@@ -150,12 +225,16 @@ export default function ItemDetailPage() {
       {/* Estados de carga o error */}
       {loading && <Loading label="Cargando detalles de la prenda..." />}
 
-      {!!error && (
-        <ErrorState
-          error={error}
-          onRetry={reload}
-          title="No se pudo encontrar la prenda"
-        />
+      {noExiste && (
+        <Aviso tono="info" titulo="Esta prenda ya no está disponible." acciones={<Link to="/catalogo" className={BTN_PRINCIPAL}>Volver al catálogo</Link>}>
+          Puede que la tienda la haya retirado del catálogo.
+        </Aviso>
+      )}
+
+      {!!error && !noExiste && (
+        <Aviso tono="error" titulo="No pudimos cargar la prenda" acciones={<button type="button" onClick={recargar} className={BTN_PRINCIPAL}>Reintentar</button>}>
+          {errorKind(error) === 'sin-conexion' ? 'Revisa tu internet e intenta de nuevo.' : 'Intenta en unos minutos.'}
+        </Aviso>
       )}
 
       {mensajeFeedback && (
@@ -332,15 +411,17 @@ export default function ItemDetailPage() {
                       <div className="mt-2.5 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Tallas disponibles">
                         {prenda.tallas.map((talla) => {
                           const isSelected = tallaSeleccionada === talla
+                          const isAgotada = agotadas.includes(talla)
                           return (
                             <button
                               key={talla}
                               type="button"
                               role="radio"
                               aria-checked={isSelected}
-                              aria-label={talla}
+                              disabled={isAgotada}
+                              aria-label={isAgotada ? `${talla}, agotada` : talla}
                               onClick={() => setTallaSeleccionada(isSelected ? '' : talla)}
-                              className={`h-10 w-10 rounded-full border text-xs font-bold transition flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                              className={`h-10 w-10 rounded-full border text-xs font-bold transition flex items-center justify-center disabled:cursor-not-allowed disabled:line-through disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                                 isSelected
                                   ? 'border-[var(--sr-acento-primario,var(--color-accent))] bg-[var(--sr-acento-primario,var(--color-accent))] text-[var(--sr-texto-sobre-oscuro,var(--color-text-on-accent))] shadow-md scale-105'
                                   : 'border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] text-[var(--color-text)] hover:border-[var(--sr-acento-primario,var(--color-accent))] hover:bg-[var(--sr-superficie,var(--color-surface))]'
@@ -436,6 +517,21 @@ export default function ItemDetailPage() {
                     >
                       <span>✨ Probarme esta prenda en el probador</span>
                     </Link>
+
+                    {/* Reserva en tienda (ms-inventario) y alerta de disponibilidad (ms-notificaciones) */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button type="button" onClick={reservar} disabled={!!ocupado} className={`${BTN_PRINCIPAL} flex-1`}>
+                        {ocupado === 'reserva' ? 'Reservando…' : 'Reservar en tienda'}
+                      </button>
+                      <button type="button" onClick={crearAlerta} disabled={!!ocupado} className={`${BTN_SECUNDARIO} flex-1`}>
+                        {ocupado === 'alerta' ? 'Creando alerta…' : 'Avisarme cuando llegue'}
+                      </button>
+                    </div>
+                    {aviso && (
+                      <Aviso tono={aviso.tono} className="mt-1" titulo={aviso.titulo} acciones={accionAviso(aviso)} onCerrar={() => setAviso(null)}>
+                        {aviso.texto}
+                      </Aviso>
+                    )}
                   </div>
                 </div>
               </div>

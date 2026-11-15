@@ -3,6 +3,8 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/modules/core/design-system'
 import { ErrorState } from '@/modules/core/components/Status'
+import { Aviso, ErrorCampo, EscenaError } from '@/modules/core/components/errores'
+import { errorDeAgregar, errorDeCrear, MAX_NOMBRE_PLAYLIST, TEXTOS_PLAYLIST } from '../utils/erroresPlaylist'
 import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { mockSessionUser } from '@/modules/core/api/mock'
@@ -19,6 +21,7 @@ export default function PlaylistsPage() {
 
   const {
     playlists,
+    loading,
     error,
     reload,
     createPlaylist,
@@ -46,6 +49,8 @@ export default function PlaylistsPage() {
   const [descripcion, setDescripcion] = useState('')
   const [visibilidad, setVisibilidad] = useState<PlaylistVisibility>('PRIVADA')
   const [errorCrear, setErrorCrear] = useState<string | null>(null)
+  /** 422 al agregar: la playlist llegó al límite de 15 prendas. */
+  const [limiteAlcanzado, setLimiteAlcanzado] = useState(false)
   const [prendaParaAgregar, setPrendaParaAgregar] = useState<string>('')
 
   // Like y guardado local para playlist activa
@@ -235,8 +240,10 @@ export default function PlaylistsPage() {
 
   const handleCrear = async (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!nombre.trim()) {
-      setErrorCrear('Escribe el nombre de la playlist.')
+    // 400 · nombre vacío y 422 · nombre muy largo: se validan antes de enviar.
+    if (!nombre.trim() || nombre.trim().length > MAX_NOMBRE_PLAYLIST) {
+      setErrorCrear(!nombre.trim() ? TEXTOS_PLAYLIST.nombre : TEXTOS_PLAYLIST.nombreLargo)
+      document.getElementById('pl-nombre')?.focus()
       return
     }
     setErrorCrear(null)
@@ -255,7 +262,9 @@ export default function PlaylistsPage() {
       showToast('Playlist creada con éxito. Ahora puedes agregar hasta 15 prendas.')
       handleSeleccionarPlaylist(nueva)
     } catch (er: unknown) {
-      setErrorCrear(er instanceof Error ? er.message : 'No se pudo crear la playlist.')
+      const r = errorDeCrear(er)
+      setErrorCrear(r.campo ?? r.general ?? null)
+      if (r.campo) document.getElementById('pl-nombre')?.focus()
     }
   }
 
@@ -295,13 +304,17 @@ export default function PlaylistsPage() {
 
   const handleAgregarPrenda = async () => {
     if (!selectedPlaylist || !prendaParaAgregar) return
+    setErrorAccion(null)
     try {
       await addItem(selectedPlaylist.id, prendaParaAgregar)
       setPrendaParaAgregar('')
       setMostrarAgregarPrenda(false)
       showToast('Prenda agregada a la playlist.')
     } catch (er: unknown) {
-      setErrorAccion(er instanceof Error ? er.message : 'Error al agregar la prenda.')
+      // 422: el mensaje va junto al botón y el contador x/15 queda a la vista.
+      const r = errorDeAgregar(er, selectedPlaylist.prendas.some((p) => p.id === prendaParaAgregar))
+      setErrorAccion(r.texto)
+      setLimiteAlcanzado(r.limite)
     }
   }
 
@@ -352,6 +365,17 @@ export default function PlaylistsPage() {
   }
 
   if (error) return <ErrorState error={error} onRetry={reload} />
+
+  // 403 y 404: la playlist de la URL no existe o es privada de otra persona. Mismo texto para los dos.
+  if (urlId && !loading && !selectedPlaylist) {
+    return (
+      <EscenaError
+        escena="tornamesa" codigo="404" etiqueta="No disponible" nivel="h1"
+        titulo={TEXTOS_PLAYLIST.noDisponible} texto="Puede que la hayan borrado o que sea privada."
+        acciones={<button type="button" onClick={handleVolver} className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco">Volver a playlists</button>}
+      />
+    )
+  }
 
   // ==========================================
   // VISTA DETALLE TIPO SPOTIFY CON DISCO DE VINILO PROTAGONISTA
@@ -505,7 +529,7 @@ export default function PlaylistsPage() {
                     <>
                       <button
                         type="button"
-                        onClick={() => setMostrarAgregarPrenda(true)}
+                        onClick={() => { setMostrarAgregarPrenda(true); setErrorAccion(null); setLimiteAlcanzado(false) }}
                         className="flex items-center gap-2 rounded-full bg-[#5013b8] hover:bg-[#6318e3] text-white text-xs font-bold px-6 py-2.5 shadow-lg shadow-purple-900/40 transition active:scale-95"
                       >
                         + Agregar prendas
@@ -599,7 +623,7 @@ export default function PlaylistsPage() {
                 {esMia && (
                   <button
                     type="button"
-                    onClick={() => setMostrarAgregarPrenda(true)}
+                    onClick={() => { setMostrarAgregarPrenda(true); setErrorAccion(null); setLimiteAlcanzado(false) }}
                     className="mt-4 inline-flex items-center gap-2 rounded-xl bg-violeta px-4 py-2 text-xs font-bold text-white"
                   >
                     + Agregar prendas
@@ -790,9 +814,7 @@ export default function PlaylistsPage() {
               </div>
 
               {selectedPlaylist.prendas.length >= MAX_PLAYLIST_ITEMS ? (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
-                  Capacidad máxima alcanzada: 15 de 15 prendas permitidas (RNF-12).
-                </div>
+                <Aviso tono="aviso" titulo={TEXTOS_PLAYLIST.limite} />
               ) : (
                 <div className="space-y-4">
                   <div>
@@ -821,10 +843,15 @@ export default function PlaylistsPage() {
               )}
 
               {errorAccion && (
-                <p className="mt-2 text-xs text-rose-400">{errorAccion}</p>
+                <div className="mt-3"><Aviso tono={limiteAlcanzado ? 'aviso' : 'error'} titulo={errorAccion} /></div>
               )}
 
-              <div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
+              <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+                {/* Contador x/15 junto a la acción (plan de errores · 422). */}
+                <span data-testid="contador-prendas"
+                  className={`mr-auto font-mono text-xs font-bold ${limiteAlcanzado || selectedPlaylist.prendas.length >= MAX_PLAYLIST_ITEMS ? 'text-[var(--sr-warn)]' : 'text-white/60'}`}>
+                  {limiteAlcanzado ? MAX_PLAYLIST_ITEMS : selectedPlaylist.prendas.length}/{MAX_PLAYLIST_ITEMS}
+                </span>
                 <button
                   type="button"
                   onClick={() => setMostrarAgregarPrenda(false)}
@@ -835,7 +862,7 @@ export default function PlaylistsPage() {
                 {selectedPlaylist.prendas.length < MAX_PLAYLIST_ITEMS && (
                   <button
                     type="button"
-                    disabled={!prendaParaAgregar}
+                    disabled={!prendaParaAgregar || limiteAlcanzado}
                     onClick={handleAgregarPrenda}
                     className="rounded-xl bg-violeta px-5 py-2 text-xs font-bold text-white hover:bg-violeta-hover disabled:opacity-50"
                   >
@@ -1335,13 +1362,17 @@ export default function PlaylistsPage() {
                 <input
                   id="pl-nombre"
                   type="text"
-                  maxLength={40}
+                  maxLength={MAX_NOMBRE_PLAYLIST}
                   placeholder="Ej. Domingo en Usaquén"
                   value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  className="w-full rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-xs text-white outline-none focus:border-violeta"
+                  onChange={(e) => { setNombre(e.target.value); if (errorCrear && e.target.value.trim()) setErrorCrear(null) }}
+                  aria-invalid={!!errorCrear}
+                  aria-describedby={errorCrear ? 'pl-nombre-err' : 'pl-nombre-hint'}
+                  className="w-full rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-xs text-white outline-none focus:border-violeta aria-[invalid=true]:border-[var(--sr-bad)]"
                 />
-                <span className="mt-1 block text-[11px] text-white/40">Máximo 40 caracteres</span>
+                {errorCrear
+                  ? <div className="mt-1.5"><ErrorCampo id="pl-nombre">{errorCrear}</ErrorCampo></div>
+                  : <span id="pl-nombre-hint" className="mt-1 block text-[11px] text-white/40">Máximo {MAX_NOMBRE_PLAYLIST} caracteres</span>}
               </div>
 
               <div>
@@ -1391,10 +1422,6 @@ export default function PlaylistsPage() {
               <p className="text-[11px] text-white/50">
                 Puedes agregar hasta {MAX_PLAYLIST_ITEMS} prendas (RNF-12).
               </p>
-
-              {errorCrear && (
-                <p className="text-xs text-rose-400 font-medium">{errorCrear}</p>
-              )}
 
               <div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
                 <button

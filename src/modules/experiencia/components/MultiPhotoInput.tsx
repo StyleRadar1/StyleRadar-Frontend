@@ -1,10 +1,29 @@
 import { useRef, useState } from 'react'
-import { PHOTO_ACCEPT, validatePhotoFile } from '../utils/photoRules'
+import { FieldError } from '@/modules/core/components/ErrorFeedback'
+import { PHOTO_MAX_MB, PHOTO_TYPES, validatePhotoFile } from '../utils/photoRules'
 
 export interface PhotoItem { key: string; url: string; file?: File }
 
 /** Fotos de una prenda: máximo `max`, valida formato y peso, vista previa y quitar. */
-export function MultiPhotoInput({ photos, onChange, max, error, id }: { photos: PhotoItem[]; onChange: (p: PhotoItem[]) => void; max: number; error?: string; id: string }) {
+export function MultiPhotoInput({
+  photos,
+  onChange,
+  max,
+  error,
+  id,
+  maxMb = PHOTO_MAX_MB,
+  allowedTypes = PHOTO_TYPES,
+  hintText,
+}: {
+  photos: PhotoItem[]
+  onChange: (p: PhotoItem[]) => void
+  max: number
+  error?: string
+  id: string
+  maxMb?: number
+  allowedTypes?: readonly string[]
+  hintText?: string
+}) {
   const input = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
 
@@ -14,7 +33,11 @@ export function MultiPhotoInput({ photos, onChange, max, error, id }: { photos: 
     const problems: string[] = []
     for (const f of Array.from(files)) {
       if (next.length >= max) { problems.push(`Máximo ${max} fotos por prenda.`); break }
-      const bad = validatePhotoFile(f)
+      const bad = validatePhotoFile(f, {
+        maxMb,
+        types: allowedTypes,
+        formatError: `Usa una foto JPG o PNG de máximo ${maxMb} MB.`,
+      })
       if (bad) { problems.push(bad); continue }
       next.push({ key: `${f.name}-${f.size}-${Math.random()}`, url: URL.createObjectURL(f), file: f })
     }
@@ -63,16 +86,11 @@ export function MultiPhotoInput({ photos, onChange, max, error, id }: { photos: 
           </li>
         )}
       </ul>
-      <p id={`${id}-hint`} className="mt-2 text-xs text-[var(--color-text-muted)]">{photos.length} de {max} fotos. JPG, PNG o WEBP de hasta 8 MB.</p>
-      <input ref={input} id={id} type="file" accept={PHOTO_ACCEPT} multiple hidden data-testid={`${id}-input`} onChange={(e) => { add(e.target.files); e.target.value = '' }} />
-      {(msg || error) && (
-        <p role="alert" className="mt-2 flex items-center gap-1.5 text-sm text-[var(--color-danger-text,#ff8a8a)] font-medium">
-          <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-          </svg>
-          <span>{msg || error}</span>
-        </p>
-      )}
+      <p id={`${id}-hint`} className="mt-2 text-xs text-[var(--color-text-muted)]">
+        {hintText ?? `${photos.length} de ${max} fotos. JPG o PNG de hasta ${maxMb} MB.`}
+      </p>
+      <input ref={input} id={id} type="file" accept={allowedTypes.join(',')} multiple hidden data-testid={`${id}-input`} onChange={(e) => { add(e.target.files); e.target.value = '' }} />
+      <FieldError id={`${id}-err`} message={msg || error} />
     </div>
   )
 }

@@ -5,14 +5,19 @@ import {
   useState,
   type FormEvent,
 } from 'react'
-import { errorMessage } from '@/modules/core/api/errors'
+import { Link } from 'react-router-dom'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO } from '@/modules/core/components/Aviso'
+import { ErrorState } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { chatService } from '../services/chatService'
 import {
+  MAX_MENSAJE,
   type ConversacionDto,
   type MensajeDto,
   type TipoContacto,
 } from '../types/chat.dto'
+import { NO_DISPONIBLE, problemaEnvio, TEXTO_LARGO, type ProblemaChat } from '../utils/chatErrors'
 import { getContactPhoto, getInitials } from './types'
 
 const REFRESH_MS = 15_000
@@ -44,8 +49,11 @@ export function ChatGlass({
   const { data: msgs, loading, error, reload, setData } = useResource(loader, [] as MensajeDto[])
   const [texto, setTexto] = useState('')
   const [sending, setSending] = useState(false)
-  const [sendError, setSendError] = useState('')
+  const [sendError, setSendError] = useState<ProblemaChat | null>(null)
+  const [cerrado, setCerrado] = useState<ProblemaChat | null>(null)
   const [imgError, setImgError] = useState(false)
+  const largo = texto.length > MAX_MENSAJE
+  const noExiste = !!error && error instanceof ApiError && (error.status === 404 || error.status === 403)
 
   const chatRef = useRef<HTMLDivElement>(null)
   const msgsContainerRef = useRef<HTMLDivElement>(null)
@@ -132,16 +140,18 @@ export function ChatGlass({
   // Envío de mensaje
   const send = async (e: FormEvent) => {
     e.preventDefault()
-    if (sending || !texto.trim()) return
+    if (sending || cerrado || !texto.trim() || largo) return
     setSending(true)
-    setSendError('')
+    setSendError(null)
     try {
       const m = await chatService.send(conv.id, texto)
       setData((l) => [...l, m])
       onSent(m)
       setTexto('')
     } catch (err) {
-      setSendError(errorMessage(err, 'No pudimos enviar el mensaje. Intenta de nuevo.'))
+      const p = problemaEnvio(err)
+      if (p.tipo === 'cerrado') setCerrado(p)
+      else setSendError(p)
     } finally {
       setSending(false)
     }
@@ -194,10 +204,25 @@ export function ChatGlass({
 
           {loading && !msgs.length ? (
             <div className="p-4 text-center text-xs opacity-60">Cargando…</div>
+          ) : noExiste ? (
+            <Aviso
+              tono="info"
+              titulo={NO_DISPONIBLE.titulo}
+              acciones={
+                <button type="button" onClick={onClose} className={BTN_PRINCIPAL}>
+                  Volver a mensajes
+                </button>
+              }
+            >
+              {NO_DISPONIBLE.texto}
+            </Aviso>
+          ) : error && !msgs.length ? (
+            <ErrorState error={error} onRetry={reload} title="No pudimos cargar la conversación" />
           ) : (
             <ol
               role="list"
               aria-label={`Mensajes con ${conv.contacto.nombre}`}
+              aria-live="polite"
               className="contents"
             >
               {msgs.map((m) => {
@@ -221,32 +246,64 @@ export function ChatGlass({
         </div>
 
         {/* Caja de entrada idéntica a la referencia */}
-        <form className="cp" onSubmit={send} autoComplete="off">
-          {sendError && (
-            <p role="alert" className="w-full text-xs font-semibold text-[#FF8DB5] mb-1">
-              {sendError}
+        <form onSubmit={send} autoComplete="off">
+          {cerrado && (
+            <div className="px-3.5 pt-2">
+              <Aviso tono="info" titulo={cerrado.titulo}>
+                {cerrado.texto}
+              </Aviso>
+            </div>
+          )}
+          {sendError && sendError.tipo !== 'campo' && (
+            <div className="px-3.5 pt-2">
+              <Aviso
+                tono="error"
+                titulo={sendError.titulo}
+                onCerrar={() => setSendError(null)}
+                acciones={
+                  sendError.tipo === 'sesion' ? (
+                    <Link to="/login" className={BTN_SECUNDARIO}>Iniciar sesión</Link>
+                  ) : sendError.tipo === 'no-existe' ? (
+                    <button type="button" onClick={onClose} className={BTN_SECUNDARIO}>Volver a mensajes</button>
+                  ) : (
+                    <button type="submit" disabled={sending} className={BTN_PRINCIPAL}>Reintentar</button>
+                  )
+                }
+              >
+                {sendError.texto}
+              </Aviso>
+            </div>
+          )}
+          <div className="cp">
+            <input
+              id="msg"
+              ref={inputRef}
+              type="text"
+              value={texto}
+              disabled={!!cerrado}
+              aria-invalid={largo || sendError?.tipo === 'campo'}
+              aria-describedby="chat-glass-error"
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder={cerrado ? 'El chat está cerrado' : 'Escribe un mensaje'}
+              aria-label="Escribe un mensaje"
+            />
+            <button
+              type="submit"
+              disabled={sending || !!cerrado || !texto.trim() || largo}
+              className="btn-send"
+              style={{
+                opacity: texto.trim() && !cerrado && !largo ? 1 : 0.65,
+                cursor: texto.trim() && !cerrado && !largo ? 'pointer' : 'default',
+              }}
+            >
+              {sending ? 'Enviando…' : 'Enviar'}
+            </button>
+          </div>
+          {(largo || sendError?.tipo === 'campo') && (
+            <p id="chat-glass-error" role="alert" className="px-3.5 pb-2 text-xs font-semibold text-[#FF8DB5]">
+              {TEXTO_LARGO}
             </p>
           )}
-          <input
-            id="msg"
-            ref={inputRef}
-            type="text"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Escribe un mensaje"
-            aria-label="Escribe un mensaje"
-          />
-          <button
-            type="submit"
-            disabled={sending || !texto.trim()}
-            className="btn-send"
-            style={{
-              opacity: texto.trim() ? 1 : 0.65,
-              cursor: texto.trim() ? 'pointer' : 'default',
-            }}
-          >
-            {sending ? 'Enviando…' : 'Enviar'}
-          </button>
         </form>
       </div>
     </div>
