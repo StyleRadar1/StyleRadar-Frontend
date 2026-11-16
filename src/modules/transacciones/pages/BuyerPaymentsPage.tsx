@@ -1,0 +1,250 @@
+import { useCallback, useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Badge, Button, Card } from '@/modules/core/design-system'
+import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
+import { formatCOP } from '@/modules/core/utils/format'
+import { userPlanService } from '../services/userPlanService'
+import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
+
+const STATUS_BADGE_LABEL: Record<PaymentStatus, string> = {
+  aprobado: 'APROBADO',
+  rechazado: 'RECHAZADO',
+  pendiente: 'PENDIENTE',
+  reembolsado: 'REEMBOLSADO',
+}
+
+const STATUS_TONE: Record<PaymentStatus, 'violeta' | 'arena' | 'lavanda'> = {
+  aprobado: 'violeta',
+  rechazado: 'arena',
+  pendiente: 'lavanda',
+  reembolsado: 'arena',
+}
+
+const formatFecha = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+
+/**
+ * Sección reutilizable del historial de pagos propios del comprador (RF-97).
+ */
+export function BuyerPaymentsSection() {
+  const navigate = useNavigate()
+  const [payments, setPayments] = useState<PaymentDto[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<unknown>(null)
+  const [selectedReceipt, setSelectedReceipt] = useState<PaymentDto | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const list = await userPlanService.getMyPayments()
+      setPayments(list)
+    } catch (err) {
+      setError(err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  if (loading) {
+    return <Loading label="Cargando tu historial de pagos…" />
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        error={error}
+        onRetry={() => {
+          void load()
+        }}
+        title="No pudimos cargar tu historial de pagos"
+      />
+    )
+  }
+
+  if (payments.length === 0) {
+    return (
+      <EmptyState title="Aún no tienes pagos de suscripción registrados">
+        Cuando actives Radar+, tus transacciones y comprobantes aparecerán aquí ordenados del más reciente al más antiguo.
+      </EmptyState>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))]">
+        <table className="w-full min-w-[40rem] text-left text-sm" aria-label="Historial de pagos">
+          <thead className="border-b border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] text-xs uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]">
+            <tr>
+              <th scope="col" className="p-4 font-bold">Fecha</th>
+              <th scope="col" className="p-4 font-bold">Concepto / Plan</th>
+              <th scope="col" className="p-4 font-bold">Valor y moneda</th>
+              <th scope="col" className="p-4 font-bold">Estado</th>
+              <th scope="col" className="p-4 font-bold">Referencia Mercado Pago</th>
+              <th scope="col" className="p-4 font-bold text-right">Comprobante</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--sr-border,var(--color-border))]">
+            {payments.map((p) => {
+              const ref = p.mpReference ?? p.id
+              const currency = p.currency ?? 'COP'
+              return (
+                <tr key={p.id} className="hover:bg-[var(--sr-surface-raised,var(--color-surface-raised))]/40">
+                  <td className="p-4 whitespace-nowrap">{formatFecha(p.date)}</td>
+                  <td className="p-4">
+                    <div className="font-semibold text-[var(--sr-text-primary,var(--color-text))]">
+                      {p.planName} · mensual
+                    </div>
+                    <div className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                      {p.method} · {p.id}
+                    </div>
+                  </td>
+                  <td className="p-4 font-mono font-semibold whitespace-nowrap">
+                    {formatCOP(p.amount)} {currency}
+                  </td>
+                  <td className="p-4">
+                    <Badge tone={STATUS_TONE[p.status]}>{STATUS_BADGE_LABEL[p.status]}</Badge>
+                    {p.status === 'reembolsado' && (
+                      <p className="mt-1 text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                        Reembolsado: {formatCOP(p.refundedAmount ?? p.amount)} {currency}
+                        {p.refundReason ? ` · ${p.refundReason}` : ''}
+                      </p>
+                    )}
+                  </td>
+                  <td className="p-4 font-mono text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                    {ref}
+                  </td>
+                  <td className="p-4 text-right whitespace-nowrap">
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReceipt(p)}
+                        className="rounded-lg border border-[var(--sr-border,var(--color-border))] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--sr-surface-raised,var(--color-surface-raised))]"
+                      >
+                        Comprobante
+                      </button>
+                      {p.status === 'rechazado' && (
+                        <button
+                          type="button"
+                          onClick={() => navigate('/pago/resultado?orden=MOCK_ORDER_FAIL')}
+                          className="rounded-lg bg-[var(--sr-accent,var(--color-accent))] px-3 py-1.5 text-xs font-bold text-[var(--color-text-on-accent,#ffffff)]"
+                        >
+                          Reintentar
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedReceipt && (
+        <Card className="border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--sr-border,var(--color-border))] pb-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                Comprobante de transacción
+              </p>
+              <h3 className="mt-0.5 text-lg font-extrabold">
+                {selectedReceipt.planName} · {selectedReceipt.id}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="secundario" onClick={() => window.print()}>
+                Imprimir / PDF
+              </Button>
+              <Button type="button" variant="secundario" onClick={() => setSelectedReceipt(null)}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
+          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Fecha</dt>
+              <dd className="font-semibold">{formatFecha(selectedReceipt.date)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Valor y moneda</dt>
+              <dd className="font-mono font-semibold">
+                {formatCOP(selectedReceipt.amount)} {selectedReceipt.currency ?? 'COP'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Estado</dt>
+              <dd className="font-semibold">{STATUS_BADGE_LABEL[selectedReceipt.status]}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Referencia Mercado Pago</dt>
+              <dd className="font-mono">{selectedReceipt.mpReference ?? selectedReceipt.id}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Medio de pago</dt>
+              <dd>{selectedReceipt.method}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Correo asociado</dt>
+              <dd className="truncate">{selectedReceipt.userEmail}</dd>
+            </div>
+            {selectedReceipt.refundReason && (
+              <div className="sm:col-span-3">
+                <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Información del reembolso</dt>
+                <dd className="font-semibold">
+                  {formatCOP(selectedReceipt.refundedAmount ?? selectedReceipt.amount)}{' '}
+                  {selectedReceipt.currency ?? 'COP'} · Motivo: {selectedReceipt.refundReason}
+                  {selectedReceipt.refundDate ? ` (${formatFecha(selectedReceipt.refundDate)})` : ''}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+/**
+ * RF-97: Página dedicada `/perfil/pagos` para el historial de pagos propios del comprador.
+ */
+export default function BuyerPaymentsPage() {
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-12 text-[var(--sr-text-primary,var(--color-text))]">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-[var(--sr-border,var(--color-border))] pb-6">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-arena">Mi cuenta · Suscripciones</p>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight md:text-5xl">Historial de pagos</h1>
+          <p className="mt-2 text-sm text-[var(--sr-text-secondary,var(--color-text-muted))]">
+            Transacciones asociadas a tu cuenta, ordenadas de la más reciente a la más antigua.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to="/perfil"
+            className="rounded-xl border border-[var(--sr-border,var(--color-border))] px-4 py-2.5 text-xs font-semibold hover:bg-[var(--sr-surface-raised,var(--color-surface-raised))]"
+          >
+            ← Volver a Mi perfil
+          </Link>
+          <Link
+            to="/planes"
+            className="rounded-xl bg-[var(--sr-accent,var(--color-accent))] px-4 py-2.5 text-xs font-bold text-[var(--color-text-on-accent,#ffffff)]"
+          >
+            Ver mi plan
+          </Link>
+        </div>
+      </div>
+
+      <BuyerPaymentsSection />
+    </section>
+  )
+}

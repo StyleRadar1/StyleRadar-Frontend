@@ -2,10 +2,13 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { MOCK_BUYER_PAYMENTS } from '../mocks/payments'
+import type { PaymentDto } from '../types/payment.dto'
 import type { MiPlanDto, PlanUsuario } from '../types/plan.dto'
 
 /** Rutas del API Gateway hacia ms-pagos-suscripciones. Provisionales hasta tener el Swagger (Julian). */
 const BASE = '/api/payments/subscriptions/me'
+const BUYER_PAYMENTS_KEY = (id: string) => `sr_buyer_payments_${id}`
 /** Las pantallas que muestran candados escuchan este evento para actualizarse al cambiar de plan. */
 export const PLAN_CHANGED = 'sr:plan'
 
@@ -23,6 +26,20 @@ export const setMockPlan = (userId: string, plan: PlanUsuario) => {
   try { sessionStorage.setItem(key(userId), plan) } catch { /* sin almacenamiento */ }
 }
 
+export function readMockBuyerPayments(userId: string): PaymentDto[] {
+  try {
+    const raw = sessionStorage.getItem(BUYER_PAYMENTS_KEY(userId))
+    if (raw) return JSON.parse(raw) as PaymentDto[]
+  } catch { /* sin almacenamiento */ }
+  return MOCK_BUYER_PAYMENTS[userId] ? [...MOCK_BUYER_PAYMENTS[userId]] : []
+}
+
+export function setMockBuyerPayments(userId: string, payments: PaymentDto[]): void {
+  try {
+    sessionStorage.setItem(BUYER_PAYMENTS_KEY(userId), JSON.stringify(payments))
+  } catch { /* sin almacenamiento */ }
+}
+
 const me = () => {
   const u = mockSessionUser()
   if (!u) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
@@ -35,6 +52,23 @@ export const userPlanService = {
   async mine(): Promise<MiPlanDto> {
     if (env.useMocks) { failIfScenario(); return mockDelay(mio(mockPlanOf(me().id)), 200) }
     return apiClient.get<MiPlanDto>(BASE).then((r) => r.data)
+  },
+
+  /**
+   * RF-97: Consultar historial de pagos propios del comprador autenticado.
+   * Endpoint: GET /api/payments/subscriptions/me/payments
+   */
+  async getMyPayments(): Promise<PaymentDto[]> {
+    if (env.useMocks) {
+      failIfScenario()
+      const user = me()
+      const list = readMockBuyerPayments(user.id)
+      const sorted = [...list].sort((a, b) => b.date.localeCompare(a.date))
+      return mockDelay(sorted, 250)
+    }
+    return apiClient.get<PaymentDto[]>(`${BASE}/payments`).then((r) =>
+      [...r.data].sort((a, b) => b.date.localeCompare(a.date)),
+    )
   },
 
   /** RF-100 y RF-101: cambiar entre Radar y Radar+. El cobro real lo hace ms-pagos con la pasarela. */

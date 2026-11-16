@@ -34,6 +34,7 @@ const Plans = lazy(() => import('@/modules/transacciones/pages/PlansPage'))
 const Checkout = lazy(() => import('@/modules/transacciones/pages/CheckoutPage'))
 const StoreSubscription = lazy(() => import('@/modules/transacciones/pages/StoreSubscriptionPage'))
 const StoreActivateSubscription = lazy(() => import('@/modules/transacciones/pages/StoreActivateSubscriptionPage'))
+const BuyerPayments = lazy(() => import('@/modules/transacciones/pages/BuyerPaymentsPage'))
 const AdminPayments = lazy(() => import('@/modules/transacciones/pages/AdminPaymentsPage'))
 const Alerts = lazy(() => import('@/modules/soporte/pages/AlertsPage'))
 const Messages = lazy(() => import('@/modules/soporte/pages/MessagesPage'))
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/suscripcion', element: page(<Checkout />) },
       // Usuario (comprador)
       { path: '/perfil', element: only(USER, <Profile />) },
+      { path: '/perfil/pagos', element: only(USER, <BuyerPayments />) },
       { path: '/probador', element: page(<ProbadorVirtual />) },
       { path: '/probador/avanzado', element: only(USER, <TryOn />) },
       { path: '/segunda-mano', element: only(USER, <SecondHand />) },

@@ -16,9 +16,12 @@ export interface PaymentDto {
   planId: 'free' | 'plus' | 'store'
   planName: string
   amount: number
+  currency?: string
+  mpReference?: string
   method: PaymentMethod
   date: string
   status: PaymentStatus
+  refundedAmount?: number
   refundReason?: string
   refundDate?: string
 }

@@ -19,11 +19,64 @@ function mockPayment(i: number): PaymentDto {
     planId: plan,
     planName: planNames[plan],
     amount: prices[plan],
+    currency: 'COP',
+    mpReference: `MP-${74000000 + i * 1357}`,
     method: methods[i % methods.length],
     date: `2026-09-${String(day).padStart(2, '0')}`,
     status: s,
-    ...(s === 'reembolsado' ? { refundReason: 'Solicitud del usuario', refundDate: `2026-09-${String(day + 2).padStart(2, '0')}` } : {}),
+    ...(s === 'reembolsado' ? { refundedAmount: prices[plan], refundReason: 'Solicitud del usuario', refundDate: `2026-09-${String(day + 2).padStart(2, '0')}` } : {}),
   }
 }
 
 export const MOCK_PAYMENTS: PaymentDto[] = Array.from({ length: 24 }, (_, i) => mockPayment(i))
+
+/** Historial de pagos mock para usuarios compradores autenticados (RF-97), coherente con useUserPlan. */
+export const MOCK_BUYER_PAYMENTS: Record<string, PaymentDto[]> = {
+  'u-1': [
+    {
+      id: 'SR-3012',
+      userId: 'u-1',
+      userName: 'Valentina Rojas',
+      userEmail: 'valentina@styleradar.co',
+      userRole: 'COMPRADOR',
+      planId: 'plus',
+      planName: 'Radar+',
+      amount: 14_900,
+      currency: 'COP',
+      mpReference: 'MP-88941205',
+      method: 'Mercado Pago',
+      date: '2026-11-09',
+      status: 'aprobado',
+    },
+    {
+      id: 'SR-2940',
+      userId: 'u-1',
+      userName: 'Valentina Rojas',
+      userEmail: 'valentina@styleradar.co',
+      userRole: 'COMPRADOR',
+      planId: 'plus',
+      planName: 'Radar+',
+      amount: 14_900,
+      currency: 'COP',
+      mpReference: 'MP-88410092',
+      method: 'PSE',
+      date: '2026-10-09',
+      status: 'aprobado',
+    },
+    {
+      id: 'SR-2885',
+      userId: 'u-1',
+      userName: 'Valentina Rojas',
+      userEmail: 'valentina@styleradar.co',
+      userRole: 'COMPRADOR',
+      planId: 'plus',
+      planName: 'Radar+',
+      amount: 14_900,
+      currency: 'COP',
+      mpReference: 'MP-87990314',
+      method: 'Nequi',
+      date: '2026-09-09',
+      status: 'rechazado',
+    },
+  ],
+}

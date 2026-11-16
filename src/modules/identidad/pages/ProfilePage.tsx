@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { errorMessage } from '@/modules/core/api/errors'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { Button } from '@/modules/core/design-system'
+import { BuyerPaymentsSection } from '@/modules/transacciones/pages/BuyerPaymentsPage'
 import { Campo, Opciones } from '../components/Campo'
 import { a11y, inputCls, labelCls } from '../utils/campo'
 import { useAuth } from '../hooks/useAuth'
@@ -17,24 +19,68 @@ export default function ProfilePage() {
   const { profile, loading, error, reload, save } = useProfile()
   // El aviso vive aquí porque el formulario se vuelve a montar después de guardar.
   const [aviso, setAviso] = useState<Aviso | null>(null)
+  const [tab, setTab] = useState<'info' | 'pagos'>('info')
 
   if (loading && !profile) return <section className="mx-auto max-w-6xl px-4 py-12"><Loading label="Cargando tu perfil…" /></section>
   if (error || !profile) return <section className="mx-auto max-w-6xl px-4 py-12"><ErrorState error={error} onRetry={reload} title="No pudimos cargar tu perfil" /></section>
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
-      <header className="flex flex-wrap items-center gap-5 border-b border-white/10 pb-8">
-        <span aria-hidden="true" className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-violeta text-3xl font-extrabold text-blanco md:h-24 md:w-24 md:text-4xl">{iniciales(profile.nombre)}</span>
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Mi perfil</p>
-          <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl">Hola, {profile.nombre.split(' ')[0]}</h1>
-          <p className="mt-2 break-words text-xs font-semibold uppercase tracking-[.14em] text-white/65">
-            {[profile.correo, profile.barrio && `Bogotá, ${profile.barrio}`, `Miembro desde ${mesAnio(profile.miembroDesde)}`, `Plan ${PLAN_LABEL[profile.plan]}`].filter(Boolean).join(' · ')}
-          </p>
+      <header className="flex flex-wrap items-center justify-between gap-5 border-b border-white/10 pb-8">
+        <div className="flex flex-wrap items-center gap-5">
+          <span aria-hidden="true" className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-violeta text-3xl font-extrabold text-blanco md:h-24 md:w-24 md:text-4xl">{iniciales(profile.nombre)}</span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Mi perfil</p>
+            <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl">Hola, {profile.nombre.split(' ')[0]}</h1>
+            <p className="mt-2 break-words text-xs font-semibold uppercase tracking-[.14em] text-white/65">
+              {[profile.correo, profile.barrio && `Bogotá, ${profile.barrio}`, `Miembro desde ${mesAnio(profile.miembroDesde)}`, `Plan ${PLAN_LABEL[profile.plan]}`].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Secciones de mi perfil">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'info'}
+            onClick={() => setTab('info')}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
+              tab === 'info'
+                ? 'bg-violeta text-blanco'
+                : 'border border-white/20 text-white/80 hover:bg-white/10'
+            }`}
+          >
+            Mi información
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'pagos'}
+            onClick={() => setTab('pagos')}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
+              tab === 'pagos'
+                ? 'bg-violeta text-blanco'
+                : 'border border-white/20 text-white/80 hover:bg-white/10'
+            }`}
+          >
+            Ver pagos aquí
+          </button>
+          <Link
+            to="/perfil/pagos"
+            className="rounded-xl border border-white/25 px-4 py-2 text-xs font-semibold hover:bg-white/10"
+          >
+            Historial de pagos
+          </Link>
         </div>
       </header>
-      {/* La key reinicia el formulario cuando llegan datos nuevos del servidor. */}
-      <ProfileForm key={JSON.stringify(profile)} profile={profile} onSave={save} aviso={aviso} setAviso={setAviso} />
+      {tab === 'pagos' ? (
+        <div className="mt-10">
+          <h2 className="mb-4 text-3xl font-extrabold tracking-tight">Historial de pagos</h2>
+          <BuyerPaymentsSection />
+        </div>
+      ) : (
+        /* La key reinicia el formulario cuando llegan datos nuevos del servidor. */
+        <ProfileForm key={JSON.stringify(profile)} profile={profile} onSave={save} aviso={aviso} setAviso={setAviso} />
+      )}
     </section>
   )
 }
