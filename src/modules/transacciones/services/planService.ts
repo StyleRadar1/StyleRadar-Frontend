@@ -1,11 +1,48 @@
-import { apiClient } from '@/modules/core/api/apiClient'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
+import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { correoValido } from '@/modules/identidad/utils/formato'
 import { PLANS, MOCK_CHECKOUT_RESPONSE, MOCK_CHECKOUT_RESULTS } from '../mocks/plans'
 import type { PlanDto, PlanIntentDto, CheckoutResponseDto, CheckoutResultDto } from '../types/plan.dto'
 
 const INTENT_KEY = 'sr_plan_intent'
+const LAST_CHECKOUT_KEY = 'sr_last_checkout_meta'
+const CUSTOM_ORDERS_KEY = 'sr_custom_checkout_orders'
 const TTL_MS = 30 * 60 * 1000 // 30 min
+
+interface LastCheckoutMeta {
+  planId: 'free' | 'plus' | 'store'
+  payerEmail?: string
+  amount: number
+  planName: string
+}
+
+function readCustomOrders(): Record<string, CheckoutResultDto> {
+  try {
+    const raw = sessionStorage.getItem(CUSTOM_ORDERS_KEY)
+    return raw ? (JSON.parse(raw) as Record<string, CheckoutResultDto>) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function saveCustomOrderResult(order: CheckoutResultDto): void {
+  try {
+    const current = readCustomOrders()
+    current[order.orderId] = order
+    sessionStorage.setItem(CUSTOM_ORDERS_KEY, JSON.stringify(current))
+  } catch { /* sin almacenamiento */ }
+}
+
+export function readLastCheckoutMeta(): LastCheckoutMeta | null {
+  try {
+    const raw = sessionStorage.getItem(LAST_CHECKOUT_KEY)
+    return raw ? (JSON.parse(raw) as LastCheckoutMeta) : null
+  } catch {
+    return null
+  }
+}
 
 export const planService = {
   /** Devuelve los planes de usuario (Radar y Radar+). */
@@ -43,15 +80,41 @@ export const planService = {
   },
 
   /** Crea una preferencia de pago (mock: devuelve un initPoint simulado). */
-  createCheckout(planId: string): Promise<CheckoutResponseDto> {
-    if (env.useMocks) return mockDelay(MOCK_CHECKOUT_RESPONSE)
-    return apiClient.post<CheckoutResponseDto>('/api/pagos/checkout', { planId }).then((r) => r.data)
+  createCheckout(planId: string, payerEmail?: string): Promise<CheckoutResponseDto> {
+    if (payerEmail !== undefined && !correoValido(payerEmail)) {
+      return Promise.reject(new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.'))
+    }
+    if (env.useMocks) {
+      try {
+        failIfScenario()
+      } catch (err) {
+        return Promise.reject(err)
+      }
+      try {
+        const meta: LastCheckoutMeta = {
+          planId: planId === 'store' ? 'store' : 'plus',
+          payerEmail: payerEmail?.trim(),
+          amount: planId === 'store' ? 89_000 : 14_900,
+          planName: planId === 'store' ? 'Tienda aliada' : 'Radar+',
+        }
+        sessionStorage.setItem(LAST_CHECKOUT_KEY, JSON.stringify(meta))
+      } catch { /* sin almacenamiento */ }
+      return mockDelay(MOCK_CHECKOUT_RESPONSE)
+    }
+    return apiClient.post<CheckoutResponseDto>('/api/pagos/checkout', { planId, payerEmail }).then((r) => r.data)
   },
 
   /** Consulta el estado del pago al backend (ignora el status de la query de MP). */
   getCheckoutResult(orderId: string): Promise<CheckoutResultDto> {
     if (env.useMocks) {
-      const result = MOCK_CHECKOUT_RESULTS[orderId] ?? MOCK_CHECKOUT_RESULTS['MOCK_ORDER_OK']
+      const custom = readCustomOrders()[orderId]
+      const base = custom ?? MOCK_CHECKOUT_RESULTS[orderId] ?? MOCK_CHECKOUT_RESULTS['MOCK_ORDER_OK']
+      const meta = readLastCheckoutMeta()
+      const result: CheckoutResultDto = {
+        ...base,
+        payerEmail: base.payerEmail ?? meta?.payerEmail,
+        planId: base.planId ?? (base.planName === 'Tienda aliada' ? 'store' : 'plus'),
+      }
       return mockDelay(result)
     }
     return apiClient.get<CheckoutResultDto>(`/api/pagos/resultado/${orderId}`).then((r) => r.data)

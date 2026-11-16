@@ -4,6 +4,7 @@ import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { PayerEmailForm, PAYMENT_INIT_ERROR_MSG } from '../components/PayerEmailForm'
 import { usePlans } from '../hooks/usePlans'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { planService } from '../services/planService'
@@ -37,54 +38,85 @@ function CheckoutResult() {
   const messages: Record<string, string> = {
     aprobado: '¡Tu pago fue aprobado! Ya tienes acceso a todos los beneficios de tu plan.',
     pendiente: 'Tu pago está pendiente. Si elegiste Efecty, acércate a un punto autorizado para completar el pago.',
-    rechazado: 'El pago fue rechazado. Puedes intentarlo de nuevo con otro medio.',
+    rechazado: 'El pago no fue aprobado. Puedes intentarlo nuevamente.',
   }
 
   return (
-    <section className="mx-auto max-w-lg px-4 py-16 text-center text-[var(--color-text)]">
+    <section className="mx-auto max-w-lg px-4 py-16 text-center">
       <span className="text-5xl">{icons[result.status]}</span>
-      <h1 className="mt-4 text-3xl font-extrabold text-[var(--color-text)]">{result.status === 'aprobado' ? '¡Listo!' : result.status === 'pendiente' ? 'Pago pendiente' : 'Pago rechazado'}</h1>
-      <p className="mt-2 text-[var(--color-text-muted)]">{messages[result.status]}</p>
+      <h1 className="mt-4 text-3xl font-extrabold">{result.status === 'aprobado' ? '¡Listo!' : result.status === 'pendiente' ? 'Pago pendiente' : 'Pago rechazado'}</h1>
+      <p className="mt-2 text-white/70">{messages[result.status]}</p>
       <Card className="mx-auto mt-8 max-w-sm text-left">
         <dl className="grid grid-cols-2 gap-2 text-sm">
-          <dt className="text-[var(--color-text-muted)]">Orden</dt><dd className="font-mono">{result.orderId}</dd>
-          <dt className="text-[var(--color-text-muted)]">Plan</dt><dd>{result.planName}</dd>
-          <dt className="text-[var(--color-text-muted)]">Monto</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
-          {result.method && <><dt className="text-[var(--color-text-muted)]">Método</dt><dd>{result.method}</dd></>}
-          <dt className="text-[var(--color-text-muted)]">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
+          <dt className="text-white/50">Orden</dt><dd className="font-mono">{result.orderId}</dd>
+          <dt className="text-white/50">Plan</dt><dd>{result.planName}</dd>
+          <dt className="text-white/50">Monto</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
+          {result.payerEmail && <><dt className="text-white/50">Pagador</dt><dd className="truncate">{result.payerEmail}</dd></>}
+          {result.method && <><dt className="text-white/50">Método</dt><dd>{result.method}</dd></>}
+          <dt className="text-white/50">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
         </dl>
       </Card>
-      <Link to="/planes" className="mt-6 inline-block text-sm font-semibold text-[var(--color-sand)] underline">Ver mis planes</Link>
+      <Link to="/planes" className="mt-6 inline-block text-sm font-semibold text-arena underline">Ver mis planes</Link>
     </section>
   )
 }
 
 /* ─── Subcomponente: tarjeta de plan ─── */
-function PlanCard({ plan, currentPlan, onSelect }: { plan: PlanDto; currentPlan: string | null; onSelect: (p: PlanDto) => void }) {
+function PlanCard({
+  plan,
+  currentPlan,
+  defaultEmail,
+  busy,
+  errorMessage,
+  onSelect,
+}: {
+  plan: PlanDto
+  currentPlan: string | null
+  defaultEmail: string
+  busy: boolean
+  errorMessage: string | null
+  onSelect: (p: PlanDto, payerEmail?: string) => void
+}) {
   const isCurrent = currentPlan === plan.id
   return (
-    <Card className={`relative flex flex-col text-[var(--color-text)] ${plan.highlighted ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/30' : ''}`}>
+    <Card className={`relative flex flex-col ${plan.highlighted ? 'border-violeta ring-2 ring-violeta/30' : ''}`}>
       {plan.highlighted && (
-        <Badge tone="violeta" >Recomendado</Badge>
+        <Badge tone="violeta">Única opción de pago · Recomendado</Badge>
       )}
-      <h3 className="mt-3 text-2xl font-extrabold text-[var(--color-text)]">{plan.name}</h3>
-      <p className="mt-1 text-3xl font-extrabold text-[var(--color-text)]">
-        {plan.price === 0 ? 'Gratis' : <>{formatCOP(plan.price)}<span className="text-base font-normal text-[var(--color-text-muted)]">/mes</span></>}
+      <h3 className="mt-3 text-2xl font-extrabold">{plan.name}</h3>
+      <p className="mt-1 text-3xl font-extrabold">
+        {plan.price === 0 ? 'Gratis' : <>{formatCOP(plan.price)}<span className="text-base font-normal text-white/50">/mes</span></>}
       </p>
-      <ul className="mt-4 flex-1 space-y-2 text-sm text-[var(--color-text-muted)]">
+      <ul className="mt-4 flex-1 space-y-2 text-sm text-white/80">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2">
-            <span className="mt-0.5 text-[var(--color-success)]">✓</span>{f}
+            <span className="mt-0.5 text-green-400">✓</span>{f}
           </li>
         ))}
       </ul>
       <div className="mt-6">
         {isCurrent ? (
-          <Button variant="secundario" className="w-full" disabled>Plan actual</Button>
-        ) : (
-          <Button variant={plan.highlighted ? 'primario' : 'secundario'} className="w-full" onClick={() => onSelect(plan)}>
-            {plan.price === 0 ? 'Usar gratis' : 'Suscribirme'}
+          <>
+            {plan.id === 'plus' && (
+              <p role="status" className="mb-2 text-xs font-semibold text-arena">
+                Ya tienes Radar+ activo.
+              </p>
+            )}
+            <Button variant="secundario" className="w-full" disabled>Plan actual</Button>
+          </>
+        ) : plan.price === 0 ? (
+          <Button variant="secundario" className="w-full" onClick={() => onSelect(plan)}>
+            Usar gratis
           </Button>
+        ) : (
+          <PayerEmailForm
+            defaultEmail={defaultEmail}
+            submitLabel="Suscribirme"
+            busyLabel="Preparando el pago…"
+            busy={busy}
+            errorMessage={errorMessage}
+            onSubmit={(payerEmail) => onSelect(plan, payerEmail)}
+          />
         )}
       </div>
     </Card>
@@ -106,12 +138,16 @@ function PlansSelector() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   // El plan de la persona se lee de un único lugar: useUserPlan (el mismo que usan /planes y los candados).
   const { plan: userPlan } = useUserPlan(user?.role === 'COMPRADOR')
   const currentPlan = userPlan === 'RADAR_PLUS' ? 'plus' : userPlan === 'RADAR' ? 'free' : null
 
-  const handleSelect = useCallback(async (plan: PlanDto) => {
+  // Solo opciones de comprador (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
+  const buyerPlans = plans.filter((p) => p.id === 'free' || p.id === 'plus')
+
+  const handleSelect = useCallback(async (plan: PlanDto, payerEmail?: string) => {
     if (plan.price === 0) return // Radar es gratis, no requiere checkout
 
     if (!user) {
@@ -125,27 +161,26 @@ function PlansSelector() {
       return
     }
 
-    // Con sesión: crear checkout mock
     setBusy(true)
+    setCheckoutError(null)
     try {
-      await planService.createCheckout(plan.id)
+      await planService.createCheckout(plan.id, payerEmail)
       // En producción aquí se redirige al initPoint de Mercado Pago.
       // En mock mostramos el resultado simulado.
       navigate(`/pago/resultado?orden=MOCK_ORDER_OK`)
     } catch {
-      // El error lo maneja el servicio
+      setCheckoutError(PAYMENT_INIT_ERROR_MSG)
     } finally {
       setBusy(false)
     }
   }, [user, navigate])
 
-  // Si venimos del login y hay intención guardada, mostrar aviso
+  // Si venimos del login y hay intención guardada, limpiar
   useEffect(() => {
     if (user) {
       const intent = planService.readIntent()
       if (intent) {
         planService.clearIntent()
-        // Podrían auto-redirigir al checkout aquí
       }
     }
   }, [user])
@@ -164,12 +199,20 @@ function PlansSelector() {
         <Loading label="Cargando planes…" />
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
-      ) : plans.length === 0 ? (
+      ) : buyerPlans.length === 0 ? (
         <EmptyState title="No hay planes disponibles" />
       ) : (
         <div className="mt-12 grid gap-6 sm:grid-cols-2">
-          {plans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} currentPlan={currentPlan} onSelect={handleSelect} />
+          {buyerPlans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              currentPlan={currentPlan}
+              defaultEmail={user?.email ?? ''}
+              busy={busy}
+              errorMessage={plan.id === 'plus' ? checkoutError : null}
+              onSelect={handleSelect}
+            />
           ))}
         </div>
       )}

@@ -33,6 +33,7 @@ const FoundationHome = lazy(() => import('@/modules/experiencia/pages/Foundation
 const Plans = lazy(() => import('@/modules/transacciones/pages/PlansPage'))
 const Checkout = lazy(() => import('@/modules/transacciones/pages/CheckoutPage'))
 const StoreSubscription = lazy(() => import('@/modules/transacciones/pages/StoreSubscriptionPage'))
+const StoreActivateSubscription = lazy(() => import('@/modules/transacciones/pages/StoreActivateSubscriptionPage'))
 const AdminPayments = lazy(() => import('@/modules/transacciones/pages/AdminPaymentsPage'))
 const Alerts = lazy(() => import('@/modules/soporte/pages/AlertsPage'))
 const Messages = lazy(() => import('@/modules/soporte/pages/MessagesPage'))
@@ -108,6 +109,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/tienda/informacion', element: only(STORE, <StoreInfo />) },
       { path: '/tienda/estadisticas', element: only(STORE, <StoreStats />) },
       { path: '/tienda/suscripcion', element: only(STORE, <StoreSubscription />) },
+      { path: '/tienda/suscripcion/activar', element: only(STORE, <StoreActivateSubscription />) },
       // Fundación
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },

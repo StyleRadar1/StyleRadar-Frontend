@@ -487,6 +487,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         password,
         aceptaHabeasData: true,
         aceptaTerminos: true,
+        role,
       })
       setStep('otp')
     } catch (err) {
@@ -520,7 +521,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setError('')
     try {
       const user = await verifyOtp({ email: email.trim() || 'usuario@styleradar.co', codigoOtp: code })
-      finishAuthAndNavigate(ROLE_HOME[user.role])
+      const nextRoute = activeTab === 'register' && user.role === 'ADMIN_ALMACEN'
+        ? '/tienda/suscripcion/activar'
+        : ROLE_HOME[user.role]
+      finishAuthAndNavigate(nextRoute)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Código inválido o expirado. Intenta de nuevo.')
     } finally {

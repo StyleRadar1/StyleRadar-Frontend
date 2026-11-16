@@ -5,12 +5,14 @@ import type { CheckoutResultDto } from './plan.dto'
  * Suscripción de una tienda aliada (RF-67, RF-68). Los 30 primeros días son gratis; después se paga
  * el plan Tienda aliada para mantener el catálogo activo. Forma provisional hasta tener el Swagger de ms-pagos.
  */
-export type StoreSubscriptionStatus = 'PRUEBA' | 'ACTIVA' | 'SUSPENDIDA'
+export type StoreSubscriptionStatus = 'SIN_SUSCRIPCION' | 'PENDIENTE' | 'PRUEBA' | 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA'
 
 export interface StoreSubscriptionDto {
   status: StoreSubscriptionStatus
   planName: string
   amount: number
+  /** Correo del pagador asociado a la suscripción (RF-67, RF-93). */
+  payerEmail?: string
   /** Fin de los 30 días gratis (solo en PRUEBA). */
   trialEndsAt?: string
   /** Fin del periodo pagado (solo en ACTIVA). */

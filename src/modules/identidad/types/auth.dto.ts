@@ -55,6 +55,7 @@ export interface RegisterRequestDto {
   aceptaTerminos?: boolean
   aceptaHabeasData?: boolean
   telefono?: string
+  role?: Role
 }
 
 export const PASSWORD_MIN = 6

@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { errorKind, errorMessage } from '@/modules/core/api/errors'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { ROLE_HOME } from '@/modules/core/types/roles'
@@ -16,6 +16,8 @@ type Errores = Partial<Record<'nombre' | 'email' | 'password' | 'terminos', stri
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const esTienda = params.get('tipo') === 'tienda'
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -60,8 +62,10 @@ export default function RegisterPage() {
         maniqui,
         aceptaTerminos: terminos,
         aceptaHabeasData: terminos,
+        ...(esTienda ? { role: 'ADMIN_ALMACEN' as const } : {}),
       })
-      navigate(ROLE_HOME[user.role], { replace: true })
+      const target = user.role === 'ADMIN_ALMACEN' ? '/tienda/suscripcion/activar' : ROLE_HOME[user.role]
+      navigate(target, { replace: true })
     } catch (err) {
       if (errorKind(err) === 'conflicto') {
         setErrores({ email: errorMessage(err) })

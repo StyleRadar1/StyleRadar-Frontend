@@ -48,10 +48,11 @@ export const authService = {
       if (DEMO_ACCOUNTS.some((a) => a.email === email) || registradas.some((a) => a.email === email)) {
         throw new ApiError(409, 'Ya existe una cuenta con ese correo. Inicia sesión o usa otro correo.')
       }
-      const user: UserSessionDto = { id: `u-n${registradas.length + 1}`, name: payload.nombre.trim(), email, role: 'COMPRADOR' }
+      const role = payload.role ?? 'COMPRADOR'
+      const user: UserSessionDto = { id: `u-n${registradas.length + 1}`, name: payload.nombre.trim(), email, role }
       registradas.push({ ...user, password: payload.password })
       agregarUsuarioMock({
-        id: user.id, nombre: user.name, correo: email, rol: 'COMPRADOR', plan: 'RADAR', estado: 'ACTIVA', barrio: '',
+        id: user.id, nombre: user.name, correo: email, rol: role, plan: 'RADAR', estado: 'ACTIVA', barrio: '',
         miembroDesde: new Date().toISOString().slice(0, 10),
       })
       return mockDelay({ token: `demo-${user.id}`, user }, 500)

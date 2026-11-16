@@ -10,7 +10,14 @@ import type { CheckoutResultDto } from '../types/plan.dto'
 import type { StoreSubscriptionStatus } from '../types/storeSubscription.dto'
 import './StoreSubscriptionPage.css'
 
-const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = { PRUEBA: 'Periodo gratuito', ACTIVA: 'Activa', SUSPENDIDA: 'Suspendida' }
+const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = {
+  SIN_SUSCRIPCION: 'Sin suscripción',
+  PENDIENTE: 'Pendiente',
+  PRUEBA: 'Periodo gratuito',
+  ACTIVA: 'Activa',
+  SUSPENDIDA: 'Suspendida',
+  CANCELADA: 'Cancelada',
+}
 const PAYMENT_LABEL: Record<PaymentStatus, string> = { aprobado: 'Aprobado', rechazado: 'Rechazado', pendiente: 'Pendiente', reembolsado: 'Reembolsado' }
 
 const fecha = (iso?: string) => iso

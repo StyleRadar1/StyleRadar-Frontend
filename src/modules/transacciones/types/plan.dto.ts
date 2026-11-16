@@ -98,4 +98,6 @@ export interface CheckoutResultDto {
   planName: string
   amount: number
   method?: string
+  payerEmail?: string
+  planId?: 'free' | 'plus' | 'store'
 }
