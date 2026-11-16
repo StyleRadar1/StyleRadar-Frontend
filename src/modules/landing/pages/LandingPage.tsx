@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { ROLE_HOME } from '@/modules/core/types/roles'
 import { CustomCursor, NoiseGrain } from '@/components/ui'
 import { LandingHeader, LandingMobileMenu, LandingFooter } from '@/components/layout'
 import {
@@ -15,12 +17,17 @@ import { AuthModal, QuickTryOnModal } from '@/components/modals'
 import './LandingPage.css'
 
 export default function LandingPage() {
+  const { user } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   // /?login abre el inicio de sesión (lo usan el botón «Iniciar sesión» del menú de la app y «Cerrar sesión»).
   const [params, setParams] = useSearchParams()
   const [isAuthOpen, setIsAuthOpen] = useState(() => params.has('login'))
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
+
+  if (user) {
+    return <Navigate to={ROLE_HOME[user.role]} replace />
+  }
 
   useEffect(() => {
     if (params.has('login')) {

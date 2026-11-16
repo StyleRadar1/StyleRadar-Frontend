@@ -44,3 +44,10 @@ export interface ItemFiltersDto {
   cercaDe?: string
   orden?: string
 }
+
+/** Reserva de una talla en la tienda (ms-inventario). Vence a los 15 minutos. */
+export interface ReservaDto {
+  prendaId: string
+  talla: string
+  expiracionReserva: string
+}

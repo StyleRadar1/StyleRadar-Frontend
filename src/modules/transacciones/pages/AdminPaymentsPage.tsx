@@ -2,6 +2,9 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { Aviso, ErrorCampo } from '@/modules/core/components/errores'
+import { errorKind } from '@/modules/core/api/errors'
+import { errorDeReembolso, TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
 import { paymentService, calcRevenue, getRefundableBalance } from '../services/paymentService'
@@ -118,6 +121,10 @@ export default function AdminPaymentsPage() {
   const [refunding, setRefunding] = useState(false)
   const amountInputRef = useRef<HTMLInputElement>(null)
   const reasonInputRef = useRef<HTMLTextAreaElement>(null)
+  /** Error debajo del campo motivo (400). */
+  const [motivoErr, setMotivoErr] = useState<string | null>(null)
+  /** Aviso de la página: 403 u otro error al reembolsar. */
+  const [avisoPagos, setAvisoPagos] = useState<{ permiso: boolean; texto?: string } | null>(null)
 
   // Estado de las tarjetas 3D apiladas estilo Verdelo
   const [activeCardIdx, setActiveCardIdx] = useState(0)
@@ -177,12 +184,16 @@ export default function AdminPaymentsPage() {
     }
     if (!refundReason.trim()) {
       setRefundError('Debes indicar el motivo del reembolso.')
+      setMotivoErr(TEXTOS_PAGOS.motivo)
+      document.getElementById('refund-motivo')?.focus()
       reasonInputRef.current?.focus()
       return
     }
 
     setRefunding(true)
     setRefundError(null)
+    setMotivoErr(null)
+    setAvisoPagos(null)
     try {
       const updated = await paymentService.refund({
         paymentId: refundTarget.id,
@@ -194,12 +205,24 @@ export default function AdminPaymentsPage() {
       setRefundTarget(null)
       setRefundReason('')
       setRefundAmount('')
-    } catch (err) {
-      setRefundError(
-        err instanceof Error && err.message
-          ? err.message
-          : 'No fue posible procesar el reembolso. Inténtalo nuevamente.',
-      )
+    } catch (e) {
+      const err = errorDeReembolso(e)
+      if (err.tipo === 'motivo') {
+        // El diálogo sigue abierto y el motivo queda como estaba escrito.
+        setMotivoErr(err.texto)
+        setRefundError(err.texto)
+        document.getElementById('refund-motivo')?.focus()
+        reasonInputRef.current?.focus()
+      } else {
+        setRefundTarget(null)
+        setSelected(null)
+        setAvisoPagos(err.tipo === 'permiso' ? { permiso: true } : { permiso: false, texto: err.texto })
+        setRefundError(
+          e instanceof Error && e.message
+            ? e.message
+            : 'No fue posible procesar el reembolso. Inténtalo nuevamente.',
+        )
+      }
     } finally {
       setRefunding(false)
     }
@@ -647,9 +670,19 @@ export default function AdminPaymentsPage() {
         />
       </Card>
 
+      {avisoPagos && (
+        <div className="mt-6">
+          {avisoPagos.permiso
+            ? <Aviso tono="error" titulo={TEXTOS_PAGOS.sinPermiso.titulo}>{TEXTOS_PAGOS.sinPermiso.texto}</Aviso>
+            : <Aviso tono="error" titulo={avisoPagos.texto ?? ''} />}
+        </div>
+      )}
+
       {/* Tabla */}
       {loading ? (
         <Loading label="Cargando pagos…" />
+      ) : error && errorKind(error) === 'permiso' ? (
+        <div className="mt-6"><Aviso tono="error" titulo={TEXTOS_PAGOS.sinPermiso.titulo}>{TEXTOS_PAGOS.sinPermiso.texto}</Aviso></div>
       ) : error ? (
         <div className="mt-6"><ErrorState error={error} onRetry={reload} /></div>
       ) : payments.length === 0 ? (
@@ -749,7 +782,7 @@ export default function AdminPaymentsPage() {
               <Button
                 variant="secundario"
                 className="mt-6 w-full border-[#c0392b] text-[#ff8a8a]"
-                onClick={() => openRefundModal(selected)}
+                onClick={() => { openRefundModal(selected); setMotivoErr(null) }}
               >
                 {(selected.refundedAmount ?? 0) > 0 ? 'Reembolsar saldo restante' : 'Reembolsar'}
               </Button>
@@ -769,6 +802,7 @@ export default function AdminPaymentsPage() {
         onCancel={() => {
           setRefundTarget(null)
           setRefundError(null)
+          setMotivoErr(null)
         }}
       >
         {refundTarget && (
@@ -819,28 +853,36 @@ export default function AdminPaymentsPage() {
             </div>
 
             <div>
-              <label htmlFor="refund-reason-input" className="block text-sm font-semibold">
-                Motivo <span className="text-[#ff8a8a]">*</span>
+              <label htmlFor="refund-motivo" className="block text-sm font-semibold">
+                Motivo <span aria-hidden="true" className="text-[#ff8a8a]">*</span>
               </label>
               <textarea
                 ref={reasonInputRef}
-                id="refund-reason-input"
-                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none focus:border-violeta"
+                id="refund-motivo"
+                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none focus:border-violeta aria-[invalid=true]:border-[var(--sr-bad)]"
                 rows={3}
                 value={refundReason}
                 onChange={(e) => {
                   setRefundReason(e.target.value)
+                  if (motivoErr && e.target.value.trim()) setMotivoErr(null)
                   if (refundError) setRefundError(null)
                 }}
                 placeholder="Describe por qué se reembolsa este pago…"
                 required
+                aria-invalid={!refundReason.trim() || !!motivoErr}
+                aria-describedby={motivoErr ? 'refund-motivo-err' : undefined}
               />
-              {!refundReason.trim() && (
+              {motivoErr && (
+                <div className="mt-1.5">
+                  <ErrorCampo id="refund-motivo">{motivoErr}</ErrorCampo>
+                </div>
+              )}
+              {!refundReason.trim() && !motivoErr && (
                 <p className="mt-1 text-xs text-[#ff8a8a]">Debes indicar el motivo del reembolso.</p>
               )}
             </div>
 
-            {refundError && (
+            {refundError && !motivoErr && (
               <p role="alert" aria-live="assertive" className="rounded-xl bg-[#ff8a8a]/15 p-2.5 text-xs font-semibold text-[#ffb4b4]">
                 {refundError}
               </p>

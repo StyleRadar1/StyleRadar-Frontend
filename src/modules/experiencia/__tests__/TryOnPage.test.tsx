@@ -16,7 +16,7 @@ describe('probador virtual (RF-23 a RF-27)', () => {
   it('rechaza un archivo inválido sin mostrar vista previa', async () => {
     open()
     await upload(png('foto.heic', 100, 'image/heic'))
-    expect(await screen.findByRole('alert')).toHaveTextContent(/HEIC no sirve/)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Usa una foto JPG o PNG.')
     expect(screen.queryByAltText('Vista previa de tu foto')).not.toBeInTheDocument()
   })
 
@@ -24,7 +24,7 @@ describe('probador virtual (RF-23 a RF-27)', () => {
     sessionStorage.setItem('sr_mock', 'subida-falla')
     open()
     await upload(png())
-    expect(await screen.findByText(/No pudimos subir tu foto/, {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(await screen.findByText('El probador no está disponible', {}, { timeout: 3000 })).toBeInTheDocument()
     expect(screen.queryByAltText('Vista previa de tu foto')).not.toBeInTheDocument()
   })
 
@@ -54,7 +54,7 @@ describe('probador virtual (RF-23 a RF-27)', () => {
     await user.click(await screen.findByRole('button', { name: /Hoodie azul noche/ }))
     await user.click(screen.getByRole('button', { name: /Probarme/ }))
     expect(await screen.findByText('No pudimos generar tu prueba', {}, { timeout: 5000 })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument()
   })
 
   it('un resultado con la URL vencida no se muestra y ofrece generarlo de nuevo', async () => {

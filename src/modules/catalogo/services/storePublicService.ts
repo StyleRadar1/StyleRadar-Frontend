@@ -1,3 +1,5 @@
+import { apiClient } from '@/modules/core/api/apiClient'
+import { env } from '@/configs/env'
 import { TIENDAS } from '@/modules/mapa/mocks/mapData'
 import { seedStores, seedPlaylists } from '@/modules/administracion/mocks/admin'
 import { ITEMS } from '../mocks/items'
@@ -273,6 +275,112 @@ export const storePublicService = {
         playlists: Math.max(playlistsCount, 1),
         aliadaDesde: aliada,
       },
+    }
+  },
+
+  async getByIdAsync(id: string): Promise<StorePublicDto | null> {
+    const syncData = this.getById(id)
+    if (env.useMocks) {
+      return syncData
+    }
+    const cleanId = (id || '').trim().toLowerCase()
+    try {
+      const r = await apiClient.get<any>(`/api/v1/almacenes/${encodeURIComponent(cleanId)}`)
+      const d = r.data
+      if (!d) return syncData
+
+      return {
+        id: cleanId,
+        nombre: d.nombre || syncData?.nombre || 'Tienda aliada',
+        categoria: d.categoria || syncData?.categoria || 'Moda local',
+        barrio: d.barrio || syncData?.barrio || 'Bogotá',
+        direccion: d.direccion || syncData?.direccion || 'Bogotá, Colombia',
+        distanciaKm: d.distanciaKm ? `${d.distanciaKm} km` : (syncData?.distanciaKm || '1,5 km'),
+        horario: d.horario || syncData?.horario || 'Lun a sáb · 10:00 a 20:00',
+        lngLat: [d.lng || d.longitud || syncData?.lngLat[0] || -74.0628, d.lat || d.latitud || syncData?.lngLat[1] || 4.6433],
+        telefono: d.telefono || syncData?.telefono || '+57 601 555 0123',
+        correo: d.correo || d.email || syncData?.correo || `${cleanId}@styleradar.co`,
+        nit: d.nit || syncData?.nit || '901.482.337-1',
+        representante: d.representante || syncData?.representante || 'Administrador de tienda',
+        aliadaDesde: d.aliadaDesde || syncData?.aliadaDesde || 'feb 2026',
+        verificacion: d.verificacion || d.estadoVerificacion || syncData?.verificacion || 'Verificada',
+        rating: d.rating ? String(d.rating) : (syncData?.rating || '4,8'),
+        reviews: d.reviews || syncData?.reviews || 150,
+        descripcion: d.descripcion || syncData?.descripcion || 'Tienda local de Bogotá aliada a StyleRadar.',
+        foto: d.foto || d.imagen || syncData?.foto || '/img/mapa/luna.jpg',
+        fotoEditorial: d.fotoEditorial || syncData?.fotoEditorial || (syncData?.foto || '/img/mapa/luna.jpg'),
+        fotosGaleria: (d.galeria && Array.isArray(d.galeria) && d.galeria.length > 0) ? d.galeria : (syncData?.fotosGaleria || []),
+        colecciones: syncData?.colecciones || [],
+        bannerNotice: d.bannerNotice || syncData?.bannerNotice || '',
+        prendas: syncData?.prendas || [],
+        categorias: syncData?.categorias || [],
+        coleccionDestacada: syncData?.coleccionDestacada || {
+          titulo: 'Colección destacada',
+          subtitulo: 'Selección de la temporada',
+          descripcion: 'Prendas exclusivas disponibles en tienda.',
+        },
+        distintivos: syncData?.distintivos || [],
+        cifras: syncData?.cifras || {
+          prendasActivas: syncData?.prendas.length || 0,
+          categoriasCount: syncData?.categorias.length || 0,
+          playlists: 0,
+          aliadaDesde: 'feb 2026',
+        },
+      }
+    } catch {
+      return syncData
+    }
+  },
+
+  async getAllAsync(): Promise<StorePublicDto[]> {
+    if (env.useMocks) {
+      return TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
+    }
+    try {
+      const r = await apiClient.get<any[]>('/api/v1/almacenes')
+      if (Array.isArray(r.data) && r.data.length > 0) {
+        return r.data.map((d) => ({
+          id: d.id || d.nit || 'tienda',
+          nombre: d.nombre || 'Tienda aliada',
+          categoria: d.categoria || 'Moda local',
+          barrio: d.barrio || 'Bogotá',
+          direccion: d.direccion || 'Bogotá, Colombia',
+          distanciaKm: d.distanciaKm ? `${d.distanciaKm} km` : '1,5 km',
+          horario: d.horario || 'Lun a sáb · 10:00 a 20:00',
+          lngLat: [d.lng || d.longitud || -74.0628, d.lat || d.latitud || 4.6433],
+          telefono: d.telefono || '+57 601 555 0123',
+          correo: d.correo || d.email || '',
+          nit: d.nit || '',
+          representante: d.representante || '',
+          aliadaDesde: d.aliadaDesde || 'feb 2026',
+          verificacion: d.verificacion || 'Verificada',
+          rating: d.rating ? String(d.rating) : '4,8',
+          reviews: d.reviews || 0,
+          descripcion: d.descripcion || '',
+          foto: d.foto || d.imagen || '/img/mapa/luna.jpg',
+          fotoEditorial: d.foto || '/img/mapa/luna.jpg',
+          fotosGaleria: [],
+          colecciones: [],
+          bannerNotice: '',
+          prendas: [],
+          categorias: [],
+          coleccionDestacada: {
+            titulo: 'Colección destacada',
+            subtitulo: 'Selección de la temporada',
+            descripcion: '',
+          },
+          distintivos: [],
+          cifras: {
+            prendasActivas: 0,
+            categoriasCount: 0,
+            playlists: 0,
+            aliadaDesde: 'feb 2026',
+          },
+        }))
+      }
+      return TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
+    } catch {
+      return TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
     }
   },
 }

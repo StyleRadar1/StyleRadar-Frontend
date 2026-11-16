@@ -27,13 +27,13 @@ describe('ingreso con Google (P14)', () => {
     expect(localStorage.getItem('sr_token')).toBe('demo-a-1')
   })
 
-  it('una cuenta de Google sin registro se explica', async () => {
+  it('una cuenta de Google sin registro dice «No pudimos entrar con Google» (plan de errores)', async () => {
     const user = userEvent.setup()
     renderLogin()
     await user.click(screen.getByRole('button', { name: 'Continuar con Google' }))
     await user.type(screen.getByLabelText('Usar otra cuenta'), 'alguien@gmail.com')
     await user.click(screen.getByRole('button', { name: 'Seguir' }))
-    expect(await screen.findByRole('alert', {}, { timeout: 3000 })).toHaveTextContent('todavía no está registrada')
+    expect(await screen.findByRole('alert', {}, { timeout: 3000 })).toHaveTextContent('No pudimos entrar con Google')
   })
 
   it('el selector se cierra con Escape', async () => {

@@ -1,35 +1,57 @@
 import { useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { ErrorToast } from '@/modules/core/components/ErrorFeedback'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { AdminCard, AdminHeader, Dl, HBars, StatusBadge, Who } from '../components/AdminUi'
 import { FoundationForm } from '../components/FoundationForm'
 import { adminFoundationService } from '../services/adminService'
 import type { AdminFoundationDto, FoundationFormDto } from '../types/admin.dto'
+import type { FoundationDuplicates } from '../utils/validation'
 
 /** Admin › Fundaciones › detalle: editar datos, activar o desactivar y ver sus donaciones. */
 export default function AdminFoundationDetailPage() {
   const { id = '' } = useParams()
   const loader = useCallback(async () => {
     const [f, todas] = await Promise.all([adminFoundationService.get(id), adminFoundationService.list()])
-    return { f, otrosNits: todas.filter((x) => x.id !== id).map((x) => x.nit) }
+    const otras = todas.filter((x) => x.id !== id)
+    return {
+      f,
+      duplicados: {
+        nits: otras.map((x) => x.nit),
+        nombres: otras.map((x) => x.nombre),
+        representantes: otras.map((x) => x.representante),
+      },
+    }
   }, [id])
-  const { data, loading, error, reload, setData } = useResource<{ f: AdminFoundationDto | null; otrosNits: string[] }>(loader, { f: null, otrosNits: [] })
+  const { data, loading, error, reload, setData } = useResource<{ f: AdminFoundationDto | null; duplicados: FoundationDuplicates }>(loader, { f: null, duplicados: {} })
   const [busy, setBusy] = useState(false)
   const [desactivar, setDesactivar] = useState(false)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof FoundationFormDto, string>>>({})
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'warn' | 'bad'; text: string; sub?: string } | null>(null)
   const f = data.f
 
   if (loading && !f) return <Loading label="Cargando la fundación…" />
   if (error || !f) return <><AdminHeader kicker="Fundaciones · detalle" title="Fundación" back={{ to: '/admin/fundaciones', label: 'Volver a fundaciones' }} /><ErrorState error={error} onRetry={reload} title="No pudimos cargar la fundación" /></>
   const total = f.donaciones.pendientes + f.donaciones.enProceso + f.donaciones.recibidas + f.donaciones.rechazadas
 
-  const ejecutar = async (fn: () => Promise<AdminFoundationDto>, ok: string) => {
-    setBusy(true); setMsg(null)
-    try { const n = await fn(); setData((d) => ({ ...d, f: { ...n } })); setMsg({ ok: true, text: ok }) }
-    catch (e) { setMsg({ ok: false, text: errorMessage(e, 'No pudimos guardar el cambio. Intenta de nuevo.') }) }
+  const ejecutar = async (fn: () => Promise<AdminFoundationDto>, ok: string, conflictText?: string) => {
+    setBusy(true); setMsg(null); setFormErrors({})
+    try { const n = await fn(); setData((d) => ({ ...d, f: { ...n } })); setMsg({ tone: 'ok', text: ok }) }
+    catch (e) {
+      const kind = errorKind(e)
+      const fields = fieldErrors(e) as Partial<Record<keyof FoundationFormDto, string>>
+      if (Object.keys(fields).length) {
+        setFormErrors(fields)
+      } else if (kind === 'conflicto') {
+        setMsg({ tone: 'warn', text: conflictText ?? 'Esta fundación ya está inactiva', sub: 'Actualizamos su estado.' })
+        reload()
+      } else {
+        setMsg({ tone: 'bad', text: errorMessage(e, 'No pudimos guardar el cambio. Intenta de nuevo.') })
+      }
+    }
     finally { setBusy(false); setDesactivar(false) }
   }
   const guardar = (d: FoundationFormDto) => ejecutar(() => adminFoundationService.update(f.id, d), 'Fundación actualizada.')
@@ -37,12 +59,19 @@ export default function AdminFoundationDetailPage() {
   return (
     <>
       <AdminHeader kicker="Fundaciones · detalle" title={f.nombre} back={{ to: '/admin/fundaciones', label: 'Volver a fundaciones' }} />
-      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mb-4 rounded-xl p-3 text-sm ${msg.ok ? 'bg-[#9be3b4]/10 text-[#9be3b4]' : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'}`}>{msg.text}</p>}
+      <ErrorToast
+        open={!!msg}
+        tone={msg?.tone ?? 'ok'}
+        icon={msg?.tone === 'warn' ? 'refresh' : msg?.tone === 'ok' ? 'ok' : 'warn'}
+        title={msg?.text ?? ''}
+        subtitle={msg?.sub}
+        onClose={() => setMsg(null)}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <AdminCard title="Información general" className="lg:row-span-2">
           <div className="mb-4 flex items-start justify-between gap-3"><Who name={f.nombre} sub={f.barrio} /><StatusBadge value={f.estado} /></div>
-          <FoundationForm key={f.id} id="ef" inicial={f} otrosNits={data.otrosNits} onSubmit={guardar}>
+          <FoundationForm key={f.id} id="ef" inicial={f} duplicados={data.duplicados} serverErrors={formErrors} onSubmit={guardar}>
             <button type="submit" disabled={busy} className="rounded-xl bg-violeta px-5 py-2.5 text-sm font-semibold disabled:opacity-60">{busy ? 'Guardando…' : 'Guardar cambios'}</button>
           </FoundationForm>
         </AdminCard>

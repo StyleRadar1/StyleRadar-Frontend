@@ -1,8 +1,10 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
+import { MENSAJES } from '@/modules/core/api/mensajes'
 import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { correoValido } from '@/modules/identidad/utils/formato'
+import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import { PLANS, MOCK_CHECKOUT_RESPONSE, MOCK_CHECKOUT_RESULTS } from '../mocks/plans'
 import type { PlanDto, PlanIntentDto, CheckoutResponseDto, CheckoutResultDto } from '../types/plan.dto'
 
@@ -85,11 +87,8 @@ export const planService = {
       return Promise.reject(new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.'))
     }
     if (env.useMocks) {
-      try {
-        failIfScenario()
-      } catch (err) {
-        return Promise.reject(err)
-      }
+      failIfScenario()
+      fallarSiDemoPlan()
       try {
         const meta: LastCheckoutMeta = {
           planId: planId === 'store' ? 'store' : 'plus',
@@ -108,7 +107,10 @@ export const planService = {
   getCheckoutResult(orderId: string): Promise<CheckoutResultDto> {
     if (env.useMocks) {
       const custom = readCustomOrders()[orderId]
-      const base = custom ?? MOCK_CHECKOUT_RESULTS[orderId] ?? MOCK_CHECKOUT_RESULTS['MOCK_ORDER_OK']
+      const base = custom ?? MOCK_CHECKOUT_RESULTS[orderId]
+      if (!base) {
+        return Promise.reject(new ApiError(404, MENSAJES['no-existe']))
+      }
       const meta = readLastCheckoutMeta()
       const result: CheckoutResultDto = {
         ...base,

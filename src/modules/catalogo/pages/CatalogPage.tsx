@@ -2,10 +2,15 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } fr
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { isStoreSuspended, STORE_SUB_CHANGED } from '@/modules/transacciones/services/storeSubscriptionService'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind } from '@/modules/core/api/errors'
+import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
+import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
+import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
 import { ItemCard } from '../components/ItemCard'
+import { CatalogMegaMenu } from '../components/CatalogMegaMenu'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
-import { INVENTORY_ITEMS } from '../mocks/inventory'
 import type { ItemFiltersDto, ItemResponseDto } from '../types/item.dto'
 import './CatalogPage.css'
 
@@ -89,6 +94,24 @@ const OPCIONES_ORDEN = [
   { id: 'asc', label: 'Precio: menor a mayor' },
   { id: 'desc', label: 'Precio: mayor a menor' },
 ]
+
+/** Aviso al guardar la búsqueda: qué pasó y qué botón lo resuelve. */
+interface AvisoBusqueda { tono: TonoAviso; titulo: string; texto: string; accion?: 'reintentar' | 'planes' | 'login' | 'ver' }
+
+/** Texto seguro para un error al guardar la búsqueda o activar su alerta. */
+function avisoDeError(e: unknown): AvisoBusqueda {
+  const status = e instanceof ApiError ? e.status : 0
+  if (status === 422 && e instanceof ApiError && e.code === LIMITE_PLAN) {
+    return { tono: 'alerta', titulo: 'Guardamos tu búsqueda, pero sin alerta', texto: 'Con el plan Radar puedes tener hasta 3 alertas activas. Con Radar+ no hay límite.', accion: 'planes' }
+  }
+  // ms-notificaciones todavía no recibe la búsqueda recién creada en ms-usuarios
+  if (status === 422) return { tono: 'alerta', titulo: 'Tu búsqueda todavía se está guardando', texto: 'Intenta crear la alerta en unos segundos.', accion: 'reintentar' }
+  if (status === 409) return { tono: 'info', titulo: 'Ya tienes una alerta para esto', texto: 'La encuentras en «Mis búsquedas y alertas».', accion: 'ver' }
+  const kind = errorKind(e)
+  if (kind === 'sesion') return { tono: 'info', titulo: 'Inicia sesión para guardar tus búsquedas', texto: 'Así te avisamos cuando llegue lo que buscas.', accion: 'login' }
+  if (kind === 'sin-conexion') return { tono: 'error', titulo: 'Se perdió la conexión', texto: 'Revisa tu internet e intenta de nuevo.', accion: 'reintentar' }
+  return { tono: 'error', titulo: 'No pudimos guardar la búsqueda', texto: 'Intenta en unos minutos.', accion: 'reintentar' }
+}
 
 export default function CatalogPage() {
   const [params, setParams] = useSearchParams()
@@ -181,8 +204,14 @@ export default function CatalogPage() {
     prevMenuAbiertoRef.current = menuFiltrosAbierto
   }, [menuFiltrosAbierto, CATEGORIAS_CONFIG])
 
-  // Feedback toast
-  const [toastMsg, setToastMsg] = useState<string | null>(null)
+  // Guardar búsqueda y su alerta (RF-28 y RF-30)
+  const [busqueda, setBusqueda] = useState<BusquedaGuardadaDto | null>(null)
+  const [avisoBusqueda, setAvisoBusqueda] = useState<AvisoBusqueda | null>(null)
+  const [guardando, setGuardando] = useState(false)
+
+  // Ordenar por cercanía necesita saber desde dónde (400 del catálogo si no hay ubicación)
+  const [pideUbicacion, setPideUbicacion] = useState(false)
+  const [ubicacionError, setUbicacionError] = useState('')
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
@@ -281,7 +310,7 @@ export default function CatalogPage() {
     }
   }, [texto, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroCercaDe, filtroColor, filtroEstilo, orden])
 
-  const { items, loading, error } = useItems(activeFilters)
+  const { items, loading, error, status } = useItems(activeFilters)
   const [storeSubTick, setStoreSubTick] = useState(0)
 
   useEffect(() => {
@@ -289,6 +318,9 @@ export default function CatalogPage() {
     window.addEventListener(STORE_SUB_CHANGED, onSubChanged)
     return () => window.removeEventListener(STORE_SUB_CHANGED, onSubChanged)
   }, [])
+
+  const sinUbicacion = filtroCercaDe === 'No especificar'
+  const mostrarPideUbicacion = sinUbicacion && (pideUbicacion || (orden === 'cerca' && status === 400))
 
   // Deduplicación garantizada por ID e imagen al construir la lista de la grilla (queda el primero)
   // RF-99: oculta prendas de tiendas con suscripción SUSPENDIDA y actualiza conteos
@@ -326,17 +358,60 @@ export default function CatalogPage() {
   }
 
   const handleCambiarOrden = (nuevoOrden: string) => {
+    // Sin ubicación no hay desde dónde medir: se pide antes de ordenar
+    if (nuevoOrden === 'cerca' && sinUbicacion) { setPideUbicacion(true); setUbicacionError(''); return }
+    setPideUbicacion(false)
     setOrden(nuevoOrden)
     const next = new URLSearchParams(params)
     if (nuevoOrden && nuevoOrden !== 'rel') next.set('orden', nuevoOrden); else next.delete('orden')
     setParams(next)
   }
 
-  // Guardar búsqueda
-  const handleGuardarBusqueda = () => {
-    const queryTerm = texto.trim() || 'Catálogo completo'
-    setToastMsg(`Búsqueda «${queryTerm}» guardada en «Mis búsquedas y alertas».`)
-    setTimeout(() => setToastMsg(null), 3500)
+  const elegirCercaDe = (loc: string) => {
+    setFiltroCercaDe(loc)
+    if (pideUbicacion && loc !== 'No especificar') {
+      setPideUbicacion(false)
+      setOrden('cerca')
+      const next = new URLSearchParams(params); next.set('orden', 'cerca'); setParams(next)
+    }
+  }
+
+  const usarMiUbicacion = () => {
+    setUbicacionError('')
+    if (!('geolocation' in navigator)) { setUbicacionError('Tu navegador no comparte la ubicación. Elige tu barrio.'); return }
+    navigator.geolocation.getCurrentPosition(
+      () => elegirCercaDe('Mi ubicación'),
+      () => { setUbicacionError('No pudimos usar tu ubicación. Elige tu barrio.'); setMenuFiltrosAbierto(true) },
+      { timeout: 10000, maximumAge: 300000 },
+    )
+  }
+
+  // Guardar búsqueda y activar su alerta
+  const activarAlerta = async (b: BusquedaGuardadaDto) => {
+    try {
+      const actual = b.alerta ? b : await alertService.setSearchAlert(b.id, true)
+      setBusqueda(actual)
+      setAvisoBusqueda({ tono: 'exito', titulo: `Guardamos «${actual.nombre}»`, texto: 'Te avisaremos cuando llegue una prenda que coincida.', accion: 'ver' })
+    } catch (e) {
+      setAvisoBusqueda(avisoDeError(e))
+    }
+  }
+
+  const guardar = async () => {
+    const nombre = texto.trim() || 'Catálogo completo'
+    try {
+      const b = busqueda?.nombre === nombre ? busqueda : await alertService.saveSearch(nombre, `${filtrosActivosCount} filtros · orden ${orden}`)
+      setBusqueda(b)
+      await activarAlerta(b)
+    } catch (e) {
+      setAvisoBusqueda(avisoDeError(e))
+    }
+  }
+
+  const handleGuardarBusqueda = async () => {
+    if (guardando) return
+    setGuardando(true); setAvisoBusqueda(null)
+    try { await guardar() } finally { setGuardando(false) }
   }
 
   // Limpiar todos los filtros
@@ -351,6 +426,21 @@ export default function CatalogPage() {
     setFiltroEstilo('Todos')
     setTexto('')
     setParams(new URLSearchParams())
+  }
+
+  const handleMegaMenuFilter = (f: { tipo?: string; estilo?: string; origen?: string; texto?: string }) => {
+    if (f.tipo !== undefined) setFiltroTipo(f.tipo)
+    if (f.estilo !== undefined) setFiltroEstilo(f.estilo)
+    if (f.origen !== undefined) setFiltroOrigen(f.origen)
+    if (f.texto !== undefined) setTexto(f.texto)
+    const next = new URLSearchParams(params)
+    if (f.tipo && f.tipo !== 'Todos') next.set('tipo', f.tipo)
+    else if (f.tipo === 'Todos') next.delete('tipo')
+    if (f.estilo && f.estilo !== 'Todos') next.set('estilo', f.estilo)
+    else if (f.estilo === 'Todos') next.delete('estilo')
+    if (f.origen && f.origen !== 'Todos') next.set('origen', f.origen)
+    else if (f.origen === 'Todos') next.delete('origen')
+    setParams(next)
   }
 
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
@@ -368,7 +458,7 @@ export default function CatalogPage() {
                   key={loc}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => setFiltroCercaDe(isSelected && !isDefault ? 'No especificar' : loc)}
+                  onClick={() => elegirCercaDe(isSelected && !isDefault ? 'No especificar' : loc)}
                   className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                 >
                   <span>{loc}</span>
@@ -667,6 +757,14 @@ export default function CatalogPage() {
           </button>
         </form>
 
+        {/* MENÚ HORIZONTAL DE CATEGORÍAS Y MEGA-MENÚ DE SUBFILTROS EN HOVER (ESTILO GOTRENDIER) */}
+        <CatalogMegaMenu
+          onSelectFilter={handleMegaMenuFilter}
+          activeTipo={filtroTipo}
+          activeEstilo={filtroEstilo}
+          activeOrigen={filtroOrigen}
+        />
+
         {/* BARRA DE HERRAMIENTAS: Filtros (botón mediano) + Guardar búsqueda + Ordenar (diseño uniforme) */}
         <div className="relative z-30 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)] mb-6">
           {/* LADO IZQUIERDO: Botón Filtros mediano con badge y contenedor relativo para el panel flotante */}
@@ -843,13 +941,14 @@ export default function CatalogPage() {
             <button
               type="button"
               onClick={handleGuardarBusqueda}
-              className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+              disabled={guardando}
+              className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-60"
               title="Guardar esta búsqueda en tu perfil para recibir avisos"
             >
               <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
               </svg>
-              <span>Guardar búsqueda</span>
+              <span>{guardando ? 'Guardando…' : 'Guardar búsqueda'}</span>
             </button>
 
             {/* Selector Ordenar rediseñado */}
@@ -1029,30 +1128,34 @@ export default function CatalogPage() {
           </div>
         )}
 
-        {/* Feedback toast */}
-        {toastMsg && (
-          <div role="status" className="mb-6 rounded-xl border border-[var(--color-success-border,rgba(16,185,129,0.3))] bg-[var(--color-success-bg,rgba(16,185,129,0.1))] p-4 text-sm text-[var(--color-success-text,#10b981)] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
-            <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            <span>{toastMsg}</span>
-          </div>
+        {/* 400 · ordenar por cercanía sin ubicación: se pide antes, sin error técnico */}
+        {mostrarPideUbicacion && (
+          <Aviso tono="info" className="mb-6" titulo="Activa tu ubicación para ordenar por cercanía" onCerrar={() => setPideUbicacion(false)}
+            acciones={<>
+              <button type="button" onClick={usarMiUbicacion} className={BTN_PRINCIPAL}>Usar mi ubicación</button>
+              <button type="button" onClick={() => { setMenuFiltrosAbierto(true); menuRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }} className={BTN_SECUNDARIO}>Elegir barrio</button>
+            </>}>
+            <p>También puedes elegir tu barrio.</p>
+            {ubicacionError && <p className="mt-1 text-[var(--color-danger-text,#ffb4b4)]">{ubicacionError}</p>}
+          </Aviso>
         )}
 
-        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ESTILO REFERENCIA EDITORIAL) */}
+        {/* Guardar búsqueda: éxito, 409, 422 (aún se guarda o límite del plan) y fallas del servicio */}
+        {avisoBusqueda && (
+          <Aviso tono={avisoBusqueda.tono} className="mb-6" titulo={avisoBusqueda.titulo} onCerrar={() => setAvisoBusqueda(null)}
+            acciones={avisoBusqueda.accion === 'reintentar' ? <button type="button" disabled={guardando} onClick={handleGuardarBusqueda} className={BTN_PRINCIPAL}>Reintentar</button>
+              : avisoBusqueda.accion === 'planes' ? <Link to="/planes" className={BTN_PRINCIPAL}>Ver Radar+</Link>
+              : avisoBusqueda.accion === 'login' ? <Link to="/login" className={BTN_PRINCIPAL}>Iniciar sesión</Link>
+              : avisoBusqueda.accion === 'ver' ? <Link to="/alertas" className={BTN_SECUNDARIO}>Ver mis búsquedas</Link> : undefined}>
+            {avisoBusqueda.texto}
+          </Aviso>
+        )}
+
+        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ROPA CON DESCUENTO Y ESPECIALES) */}
         <div className="relative z-10 mb-10">
-          <HangingCollectionRack
-            onApplyCollectionFilter={(tipo, estilo) => {
-              setFiltroTipo(tipo)
-              setFiltroEstilo(estilo)
-              const next = new URLSearchParams(params)
-              if (tipo !== 'Todos') next.set('tipo', tipo)
-              else next.delete('tipo')
-              if (estilo !== 'Todos') next.set('estilo', estilo)
-              else next.delete('estilo')
-              setParams(next)
-            }}
+          <HangingSpecialsRack
+            filtroTipo={filtroTipo}
+            filtroEstilo={filtroEstilo}
           />
         </div>
 
@@ -1067,7 +1170,7 @@ export default function CatalogPage() {
             </span>
           </div>
 
-          {error && (
+          {error && !mostrarPideUbicacion && (
             <div role="alert" className="my-8 rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.3))] bg-[var(--color-danger-bg,rgba(239,68,68,0.1))] p-4 text-sm text-[var(--color-danger-text,#ef4444)] flex items-center gap-2">
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
@@ -1117,7 +1220,7 @@ export default function CatalogPage() {
 }
 
 /* ============================================================================
- * Sección de "Prendas colgadas en una barra" (Nueva Colección | Moda Local Bogotá)
+ * Sección de "Prendas colgadas en una barra" (Ropa con descuento y especiales)
  * ============================================================================ */
 
 type RackBadgeVariant = 'discount' | 'new' | 'stock'
@@ -1128,6 +1231,7 @@ interface HangingRackGarment {
   tienda: string
   barrio: string
   precio: number
+  originalPrice?: number
   imagen: string
   recorte?: string
   tipoGancho: 'hombros' | 'pinzas'
@@ -1141,27 +1245,32 @@ interface HangingRackGarment {
   }
 }
 
-const LOW_STOCK_INV =
-  INVENTORY_ITEMS.find((inv) => inv.id === 'inv-2') ??
-  INVENTORY_ITEMS.find((inv) => inv.estado === 'BAJO_STOCK' && inv.stockTotal > 0)
-
-const LOW_STOCK_COUNT = LOW_STOCK_INV?.stockTotal ?? 2
-
 const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
   .filter((it): it is ItemResponseDto & { recorte: string } => Boolean(it.recorte))
   .map((found) => {
     const tipoNorm = found.tipo === 'Suéter' ? 'Saco' : found.tipo
     let badge: HangingRackGarment['badge']
+    let originalPrice: number | undefined
 
     if (found.id === 'p19') {
-      badge = { text: '-20%', variant: 'discount' }
+      badge = { text: '-20% DCTO', variant: 'discount' }
+      originalPrice = Math.round(found.precio * 1.25)
     } else if (found.id === 'p27') {
-      badge = {
-        text: `SOLO ${LOW_STOCK_COUNT} ${LOW_STOCK_COUNT === 1 ? 'UNIDAD' : 'UNIDADES'}`,
-        variant: 'stock',
-      }
+      badge = { text: '-30% OFERTA', variant: 'discount' }
+      originalPrice = Math.round(found.precio * 1.42)
+    } else if (found.id === 'p23') {
+      badge = { text: '-15% DCTO', variant: 'discount' }
+      originalPrice = Math.round(found.precio * 1.18)
+    } else if (found.id === 'p24') {
+      badge = { text: 'ESPECIAL', variant: 'stock' }
+    } else if (found.id === 'p26') {
+      badge = { text: 'POPULAR', variant: 'new' }
     } else if (found.id === 'p22') {
-      badge = { text: 'NUEVO', variant: 'new' }
+      badge = { text: 'DROP LOCAL', variant: 'new' }
+    } else if (found.id === 'p18') {
+      badge = { text: 'ÚNICA PIEZA', variant: 'stock' }
+    } else if (found.id === 'p25') {
+      badge = { text: 'DESTACADO', variant: 'new' }
     }
 
     return {
@@ -1170,6 +1279,7 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
       tienda: found.tienda,
       barrio: found.barrio,
       precio: found.precio,
+      originalPrice,
       imagen: found.imagen,
       recorte: found.recorte,
       tipoGancho: found.tipoGancho ?? 'hombros',
@@ -1343,18 +1453,33 @@ function HangerClipsFront() {
   )
 }
 
-function HangingCollectionRack({
-  onApplyCollectionFilter,
+function HangingSpecialsRack({
+  filtroTipo,
+  filtroEstilo,
 }: {
-  onApplyCollectionFilter: (tipo: string, estilo: string) => void
+  filtroTipo?: string
+  filtroEstilo?: string
 }) {
-  // Índice 3 corresponde a "Chaqueta de cuero" (p6) en el centro al iniciar
   const [activeIndex, setActiveIndex] = useState<number>(3)
   const dragStartX = useRef<number | null>(null)
   const dragDeltaX = useRef<number>(0)
   const didDrag = useRef<boolean>(false)
 
-  const total = HANGING_RACK_GARMENTS.length
+  const availableGarments = useMemo(() => {
+    let list = HANGING_RACK_GARMENTS
+    if (filtroTipo && filtroTipo !== 'Todos') {
+      const filtered = list.filter((g) => g.tipoFiltro.toLowerCase() === filtroTipo.toLowerCase())
+      if (filtered.length >= 3) list = filtered
+    }
+    if (filtroEstilo && filtroEstilo !== 'Todos') {
+      const filtered = list.filter((g) => g.estilo.toLowerCase() === filtroEstilo.toLowerCase())
+      if (filtered.length >= 3) list = filtered
+    }
+    return list
+  }, [filtroTipo, filtroEstilo])
+
+  const total = availableGarments.length
+  const safeActiveIndex = activeIndex % (total || 1)
 
   const moveBy = useCallback(
     (delta: number) => {
@@ -1397,31 +1522,28 @@ function HangingCollectionRack({
     }
   }
 
-  const featured = HANGING_RACK_GARMENTS[activeIndex] ?? HANGING_RACK_GARMENTS[0]
+  const featured = availableGarments[safeActiveIndex] ?? availableGarments[0]
 
-  // Calculamos el desplazamiento circular más corto (-3..+3) para cada prenda
   const visibleGarments = useMemo(() => {
-    return HANGING_RACK_GARMENTS.map((garment, index) => {
-      let offset = index - activeIndex
+    return availableGarments.map((garment, index) => {
+      let offset = index - safeActiveIndex
       if (offset > total / 2) offset -= total
       if (offset < -total / 2) offset += total
       return { garment, index, offset }
     }).filter(({ offset }) => offset >= -3 && offset <= 3)
-  }, [activeIndex, total])
-
-  const collectionHref = `/catalogo?tipo=${encodeURIComponent(featured.tipoFiltro)}&estilo=${encodeURIComponent(featured.estilo)}`
+  }, [safeActiveIndex, availableGarments, total])
 
   return (
     <section
       className="sr-rack-section"
-      aria-label="Nueva colección de moda local en Bogotá"
+      aria-label="Ropa con descuento y piezas especiales en Bogotá"
       onKeyDown={handleKeyDown}
     >
       {/* 1. Encabezado pequeño centrado en mayúsculas con separador vertical fino */}
       <header className="sr-rack-header">
-        <span className="sr-rack-kicker">NUEVA COLECCIÓN</span>
+        <span className="sr-rack-kicker">ROPA CON DESCUENTO & ESPECIALES</span>
         <span className="sr-rack-divider" aria-hidden="true" />
-        <span className="sr-rack-kicker sr-rack-kicker--muted">MODA LOCAL BOGOTÁ</span>
+        <span className="sr-rack-kicker sr-rack-kicker--muted">OFERTAS Y POPULARES · TIENDAS LOCALES BOGOTÁ</span>
       </header>
 
       {/* 2. Barra metálica horizontal fina + prendas colgadas de ganchos */}
@@ -1430,7 +1552,7 @@ function HangingCollectionRack({
         tabIndex={0}
         role="region"
         aria-roledescription="carrusel"
-        aria-label="Perchero interactivo de prendas"
+        aria-label="Perchero interactivo de prendas en descuento"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
@@ -1537,19 +1659,25 @@ function HangingCollectionRack({
         </div>
       </div>
 
-      {/* 3. Detalle inferior de la prenda destacada + botón "Ver la colección" */}
+      {/* 3. Detalle inferior de la prenda destacada + botón "Ver prenda" */}
       <div className="sr-rack-footer">
         <p className="sr-rack-title">{featured.nombre}</p>
         <p className="sr-rack-meta">
-          {featured.tienda} · {formatCOP(featured.precio)}
+          {featured.tienda} · {featured.originalPrice ? (
+            <>
+              <span className="line-through opacity-50 mr-1.5">{formatCOP(featured.originalPrice)}</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCOP(featured.precio)}</span>
+            </>
+          ) : (
+            formatCOP(featured.precio)
+          )}
         </p>
 
         <Link
-          to={collectionHref}
-          onClick={() => onApplyCollectionFilter(featured.tipoFiltro, featured.estilo)}
+          to={`/catalogo/${featured.id}`}
           className="sr-rack-cta"
         >
-          Ver la colección
+          Ver prenda
         </Link>
       </div>
     </section>

@@ -2,6 +2,7 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { MOCK_PAYMENTS } from '../mocks/payments'
 import type { PaymentDto, PaymentFiltersDto, RefundRequestDto } from '../types/payment.dto'
 
@@ -27,8 +28,8 @@ export function getRefundableBalance(p: PaymentDto): number {
 
 /** Servicio de pagos para el admin. Patrón: mock o gateway. */
 export const paymentService = {
-  list(filters: PaymentFiltersDto): Promise<PaymentDto[]> {
-    if (env.useMocks) return mockDelay(applyFilters(MOCK_PAYMENTS, filters))
+  async list(filters: PaymentFiltersDto): Promise<PaymentDto[]> {
+    if (env.useMocks) { failIfScenario(); return mockDelay(applyFilters(MOCK_PAYMENTS, filters)) }
     return apiClient.get<PaymentDto[]>('/api/pagos', { params: filters }).then((r) => r.data)
   },
 
@@ -45,16 +46,12 @@ export const paymentService = {
    * RF-98: Reembolsa total o parcialmente un pago APROBADO.
    * Valida motivo obligatorio, monto > 0 y monto <= saldo reembolsable.
    */
-  refund(req: RefundRequestDto): Promise<PaymentDto> {
+  async refund(req: RefundRequestDto): Promise<PaymentDto> {
     if (!req.reason || !req.reason.trim()) {
       return Promise.reject(new ApiError(400, 'Debes indicar el motivo del reembolso.'))
     }
     if (env.useMocks) {
-      try {
-        failIfScenario()
-      } catch {
-        return Promise.reject(new ApiError(500, 'No fue posible procesar el reembolso. Inténtalo nuevamente.'))
-      }
+      failIfScenario()
       const idx = MOCK_PAYMENTS.findIndex((x) => x.id === req.paymentId)
       if (idx === -1) return Promise.reject(new Error('Pago no encontrado'))
       const p = MOCK_PAYMENTS[idx]

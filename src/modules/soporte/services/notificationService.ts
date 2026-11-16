@@ -1,6 +1,6 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
-import { failIfScenario } from '@/modules/core/api/mockScenario'
+import { failIfScenario, failWithScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { seedNotifications } from '../mocks/notifications'
 import type { NotificacionDto } from '../types/notification.dto'
@@ -37,6 +37,8 @@ export const notificationService = {
   async markRead(id: string): Promise<void> {
     if (env.useMocks) {
       failIfScenario()
+      failWithScenario('alerta-ajena', 403)
+      failWithScenario('alerta-borrada', 404)
       const n = mine().find((x) => x.id === id)
       if (n) n.leida = true
       await mockDelay(undefined, 150)

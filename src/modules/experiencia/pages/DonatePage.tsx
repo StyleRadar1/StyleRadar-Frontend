@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { Link } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { errorKind, fieldErrors } from '@/modules/core/api/errors'
+import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { Steps } from '@/modules/core/components/Steps'
 import { ChoiceGroup, Field } from '../components/Field'
@@ -47,7 +48,11 @@ export default function DonatePage() {
           ...(form.modalidad === 'ENTREGA_EN_PUNTO' ? { puntoId: form.puntoId } : { direccion: form.direccion.trim() }) },
       }, form.fotos.map((p) => p.file!).filter(Boolean))
       setDone(res)
-    } catch (e) { setSendError(e) } finally { setSending(false) }
+    } catch (e) {
+      const campos = fieldErrors(e)
+      if (Object.keys(campos).length) setErrors((prev) => ({ ...prev, ...(campos as DonationErrors) }))
+      setSendError(e)
+    } finally { setSending(false) }
   }
 
   if (done) return (
@@ -101,14 +106,7 @@ export default function DonatePage() {
                   )
                 }) : <p className="text-sm text-[var(--color-text-muted)]">Ninguna fundación cercana recibe {form.categoria.toLowerCase()} ahora. Desmarca el filtro para verlas todas o cambia la categoría.</p>}
               </div>
-              {errors.fundacionId && (
-                <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-danger-text,#ff8a8a)] font-medium">
-                  <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                  </svg>
-                  <span>{errors.fundacionId}</span>
-                </p>
-              )}
+              {errors.fundacionId && <FieldError message={errors.fundacionId} />}
             </fieldset>
           ))}
 
@@ -131,12 +129,17 @@ export default function DonatePage() {
         </>)}
 
         {sendError != null && (
-          <p role="alert" className="flex items-center gap-2 rounded-xl border border-[var(--color-danger-border,#ff8a8a)] bg-[var(--color-danger-bg,rgba(220,38,38,0.12))] p-3 text-sm text-[var(--color-danger-text,#ff8a8a)] font-medium">
-            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-            </svg>
-            <span>No pudimos enviar la solicitud. {errorMessage(sendError)}</span>
-          </p>
+          errorKind(sendError) === 'servidor' || errorKind(sendError) === 'sin-conexion' || errorKind(sendError) === 'limite' ? (
+            <ErrorState compact error={sendError} title="No pudimos registrar la donación" onRetry={submit} />
+          ) : errorKind(sendError) === 'conflicto' ? (
+            <ErrorBanner tone="warn" icon="refresh" title="No pudimos registrar la donación">
+              Ya enviaste una donación igual a esta fundación que sigue pendiente. Revisa tus donaciones antes de reintentar.
+            </ErrorBanner>
+          ) : (
+            <ErrorBanner tone="warn" icon="warn" title="No pudimos registrar la donación">
+              Revisa los datos. La donación debe ir a una fundación, no a tu propia cuenta.
+            </ErrorBanner>
+          )
         )}
 
         <div className="flex flex-wrap justify-between gap-2 border-t border-[var(--color-border)] pt-5">

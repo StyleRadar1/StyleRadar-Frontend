@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/modules/core/design-system'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
@@ -47,6 +48,7 @@ export default function StoreSubscriptionPage() {
   const [askCancel, setAskCancel] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<unknown>(null)
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
 
   // RF-96: Estado para reintento de pago rechazado con PayerEmailForm
   const [retryPaymentTarget, setRetryPaymentTarget] = useState<PaymentDto | null>(null)
@@ -142,6 +144,7 @@ export default function StoreSubscriptionPage() {
           </div>
           <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días.</p>
         </div>
+
 
         {failedPayment && (
           <div className="store-subscription__alert" role="alert">
@@ -246,6 +249,17 @@ export default function StoreSubscriptionPage() {
               Cambiar método de pago
             </Button>
           </div>
+          <p className="mt-3 text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]/50 pt-2">
+            El plan y la actividad comercial de tu tienda se rigen por las{' '}
+            <Link to="/legal/reglas-tiendas" className="font-semibold text-[var(--color-accent)] underline">
+              Reglas para Tiendas y Marcas Aliadas
+            </Link>{' '}
+            y la{' '}
+            <Link to="/legal/pagos-seguridad" className="font-semibold text-[var(--color-accent)] underline">
+              Política de Pagos y Seguridad
+            </Link>
+            .
+          </p>
         </article>
 
         <section className="store-subscription__history">

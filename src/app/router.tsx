@@ -2,7 +2,10 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import type { Role } from '@/modules/core/types/roles'
 import { NotFound } from '@/modules/core/components/NotFound'
+import { SessionExpiredOverlay } from '@/modules/core/components/SessionExpiredOverlay'
+import { SinConexion } from '@/modules/core/components/SinConexion'
 import { WelcomeOverlay } from '@/modules/core/components/WelcomeOverlay'
+import { CookieBanner } from '@/modules/legal/components/CookieBanner'
 import { AuroraBackground, isAuroraExcluded } from '@/modules/core/design-system'
 import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
@@ -45,6 +48,13 @@ const AdminStoreDetail = lazy(() => import('@/modules/administracion/pages/Admin
 const AdminFoundations = lazy(() => import('@/modules/administracion/pages/AdminFoundationsPage'))
 const AdminFoundationDetail = lazy(() => import('@/modules/administracion/pages/AdminFoundationDetailPage'))
 const AdminPlaylists = lazy(() => import('@/modules/administracion/pages/AdminPlaylistsPage'))
+// Cumplimiento Legal (Colombia)
+const LegalIndex = lazy(() => import('@/modules/legal/pages/LegalIndexPage'))
+const LegalDocument = lazy(() => import('@/modules/legal/pages/LegalDocumentPage'))
+const Pqrs = lazy(() => import('@/modules/legal/pages/PqrsPage'))
+const HelpCenter = lazy(() => import('@/modules/legal/pages/HelpCenterPage'))
+// Vitrina de las piezas de error: solo en desarrollo, no llega al build de QA ni producción.
+const ErroresDemo = import.meta.env.DEV ? lazy(() => import('@/modules/core/pages/ErroresDemo')) : null
 
 const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-white/60">Cargando…</p>}>{el}</Suspense>
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
@@ -76,6 +86,9 @@ function RootLayout() {
         <Outlet />
       </div>
       <WelcomeOverlay />
+      <SessionExpiredOverlay />
+      <SinConexion />
+      <CookieBanner />
     </div>
   )
 }
@@ -101,6 +114,11 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/planes', element: page(<Plans />) },
       { path: '/pago/resultado', element: page(<Checkout />) },
       { path: '/suscripcion', element: page(<Checkout />) },
+      // Cumplimiento Legal y Derechos del Usuario (Colombia)
+      { path: '/legal', element: page(<LegalIndex />) },
+      { path: '/legal/pqrs', element: page(<Pqrs />) },
+      { path: '/legal/centro-ayuda', element: page(<HelpCenter />) },
+      { path: '/legal/:slug', element: page(<LegalDocument />) },
       // Usuario (comprador)
       { path: '/perfil', element: only(USER, <Profile />) },
       { path: '/perfil/pagos', element: only(USER, <BuyerPayments />) },
@@ -123,6 +141,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },
       { path: '/fundacion/estadisticas', element: only(FOUND, <Stats />) },
+      ...(ErroresDemo ? [{ path: '/dev/errores', element: page(<ErroresDemo />) }] : []),
       { path: '*', element: <NotFound /> },
     ],
   },

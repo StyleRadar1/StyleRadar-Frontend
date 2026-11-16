@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import CatalogPage from '../pages/CatalogPage'
-import { renderAt } from '../../experiencia/__tests__/helpers'
+import { loginAs, renderAt } from '../../experiencia/__tests__/helpers'
 
 const routes = [
   { path: '/catalogo', element: <CatalogPage /> },
@@ -105,8 +105,9 @@ describe('CatalogPage - Filtros compactos, Cerca de y Ordenar rediseñado', () =
     expect(screen.getByText(/Cerca de: Chapinero/i)).toBeInTheDocument()
   })
 
-  it('permite guardar la búsqueda y muestra la notificación toast', async () => {
+  it('permite guardar la búsqueda y activa su alerta', async () => {
     const user = userEvent.setup()
+    loginAs('u-1', 'Valentina Rojas')
     renderAt('/catalogo', routes)
 
     await waitFor(() => {
@@ -116,6 +117,6 @@ describe('CatalogPage - Filtros compactos, Cerca de y Ordenar rediseñado', () =
     const btnGuardar = screen.getByRole('button', { name: /Guardar búsqueda/i })
     await user.click(btnGuardar)
 
-    expect(screen.getByRole('status')).toHaveTextContent(/guardada en «Mis búsquedas y alertas»/i)
+    expect(await screen.findByText('Guardamos «Catálogo completo»')).toBeInTheDocument()
   })
 })

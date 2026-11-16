@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { errorKind } from '@/modules/core/api/errors'
+import { Aviso } from '@/modules/core/components/errores'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { PayerEmailForm, PAYMENT_INIT_ERROR_MSG } from '../components/PayerEmailForm'
 import { usePlans } from '../hooks/usePlans'
@@ -10,6 +12,9 @@ import { useUserPlan } from '../hooks/useUserPlan'
 import { planService } from '../services/planService'
 import { userPlanService } from '../services/userPlanService'
 import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
+import { PagoRechazado } from '../components/PagoRechazado'
+import { PLAN_CHANGED } from '../services/userPlanService'
+import { avisoDePlan, TEXTOS_PLAN, type AvisoPlan } from '../utils/erroresPlan'
 
 /* ─── Subcomponente: resultado del pago ─── */
 function CheckoutResult() {
@@ -57,8 +62,33 @@ function CheckoutResult() {
   }, [result, navigate])
 
   if (loading) return <Loading label="Consultando el estado del pago…" />
+  // 404: no hay suscripción ni orden con ese número.
+  if (error && errorKind(error) === 'no-existe') {
+    return (
+      <section className="mx-auto max-w-lg px-4 py-16">
+        <Aviso tono="info" titulo={TEXTOS_PLAN.sinSuscripcion.titulo}
+          accion={<Link to="/planes" className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold text-blanco">Ver planes</Link>}>
+          {TEXTOS_PLAN.sinSuscripcion.texto}
+        </Aviso>
+      </section>
+    )
+  }
   if (error) return <ErrorState error={error} title="No pudimos consultar el pago" />
   if (!result) return <EmptyState title="Sin resultado" />
+
+  // Mercado Pago no aprobó el pago: pantalla del plan con Reintentar. No se muestran datos del medio de pago.
+  if (result.status === 'rechazado') {
+    const reintentar = result.planName === 'Tienda aliada' ? '/tienda/suscripcion' : '/suscripcion'
+    return (
+      <PagoRechazado
+        detalle={<p className="text-xs text-[var(--sr-tx-2)]">{result.planName} · {formatCOP(result.amount)} · cobro $0</p>}
+        acciones={<>
+          <Link to={reintentar} className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco">Reintentar pago</Link>
+          <Link to="/planes" className="rounded-xl border border-[color-mix(in_srgb,var(--sr-tx)_25%,transparent)] px-5 py-3 text-sm font-semibold text-[var(--sr-tx)]">Ver planes</Link>
+        </>}
+      />
+    )
+  }
 
   const icons: Record<string, string> = { aprobado: '✅', pendiente: '⏳', rechazado: '❌' }
   const messages: Record<string, string> = {
@@ -193,6 +223,7 @@ function PlansSelector() {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
   // El plan de la persona se lee de un único lugar: useUserPlan (el mismo que usan /planes y los candados).
   const { plan: userPlan } = useUserPlan(user?.role === 'COMPRADOR')
@@ -215,15 +246,21 @@ function PlansSelector() {
       return
     }
 
+    // Con sesión: crear checkout mock
     setBusy(true)
     setCheckoutError(null)
+    setAviso(null)
     try {
       await planService.createCheckout(plan.id, payerEmail)
       // En producción aquí se redirige al initPoint de Mercado Pago.
       // En mock mostramos el resultado simulado.
       navigate(`/pago/resultado?orden=MOCK_ORDER_OK`)
-    } catch {
-      setCheckoutError(PAYMENT_INIT_ERROR_MSG)
+    } catch (e) {
+      const a = avisoDePlan(e, PAYMENT_INIT_ERROR_MSG)
+      setAviso(a)
+      setCheckoutError(a.texto || PAYMENT_INIT_ERROR_MSG)
+      // 409: se vuelve a leer el plan para que la pantalla muestre el estado real.
+      if (a.refrescar) window.dispatchEvent(new Event(PLAN_CHANGED))
     } finally {
       setBusy(false)
     }
@@ -249,6 +286,12 @@ function PlansSelector() {
         </p>
       </div>
 
+      {aviso && (
+        <div className="mx-auto mt-8 max-w-xl">
+          <Aviso tono={aviso.tono} titulo={aviso.titulo}>{aviso.texto}</Aviso>
+        </div>
+      )}
+
       {loading ? (
         <Loading label="Cargando planes…" />
       ) : error ? (
@@ -270,6 +313,28 @@ function PlansSelector() {
           ))}
         </div>
       )}
+
+      {/* Aviso de cumplimiento normativo y derecho de retracto en compras electrónicas */}
+      <div className="mt-12 rounded-2xl border border-[var(--color-border)]/60 bg-[var(--color-surface-raised)]/30 p-5 text-center text-xs text-[var(--color-text-muted)] space-y-2">
+        <p>
+          🔒 Transacciones seguras procesadas en pesos colombianos (COP) con IVA incluido a través de pasarelas de pago certificadas.
+        </p>
+        <p>
+          Al contratar un plan o adquirir prendas a través de Style Radar, aplicas a las garantías legales de la Ley 1480 de 2011 y al{' '}
+          <Link to="/legal/devoluciones-garantias" className="font-semibold text-[var(--color-text)] underline hover:text-[var(--color-accent)]">
+            Derecho de Retracto dentro de los 5 días hábiles
+          </Link>{' '}
+          siguientes a la entrega. Consulta nuestros{' '}
+          <Link to="/legal/terminos" className="font-semibold text-[var(--color-text)] underline hover:text-[var(--color-accent)]">
+            Términos y Condiciones
+          </Link>{' '}
+          y nuestra{' '}
+          <Link to="/legal/datos-personales" className="font-semibold text-[var(--color-text)] underline hover:text-[var(--color-accent)]">
+            Política de Datos
+          </Link>
+          .
+        </p>
+      </div>
 
       {busy && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60">

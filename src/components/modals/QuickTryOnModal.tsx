@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import './QuickTryOnModal.css'
+import { readDimensions } from '@/modules/experiencia/utils/photoRules'
+import { TEXTO_FOTO, TRYON_ACCEPT, validarArchivoPrueba, validarDimensionesPrueba } from '@/modules/experiencia/utils/tryOnRules'
 
 /* ================================================================
    QuickTryOnModal — Probador Virtual Editorial Premium
@@ -146,6 +148,7 @@ export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
   const [wearing, setWearing] = useState<Record<string, TryOnItem>>({})
   const [sourceMode, setSourceMode] = useState<'mannequin' | 'photo'>('mannequin')
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState('')
   const [showGuide, setShowGuide] = useState(true)
   const [photoScale, setPhotoScale] = useState(1)
   const [photoOffset, setPhotoOffset] = useState({ x: 0, y: 0 })
@@ -189,10 +192,21 @@ export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
   }, [])
 
   /* Carga de foto */
-  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
-    if (!file.type.startsWith('image/')) return
+    // Mismas reglas que el servidor del probador: JPG o PNG, hasta 5 MB, vertical y mínimo 300 × 400 px
+    const bad = validarArchivoPrueba(file)
+    if (bad) { setPhotoError(bad); return }
+    const url = URL.createObjectURL(file)
+    try {
+      const { width, height } = await readDimensions(url)
+      if (!validarDimensionesPrueba(width, height)) { setPhotoError(`${TEXTO_FOTO.dimensionesTitulo}. ${TEXTO_FOTO.dimensiones}`); return }
+    } catch {
+      setPhotoError(TEXTO_FOTO.ilegible); return
+    } finally { URL.revokeObjectURL(url) }
+    setPhotoError('')
     const reader = new FileReader()
     reader.onload = () => {
       setUserPhoto(reader.result as string)
@@ -205,6 +219,7 @@ export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
 
   /* Usar foto de ejemplo */
   const useExample = useCallback(() => {
+    setPhotoError('')
     setUserPhoto('/prototipo/assets/img/general/ref.jpg')
     setSourceMode('photo')
     setPhotoScale(1)
@@ -417,7 +432,7 @@ export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept={TRYON_ACCEPT}
             className="sr-only"
             onChange={handlePhotoUpload}
             aria-label="Cargar foto personal"
@@ -439,6 +454,7 @@ export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
             />
             USAR FOTO DE EJEMPLO
           </button>
+          {photoError && <p role="alert" className="cz-upload-error" style={{ gridColumn: '1 / -1', margin: '8px 0 0', fontSize: 13, color: '#ffb4b4' }}>{photoError}</p>}
         </div>
 
         {/* ---- Filtros de categorías (pills) ---- */}

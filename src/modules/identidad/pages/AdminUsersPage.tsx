@@ -1,6 +1,7 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { errorKind, errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { Toasts, useToasts } from '@/modules/core/components/errores'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
 import { EstadoCuentaPill } from '../components/EstadoCuentaPill'
@@ -11,6 +12,7 @@ import {
   type EstadoCuenta, type UsuarioAdminDto,
 } from '../types/usuario.dto'
 import { mesAnio, normalizar } from '../utils/formato'
+import { TEXTOS_ADMIN_USUARIOS } from '../utils/erroresAdmin'
 
 type FiltroEstado = EstadoCuenta | 'TODOS'
 type FiltroRol = Role | 'TODOS'
@@ -35,6 +37,7 @@ export default function AdminUsersPage() {
   const [aviso, setAviso] = useState<Aviso | null>(null)
   const inFlight = useRef(false)
   const searchId = useId()
+  const toasts = useToasts()
 
   const porRol = useMemo(() => users.filter((u) => rol === 'TODOS' || u.rol === rol), [users, rol])
   const conteo = useMemo(() => {
@@ -60,8 +63,13 @@ export default function AdminUsersPage() {
         ? { ok: true, text: `Se deshizo el cambio: ${upd.nombre} vuelve a estar ${ESTADO_CUENTA_LABEL[upd.estado]}.` }
         : { ok: true, text: `${upd.nombre} ahora está ${ESTADO_CUENTA_LABEL[upd.estado]}.`, undo: { user: upd, to: antes } })
     } catch (e) {
+      const kind = errorKind(e)
+      // 403: no se toca la lista, así la cuenta se ve con el estado que tenía.
+      if (kind === 'permiso') { toasts.mostrar({ tono: 'error', ...TEXTOS_ADMIN_USUARIOS.sinPermiso }); return }
+      // 404: la cuenta ya no está; se vuelve a pedir la lista para que desaparezca.
+      if (kind === 'no-existe') { toasts.mostrar({ tono: 'info', ...TEXTOS_ADMIN_USUARIOS.noExiste }); reload(); return }
       setAviso({ ok: false, text: errorMessage(e, 'No se pudo cambiar el estado de la cuenta.') })
-      if (errorKind(e) === 'conflicto') reload()
+      if (kind === 'conflicto') reload()
     } finally {
       inFlight.current = false; setBusy(false); setCambio(null)
     }
@@ -173,6 +181,7 @@ export default function AdminUsersPage() {
           </fieldset>
         )}
       </ConfirmDialog>
+      <Toasts items={toasts.items} quitar={toasts.quitar} duracion={toasts.duracion} />
     </section>
   )
 }

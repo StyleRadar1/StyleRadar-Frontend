@@ -70,7 +70,7 @@ export const MOCK_RACK_DATA: RackItem[] = [
 ]
 
 const CATEGORIES: { id: RackCategory; label: string }[] = [
-  { id: 'Todos', label: 'NUEVA COLECCIÓN' },
+  { id: 'Todos', label: 'ESPECIALES & DESCUENTOS' },
   { id: 'Buzo', label: 'BUZOS' },
   { id: 'Chaqueta', label: 'CHAQUETAS' },
   { id: 'Saco', label: 'SACOS' },

@@ -63,4 +63,25 @@ describe('menú según el rol', () => {
     renderNav()
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/?login')
   })
+
+  it('el logo de StyleRadar lleva al inicio de cada rol si hay sesión, o al landing si no', () => {
+    const { unmount } = renderNav()
+    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/')
+    unmount()
+
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    const { unmount: u2 } = renderNav()
+    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/catalogo')
+    u2()
+
+    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'ADMIN_ALMACEN')
+    const { unmount: u3 } = renderNav()
+    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/mi-tienda')
+    u3()
+
+    loginAs('f-1', 'Ropero Comunitario', 'fundacion@styleradar.co', 'REPRESENTANTE_FUNDACION')
+    const { unmount: u4 } = renderNav()
+    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/fundacion')
+    u4()
+  })
 })

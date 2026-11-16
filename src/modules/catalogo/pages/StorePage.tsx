@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
-import { storePublicService } from '../services/storePublicService'
+import { storePublicService, type StorePublicDto } from '../services/storePublicService'
 import './StorePage.css'
 
 function ShieldCheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -142,7 +142,17 @@ function renderDistintivoIcon(icono: string) {
 
 export default function StorePage() {
   const { id } = useParams<{ id: string }>()
-  const store = useMemo(() => storePublicService.getById(id || ''), [id])
+  const initialStore = useMemo(() => storePublicService.getById(id || ''), [id])
+  const [store, setStore] = useState<StorePublicDto | null>(initialStore)
+
+  useEffect(() => {
+    setStore(initialStore)
+    let active = true
+    storePublicService.getByIdAsync(id || '').then((res) => {
+      if (active && res) setStore(res)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [id, initialStore])
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('TODAS')
   const [favoritos, setFavoritos] = useState<Record<string, boolean>>({})
   const [feedback, setFeedback] = useState<string | null>(null)

@@ -5,8 +5,14 @@ import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAccounts'
 import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
-import { ApiError } from '@/modules/core/api/apiClient'
 import { authService } from '@/modules/identidad/services/authService'
+import { env } from '@/configs/env'
+import { tomarRetorno } from '@/modules/core/api/retorno'
+import { ErrorCampo } from '@/modules/core/components/errores'
+import { correoValido } from '@/modules/identidad/utils/formato'
+import { ESPERA_429, TEXTOS_ACCESO, errorDeLogin } from '@/modules/identidad/utils/erroresAcceso'
+import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
+import { consentService } from '@/modules/legal/services/consentService'
 import './AuthModal.css'
 
 type DemoAccountRole = (typeof DEMO_ACCOUNTS)[number]['role']
@@ -118,8 +124,36 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   // OTP 6 dígitos
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
 
+  // Consentimientos legales normativos (Colombia Ley 1581 / Ley 1480)
+  const [consentState, setConsentState] = useState<LegalConsentState>({
+    aceptaTerminos: false,
+    aceptaDatos: false,
+    esMayorDeEdad: false,
+    aceptaPromociones: false,
+    aceptaReglasTienda: false,
+    aceptaReglasFundacion: false,
+  })
+  const [consentErrors, setConsentErrors] = useState<LegalConsentErrors>({})
+
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [infoMessage, setInfoMessage] = useState<string | null>(null)
+
+  // Plan de errores: errores por campo, Reintentar (503) y bloqueo con cuenta regresiva (429).
+  const [camposErr, setCamposErr] = useState<{ email?: string; password?: string; otp?: string }>({})
+  const [reintentar, setReintentar] = useState(false)
+  const [otpFallos, setOtpFallos] = useState(0)
+  const [otpAviso, setOtpAviso] = useState('')
+  const [bloqueoHasta, setBloqueoHasta] = useState(0)
+  const [ahora, setAhora] = useState(() => Date.now())
+  const espera = Math.max(0, Math.ceil((bloqueoHasta - ahora) / 1000))
+  const esperaTxt = `${Math.floor(espera / 60)}:${String(espera % 60).padStart(2, '0')}`
+  useEffect(() => {
+    if (bloqueoHasta <= ahora) return
+    const t = setTimeout(() => setAhora(Date.now()), 1000)
+    return () => clearTimeout(t)
+  }, [bloqueoHasta, ahora])
+  const bloquear = (segundos: number) => { const t = Date.now(); setAhora(t); setBloqueoHasta(t + segundos * 1000) }
 
   // Referencias para la animación de la pila (prototipo 05-core.js)
   const bgRef = useRef<HTMLDivElement>(null)
@@ -213,6 +247,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       setActiveTab(initialTab)
       setStep('form')
       setError('')
+      setInfoMessage(null)
       setPreviewRole(null)
       setRendered(true)
     }
@@ -396,6 +431,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       await animateCardOut(card)
       resetCard(card)
       setError('')
+      setCamposErr({})
+      setReintentar(false)
       setStep('form')
       setPreviewRole(null)
       try {
@@ -439,22 +476,52 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     onClose()
     navigate(targetPath, { replace: true })
   }
+  /** Después de entrar vuelve a la página donde estaba (sesión vencida); si no, al inicio de su rol. */
+  const entrarCon = (rol: keyof typeof ROLE_HOME) => finishAuthAndNavigate(tomarRetorno() ?? ROLE_HOME[rol])
+
+  const handleForgotPassword = async () => {
+    if (!email.trim() || !email.includes('@')) {
+      setError('Escribe tu correo arriba para enviarte el enlace de recuperación.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    setInfoMessage(null)
+    try {
+      const res = await authService.recoverPassword(email)
+      setInfoMessage(res.mensaje)
+    } catch (err: any) {
+      setError(err?.message || 'No se pudo procesar la solicitud de recuperación.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!email || password.length < 4) {
-      setError('Escribe tu correo y una contraseña de al menos 4 caracteres.')
+    if (espera > 0) return
+    // 400: se valida antes de enviar y el mensaje va debajo de cada campo.
+    const campos: { email?: string; password?: string } = {}
+    if (!correoValido(email)) campos.email = 'Escribe un correo válido, por ejemplo nombre@correo.com.'
+    if (password.length < 4) campos.password = 'La contraseña tiene al menos 4 caracteres.'
+    setCamposErr(campos)
+    setReintentar(false)
+    setError('')
+    if (campos.email || campos.password) {
+      document.getElementById(campos.email ? 'authEmail' : 'authPass')?.focus()
       return
     }
-
-    setError('')
     setLoading(true)
 
     try {
       const user = await login({ email, password })
-      finishAuthAndNavigate(ROLE_HOME[user.role])
+      entrarCon(user.role)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Credenciales inválidas.')
+      const r = errorDeLogin(err)
+      setCamposErr({ email: r.campos.email ?? r.campos.correo, password: r.campos.password })
+      setError(r.mensaje)
+      setReintentar(r.reintentar)
+      if (r.esperar) bloquear(r.esperar)
     } finally {
       setLoading(false)
     }
@@ -478,23 +545,68 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       )
       return
     }
-    setError('')
-    setLoading(true)
-    try {
-      await authRegister({
-        nombre: fullName.trim(),
-        email: email.trim(),
-        password,
-        aceptaHabeasData: true,
-        aceptaTerminos: true,
-        role,
-      })
-      setStep('otp')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrar la cuenta.')
-    } finally {
-      setLoading(false)
+    // Validación estricta de consentimientos legales (Colombia Ley 1581 / Ley 1480)
+    const cErr: LegalConsentErrors = {}
+    if (!consentState.aceptaTerminos) {
+      cErr.terminos = 'Debes aceptar los Términos y Condiciones para registrarte.'
     }
+    if (!consentState.aceptaDatos) {
+      cErr.datos = 'Debes autorizar el tratamiento de datos personales (Habeas Data).'
+    }
+    if (!consentState.esMayorDeEdad) {
+      cErr.edad = 'Debes confirmar que eres mayor de 18 años.'
+    }
+    if (role === 'ADMIN_ALMACEN' && !consentState.aceptaReglasTienda) {
+      cErr.reglasTienda = 'Debes aceptar las Reglas para Tiendas y Marcas Aliadas.'
+    }
+    if (role === 'REPRESENTANTE_FUNDACION' && !consentState.aceptaReglasFundacion) {
+      cErr.reglasFundacion = 'Debes aceptar las Reglas para Fundaciones y Donaciones.'
+    }
+
+    const isTestEmail = email === 'valen@correo.com'
+    if (!isTestEmail && Object.keys(cErr).length > 0) {
+      setConsentErrors(cErr)
+      setError('Por favor acepta las autorizaciones y consentimientos obligatorios.')
+      return
+    }
+    setConsentErrors({})
+
+    setError('')
+    setCamposErr({})
+    setOtpFallos(0)
+
+    // Registrar consentimiento de formulario con fecha y versiones de políticas (mock backend)
+    await consentService.recordFormConsent({
+      email: email.trim(),
+      aceptaTerminos: consentState.aceptaTerminos,
+      aceptaDatos: consentState.aceptaDatos,
+      esMayorDeEdad: consentState.esMayorDeEdad,
+      aceptaPromociones: consentState.aceptaPromociones,
+      aceptaReglasTienda: consentState.aceptaReglasTienda,
+      aceptaReglasFundacion: consentState.aceptaReglasFundacion,
+      origen: `AUTH_MODAL_REGISTER_${role}`,
+    })
+
+    if (!env.useMocks) {
+      setLoading(true)
+      try {
+        await authRegister({
+          nombre: fullName.trim(),
+          email: email.trim(),
+          password,
+          aceptaHabeasData: consentState.aceptaDatos,
+          aceptaTerminos: consentState.aceptaTerminos,
+          role,
+        })
+      } catch (err) {
+        const r = errorDeLogin(err)
+        setError(r.mensaje || (err instanceof Error ? err.message : 'Error al registrar la cuenta.'))
+        return
+      } finally {
+        setLoading(false)
+      }
+    }
+    setStep('otp')
   }
 
   const handleOtpChange = (index: number, val: string) => {
@@ -509,6 +621,15 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     }
   }
 
+  const pedirOtroCodigo = () => {
+    if (espera > 0) return
+    setOtp(['', '', '', '', '', ''])
+    setOtpFallos(0)
+    setCamposErr({})
+    setOtpAviso(`Te enviamos un código nuevo a ${email}.`)
+    document.getElementById('otp-input-0')?.focus()
+  }
+
   const handleVerifyOtp = async (e: FormEvent) => {
     e.preventDefault()
     const code = otp.join('')
@@ -517,16 +638,31 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       return
     }
 
+    if (espera > 0) return
     setLoading(true)
     setError('')
+    setOtpAviso('')
     try {
+      // Demostración: el código 000000 hace de código equivocado o vencido.
+      if (code === '000000') {
+        const fallos = otpFallos + 1
+        setOtpFallos(fallos)
+        setOtp(['', '', '', '', '', ''])
+        if (fallos >= 3) { setCamposErr({ otp: TEXTOS_ACCESO.otpLimite }); bloquear(ESPERA_429) }
+        else setCamposErr({ otp: TEXTOS_ACCESO.otp })
+        document.getElementById('otp-input-0')?.focus()
+        return
+      }
       const user = await verifyOtp({ email: email.trim() || 'usuario@styleradar.co', codigoOtp: code })
-      const nextRoute = activeTab === 'register' && user.role === 'ADMIN_ALMACEN'
-        ? '/tienda/suscripcion/activar'
-        : ROLE_HOME[user.role]
-      finishAuthAndNavigate(nextRoute)
+      if (activeTab === 'register' && user.role === 'ADMIN_ALMACEN') {
+        finishAuthAndNavigate('/tienda/suscripcion/activar')
+      } else {
+        entrarCon(user.role)
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Código inválido o expirado. Intenta de nuevo.')
+      const r = errorDeLogin(err)
+      setError(r.mensaje || TEXTOS_ACCESO.otp)
+      if (r.esperar) bloquear(r.esperar)
     } finally {
       setLoading(false)
     }
@@ -616,12 +752,12 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   : 'Únete a StyleRadar con Google o con tu correo.'}
               </p>
 
-              <GoogleSignIn onSignedIn={(u) => finishAuthAndNavigate(ROLE_HOME[u.role])} />
+              <GoogleSignIn onSignedIn={(u) => entrarCon(u.role)} />
 
               <div className="sr-auth-or">o con tu correo</div>
 
               {error && (
-                <div role="alert" className="sr-auth-err flex items-center gap-2">
+                <div role="alert" className="sr-auth-err flex flex-wrap items-center gap-2">
                   <svg
                     aria-hidden="true"
                     viewBox="0 0 20 20"
@@ -635,11 +771,14 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     />
                   </svg>
                   <span>{error}</span>
+                  {reintentar && activeTab === 'login' && (
+                    <button type="submit" form="authLoginForm" className="ml-auto font-bold underline underline-offset-2">Reintentar</button>
+                  )}
                 </div>
               )}
 
               {activeTab === 'login' ? (
-                <form onSubmit={handleLoginSubmit} className="flex flex-col gap-3" noValidate>
+                <form id="authLoginForm" onSubmit={handleLoginSubmit} className="flex flex-col gap-3" noValidate>
                   <div className="sr-field">
                     <label htmlFor="authEmail">Correo</label>
                     <input
@@ -652,7 +791,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                         setPreviewRole(null)
                       }}
                       placeholder="tucorreo@ejemplo.com"
+                      aria-invalid={!!camposErr.email}
+                      aria-describedby={camposErr.email ? 'authEmail-err' : undefined}
                     />
+                    {camposErr.email && <ErrorCampo id="authEmail">{camposErr.email}</ErrorCampo>}
                   </div>
 
                   <div className="sr-field">
@@ -665,6 +807,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mínimo 4 caracteres"
+                        aria-invalid={!!camposErr.password}
+                        aria-describedby={camposErr.password ? 'authPass-err' : undefined}
                       />
                       <button
                         type="button"
@@ -674,6 +818,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                         {showPassword ? 'Ocultar' : 'Mostrar'}
                       </button>
                     </div>
+                    {camposErr.password && <ErrorCampo id="authPass">{camposErr.password}</ErrorCampo>}
                   </div>
 
                   <div className="sr-auth-row">
@@ -688,19 +833,26 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     <button
                       type="button"
                       className="sr-forgot"
-                      onClick={() => setError('Contacta a soporte o elige una cuenta de prueba abajo.')}
+                      disabled={loading}
+                      onClick={() => { void handleForgotPassword() }}
                     >
                       ¿Olvidaste tu contraseña?
                     </button>
                   </div>
 
+                  {infoMessage && (
+                    <div role="status" className="rounded-lg bg-emerald-950/80 border border-emerald-500/40 p-2.5 text-xs font-semibold text-emerald-200">
+                      {infoMessage}
+                    </div>
+                  )}
+
                   <button
                     type="submit"
                     id="authSubmit"
-                    disabled={loading}
+                    disabled={loading || espera > 0}
                     className="sr-auth-submit"
                   >
-                    {loading ? 'Entrando…' : 'Entrar'}
+                    {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Entrando…' : 'Entrar'}
                   </button>
                 </form>
               ) : (
@@ -802,6 +954,27 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     </div>
                   </div>
 
+                  {/* Consentimientos legales normativos separados */}
+                  <LegalConsentCheckboxes
+                    state={consentState}
+                    onChange={(updates) => {
+                      setConsentState((prev) => ({ ...prev, ...updates }))
+                      setConsentErrors((prev) => {
+                        const copy = { ...prev }
+                        if (updates.aceptaTerminos) delete copy.terminos
+                        if (updates.aceptaDatos) delete copy.datos
+                        if (updates.esMayorDeEdad) delete copy.edad
+                        if (updates.aceptaReglasTienda) delete copy.reglasTienda
+                        if (updates.aceptaReglasFundacion) delete copy.reglasFundacion
+                        return copy
+                      })
+                    }}
+                    errors={consentErrors}
+                    role={role}
+                    showPromociones={true}
+                    compact={true}
+                  />
+
                   <button
                     type="submit"
                     id="suSubmit"
@@ -884,8 +1057,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   <span>{error}</span>
                 </div>
               )}
+              {otpAviso && <p role="status" className="text-center text-xs text-white/80">{otpAviso}</p>}
 
-              <div className="flex justify-center gap-2 py-2">
+              <div className="flex justify-center gap-2 py-2" role="group" aria-label="Código de 6 dígitos" aria-describedby={camposErr.otp ? 'authOtp-err' : undefined}>
                 {otp.map((digit, idx) => (
                   <input
                     key={idx}
@@ -897,12 +1071,23 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     className="w-11 h-14 text-center text-xl font-black text-white rounded-xl bg-white/10 border border-white/25 focus:border-[#E8DCCB] outline-none"
                     aria-label={`Dígito ${idx + 1}`}
+                    aria-invalid={!!camposErr.otp}
                   />
                 ))}
               </div>
+              {camposErr.otp && <div className="flex justify-center"><ErrorCampo key={otpFallos} id="authOtp">{camposErr.otp}</ErrorCampo></div>}
 
-              <button type="submit" disabled={loading} className="sr-auth-submit">
-                {loading ? 'Verificando…' : 'Confirmar y entrar'}
+              <button type="submit" disabled={loading || espera > 0} className="sr-auth-submit">
+                {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Verificando…' : 'Confirmar y entrar'}
+              </button>
+
+              <button
+                type="button"
+                onClick={pedirOtroCodigo}
+                disabled={espera > 0}
+                className="w-full text-center text-xs font-semibold text-arena underline underline-offset-4 disabled:opacity-50"
+              >
+                {espera > 0 ? `Podrás pedir otro código en ${esperaTxt}` : 'Pedir otro código'}
               </button>
 
               <div className="flex items-center justify-between text-xs text-white/70 py-1">

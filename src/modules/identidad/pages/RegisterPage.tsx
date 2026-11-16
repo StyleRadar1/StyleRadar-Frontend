@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { errorKind, errorMessage } from '@/modules/core/api/errors'
+import { errorKind, errorMessage, fieldErrors, MENSAJES } from '@/modules/core/api/errors'
+import { Aviso } from '@/modules/core/components/errores'
+import { camposDeRegistro, TEXTOS_ACCESO } from '../utils/erroresAcceso'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { ROLE_HOME } from '@/modules/core/types/roles'
 import { Campo, Opciones } from '../components/Campo'
@@ -9,6 +11,8 @@ import { useAuth } from '../hooks/useAuth'
 import { PASSWORD_MIN } from '../types/auth.dto'
 import { MANIQUI_LABEL, type Maniqui } from '../types/usuario.dto'
 import { correoValido } from '../utils/formato'
+import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
+import { consentService } from '@/modules/legal/services/consentService'
 
 type Errores = Partial<Record<'nombre' | 'email' | 'password' | 'terminos', string>>
 
@@ -23,55 +27,99 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [ver, setVer] = useState(false)
   const [maniqui, setManiqui] = useState<Maniqui>('MUJER')
-  const [terminos, setTerminos] = useState(false)
+  const [consentState, setConsentState] = useState<LegalConsentState>({
+    aceptaTerminos: false,
+    aceptaDatos: false,
+    esMayorDeEdad: false,
+    aceptaPromociones: false,
+  })
+  const [consentErrors, setConsentErrors] = useState<LegalConsentErrors>({})
   const [errores, setErrores] = useState<Errores>({})
   const [general, setGeneral] = useState('')
+  const [noSePudo, setNoSePudo] = useState(false)
   const [loading, setLoading] = useState(false)
   const inFlight = useRef(false)
 
-  const validar = (): Errores => {
+  const validar = (): { formErrors: Errores; legalErrors: LegalConsentErrors } => {
     const e: Errores = {}
+    const cErr: LegalConsentErrors = {}
+
     if (nombre.trim().length < 3) e.nombre = 'Escribe tu nombre completo (mínimo 3 letras).'
     if (!correoValido(email))
       e.email = 'Escribe un correo válido, por ejemplo tucorreo@ejemplo.com.'
     if (password.length < PASSWORD_MIN)
       e.password = `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`
-    if (!terminos)
-      e.terminos = 'Para crear la cuenta debes aceptar los términos y la política de datos.'
-    return e
+
+    if (!consentState.aceptaTerminos || !consentState.aceptaDatos) {
+      cErr.terminos = 'Para crear la cuenta debes aceptar los términos y la política de datos.'
+    }
+    if (!consentState.aceptaDatos) {
+      cErr.datos = 'Debes autorizar el tratamiento de datos personales (Habeas Data).'
+    }
+    if (!consentState.esMayorDeEdad) {
+      cErr.edad = 'Debes confirmar que eres mayor de 18 años.'
+    }
+
+    return { formErrors: e, legalErrors: cErr }
   }
 
   const onSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
     if (inFlight.current) return
-    const e = validar()
-    setErrores(e)
+    const { formErrors, legalErrors } = validar()
+    setErrores(formErrors)
+    setConsentErrors(legalErrors)
     setGeneral('')
-    const primero = (['nombre', 'email', 'password', 'terminos'] as const).find((k) => e[k])
+    setNoSePudo(false)
+
+    const primero = (['nombre', 'email', 'password'] as const).find((k) => formErrors[k])
     if (primero) {
       document.getElementById(`su-${primero}`)?.focus()
       return
     }
+    if (Object.keys(legalErrors).length > 0) {
+      document.getElementById('consent-terminos')?.focus()
+      return
+    }
+
     inFlight.current = true
     setLoading(true)
+
+    // Registrar consentimiento de Habeas Data con trazabilidad
+    await consentService.recordFormConsent({
+      email: email.trim(),
+      aceptaTerminos: consentState.aceptaTerminos,
+      aceptaDatos: consentState.aceptaDatos,
+      esMayorDeEdad: consentState.esMayorDeEdad,
+      aceptaPromociones: consentState.aceptaPromociones,
+      origen: 'REGISTER_PAGE_COMPRADOR',
+    })
+
     try {
       const user = await register({
         nombre: nombre.trim(),
         email: email.trim(),
         password,
         maniqui,
-        aceptaTerminos: terminos,
-        aceptaHabeasData: terminos,
+        aceptaTerminos: consentState.aceptaTerminos,
+        aceptaHabeasData: consentState.aceptaDatos,
         ...(esTienda ? { role: 'ADMIN_ALMACEN' as const } : {}),
       })
       const target = user.role === 'ADMIN_ALMACEN' ? '/tienda/suscripcion/activar' : ROLE_HOME[user.role]
       navigate(target, { replace: true })
     } catch (err) {
-      if (errorKind(err) === 'conflicto') {
-        setErrores({ email: errorMessage(err) })
-        document.getElementById('su-email')?.focus()
+      const kind = errorKind(err)
+      const campos = camposDeRegistro(fieldErrors(err))
+      const primero = (['nombre', 'email', 'password'] as const).find((k) => campos[k])
+      if (primero) {
+        // 400 · 422 con campos: el mensaje del servidor va debajo de cada campo y el cursor al primero.
+        setErrores(campos)
+        document.getElementById(`su-${primero}`)?.focus()
+      } else if (kind === 'conflicto' || kind === 'datos') {
+        // 409 · 422 «el correo ya tiene cuenta»: nunca se confirma que el correo existe.
+        setNoSePudo(true)
       } else {
-        setGeneral(errorMessage(err, 'No se pudo crear la cuenta. Intenta de nuevo.'))
+        setGeneral(kind === 'servidor' ? MENSAJES.servidor : errorMessage(err, 'No se pudo crear la cuenta. Intenta de nuevo.'))
       }
     } finally {
       inFlight.current = false
@@ -177,42 +225,48 @@ export default function RegisterPage() {
                 Puedes cambiarlo después en tu perfil.
               </p>
             </div>
-            <div>
-              <label className="flex items-start gap-3 text-sm text-[var(--color-text)] cursor-pointer">
-                <input
-                  id="su-terminos"
-                  type="checkbox"
-                  checked={terminos}
-                  onChange={(e) => setTerminos(e.target.checked)}
-                  aria-invalid={!!errores.terminos}
-                  aria-describedby={errores.terminos ? 'su-terminos-err' : undefined}
-                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                />
-                <span>Acepto los términos de uso y la política de tratamiento de datos.</span>
-              </label>
-              {errores.terminos && (
-                <p
-                  id="su-terminos-err"
-                  role="alert"
-                  className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--color-danger-text)]"
-                >
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="h-3.5 w-3.5 shrink-0"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span>{errores.terminos}</span>
-                </p>
-              )}
-            </div>
+            {/* Consentimientos legales normativos separados */}
+            <LegalConsentCheckboxes
+              state={consentState}
+              onChange={(updates) => {
+                setConsentState((prev) => ({ ...prev, ...updates }))
+                setConsentErrors((prev) => {
+                  const copy = { ...prev }
+                  if (updates.aceptaTerminos) delete copy.terminos
+                  if (updates.aceptaDatos) delete copy.datos
+                  if (updates.esMayorDeEdad) delete copy.edad
+                  return copy
+                })
+              }}
+              errors={consentErrors}
+              role="COMPRADOR"
+              showPromociones={true}
+            />
 
+            {noSePudo && (
+              <Aviso
+                tono="error"
+                titulo={TEXTOS_ACCESO.registro}
+                accion={
+                  <>
+                    <Link
+                      to="/login"
+                      className="rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-on-accent)]"
+                    >
+                      Iniciar sesión
+                    </Link>
+                    <Link
+                      to="/login"
+                      className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)]"
+                    >
+                      Recuperar contraseña
+                    </Link>
+                  </>
+                }
+              >
+                Si ya tienes una cuenta, inicia sesión o recupera tu contraseña.
+              </Aviso>
+            )}
             {general && (
               <p
                 role="alert"

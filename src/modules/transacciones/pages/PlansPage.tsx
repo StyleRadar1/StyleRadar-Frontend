@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { errorMessage } from '@/modules/core/api/errors'
+import { Aviso } from '@/modules/core/components/errores'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { BuyerRenewalStatusCard } from '../components/BuyerRenewalStatusCard'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
-import { userPlanService } from '../services/userPlanService'
+import { PLAN_CHANGED, userPlanService } from '../services/userPlanService'
+import { avisoDePlan, type AvisoPlan } from '../utils/erroresPlan'
 import { COMPARATIVA, PLAN_LABEL, PLANES, REGLAS, type PlanInfo, type PlanUsuario } from '../types/plan.dto'
 
 const REGISTRO: Record<string, [string, string]> = {
@@ -37,10 +38,11 @@ export default function PlansPage() {
   const [cambio, setCambio] = useState<PlanUsuario | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
   const cambiar = async () => {
     if (!cambio || busy) return
-    setBusy(true); setMsg(null)
+    setBusy(true); setMsg(null); setAviso(null)
     try {
       const r = await userPlanService.change(cambio)
       const fechaCorte = formatFechaVigencia(r.periodEndsAt ?? r.proximoCobro)
@@ -54,7 +56,10 @@ export default function PlansPage() {
               : 'Volviste al plan Radar. Los beneficios de Radar+ quedan con candado.',
       })
     } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e, 'No pudimos cambiar tu plan. Intenta de nuevo.') })
+      const a = avisoDePlan(e, 'No pudimos cambiar tu plan. Intenta de nuevo.')
+      setAviso(a)
+      // 409: se vuelve a leer el plan para mostrar el estado real.
+      if (a.refrescar) window.dispatchEvent(new Event(PLAN_CHANGED))
     } finally { setBusy(false); setCambio(null) }
   }
 
@@ -70,6 +75,12 @@ export default function PlansPage() {
     } finally {
       setBusy(false)
     }
+  }
+
+  /** Lleva a la tarjeta del plan que la persona tiene ahora. */
+  const verMiPlan = () => {
+    const el = document.querySelector<HTMLElement>('[data-plan-actual="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.focus()
   }
 
   const accion = (p: PlanInfo) => {
@@ -107,14 +118,25 @@ export default function PlansPage() {
   const fechaFinRadarPlus = formatFechaVigencia(details?.periodEndsAt ?? details?.proximoCobro)
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12">
+    <section className="mx-auto max-w-6xl px-4 py-12 bg-transparent text-[var(--sr-hero-text)]">
       <PlanDegradedBanner />
-
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Planes</p>
-      <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Un plan para cada quien</h1>
-      <p className="mt-3 max-w-2xl text-white/70">Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras.</p>
-      {comprador && plan && <p className="mt-4 text-sm">Tu plan actual: <b>{PLAN_LABEL[plan]}</b></p>}
+      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Planes</p>
+      <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
+        Un plan para cada quien
+      </h1>
+      <p className="mt-3 max-w-2xl text-[var(--sr-hero-text-muted)]">
+        Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras.
+      </p>
+      {comprador && plan && <p className="mt-4 text-sm text-[var(--sr-hero-text)]">Tu plan actual: <b>{PLAN_LABEL[plan]}</b></p>}
       <BuyerRenewalStatusCard />
+      {aviso && (
+        <div className="mt-4 max-w-xl">
+          <Aviso tono={aviso.tono} titulo={aviso.titulo}
+            accion={aviso.refrescar ? <button type="button" onClick={verMiPlan} className="rounded-lg border border-current px-3 py-1 text-sm font-semibold text-[var(--sr-hero-text)]">Ver mi plan</button> : undefined}>
+            {aviso.texto}
+          </Aviso>
+        </div>
+      )}
 
       {comprador && plan === 'RADAR_PLUS' && details?.renewalEnabled === false && (
         <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-arena/40 bg-white/[.04] p-4 text-sm">
@@ -136,21 +158,34 @@ export default function PlansPage() {
 
       <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Planes">
         {PLANES.map((p) => (
-          <li key={p.id} aria-label={p.nombre} className={`relative flex flex-col rounded-2xl border p-6 ${p.destacado ? 'border-violeta bg-gradient-to-b from-violeta/35 to-white/[.03]' : 'border-white/10 bg-white/[.03]'}`}>
-            {p.destacado && !(comprador && plan === p.id) && <span className="absolute right-4 top-4 rounded-full bg-violeta px-3 py-1 text-[11px] font-semibold">Más elegido</span>}
+          <li
+            key={p.id}
+            aria-label={p.nombre}
+            data-plan-actual={comprador && plan === p.id}
+            tabIndex={-1}
+            className={`relative flex flex-col rounded-2xl border p-6 backdrop-blur-xl ${
+              p.destacado
+                ? 'border-violeta bg-[var(--sr-surface)]/80 shadow-lg shadow-purple-900/20'
+                : 'border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/60'
+            }`}
+          >
+            {p.destacado && !(comprador && plan === p.id) && <span className="absolute right-4 top-4 rounded-full bg-violeta px-3 py-1 text-[11px] font-semibold text-white">Más elegido</span>}
             {comprador && plan === p.id && <span className="absolute right-4 top-4 rounded-full bg-arena px-3 py-1 text-[11px] font-semibold text-grafito">Tu plan</span>}
-            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-lavanda">{p.para}</p>
-            <h2 className="mt-2 text-2xl font-bold">{p.nombre}</h2>
-            <p className="mt-3 text-3xl font-extrabold">{p.precio ? formatCOP(p.precio) : '$0'} <small className="text-sm font-medium text-white/60">{p.periodo}</small></p>
-            <p className="mt-1 min-h-10 text-sm text-arena">{p.nota}</p>
-            <ul className="mb-6 mt-5 space-y-2 text-sm text-white/80">
-              {p.incluye.map((i) => <li key={i} className="flex gap-2"><span aria-hidden="true" className="text-arena">✓</span>{i}</li>)}
+            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[var(--sr-hero-text-muted)]">{p.para}</p>
+            <h2 className="mt-2 text-2xl font-bold text-[var(--sr-hero-text)]">{p.nombre}</h2>
+            <p className="mt-3 text-3xl font-extrabold text-[var(--sr-hero-text)]">
+              {p.precio ? formatCOP(p.precio) : '$0'}{' '}
+              <small className="text-sm font-medium text-[var(--sr-hero-text-muted)]">{p.periodo}</small>
+            </p>
+            <p className="mt-1 min-h-10 text-sm text-[var(--sr-hero-text-muted)]">{p.nota}</p>
+            <ul className="mb-6 mt-5 space-y-2 text-sm text-[var(--sr-hero-text)]">
+              {p.incluye.map((i) => <li key={i} className="flex gap-2"><span aria-hidden="true" className="text-violeta-claro">✓</span>{i}</li>)}
             </ul>
             {accion(p)}
           </li>
         ))}
       </ul>
-      <p className="mt-6 text-sm text-white/55">Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar.</p>
+      <p className="mt-6 text-sm text-[var(--sr-hero-text-muted)]">Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar.</p>
 
       <h2 className="mt-14 text-2xl font-bold">Radar y Radar+, lado a lado</h2>
       <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">

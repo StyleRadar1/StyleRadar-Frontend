@@ -1,20 +1,39 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { errorKind, errorMessage } from '@/modules/core/api/errors'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { PlanGate } from '@/modules/transacciones/components/PlanGate'
 import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { LockIcon } from '../components/LockIcon'
-import { alertService } from '../services/alertService'
+import { alertService, LIMITE_PLAN } from '../services/alertService'
 import { alertasActivas, PLAN_LABEL, type AlertasResumenDto } from '../types/notification.dto'
 
 const EMPTY: AlertasResumenDto = { plan: 'RADAR', limiteAlertas: PLAN_LIMITS.alertas, alertas: [], busquedas: [] }
 const fecha = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
 const dia = (iso: string) => fecha.format(new Date(`${iso.slice(0, 10)}T12:00:00`))
 
-type Msg = { ok: boolean; text: string; planes?: boolean }
+type Msg = { ok: boolean; titulo?: string; text: string; planes?: boolean; neutro?: boolean }
+
+/**
+ * Error al cambiar o borrar una alerta. Texto fijo (nunca el ID ni el mensaje del servidor);
+ * `quitar` indica que la alerta ya no está y se saca de la lista.
+ */
+function errorAlerta(e: unknown): Msg & { quitar?: boolean; recargar?: boolean } {
+  const status = e instanceof ApiError ? e.status : 0
+  if (status === 404) return { ok: false, titulo: 'Esa alerta ya no está', text: 'Actualizamos la lista.', quitar: true, recargar: true, neutro: true }
+  // 403: alerta de otra persona. Se trata igual que el 404 para no revelar que existe
+  if (status === 403) return { ok: false, titulo: 'Ya no está disponible', text: 'Actualizamos la lista.', quitar: true, recargar: true, neutro: true }
+  if (status === 409) return { ok: false, titulo: 'Ya tienes una alerta para esto', text: 'La encuentras en Mis búsquedas.', recargar: true, neutro: true }
+  if (status === 422 && e instanceof ApiError && e.code === LIMITE_PLAN) return { ok: false, text: 'Con el plan Radar puedes tener hasta 3 alertas activas. Apaga alguna o pásate a Radar+.', planes: true }
+  if (status === 422) return { ok: false, titulo: 'Tu búsqueda todavía se está guardando', text: 'Intenta activar la alerta en unos segundos.' }
+  const kind = errorKind(e)
+  if (kind === 'sin-conexion') return { ok: false, text: 'Se perdió la conexión. Revisa tu internet e intenta de nuevo.' }
+  if (kind === 'sesion') return { ok: false, text: 'Tu sesión venció. Vuelve a iniciar sesión.' }
+  return { ok: false, text: 'No pudimos guardar el cambio. Intenta en unos minutos.' }
+}
 type Remove = { kind: 'alerta' | 'busqueda'; id: string; nombre: string }
 
 /** RF-28 a RF-32 con el bloqueo por plan (P8): en Radar hay máximo 3 alertas activas; en Radar+ no hay límite. */
@@ -46,10 +65,15 @@ export default function AlertsPage() {
       }
       setMsg({ ok: true, text: on ? `Te avisaremos sobre «${nombre}».` : `Apagaste la alerta de «${nombre}».` })
     } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e), planes: errorKind(e) === 'datos' })
-      if (errorKind(e) === 'conflicto') reload()
+      const m = errorAlerta(e)
+      if (m.quitar) quitar(kind, id)
+      setMsg(m)
+      if (m.recargar) reload()
     } finally { inFlight.current = false; setBusy(null) }
   }
+
+  const quitar = (kind: Remove['kind'], id: string) =>
+    setData((d) => (kind === 'alerta' ? { ...d, alertas: d.alertas.filter((x) => x.id !== id) } : { ...d, busquedas: d.busquedas.filter((x) => x.id !== id) }))
 
   const confirmRemove = async () => {
     if (!remove || inFlight.current) return
@@ -64,7 +88,10 @@ export default function AlertsPage() {
       }
       setMsg({ ok: true, text: `Eliminaste «${remove.nombre}».` })
     } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e) })
+      const m = errorAlerta(e)
+      if (m.quitar) quitar(remove.kind, remove.id)
+      setMsg(m)
+      if (m.recargar) reload()
     } finally { inFlight.current = false; setBusy(null); setRemove(null) }
   }
 
@@ -91,7 +118,17 @@ export default function AlertsPage() {
 
             {msg && (
               <div className="mt-4 space-y-3">
-                <p role={msg.ok ? 'status' : 'alert'} className={`rounded-xl p-3 text-sm ${msg.ok ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]'}`}>
+                <p
+                  role={msg.ok ? 'status' : 'alert'}
+                  className={`rounded-xl p-3 text-sm ${
+                    msg.ok
+                      ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]'
+                      : msg.neutro
+                        ? 'border border-[var(--color-accent)]/40 bg-[var(--color-surface-muted)] text-[var(--color-text)]'
+                        : 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]'
+                  }`}
+                >
+                  {msg.titulo && <b className="block">{msg.titulo}</b>}
                   {msg.text} {msg.planes && <Link to="/planes" className="font-semibold underline">Ver planes</Link>}
                 </p>
                 {msg.planes && (

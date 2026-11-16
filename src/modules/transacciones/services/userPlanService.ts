@@ -2,6 +2,7 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import { MOCK_BUYER_PAYMENTS } from '../mocks/payments'
 import type { PaymentDto } from '../types/payment.dto'
 import {
@@ -244,6 +245,7 @@ export const userPlanService = {
   async change(plan: PlanUsuario): Promise<MiPlanDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
+      fallarSiDemoPlan()
       const user = me()
       const current = readMockPlanState(user.id)
       if (plan === 'RADAR' && current.plan === 'RADAR_PLUS') {
