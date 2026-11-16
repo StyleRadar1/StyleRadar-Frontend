@@ -14,12 +14,20 @@ import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
 /* ─── Subcomponente: resultado del pago ─── */
 function CheckoutResult() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const orderId = params.get('orden') ?? 'MOCK_ORDER_OK'
   const [result, setResult] = useState<CheckoutResultDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
+  const [showRetry, setShowRetry] = useState(false)
+  const [retrying, setRetrying] = useState(false)
+  const [retryError, setRetryError] = useState<string | null>(null)
 
   useEffect(() => {
+    setLoading(true)
+    setShowRetry(false)
+    setRetryError(null)
     planService.getCheckoutResult(orderId)
       .then((r) => {
         // RF-100: solo un pago aprobado activa el plan; si no, la persona conserva el que tenía.
@@ -29,6 +37,24 @@ function CheckoutResult() {
       .catch(setError)
       .finally(() => setLoading(false))
   }, [orderId])
+
+  const handleRetrySubmit = useCallback(async (payerEmail: string) => {
+    if (!result) return
+    setRetrying(true)
+    setRetryError(null)
+    try {
+      const newOrder = await planService.retryRejectedPayment(result, payerEmail)
+      navigate(`/pago/resultado?orden=${encodeURIComponent(newOrder.orderId)}`)
+    } catch (err) {
+      setRetryError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'No fue posible generar un nuevo intento de pago.',
+      )
+    } finally {
+      setRetrying(false)
+    }
+  }, [result, navigate])
 
   if (loading) return <Loading label="Consultando el estado del pago…" />
   if (error) return <ErrorState error={error} title="No pudimos consultar el pago" />
@@ -45,7 +71,7 @@ function CheckoutResult() {
     <section className="mx-auto max-w-lg px-4 py-16 text-center">
       <span className="text-5xl">{icons[result.status]}</span>
       <h1 className="mt-4 text-3xl font-extrabold">{result.status === 'aprobado' ? '¡Listo!' : result.status === 'pendiente' ? 'Pago pendiente' : 'Pago rechazado'}</h1>
-      <p className="mt-2 text-white/70">{messages[result.status]}</p>
+      <p role={result.status === 'rechazado' ? 'alert' : 'status'} className="mt-2 text-white/70">{messages[result.status]}</p>
       <Card className="mx-auto mt-8 max-w-sm text-left">
         <dl className="grid grid-cols-2 gap-2 text-sm">
           <dt className="text-white/50">Orden</dt><dd className="font-mono">{result.orderId}</dd>
@@ -55,6 +81,34 @@ function CheckoutResult() {
           {result.method && <><dt className="text-white/50">Método</dt><dd>{result.method}</dd></>}
           <dt className="text-white/50">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
         </dl>
+
+        {result.status === 'rechazado' && (
+          <div className="mt-5 border-t border-[var(--sr-border,var(--color-border))] pt-4">
+            {!showRetry ? (
+              <Button
+                type="button"
+                variant="primario"
+                className="w-full"
+                onClick={() => setShowRetry(true)}
+              >
+                Reintentar pago
+              </Button>
+            ) : (
+              <PayerEmailForm
+                defaultEmail={result.payerEmail ?? user?.email ?? ''}
+                submitLabel="Continuar a Mercado Pago"
+                busyLabel="Generando nuevo intento…"
+                busy={retrying}
+                errorMessage={retryError}
+                onSubmit={handleRetrySubmit}
+                onCancel={() => {
+                  setShowRetry(false)
+                  setRetryError(null)
+                }}
+              />
+            )}
+          </div>
+        )}
       </Card>
       <Link to="/planes" className="mt-6 inline-block text-sm font-semibold text-arena underline">Ver mis planes</Link>
     </section>

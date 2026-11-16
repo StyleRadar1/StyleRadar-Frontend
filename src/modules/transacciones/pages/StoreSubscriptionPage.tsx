@@ -3,9 +3,11 @@ import { Button } from '@/modules/core/design-system'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { PayerEmailForm } from '../components/PayerEmailForm'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
-import type { PaymentStatus } from '../types/payment.dto'
+import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
 import type { CheckoutResultDto } from '../types/plan.dto'
 import type { StoreSubscriptionStatus } from '../types/storeSubscription.dto'
 import './StoreSubscriptionPage.css'
@@ -18,7 +20,12 @@ const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = {
   SUSPENDIDA: 'Suspendida',
   CANCELADA: 'Cancelada',
 }
-const PAYMENT_LABEL: Record<PaymentStatus, string> = { aprobado: 'Aprobado', rechazado: 'Rechazado', pendiente: 'Pendiente', reembolsado: 'Reembolsado' }
+const PAYMENT_LABEL: Record<PaymentStatus, string> = {
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+  pendiente: 'Pendiente',
+  reembolsado: 'Reembolsado',
+}
 
 const fecha = (iso?: string) => iso
   ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
@@ -26,11 +33,12 @@ const fecha = (iso?: string) => iso
 
 const OUTCOME: Record<CheckoutResultDto['status'], { title: string; text: string; alert: boolean }> = {
   aprobado: { title: '¡Pago aprobado!', text: 'Tu suscripción quedó activa y tu catálogo sigue visible en el radar.', alert: false },
-  pendiente: { title: 'Pago pendiente', text: 'Aún no recibimos la confirmación del pago. La suscripción se activará cuando se apruebe.', alert: false },
-  rechazado: { title: 'Pago rechazado', text: 'La suscripción no se activó. Puedes intentarlo de nuevo con otro medio de pago.', alert: true },
+  pendiente: { title: 'Pago pendiente', text: 'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado.', alert: false },
+  rechazado: { title: 'Pago rechazado', text: 'El pago no fue aprobado. Puedes intentarlo nuevamente. La suscripción no se activó.', alert: true },
 }
 
 export default function StoreSubscriptionPage() {
+  const { user } = useAuth()
   const { data, loading, error, reload } = useStoreSubscription()
   const [paying, setPaying] = useState(false)
   const [outcome, setOutcome] = useState<CheckoutResultDto | null>(null)
@@ -38,6 +46,11 @@ export default function StoreSubscriptionPage() {
   const [askCancel, setAskCancel] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<unknown>(null)
+
+  // RF-96: Estado para reintento de pago rechazado con PayerEmailForm
+  const [retryPaymentTarget, setRetryPaymentTarget] = useState<PaymentDto | null>(null)
+  const [showRetryForm, setShowRetryForm] = useState(false)
+  const [retryErrorMsg, setRetryErrorMsg] = useState<string | null>(null)
 
   const pay = useCallback(async () => {
     setPaying(true)
@@ -54,6 +67,30 @@ export default function StoreSubscriptionPage() {
       setPaying(false)
     }
   }, [reload])
+
+  const handleRetryPayment = useCallback(async (payerEmail: string) => {
+    setPaying(true)
+    setRetryErrorMsg(null)
+    setPayError(null)
+    setOutcome(null)
+    try {
+      const targetId = retryPaymentTarget?.id ?? 'REJECTED'
+      const r = await storeSubscriptionService.retryPayment(targetId, payerEmail)
+      if (r.redirectTo) { window.location.assign(r.redirectTo); return }
+      setOutcome(r.result ?? null)
+      setShowRetryForm(false)
+      setRetryPaymentTarget(null)
+      reload()
+    } catch (err) {
+      setRetryErrorMsg(
+        err instanceof Error && err.message
+          ? err.message
+          : 'No fue posible generar un nuevo intento de pago.',
+      )
+    } finally {
+      setPaying(false)
+    }
+  }, [retryPaymentTarget, reload])
 
   const cancel = useCallback(async () => {
     setCancelling(true)
@@ -83,6 +120,12 @@ export default function StoreSubscriptionPage() {
   const failedPayment = lastPayment?.status === 'rechazado' ? lastPayment : null
   const nextCharge = sub.periodEndsAt ? fecha(sub.periodEndsAt) : '23 oct 2026'
   const startedAt = sub.status === 'ACTIVA' ? 'feb 2026' : 'nov 2026'
+  const defaultRetryEmail =
+    retryPaymentTarget?.userEmail ??
+    failedPayment?.userEmail ??
+    sub.payerEmail ??
+    user?.email ??
+    'luna@styleradar.co'
 
   return (
     <section className="store-subscription">
@@ -97,38 +140,167 @@ export default function StoreSubscriptionPage() {
           </div>
           <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días.</p>
         </div>
-          {failedPayment && <div className="store-subscription__alert" role="alert"><span className="store-subscription__alert-icon">⚠</span><div><strong>No pudimos cobrar tu suscripción</strong><p>El pago del {fecha(failedPayment.date)} con {failedPayment.method} fue rechazado. Tienes hasta el <b>25 sep 2026</b> para pagar con otro medio; si no, tu catálogo dejará de verse en el radar y en el mapa.</p></div><Button onClick={() => { void pay() }} disabled={paying}>{paying ? 'Procesando…' : 'Pagar con otro medio'}</Button></div>}
-          {msg && <div role={msg.alert ? 'alert' : 'status'} className={`store-subscription__notice ${msg.alert ? 'is-error' : ''}`}><strong>{msg.title}</strong><p>{msg.text}</p></div>}
-          {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
-          {!!cancelError && <div className="store-subscription__error"><ErrorState error={cancelError} title="No se canceló la renovación" /></div>}
-          <article className="store-subscription__plan"><span className="store-subscription__badge">● {STATUS_LABEL[sub.status].toUpperCase()}</span><h3>{sub.planName}</h3><p className="store-subscription__price">{formatCOP(sub.amount)} <small>/ mes</small></p>
-            <ul><li>Catálogo ilimitado visible en el radar y en el mapa</li><li>Colecciones y playlists de tienda</li><li>Estadísticas de visitas, guardados y mensajes</li><li>Avisos automáticos a quienes esperan una prenda</li></ul>
-            <div className="store-subscription__metadata"><span>Próximo cobro: <b>{sub.status === 'ACTIVA' ? nextCharge : 'al finalizar el periodo gratis'}</b></span><span>Desde: <b>{startedAt}</b></span><span>Método: <b>{lastPayment?.method ?? 'Sin método registrado'}</b></span></div>
-            <div className="store-subscription__actions">{sub.status !== 'ACTIVA' && <Button onClick={() => { void pay() }} disabled={paying}>{paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}</Button>}{sub.status === 'ACTIVA' && sub.renewalEnabled && <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>}<Button variant="secundario" disabled title="La gestión del método se habilitará cuando esté disponible en pagos">Cambiar método de pago</Button></div>
-          </article>
 
-      <section className="store-subscription__history"><h2>Historial de pagos</h2><p>Cobros de tu suscripción. Abre un comprobante para verlo o descargarlo.</p>
-      {payments.length === 0 ? (
-        <div className="store-subscription__empty"><EmptyState title="Aún no tienes pagos">Cuando pagues la suscripción, cada intento aparecerá aquí.</EmptyState></div>
-      ) : (
-        <div className="store-subscription__table-wrap">
-          <table aria-label="Historial de pagos">
-            <thead>
-              <tr>
-                <th scope="col">Fecha</th><th scope="col">Concepto</th><th scope="col">Método</th><th scope="col">Valor</th><th scope="col">Estado</th><th scope="col" aria-label="Comprobante" />
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((p) => (
-                <tr key={p.id}>
-                  <td>{fecha(p.date)}</td><td><b>Tienda aliada · mensual</b><small>{p.id}</small></td><td>{p.method}</td><td>{formatCOP(p.amount)}</td><td><span className={`store-subscription__payment-status is-${p.status}`}>● {PAYMENT_LABEL[p.status]}</span></td><td>{p.status === 'aprobado' && <button type="button" className="store-subscription__receipt" onClick={() => window.print()}>Comprobante</button>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      </section>
+        {failedPayment && (
+          <div className="store-subscription__alert" role="alert">
+            <span className="store-subscription__alert-icon">⚠</span>
+            <div>
+              <strong>El pago no fue aprobado. Puedes intentarlo nuevamente.</strong>
+              <p>
+                El pago del {fecha(failedPayment.date)} con {failedPayment.method} fue rechazado ({formatCOP(failedPayment.amount)}).
+                Genera un nuevo intento indicando el correo del pagador para activar tu suscripción.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => {
+                  setRetryPaymentTarget(failedPayment)
+                  setShowRetryForm(true)
+                  setRetryErrorMsg(null)
+                }}
+                disabled={paying}
+              >
+                Reintentar pago
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {msg && (
+          <div role={msg.alert ? 'alert' : 'status'} className={`store-subscription__notice ${msg.alert ? 'is-error' : ''}`}>
+            <strong>{msg.title}</strong>
+            <p>{msg.text}</p>
+            {outcome?.status === 'rechazado' && !showRetryForm && (
+              <div className="mt-3">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setRetryPaymentTarget(failedPayment)
+                    setShowRetryForm(true)
+                    setRetryErrorMsg(null)
+                  }}
+                  disabled={paying}
+                >
+                  Reintentar pago
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {showRetryForm && (
+          <div className="mb-6 rounded-2xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-5">
+            <h3 className="text-base font-bold text-[var(--sr-text-primary,var(--color-text))]">
+              Reintentar pago rechazado
+            </h3>
+            <p className="mt-1 mb-4 text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+              Plan: <b>{retryPaymentTarget?.planName ?? sub.planName}</b> · Valor original:{' '}
+              <b>{formatCOP(retryPaymentTarget?.amount ?? sub.amount)}</b>
+            </p>
+            <PayerEmailForm
+              defaultEmail={defaultRetryEmail}
+              submitLabel="Continuar a Mercado Pago"
+              busyLabel="Generando nuevo intento…"
+              busy={paying}
+              errorMessage={retryErrorMsg}
+              onSubmit={handleRetryPayment}
+              onCancel={() => {
+                setShowRetryForm(false)
+                setRetryPaymentTarget(null)
+                setRetryErrorMsg(null)
+              }}
+            />
+          </div>
+        )}
+
+        {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
+        {!!cancelError && <div className="store-subscription__error"><ErrorState error={cancelError} title="No se canceló la renovación" /></div>}
+
+        <article className="store-subscription__plan">
+          <span className="store-subscription__badge">● {STATUS_LABEL[sub.status].toUpperCase()}</span>
+          <h3>{sub.planName}</h3>
+          <p className="store-subscription__price">{formatCOP(sub.amount)} <small>/ mes</small></p>
+          <ul>
+            <li>Catálogo ilimitado visible en el radar y en el mapa</li>
+            <li>Colecciones y playlists de tienda</li>
+            <li>Estadísticas de visitas, guardados y mensajes</li>
+            <li>Avisos automáticos a quienes esperan una prenda</li>
+          </ul>
+          <div className="store-subscription__metadata">
+            <span>Próximo cobro: <b>{sub.status === 'ACTIVA' ? nextCharge : 'al finalizar el periodo gratis'}</b></span>
+            <span>Desde: <b>{startedAt}</b></span>
+            <span>Método: <b>{lastPayment?.method ?? 'Sin método registrado'}</b></span>
+          </div>
+          <div className="store-subscription__actions">
+            {sub.status !== 'ACTIVA' && (
+              <Button onClick={() => { void pay() }} disabled={paying}>
+                {paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}
+              </Button>
+            )}
+            {sub.status === 'ACTIVA' && sub.renewalEnabled && (
+              <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>
+            )}
+            <Button variant="secundario" disabled title="La gestión del método se habilitará cuando esté disponible en pagos">
+              Cambiar método de pago
+            </Button>
+          </div>
+        </article>
+
+        <section className="store-subscription__history">
+          <h2>Historial de pagos</h2>
+          <p>Cobros de tu suscripción. Abre un comprobante para verlo o descargarlo.</p>
+          {payments.length === 0 ? (
+            <div className="store-subscription__empty">
+              <EmptyState title="Aún no tienes pagos">Cuando pagues la suscripción, cada intento aparecerá aquí.</EmptyState>
+            </div>
+          ) : (
+            <div className="store-subscription__table-wrap">
+              <table aria-label="Historial de pagos">
+                <thead>
+                  <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Concepto</th>
+                    <th scope="col">Método</th>
+                    <th scope="col">Valor</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" aria-label="Acción o comprobante" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((p) => (
+                    <tr key={p.id}>
+                      <td>{fecha(p.date)}</td>
+                      <td><b>Tienda aliada · mensual</b><small>{p.id}</small></td>
+                      <td>{p.method}</td>
+                      <td>{formatCOP(p.amount)}</td>
+                      <td><span className={`store-subscription__payment-status is-${p.status}`}>● {PAYMENT_LABEL[p.status]}</span></td>
+                      <td>
+                        {p.status === 'aprobado' && (
+                          <button type="button" className="store-subscription__receipt" onClick={() => window.print()}>
+                            Comprobante
+                          </button>
+                        )}
+                        {p.status === 'rechazado' && sub.status !== 'ACTIVA' && (
+                          <button
+                            type="button"
+                            className="store-subscription__receipt"
+                            onClick={() => {
+                              setRetryPaymentTarget(p)
+                              setShowRetryForm(true)
+                              setRetryErrorMsg(null)
+                            }}
+                          >
+                            Reintentar pago
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
 
       <ConfirmDialog

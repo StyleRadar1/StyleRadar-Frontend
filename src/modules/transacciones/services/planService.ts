@@ -119,4 +119,45 @@ export const planService = {
     }
     return apiClient.get<CheckoutResultDto>(`/api/pagos/resultado/${orderId}`).then((r) => r.data)
   },
+
+  /**
+   * RF-96: Genera un nuevo intento de pago a partir de un pago RECHAZADO,
+   * conservando el valor y el plan originales con una nueva referencia.
+   */
+  async retryRejectedPayment(
+    originalOrder: CheckoutResultDto,
+    payerEmail: string,
+    nextStatus: 'aprobado' | 'pendiente' | 'rechazado' = 'aprobado',
+  ): Promise<CheckoutResultDto> {
+    if (!correoValido(payerEmail)) {
+      throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.')
+    }
+    if (originalOrder.status !== 'rechazado') {
+      throw new ApiError(400, 'Solo se pueden reintentar pagos rechazados.')
+    }
+    if (env.useMocks) {
+      try {
+        failIfScenario()
+      } catch {
+        throw new ApiError(500, 'No fue posible generar un nuevo intento de pago.')
+      }
+      const newOrderId = `MP-RETRY-${Math.floor(100000 + Math.random() * 900000)}`
+      const newOrder: CheckoutResultDto = {
+        orderId: newOrderId,
+        status: nextStatus,
+        planName: originalOrder.planName,
+        amount: originalOrder.amount,
+        method: 'Mercado Pago',
+        payerEmail: payerEmail.trim(),
+        planId: originalOrder.planId ?? (originalOrder.planName === 'Tienda aliada' ? 'store' : 'plus'),
+      }
+      saveCustomOrderResult(newOrder)
+      return mockDelay(newOrder, 300)
+    }
+    return apiClient
+      .post<CheckoutResultDto>(`/api/pagos/${originalOrder.orderId}/reintentar`, {
+        payerEmail: payerEmail.trim(),
+      })
+      .then((r) => r.data)
+  },
 }

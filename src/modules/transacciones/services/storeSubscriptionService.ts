@@ -212,6 +212,80 @@ export const storeSubscriptionService = {
   },
 
   /**
+   * RF-96: Reintenta un pago RECHAZADO de la tienda indicando el correo del pagador.
+   * Crea una nueva transacción por el mismo valor y conserva el pago rechazado original en el historial.
+   */
+  async retryPayment(paymentId: string, payerEmail: string, orderId = 'MOCK_STORE_OK'): Promise<StorePayResult> {
+    if (!correoValido(payerEmail)) {
+      throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.')
+    }
+    const before = readMockStoreSubscription()
+    const original = before.payments.find((p) => p.id === paymentId && p.status === 'rechazado') ??
+      before.payments.find((p) => p.status === 'rechazado')
+    if (!original) {
+      throw new ApiError(400, 'Solo se pueden reintentar pagos rechazados.')
+    }
+    if (!env.useMocks) {
+      const r = await apiClient
+        .post<CheckoutResponseDto>(`${BASE}/payments/${original.id}/retry`, { payerEmail: payerEmail.trim() })
+        .then((res) => res.data)
+      return { redirectTo: r.initPoint }
+    }
+    try {
+      failIfScenario()
+    } catch {
+      throw new ApiError(500, 'No fue posible generar un nuevo intento de pago.')
+    }
+    await mockDelay(MOCK_CHECKOUT_RESPONSE, 300)
+    const result = await planService.getCheckoutResult(orderId)
+
+    const state = readMockStoreSubscription()
+    const u = mockSessionUser()
+    const resolvedEmail = payerEmail.trim()
+    const newRef = `SR-R${2000 + state.payments.length}`
+    const payment: PaymentDto = {
+      id: newRef,
+      userId: u?.id ?? original.userId,
+      userName: u?.name ?? original.userName,
+      userEmail: resolvedEmail,
+      userRole: 'ADMIN_ALMACEN',
+      planId: 'store',
+      planName: original.planName,
+      amount: original.amount,
+      method: (result.method as PaymentDto['method'] | undefined) ?? 'Mercado Pago',
+      date: new Date().toISOString().slice(0, 10),
+      status: result.status === 'aprobado' ? 'aprobado' : result.status === 'pendiente' ? 'pendiente' : 'rechazado',
+    }
+    const next: StoreSubscriptionStateDto = {
+      subscription: {
+        ...state.subscription,
+        payerEmail: resolvedEmail,
+      },
+      payments: [payment, ...state.payments],
+    }
+    if (result.status === 'aprobado') {
+      next.subscription = {
+        status: 'ACTIVA',
+        planName: original.planName,
+        amount: original.amount,
+        payerEmail: resolvedEmail,
+        periodEndsAt: addOneMonth(),
+        renewalEnabled: true,
+      }
+    }
+    writeState(next)
+    return {
+      result: {
+        ...result,
+        orderId: newRef,
+        planName: original.planName,
+        amount: original.amount,
+        payerEmail: resolvedEmail,
+      },
+    }
+  },
+
+  /**
    * RF-68: cancela la renovación (y el cobro automático en la pasarela). La suscripción sigue hasta el fin del
    * periodo pagado, sin devolución por el tiempo restante. Cancelar dos veces conserva el estado sin duplicar.
    */
