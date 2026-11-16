@@ -31,7 +31,9 @@ describe('RegisterPage (RF-01)', () => {
     await user.type(screen.getByLabelText('Correo'), 'ana@correo.com')
     await user.type(screen.getByLabelText('Contraseña'), 'secreta1')
     await user.click(screen.getByRole('radio', { name: /Hombre/ }))
-    await user.click(screen.getByRole('checkbox'))
+    for (const cb of screen.getAllByRole('checkbox')) {
+      await user.click(cb)
+    }
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     expect(await screen.findByRole('heading', { name: 'Catálogo' })).toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem('sr_user') ?? '{}')).toMatchObject({ name: 'Ana María Gómez', role: 'COMPRADOR' })
@@ -44,7 +46,9 @@ describe('RegisterPage (RF-01)', () => {
     await user.type(screen.getByLabelText('Nombre completo'), 'Otra Persona')
     await user.type(screen.getByLabelText('Correo'), 'usuario@styleradar.co')
     await user.type(screen.getByLabelText('Contraseña'), 'secreta1')
-    await user.click(screen.getByRole('checkbox'))
+    for (const cb of screen.getAllByRole('checkbox')) {
+      await user.click(cb)
+    }
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos crear la cuenta con esos datos.')
     expect(screen.queryByText(/ya existe|ya tiene cuenta|ya está registrad/i)).not.toBeInTheDocument()

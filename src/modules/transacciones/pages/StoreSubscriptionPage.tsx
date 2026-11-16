@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/modules/core/design-system'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
@@ -31,6 +32,7 @@ export default function StoreSubscriptionPage() {
   const [askCancel, setAskCancel] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<unknown>(null)
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
 
   const pay = useCallback(async () => {
     setPaying(true)
@@ -92,12 +94,24 @@ export default function StoreSubscriptionPage() {
         </div>
           {failedPayment && <div className="store-subscription__alert" role="alert"><span className="store-subscription__alert-icon">⚠</span><div><strong>No pudimos cobrar tu suscripción</strong><p>El pago del {fecha(failedPayment.date)} con {failedPayment.method} fue rechazado. Tienes hasta el <b>25 sep 2026</b> para pagar con otro medio; si no, tu catálogo dejará de verse en el radar y en el mapa.</p></div><Button onClick={() => { void pay() }} disabled={paying}>{paying ? 'Procesando…' : 'Pagar con otro medio'}</Button></div>}
           {msg && <div role={msg.alert ? 'alert' : 'status'} className={`store-subscription__notice ${msg.alert ? 'is-error' : ''}`}><strong>{msg.title}</strong><p>{msg.text}</p></div>}
+          {paymentNotice && <div role="status" className="store-subscription__notice"><strong>Actualización de medio de pago</strong><p>{paymentNotice}</p></div>}
           {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
           {!!cancelError && <div className="store-subscription__error"><ErrorState error={cancelError} title="No se canceló la renovación" /></div>}
           <article className="store-subscription__plan"><span className="store-subscription__badge">● {STATUS_LABEL[sub.status].toUpperCase()}</span><h3>{sub.planName}</h3><p className="store-subscription__price">{formatCOP(sub.amount)} <small>/ mes</small></p>
             <ul><li>Catálogo ilimitado visible en el radar y en el mapa</li><li>Colecciones y playlists de tienda</li><li>Estadísticas de visitas, guardados y mensajes</li><li>Avisos automáticos a quienes esperan una prenda</li></ul>
             <div className="store-subscription__metadata"><span>Próximo cobro: <b>{sub.status === 'ACTIVA' ? nextCharge : 'al finalizar el periodo gratis'}</b></span><span>Desde: <b>{startedAt}</b></span><span>Método: <b>{lastPayment?.method ?? 'Sin método registrado'}</b></span></div>
-            <div className="store-subscription__actions">{sub.status !== 'ACTIVA' && <Button onClick={() => { void pay() }} disabled={paying}>{paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}</Button>}{sub.status === 'ACTIVA' && sub.renewalEnabled && <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>}<Button variant="secundario" disabled title="La gestión del método se habilitará cuando esté disponible en pagos">Cambiar método de pago</Button></div>
+            <div className="store-subscription__actions">{sub.status !== 'ACTIVA' && <Button onClick={() => { void pay() }} disabled={paying}>{paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}</Button>}{sub.status === 'ACTIVA' && sub.renewalEnabled && <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>}<Button variant="secundario" onClick={() => setPaymentNotice('La gestión directa de métodos (tarjeta / PSE) quedará habilitada con la pasarela del API Gateway.')}>Cambiar método de pago</Button></div>
+            <p className="mt-3 text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]/50 pt-2">
+              El plan y la actividad comercial de tu tienda se rigen por las{' '}
+              <Link to="/legal/reglas-tiendas" className="font-semibold text-[var(--color-accent)] underline">
+                Reglas para Tiendas y Marcas Aliadas
+              </Link>{' '}
+              y la{' '}
+              <Link to="/legal/pagos-seguridad" className="font-semibold text-[var(--color-accent)] underline">
+                Política de Pagos y Seguridad
+              </Link>
+              .
+            </p>
           </article>
 
       <section className="store-subscription__history"><h2>Historial de pagos</h2><p>Cobros de tu suscripción. Abre un comprobante para verlo o descargarlo.</p>

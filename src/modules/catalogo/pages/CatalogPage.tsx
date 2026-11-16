@@ -7,9 +7,9 @@ import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/
 import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
 import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
 import { ItemCard } from '../components/ItemCard'
+import { CatalogMegaMenu } from '../components/CatalogMegaMenu'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
-import { INVENTORY_ITEMS } from '../mocks/inventory'
 import type { ItemFiltersDto, ItemResponseDto } from '../types/item.dto'
 import './CatalogPage.css'
 
@@ -416,6 +416,21 @@ export default function CatalogPage() {
     setParams(new URLSearchParams())
   }
 
+  const handleMegaMenuFilter = (f: { tipo?: string; estilo?: string; origen?: string; texto?: string }) => {
+    if (f.tipo !== undefined) setFiltroTipo(f.tipo)
+    if (f.estilo !== undefined) setFiltroEstilo(f.estilo)
+    if (f.origen !== undefined) setFiltroOrigen(f.origen)
+    if (f.texto !== undefined) setTexto(f.texto)
+    const next = new URLSearchParams(params)
+    if (f.tipo && f.tipo !== 'Todos') next.set('tipo', f.tipo)
+    else if (f.tipo === 'Todos') next.delete('tipo')
+    if (f.estilo && f.estilo !== 'Todos') next.set('estilo', f.estilo)
+    else if (f.estilo === 'Todos') next.delete('estilo')
+    if (f.origen && f.origen !== 'Todos') next.set('origen', f.origen)
+    else if (f.origen === 'Todos') next.delete('origen')
+    setParams(next)
+  }
+
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
   const renderOpcionesCategoria = () => {
@@ -729,6 +744,14 @@ export default function CatalogPage() {
             Buscar
           </button>
         </form>
+
+        {/* MENÚ HORIZONTAL DE CATEGORÍAS Y MEGA-MENÚ DE SUBFILTROS EN HOVER (ESTILO GOTRENDIER) */}
+        <CatalogMegaMenu
+          onSelectFilter={handleMegaMenuFilter}
+          activeTipo={filtroTipo}
+          activeEstilo={filtroEstilo}
+          activeOrigen={filtroOrigen}
+        />
 
         {/* BARRA DE HERRAMIENTAS: Filtros (botón mediano) + Guardar búsqueda + Ordenar (diseño uniforme) */}
         <div className="relative z-30 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)] mb-6">
@@ -1116,19 +1139,11 @@ export default function CatalogPage() {
           </Aviso>
         )}
 
-        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ESTILO REFERENCIA EDITORIAL) */}
+        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ROPA CON DESCUENTO Y ESPECIALES) */}
         <div className="relative z-10 mb-10">
-          <HangingCollectionRack
-            onApplyCollectionFilter={(tipo, estilo) => {
-              setFiltroTipo(tipo)
-              setFiltroEstilo(estilo)
-              const next = new URLSearchParams(params)
-              if (tipo !== 'Todos') next.set('tipo', tipo)
-              else next.delete('tipo')
-              if (estilo !== 'Todos') next.set('estilo', estilo)
-              else next.delete('estilo')
-              setParams(next)
-            }}
+          <HangingSpecialsRack
+            filtroTipo={filtroTipo}
+            filtroEstilo={filtroEstilo}
           />
         </div>
 
@@ -1193,7 +1208,7 @@ export default function CatalogPage() {
 }
 
 /* ============================================================================
- * Sección de "Prendas colgadas en una barra" (Nueva Colección | Moda Local Bogotá)
+ * Sección de "Prendas colgadas en una barra" (Ropa con descuento y especiales)
  * ============================================================================ */
 
 type RackBadgeVariant = 'discount' | 'new' | 'stock'
@@ -1204,6 +1219,7 @@ interface HangingRackGarment {
   tienda: string
   barrio: string
   precio: number
+  originalPrice?: number
   imagen: string
   recorte?: string
   tipoGancho: 'hombros' | 'pinzas'
@@ -1217,27 +1233,32 @@ interface HangingRackGarment {
   }
 }
 
-const LOW_STOCK_INV =
-  INVENTORY_ITEMS.find((inv) => inv.id === 'inv-2') ??
-  INVENTORY_ITEMS.find((inv) => inv.estado === 'BAJO_STOCK' && inv.stockTotal > 0)
-
-const LOW_STOCK_COUNT = LOW_STOCK_INV?.stockTotal ?? 2
-
 const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
   .filter((it): it is ItemResponseDto & { recorte: string } => Boolean(it.recorte))
   .map((found) => {
     const tipoNorm = found.tipo === 'Suéter' ? 'Saco' : found.tipo
     let badge: HangingRackGarment['badge']
+    let originalPrice: number | undefined
 
     if (found.id === 'p19') {
-      badge = { text: '-20%', variant: 'discount' }
+      badge = { text: '-20% DCTO', variant: 'discount' }
+      originalPrice = Math.round(found.precio * 1.25)
     } else if (found.id === 'p27') {
-      badge = {
-        text: `SOLO ${LOW_STOCK_COUNT} ${LOW_STOCK_COUNT === 1 ? 'UNIDAD' : 'UNIDADES'}`,
-        variant: 'stock',
-      }
+      badge = { text: '-30% OFERTA', variant: 'discount' }
+      originalPrice = Math.round(found.precio * 1.42)
+    } else if (found.id === 'p23') {
+      badge = { text: '-15% DCTO', variant: 'discount' }
+      originalPrice = Math.round(found.precio * 1.18)
+    } else if (found.id === 'p24') {
+      badge = { text: 'ESPECIAL', variant: 'stock' }
+    } else if (found.id === 'p26') {
+      badge = { text: 'POPULAR', variant: 'new' }
     } else if (found.id === 'p22') {
-      badge = { text: 'NUEVO', variant: 'new' }
+      badge = { text: 'DROP LOCAL', variant: 'new' }
+    } else if (found.id === 'p18') {
+      badge = { text: 'ÚNICA PIEZA', variant: 'stock' }
+    } else if (found.id === 'p25') {
+      badge = { text: 'DESTACADO', variant: 'new' }
     }
 
     return {
@@ -1246,6 +1267,7 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
       tienda: found.tienda,
       barrio: found.barrio,
       precio: found.precio,
+      originalPrice,
       imagen: found.imagen,
       recorte: found.recorte,
       tipoGancho: found.tipoGancho ?? 'hombros',
@@ -1419,18 +1441,33 @@ function HangerClipsFront() {
   )
 }
 
-function HangingCollectionRack({
-  onApplyCollectionFilter,
+function HangingSpecialsRack({
+  filtroTipo,
+  filtroEstilo,
 }: {
-  onApplyCollectionFilter: (tipo: string, estilo: string) => void
+  filtroTipo?: string
+  filtroEstilo?: string
 }) {
-  // Índice 3 corresponde a "Chaqueta de cuero" (p6) en el centro al iniciar
   const [activeIndex, setActiveIndex] = useState<number>(3)
   const dragStartX = useRef<number | null>(null)
   const dragDeltaX = useRef<number>(0)
   const didDrag = useRef<boolean>(false)
 
-  const total = HANGING_RACK_GARMENTS.length
+  const availableGarments = useMemo(() => {
+    let list = HANGING_RACK_GARMENTS
+    if (filtroTipo && filtroTipo !== 'Todos') {
+      const filtered = list.filter((g) => g.tipoFiltro.toLowerCase() === filtroTipo.toLowerCase())
+      if (filtered.length >= 3) list = filtered
+    }
+    if (filtroEstilo && filtroEstilo !== 'Todos') {
+      const filtered = list.filter((g) => g.estilo.toLowerCase() === filtroEstilo.toLowerCase())
+      if (filtered.length >= 3) list = filtered
+    }
+    return list
+  }, [filtroTipo, filtroEstilo])
+
+  const total = availableGarments.length
+  const safeActiveIndex = activeIndex % (total || 1)
 
   const moveBy = useCallback(
     (delta: number) => {
@@ -1473,31 +1510,28 @@ function HangingCollectionRack({
     }
   }
 
-  const featured = HANGING_RACK_GARMENTS[activeIndex] ?? HANGING_RACK_GARMENTS[0]
+  const featured = availableGarments[safeActiveIndex] ?? availableGarments[0]
 
-  // Calculamos el desplazamiento circular más corto (-3..+3) para cada prenda
   const visibleGarments = useMemo(() => {
-    return HANGING_RACK_GARMENTS.map((garment, index) => {
-      let offset = index - activeIndex
+    return availableGarments.map((garment, index) => {
+      let offset = index - safeActiveIndex
       if (offset > total / 2) offset -= total
       if (offset < -total / 2) offset += total
       return { garment, index, offset }
     }).filter(({ offset }) => offset >= -3 && offset <= 3)
-  }, [activeIndex, total])
-
-  const collectionHref = `/catalogo?tipo=${encodeURIComponent(featured.tipoFiltro)}&estilo=${encodeURIComponent(featured.estilo)}`
+  }, [safeActiveIndex, availableGarments, total])
 
   return (
     <section
       className="sr-rack-section"
-      aria-label="Nueva colección de moda local en Bogotá"
+      aria-label="Ropa con descuento y piezas especiales en Bogotá"
       onKeyDown={handleKeyDown}
     >
       {/* 1. Encabezado pequeño centrado en mayúsculas con separador vertical fino */}
       <header className="sr-rack-header">
-        <span className="sr-rack-kicker">NUEVA COLECCIÓN</span>
+        <span className="sr-rack-kicker">ROPA CON DESCUENTO & ESPECIALES</span>
         <span className="sr-rack-divider" aria-hidden="true" />
-        <span className="sr-rack-kicker sr-rack-kicker--muted">MODA LOCAL BOGOTÁ</span>
+        <span className="sr-rack-kicker sr-rack-kicker--muted">OFERTAS Y POPULARES · TIENDAS LOCALES BOGOTÁ</span>
       </header>
 
       {/* 2. Barra metálica horizontal fina + prendas colgadas de ganchos */}
@@ -1506,7 +1540,7 @@ function HangingCollectionRack({
         tabIndex={0}
         role="region"
         aria-roledescription="carrusel"
-        aria-label="Perchero interactivo de prendas"
+        aria-label="Perchero interactivo de prendas en descuento"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
@@ -1613,19 +1647,25 @@ function HangingCollectionRack({
         </div>
       </div>
 
-      {/* 3. Detalle inferior de la prenda destacada + botón "Ver la colección" */}
+      {/* 3. Detalle inferior de la prenda destacada + botón "Ver prenda" */}
       <div className="sr-rack-footer">
         <p className="sr-rack-title">{featured.nombre}</p>
         <p className="sr-rack-meta">
-          {featured.tienda} · {formatCOP(featured.precio)}
+          {featured.tienda} · {featured.originalPrice ? (
+            <>
+              <span className="line-through opacity-50 mr-1.5">{formatCOP(featured.originalPrice)}</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCOP(featured.precio)}</span>
+            </>
+          ) : (
+            formatCOP(featured.precio)
+          )}
         </p>
 
         <Link
-          to={collectionHref}
-          onClick={() => onApplyCollectionFilter(featured.tipoFiltro, featured.estilo)}
+          to={`/catalogo/${featured.id}`}
           className="sr-rack-cta"
         >
-          Ver la colección
+          Ver prenda
         </Link>
       </div>
     </section>

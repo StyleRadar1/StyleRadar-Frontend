@@ -149,12 +149,14 @@ export const itemService = {
    * Reserva una unidad de la talla en la tienda por 15 minutos (ms-inventario, POST /api/v1/inventario/reserva).
    * Responde 409 si ya no quedan unidades de esa talla. Ruta provisional como las demás del catálogo.
    */
-  async reserve(prendaId: string, talla: string): Promise<ReservaDto> {
+  async reserve(prendaId: string, talla: string, sedeId?: string): Promise<ReservaDto> {
     if (env.useMocks) {
       failIfScenario()
       failWithScenario('sin-unidades', 409)
       return mockDelay({ prendaId, talla, expiracionReserva: new Date(Date.now() + 15 * 60 * 1000).toISOString() }, 300)
     }
-    return apiClient.post<ReservaDto>('/api/v1/inventario/reserva', { prendaId, talla }).then((r) => r.data)
+    const payload: { prendaId: string; talla: string; sedeId?: string } = { prendaId, talla }
+    if (sedeId) payload.sedeId = sedeId
+    return apiClient.post<ReservaDto>('/api/v1/inventario/reserva', payload).then((r) => r.data)
   },
 }

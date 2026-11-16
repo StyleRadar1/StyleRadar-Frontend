@@ -125,4 +125,20 @@ export const authService = {
     }
     return apiClient.post<LoginResponseDto>('/api/v1/auth/oauth2/google', payload).then((res) => res.data)
   },
+
+  /** Recuperación de contraseña (envío de enlace o token a correo) */
+  async recoverPassword(email: string): Promise<{ mensaje: string }> {
+    const cleanEmail = (email || '').trim().toLowerCase()
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new ApiError(400, 'Ingresa un correo electrónico válido.')
+    }
+    if (env.useMocks) {
+      return mockDelay({
+        mensaje: 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.',
+      }, 350)
+    }
+    return apiClient
+      .post<{ mensaje: string }>('/api/v1/auth/password/recuperar', { email: cleanEmail })
+      .then((res) => res.data)
+  },
 }

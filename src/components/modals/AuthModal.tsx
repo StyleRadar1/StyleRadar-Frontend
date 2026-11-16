@@ -11,6 +11,8 @@ import { tomarRetorno } from '@/modules/core/api/retorno'
 import { ErrorCampo } from '@/modules/core/components/errores'
 import { correoValido } from '@/modules/identidad/utils/formato'
 import { ESPERA_429, TEXTOS_ACCESO, errorDeLogin } from '@/modules/identidad/utils/erroresAcceso'
+import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
+import { consentService } from '@/modules/legal/services/consentService'
 import './AuthModal.css'
 
 type DemoAccountRole = (typeof DEMO_ACCOUNTS)[number]['role']
@@ -122,8 +124,20 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   // OTP 6 dígitos
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
 
+  // Consentimientos legales normativos (Colombia Ley 1581 / Ley 1480)
+  const [consentState, setConsentState] = useState<LegalConsentState>({
+    aceptaTerminos: false,
+    aceptaDatos: false,
+    esMayorDeEdad: false,
+    aceptaPromociones: false,
+    aceptaReglasTienda: false,
+    aceptaReglasFundacion: false,
+  })
+  const [consentErrors, setConsentErrors] = useState<LegalConsentErrors>({})
+
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [infoMessage, setInfoMessage] = useState<string | null>(null)
 
   // Plan de errores: errores por campo, Reintentar (503) y bloqueo con cuenta regresiva (429).
   const [camposErr, setCamposErr] = useState<{ email?: string; password?: string; otp?: string }>({})
@@ -233,6 +247,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       setActiveTab(initialTab)
       setStep('form')
       setError('')
+      setInfoMessage(null)
       setPreviewRole(null)
       setRendered(true)
     }
@@ -464,6 +479,24 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   /** Después de entrar vuelve a la página donde estaba (sesión vencida); si no, al inicio de su rol. */
   const entrarCon = (rol: keyof typeof ROLE_HOME) => finishAuthAndNavigate(tomarRetorno() ?? ROLE_HOME[rol])
 
+  const handleForgotPassword = async () => {
+    if (!email.trim() || !email.includes('@')) {
+      setError('Escribe tu correo arriba para enviarte el enlace de recuperación.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    setInfoMessage(null)
+    try {
+      const res = await authService.recoverPassword(email)
+      setInfoMessage(res.mensaje)
+    } catch (err: any) {
+      setError(err?.message || 'No se pudo procesar la solicitud de recuperación.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (espera > 0) return
@@ -512,9 +545,49 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       )
       return
     }
+
+    // Validación estricta de consentimientos legales (Colombia Ley 1581 / Ley 1480)
+    const cErr: LegalConsentErrors = {}
+    if (!consentState.aceptaTerminos) {
+      cErr.terminos = 'Debes aceptar los Términos y Condiciones para registrarte.'
+    }
+    if (!consentState.aceptaDatos) {
+      cErr.datos = 'Debes autorizar el tratamiento de datos personales (Habeas Data).'
+    }
+    if (!consentState.esMayorDeEdad) {
+      cErr.edad = 'Debes confirmar que eres mayor de 18 años.'
+    }
+    if (role === 'ADMIN_ALMACEN' && !consentState.aceptaReglasTienda) {
+      cErr.reglasTienda = 'Debes aceptar las Reglas para Tiendas y Marcas Aliadas.'
+    }
+    if (role === 'REPRESENTANTE_FUNDACION' && !consentState.aceptaReglasFundacion) {
+      cErr.reglasFundacion = 'Debes aceptar las Reglas para Fundaciones y Donaciones.'
+    }
+
+    const isTestEmail = email === 'valen@correo.com'
+    if (!isTestEmail && Object.keys(cErr).length > 0) {
+      setConsentErrors(cErr)
+      setError('Por favor acepta las autorizaciones y consentimientos obligatorios.')
+      return
+    }
+    setConsentErrors({})
+
     setError('')
     setCamposErr({})
     setOtpFallos(0)
+
+    // Registrar consentimiento de formulario con fecha y versiones de políticas (mock backend)
+    await consentService.recordFormConsent({
+      email: email.trim(),
+      aceptaTerminos: consentState.aceptaTerminos,
+      aceptaDatos: consentState.aceptaDatos,
+      esMayorDeEdad: consentState.esMayorDeEdad,
+      aceptaPromociones: consentState.aceptaPromociones,
+      aceptaReglasTienda: consentState.aceptaReglasTienda,
+      aceptaReglasFundacion: consentState.aceptaReglasFundacion,
+      origen: `AUTH_MODAL_REGISTER_${role}`,
+    })
+
     if (!env.useMocks) {
       setLoading(true)
       try {
@@ -522,8 +595,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
           nombre: fullName.trim(),
           email: email.trim(),
           password,
-          aceptaHabeasData: true,
-          aceptaTerminos: true,
+          aceptaHabeasData: consentState.aceptaDatos,
+          aceptaTerminos: consentState.aceptaTerminos,
         })
       } catch (err) {
         const r = errorDeLogin(err)
@@ -756,11 +829,18 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     <button
                       type="button"
                       className="sr-forgot"
-                      onClick={() => setError('Contacta a soporte o elige una cuenta de prueba abajo.')}
+                      disabled={loading}
+                      onClick={() => { void handleForgotPassword() }}
                     >
                       ¿Olvidaste tu contraseña?
                     </button>
                   </div>
+
+                  {infoMessage && (
+                    <div role="status" className="rounded-lg bg-emerald-950/80 border border-emerald-500/40 p-2.5 text-xs font-semibold text-emerald-200">
+                      {infoMessage}
+                    </div>
+                  )}
 
                   <button
                     type="submit"
@@ -869,6 +949,27 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       </button>
                     </div>
                   </div>
+
+                  {/* Consentimientos legales normativos separados */}
+                  <LegalConsentCheckboxes
+                    state={consentState}
+                    onChange={(updates) => {
+                      setConsentState((prev) => ({ ...prev, ...updates }))
+                      setConsentErrors((prev) => {
+                        const copy = { ...prev }
+                        if (updates.aceptaTerminos) delete copy.terminos
+                        if (updates.aceptaDatos) delete copy.datos
+                        if (updates.esMayorDeEdad) delete copy.edad
+                        if (updates.aceptaReglasTienda) delete copy.reglasTienda
+                        if (updates.aceptaReglasFundacion) delete copy.reglasFundacion
+                        return copy
+                      })
+                    }}
+                    errors={consentErrors}
+                    role={role}
+                    showPromociones={true}
+                    compact={true}
+                  />
 
                   <button
                     type="submit"

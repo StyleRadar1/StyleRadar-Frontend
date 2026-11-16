@@ -108,6 +108,86 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
             </svg>
           </button>
         </div>
+
+        {/* Sección de cumplimiento legal, protección al consumidor y pie de página completo */}
+        <div className="w-full pt-10 border-t border-[var(--sr-border-subtle)]/70">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-xs text-[var(--sr-hero-text-muted)]">
+            <div className="space-y-2">
+              <p className="font-bold uppercase tracking-wider text-[var(--sr-hero-text)] text-[11px]">
+                Marco Legal
+              </p>
+              <ul className="space-y-1.5">
+                <li><Link to="/legal/terminos" className="hover:text-[var(--sr-accent)] transition-colors">Términos y Condiciones</Link></li>
+                <li><Link to="/legal/datos-personales" className="hover:text-[var(--sr-accent)] transition-colors">Política de Datos (Habeas Data)</Link></li>
+                <li><Link to="/legal/aviso-privacidad" className="hover:text-[var(--sr-accent)] transition-colors">Aviso de Privacidad</Link></li>
+                <li><Link to="/legal/cookies" className="hover:text-[var(--sr-accent)] transition-colors">Política de Cookies</Link></li>
+                <li><Link to="/legal/pagos-seguridad" className="hover:text-[var(--sr-accent)] transition-colors">Medios de Pago y Seguridad</Link></li>
+                <li><Link to="/legal" className="font-semibold text-[var(--sr-accent)] hover:underline">Mapa Legal Completo →</Link></li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <p className="font-bold uppercase tracking-wider text-[var(--sr-hero-text)] text-[11px]">
+                Ayuda & Consumidor
+              </p>
+              <ul className="space-y-1.5">
+                <li><Link to="/legal/pqrs" className="font-semibold text-[var(--sr-hero-text)] hover:text-[var(--sr-accent)] transition-colors">Radicar PQRS Oficial</Link></li>
+                <li><Link to="/legal/devoluciones-garantias" className="hover:text-[var(--sr-accent)] transition-colors font-medium">Derecho de Retracto (5 días)</Link></li>
+                <li><Link to="/legal/devoluciones-garantias" className="hover:text-[var(--sr-accent)] transition-colors">Garantías y Cambios</Link></li>
+                <li><Link to="/legal/envios-entregas" className="hover:text-[var(--sr-accent)] transition-colors">Envíos y Entregas Bogotá</Link></li>
+                <li><Link to="/legal/centro-ayuda" className="hover:text-[var(--sr-accent)] transition-colors">Centro de Ayuda / FAQ</Link></li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('sr-open-cookie-settings'))}
+                    className="font-medium text-[var(--sr-accent)] hover:underline cursor-pointer"
+                  >
+                    Configurar cookies
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <p className="font-bold uppercase tracking-wider text-[var(--sr-hero-text)] text-[11px]">
+                Aliados & Comunidad
+              </p>
+              <ul className="space-y-1.5">
+                <li><Link to="/legal/reglas-tiendas" className="hover:text-[var(--sr-accent)] transition-colors">Reglas para Tiendas</Link></li>
+                <li><Link to="/legal/reglas-fundaciones" className="hover:text-[var(--sr-accent)] transition-colors">Reglas para Fundaciones</Link></li>
+                <li><Link to="/legal/segunda-vida" className="hover:text-[var(--sr-accent)] transition-colors">Segunda Vida (Ropa Usada)</Link></li>
+                <li><Link to="/legal/probador-virtual-datos" className="hover:text-[var(--sr-accent)] transition-colors">Probador Virtual y Datos</Link></li>
+                <li><Link to="/legal/normas-comunidad" className="hover:text-[var(--sr-accent)] transition-colors">Normas de Comunidad</Link></li>
+                <li><Link to="/planes" className="hover:text-[var(--sr-accent)] transition-colors">Planes para Comercios</Link></li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <p className="font-bold uppercase tracking-wider text-[var(--sr-hero-text)] text-[11px]">
+                Información del Proveedor
+              </p>
+              <div className="space-y-1 text-[11px]">
+                <p><strong className="text-[var(--sr-hero-text)]">[RAZÓN SOCIAL DE LA EMPRESA OPERADORA S.A.S.]</strong></p>
+                <p>NIT [NIT: XXXXXXXXX-X]</p>
+                <p>[DIRECCIÓN COMERCIAL, BOGOTÁ D.C.]</p>
+                <p>Canal Habeas Data: <a href="mailto:privacidad@styleradar.co" className="text-[var(--sr-accent)] underline">[CORREO_DATOS]</a></p>
+                <p className="pt-1">
+                  <a
+                    href="https://www.sic.gov.co"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-semibold text-[var(--sr-hero-text)] hover:text-[var(--sr-accent)]"
+                  >
+                    <span>Vigilado SIC (sic.gov.co)</span>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
   )

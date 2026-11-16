@@ -214,6 +214,28 @@ function PlansSelector() {
         </div>
       )}
 
+      {/* Aviso de cumplimiento normativo y derecho de retracto en compras electrónicas */}
+      <div className="mt-12 rounded-2xl border border-[var(--color-border)]/60 bg-[var(--color-surface-raised)]/30 p-5 text-center text-xs text-[var(--color-text-muted)] space-y-2">
+        <p>
+          🔒 Transacciones seguras procesadas en pesos colombianos (COP) con IVA incluido a través de pasarelas de pago certificadas.
+        </p>
+        <p>
+          Al contratar un plan o adquirir prendas a través de Style Radar, aplicas a las garantías legales de la Ley 1480 de 2011 y al{' '}
+          <Link to="/legal/devoluciones-garantias" className="font-semibold text-[var(--color-text)] underline hover:text-[var(--color-accent)]">
+            Derecho de Retracto dentro de los 5 días hábiles
+          </Link>{' '}
+          siguientes a la entrega. Consulta nuestros{' '}
+          <Link to="/legal/terminos" className="font-semibold text-[var(--color-text)] underline hover:text-[var(--color-accent)]">
+            Términos y Condiciones
+          </Link>{' '}
+          y nuestra{' '}
+          <Link to="/legal/datos-personales" className="font-semibold text-[var(--color-text)] underline hover:text-[var(--color-accent)]">
+            Política de Datos
+          </Link>
+          .
+        </p>
+      </div>
+
       {busy && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60">
           <Loading label="Preparando el pago…" />
