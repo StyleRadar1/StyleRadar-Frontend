@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
+import { isStoreSuspended, STORE_SUB_CHANGED } from '@/modules/transacciones/services/storeSubscriptionService'
 import { ItemCard } from '../components/ItemCard'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
@@ -281,12 +282,22 @@ export default function CatalogPage() {
   }, [texto, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroCercaDe, filtroColor, filtroEstilo, orden])
 
   const { items, loading, error } = useItems(activeFilters)
+  const [storeSubTick, setStoreSubTick] = useState(0)
+
+  useEffect(() => {
+    const onSubChanged = () => setStoreSubTick((v) => v + 1)
+    window.addEventListener(STORE_SUB_CHANGED, onSubChanged)
+    return () => window.removeEventListener(STORE_SUB_CHANGED, onSubChanged)
+  }, [])
 
   // Deduplicación garantizada por ID e imagen al construir la lista de la grilla (queda el primero)
+  // RF-99: oculta prendas de tiendas con suscripción SUSPENDIDA y actualiza conteos
   const uniqueItems = useMemo(() => {
+    void storeSubTick
     const map = new Map<string, ItemResponseDto>()
     const imageToId = new Map<string, string>()
     for (const it of items) {
+      if (isStoreSuspended(it.tienda)) continue
       if (it.imagen && imageToId.has(it.imagen)) {
         const originalId = imageToId.get(it.imagen)
         if (import.meta.env.DEV) {
@@ -304,7 +315,7 @@ export default function CatalogPage() {
       }
     }
     return Array.from(map.values())
-  }, [items])
+  }, [items, storeSubTick])
 
   // Manejo de búsqueda
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -510,7 +521,7 @@ export default function CatalogPage() {
       case 'marca':
         return (
           <div className="sr-filter-chips-grid">
-            {MARCAS.map((m) => {
+            {MARCAS.filter((m) => m === 'Todas' || !isStoreSuspended(m)).map((m) => {
               const isSelected = filtroMarca === m
               const isDefault = m === 'Todas'
               return (

@@ -19,6 +19,9 @@ const BASE = '/api/payments/subscriptions/store'
 
 /* ─── Estado simulado: vive en la pestaña, por usuario, para sobrevivir a recargas ─── */
 const key = (id: string) => `sr_store_sub_${id}`
+const SUSPENDED_STORES_KEY = 'sr_suspended_store_names'
+export const STORE_SUB_CHANGED = 'sr:store-sub-changed'
+
 const SEED = (): StoreSubscriptionStateDto => ({
   subscription: {
     status: 'PRUEBA',
@@ -32,6 +35,46 @@ const SEED = (): StoreSubscriptionStateDto => ({
 
 const sessionId = () => mockSessionUser()?.id ?? 'anon'
 
+function readSuspendedStoreNames(): string[] {
+  try {
+    const raw = sessionStorage.getItem(SUSPENDED_STORES_KEY)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+
+export function setStoreSuspendedByName(storeName: string, suspended: boolean): void {
+  try {
+    const normalized = storeName.trim().toLowerCase()
+    const current = readSuspendedStoreNames()
+    const next = suspended
+      ? Array.from(new Set([...current, normalized]))
+      : current.filter((n) => n !== normalized)
+    sessionStorage.setItem(SUSPENDED_STORES_KEY, JSON.stringify(next))
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(STORE_SUB_CHANGED))
+    }
+  } catch { /* sin almacenamiento */ }
+}
+
+/**
+ * RF-99: Verifica si el catálogo de una tienda está suspendido por falta de pago.
+ */
+export function isStoreSuspended(storeName: string): boolean {
+  if (!storeName || storeName === 'Segunda mano') return false
+  const normalized = storeName.trim().toLowerCase()
+  if (readSuspendedStoreNames().includes(normalized)) return true
+  if (normalized === 'luna store') {
+    const t1 = readMockStoreSubscription('t-1')
+    const current = readMockStoreSubscription()
+    if (t1.subscription.status === 'SUSPENDIDA' || current.subscription.status === 'SUSPENDIDA') {
+      return true
+    }
+  }
+  return false
+}
+
 export function readMockStoreSubscription(userId?: string): StoreSubscriptionStateDto {
   try {
     const raw = sessionStorage.getItem(key(userId ?? sessionId()))
@@ -43,6 +86,12 @@ export function readMockStoreSubscription(userId?: string): StoreSubscriptionSta
 function writeState(s: StoreSubscriptionStateDto, userId?: string) {
   try {
     sessionStorage.setItem(key(userId ?? sessionId()), JSON.stringify(s))
+    const u = mockSessionUser()
+    const storeName = u?.role === 'ADMIN_ALMACEN' ? u.name : 'Luna Store'
+    setStoreSuspendedByName(storeName, s.subscription.status === 'SUSPENDIDA')
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(STORE_SUB_CHANGED))
+    }
   } catch { /* sin almacenamiento */ }
 }
 
@@ -64,7 +113,10 @@ export function setMockStoreSubscriptionStatus(status: StoreSubscriptionStatus, 
 
 /** Solo para pruebas: deja la tienda otra vez en su periodo gratuito. */
 export const resetMockStoreSubscription = () => {
-  try { sessionStorage.removeItem(key(sessionId())) } catch { /* sin almacenamiento */ }
+  try {
+    sessionStorage.removeItem(key(sessionId()))
+    sessionStorage.removeItem(SUSPENDED_STORES_KEY)
+  } catch { /* sin almacenamiento */ }
 }
 
 const addOneMonth = (): string => {

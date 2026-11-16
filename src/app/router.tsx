@@ -7,6 +7,7 @@ import { AuroraBackground, isAuroraExcluded } from '@/modules/core/design-system
 import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
+import { RequireStoreActiveSub } from './RequireStoreActiveSub'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 import LandingPage from '@/modules/landing/pages/LandingPage'
@@ -47,6 +48,12 @@ const AdminPlaylists = lazy(() => import('@/modules/administracion/pages/AdminPl
 
 const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-white/60">Cargando…</p>}>{el}</Suspense>
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
+const onlyStoreActive = (el: ReactNode) =>
+  page(
+    <RequireRole roles={['ADMIN_ALMACEN']}>
+      <RequireStoreActiveSub>{el}</RequireStoreActiveSub>
+    </RequireRole>,
+  )
 
 const USER: Role[] = ['COMPRADOR']
 const STORE: Role[] = ['ADMIN_ALMACEN']
@@ -105,11 +112,11 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/donar', element: only(USER, <Donate />) },
       { path: '/alertas', element: only(USER, <Alerts />) },
       { path: '/mensajes', element: only(ANY, <Messages />) },
-      // Tienda
-      { path: '/mi-tienda', element: only(STORE, <MyStore />) },
-      { path: '/tienda/inventario', element: only(STORE, <Inventory />) },
-      { path: '/tienda/informacion', element: only(STORE, <StoreInfo />) },
-      { path: '/tienda/estadisticas', element: only(STORE, <StoreStats />) },
+      // Tienda (rutas de gestión y publicación protegidas por RequireStoreActiveSub; suscripción siempre accesible)
+      { path: '/mi-tienda', element: onlyStoreActive(<MyStore />) },
+      { path: '/tienda/inventario', element: onlyStoreActive(<Inventory />) },
+      { path: '/tienda/informacion', element: onlyStoreActive(<StoreInfo />) },
+      { path: '/tienda/estadisticas', element: onlyStoreActive(<StoreStats />) },
       { path: '/tienda/suscripcion', element: only(STORE, <StoreSubscription />) },
       { path: '/tienda/suscripcion/activar', element: only(STORE, <StoreActivateSubscription />) },
       // Fundación

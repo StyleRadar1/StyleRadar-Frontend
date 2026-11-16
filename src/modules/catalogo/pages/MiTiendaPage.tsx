@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import './MiTiendaPage.css'
 import './MiTiendaDashboard.css'
 
@@ -282,6 +283,7 @@ export default function MiTiendaPage() {
 
   return (
     <main className="my-store msd">
+      <StoreSuspendedBanner />
       {/* ── Hero a todo el ancho ── */}
       <section className="msd-hero" aria-labelledby="store-title">
         <div className="msd-hero__media" aria-hidden="true"><img src={HERO_PHOTO} alt="" /></div>

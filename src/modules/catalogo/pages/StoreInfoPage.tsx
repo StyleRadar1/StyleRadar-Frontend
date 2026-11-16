@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import './StoreInfoPage.css'
 
 type LegalStoreInfo = {
@@ -86,6 +87,7 @@ export default function StoreInfoPage() {
   const update = (key: keyof LegalStoreInfo, value: string) => setDraft((current) => ({ ...current, [key]: value }))
 
   return <main className="store-info">
+    <StoreSuspendedBanner />
     <div className="store-info__layout">
       <section className="store-info__main">
         <header className="store-info__heading">

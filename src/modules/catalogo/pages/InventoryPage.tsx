@@ -3,6 +3,7 @@ import { Button } from '@/modules/core/design-system'
 import { Loading, EmptyState, ErrorState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
+import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { useInventory } from '../hooks/useInventory'
 import type { InventoryItemDto, InventoryItemStatus } from '../types/inventory.dto'
 import './InventoryPage.css'
@@ -304,6 +305,7 @@ export default function InventoryPage() {
 
   return (
     <div className="inv-page">
+      <StoreSuspendedBanner />
       {/* ── Cabecera compacta a todo el ancho bajo el navbar ── */}
       <header className="inv-hero" aria-labelledby="inv-heading">
         <div className="inv-hero__media" aria-hidden="true">

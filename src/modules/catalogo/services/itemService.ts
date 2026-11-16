@@ -1,10 +1,14 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
 import { env } from '@/configs/env'
+import { isStoreSuspended } from '@/modules/transacciones/services/storeSubscriptionService'
 import { ITEMS } from '../mocks/items'
 import type { ItemFiltersDto, ItemResponseDto } from '../types/item.dto'
 
 const matches = (it: ItemResponseDto, f: ItemFiltersDto) => {
+  // RF-99: Las prendas de un almacén con suscripción SUSPENDIDA no se muestran en el catálogo público
+  if (isStoreSuspended(it.tienda)) return false
+
   if (f.texto) {
     const q = f.texto.toLowerCase().trim()
     const content = `${it.nombre} ${it.tipo} ${it.color} ${it.tienda} ${it.barrio} ${it.estilo}`.toLowerCase()

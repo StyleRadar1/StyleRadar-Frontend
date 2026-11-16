@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Statu
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { PayerEmailForm } from '../components/PayerEmailForm'
+import { StoreSuspendedBanner } from '../components/StoreSuspendedBanner'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
@@ -129,6 +130,7 @@ export default function StoreSubscriptionPage() {
 
   return (
     <section className="store-subscription">
+      <StoreSuspendedBanner status={sub.status} onPayClick={() => { void pay() }} />
       <div className="store-subscription__main">
         <div className="store-subscription__title">
           <div className="flex flex-wrap items-center gap-3">
