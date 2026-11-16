@@ -1,10 +1,9 @@
-import { useCallback, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useContext, useState } from 'react'
 import { Button } from '@/modules/core/design-system'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
-import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { PayerEmailForm } from '../components/PayerEmailForm'
 import { StoreSuspendedBanner } from '../components/StoreSuspendedBanner'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
@@ -40,7 +39,8 @@ const OUTCOME: Record<CheckoutResultDto['status'], { title: string; text: string
 }
 
 export default function StoreSubscriptionPage() {
-  const { user } = useAuth()
+  const auth = useContext(AuthContext)
+  const user = auth?.user ?? null
   const { data, loading, error, reload } = useStoreSubscription()
   const [paying, setPaying] = useState(false)
   const [outcome, setOutcome] = useState<CheckoutResultDto | null>(null)
@@ -252,13 +252,13 @@ export default function StoreSubscriptionPage() {
           </div>
           <p className="mt-3 text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]/50 pt-2">
             El plan y la actividad comercial de tu tienda se rigen por las{' '}
-            <Link to="/legal/reglas-tiendas" className="font-semibold text-[var(--color-accent)] underline">
+            <a href="/legal/reglas-tiendas" className="font-semibold text-[var(--color-accent)] underline">
               Reglas para Tiendas y Marcas Aliadas
-            </Link>{' '}
+            </a>{' '}
             y la{' '}
-            <Link to="/legal/pagos-seguridad" className="font-semibold text-[var(--color-accent)] underline">
+            <a href="/legal/pagos-seguridad" className="font-semibold text-[var(--color-accent)] underline">
               Política de Pagos y Seguridad
-            </Link>
+            </a>
             .
           </p>
         </article>

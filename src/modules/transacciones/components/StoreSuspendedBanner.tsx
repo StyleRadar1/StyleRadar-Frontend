@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useContext, useEffect, useState } from 'react'
 import { Badge, Button } from '@/modules/core/design-system'
-import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import {
   readMockStoreSubscription,
   STORE_SUB_CHANGED,
@@ -21,9 +20,8 @@ interface StoreSuspendedBannerProps {
  * RF-99: Banner fijo en la parte superior de las pantallas de la tienda cuando la suscripción está SUSPENDIDA.
  */
 export function StoreSuspendedBanner({ status: propStatus, onPayClick }: StoreSuspendedBannerProps) {
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const auth = useContext(AuthContext)
+  const user = auth?.user ?? null
   const [subStatus, setSubStatus] = useState<StoreSubscriptionStatus>(
     () => propStatus ?? readMockStoreSubscription(user?.id).subscription.status,
   )
@@ -45,11 +43,13 @@ export function StoreSuspendedBanner({ status: propStatus, onPayClick }: StoreSu
   if (effectiveStatus !== 'SUSPENDIDA') return null
 
   const handleAction = () => {
-    if (onPayClick && location.pathname === '/tienda/suscripcion') {
-      onPayClick()
-      return
+    if (typeof window !== 'undefined') {
+      if (onPayClick && window.location.pathname === '/tienda/suscripcion') {
+        onPayClick()
+        return
+      }
+      window.location.assign('/tienda/suscripcion')
     }
-    navigate('/tienda/suscripcion')
   }
 
   return (

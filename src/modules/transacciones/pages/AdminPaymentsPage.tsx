@@ -167,8 +167,23 @@ export default function AdminPaymentsPage() {
     setRefundError(null)
   }, [])
 
+  const handleCancelRefund = useCallback(() => {
+    setRefundTarget(null)
+    setRefundError(null)
+    setMotivoErr(null)
+  }, [])
+
   const handleRefund = useCallback(async () => {
     if (!refundTarget) return
+
+    // 400 · reembolso sin motivo: se valida antes de enviar y el mensaje va debajo del campo.
+    if (!refundReason.trim()) {
+      setMotivoErr(TEXTOS_PAGOS.motivo)
+      document.getElementById('refund-motivo')?.focus()
+      reasonInputRef.current?.focus()
+      return
+    }
+
     const maxRefundable = getRefundableBalance(refundTarget)
     const numAmount = Number(refundAmount)
 
@@ -180,13 +195,6 @@ export default function AdminPaymentsPage() {
     if (numAmount > maxRefundable) {
       setRefundError('El monto solicitado supera el saldo disponible para reembolsar.')
       amountInputRef.current?.focus()
-      return
-    }
-    if (!refundReason.trim()) {
-      setRefundError('Debes indicar el motivo del reembolso.')
-      setMotivoErr(TEXTOS_PAGOS.motivo)
-      document.getElementById('refund-motivo')?.focus()
-      reasonInputRef.current?.focus()
       return
     }
 
@@ -210,7 +218,6 @@ export default function AdminPaymentsPage() {
       if (err.tipo === 'motivo') {
         // El diálogo sigue abierto y el motivo queda como estaba escrito.
         setMotivoErr(err.texto)
-        setRefundError(err.texto)
         document.getElementById('refund-motivo')?.focus()
         reasonInputRef.current?.focus()
       } else {
@@ -799,11 +806,7 @@ export default function AdminPaymentsPage() {
         danger
         busy={refunding}
         onConfirm={handleRefund}
-        onCancel={() => {
-          setRefundTarget(null)
-          setRefundError(null)
-          setMotivoErr(null)
-        }}
+        onCancel={handleCancelRefund}
       >
         {refundTarget && (
           <div className="space-y-3 text-left">
@@ -816,6 +819,33 @@ export default function AdminPaymentsPage() {
               )}
               {' '}Saldo reembolsable disponible: <strong>{formatCOP(getRefundableBalance(refundTarget))}</strong>.
             </p>
+
+            <div>
+              <label htmlFor="refund-motivo" className="block text-sm font-semibold">
+                Motivo <span aria-hidden="true" className="text-[#ff8a8a]">*</span>
+              </label>
+              <textarea
+                ref={reasonInputRef}
+                id="refund-motivo"
+                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none focus:border-violeta aria-[invalid=true]:border-[var(--sr-bad)]"
+                rows={3}
+                value={refundReason}
+                onChange={(e) => {
+                  setRefundReason(e.target.value)
+                  if (motivoErr && e.target.value.trim()) setMotivoErr(null)
+                  if (refundError) setRefundError(null)
+                }}
+                placeholder="Describe por qué se reembolsa este pago…"
+                required
+                aria-invalid={!!motivoErr}
+                aria-describedby={motivoErr ? 'refund-motivo-err' : undefined}
+              />
+              {motivoErr && (
+                <div className="mt-1.5">
+                  <ErrorCampo id="refund-motivo">{motivoErr}</ErrorCampo>
+                </div>
+              )}
+            </div>
 
             <div>
               <label htmlFor="refund-amount-input" className="block text-sm font-semibold">
@@ -849,36 +879,6 @@ export default function AdminPaymentsPage() {
                 <p role="alert" className="mt-1 text-xs font-semibold text-[#ff8a8a]">
                   El monto solicitado supera el saldo disponible para reembolsar.
                 </p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="refund-motivo" className="block text-sm font-semibold">
-                Motivo <span aria-hidden="true" className="text-[#ff8a8a]">*</span>
-              </label>
-              <textarea
-                ref={reasonInputRef}
-                id="refund-motivo"
-                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none focus:border-violeta aria-[invalid=true]:border-[var(--sr-bad)]"
-                rows={3}
-                value={refundReason}
-                onChange={(e) => {
-                  setRefundReason(e.target.value)
-                  if (motivoErr && e.target.value.trim()) setMotivoErr(null)
-                  if (refundError) setRefundError(null)
-                }}
-                placeholder="Describe por qué se reembolsa este pago…"
-                required
-                aria-invalid={!refundReason.trim() || !!motivoErr}
-                aria-describedby={motivoErr ? 'refund-motivo-err' : undefined}
-              />
-              {motivoErr && (
-                <div className="mt-1.5">
-                  <ErrorCampo id="refund-motivo">{motivoErr}</ErrorCampo>
-                </div>
-              )}
-              {!refundReason.trim() && !motivoErr && (
-                <p className="mt-1 text-xs text-[#ff8a8a]">Debes indicar el motivo del reembolso.</p>
               )}
             </div>
 
