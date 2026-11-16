@@ -87,7 +87,7 @@ function writeState(s: StoreSubscriptionStateDto, userId?: string) {
   try {
     sessionStorage.setItem(key(userId ?? sessionId()), JSON.stringify(s))
     const u = mockSessionUser()
-    const storeName = u?.role === 'ADMIN_ALMACEN' ? u.name : 'Luna Store'
+    const storeName = u?.name || 'Luna Store'
     setStoreSuspendedByName(storeName, s.subscription.status === 'SUSPENDIDA')
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event(STORE_SUB_CHANGED))

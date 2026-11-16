@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { errorMessage } from '@/modules/core/api/errors'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { Button } from '@/modules/core/design-system'
+import { BuyerRenewalStatusCard } from '@/modules/transacciones/components/BuyerRenewalStatusCard'
 import { PlanDegradedBanner } from '@/modules/transacciones/components/PlanDegradedBanner'
 import { BuyerPaymentsSection } from '@/modules/transacciones/pages/BuyerPaymentsPage'
 import { Campo, Opciones } from '../components/Campo'
@@ -74,6 +75,7 @@ export default function ProfilePage() {
           </Link>
         </div>
       </header>
+      <BuyerRenewalStatusCard />
       {tab === 'pagos' ? (
         <div className="mt-10">
           <h2 className="mb-4 text-3xl font-extrabold tracking-tight">Historial de pagos</h2>

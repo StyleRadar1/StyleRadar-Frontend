@@ -4,6 +4,7 @@ import { errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { BuyerRenewalStatusCard } from '../components/BuyerRenewalStatusCard'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { userPlanService } from '../services/userPlanService'
@@ -113,6 +114,7 @@ export default function PlansPage() {
       <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Un plan para cada quien</h1>
       <p className="mt-3 max-w-2xl text-white/70">Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras.</p>
       {comprador && plan && <p className="mt-4 text-sm">Tu plan actual: <b>{PLAN_LABEL[plan]}</b></p>}
+      <BuyerRenewalStatusCard />
 
       {comprador && plan === 'RADAR_PLUS' && details?.renewalEnabled === false && (
         <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-arena/40 bg-white/[.04] p-4 text-sm">
