@@ -25,16 +25,16 @@ export default function LandingPage() {
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
 
-  if (user) {
-    return <Navigate to={ROLE_HOME[user.role]} replace />
-  }
-
   useEffect(() => {
     if (params.has('login')) {
       setAuthTab('login')
       setIsAuthOpen(true)
     }
   }, [params])
+
+  if (user) {
+    return <Navigate to={ROLE_HOME[user.role]} replace />
+  }
 
   const handleOpenLogin = () => {
     setAuthTab('login')
