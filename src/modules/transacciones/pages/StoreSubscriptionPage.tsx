@@ -218,6 +218,7 @@ export default function StoreSubscriptionPage() {
           </div>
         )}
 
+        {paymentNotice && <div role="status" className="store-subscription__notice"><strong>Actualización de medio de pago</strong><p>{paymentNotice}</p></div>}
         {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
         {!!cancelError && <div className="store-subscription__error"><ErrorState error={cancelError} title="No se canceló la renovación" /></div>}
 
@@ -245,7 +246,7 @@ export default function StoreSubscriptionPage() {
             {sub.status === 'ACTIVA' && sub.renewalEnabled && (
               <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>
             )}
-            <Button variant="secundario" disabled title="La gestión del método se habilitará cuando esté disponible en pagos">
+            <Button variant="secundario" onClick={() => setPaymentNotice('La gestión directa de métodos (tarjeta / PSE) quedará habilitada con la pasarela del API Gateway.')}>
               Cambiar método de pago
             </Button>
           </div>

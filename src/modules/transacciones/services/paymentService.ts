@@ -2,7 +2,6 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
-import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { MOCK_PAYMENTS } from '../mocks/payments'
 import type { PaymentDto, PaymentFiltersDto, RefundRequestDto } from '../types/payment.dto'
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Aviso } from '@/modules/core/components/errores'
+import { errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
