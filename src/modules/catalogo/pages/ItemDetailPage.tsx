@@ -3,8 +3,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Loading, ErrorState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useResource } from '@/modules/core/hooks/useResource'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
+import { PlanGate } from '@/modules/transacciones/components/PlanGate'
+import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
+import { getWishlistIds, setWishlistIds } from '@/modules/transacciones/services/userPlanService'
+import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { ItemCard } from '../components/ItemCard'
 import { itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
@@ -15,17 +20,26 @@ import './ItemDetailPage.css'
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const isBuyer = user?.role === 'COMPRADOR'
+  const { plan: userPlan } = useUserPlan(isBuyer)
+  const userId = user?.id ?? 'u-1'
+
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string>('')
-  const [guardado, setGuardado] = useState(false)
+  const [wishlistIds, setWishlistIdsState] = useState<string[]>(() => getWishlistIds(userId))
+  const [showWishlistGate, setShowWishlistGate] = useState(false)
   const [guardadoPlaylist, setGuardadoPlaylist] = useState(false)
   const [mensajeFeedback, setMensajeFeedback] = useState<string | null>(null)
   const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null)
   const [prevId, setPrevId] = useState(id)
   const [descripcionExpandida, setDescripcionExpandida] = useState(false)
 
+  const guardado = id ? wishlistIds.includes(id) : false
+
   if (id !== prevId) {
     setPrevId(id)
     setImagenSeleccionada(null)
+    setShowWishlistGate(false)
   }
 
   // Carga de la prenda principal y similares
@@ -60,8 +74,26 @@ export default function ItemDetailPage() {
   }, [navigate])
 
   const handleGuardar = () => {
-    setGuardado((prev) => !prev)
-    setMensajeFeedback(guardado ? 'Prenda retirada de tus favoritos.' : '¡Prenda guardada en tus favoritos!')
+    if (!id) return
+    const current = getWishlistIds(userId)
+    if (current.includes(id)) {
+      const next = current.filter((x) => x !== id)
+      setWishlistIds(next, userId)
+      setWishlistIdsState(next)
+      setShowWishlistGate(false)
+      setMensajeFeedback('Prenda retirada de tus favoritos.')
+      setTimeout(() => setMensajeFeedback(null), 3000)
+      return
+    }
+    if (isBuyer && userPlan === 'RADAR' && current.length >= PLAN_LIMITS.wishlist) {
+      setShowWishlistGate(true)
+      return
+    }
+    const next = [...current, id]
+    setWishlistIds(next, userId)
+    setWishlistIdsState(next)
+    setShowWishlistGate(false)
+    setMensajeFeedback('¡Prenda guardada en tus favoritos!')
     setTimeout(() => setMensajeFeedback(null), 3000)
   }
 
@@ -403,6 +435,11 @@ export default function ItemDetailPage() {
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                         </svg>
                         <span>Favorito</span>
+                        {isBuyer && userPlan === 'RADAR' && (
+                          <span className="font-mono text-[0.6875rem] opacity-80">
+                            ({wishlistIds.length}/{PLAN_LIMITS.wishlist})
+                          </span>
+                        )}
                       </button>
 
                       {/* Botón primario Ver tienda (relleno, píldora, color de acento) */}
@@ -413,6 +450,14 @@ export default function ItemDetailPage() {
                         Ver tienda
                       </Link>
                     </div>
+
+                    {showWishlistGate && (
+                      <PlanGate
+                        forceLock={true}
+                        title="Wishlist sin límite con Radar+"
+                        text={`Alcanzaste el límite de ${PLAN_LIMITS.wishlist}/${PLAN_LIMITS.wishlist} prendas en tu wishlist con el plan Radar. Pásate a Radar+ para guardar todas las prendas que quieras.`}
+                      />
+                    )}
 
                     {/* Botón secundario Guardar en playlist */}
                     <button

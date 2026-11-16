@@ -3,6 +3,7 @@
  * (puerto 8400, vía API Gateway). Precios y beneficios provisionales: falta validarlos con Transacciones.
  */
 export type PlanUsuario = 'RADAR' | 'RADAR_PLUS'
+export type PlanMockScenario = 'NORMAL' | 'DEGRADADO_POR_PAGO'
 
 export const PLAN_LABEL: Record<PlanUsuario, string> = { RADAR: 'Radar', RADAR_PLUS: 'Radar+' }
 
@@ -10,13 +11,26 @@ export interface MiPlanDto {
   plan: PlanUsuario
   /** Fecha del próximo cobro; vacía en el plan gratis. */
   proximoCobro?: string
+  /** Fecha hasta la que dura el periodo ya pagado cuando se cancela la renovación (RF-101). */
+  periodEndsAt?: string
+  /** Estado de la renovación automática en Radar+ (RF-95, RF-101). */
+  renewalEnabled?: boolean
+  /** Indica si la cuenta pasó de Radar+ a Radar por falta de pago (RF-103). */
+  degradedByPayment?: boolean
 }
 
 /** Lo que solo tiene Radar+ y se muestra con candado en el plan Radar. */
 export type FuncionPago = 'probador-foto' | 'alertas-sin-limite' | 'wishlist-sin-limite'
 
-/** Límites del plan Radar. */
-export const LIMITES_RADAR = { alertas: 3, wishlist: 20 } as const
+/** Límites concentrados del plan Radar (RF-102). */
+export const PLAN_LIMITS = {
+  wishlist: 20,
+  alertas: 3,
+  probadorFoto: 30,
+} as const
+
+/** Alias de compatibilidad previa. */
+export const LIMITES_RADAR = PLAN_LIMITS
 
 export interface PlanInfo {
   id: string

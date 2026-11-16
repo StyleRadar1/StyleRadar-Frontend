@@ -4,11 +4,13 @@ import { errorKind, errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
+import { PlanGate } from '@/modules/transacciones/components/PlanGate'
+import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { LockIcon } from '../components/LockIcon'
 import { alertService } from '../services/alertService'
 import { alertasActivas, PLAN_LABEL, type AlertasResumenDto } from '../types/notification.dto'
 
-const EMPTY: AlertasResumenDto = { plan: 'RADAR', limiteAlertas: 3, alertas: [], busquedas: [] }
+const EMPTY: AlertasResumenDto = { plan: 'RADAR', limiteAlertas: PLAN_LIMITS.alertas, alertas: [], busquedas: [] }
 const fecha = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
 const dia = (iso: string) => fecha.format(new Date(`${iso.slice(0, 10)}T12:00:00`))
 
@@ -88,9 +90,18 @@ export default function AlertsPage() {
             )}
 
             {msg && (
-              <p role={msg.ok ? 'status' : 'alert'} className={`mt-4 rounded-xl p-3 text-sm ${msg.ok ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]'}`}>
-                {msg.text} {msg.planes && <Link to="/planes" className="font-semibold underline">Ver planes</Link>}
-              </p>
+              <div className="mt-4 space-y-3">
+                <p role={msg.ok ? 'status' : 'alert'} className={`rounded-xl p-3 text-sm ${msg.ok ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]'}`}>
+                  {msg.text} {msg.planes && <Link to="/planes" className="font-semibold underline">Ver planes</Link>}
+                </p>
+                {msg.planes && (
+                  <PlanGate
+                    forceLock={true}
+                    title="Alertas de disponibilidad sin límite con Radar+"
+                    text="Con el plan Radar tienes hasta 3 alertas activas. Activa Radar+ para recibir avisos sin límite."
+                  />
+                )}
+              </div>
             )}
 
             <h2 className="mt-10 text-xl font-bold text-[var(--color-text)]">Búsquedas guardadas · {data.busquedas.length}</h2>

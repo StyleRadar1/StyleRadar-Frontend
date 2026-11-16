@@ -3,7 +3,11 @@ import { useResource } from '@/modules/core/hooks/useResource'
 import { errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { ErrorState } from '@/modules/core/components/Status'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { PlanGate } from '@/modules/transacciones/components/PlanGate'
+import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
+import { getTryOnPhotoUses, setTryOnPhotoUses } from '@/modules/transacciones/services/userPlanService'
+import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { GarmentSelector } from '../components/GarmentSelector'
 import { garmentProblem } from '../utils/garments'
 import { PhotoPicker, type UploadedPhoto } from '../components/PhotoPicker'
@@ -14,7 +18,13 @@ import type { TryOnGarmentDto } from '../types/tryon.dto'
 
 /** Probador virtual: RF-23 (foto), RF-24 (prenda), RF-25 (job), RF-26 (resultado) y RF-27 (borrar). */
 export default function TryOnPage() {
+  const { user } = useAuth()
+  const isBuyer = user?.role === 'COMPRADOR'
+  const { plan: userPlan } = useUserPlan(isBuyer)
+  const userId = user?.id ?? 'u-1'
+
   const [photo, setPhoto] = useState<UploadedPhoto | null>(null)
+  const [tryOnUses, setTryOnUsesState] = useState<number>(() => getTryOnPhotoUses(userId))
   const { data: garments, loading: gLoading, error: gError, reload: loadGarments } = useResource(tryOnService.listGarments, [] as TryOnGarmentDto[])
   const [garmentId, setGarmentId] = useState<string | null>(null)
   const [confirmDel, setConfirmDel] = useState(false)
@@ -23,14 +33,24 @@ export default function TryOnPage() {
   const job = useTryOnJob()
   const selectorRef = useRef<HTMLElement>(null)
 
+  const limitReached = isBuyer && userPlan === 'RADAR' && tryOnUses >= PLAN_LIMITS.probadorFoto
+
   // La URL temporal de la foto se libera al salir de la pantalla.
   const photoUrl = photo?.previewUrl
   useEffect(() => () => { if (photoUrl) URL.revokeObjectURL(photoUrl) }, [photoUrl])
 
   const garment = garments.find((g) => g.id === garmentId)
-  const canStart = !!photo && !!garment && !garmentProblem(garment) && !job.active
+  const canStart = !!photo && !!garment && !garmentProblem(garment) && !job.active && !limitReached
 
-  const startTry = () => { if (photo && garment && !garmentProblem(garment)) job.start(photo.photoId, garment.id) }
+  const startTry = () => {
+    if (limitReached) return
+    if (photo && garment && !garmentProblem(garment)) {
+      const nextCount = tryOnUses + 1
+      setTryOnPhotoUses(nextCount, userId)
+      setTryOnUsesState(nextCount)
+      job.start(photo.photoId, garment.id)
+    }
+  }
   const otherGarment = () => { job.reset(); setGarmentId(null); selectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
 
   const deletePhoto = async () => {
@@ -58,7 +78,21 @@ export default function TryOnPage() {
       <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
         <div className="space-y-8">
           <section aria-labelledby="t-foto" className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-            <h2 id="t-foto" className="text-lg font-bold text-[var(--color-text)]">1. Tu foto</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 id="t-foto" className="text-lg font-bold text-[var(--color-text)]">1. Tu foto</h2>
+              {isBuyer && (
+                <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
+                  {userPlan === 'RADAR_PLUS'
+                    ? 'Probador con foto propia · Sin límite (Radar+)'
+                    : `Usos con foto propia: ${tryOnUses}/${PLAN_LIMITS.probadorFoto}`}
+                </span>
+              )}
+            </div>
+            {limitReached && (
+              <p role="alert" className="mt-3 rounded-xl border border-[var(--color-danger-border,#ff8a8a)] bg-[var(--color-danger-bg,rgba(220,38,38,0.12))] p-3 text-xs font-semibold text-[var(--color-danger-text,#ff8a8a)]">
+                Alcanzaste el límite de {PLAN_LIMITS.probadorFoto} usos del probador virtual con foto propia en el plan Radar. Pásate a Radar+ para seguir probándote prendas sin límite.
+              </p>
+            )}
             <div className="mt-4">
               <PlanGate title="Pruébate la ropa sobre tu foto con Radar+" text="Con el plan Radar usas el maniquí. Radar+ te deja subir tu foto de cuerpo entero y ver las prendas sobre ti.">
                 <PhotoPicker photo={photo} onUploaded={(p) => { setDelMsg(null); job.reset(); setPhoto(p) }} />

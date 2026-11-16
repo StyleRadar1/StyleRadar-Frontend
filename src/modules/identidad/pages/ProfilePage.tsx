@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { errorMessage } from '@/modules/core/api/errors'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { Button } from '@/modules/core/design-system'
+import { PlanDegradedBanner } from '@/modules/transacciones/components/PlanDegradedBanner'
 import { BuyerPaymentsSection } from '@/modules/transacciones/pages/BuyerPaymentsPage'
 import { Campo, Opciones } from '../components/Campo'
 import { a11y, inputCls, labelCls } from '../utils/campo'
@@ -26,6 +27,7 @@ export default function ProfilePage() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
+      <PlanDegradedBanner />
       <header className="flex flex-wrap items-center justify-between gap-5 border-b border-white/10 pb-8">
         <div className="flex flex-wrap items-center gap-5">
           <span aria-hidden="true" className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-violeta text-3xl font-extrabold text-blanco md:h-24 md:w-24 md:text-4xl">{iniciales(profile.nombre)}</span>

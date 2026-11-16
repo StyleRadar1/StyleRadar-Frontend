@@ -53,8 +53,8 @@ describe('planes (P7)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Cambiar a Radar' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cambiar plan' }))
-    expect(await screen.findByText(/Volviste al plan Radar/, {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(await within(screen.getByRole('listitem', { name: 'Radar' })).findByText('Tu plan')).toBeInTheDocument()
+    expect(await screen.findByText(/Radar\+ activo hasta/, {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(await screen.findAllByRole('button', { name: 'Reactivar renovación' })).not.toHaveLength(0)
   })
 
   it('si el cambio falla lo explica', async () => {
