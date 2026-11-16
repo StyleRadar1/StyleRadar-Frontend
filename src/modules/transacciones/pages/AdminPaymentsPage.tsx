@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
-import { paymentService, calcRevenue } from '../services/paymentService'
+import { paymentService, calcRevenue, getRefundableBalance } from '../services/paymentService'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
 import '@/styles/verdelo-dashboard.css'
 
@@ -112,8 +112,12 @@ export default function AdminPaymentsPage() {
   const { data: payments, loading, error, reload, setData } = usePayments(stableFilters)
   const [selected, setSelected] = useState<PaymentDto | null>(null)
   const [refundTarget, setRefundTarget] = useState<PaymentDto | null>(null)
+  const [refundAmount, setRefundAmount] = useState<string>('')
   const [refundReason, setRefundReason] = useState('')
+  const [refundError, setRefundError] = useState<string | null>(null)
   const [refunding, setRefunding] = useState(false)
+  const amountInputRef = useRef<HTMLInputElement>(null)
+  const reasonInputRef = useRef<HTMLTextAreaElement>(null)
 
   // Estado de las tarjetas 3D apiladas estilo Verdelo
   const [activeCardIdx, setActiveCardIdx] = useState(0)
@@ -124,10 +128,13 @@ export default function AdminPaymentsPage() {
 
   const statsSummary = useMemo(() => {
     const approved = payments.filter((p) => p.status === 'aprobado')
-    const refunded = payments.filter((p) => p.status === 'reembolsado')
+    const refunded = payments.filter((p) => p.status === 'reembolsado' || (p.refundedAmount ?? 0) > 0)
     const pending = payments.filter((p) => p.status === 'pendiente')
     const approvedSum = approved.reduce((acc, p) => acc + p.amount, 0)
-    const refundedSum = refunded.reduce((acc, p) => acc + p.amount, 0)
+    const refundedSum = payments.reduce(
+      (acc, p) => acc + (p.refundedAmount ?? (p.status === 'reembolsado' ? p.amount : 0)),
+      0,
+    )
     const plusSum = approved.filter((p) => p.planId === 'plus').reduce((acc, p) => acc + p.amount, 0)
     const storeSum = approved.filter((p) => p.planId === 'store').reduce((acc, p) => acc + p.amount, 0)
     return {
@@ -145,19 +152,58 @@ export default function AdminPaymentsPage() {
     setFilters((prev) => ({ ...prev, [key]: value || undefined }))
   }, [])
 
+  const openRefundModal = useCallback((payment: PaymentDto) => {
+    const balance = getRefundableBalance(payment)
+    setRefundTarget(payment)
+    setRefundAmount(String(balance))
+    setRefundReason('')
+    setRefundError(null)
+  }, [])
+
   const handleRefund = useCallback(async () => {
-    if (!refundTarget || !refundReason.trim()) return
+    if (!refundTarget) return
+    const maxRefundable = getRefundableBalance(refundTarget)
+    const numAmount = Number(refundAmount)
+
+    if (!refundAmount.trim() || Number.isNaN(numAmount) || numAmount <= 0) {
+      setRefundError('El monto a reembolsar debe ser mayor que 0.')
+      amountInputRef.current?.focus()
+      return
+    }
+    if (numAmount > maxRefundable) {
+      setRefundError('El monto solicitado supera el saldo disponible para reembolsar.')
+      amountInputRef.current?.focus()
+      return
+    }
+    if (!refundReason.trim()) {
+      setRefundError('Debes indicar el motivo del reembolso.')
+      reasonInputRef.current?.focus()
+      return
+    }
+
     setRefunding(true)
+    setRefundError(null)
     try {
-      const updated = await paymentService.refund({ paymentId: refundTarget.id, reason: refundReason.trim() })
+      const updated = await paymentService.refund({
+        paymentId: refundTarget.id,
+        amount: numAmount,
+        reason: refundReason.trim(),
+      })
       setData((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      setSelected(updated)
       setRefundTarget(null)
       setRefundReason('')
-      setSelected(null)
+      setRefundAmount('')
+    } catch (err) {
+      setRefundError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'No fue posible procesar el reembolso. Inténtalo nuevamente.',
+      )
     } finally {
       setRefunding(false)
     }
-  }, [refundTarget, refundReason, setData])
+  }, [refundTarget, refundAmount, refundReason, setData])
 
   const cycleCard = (dir: 1 | -1) => {
     setFlippedCardId(null)
@@ -632,10 +678,24 @@ export default function AdminPaymentsPage() {
                   <td className="py-3.5 pr-4 font-mono text-xs text-lavanda">{p.id}</td>
                   <td className="py-3.5 pr-4 font-semibold text-blanco">{p.userName}</td>
                   <td className="py-3.5 pr-4 text-white/80">{p.planName}</td>
-                  <td className="py-3.5 pr-4 text-right font-mono font-bold text-arena">{formatCOP(p.amount)}</td>
+                  <td className="py-3.5 pr-4 text-right font-mono font-bold text-arena">
+                    <div>{formatCOP(p.amount)}</div>
+                    {(p.refundedAmount ?? 0) > 0 && (
+                      <div className="text-[0.6875rem] font-normal text-[#ff8a8a]">
+                        Reembolsado: {formatCOP(p.refundedAmount ?? 0)} / {formatCOP(p.amount)}
+                      </div>
+                    )}
+                  </td>
                   <td className="py-3.5 pr-4 text-white/75">{p.method}</td>
                   <td className="py-3.5 pr-4 text-white/70">{p.date}</td>
-                  <td className="py-3.5"><Badge tone={STATUS_TONES[p.status]}>{STATUS_LABELS[p.status]}</Badge></td>
+                  <td className="py-3.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge tone={STATUS_TONES[p.status]}>{STATUS_LABELS[p.status]}</Badge>
+                      {p.status === 'aprobado' && (p.refundedAmount ?? 0) > 0 && (p.refundedAmount ?? 0) < p.amount && (
+                        <Badge tone="arena">Reembolso parcial</Badge>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -651,14 +711,33 @@ export default function AdminPaymentsPage() {
               <h2 className="text-xl font-bold">Pago {selected.id}</h2>
               <button type="button" className="text-2xl text-white/50 hover:text-white" onClick={() => setSelected(null)}>×</button>
             </div>
-            <Badge tone={STATUS_TONES[selected.status]}>{STATUS_LABELS[selected.status]}</Badge>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <Badge tone={STATUS_TONES[selected.status]}>{STATUS_LABELS[selected.status]}</Badge>
+              {selected.status === 'aprobado' && (selected.refundedAmount ?? 0) > 0 && (selected.refundedAmount ?? 0) < selected.amount && (
+                <Badge tone="arena">Reembolso parcial</Badge>
+              )}
+            </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div><dt className="text-white/50">Usuario</dt><dd className="font-semibold">{selected.userName}</dd></div>
               <div><dt className="text-white/50">Correo</dt><dd>{selected.userEmail}</dd></div>
               <div><dt className="text-white/50">Plan</dt><dd>{selected.planName}</dd></div>
-              <div><dt className="text-white/50">Monto</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.amount)}</dd></div>
+              <div><dt className="text-white/50">Monto total</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.amount)}</dd></div>
               <div><dt className="text-white/50">Método</dt><dd>{selected.method}</dd></div>
               <div><dt className="text-white/50">Fecha</dt><dd>{selected.date}</dd></div>
+              {((selected.refundedAmount ?? 0) > 0 || selected.status === 'reembolsado') && (
+                <>
+                  <div>
+                    <dt className="text-white/50">Monto reembolsado</dt>
+                    <dd className="font-mono font-semibold text-[#ff8a8a]">
+                      {formatCOP(selected.refundedAmount ?? selected.amount)} / {formatCOP(selected.amount)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-white/50">Saldo reembolsable</dt>
+                    <dd className="font-mono font-semibold">{formatCOP(getRefundableBalance(selected))}</dd>
+                  </div>
+                </>
+              )}
               {selected.refundReason && (
                 <>
                   <div className="col-span-2"><dt className="text-white/50">Motivo del reembolso</dt><dd className="text-[#ff8a8a]">{selected.refundReason}</dd></div>
@@ -666,20 +745,20 @@ export default function AdminPaymentsPage() {
                 </>
               )}
             </dl>
-            {selected.status === 'aprobado' && (
+            {selected.status === 'aprobado' && getRefundableBalance(selected) > 0 && (
               <Button
                 variant="secundario"
                 className="mt-6 w-full border-[#c0392b] text-[#ff8a8a]"
-                onClick={() => { setRefundTarget(selected); setRefundReason('') }}
+                onClick={() => openRefundModal(selected)}
               >
-                Reembolsar
+                {(selected.refundedAmount ?? 0) > 0 ? 'Reembolsar saldo restante' : 'Reembolsar'}
               </Button>
             )}
           </div>
         </div>
       )}
 
-      {/* Diálogo de reembolso */}
+      {/* Diálogo de reembolso (RF-98: total o parcial) */}
       <ConfirmDialog
         open={!!refundTarget}
         title="¿Reembolsar este pago?"
@@ -687,25 +766,86 @@ export default function AdminPaymentsPage() {
         danger
         busy={refunding}
         onConfirm={handleRefund}
-        onCancel={() => setRefundTarget(null)}
+        onCancel={() => {
+          setRefundTarget(null)
+          setRefundError(null)
+        }}
       >
-        <p className="mb-2">
-          Pago <strong>{refundTarget?.id}</strong> por <strong>{refundTarget ? formatCOP(refundTarget.amount) : ''}</strong> a {refundTarget?.userName}.
-          El reembolso restará de los ingresos netos.
-        </p>
-        <label className="block text-sm font-semibold">
-          Motivo <span className="text-[#ff8a8a]">*</span>
-        </label>
-        <textarea
-          className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none focus:border-violeta"
-          rows={3}
-          value={refundReason}
-          onChange={(e) => setRefundReason(e.target.value)}
-          placeholder="Describe por qué se reembolsa este pago…"
-          required
-        />
-        {!refundReason.trim() && (
-          <p className="mt-1 text-xs text-[#ff8a8a]">El motivo es obligatorio.</p>
+        {refundTarget && (
+          <div className="space-y-3 text-left">
+            <p className="text-sm">
+              Pago <strong>{refundTarget.id}</strong> por <strong>{formatCOP(refundTarget.amount)}</strong> a {refundTarget.userName}.
+              {(refundTarget.refundedAmount ?? 0) > 0 && (
+                <span>
+                  {' '}Ya reembolsado: <strong>{formatCOP(refundTarget.refundedAmount ?? 0)}</strong>.
+                </span>
+              )}
+              {' '}Saldo reembolsable disponible: <strong>{formatCOP(getRefundableBalance(refundTarget))}</strong>.
+            </p>
+
+            <div>
+              <label htmlFor="refund-amount-input" className="block text-sm font-semibold">
+                Monto a reembolsar <span className="text-[#ff8a8a]">*</span>
+              </label>
+              <input
+                ref={amountInputRef}
+                id="refund-amount-input"
+                type="number"
+                min={1}
+                max={getRefundableBalance(refundTarget)}
+                step={100}
+                value={refundAmount}
+                onChange={(e) => {
+                  setRefundAmount(e.target.value)
+                  if (refundError) setRefundError(null)
+                }}
+                aria-invalid={
+                  !refundAmount.trim() ||
+                  Number(refundAmount) <= 0 ||
+                  Number(refundAmount) > getRefundableBalance(refundTarget)
+                }
+                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 font-mono text-sm outline-none focus:border-violeta"
+              />
+              {refundAmount.trim() !== '' && Number(refundAmount) <= 0 && (
+                <p role="alert" className="mt-1 text-xs font-semibold text-[#ff8a8a]">
+                  El monto a reembolsar debe ser mayor que 0.
+                </p>
+              )}
+              {Number(refundAmount) > getRefundableBalance(refundTarget) && (
+                <p role="alert" className="mt-1 text-xs font-semibold text-[#ff8a8a]">
+                  El monto solicitado supera el saldo disponible para reembolsar.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="refund-reason-input" className="block text-sm font-semibold">
+                Motivo <span className="text-[#ff8a8a]">*</span>
+              </label>
+              <textarea
+                ref={reasonInputRef}
+                id="refund-reason-input"
+                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none focus:border-violeta"
+                rows={3}
+                value={refundReason}
+                onChange={(e) => {
+                  setRefundReason(e.target.value)
+                  if (refundError) setRefundError(null)
+                }}
+                placeholder="Describe por qué se reembolsa este pago…"
+                required
+              />
+              {!refundReason.trim() && (
+                <p className="mt-1 text-xs text-[#ff8a8a]">Debes indicar el motivo del reembolso.</p>
+              )}
+            </div>
+
+            {refundError && (
+              <p role="alert" aria-live="assertive" className="rounded-xl bg-[#ff8a8a]/15 p-2.5 text-xs font-semibold text-[#ffb4b4]">
+                {refundError}
+              </p>
+            )}
+          </div>
         )}
       </ConfirmDialog>
     </section>

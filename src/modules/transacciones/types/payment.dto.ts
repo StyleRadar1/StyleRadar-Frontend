@@ -39,4 +39,5 @@ export interface PaymentFiltersDto {
 export interface RefundRequestDto {
   paymentId: string
   reason: string
+  amount?: number
 }
