@@ -42,7 +42,7 @@ export function Hero() {
     <section
       id="inicio"
       ref={heroRef}
-      className="relative min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-[#18151d] text-[var(--hero-fg)]"
+      className="relative min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-transparent text-[var(--hero-fg)]"
       style={{
         '--color-white': '#ffffff',
         '--color-blanco': '#ffffff',
@@ -88,7 +88,7 @@ export function Hero() {
           <span className="tracking-tight text-[var(--hero-fg)]">StyleRadar</span>
         </h1>
 
-        <p className="mt-8 px-6 py-2.5 rounded-full bg-[var(--hero-sub-bg)] border border-[var(--hero-sub-border)] backdrop-blur-md text-[var(--hero-fg)] font-extrabold text-xs sm:text-sm tracking-[0.2em] uppercase shadow-lg">
+        <p className="mt-8 px-6 py-2.5 rounded-full bg-white/10 dark:bg-purple-950/40 border border-white/20 dark:border-purple-400/30 backdrop-blur-xl text-[var(--hero-fg)] font-extrabold text-xs sm:text-sm tracking-[0.2em] uppercase shadow-[0_8px_30px_rgba(0,0,0,0.5),0_0_20px_rgba(139,92,246,0.25)]">
           Descubre tu estilo. En tu ciudad.
         </p>
 
@@ -96,7 +96,7 @@ export function Hero() {
         <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
           <Link
             to="/catalogo"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--hero-btn-primary-bg)] hover:bg-[#5b17c2] text-[var(--hero-btn-primary-fg)] font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_32px_#48119a77] hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_32px_rgba(139,92,246,0.55)] border border-white/25 hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
             <span>Entrar a StyleRadar</span>
             <svg
@@ -118,7 +118,7 @@ export function Hero() {
           <a
             href="#pe-videos"
             onClick={handleScrollTo}
-            className="inline-flex items-center gap-2 px-7 py-4 rounded-full border border-[var(--hero-btn-border)] hover:border-white/80 bg-[var(--hero-btn-bg)] hover:bg-white/20 text-[var(--hero-btn-fg)] font-extrabold text-xs sm:text-sm tracking-wider uppercase backdrop-blur-md hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center gap-2 px-7 py-4 rounded-full border border-purple-400/30 hover:border-purple-300/60 bg-purple-500/10 hover:bg-purple-500/25 text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase backdrop-blur-xl shadow-lg hover:-translate-y-0.5 transition-all"
           >
             <span>Conoce cómo funciona</span>
             <svg

@@ -47,10 +47,10 @@ export function ClothingCycle() {
                 role="tab"
                 aria-selected={isSelected}
                 onClick={() => setActiveTab(index)}
-                className={`flex items-center gap-4 p-5 rounded-2xl text-left transition-all cursor-pointer ${
+                className={`flex items-center gap-4 p-5 rounded-2xl text-left backdrop-blur-xl transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-[var(--sr-surface-raised)] border-2 border-[var(--sr-accent)] shadow-lg scale-[1.02]'
-                    : 'bg-[var(--sr-surface)]/60 border border-[var(--sr-border-subtle)] hover:bg-[var(--sr-surface)]'
+                    ? 'bg-gradient-to-r from-purple-900/40 to-violet-950/60 border-2 border-purple-400 shadow-[0_8px_30px_rgba(139,92,246,0.35)] scale-[1.02]'
+                    : 'bg-white/[0.04] dark:bg-purple-950/20 border border-white/10 dark:border-purple-400/20 hover:bg-purple-500/10 hover:border-purple-400/40'
                 }`}
               >
                 <span
@@ -72,7 +72,7 @@ export function ClothingCycle() {
         </div>
 
         {/* Panel del pilar activo */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-[var(--sr-surface)]/80 border border-[var(--sr-border-subtle)] rounded-3xl p-6 md:p-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-white/[0.04] dark:bg-[#141021]/70 backdrop-blur-2xl border border-white/10 dark:border-purple-400/25 shadow-[0_16px_45px_rgba(0,0,0,0.4),0_0_30px_rgba(139,92,246,0.15)] rounded-3xl p-6 md:p-12">
           {/* Detalles del pilar */}
           <div className="lg:col-span-7 space-y-6">
             <span className="inline-block px-3.5 py-1.5 rounded-full bg-[var(--sr-accent)]/20 border border-[var(--sr-accent)]/40 text-[var(--sr-accent)] font-bold text-xs uppercase tracking-wider">
@@ -109,7 +109,7 @@ export function ClothingCycle() {
             <div className="pt-2">
               <Link
                 to={currentPillar.to}
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[var(--sr-accent)]/30 hover:translate-x-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-white font-extrabold text-xs uppercase tracking-wider shadow-[0_8px_25px_rgba(139,92,246,0.5)] border border-white/20 hover:translate-x-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
                 <span>{currentPillar.action}</span>
                 <span aria-hidden="true">↗</span>

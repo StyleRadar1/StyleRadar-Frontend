@@ -423,56 +423,58 @@ body::after {
   pointer-events: none;
   z-index: 0;
   border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.6;
+  filter: blur(100px);
+  opacity: 0.85;
   transition: opacity 0.5s ease;
 }
 
 html[data-theme="dark"] body::before,
 html[data-theme="oscuro"] body::before,
 html[data-tema="oscuro"] body::before {
-  top: -10vh;
-  left: 15vw;
-  width: 50vw;
-  height: 50vw;
-  max-width: 650px;
-  max-height: 650px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, rgba(109, 40, 217, 0.10) 50%, transparent 70%);
+  top: -15vh;
+  left: 10vw;
+  width: 55vw;
+  height: 55vw;
+  max-width: 750px;
+  max-height: 750px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, rgba(139, 92, 246, 0.22) 40%, rgba(109, 40, 217, 0.12) 65%, transparent 75%);
 }
 
 html[data-theme="dark"] body::after,
 html[data-theme="oscuro"] body::after,
 html[data-tema="oscuro"] body::after {
-  bottom: 5vh;
-  right: 10vw;
-  width: 45vw;
-  height: 45vw;
-  max-width: 550px;
-  max-height: 550px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.16) 0%, rgba(76, 29, 149, 0.08) 50%, transparent 70%);
+  bottom: 0vh;
+  right: 5vw;
+  width: 50vw;
+  height: 50vw;
+  max-width: 700px;
+  max-height: 700px;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.30) 0%, rgba(147, 51, 234, 0.18) 45%, transparent 70%);
 }
 
 html[data-theme="light"] body::before,
 html[data-theme="claro"] body::before,
 html[data-tema="claro"] body::before {
-  top: -10vh;
-  left: 20vw;
-  width: 50vw;
-  height: 50vw;
-  max-width: 600px;
-  max-height: 600px;
-  background: radial-gradient(circle, rgba(233, 213, 255, 0.6) 0%, rgba(243, 232, 255, 0.3) 50%, transparent 70%);
+  top: -15vh;
+  left: 15vw;
+  width: 55vw;
+  height: 55vw;
+  max-width: 750px;
+  max-height: 750px;
+  background: radial-gradient(circle, rgba(216, 180, 254, 0.75) 0%, rgba(233, 213, 255, 0.45) 50%, transparent 70%);
 }
 
 html[data-theme="light"] body::after,
 html[data-theme="claro"] body::after,
 html[data-tema="claro"] body::after {
-  bottom: 8vh;
-  right: 12vw;
-  width: 42vw;
-  height: 42vw;
-  max-width: 500px;
-  max-height: 500px;
+  bottom: 0vh;
+  right: 10vw;
+  width: 50vw;
+  height: 50vw;
+  max-width: 650px;
+  max-height: 650px;
+  background: radial-gradient(circle, rgba(196, 181, 253, 0.65) 0%, rgba(224, 231, 255, 0.45) 50%, transparent 70%);
+}
   background: radial-gradient(circle, rgba(224, 231, 255, 0.5) 0%, rgba(245, 243, 255, 0.2) 50%, transparent 70%);
 }
 
