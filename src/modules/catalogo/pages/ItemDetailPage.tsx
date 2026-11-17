@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useContext } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Loading } from '@/modules/core/components/Status'
 import { ApiError } from '@/modules/core/api/apiClient'
@@ -7,7 +7,7 @@ import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/
 import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useResource } from '@/modules/core/hooks/useResource'
-import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { PlanGate } from '@/modules/transacciones/components/PlanGate'
@@ -52,7 +52,8 @@ function general(e: unknown, titulo: string, accion?: Accion): AvisoPrenda {
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const auth = useContext(AuthContext)
+  const user = auth?.user ?? null
   const isBuyer = user?.role === 'COMPRADOR'
   const { plan: userPlan } = useUserPlan(isBuyer)
   const userId = user?.id ?? 'u-1'

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO } from '@/modules/core/components/Aviso'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { PlanGate } from '@/modules/transacciones/components/PlanGate'
 import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
 import { getTryOnPhotoUses, setTryOnPhotoUses } from '@/modules/transacciones/services/userPlanService'
@@ -19,7 +19,8 @@ import type { TryOnGarmentDto } from '../types/tryon.dto'
 
 /** Probador virtual: RF-23 (foto), RF-24 (prenda), RF-25 (job), RF-26 (resultado) y RF-27 (borrar). */
 export default function TryOnPage() {
-  const { user } = useAuth()
+  const auth = useContext(AuthContext)
+  const user = auth?.user ?? null
   const isBuyer = user?.role === 'COMPRADOR'
   const { plan: userPlan } = useUserPlan(isBuyer)
   const userId = user?.id ?? 'u-1'
