@@ -638,14 +638,48 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   }
 
   const handleOtpChange = (index: number, val: string) => {
-    if (val.length > 1) val = val.slice(-1)
-    const newOtp = [...otp]
-    newOtp[index] = val
-    setOtp(newOtp)
+    const digitsOnly = val.replace(/\D/g, '')
+    if (!digitsOnly) {
+      setOtp((prev) => {
+        const next = [...prev]
+        next[index] = ''
+        return next
+      })
+      return
+    }
 
-    if (val && index < 5) {
-      const nextInput = document.getElementById(`otp-input-${index + 1}`)
-      nextInput?.focus()
+    // Si se pegó o autocompletó múltiples dígitos (ej. "123456")
+    if (digitsOnly.length > 1) {
+      setOtp((prev) => {
+        const next = [...prev]
+        for (let i = 0; i < digitsOnly.length && index + i < 6; i++) {
+          next[index + i] = digitsOnly[i]
+        }
+        return next
+      })
+      const nextIdx = Math.min(index + digitsOnly.length, 5)
+      setTimeout(() => {
+        const target = document.getElementById(`otp-input-${nextIdx}`)
+        target?.focus()
+        ;(target as HTMLInputElement)?.select()
+      }, 10)
+      return
+    }
+
+    // Un solo dígito ingresado
+    const digit = digitsOnly.slice(-1)
+    setOtp((prev) => {
+      const next = [...prev]
+      next[index] = digit
+      return next
+    })
+
+    if (index < 5) {
+      setTimeout(() => {
+        const nextInput = document.getElementById(`otp-input-${index + 1}`)
+        nextInput?.focus()
+        ;(nextInput as HTMLInputElement)?.select()
+      }, 10)
     }
   }
 
@@ -653,19 +687,55 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     e.preventDefault()
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
     if (!pasted) return
-    const newOtp = [...otp]
-    for (let i = 0; i < pasted.length; i++) {
+    const newOtp = ['', '', '', '', '', '']
+    for (let i = 0; i < pasted.length && i < 6; i++) {
       newOtp[i] = pasted[i]
     }
     setOtp(newOtp)
     const nextIdx = Math.min(pasted.length, 5)
-    document.getElementById(`otp-input-${nextIdx}`)?.focus()
+    setTimeout(() => {
+      const target = document.getElementById(`otp-input-${nextIdx}`)
+      target?.focus()
+      ;(target as HTMLInputElement)?.select()
+    }, 10)
   }
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      document.getElementById(`otp-input-${index - 1}`)?.focus()
+    if (e.key === 'Backspace') {
+      if (!otp[index] && index > 0) {
+        e.preventDefault()
+        setOtp((prev) => {
+          const next = [...prev]
+          next[index - 1] = ''
+          return next
+        })
+        const prevInput = document.getElementById(`otp-input-${index - 1}`)
+        prevInput?.focus()
+        ;(prevInput as HTMLInputElement)?.select()
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault()
+      const prevInput = document.getElementById(`otp-input-${index - 1}`)
+      prevInput?.focus()
+      ;(prevInput as HTMLInputElement)?.select()
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      e.preventDefault()
+      const nextInput = document.getElementById(`otp-input-${index + 1}`)
+      nextInput?.focus()
+      ;(nextInput as HTMLInputElement)?.select()
     }
+  }
+
+  const fillTestOtp = (code: string) => {
+    const chars = code.slice(0, 6).split('')
+    while (chars.length < 6) chars.push('')
+    setOtp(chars)
+    setError('')
+    setCamposErr({})
+    setOtpAviso('')
+    setTimeout(() => {
+      document.getElementById('otp-input-5')?.focus()
+    }, 20)
   }
 
   const pedirOtroCodigo = () => {
@@ -708,10 +778,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       } else {
         entrarCon(user.role)
       }
-    } catch (err) {
-      const r = errorDeLogin(err)
-      setError(r.mensaje || TEXTOS_ACCESO.otp)
-      if (r.esperar) bloquear(r.esperar)
+    } catch (err: any) {
+      const msg = err?.message || TEXTOS_ACCESO.otp
+      setCamposErr({ otp: msg })
+      setError(msg)
+      if (err?.status === 429) bloquear(ESPERA_429)
     } finally {
       setLoading(false)
     }
@@ -902,6 +973,23 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     className="sr-auth-submit"
                   >
                     {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Entrando…' : 'Entrar'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError('')
+                      setCamposErr({})
+                      if (!email.trim()) setEmail('usuario@styleradar.co')
+                      if (cardRef.current) cardRef.current.scrollTop = 0
+                      setStep('otp')
+                      setTimeout(() => {
+                        document.getElementById('otp-input-0')?.focus()
+                      }, 60)
+                    }}
+                    className="w-full text-center text-xs font-semibold text-white/70 hover:text-white pt-1"
+                  >
+                    ¿Prefieres ingresar con código temporal? <b className="text-arena font-bold underline underline-offset-2">Entrar con OTP →</b>
                   </button>
                 </form>
               ) : (
@@ -1100,12 +1188,23 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               </p>
             </>
           ) : (
-            <form onSubmit={handleVerifyOtp} className="sr-auth-otp-form flex flex-col gap-4">
+            <form onSubmit={handleVerifyOtp} className="sr-auth-otp-form flex flex-col gap-3.5">
               <h2>Verifica que eres tú</h2>
               <p className="sr-sub">
-                Enviamos un código de 6 dígitos a <b className="text-white">{email}</b>. Vence en 10
-                minutos.
+                {email ? (
+                  <>Enviamos un código de 6 dígitos a <b className="text-white">{email}</b>. Vence en 10 minutos.</>
+                ) : (
+                  <>Ingresa tu código de 6 dígitos para continuar.</>
+                )}
               </p>
+
+              {/* Banner informativo de modo prueba para evitar confusión */}
+              <div className="rounded-xl bg-[#48119a]/25 border border-[#48119a]/50 p-2.5 text-center text-xs text-white/90">
+                <span className="block text-[11px] text-[#E8DCCB] font-bold uppercase tracking-wider mb-0.5">
+                  Modo demostración activo
+                </span>
+                No necesitas esperar un correo externo. Haz clic en el botón de abajo o escribe <b className="text-arena font-mono font-bold">123456</b>.
+              </div>
 
               {error && (
                 <div role="alert" className="sr-auth-err flex items-center gap-2">
@@ -1133,11 +1232,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     id={`otp-input-${idx}`}
                     type="text"
                     inputMode="numeric"
-                    maxLength={1}
+                    autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+                    maxLength={2}
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                     onPaste={handleOtpPaste}
+                    onFocus={(e) => e.currentTarget.select()}
                     className="sr-auth-otp-digit"
                     aria-label={`Dígito ${idx + 1}`}
                     aria-invalid={!!camposErr.otp}
@@ -1146,11 +1247,28 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               </div>
               {camposErr.otp && <div className="flex justify-center"><ErrorCampo key={otpFallos} id="authOtp">{camposErr.otp}</ErrorCampo></div>}
 
-              <p className="text-center text-[11px] text-white/50">
-                (Código de prueba: <b className="text-arena font-semibold">123456</b> · Para probar error: <b>000000</b>)
-              </p>
+              {/* Botón de un solo clic para autocompletar el código de prueba */}
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  id="btnAutoFillOtp"
+                  onClick={() => fillTestOtp('123456')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#E8DCCB] text-[#16111e] hover:bg-white shadow-md active:scale-95 transition-all cursor-pointer"
+                >
+                  <span>⚡ Rellenar código válido:</span>
+                  <span className="font-mono tracking-widest font-black text-sm">123456</span>
+                </button>
+                <button
+                  type="button"
+                  id="btnAutoFillOtpError"
+                  onClick={() => fillTestOtp('000000')}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-semibold text-white/70 bg-white/10 hover:bg-white/20 hover:text-white transition-all cursor-pointer"
+                >
+                  <span>Probar error (000000)</span>
+                </button>
+              </div>
 
-              <button type="submit" disabled={loading || espera > 0} className="sr-auth-submit">
+              <button type="submit" disabled={loading || espera > 0} className="sr-auth-submit mt-1">
                 {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Verificando…' : 'Confirmar y entrar'}
               </button>
 
