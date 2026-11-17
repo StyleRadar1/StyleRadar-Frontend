@@ -10,8 +10,8 @@ import { ROLE_DOT, avatarCls } from './roleTone'
 
 /** Accesos del menú de cuenta según el rol (los mismos del prototipo, con las rutas de la app). */
 const ITEMS: Record<Role, [string, string][]> = {
-  COMPRADOR: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/segunda-mano', 'Mis publicaciones'], ['/alertas', 'Mis búsquedas y alertas'], ['/planes', 'Mi plan']],
-  ADMIN_ALMACEN: [['/tienda/inventario', 'Mi tienda'], ['/tienda/suscripcion', 'Mi suscripción']],
+  COMPRADOR: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/segunda-mano', 'Mis publicaciones (Segunda mano)'], ['/donar', 'Donar a fundación'], ['/alertas', 'Mis búsquedas y alertas'], ['/planes', 'Mi plan']],
+  ADMIN_ALMACEN: [['/tienda/inventario', 'Mi tienda'], ['/donar', 'Donar a fundación'], ['/tienda/suscripcion', 'Mi suscripción']],
   REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
   ADMIN_STYLERADAR: [['/admin/estadisticas', 'Estadísticas'], ['/admin/usuarios', 'Usuarios'], ['/admin/pagos', 'Pagos']],
 }

@@ -38,18 +38,18 @@ export default function SecondHandPage() {
       <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Segunda vida</p>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-text)] md:text-5xl">Ropa usada de gente de Bogotá</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link
             to="/segunda-mano/publicar"
             className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm"
           >
-            Vender o donar prenda
+            Publicar para vender ($ COP)
           </Link>
           <Link
             to="/donar"
             className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all"
           >
-            Donar a fundación
+            Donar a fundación ($0)
           </Link>
         </div>
       </div>

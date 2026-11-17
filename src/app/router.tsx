@@ -66,6 +66,7 @@ const onlyStoreActive = (el: ReactNode) =>
   )
 
 const USER: Role[] = ['COMPRADOR']
+const USER_OR_STORE: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN']
 const STORE: Role[] = ['ADMIN_ALMACEN']
 const FOUND: Role[] = ['REPRESENTANTE_FUNDACION']
 const ANY: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION', 'ADMIN_STYLERADAR']
@@ -124,10 +125,10 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/perfil/pagos', element: only(USER, <BuyerPayments />) },
       { path: '/probador', element: page(<ProbadorVirtual />) },
       { path: '/probador/avanzado', element: only(USER, <TryOn />) },
-      { path: '/segunda-mano', element: only(USER, <SecondHand />) },
-      { path: '/segunda-mano/publicar', element: only(USER, <PublishListing />) },
-      { path: '/segunda-mano/:id/editar', element: only(USER, <PublishListing />) },
-      { path: '/donar', element: only(USER, <Donate />) },
+      { path: '/segunda-mano', element: page(<SecondHand />) },
+      { path: '/segunda-mano/publicar', element: only(USER_OR_STORE, <PublishListing />) },
+      { path: '/segunda-mano/:id/editar', element: only(USER_OR_STORE, <PublishListing />) },
+      { path: '/donar', element: only(USER_OR_STORE, <Donate />) },
       { path: '/alertas', element: only(USER, <Alerts />) },
       { path: '/mensajes', element: only(ANY, <Messages />) },
       // Tienda (rutas de gestión y publicación protegidas por RequireStoreActiveSub; suscripción siempre accesible)

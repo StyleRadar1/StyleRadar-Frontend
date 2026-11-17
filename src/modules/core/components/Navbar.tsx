@@ -9,9 +9,9 @@ import { NotificationBell } from '@/modules/soporte/components/NotificationBell'
 import { UserMenu } from './UserMenu'
 
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
-  GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
-  COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
-  ADMIN_ALMACEN: [['/mi-tienda', 'Mi tienda'], ['/tienda/inventario', 'Inventario'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
+  GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/segunda-mano', 'Segunda mano'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
+  COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/segunda-mano', 'Segunda mano'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
+  ADMIN_ALMACEN: [['/mi-tienda', 'Mi tienda'], ['/tienda/inventario', 'Inventario'], ['/donar', 'Donaciones'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
   REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
   ADMIN_STYLERADAR: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
 }
