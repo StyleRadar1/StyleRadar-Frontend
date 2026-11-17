@@ -105,7 +105,7 @@ export const tryOnService = {
       mock.consent = true
       return
     }
-    await apiClient.post('/api/tryon/consents', {
+    await apiClient.post('/api/v1/try-on/consents', {
       termsVersion: 'v1.0-LEY1581-2026',
       accepted: true,
       purposes: ['VIRTUAL_TRY_ON_INFERENCE', 'TEMPORARY_SILHOUETTE_STORAGE'],

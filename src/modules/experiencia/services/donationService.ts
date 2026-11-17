@@ -29,7 +29,10 @@ export const donationService = {
   /** RF-44: fundaciones ordenadas por cercanía, con las categorías que reciben. */
   async foundations(): Promise<FoundationDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...FOUNDATIONS].sort((a, b) => a.distanciaKm - b.distanciaKm)) }
-    return apiClient.get<FoundationDto[]>('/api/donations/foundations').then((r) => r.data)
+    return apiClient
+      .get<FoundationDto[]>('/api/v1/donaciones/foundations')
+      .catch(() => apiClient.get<FoundationDto[]>('/api/donations/foundations'))
+      .then((r) => r.data)
   },
 
   /** RF-42, RF-45 y RF-48: solicitud con fotos y logística desde el primer formulario. */
