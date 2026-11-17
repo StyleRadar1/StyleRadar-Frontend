@@ -16,7 +16,10 @@ const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
 
 export function ItemCard({ item }: { item: ItemResponseDto }) {
   const storeId = getStoreIdByName(item.tienda)
-  const fotoSecundaria = item.imagenSecundaria || (item.recorte && item.recorte !== item.imagen ? item.recorte : null)
+  const fotoSecundaria =
+    (item.imagenes && item.imagenes.length > 1 ? item.imagenes[1] : null) ||
+    item.imagenSecundaria ||
+    (item.recorte && item.recorte !== item.imagen ? item.recorte : null)
   const tieneDescuento = Boolean(item.descuento && item.precioAnterior && item.precioAnterior > item.precio)
 
   return (

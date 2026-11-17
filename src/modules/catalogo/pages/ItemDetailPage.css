@@ -6,10 +6,10 @@
 .sr-detail-hero-card {
   position: relative;
   width: 100%;
-  border-radius: 1rem;
+  border-radius: 1.5rem;
   border: 1px solid var(--sr-border-subtle, var(--color-border));
   background: linear-gradient(180deg, var(--sr-surface-raised, #fcfbf9) 0%, var(--sr-superficie, #f4efe6) 100%);
-  box-shadow: 0 10px 30px var(--sr-sombra, rgba(38, 38, 38, 0.08));
+  box-shadow: 0 16px 40px var(--sr-sombra, rgba(38, 38, 38, 0.08));
   color: var(--color-text);
   overflow: hidden;
 }
@@ -17,7 +17,11 @@
 html[data-theme='dark'] .sr-detail-hero-card,
 html[data-theme='oscuro'] .sr-detail-hero-card,
 html[data-tema='oscuro'] .sr-detail-hero-card {
-  background: linear-gradient(180deg, var(--sr-surface, #242031) 0%, var(--sr-fondo-oscuro, #15131c) 100%);
+  background: radial-gradient(circle at 50% 15%, rgba(139, 92, 246, 0.14) 0%, transparent 60%),
+              radial-gradient(circle at 85% 75%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+              linear-gradient(180deg, #1d1926 0%, #121019 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 45px -10px rgba(139, 92, 246, 0.18);
 }
 
 html[data-theme='colorblind'] .sr-detail-hero-card,
@@ -29,12 +33,12 @@ html[data-cvd='on'] .sr-detail-hero-card {
 
 /* Sombra elíptica en el suelo */
 .sr-hero-shadow {
-  width: 58%;
-  height: 1.125rem;
-  margin: -0.375rem auto 0.875rem;
+  width: 62%;
+  height: 1.25rem;
+  margin: -0.25rem auto 0.75rem;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, var(--sr-sombra, rgba(0, 0, 0, 0.38)) 0%, transparent 75%);
-  filter: blur(6px);
+  background: radial-gradient(ellipse at center, var(--sr-sombra, rgba(0, 0, 0, 0.45)) 0%, transparent 75%);
+  filter: blur(8px);
 }
 
 /* Animaciones */

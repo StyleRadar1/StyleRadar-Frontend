@@ -11,6 +11,8 @@ export interface InventoryItemDto {
   categoria: string
   precio: number
   imagenUrl: string
+  /** Galería de hasta 4 fotos en diferentes ángulos */
+  imagenes?: string[]
   tallasDisponibles: string[]
   stockPorTalla: Record<string, number>
   stockTotal: number
@@ -43,6 +45,8 @@ export interface CreateInventoryItemDto {
   categoria: string
   precio: number
   imagenUrl?: string
+  /** Galería de hasta 4 fotos en diferentes ángulos */
+  imagenes?: string[]
   stockPorTalla: Record<string, number>
 }
 

@@ -191,6 +191,7 @@ export const inventoryService = {
       if (Object.keys(fields).length) throw new ApiError(400, 'Revisa los datos de la prenda.', fields)
 
       const total = Object.values(dto.stockPorTalla).reduce((a, b) => a + b, 0)
+      const primaryImg = dto.imagenUrl || (dto.imagenes && dto.imagenes[0]) || '/img/productos/chaqueta-denim-oversize.jpg'
       const newItem: InventoryItemDto = {
         id: `inv-${Date.now()}`,
         tiendaId: 't-1',
@@ -199,7 +200,8 @@ export const inventoryService = {
         estilo: dto.estilo,
         categoria: dto.categoria,
         precio: dto.precio,
-        imagenUrl: dto.imagenUrl || '/img/productos/chaqueta-denim-oversize.jpg',
+        imagenUrl: primaryImg,
+        imagenes: dto.imagenes && dto.imagenes.length > 0 ? dto.imagenes.slice(0, 4) : [primaryImg],
         tallasDisponibles: Object.keys(dto.stockPorTalla),
         stockPorTalla: dto.stockPorTalla,
         stockTotal: total,
@@ -279,6 +281,7 @@ export function getInventoryItemByIdSync(id: string): import('../types/item.dto'
     color: 'Negro',
     tallas: inv.tallasDisponibles,
     imagen: inv.imagenUrl,
+    imagenes: inv.imagenes && inv.imagenes.length > 0 ? inv.imagenes : [inv.imagenUrl],
     distanciaKm: 1.2,
   }
 }

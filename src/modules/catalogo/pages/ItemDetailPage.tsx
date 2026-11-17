@@ -66,6 +66,9 @@ export default function ItemDetailPage() {
   const [guardadoPlaylist, setGuardadoPlaylist] = useState(false)
   const [mensajeFeedback, setMensajeFeedback] = useState<string | null>(null)
   const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null)
+  const [indiceImagen, setIndiceImagen] = useState(0)
+  const [zoomActivo, setZoomActivo] = useState(false)
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 })
   const [prevId, setPrevId] = useState(id)
   const [descripcionExpandida, setDescripcionExpandida] = useState(false)
   const [aviso, setAviso] = useState<AvisoPrenda | null>(null)
@@ -78,6 +81,8 @@ export default function ItemDetailPage() {
   if (id !== prevId) {
     setPrevId(id)
     setImagenSeleccionada(null)
+    setIndiceImagen(0)
+    setZoomActivo(false)
     setShowWishlistGate(false)
   }
 
@@ -99,7 +104,6 @@ export default function ItemDetailPage() {
 
   const prenda = data.prenda
   const similares = data.similares
-  const imagenActiva = imagenSeleccionada ?? prenda?.imagen ?? ''
 
   // Accesibilidad: cerrar con tecla Escape
   useEffect(() => {
@@ -196,15 +200,52 @@ export default function ItemDetailPage() {
     }
   }, [prenda])
 
-  // Lista de imágenes para miniaturas si tiene más de una
+  // Galería multi-ángulo: hasta 4 fotos en distintos ángulos (Frontal, Detalle, Espalda, Look)
   const imagenesDisponibles = useMemo(() => {
     if (!prenda) return []
+    if (prenda.imagenes && prenda.imagenes.length > 0) {
+      return prenda.imagenes.slice(0, 4)
+    }
     const list: string[] = [prenda.imagen]
-    if (prenda.recorte && prenda.recorte !== prenda.imagen) {
+    if (prenda.imagenSecundaria && !list.includes(prenda.imagenSecundaria)) {
+      list.push(prenda.imagenSecundaria)
+    }
+    if (prenda.recorte && !list.includes(prenda.recorte)) {
       list.push(prenda.recorte)
     }
-    return Array.from(new Set(list))
+    return list.slice(0, 4)
   }, [prenda])
+
+  const ANGLE_LABELS = ['Frontal', 'Detalle', 'Espalda', 'Look completo']
+
+  const imagenActiva = imagenSeleccionada ?? (imagenesDisponibles[indiceImagen] || prenda?.imagen || '')
+
+  const seleccionarFoto = (url: string, index: number) => {
+    setImagenSeleccionada(url)
+    setIndiceImagen(index)
+  }
+
+  const anteriorFoto = () => {
+    if (imagenesDisponibles.length <= 1) return
+    const nextIdx = indiceImagen > 0 ? indiceImagen - 1 : imagenesDisponibles.length - 1
+    setIndiceImagen(nextIdx)
+    setImagenSeleccionada(imagenesDisponibles[nextIdx])
+  }
+
+  const siguienteFoto = () => {
+    if (imagenesDisponibles.length <= 1) return
+    const nextIdx = indiceImagen < imagenesDisponibles.length - 1 ? indiceImagen + 1 : 0
+    setIndiceImagen(nextIdx)
+    setImagenSeleccionada(imagenesDisponibles[nextIdx])
+  }
+
+  const handleMouseMoveZoom = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!zoomActivo) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    setZoomPos({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) })
+  }
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 text-[var(--color-text)]">
@@ -290,46 +331,180 @@ export default function ItemDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
               
               {/* ---------------------------------------------------- */}
-              {/* COLUMNA CENTRO: Prenda grande + Fondo difuminado      */}
-              {/* Desktop: Col 6 centro | Tablet: Top ancho completo    */}
-              {/* Mobile: Primero en el orden visual (order-1)         */}
+              {/* COLUMNA CENTRO: Galería Multi-Ángulo (hasta 4 fotos) */}
+              {/* Desktop: Col 6 centro | Tablet: Top ancho completo   */}
+              {/* Mobile: Primero en el orden visual (order-1)        */}
               {/* ---------------------------------------------------- */}
               <div className="flex flex-col items-center justify-center md:col-span-2 lg:col-span-6 md:order-1 lg:order-2 order-1">
-                <div className="relative w-full max-w-[23.75rem] sm:max-w-[26.25rem] aspect-[3/4] flex items-center justify-center overflow-hidden rounded-2xl">
-                  {/* Fondo difuminado de la misma imagen con máscara lateral */}
+                {/* Etiqueta superior editorial con aura de marca */}
+                <div className="mb-3 text-center z-10">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] px-3.5 py-1 text-[11px] font-bold tracking-wider text-[var(--sr-acento-primario,var(--color-accent))] shadow-sm backdrop-blur-md">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)] animate-ping" />
+                    <span>{prenda.tienda === 'Segunda mano' ? 'MODA CIRCULAR BOGOTÁ' : 'DISEÑO INDEPENDIENTE BOGOTÁ'}</span>
+                    <span className="text-[var(--color-text-muted)]">·</span>
+                    <span className="text-[var(--color-text)] uppercase">{prenda.barrio}</span>
+                  </span>
+                </div>
+
+                {/* Contenedor interactivo de la foto con aura y zoom */}
+                <div
+                  className={`group/stage relative w-full max-w-[24.5rem] sm:max-w-[27rem] aspect-[3/4] flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 ${
+                    zoomActivo ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                  }`}
+                  onClick={() => setZoomActivo((prev) => !prev)}
+                  onMouseMove={handleMouseMoveZoom}
+                  onMouseLeave={() => setZoomActivo(false)}
+                >
+                  {/* Fondo difuminado de la misma imagen activa */}
                   <img
                     src={imagenActiva || prenda.imagen}
                     alt=""
                     aria-hidden="true"
                     loading="lazy"
                     decoding="async"
-                    className="pointer-events-none absolute inset-0 h-full w-full scale-[1.35] object-cover opacity-60 blur-[36px] saturate-[1.2]"
+                    className="pointer-events-none absolute inset-0 h-full w-full scale-[1.4] object-cover opacity-60 blur-[36px] saturate-[1.25]"
                   />
+                  {/* Gradiente radial de luz editorial */}
                   <div
-                    className="pointer-events-none absolute inset-0 bg-radial from-transparent via-transparent to-[var(--sr-superficie,var(--color-surface))]/70"
+                    className="pointer-events-none absolute inset-0 bg-radial from-transparent via-[var(--sr-superficie,var(--color-surface))]/40 to-[var(--sr-superficie,var(--color-surface))]/80"
                     aria-hidden="true"
                   />
 
-                  {/* Prenda grande completa, sin recorte (object-contain) */}
-                  <img
-                    src={imagenActiva || prenda.imagen}
-                    alt={prenda.nombre}
-                    className="relative z-10 max-h-[92%] max-w-[92%] w-auto h-auto object-contain sr-hero-image-animate sr-hero-image-fade drop-shadow-xl"
-                  />
+                  {/* Contador de vistas / Ángulo actual */}
+                  <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md border border-white/15 shadow-sm">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" />
+                      {indiceImagen + 1}/{imagenesDisponibles.length} · {ANGLE_LABELS[indiceImagen] || `Ángulo ${indiceImagen + 1}`}
+                    </span>
+                  </div>
+
+                  {/* Botón de inspeccionar textura / Zoom */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setZoomActivo((prev) => !prev)
+                    }}
+                    className="absolute top-3 right-3 z-30 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-[11px] font-bold text-white/90 hover:text-white hover:bg-black/90 backdrop-blur-md border border-white/15 transition shadow-sm"
+                    title={zoomActivo ? 'Desactivar zoom' : 'Inspeccionar textura / Zoom'}
+                    aria-label={zoomActivo ? 'Desactivar zoom' : 'Inspeccionar textura / Zoom'}
+                  >
+                    <span>{zoomActivo ? '✕' : '🔍'}</span>
+                    <span className="hidden sm:inline">{zoomActivo ? 'Cerrar zoom' : 'Zoom textura'}</span>
+                  </button>
+
+                  {/* Flechas de navegación para cambiar ángulo (si hay más de 1 imagen) */}
+                  {imagenesDisponibles.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          anteriorFoto()
+                        }}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white hover:bg-black/90 hover:scale-110 active:scale-95 transition backdrop-blur-md border border-white/20 shadow-lg"
+                        aria-label="Ver ángulo anterior"
+                        title="Ángulo anterior"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          siguienteFoto()
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white hover:bg-black/90 hover:scale-110 active:scale-95 transition backdrop-blur-md border border-white/20 shadow-lg"
+                        aria-label="Ver ángulo siguiente"
+                        title="Ángulo siguiente"
+                      >
+                        ›
+                      </button>
+                    </>
+                  )}
+
+                  {/* Prenda activa completa: con zoom interactivo o presentación hero */}
+                  <div className="relative z-10 flex h-full w-full items-center justify-center overflow-hidden p-3">
+                    <img
+                      src={imagenActiva || prenda.imagen}
+                      alt={`${prenda.nombre} - ${ANGLE_LABELS[indiceImagen] || 'vista de prenda'}`}
+                      style={
+                        zoomActivo
+                          ? {
+                              transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                              transform: 'scale(2.3)',
+                              transition: 'transform 100ms ease-out',
+                            }
+                          : undefined
+                      }
+                      className={`max-h-[92%] max-w-[92%] w-auto h-auto object-contain sr-hero-image-animate drop-shadow-2xl transition-all duration-300 ${
+                        zoomActivo ? 'brightness-105' : 'group-hover/stage:scale-[1.02]'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Indicador de puntos (dots) en la parte inferior de la imagen */}
+                  {imagenesDisponibles.length > 1 && (
+                    <div className="absolute bottom-3 inset-x-0 z-30 flex items-center justify-center gap-1.5 pointer-events-none">
+                      {imagenesDisponibles.map((_, dotIdx) => (
+                        <span
+                          key={dotIdx}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            dotIdx === indiceImagen ? 'w-5 bg-[var(--color-accent)]' : 'w-1.5 bg-white/40'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Texto de etiqueta entre la prenda y la sombra */}
-                <div className="mt-4 text-center z-10">
-                  <p className="text-[0.625rem] font-bold uppercase tracking-[.24em] text-[var(--sr-acento-primario,var(--color-accent))]">
-                    {prenda.tienda === 'Segunda mano' ? 'MODA CIRCULAR BOGOTÁ' : 'DISEÑO LOCAL BOGOTÁ'}
-                  </p>
-                  <p className="mt-0.5 text-xs font-black uppercase tracking-wider text-[var(--color-text)]">
-                    {prenda.tienda === 'Segunda mano' ? 'SEGUNDA MANO' : `${prenda.tipo} · ${prenda.barrio}`}
-                  </p>
-                </div>
-
-                {/* Sombra elíptica difusa en el suelo */}
+                {/* Sombra elíptica en el suelo */}
                 <div className="sr-hero-shadow" aria-hidden="true" />
+
+                {/* Franja de Miniaturas de los 4 Ángulos */}
+                {imagenesDisponibles.length > 1 && (
+                  <div className="mt-3 w-full max-w-[24.5rem] sm:max-w-[27rem] z-20">
+                    <div className="flex items-center justify-between mb-2 px-1">
+                      <span className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)] flex items-center gap-1.5">
+                        <span>ÁNGULOS DE LA PRENDA</span>
+                        <span className="rounded bg-[var(--color-accent)]/20 px-1.5 py-0.5 text-[9px] font-black text-[var(--color-accent)]">
+                          {imagenesDisponibles.length} VISTAS
+                        </span>
+                      </span>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">Toca para cambiar</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2.5" role="tablist" aria-label="Ángulos y vistas de la prenda">
+                      {imagenesDisponibles.map((imgUrl, idx) => {
+                        const isActive = (imagenActiva === imgUrl) || (indiceImagen === idx)
+                        const angleLabel = ANGLE_LABELS[idx] || `Vista ${idx + 1}`
+                        return (
+                          <button
+                            key={imgUrl + idx}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            aria-label={`Ver vista ${idx + 1}: ${angleLabel}`}
+                            onClick={() => seleccionarFoto(imgUrl, idx)}
+                            className={`group/thumb relative flex flex-col items-center rounded-xl p-1 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                              isActive
+                                ? 'ring-2 ring-[var(--sr-acento-primario,var(--color-accent))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] shadow-md -translate-y-0.5'
+                                : 'border border-[var(--sr-border-subtle,var(--color-border))] opacity-75 hover:opacity-100 hover:border-[var(--color-accent)]/50'
+                            }`}
+                          >
+                            <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-black/20">
+                              <img src={imgUrl} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover/thumb:scale-105" />
+                            </div>
+                            <span className={`mt-1 text-[9px] font-bold tracking-tight truncate max-w-full ${
+                              isActive ? 'text-[var(--sr-acento-primario,var(--color-accent))]' : 'text-[var(--color-text-muted)]'
+                            }`}>
+                              {angleLabel}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* ---------------------------------------------------- */}
@@ -355,21 +530,27 @@ export default function ItemDetailPage() {
 
                   {/* Precio destacado con descuento (si aplica) */}
                   {prenda.descuento && prenda.precioAnterior && prenda.precioAnterior > prenda.precio ? (
-                    <div className="mt-3 flex items-baseline gap-2">
-                      <span className="text-sm line-through text-[var(--color-text-muted)] font-medium">
-                        {formatCOP(prenda.precioAnterior)}
-                      </span>
-                      <span className="text-2xl font-black text-rose-500">
-                        {formatCOP(prenda.precio)}
-                      </span>
-                      <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-                        -{prenda.descuento}%
-                      </span>
+                    <div className="mt-3">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm line-through text-[var(--color-text-muted)] font-medium">
+                          {formatCOP(prenda.precioAnterior)}
+                        </span>
+                        <span className="text-2xl font-black text-rose-500">
+                          {formatCOP(prenda.precio)}
+                        </span>
+                        <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                          -{prenda.descuento}%
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
                     </div>
                   ) : (
-                    <p className="mt-3 text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
-                      {formatCOP(prenda.precio)}
-                    </p>
+                    <div className="mt-3">
+                      <p className="text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
+                        {formatCOP(prenda.precio)}
+                      </p>
+                      <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
+                    </div>
                   )}
 
                   {/* c) Descripción corta (3-5 líneas) con "Leer más" (si existe en los datos) */}
@@ -385,32 +566,6 @@ export default function ItemDetailPage() {
                       >
                         {descripcionExpandida ? 'Leer menos' : 'Leer más'}
                       </button>
-                    </div>
-                  )}
-
-                  {/* d) Miniaturas de la prenda (solo si tiene más de una imagen) */}
-                  {imagenesDisponibles.length > 1 && (
-                    <div className="mt-6">
-                      <span className="block text-[0.625rem] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)] mb-2">
-                        VISTAS
-                      </span>
-                      <div className="flex gap-2.5 overflow-x-auto pb-1">
-                        {imagenesDisponibles.map((imgUrl, idx) => (
-                          <button
-                            key={imgUrl}
-                            type="button"
-                            aria-label={`Ver imagen ${idx + 1} de ${prenda.nombre}`}
-                            onClick={() => setImagenSeleccionada(imgUrl)}
-                            className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
-                              imagenActiva === imgUrl
-                                ? 'border-[var(--sr-acento-primario,var(--color-accent))] shadow-md scale-105'
-                                : 'border-[var(--sr-border-subtle,var(--color-border))] opacity-75 hover:opacity-100'
-                            }`}
-                          >
-                            <img src={imgUrl} alt="" className="h-full w-full object-cover" />
-                          </button>
-                        ))}
-                      </div>
                     </div>
                   )}
 

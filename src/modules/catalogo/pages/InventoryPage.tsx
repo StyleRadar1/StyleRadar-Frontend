@@ -56,6 +56,7 @@ export default function InventoryPage() {
   const [mostrarAgregar, setMostrarAgregar] = useState(false)
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nuevaImagen, setNuevaImagen] = useState('')
+  const [nuevasImagenes, setNuevasImagenes] = useState<string[]>([])
   const [nuevoEstilo, setNuevoEstilo] = useState('Streetwear')
   const [nuevaCategoria, setNuevaCategoria] = useState('Chaquetas')
   const [nuevoPrecio, setNuevoPrecio] = useState(120000)
@@ -228,24 +229,59 @@ export default function InventoryPage() {
   const handleCerrarAgregar = useCallback(() => {
     setMostrarAgregar(false)
     setNuevaImagen('')
+    setNuevasImagenes([])
     setCreateErrors({})
   }, [])
 
-  // Subir foto para la nueva prenda
+  // Subir fotos para la nueva prenda (hasta 4 ángulos: frontal, detalle, espalda, modelo)
   const handleSubirFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      setCreateErrors((prev) => ({ ...prev, _global: 'Por favor selecciona un archivo de imagen válido.' }))
-      return
-    }
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setNuevaImagen(reader.result)
+    const fileList = e.target.files
+    if (!fileList || fileList.length === 0) return
+
+    const validFiles: File[] = []
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i]
+      if (file.type.startsWith('image/')) {
+        validFiles.push(file)
       }
     }
-    reader.readAsDataURL(file)
+
+    if (validFiles.length === 0) {
+      setCreateErrors((prev) => ({ ...prev, _global: 'Por favor selecciona archivos de imagen válidos (PNG, JPG o WEBP).' }))
+      return
+    }
+
+    const remainingSlots = 4 - nuevasImagenes.length
+    if (remainingSlots <= 0) {
+      setCreateErrors((prev) => ({ ...prev, _global: 'Ya alcanzaste el máximo de 4 fotos por prenda.' }))
+      return
+    }
+
+    const filesToRead = validFiles.slice(0, remainingSlots)
+    filesToRead.forEach((file) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          const res = reader.result
+          setNuevasImagenes((prev) => {
+            if (prev.length >= 4) return prev
+            const next = [...prev, res]
+            if (next.length === 1) setNuevaImagen(res)
+            return next
+          })
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  const handleQuitarFoto = (index: number) => {
+    setNuevasImagenes((prev) => {
+      const next = prev.filter((_, i) => i !== index)
+      setNuevaImagen(next[0] || '')
+      return next
+    })
   }
 
   // Crear prenda nueva
@@ -271,12 +307,14 @@ export default function InventoryPage() {
     setGuardando(true)
     setCreateErrors({})
     try {
+      const fotosParaGuardar = nuevasImagenes.length > 0 ? nuevasImagenes : nuevaImagen ? [nuevaImagen] : []
       await addItem({
         nombre: nuevoNombre.trim(),
         estilo: nuevoEstilo,
         categoria: nuevaCategoria,
         precio: nuevoPrecio,
-        imagenUrl: nuevaImagen || undefined,
+        imagenUrl: fotosParaGuardar[0] || undefined,
+        imagenes: fotosParaGuardar.length > 0 ? fotosParaGuardar : undefined,
         stockPorTalla: {
           S: Number(stockS),
           M: Number(stockM),
@@ -286,6 +324,7 @@ export default function InventoryPage() {
       setMostrarAgregar(false)
       setNuevoNombre('')
       setNuevaImagen('')
+      setNuevasImagenes([])
       showToast('¡Prenda incorporada al inventario del almacén!')
     } catch (err) {
       const fields = fieldErrors(err)
@@ -1161,43 +1200,76 @@ export default function InventoryPage() {
       >
         <form onSubmit={handleCrearPrenda} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-white/80">
-              Foto de la prenda
-            </label>
-            <div className="mt-1 flex items-center gap-3">
-              {nuevaImagen ? (
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/20 bg-black/40">
-                  <img src={nuevaImagen} alt="Previsualización" className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => setNuevaImagen('')}
-                    className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/75 text-[10px] text-white hover:bg-rose-600"
-                    title="Quitar foto"
-                    aria-label="Quitar foto"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : null}
-
-              <label
-                htmlFor="fotoPrenda"
-                className="flex h-16 flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/30 bg-black/30 px-3 text-center transition hover:border-violeta-claro hover:bg-black/50"
-              >
-                <span className="text-xs font-medium text-white/90">
-                  {nuevaImagen ? 'Cambiar foto seleccionada' : '📷 Subir foto de la prenda'}
-                </span>
-                <span className="text-[10px] text-white/50">PNG, JPG o WEBP (instantáneo)</span>
+            <div className="flex items-center justify-between">
+              <label htmlFor="fotoPrenda" className="block text-xs font-semibold text-white/80">
+                Fotos de la prenda (hasta 4 ángulos)
               </label>
-
-              <input
-                id="fotoPrenda"
-                type="file"
-                accept="image/*"
-                onChange={handleSubirFoto}
-                className="sr-only"
-              />
+              <span className="text-[11px] font-bold text-violeta-claro">
+                {nuevasImagenes.length > 0 ? `${nuevasImagenes.length}/4 fotos` : '0/4 fotos'}
+              </span>
             </div>
+            <p className="mt-0.5 text-[10px] text-white/50">
+              Muestra tu prenda en diferentes ángulos (1. Frontal, 2. Detalle textura, 3. Espalda, 4. Look en modelo).
+            </p>
+
+            {/* Cuadrícula de fotos subidas */}
+            <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {['1. Frontal', '2. Detalle', '3. Espalda', '4. Look'].map((slotLabel, index) => {
+                const fotoUrl = nuevasImagenes[index] || (index === 0 ? nuevaImagen : null)
+                return (
+                  <div
+                    key={slotLabel}
+                    className="relative flex flex-col items-center justify-center rounded-xl border border-white/15 bg-black/40 p-1.5 aspect-[3/4] overflow-hidden"
+                  >
+                    {fotoUrl ? (
+                      <>
+                        <img src={fotoUrl} alt={slotLabel} className="h-full w-full object-cover rounded-lg" />
+                        <span className="absolute bottom-1 left-1 rounded bg-black/80 px-1.5 py-0.5 text-[9px] font-bold text-white/90 backdrop-blur-sm">
+                          {slotLabel}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleQuitarFoto(index)}
+                          className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/80 text-[10px] text-white hover:bg-rose-600 transition"
+                          title={`Quitar foto ${slotLabel}`}
+                          aria-label={`Quitar foto ${slotLabel}`}
+                        >
+                          ✕
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center text-center p-2 text-white/40">
+                        <span className="text-lg opacity-40">📷</span>
+                        <span className="mt-1 text-[9px] font-medium">{slotLabel}</span>
+                        <span className="text-[8px] opacity-60">Vacío</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {nuevasImagenes.length < 4 && (
+              <div className="mt-3">
+                <label
+                  htmlFor="fotoPrenda"
+                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/30 bg-black/30 px-3 text-center transition hover:border-violeta-claro hover:bg-black/50"
+                >
+                  <span className="text-xs font-medium text-white/90">
+                    📷 {nuevasImagenes.length === 0 ? 'Subir fotos de la prenda' : `+ Agregar otra foto (${nuevasImagenes.length}/4)`}
+                  </span>
+                  <span className="text-[10px] text-white/50">PNG, JPG o WEBP</span>
+                </label>
+                <input
+                  id="fotoPrenda"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleSubirFoto}
+                  className="sr-only"
+                />
+              </div>
+            )}
           </div>
 
           <div>

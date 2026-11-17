@@ -26,6 +26,8 @@ export interface ItemResponseDto {
   tallas: string[]
   imagen: string
   imagenSecundaria?: string
+  /** Galería de hasta 4 fotos en distintos ángulos (Frontal, Detalle, Espalda, Look) */
+  imagenes?: string[]
   distanciaKm: number
   recorte?: string
   tipoGancho?: 'hombros' | 'pinzas'
