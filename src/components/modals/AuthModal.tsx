@@ -11,6 +11,7 @@ import { tomarRetorno } from '@/modules/core/api/retorno'
 import { ErrorCampo } from '@/modules/core/components/errores'
 import { correoValido } from '@/modules/identidad/utils/formato'
 import { ESPERA_429, TEXTOS_ACCESO, errorDeLogin } from '@/modules/identidad/utils/erroresAcceso'
+import { PASSWORD_MIN } from '@/modules/identidad/types/auth.dto'
 import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
 import { consentService } from '@/modules/legal/services/consentService'
 import './AuthModal.css'
@@ -537,10 +538,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   const handleRegisterSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!email || password.length < 8 || !fullName) {
+    if (!email || password.length < PASSWORD_MIN || !fullName) {
       setError(
-        password.length < 8
-          ? 'La contraseña debe tener al menos 8 caracteres.'
+        password.length < PASSWORD_MIN
+          ? `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`
           : 'Por favor completa todos los campos requeridos.',
       )
       return
@@ -563,7 +564,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       cErr.reglasFundacion = 'Debes aceptar las Reglas para Fundaciones y Donaciones.'
     }
 
-    const isTestEmail = email === 'valen@correo.com'
+    const isTestEmail = email.trim().toLowerCase() === 'valen@correo.com'
     if (!isTestEmail && Object.keys(cErr).length > 0) {
       setConsentErrors(cErr)
       setError('Por favor acepta las autorizaciones y consentimientos obligatorios.')
@@ -587,9 +588,29 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       origen: `AUTH_MODAL_REGISTER_${role}`,
     })
 
-    if (!env.useMocks) {
-      setLoading(true)
-      try {
+    setLoading(true)
+    try {
+      if (env.useMocks) {
+        const emailLower = email.trim().toLowerCase()
+        const isDemo = DEMO_ACCOUNTS.some((a) => a.email === emailLower)
+        if (!isDemo) {
+          try {
+            await authService.register({
+              nombre: fullName.trim(),
+              email: email.trim(),
+              password,
+              aceptaHabeasData: consentState.aceptaDatos,
+              aceptaTerminos: consentState.aceptaTerminos,
+              role,
+            })
+          } catch (err: any) {
+            if (err?.status !== 409) {
+              setError(err?.message || 'Error al registrar la cuenta.')
+              return
+            }
+          }
+        }
+      } else {
         await authRegister({
           nombre: fullName.trim(),
           email: email.trim(),
@@ -598,15 +619,22 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
           aceptaTerminos: consentState.aceptaTerminos,
           role,
         })
-      } catch (err) {
-        const r = errorDeLogin(err)
-        setError(r.mensaje || (err instanceof Error ? err.message : 'Error al registrar la cuenta.'))
-        return
-      } finally {
-        setLoading(false)
       }
+    } catch (err) {
+      const r = errorDeLogin(err)
+      setError(r.mensaje || (err instanceof Error ? err.message : 'Error al registrar la cuenta.'))
+      return
+    } finally {
+      setLoading(false)
+    }
+
+    if (cardRef.current) {
+      cardRef.current.scrollTop = 0
     }
     setStep('otp')
+    setTimeout(() => {
+      document.getElementById('otp-input-0')?.focus()
+    }, 60)
   }
 
   const handleOtpChange = (index: number, val: string) => {
@@ -618,6 +646,25 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     if (val && index < 5) {
       const nextInput = document.getElementById(`otp-input-${index + 1}`)
       nextInput?.focus()
+    }
+  }
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (!pasted) return
+    const newOtp = [...otp]
+    for (let i = 0; i < pasted.length; i++) {
+      newOtp[i] = pasted[i]
+    }
+    setOtp(newOtp)
+    const nextIdx = Math.min(pasted.length, 5)
+    document.getElementById(`otp-input-${nextIdx}`)?.focus()
+  }
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      document.getElementById(`otp-input-${index - 1}`)?.focus()
     }
   }
 
@@ -656,6 +703,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       const user = await verifyOtp({ email: email.trim() || 'usuario@styleradar.co', codigoOtp: code })
       if (activeTab === 'register' && user.role === 'ADMIN_ALMACEN') {
         finishAuthAndNavigate('/tienda/suscripcion/activar')
+      } else if (activeTab === 'register' && user.role === 'REPRESENTANTE_FUNDACION') {
+        finishAuthAndNavigate('/fundacion')
       } else {
         entrarCon(user.role)
       }
@@ -975,6 +1024,24 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     compact={true}
                   />
 
+                  {error && (
+                    <div role="alert" className="sr-auth-err flex flex-wrap items-center gap-2">
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="h-4 w-4 shrink-0"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{error}</span>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
                     id="suSubmit"
@@ -1033,7 +1100,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               </p>
             </>
           ) : (
-            <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+            <form onSubmit={handleVerifyOtp} className="sr-auth-otp-form flex flex-col gap-4">
               <h2>Verifica que eres tú</h2>
               <p className="sr-sub">
                 Enviamos un código de 6 dígitos a <b className="text-white">{email}</b>. Vence en 10
@@ -1069,13 +1136,19 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
-                    className="w-11 h-14 text-center text-xl font-black text-white rounded-xl bg-white/10 border border-white/25 focus:border-[#E8DCCB] outline-none"
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    onPaste={handleOtpPaste}
+                    className="sr-auth-otp-digit"
                     aria-label={`Dígito ${idx + 1}`}
                     aria-invalid={!!camposErr.otp}
                   />
                 ))}
               </div>
               {camposErr.otp && <div className="flex justify-center"><ErrorCampo key={otpFallos} id="authOtp">{camposErr.otp}</ErrorCampo></div>}
+
+              <p className="text-center text-[11px] text-white/50">
+                (Código de prueba: <b className="text-arena font-semibold">123456</b> · Para probar error: <b>000000</b>)
+              </p>
 
               <button type="submit" disabled={loading || espera > 0} className="sr-auth-submit">
                 {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Verificando…' : 'Confirmar y entrar'}

@@ -244,27 +244,67 @@
 /* Tarjeta de vidrio encima de la foto */
 .sr-auth-card {
   position: relative;
-  z-index: 5;
-  width: min(404px, calc(100% - 28px));
-  max-height: calc(100% - 64px);
+  z-index: 10;
+  width: min(420px, calc(100% - 24px));
+  max-height: calc(100% - 50px);
   overflow-y: auto;
   scrollbar-width: thin;
-  padding: clamp(18px, 2.2vh, 24px) clamp(18px, 2.2vw, 26px);
-  background: rgba(38, 38, 38, 0.54);
+  padding: clamp(20px, 2.4vh, 26px) clamp(20px, 2.4vw, 28px);
+  background: rgba(22, 17, 30, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(22px) saturate(1.2);
-  -webkit-backdrop-filter: blur(22px) saturate(1.2);
-  border-radius: 14px;
+  backdrop-filter: blur(24px) saturate(1.25);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  border-radius: 16px;
   color: #FFFFFF;
   opacity: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(8px, 1.15vh, 11px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.38);
+  gap: clamp(10px, 1.25vh, 13px);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px -10px rgba(72, 17, 154, 0.3);
 }
 
 .sr-auth-card > * {
-  opacity: 0;
+  opacity: 1;
+}
+
+/* Formulario y controles de verificación OTP */
+.sr-auth-otp-form {
+  position: relative;
+  z-index: 12;
+  opacity: 1 !important;
+  animation: sr-auth-fade-in 0.28s cubic-bezier(0.2, 0.7, 0.1, 1) forwards;
+}
+
+.sr-auth-otp-digit {
+  width: clamp(2.5rem, 5.5vw, 3rem);
+  height: clamp(3.25rem, 7vh, 3.75rem);
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 0.75rem;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.2, 0.7, 0.1, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.sr-auth-otp-digit:focus {
+  border-color: var(--sr-role-line, #e8dccb);
+  background: rgba(0, 0, 0, 0.75);
+  box-shadow: 0 0 16px rgba(123, 77, 216, 0.45);
+  transform: translateY(-2px);
+}
+
+.sr-auth-otp-digit[aria-invalid="true"] {
+  border-color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+}
+
+@keyframes sr-auth-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Los avisos de error aparecen después de la animación de entrada de la tarjeta:
