@@ -105,7 +105,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
-  const { login, register: authRegister, verifyOtp } = useAuth()
+  const { register: authRegister, verifyOtp } = useAuth()
   const navigate = useNavigate()
 
   const [rendered, setRendered] = useState(isOpen)
@@ -515,8 +515,17 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setLoading(true)
 
     try {
-      const user = await login({ email, password })
-      entrarCon(user.role)
+      // Validar credenciales contra el servicio (para disparar 401, 403, 429, 503 si fallan)
+      await authService.login({ email, password })
+
+      // Al oprimir Entrar (incluso con cuentas demo), pasar a la pantalla del código OTP
+      if (cardRef.current) {
+        cardRef.current.scrollTop = 0
+      }
+      setStep('otp')
+      setTimeout(() => {
+        document.getElementById('otp-input-0')?.focus()
+      }, 60)
     } catch (err) {
       const r = errorDeLogin(err)
       setCamposErr({ email: r.campos.email ?? r.campos.correo, password: r.campos.password })

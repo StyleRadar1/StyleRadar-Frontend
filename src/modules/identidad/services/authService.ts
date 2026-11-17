@@ -91,7 +91,7 @@ export const authService = {
         throw new ApiError(400, 'Código de verificación incorrecto.')
       }
       const email = payload.email.trim().toLowerCase()
-      const user = registradas.find((a) => a.email === email) || DEMO_ACCOUNTS[0]
+      const user = registradas.find((a) => a.email === email) || DEMO_ACCOUNTS.find((a) => a.email === email) || DEMO_ACCOUNTS[0]
       return mockDelay({ token: `demo-${user.id}`, user })
     }
     return apiClient.post<LoginResponseDto>('/api/v1/auth/otp/verificar', payload).then((res) => res.data)
