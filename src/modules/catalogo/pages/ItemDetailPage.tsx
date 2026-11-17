@@ -570,7 +570,7 @@ export default function ItemDetailPage() {
                   )}
 
                   {/* Tarjeta de disponibilidad en tienda real (RF-22) */}
-                  <div className="mt-6 rounded-2xl border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] p-4 text-xs text-[var(--color-text)]">
+                  <div className="mt-6 rounded-2xl border border-white/15 dark:border-white/10 bg-white/50 dark:bg-white/[0.04] p-4 text-xs text-[var(--color-text)] backdrop-blur-xl shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-success-bg,rgba(16,185,129,0.15))] border border-[var(--color-success-border,rgba(16,185,129,0.3))] px-2.5 py-0.5 text-[0.625rem] font-bold text-[var(--color-success-text,#10b981)]">
                         <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -636,8 +636,8 @@ export default function ItemDetailPage() {
                               onClick={() => setTallaSeleccionada(isSelected ? '' : talla)}
                               className={`h-10 w-10 rounded-full border text-xs font-bold transition flex items-center justify-center disabled:cursor-not-allowed disabled:line-through disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                                 isSelected
-                                  ? 'border-[var(--sr-acento-primario,var(--color-accent))] bg-[var(--sr-acento-primario,var(--color-accent))] text-[var(--sr-texto-sobre-oscuro,var(--color-text-on-accent))] shadow-md scale-105'
-                                  : 'border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] text-[var(--color-text)] hover:border-[var(--sr-acento-primario,var(--color-accent))] hover:bg-[var(--sr-superficie,var(--color-surface))]'
+                                  ? 'border-purple-400 bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6] text-white shadow-[0_4px_14px_rgba(139,92,246,0.45)] scale-105'
+                                  : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:border-purple-400/50 hover:bg-white/10'
                               }`}
                             >
                               {talla}
@@ -679,10 +679,10 @@ export default function ItemDetailPage() {
                         type="button"
                         onClick={handleGuardar}
                         aria-pressed={guardado}
-                        className={`flex-1 inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                        className={`flex-1 inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-xs font-bold backdrop-blur-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                           guardado
-                            ? 'border-[var(--sr-acento-primario,var(--color-accent))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] text-[var(--sr-acento-primario,var(--color-accent))] shadow-sm'
-                            : 'border-[var(--sr-border-subtle,var(--color-border))] bg-transparent text-[var(--color-text)] hover:border-[var(--sr-acento-primario,var(--color-accent))] hover:bg-[var(--sr-surface-raised,var(--color-surface-raised))]'
+                            ? 'border-purple-400 bg-purple-500/20 text-purple-300 shadow-[0_2px_12px_rgba(168,85,247,0.25)]'
+                            : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:bg-white/10 hover:border-purple-400/40'
                         }`}
                       >
                         <svg
@@ -704,10 +704,10 @@ export default function ItemDetailPage() {
                         )}
                       </button>
 
-                      {/* Botón primario Ver tienda (relleno, píldora, color de acento) */}
+                      {/* Botón primario Ver tienda (morado suave con glow) */}
                       <Link
                         to={`/tiendas/${getStoreIdByName(prenda.tienda)}`}
-                        className="flex-1 inline-flex items-center justify-center rounded-full bg-[var(--sr-acento-primario,var(--color-accent))] px-6 py-3 text-xs font-black text-[var(--sr-texto-sobre-oscuro,var(--color-text-on-accent))] shadow-lg transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                        className="flex-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] px-6 py-3 text-xs font-bold text-white shadow-[0_4px_20px_-2px_rgba(139,92,246,0.5)] border border-white/20 transition-all hover:from-[#B49BFB] hover:to-[#8B5CF6] hover:shadow-[0_6px_25px_-2px_rgba(139,92,246,0.65)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                       >
                         Ver tienda
                       </Link>
@@ -726,10 +726,10 @@ export default function ItemDetailPage() {
                       type="button"
                       onClick={handleGuardarPlaylist}
                       aria-pressed={guardadoPlaylist}
-                      className={`w-full inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                      className={`w-full inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold backdrop-blur-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                         guardadoPlaylist
-                          ? 'border-[var(--sr-acento-primario,var(--color-accent))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] text-[var(--sr-acento-primario,var(--color-accent))] shadow-sm'
-                          : 'border-[var(--sr-border-subtle,var(--color-border))] bg-transparent text-[var(--color-text)] hover:border-[var(--sr-acento-primario,var(--color-accent))] hover:bg-[var(--sr-surface-raised,var(--color-surface-raised))]'
+                          ? 'border-purple-400 bg-purple-500/20 text-purple-300 shadow-[0_2px_12px_rgba(168,85,247,0.25)]'
+                          : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:bg-white/10 hover:border-purple-400/40'
                       }`}
                     >
                       <span>📑</span>
@@ -739,7 +739,7 @@ export default function ItemDetailPage() {
                     {/* Enlace directo para probarse la prenda en el probador virtual (RF-57) */}
                     <Link
                       to={`/probador?prenda=${prenda.id}${tallaSeleccionada ? `&talla=${tallaSeleccionada}` : ''}`}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--sr-superficie,var(--color-surface))] hover:text-[var(--sr-acento-primario,var(--color-accent))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/60 px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition backdrop-blur-md shadow-[0_2px_12px_rgba(168,85,247,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                     >
                       <span>✨ Probarme esta prenda en el probador</span>
                     </Link>

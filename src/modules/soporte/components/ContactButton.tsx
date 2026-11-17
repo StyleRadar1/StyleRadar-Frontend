@@ -27,8 +27,12 @@ export function ContactButton({ label, primary, icon, className = '', ...req }: 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ProblemaChat | null>(null)
   const cls = icon
-    ? 'grid h-10 w-10 place-items-center rounded-full bg-violeta text-blanco shadow-lg ring-1 ring-white/20 transition hover:scale-110 hover:bg-violeta-claro disabled:opacity-60'
-    : `inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-60 ${primary ? 'bg-violeta' : 'border border-white/25 hover:bg-white/10'}`
+    ? 'grid h-10 w-10 place-items-center rounded-full bg-gradient-to-r from-[#9D5CFF] to-[#8B5CF6] text-white shadow-lg ring-1 ring-white/20 transition hover:scale-110 hover:brightness-110 disabled:opacity-60'
+    : `inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold backdrop-blur-md transition disabled:opacity-60 ${
+        primary
+          ? 'bg-gradient-to-r from-[#9D5CFF] to-[#8B5CF6] text-white shadow-[0_4px_16px_rgba(139,92,246,0.35)] border border-white/20 hover:brightness-110'
+          : 'border border-purple-300/30 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20 hover:text-white'
+      }`
   const iconCls = icon ? 'h-5 w-5' : 'h-4 w-4'
 
   if (!user) {

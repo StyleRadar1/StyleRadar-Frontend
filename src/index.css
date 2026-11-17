@@ -44,48 +44,48 @@
 html[data-theme="dark"],
 html[data-theme="oscuro"],
 html[data-tema="oscuro"] {
-  /* Fondo y superficies oscuras */
-  --sr-bg: #1d1d1d;
-  --sr-surface: #262626;
-  --sr-surface-raised: #2d2d33;
-  --sr-bg-2: #262626;
+  /* Fondo y superficies oscuras con profundidad y matiz terciopelo cósmico */
+  --sr-bg: #09070f;
+  --sr-surface: #141021;
+  --sr-surface-raised: #1c162e;
+  --sr-bg-2: #141021;
 
   /* Bordes */
-  --sr-border-subtle: rgba(255, 255, 255, 0.12);
-  --sr-border-control: rgba(255, 255, 255, 0.35);
+  --sr-border-subtle: rgba(255, 255, 255, 0.10);
+  --sr-border-control: rgba(168, 85, 247, 0.40);
 
-  /* Tipografía */
-  --sr-text-primary: #ffffff;
-  --sr-text-secondary: #b9b9ca;
-  --sr-text-muted: #8e8e9f;
+  /* Tipografía estelar luminosa */
+  --sr-text-primary: #f8fafc;
+  --sr-text-secondary: #b8b3ce;
+  --sr-text-muted: #8b86a4;
   --sr-text-on-accent: #ffffff;
-  --sr-tx: #ffffff;
-  --sr-tx-2: #b9b9ca;
+  --sr-tx: #f8fafc;
+  --sr-tx-2: #b8b3ce;
 
   /* Marca y foco */
-  --sr-accent: #7b4dd8;
-  --sr-accent-text: #b9b9ca;
-  --sr-acc-tx: #b9b9ca;
+  --sr-accent: #9d5cff;
+  --sr-accent-text: #c084fc;
+  --sr-acc-tx: #c084fc;
   --sr-focus: #e8dccb;
   --sr-foco: #e8dccb;
 
-  /* Sombras oscuras */
-  --sr-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  /* Sombras oscuras con halo violeta ambiental */
+  --sr-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.85), 0 0 35px -8px rgba(72, 17, 154, 0.22);
 
   /* Estados accesibles */
-  --sr-ok: #9be3b4;
-  --sr-ok-bg: rgba(155, 227, 180, 0.12);
-  --sr-bad: #ffb4b4;
-  --sr-bad-bg: rgba(255, 180, 180, 0.12);
-  --sr-warn: #f3d27a;
-  --sr-warn-bg: rgba(243, 210, 122, 0.12);
-  --sr-info: #8dc5e8;
-  --sr-info-bg: rgba(141, 197, 232, 0.12);
+  --sr-ok: #4ade80;
+  --sr-ok-bg: rgba(74, 222, 128, 0.14);
+  --sr-bad: #f87171;
+  --sr-bad-bg: rgba(248, 113, 113, 0.14);
+  --sr-warn: #fbbf24;
+  --sr-warn-bg: rgba(251, 191, 36, 0.14);
+  --sr-info: #38bdf8;
+  --sr-info-bg: rgba(56, 189, 248, 0.14);
 
   /* Puntos de roles en menús */
-  --sr-rol-usuario: #a98be0;
-  --sr-rol-tienda: #9be3b4;
-  --sr-rol-fundacion: #f0c27b;
+  --sr-rol-usuario: #c084fc;
+  --sr-rol-tienda: #4ade80;
+  --sr-rol-fundacion: #fbbf24;
   --sr-rol-admin: #e8dccb;
 
   /* Superficie y tokens del Hero Aurora Noche */
@@ -144,90 +144,90 @@ html[data-tema="oscuro"] {
 }
 
 /* =====================================================================
-   TEMA CLARO · Paleta cálida arena (CERO blanco puro #FFFFFF)
-   - fondo: #EFE6D6
-   - superficie: #F7F1E6
-   - superficie elevada: #FBF7EF
-   - borde decorativo: #D9CBB2
-   - borde controles: #857458
-   - texto principal: #2B2118 (café profundo, contraste 12.8:1)
-   - texto secundario: #5C4D3C (contraste 6.2:1)
-   - texto atenuado: #6B5B48 (contraste 4.8:1)
-   - texto sobre acento: #FBF7EF
-   - sombras: café translúcido rgba(43, 33, 24, 0.10)
+   TEMA CLARO · Editorial Alabaster & Pure Gallery
+   - CERO tonos amarillentos, textura de yogurt ni ocres pesados.
+   - Fondo: #F8F9FA (blanco galería de arte con micro-matiz neutro)
+   - Superficie: #FFFFFF (tarjetas nítidas con sombras multicapa)
+   - Superficie elevada: #FFFFFF
+   - Borde sutil: #E2E8F0
+   - Borde control: #94A3B8
+   - Texto principal: #0F172A (obsidiana grafito, contraste 15.5:1)
+   - Texto secundario: #475569 (contraste 7.2:1)
+   - Texto atenuado: #64748B (contraste 4.8:1)
+   - Acento: #48119A (morado real icónico)
    ===================================================================== */
 html[data-theme="light"],
 html[data-theme="claro"],
 html[data-tema="claro"] {
-  /* Fondo y superficies arena cálida */
-  --sr-bg: #efe6d6;
-  --sr-surface: #f7f1e6;
-  --sr-surface-raised: #fbf7ef;
-  --sr-bg-2: #f7f1e6;
+  /* Fondo y superficies: Editorial Alabaster */
+  --sr-bg: #f8f9fa;
+  --sr-surface: #ffffff;
+  --sr-surface-raised: #ffffff;
+  --sr-bg-2: #f1f3f5;
 
-  /* Bordes cálidos */
-  --sr-border-subtle: #d9cbb2;
-  --sr-border-control: #857458;
+  /* Bordes nítidos modernos */
+  --sr-border-subtle: #e2e8f0;
+  --sr-border-control: #94a3b8;
 
-  /* Tipografía café de alto contraste */
-  --sr-text-primary: #2b2118;
-  --sr-text-secondary: #5c4d3c;
-  --sr-text-muted: #6b5b48;
-  --sr-text-on-accent: #fbf7ef;
-  --sr-tx: #2b2118;
-  --sr-tx-2: #5c4d3c;
+  /* Tipografía obsidiana de alto impacto */
+  --sr-text-primary: #0f172a;
+  --sr-text-secondary: #475569;
+  --sr-text-muted: #64748b;
+  --sr-text-on-accent: #ffffff;
+  --sr-tx: #0f172a;
+  --sr-tx-2: #475569;
 
-  /* Marca y acento (violeta oscuro con contraste 9.1:1 sobre #EFE6D6) */
+  /* Marca y acento */
   --sr-accent: #48119a;
   --sr-accent-text: #48119a;
   --sr-acc-tx: #48119a;
   --sr-focus: #48119a;
   --sr-foco: #48119a;
 
-  /* Sombras café translúcidas, sin grises ni negros fríos */
-  --sr-shadow: 0 10px 30px rgba(43, 33, 24, 0.1);
+  /* Sombras limpias multicapa sin suciedad */
+  --sr-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 0 1px rgba(0, 0, 0, 0.08);
 
   /* Estados con contraste reforzado para fondo claro */
-  --sr-ok: #1e6b3a;
-  --sr-ok-bg: rgba(30, 107, 58, 0.12);
-  --sr-bad: #a3231a;
-  --sr-bad-bg: rgba(163, 35, 26, 0.12);
-  --sr-warn: #7a5300;
-  --sr-warn-bg: rgba(122, 83, 0, 0.12);
-  --sr-info: #1c537b;
-  --sr-info-bg: rgba(28, 83, 123, 0.12);
+  --sr-ok: #166534;
+  --sr-ok-bg: rgba(22, 101, 52, 0.10);
+  --sr-bad: #b91c1c;
+  --sr-bad-bg: rgba(185, 28, 28, 0.10);
+  --sr-warn: #854d0e;
+  --sr-warn-bg: rgba(133, 77, 14, 0.10);
+  --sr-info: #0369a1;
+  --sr-info-bg: rgba(3, 105, 161, 0.10);
 
   /* Roles con legibilidad adaptada */
   --sr-rol-usuario: #48119a;
-  --sr-rol-tienda: #1e6b3a;
-  --sr-rol-fundacion: #7a5300;
-  --sr-rol-admin: #5c4d3c;
+  --sr-rol-tienda: #166534;
+  --sr-rol-fundacion: #854d0e;
+  --sr-rol-admin: #475569;
 
-  /* Superficie y tokens del Hero Aurora Día (Amanecer en el radar) */
-  --sr-hero-bg: #e6d9c0;
-  --sr-hero-text: #1f1433;
-  --sr-hero-text-muted: #2e2147;
-  --sr-hero-bar: #efe5d0;
+  /* Superficie y tokens del Hero Aurora Día (Amanecer luminoso en el radar) */
+  --sr-hero-bg: #f3f0f8;
+  --sr-hero-text: #0f172a;
+  --sr-hero-text-muted: #475569;
+  --sr-hero-bar: #ffffff;
   --aurora-blur: 75px;
 
-  /* Paleta Aurora Día (Unificada: referencia del Catálogo) */
-  --aurora-c1: #e3b3d3;
-  --aurora-c2: #cfa6e6;
-  --aurora-c3: #a97fd6;
-  --aurora-c4: #e8d4f0;
-  --aurora-opacity: 0.55;
+  /* Paleta Aurora Día (Luminosa, fresca, sin tonos barro/yogurt) */
+  --aurora-c1: #fbcfe8;
+  --aurora-c2: #ddd6fe;
+  --aurora-c3: #c084fc;
+  --aurora-c4: #e0e7ff;
+  --aurora-opacity: 0.65;
 
-  /* Tokens Probador Virtual (Modo Claro: fondo blanco puro y maniquí negro con volumen) */
+  /* Tokens Probador Virtual */
   --probador-bg: #ffffff;
-  --probador-text: #1f1433;
-  --probador-text-muted: rgba(31, 20, 51, 0.6);
+  --probador-text: #0f172a;
+  --probador-text-muted: rgba(15, 23, 42, 0.6);
   --probador-topbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 70%, transparent 100%);
   --probador-mannequin-filter: brightness(0.08) contrast(1.3) grayscale(1);
   --probador-ambient-glow-display: none;
-  --probador-floor-shadow: radial-gradient(ellipse, rgba(0, 0, 0, 0.18) 0%, transparent 70%);
-  --probador-pill-bg: #1f1433;
-  --probador-pill-border: rgba(31, 20, 51, 0.2);
-  --probador-pill-text: #f4eee3;
+  --probador-floor-shadow: radial-gradient(ellipse, rgba(0, 0, 0, 0.12) 0%, transparent 70%);
+  --probador-pill-bg: #0f172a;
+  --probador-pill-border: rgba(15, 23, 42, 0.15);
+  --probador-pill-text: #ffffff;
   --probador-accent: #48119a;
 
   /* Tokens fijos del Hero Landing (invariantes al tema) */
@@ -251,13 +251,13 @@ html[data-tema="claro"] {
   color-scheme: light;
 
   /* Mapeo retrocompatible para componentes que aún lean variables históricas */
-  --color-fondo: #efe6d6;
-  --color-grafito: #f7f1e6;
-  --color-blanco: #2b2118;
-  --color-white: #2b2118;
-  --color-black: #fbf7ef;
-  --color-arena: #5c4d3c;
-  --color-lavanda: #5c4d3c;
+  --color-fondo: #f8f9fa;
+  --color-grafito: #ffffff;
+  --color-blanco: #0f172a;
+  --color-white: #0f172a;
+  --color-black: #ffffff;
+  --color-arena: #475569;
+  --color-lavanda: #64748b;
   --color-violeta-claro: #48119a;
 }
 
@@ -362,7 +362,7 @@ html[data-tema="daltonico"] main a:not([class*="rounded"]) {
 
 /* =====================================================================
    Tratamiento de imágenes de prendas en tema claro:
-   Fondos blancos pasan a integrarse con el tono arena de la superficie.
+   Superficies limpias y nítidas sin oscurecer los tejidos.
    ===================================================================== */
 html[data-theme="claro"] img.img-prenda,
 html[data-theme="claro"] .p-card img,
@@ -370,7 +370,7 @@ html[data-theme="claro"] .pd-img img,
 html[data-tema="claro"] img.img-prenda,
 html[data-tema="claro"] .p-card img,
 html[data-tema="claro"] .pd-img img {
-  mix-blend-mode: multiply;
+  mix-blend-mode: normal;
 }
 
 /* =====================================================================
@@ -408,8 +408,77 @@ html {
 
 body {
   @apply font-sans antialiased;
+  position: relative;
+  min-height: 100vh;
   background-color: var(--sr-bg);
   color: var(--sr-text-primary);
+  overflow-x: hidden;
+}
+
+/* Halos de luz ambiental de fondo para efecto frosted glass */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.6;
+  transition: opacity 0.5s ease;
+}
+
+html[data-theme="dark"] body::before,
+html[data-theme="oscuro"] body::before,
+html[data-tema="oscuro"] body::before {
+  top: -10vh;
+  left: 15vw;
+  width: 50vw;
+  height: 50vw;
+  max-width: 650px;
+  max-height: 650px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, rgba(109, 40, 217, 0.10) 50%, transparent 70%);
+}
+
+html[data-theme="dark"] body::after,
+html[data-theme="oscuro"] body::after,
+html[data-tema="oscuro"] body::after {
+  bottom: 5vh;
+  right: 10vw;
+  width: 45vw;
+  height: 45vw;
+  max-width: 550px;
+  max-height: 550px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.16) 0%, rgba(76, 29, 149, 0.08) 50%, transparent 70%);
+}
+
+html[data-theme="light"] body::before,
+html[data-theme="claro"] body::before,
+html[data-tema="claro"] body::before {
+  top: -10vh;
+  left: 20vw;
+  width: 50vw;
+  height: 50vw;
+  max-width: 600px;
+  max-height: 600px;
+  background: radial-gradient(circle, rgba(233, 213, 255, 0.6) 0%, rgba(243, 232, 255, 0.3) 50%, transparent 70%);
+}
+
+html[data-theme="light"] body::after,
+html[data-theme="claro"] body::after,
+html[data-tema="claro"] body::after {
+  bottom: 8vh;
+  right: 12vw;
+  width: 42vw;
+  height: 42vw;
+  max-width: 500px;
+  max-height: 500px;
+  background: radial-gradient(circle, rgba(224, 231, 255, 0.5) 0%, rgba(245, 243, 255, 0.2) 50%, transparent 70%);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 @layer base {

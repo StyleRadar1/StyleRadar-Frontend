@@ -43,45 +43,45 @@
 html[data-theme="light"],
 html[data-theme="claro"],
 html[data-tema="claro"] {
-  /* Fondos y superficies */
-  --bg: #ffffff;
-  --bg-elevated: #f8f6f2;
-  --surface: #f4efe6;
-  --surface-muted: #eae2d5;
-  --border: #d4c7b5;
+  /* Fondos y superficies: Galería editorial nítida */
+  --bg: #f8f9fa;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f1f3f5;
+  --border: #e2e8f0;
 
-  /* Tipografía */
-  --text: #262626;
-  --text-muted: #595959;
+  /* Tipografía obsidiana de alto impacto */
+  --text: #0f172a;
+  --text-muted: #64748b;
   --text-on-accent: #ffffff;
 
   /* Marca y acento */
   --accent: #48119a;
   --accent-hover: #360c74;
-  --accent-soft: #b9b9ca;
+  --accent-soft: #e9d5ff;
   --sand: #e8dccb;
   --focus-ring: #48119a;
 
   /* Capas */
-  --overlay: rgba(38, 38, 38, 0.6);
-  --shadow-color: rgba(38, 38, 38, 0.12);
+  --overlay: rgba(15, 23, 42, 0.45);
+  --shadow-color: rgba(15, 23, 42, 0.08);
 
   /* Estados accesibles (WCAG AA) */
-  --success: #1e6b3a;
-  --success-bg: rgba(30, 107, 58, 0.12);
-  --success-text: #144a27;
+  --success: #166534;
+  --success-bg: rgba(22, 101, 52, 0.10);
+  --success-text: #14532d;
 
-  --warning: #8a5800;
-  --warning-bg: rgba(138, 88, 0, 0.12);
-  --warning-text: #5c3b00;
+  --warning: #854d0e;
+  --warning-bg: rgba(133, 77, 14, 0.10);
+  --warning-text: #713f12;
 
-  --danger: #b31d1d;
-  --danger-bg: rgba(179, 29, 29, 0.12);
-  --danger-text: #7a1212;
+  --danger: #b91c1c;
+  --danger-bg: rgba(185, 28, 28, 0.10);
+  --danger-text: #991b1b;
 
-  --info: #006699;
-  --info-bg: rgba(0, 102, 153, 0.12);
-  --info-text: #004466;
+  --info: #0369a1;
+  --info-bg: rgba(3, 105, 161, 0.10);
+  --info-text: #075985;
 
   color-scheme: light;
 }
@@ -94,45 +94,45 @@ html[data-tema="claro"] {
 html[data-theme="dark"],
 html[data-theme="oscuro"],
 html[data-tema="oscuro"] {
-  /* Fondos y superficies */
-  --bg: #15131c;
-  --bg-elevated: #1d1a27;
-  --surface: #242031;
-  --surface-muted: #2d283e;
-  --border: rgba(255, 255, 255, 0.14);
+  /* Fondos y superficies: Noir cósmico con profundidad */
+  --bg: #09070f;
+  --bg-elevated: #1c162e;
+  --surface: #141021;
+  --surface-muted: #251e3d;
+  --border: rgba(255, 255, 255, 0.10);
 
-  /* Tipografía */
-  --text: #f5f3f8;
-  --text-muted: #b2aec2;
-  --text-on-accent: #15131c;
+  /* Tipografía estelar luminosa */
+  --text: #f8fafc;
+  --text-muted: #b8b3ce;
+  --text-on-accent: #09070f;
 
-  /* Marca y acento */
-  --accent: #a98bea;
-  --accent-hover: #c1acf2;
-  --accent-soft: #3d3354;
+  /* Marca y acento: Violeta eléctrico luminoso con halo */
+  --accent: #9d5cff;
+  --accent-hover: #b77eff;
+  --accent-soft: #2e214d;
   --sand: #e8dccb;
-  --focus-ring: #a98bea;
+  --focus-ring: #c084fc;
 
-  /* Capas */
-  --overlay: rgba(0, 0, 0, 0.75);
-  --shadow-color: rgba(0, 0, 0, 0.5);
+  /* Capas y sombras profundas con aura violeta */
+  --overlay: rgba(5, 3, 10, 0.85);
+  --shadow-color: rgba(0, 0, 0, 0.7);
 
   /* Estados accesibles (WCAG AA) */
-  --success: #56d38e;
-  --success-bg: rgba(86, 211, 142, 0.16);
-  --success-text: #86e3b0;
+  --success: #4ade80;
+  --success-bg: rgba(74, 222, 128, 0.14);
+  --success-text: #86efac;
 
-  --warning: #f5b842;
-  --warning-bg: rgba(245, 184, 66, 0.16);
-  --warning-text: #f7ca74;
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.14);
+  --warning-text: #fde68a;
 
-  --danger: #ff7575;
-  --danger-bg: rgba(255, 117, 117, 0.16);
-  --danger-text: #ffa8a8;
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.14);
+  --danger-text: #fca5a5;
 
-  --info: #5cb8ff;
-  --info-bg: rgba(92, 184, 255, 0.16);
-  --info-text: #8fd0ff;
+  --info: #38bdf8;
+  --info-bg: rgba(56, 189, 248, 0.14);
+  --info-text: #7dd3fc;
 
   color-scheme: dark;
 }
