@@ -17,17 +17,23 @@ export interface ItemResponseDto {
   tienda: string
   barrio: string
   precio: number
+  precioAnterior?: number
+  descuento?: number
   estilo: Estilo
   tipo: string
   color: string
+  coloresDisponibles?: string[]
   tallas: string[]
   imagen: string
+  imagenSecundaria?: string
   distanciaKm: number
   recorte?: string
   tipoGancho?: 'hombros' | 'pinzas'
   anclaY?: number
   bajada?: number
   descripcion?: string
+  esNuevo?: boolean
+  esSegundaMano?: boolean
 }
 
 export interface ItemFiltersDto {

@@ -57,6 +57,9 @@ export function Hero() {
             key={slide.id}
             src={slide.src}
             alt={slide.alt}
+            loading={index === 0 ? 'eager' : 'lazy'}
+            fetchPriority={index === 0 ? 'high' : 'auto'}
+            decoding="async"
             style={{ objectPosition: slide.position || 'center' }}
             className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-out ${
               index === currentSlide

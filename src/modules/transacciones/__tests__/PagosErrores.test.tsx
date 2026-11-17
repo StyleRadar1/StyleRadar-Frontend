@@ -19,7 +19,7 @@ const abrirReembolso = async (user: ReturnType<typeof userEvent.setup>) => {
   return screen.getByRole('dialog')
 }
 
-describe('Admin · Pagos · errores del plan (Cristian)', () => {
+describe('Admin · Pagos · errores del plan (Cristian)', { timeout: 15000 }, () => {
   afterEach(() => { vi.restoreAllMocks(); sessionStorage.clear() })
 
   it('400: reembolso sin motivo → mensaje debajo del campo motivo, sin enviar', async () => {

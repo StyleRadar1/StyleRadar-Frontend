@@ -15,6 +15,7 @@ import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
 import { getWishlistIds, setWishlistIds } from '@/modules/transacciones/services/userPlanService'
 import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { ItemCard } from '../components/ItemCard'
+import { SizeGuideModal } from '../components/SizeGuideModal'
 import { itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
 import { getStoreIdByName } from '../services/storePublicService'
@@ -59,6 +60,7 @@ export default function ItemDetailPage() {
   const userId = user?.id ?? 'u-1'
 
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string>('')
+  const [guiaTallasAbierta, setGuiaTallasAbierta] = useState(false)
   const [wishlistIds, setWishlistIdsState] = useState<string[]>(() => getWishlistIds(userId))
   const [showWishlistGate, setShowWishlistGate] = useState(false)
   const [guardadoPlaylist, setGuardadoPlaylist] = useState(false)
@@ -351,10 +353,24 @@ export default function ItemDetailPage() {
                     {prenda.nombre}
                   </h1>
 
-                  {/* Precio destacado */}
-                  <p className="mt-3 text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
-                    {formatCOP(prenda.precio)}
-                  </p>
+                  {/* Precio destacado con descuento (si aplica) */}
+                  {prenda.descuento && prenda.precioAnterior && prenda.precioAnterior > prenda.precio ? (
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <span className="text-sm line-through text-[var(--color-text-muted)] font-medium">
+                        {formatCOP(prenda.precioAnterior)}
+                      </span>
+                      <span className="text-2xl font-black text-rose-500">
+                        {formatCOP(prenda.precio)}
+                      </span>
+                      <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                        -{prenda.descuento}%
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
+                      {formatCOP(prenda.precio)}
+                    </p>
+                  )}
 
                   {/* c) Descripción corta (3-5 líneas) con "Leer más" (si existe en los datos) */}
                   {prenda.descripcion && (
@@ -434,7 +450,16 @@ export default function ItemDetailPage() {
                   {prenda.tallas && prenda.tallas.length > 0 && (
                     <div>
                       <div className="flex items-center justify-between text-[0.6875rem] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
-                        <span>TALLA</span>
+                        <div className="flex items-center gap-2">
+                          <span>TALLA</span>
+                          <button
+                            type="button"
+                            onClick={() => setGuiaTallasAbierta(true)}
+                            className="text-[var(--color-accent)] hover:underline capitalize font-semibold tracking-normal text-[11px]"
+                          >
+                            📏 Guía de tallas
+                          </button>
+                        </div>
                         {tallaSeleccionada && (
                           <span className="text-[var(--sr-acento-primario,var(--color-accent))] font-bold text-xs lowercase first-letter:uppercase">
                             Talla elegida: {tallaSeleccionada}
@@ -677,6 +702,12 @@ export default function ItemDetailPage() {
               </div>
             </div>
           )}
+          {/* Modal de guía de tallas */}
+          <SizeGuideModal
+            isOpen={guiaTallasAbierta}
+            onClose={() => setGuiaTallasAbierta(false)}
+            tipoPrenda={prenda.tipo}
+          />
         </div>
       )}
     </section>

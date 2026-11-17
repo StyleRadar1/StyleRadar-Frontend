@@ -16,6 +16,8 @@ const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
 
 export function ItemCard({ item }: { item: ItemResponseDto }) {
   const storeId = getStoreIdByName(item.tienda)
+  const fotoSecundaria = item.imagenSecundaria || (item.recorte && item.recorte !== item.imagen ? item.recorte : null)
+  const tieneDescuento = Boolean(item.descuento && item.precioAnterior && item.precioAnterior > item.precio)
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm transition duration-200 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-md">
@@ -40,8 +42,40 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
           loading="lazy"
           decoding="async"
           style={MAIN_PHOTO_MASK_STYLE}
-          className="relative z-10 h-full w-full object-contain transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.03]"
+          className={`relative z-10 h-full w-full object-contain transition-all duration-300 motion-reduce:transition-none ${
+            fotoSecundaria ? 'group-hover:opacity-0' : 'group-hover:scale-[1.03]'
+          }`}
         />
+        {/* Segunda foto al pasar el mouse (hover lookbook / ángulo alternativo estilo Stradivarius/Shein) */}
+        {fotoSecundaria && (
+          <img
+            src={fotoSecundaria}
+            alt={`${item.nombre} vista alternativa`}
+            loading="lazy"
+            decoding="async"
+            style={MAIN_PHOTO_MASK_STYLE}
+            className="absolute inset-0 z-20 h-full w-full object-contain opacity-0 transition-opacity duration-300 motion-reduce:transition-none group-hover:opacity-100"
+          />
+        )}
+
+        {/* Badges superiores (Descuento, Nuevo, Circular) */}
+        <div className="absolute left-2.5 top-2.5 z-30 flex flex-col items-start gap-1">
+          {tieneDescuento && (
+            <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+              -{item.descuento}%
+            </span>
+          )}
+          {item.esNuevo && (
+            <span className="rounded-md bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+              Nuevo
+            </span>
+          )}
+          {item.esSegundaMano && (
+            <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+              Segunda mano
+            </span>
+          )}
+        </div>
       </Link>
 
       {/* Información compacta con padding reducido y espacio lateral para el botón flotante */}
@@ -67,11 +101,40 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
               {item.nombre}
             </Link>
           </h3>
+
+          {/* Variantes de color disponibles (swatches sutiles estilo Stradivarius) */}
+          {item.coloresDisponibles && item.coloresDisponibles.length > 1 && (
+            <div className="mt-1.5 flex items-center gap-1">
+              {item.coloresDisponibles.slice(0, 3).map((col) => (
+                <span
+                  key={col}
+                  title={`Disponible en ${col}`}
+                  className="inline-block h-2 w-2 rounded-full border border-[var(--color-border)] bg-[var(--color-text-muted)]/40"
+                />
+              ))}
+              {item.coloresDisponibles.length > 3 && (
+                <span className="text-[9px] text-[var(--color-text-muted)] font-medium">
+                  +{item.coloresDisponibles.length - 3}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
-          <span className="text-sm font-semibold text-[var(--color-text)]">
-            {formatCOP(item.precio)}
-          </span>
+          <div className="flex items-baseline gap-1.5">
+            {tieneDescuento && item.precioAnterior && (
+              <span className="text-[0.6875rem] line-through text-[var(--color-text-muted)]">
+                {formatCOP(item.precioAnterior)}
+              </span>
+            )}
+            <span
+              className={`text-sm font-semibold ${
+                tieneDescuento ? 'text-rose-500 font-bold' : 'text-[var(--color-text)]'
+              }`}
+            >
+              {formatCOP(item.precio)}
+            </span>
+          </div>
           <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
             a {item.distanciaKm.toLocaleString('es-CO')} km
           </span>

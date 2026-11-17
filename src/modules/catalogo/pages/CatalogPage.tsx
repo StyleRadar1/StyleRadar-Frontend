@@ -8,6 +8,7 @@ import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/
 import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
 import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
 import { ItemCard } from '../components/ItemCard'
+import { ItemGridSkeleton } from '../components/ItemCardSkeleton'
 import { CatalogMegaMenu } from '../components/CatalogMegaMenu'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
@@ -349,11 +350,68 @@ export default function CatalogPage() {
     return Array.from(map.values())
   }, [items, storeSubTick])
 
+  // Historial de búsquedas recientes y sugerencias predictivas (Fase 3: M6)
+  const [busquedasRecientes, setBusquedasRecientes] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('sr_recent_searches')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setMostrarSugerencias(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const guardarBusquedaReciente = (query: string) => {
+    const q = query.trim()
+    if (!q) return
+    setBusquedasRecientes((prev) => {
+      const filtradas = [q, ...prev.filter((b) => b.toLowerCase() !== q.toLowerCase())].slice(0, 5)
+      try {
+        localStorage.setItem('sr_recent_searches', JSON.stringify(filtradas))
+      } catch {
+        // safe fallback
+      }
+      return filtradas
+    })
+  }
+
+  const limpiarBusquedasRecientes = () => {
+    setBusquedasRecientes([])
+    try {
+      localStorage.removeItem('sr_recent_searches')
+    } catch {
+      // safe fallback
+    }
+  }
+
+  const aplicarBusquedaRapida = (termino: string) => {
+    setTexto(termino)
+    guardarBusquedaReciente(termino)
+    setMostrarSugerencias(false)
+    const next = new URLSearchParams(params)
+    next.set('q', termino)
+    setParams(next)
+  }
+
   // Manejo de búsqueda
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setMostrarSugerencias(false)
+    const q = texto.trim()
+    if (q) guardarBusquedaReciente(q)
     const next = new URLSearchParams(params)
-    if (texto.trim()) next.set('q', texto.trim()); else next.delete('q')
+    if (q) next.set('q', q); else next.delete('q')
     setParams(next)
   }
 
@@ -711,51 +769,123 @@ export default function CatalogPage() {
           </h1>
         </div>
 
-        {/* Barra de búsqueda interactiva */}
-        <form onSubmit={handleSearchSubmit} className="relative mb-4 flex gap-2">
-          <div className="relative flex-1">
-            <svg
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              placeholder="Busca «camisa blanca manga larga talla M», «blazer», «cuero»…"
-              aria-label="Buscar prendas"
-              className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] py-3.5 pl-11 pr-10 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] outline-none backdrop-blur-xl focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-focus-ring)]"
-            />
-            {texto && (
-              <button
-                type="button"
-                onClick={() => setTexto('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                aria-label="Borrar texto"
+        {/* Barra de búsqueda interactiva con historial y sugerencias predictivas */}
+        <div ref={searchContainerRef} className="relative mb-4">
+          <form onSubmit={handleSearchSubmit} className="flex gap-2">
+            <div className="relative flex-1">
+              <svg
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            )}
-          </div>
-          <button
-            type="submit"
-            className="rounded-2xl bg-[var(--color-accent)] px-7 text-sm font-bold text-[var(--color-text-on-accent)] shadow-lg transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-          >
-            Buscar
-          </button>
-        </form>
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                value={texto}
+                onFocus={() => setMostrarSugerencias(true)}
+                onChange={(e) => {
+                  setTexto(e.target.value)
+                  setMostrarSugerencias(true)
+                }}
+                placeholder="Busca «camisa blanca manga larga talla M», «blazer», «cuero»…"
+                aria-label="Buscar prendas"
+                className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] py-3.5 pl-11 pr-10 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] outline-none backdrop-blur-xl focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-focus-ring)]"
+              />
+              {texto && (
+                <button
+                  type="button"
+                  onClick={() => setTexto('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                  aria-label="Borrar texto"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="rounded-2xl bg-[var(--color-accent)] px-7 text-sm font-bold text-[var(--color-text-on-accent)] shadow-lg transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            >
+              Buscar
+            </button>
+          </form>
+
+          {/* Menú de sugerencias e historial de búsquedas recientes */}
+          {mostrarSugerencias && (
+            <div
+              className="absolute left-0 right-0 top-full mt-2 z-50 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-2xl backdrop-blur-2xl text-[var(--color-text)] animate-in fade-in zoom-in-95 duration-150"
+              role="region"
+              aria-label="Sugerencias de búsqueda"
+            >
+              {/* Búsquedas recientes si existen */}
+              {busquedasRecientes.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]/50">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      Búsquedas recientes
+                    </span>
+                    <button
+                      type="button"
+                      onClick={limpiarBusquedasRecientes}
+                      className="text-[11px] font-semibold text-[var(--color-text-muted)] hover:text-rose-500 transition"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {busquedasRecientes.map((reciente) => (
+                      <button
+                        key={reciente}
+                        type="button"
+                        onClick={() => aplicarBusquedaRapida(reciente)}
+                        className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition flex items-center gap-1.5"
+                      >
+                        <span>{reciente}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tendencias en Bogotá */}
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] flex items-center gap-1.5 mb-2">
+                  <svg className="w-3.5 h-3.5 text-[var(--color-accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                    <polyline points="17 6 23 6 23 12" />
+                  </svg>
+                  Tendencias en tiendas de Bogotá
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {['Blazer oversize', 'Chaqueta de nylon', 'Hoodie', 'Jean ancho', 'Segunda mano', 'Techwear'].map((trend) => (
+                    <button
+                      key={trend}
+                      type="button"
+                      onClick={() => aplicarBusquedaRapida(trend)}
+                      className="rounded-xl bg-[var(--color-surface-raised)]/60 px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] hover:bg-[var(--color-accent)] hover:text-[var(--color-text-on-accent)] transition"
+                    >
+                      {trend}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* MENÚ HORIZONTAL DE CATEGORÍAS Y MEGA-MENÚ DE SUBFILTROS EN HOVER (ESTILO GOTRENDIER) */}
         <CatalogMegaMenu
@@ -1182,10 +1312,7 @@ export default function CatalogPage() {
           )}
 
           {loading ? (
-            <div className="py-16 text-center text-[var(--color-text-muted)]">
-              <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-accent)]" />
-              <p className="text-sm">Buscando prendas en el catálogo…</p>
-            </div>
+            <ItemGridSkeleton count={8} />
           ) : uniqueItems.length ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(10.625rem,1fr))]">
               {uniqueItems.map((it) => (
