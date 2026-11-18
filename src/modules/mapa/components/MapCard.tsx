@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
+import { mapService, type CatalogSummaryDto } from '../services/mapService'
 import type { MapPinDto } from '../types/map.dto'
 
 interface Props {
@@ -12,6 +13,19 @@ interface Props {
 export default function MapCard({ pin, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
   const isFound = pin.tipo === 'fundacion'
+  const [resumen, setResumen] = useState<CatalogSummaryDto | null>(null)
+
+  useEffect(() => {
+    setResumen(null)
+    if (isFound) return
+    let cancelled = false
+    mapService.getCatalogSummary(pin.id)
+      .then((data) => {
+        if (!cancelled) setResumen(data)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [pin.id, isFound])
 
   /* Clic fuera cierra */
   useEffect(() => {
@@ -46,7 +60,7 @@ export default function MapCard({ pin, onClose }: Props) {
         {pin.photo ? <img src={pin.photo} alt={pin.name} loading="lazy" /> : <span className="lm-photo-empty">{pin.name.charAt(0)}</span>}
         <span className="lm-photo-fade" aria-hidden="true" />
         <span className={`lm-photo-badge${isFound ? ' is-found' : ''}`}>
-          {isFound ? '♥ Fundación' : `● ${pin.cat}`}
+          {isFound ? '♥ Fundación' : pin.cat ? `● ${pin.cat}` : '● Tienda'}
         </span>
       </div>
 
@@ -64,34 +78,54 @@ export default function MapCard({ pin, onClose }: Props) {
       </button>
 
       <h3 className="text-base font-bold leading-tight text-[var(--color-text)]">{pin.name}</h3>
-      <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{pin.barrio} · a {pin.d}</p>
+      {(pin.barrio || pin.d) && (
+        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+          {[pin.barrio, pin.d ? `a ${pin.d}` : ''].filter(Boolean).join(' · ')}
+        </p>
+      )}
 
       {/* Info */}
-      <dl className="mt-3 space-y-1 text-xs">
-        <div className="flex gap-2">
-          <dt className="text-[var(--color-text-muted)]">Dirección</dt>
-          <dd className="text-[var(--color-text)]">{pin.dir}</dd>
-        </div>
-        <div className="flex gap-2">
-          <dt className="text-[var(--color-text-muted)]">Horario</dt>
-          <dd className="text-[var(--color-text)]">{pin.hours}</dd>
-        </div>
-        {pin.rating && (
-          <div className="flex gap-2">
-            <dt className="text-[var(--color-text-muted)]">Calificación</dt>
-            <dd className="text-[var(--color-text)]">★ {pin.rating} ({pin.reviews} reseñas)</dd>
-          </div>
-        )}
-      </dl>
+      {(pin.dir || pin.hours || pin.rating) && (
+        <dl className="mt-3 space-y-1 text-xs">
+          {pin.dir && (
+            <div className="flex gap-2">
+              <dt className="text-[var(--color-text-muted)]">Dirección</dt>
+              <dd className="text-[var(--color-text)]">{pin.dir}</dd>
+            </div>
+          )}
+          {pin.hours && (
+            <div className="flex gap-2">
+              <dt className="text-[var(--color-text-muted)]">Horario</dt>
+              <dd className="text-[var(--color-text)]">{pin.hours}</dd>
+            </div>
+          )}
+          {pin.rating && (
+            <div className="flex gap-2">
+              <dt className="text-[var(--color-text-muted)]">Calificación</dt>
+              <dd className="text-[var(--color-text)]">
+                ★ {pin.rating}
+                {pin.reviews !== undefined ? ` (${pin.reviews} reseñas)` : ''}
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
 
       {pin.desc && <p className="mt-2 text-xs leading-snug text-[var(--color-text-muted)]">{pin.desc}</p>}
 
-      {/* Tienda: vista previa de productos */}
-      {!isFound && pin.products && pin.products.length > 0 && (
+      {/* Tienda: vista previa de productos (resumen de hasta 4 prendas) */}
+      {!isFound && ((resumen ? resumen.prendas : pin.products) ?? []).length > 0 && (
         <div className="mt-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Lo que ofrece</p>
-          <ul className="mt-2 grid grid-cols-3 gap-2">
-            {pin.products.slice(0, 3).map((p) => (
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Lo que ofrece</p>
+            {resumen && (
+              <span className="text-[10px] text-[var(--color-text-muted)]">
+                {resumen.totalPrendas} disponibles
+              </span>
+            )}
+          </div>
+          <ul className="mt-2 grid grid-cols-2 gap-2">
+            {((resumen ? resumen.prendas : pin.products) ?? []).slice(0, 4).map((p) => (
               <li key={p.id} className="min-w-0">
                 <img
                   src={p.imagen}

@@ -10,18 +10,31 @@ export interface MapProductDto {
   imagen: string
 }
 
+/** Categorías de almacén unificadas (SR-RF-18) */
+export const CATEGORIAS_ALMACEN = [
+  { id: 'cat-casual', nombre: 'Casual' },
+  { id: 'cat-formal', nombre: 'Formal' },
+  { id: 'cat-deportivo', nombre: 'Deportivo' },
+  { id: 'cat-urbano', nombre: 'Urbano' },
+  { id: 'cat-vintage', nombre: 'Vintage' },
+  { id: 'cat-accesorios', nombre: 'Accesorios' },
+  { id: 'cat-calzado', nombre: 'Calzado' },
+] as const
+
 export interface MapPinDto {
   id: string
   tipo: PinTipo
   name: string
-  /** Categoría (e.g. 'Sport', 'Leather') o 'Fundación' */
+  /** Identificador de categoría del almacén (UUID en back) */
+  categoriaId?: string
+  /** Categoría (e.g. 'Deportivo', 'Urbano', 'Calzado') o 'Fundación' */
   cat: string
-  barrio: string
-  dir: string
-  /** Distancia aproximada en texto */
-  d: string
+  barrio?: string
+  dir?: string
+  /** Distancia aproximada en texto con coma decimal (e.g. '1,25 km') */
+  d?: string
   /** Horario */
-  hours: string
+  hours?: string
   /** Coordenadas [lng, lat] */
   lngLat: [number, number]
   /** Ruta en la app (e.g. '/tiendas/luna') */
@@ -40,7 +53,9 @@ export interface MapPinDto {
   stats?: [number, number, number]
   /** Foto del punto (archivo en public/img/mapa) */
   photo?: string
-  /** Productos destacados (solo tiendas) */
+  /** Total de prendas reportadas en el resumen del catálogo */
+  totalPrendas?: number
+  /** Productos destacados (solo tiendas, hasta 4 desde /catalogo/resumen) */
   products?: MapProductDto[]
 }
 

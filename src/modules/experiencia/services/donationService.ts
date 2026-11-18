@@ -27,9 +27,22 @@ const MOCK_FOUNDATION_OF: Record<string, string> = { 'f-1': 'abrigo' }
 
 export const donationService = {
   /** RF-44: fundaciones ordenadas por cercanía, con las categorías que reciben. */
-  async foundations(): Promise<FoundationDto[]> {
+  async foundations(coords?: { lat: number; lng: number; radioKm?: number }): Promise<FoundationDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...FOUNDATIONS].sort((a, b) => a.distanciaKm - b.distanciaKm)) }
-    return apiClient.get<FoundationDto[]>('/api/donations/foundations').then((r) => r.data)
+    const params = coords
+      ? { lat: coords.lat, lng: coords.lng, radioKm: coords.radioKm ?? 5 }
+      : { lat: 4.6533, lng: -74.0836, radioKm: 10 }
+    const r = await apiClient.get<any[]>('/api/v1/fundaciones/cercanas', { params })
+    const rows = Array.isArray(r.data) ? r.data : []
+    return rows.map((f) => ({
+      id: String(f.id ?? ''),
+      nombre: f.nombre || f.name || '',
+      barrio: f.barrio || '',
+      distanciaKm: typeof f.distanciaKm === 'number' ? f.distanciaKm : Number(f.distanciaKm ?? 0),
+      categorias: Array.isArray(f.categorias) ? f.categorias : Array.isArray(f.accepts) ? f.accepts : [],
+      activa: f.activa !== false,
+      puntos: Array.isArray(f.puntos) ? f.puntos : [],
+    }))
   },
 
   /** RF-42, RF-45 y RF-48: solicitud con fotos y logística desde el primer formulario. */
