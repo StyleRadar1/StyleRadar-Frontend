@@ -12,24 +12,32 @@ import { ItemGridSkeleton } from '../components/ItemCardSkeleton'
 import { CatalogMegaMenu } from '../components/CatalogMegaMenu'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
-import type { ItemFiltersDto, ItemResponseDto } from '../types/item.dto'
+import {
+  COLORES_UNIFICADOS,
+  ESTILOS_UNIFICADOS,
+  MARCAS_TIENDAS_UNIFICADAS,
+  ORDENES_UNIFICADOS,
+  TALLAS_POR_TIPO,
+  TIPOS_PRENDA_UNIFICADOS,
+  type ItemFiltersDto,
+  type ItemResponseDto,
+  type OrdenCatalogo,
+  type TipoTalla,
+} from '../types/item.dto'
 import './CatalogPage.css'
 
-// Tipos de prenda
-const TIPOS_PRENDA = [
-  'Todos',
-  'Saco',
-  'Pantalón',
-  'Buzo',
-  'Chaqueta',
-  'Calzado',
-  'Accesorio',
+// Tipos de prenda unificados (12)
+const TIPOS_PRENDA = ['Todos', ...TIPOS_PRENDA_UNIFICADOS] as const
+
+// Tallas disponibles agrupadas por tipo de talla (SR-RF-10)
+const GRUPOS_TALLAS: { id: TipoTalla; label: string; tallas: readonly string[] }[] = [
+  { id: 'ROPA', label: 'Ropa', tallas: TALLAS_POR_TIPO.ROPA },
+  { id: 'PANTALON', label: 'Pantalón', tallas: TALLAS_POR_TIPO.PANTALON },
+  { id: 'CALZADO', label: 'Calzado', tallas: TALLAS_POR_TIPO.CALZADO },
+  { id: 'UNICA', label: 'Talla única', tallas: TALLAS_POR_TIPO.UNICA },
 ]
 
-// Tallas disponibles
-const TALLAS = ['Todas', 'XS', 'S', 'M', 'L', 'XL', '28', '30', '32', '38', '39', '40']
-
-// Presets de precio
+// Presets de precio (SR-RF-11)
 const PRECIOS_PRESETS = [
   { label: 'Cualquier precio', min: undefined, max: undefined },
   { label: 'Hasta $100.000', min: undefined, max: 100000 },
@@ -45,56 +53,35 @@ const ORIGENES = [
   { id: 'segunda-mano', label: 'Segunda mano' },
 ]
 
-// Opciones de ubicación Cerca de (localidades y barrios de Bogotá)
-const OPCIONES_CERCA_DE = [
-  'No especificar',
-  'Cerca de mí',
-  'Chapinero',
-  'Zona G',
-  'Chicó',
-  'Usaquén',
-  'Cedritos',
-  'Teusaquillo',
-  'Centro',
-  'Suba',
-  'Engativá',
-  'Fontibón',
-  'Kennedy',
-  'Bosa',
-] as const
+// Coordenadas de referencia por zona de Bogotá para calcular lat/lng cuando no se comparte GPS
+const ZONAS_BOGOTA_COORDS: Record<string, { lat: number; lng: number }> = {
+  Chapinero: { lat: 4.6433, lng: -74.0628 },
+  'Zona G': { lat: 4.6525, lng: -74.056 },
+  Chicó: { lat: 4.6766, lng: -74.0504 },
+  Usaquén: { lat: 4.6974, lng: -74.0305 },
+  Teusaquillo: { lat: 4.6256, lng: -74.0722 },
+  Suba: { lat: 4.7431, lng: -74.0886 },
+  Kennedy: { lat: 4.62, lng: -74.1534 },
+}
 
-// Marcas o tiendas del radar
-const MARCAS = [
-  'Todas',
-  'Kicks Local',
-  'Luna Store',
-  'Nómada Studio',
-  'Segunda mano',
-  'The Local Lab',
-] as const
+// Marcas o tiendas del radar (11 tiendas unificadas, SR-RF-12)
+const MARCAS = ['Todas', ...MARCAS_TIENDAS_UNIFICADAS] as const
 
-// Colores disponibles
-const COLORES = ['Todos', 'Negro', 'Blanco', 'Azul', 'Crudo', 'Gris', 'Café']
+// Colores disponibles unificados (8 colores, SR-RF-09)
+const COLORES = ['Todos', ...COLORES_UNIFICADOS] as const
 
-// Los cinco estilos oficiales de StyleRadar
-const ESTILOS = [
-  'Todos',
-  'Streetwear',
-  'Elegante',
-  'Casual',
-  'Vintage',
-  'Techwear',
-] as const
+// Los cinco estilos unificados de StyleRadar (SR-RF-13)
+const ESTILOS = ['Todos', ...ESTILOS_UNIFICADOS] as const
 
-// Opciones de ordenamiento (con Cercanía)
-const OPCIONES_ORDEN = [
-  { id: 'rel', label: 'Recomendados' },
-  { id: 'new', label: 'Más recientes' },
-  { id: 'cerca', label: 'Cercanía' },
-  { id: 'rep', label: 'Mejor calificadas' },
-  { id: 'asc', label: 'Precio: menor a mayor' },
-  { id: 'desc', label: 'Precio: mayor a menor' },
-]
+// Opciones de ordenamiento unificadas (SR-RF-14, SR-RF-15)
+const OPCIONES_ORDEN = ORDENES_UNIFICADOS
+
+function normOrdenParam(raw: string | null): OrdenCatalogo {
+  const up = (raw ?? '').toUpperCase().trim()
+  if (up === 'DISTANCIA' || up === 'CERCA' || up === 'CERCANIA') return 'DISTANCIA'
+  if (up === 'REPUTACION' || up === 'REP') return 'REPUTACION'
+  return 'RECIENTES'
+}
 
 /** Aviso al guardar la búsqueda: qué pasó y qué botón lo resuelve. */
 interface AvisoBusqueda { tono: TonoAviso; titulo: string; texto: string; accion?: 'reintentar' | 'planes' | 'login' | 'ver' }
@@ -119,7 +106,7 @@ export default function CatalogPage() {
 
   // Estados de búsqueda y orden
   const [texto, setTexto] = useState(params.get('q') ?? '')
-  const [orden, setOrden] = useState<string>(params.get('orden') ?? 'rel')
+  const [orden, setOrden] = useState<OrdenCatalogo>(() => normOrdenParam(params.get('orden')))
 
   // Menús desplegables
   const [menuFiltrosAbierto, setMenuFiltrosAbierto] = useState(false)
@@ -128,10 +115,10 @@ export default function CatalogPage() {
   const botonFiltrosRef = useRef<HTMLButtonElement>(null)
   const ordenRef = useRef<HTMLDivElement>(null)
 
-  type CategoriaId = 'cercaDe' | 'tipo' | 'talla' | 'precio' | 'origen' | 'marca' | 'color' | 'estilo'
+  type CategoriaId = 'tipo' | 'talla' | 'precio' | 'origen' | 'marca' | 'color' | 'estilo'
 
   // Categoría activa en el selector de dos columnas
-  const [categoriaActiva, setCategoriaActiva] = useState<CategoriaId>('cercaDe')
+  const [categoriaActiva, setCategoriaActiva] = useState<CategoriaId>('tipo')
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const prevMenuAbiertoRef = useRef(false)
 
@@ -176,7 +163,6 @@ export default function CatalogPage() {
   }, [menuFiltrosAbierto, categoriaActiva])
 
   // Filtros del catálogo
-  const [filtroCercaDe, setFiltroCercaDe] = useState<string>(params.get('cerca') ?? 'No especificar')
   const [filtroTipo, setFiltroTipo] = useState<string>(params.get('tipo') ?? 'Todos')
   const [filtroTalla, setFiltroTalla] = useState<string>(params.get('talla') ?? 'Todas')
   const [filtroPrecio, setFiltroPrecio] = useState<number>(0)
@@ -186,7 +172,6 @@ export default function CatalogPage() {
   const [filtroEstilo, setFiltroEstilo] = useState<string>(params.get('estilo') ?? 'Todos')
 
   const CATEGORIAS_CONFIG: { id: CategoriaId; label: string; count: number }[] = useMemo(() => [
-    { id: 'cercaDe', label: 'Cerca de', count: filtroCercaDe !== 'No especificar' ? 1 : 0 },
     { id: 'tipo', label: 'Tipo de prenda', count: filtroTipo !== 'Todos' ? 1 : 0 },
     { id: 'talla', label: 'Talla disponible', count: filtroTalla !== 'Todas' ? 1 : 0 },
     { id: 'precio', label: 'Rango de precio', count: filtroPrecio !== 0 ? 1 : 0 },
@@ -194,12 +179,12 @@ export default function CatalogPage() {
     { id: 'marca', label: 'Marca', count: filtroMarca !== 'Todas' ? 1 : 0 },
     { id: 'color', label: 'Color', count: filtroColor !== 'Todos' ? 1 : 0 },
     { id: 'estilo', label: 'Estilo', count: filtroEstilo !== 'Todos' ? 1 : 0 },
-  ], [filtroCercaDe, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
+  ], [filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
 
-  // Al abrir el panel: empieza en la primera categoría con filtros aplicados, o en 'cercaDe'
+  // Al abrir el panel: empieza en la primera categoría con filtros aplicados, o en 'tipo'
   useEffect(() => {
     if (menuFiltrosAbierto && !prevMenuAbiertoRef.current) {
-      const primeraConFiltro = CATEGORIAS_CONFIG.find((cat) => cat.count > 0)?.id ?? 'cercaDe'
+      const primeraConFiltro = CATEGORIAS_CONFIG.find((cat) => cat.count > 0)?.id ?? 'tipo'
       setCategoriaActiva(primeraConFiltro)
     }
     prevMenuAbiertoRef.current = menuFiltrosAbierto
@@ -210,8 +195,10 @@ export default function CatalogPage() {
   const [avisoBusqueda, setAvisoBusqueda] = useState<AvisoBusqueda | null>(null)
   const [guardando, setGuardando] = useState(false)
 
-  // Ordenar por cercanía necesita saber desde dónde (400 del catálogo si no hay ubicación)
+  // Ordenar por cercanía (DISTANCIA) necesita lat y lng (400 del catálogo si no hay ubicación)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [pideUbicacion, setPideUbicacion] = useState(false)
+  const [mostrarZonasUbicacion, setMostrarZonasUbicacion] = useState(false)
   const [ubicacionError, setUbicacionError] = useState('')
 
   // Cerrar menús al hacer clic fuera
@@ -282,7 +269,6 @@ export default function CatalogPage() {
   // Contador de filtros activos (excluyendo defaults)
   const filtrosActivosCount = useMemo(() => {
     let count = 0
-    if (filtroCercaDe !== 'No especificar') count++
     if (filtroTipo !== 'Todos') count++
     if (filtroTalla !== 'Todas') count++
     if (filtroPrecio !== 0) count++
@@ -291,7 +277,7 @@ export default function CatalogPage() {
     if (filtroColor !== 'Todos') count++
     if (filtroEstilo !== 'Todos') count++
     return count
-  }, [filtroCercaDe, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
+  }, [filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
 
   // Filtros combinados para el hook
   const activeFilters = useMemo<ItemFiltersDto>(() => {
@@ -304,12 +290,13 @@ export default function CatalogPage() {
       precioMax: selectedPreset?.max,
       origen: filtroOrigen !== 'Todos' ? filtroOrigen : undefined,
       marca: filtroMarca !== 'Todas' ? filtroMarca : undefined,
-      cercaDe: filtroCercaDe !== 'No especificar' ? filtroCercaDe : undefined,
       color: filtroColor !== 'Todos' ? filtroColor : undefined,
       estilo: filtroEstilo !== 'Todos' ? filtroEstilo : undefined,
+      lat: orden === 'DISTANCIA' ? coords?.lat : undefined,
+      lng: orden === 'DISTANCIA' ? coords?.lng : undefined,
       orden,
     }
-  }, [texto, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroCercaDe, filtroColor, filtroEstilo, orden])
+  }, [texto, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
 
   const { items, loading, error, status } = useItems(activeFilters)
   const [storeSubTick, setStoreSubTick] = useState(0)
@@ -320,8 +307,8 @@ export default function CatalogPage() {
     return () => window.removeEventListener(STORE_SUB_CHANGED, onSubChanged)
   }, [])
 
-  const sinUbicacion = filtroCercaDe === 'No especificar'
-  const mostrarPideUbicacion = sinUbicacion && (pideUbicacion || (orden === 'cerca' && status === 400))
+  const sinUbicacion = coords === null
+  const mostrarPideUbicacion = sinUbicacion && (pideUbicacion || (orden === 'DISTANCIA' && status === 400))
 
   // Deduplicación garantizada por ID e imagen al construir la lista de la grilla (queda el primero)
   // RF-99: oculta prendas de tiendas con suscripción SUSPENDIDA y actualiza conteos
@@ -415,31 +402,45 @@ export default function CatalogPage() {
     setParams(next)
   }
 
-  const handleCambiarOrden = (nuevoOrden: string) => {
-    // Sin ubicación no hay desde dónde medir: se pide antes de ordenar
-    if (nuevoOrden === 'cerca' && sinUbicacion) { setPideUbicacion(true); setUbicacionError(''); return }
+  const handleCambiarOrden = (nuevoOrden: OrdenCatalogo) => {
+    // Sin ubicación (lat/lng) no hay desde dónde medir: se pide antes de ordenar por DISTANCIA (400 en back)
+    if (nuevoOrden === 'DISTANCIA' && sinUbicacion) {
+      setPideUbicacion(true)
+      setMostrarZonasUbicacion(false)
+      setUbicacionError('')
+      return
+    }
     setPideUbicacion(false)
+    setMostrarZonasUbicacion(false)
     setOrden(nuevoOrden)
     const next = new URLSearchParams(params)
-    if (nuevoOrden && nuevoOrden !== 'rel') next.set('orden', nuevoOrden); else next.delete('orden')
+    if (nuevoOrden && nuevoOrden !== 'RECIENTES') next.set('orden', nuevoOrden); else next.delete('orden')
     setParams(next)
   }
 
-  const elegirCercaDe = (loc: string) => {
-    setFiltroCercaDe(loc)
-    if (pideUbicacion && loc !== 'No especificar') {
-      setPideUbicacion(false)
-      setOrden('cerca')
-      const next = new URLSearchParams(params); next.set('orden', 'cerca'); setParams(next)
-    }
+  const activarDistanciaConCoords = (nextCoords: { lat: number; lng: number }) => {
+    setCoords(nextCoords)
+    setPideUbicacion(false)
+    setMostrarZonasUbicacion(false)
+    setOrden('DISTANCIA')
+    const next = new URLSearchParams(params)
+    next.set('orden', 'DISTANCIA')
+    setParams(next)
   }
 
   const usarMiUbicacion = () => {
     setUbicacionError('')
-    if (!('geolocation' in navigator)) { setUbicacionError('Tu navegador no comparte la ubicación. Elige tu barrio.'); return }
+    if (!('geolocation' in navigator)) {
+      setUbicacionError('Tu navegador no comparte la ubicación. Elige tu zona.')
+      setMostrarZonasUbicacion(true)
+      return
+    }
     navigator.geolocation.getCurrentPosition(
-      () => elegirCercaDe('Mi ubicación'),
-      () => { setUbicacionError('No pudimos usar tu ubicación. Elige tu barrio.'); setMenuFiltrosAbierto(true) },
+      (pos) => activarDistanciaConCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        setUbicacionError('No pudimos usar tu ubicación. Elige una zona de Bogotá.')
+        setMostrarZonasUbicacion(true)
+      },
       { timeout: 10000, maximumAge: 300000 },
     )
   }
@@ -474,7 +475,6 @@ export default function CatalogPage() {
 
   // Limpiar todos los filtros
   const handleResetFiltros = () => {
-    setFiltroCercaDe('No especificar')
     setFiltroTipo('Todos')
     setFiltroTalla('Todas')
     setFiltroPrecio(0)
@@ -505,32 +505,6 @@ export default function CatalogPage() {
 
   const renderOpcionesCategoria = () => {
     switch (categoriaActiva) {
-      case 'cercaDe':
-        return (
-          <div className="sr-filter-chips-grid">
-            {OPCIONES_CERCA_DE.map((loc) => {
-              const isSelected = filtroCercaDe === loc
-              const isDefault = loc === 'No especificar'
-              return (
-                <button
-                  key={loc}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => elegirCercaDe(isSelected && !isDefault ? 'No especificar' : loc)}
-                  className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
-                >
-                  <span>{loc}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        )
       case 'tipo':
         return (
           <div className="sr-filter-chips-grid">
@@ -559,28 +533,46 @@ export default function CatalogPage() {
         )
       case 'talla':
         return (
-          <div className="sr-filter-chips-grid">
-            {TALLAS.map((sz) => {
-              const isSelected = filtroTalla === sz
-              const isDefault = sz === 'Todas'
-              return (
-                <button
-                  key={sz}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => setFiltroTalla(isSelected && !isDefault ? 'Todas' : sz)}
-                  className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
-                >
-                  <span>{sz}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
-                </button>
-              )
-            })}
+          <div className="space-y-3">
+            <div className="sr-filter-chips-grid">
+              <button
+                type="button"
+                aria-pressed={filtroTalla === 'Todas'}
+                onClick={() => setFiltroTalla('Todas')}
+                className={`sr-filter-chip ${filtroTalla === 'Todas' ? 'sr-filter-chip--selected' : ''}`}
+              >
+                <span>Todas</span>
+              </button>
+            </div>
+            {GRUPOS_TALLAS.map((grupo) => (
+              <div key={grupo.id}>
+                <p className="mb-1.5 text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                  {grupo.label}
+                </p>
+                <div className="sr-filter-chips-grid">
+                  {grupo.tallas.map((sz) => {
+                    const isSelected = filtroTalla === sz
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => setFiltroTalla(isSelected ? 'Todas' : sz)}
+                        className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                      >
+                        <span>{sz}</span>
+                        {isSelected && (
+                          <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )
       case 'precio':
@@ -871,7 +863,7 @@ export default function CatalogPage() {
                   Tendencias en tiendas de Bogotá
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {['Blazer oversize', 'Chaqueta de nylon', 'Hoodie', 'Jean ancho', 'Segunda mano', 'Techwear'].map((trend) => (
+                  {['Blazer oversize', 'Chaqueta de nylon', 'Hoodie', 'Jean ancho', 'Segunda mano', 'Urbano'].map((trend) => (
                     <button
                       key={trend}
                       type="button"
@@ -1098,7 +1090,7 @@ export default function CatalogPage() {
                   Ordenar:
                 </span>
                 <span className="text-[var(--color-text)] text-xs">
-                  {opcionOrdenActual?.label ?? 'Recomendados'}
+                  {opcionOrdenActual?.label ?? 'Más recientes'}
                 </span>
                 <svg
                   className={`h-3 w-3 text-[var(--color-text-muted)] transition-transform ${menuOrdenAbierto ? 'rotate-180' : ''}`}
@@ -1160,17 +1152,6 @@ export default function CatalogPage() {
         {filtrosActivosCount > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
             <span className="text-[0.6875rem] text-[var(--color-text-muted)]">Filtros aplicados:</span>
-            {filtroCercaDe !== 'No especificar' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
-                Cerca de: {filtroCercaDe}
-                <button type="button" onClick={() => setFiltroCercaDe('No especificar')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de ubicación">
-                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </span>
-            )}
             {filtroTipo !== 'Todos' && (
               <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Tipo: {filtroTipo}
@@ -1258,14 +1239,28 @@ export default function CatalogPage() {
           </div>
         )}
 
-        {/* 400 · ordenar por cercanía sin ubicación: se pide antes, sin error técnico */}
+        {/* 400 · ordenar por cercanía sin ubicación: se pide lat/lng antes, sin error técnico */}
         {mostrarPideUbicacion && (
           <Aviso tono="info" className="mb-6" titulo="Activa tu ubicación para ordenar por cercanía" onCerrar={() => setPideUbicacion(false)}
             acciones={<>
               <button type="button" onClick={usarMiUbicacion} className={BTN_PRINCIPAL}>Usar mi ubicación</button>
-              <button type="button" onClick={() => { setMenuFiltrosAbierto(true); menuRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }} className={BTN_SECUNDARIO}>Elegir barrio</button>
+              <button type="button" onClick={() => setMostrarZonasUbicacion((prev) => !prev)} className={BTN_SECUNDARIO}>Elegir barrio</button>
             </>}>
-            <p>También puedes elegir tu barrio.</p>
+            <p>Comparte tu ubicación GPS o selecciona una zona de referencia en Bogotá.</p>
+            {mostrarZonasUbicacion && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {Object.entries(ZONAS_BOGOTA_COORDS).map(([zona, c]) => (
+                  <button
+                    key={zona}
+                    type="button"
+                    onClick={() => activarDistanciaConCoords(c)}
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)]"
+                  >
+                    {zona}
+                  </button>
+                ))}
+              </div>
+            )}
             {ubicacionError && <p className="mt-1 text-[var(--color-danger-text,#ffb4b4)]">{ubicacionError}</p>}
           </Aviso>
         )}
@@ -1296,7 +1291,7 @@ export default function CatalogPage() {
               Prendas encontradas ({uniqueItems.length})
             </h2>
             <span className="text-xs text-[var(--color-text-muted)] font-mono">
-              {orden === 'cerca' ? 'Ordenado por cercanía' : `Orden: ${opcionOrdenActual?.label}`}
+              {orden === 'DISTANCIA' ? 'Ordenado por cercanía' : `Orden: ${opcionOrdenActual?.label ?? 'Más recientes'}`}
             </span>
           </div>
 
@@ -1356,7 +1351,7 @@ interface HangingRackGarment {
   id: string
   nombre: string
   tienda: string
-  barrio: string
+  barrio?: string
   precio: number
   originalPrice?: number
   imagen: string

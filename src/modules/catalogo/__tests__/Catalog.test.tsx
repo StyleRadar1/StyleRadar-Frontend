@@ -9,7 +9,7 @@ const routes = [
   { path: '/catalogo/:id', element: <div>Detalle Prenda</div> },
 ]
 
-describe('CatalogPage - Filtros compactos, Cerca de y Ordenar rediseñado', () => {
+describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () => {
   it('renderiza encabezado limpio sin chips superiores y sin sección Para ti', async () => {
     renderAt('/catalogo', routes)
 
@@ -30,7 +30,7 @@ describe('CatalogPage - Filtros compactos, Cerca de y Ordenar rediseñado', () =
     expect(screen.getByRole('button', { name: /Guardar búsqueda/i })).toBeInTheDocument()
   })
 
-  it('el selector Ordenar tiene diseño de botón desplegable con la opción Cercanía', async () => {
+  it('el selector Ordenar ofrece solo las 3 opciones del back: Más recientes, Mejor calificadas y Cercanía', async () => {
     const user = userEvent.setup()
     renderAt('/catalogo', routes)
 
@@ -46,13 +46,15 @@ describe('CatalogPage - Filtros compactos, Cerca de y Ordenar rediseñado', () =
     const btnOrdenar = screen.getByRole('button', { name: /Ordenar resultados/i })
     expect(btnOrdenar).toBeInTheDocument()
 
-    // Al abrir el menú de ordenamiento muestra "Cercanía"
+    // Al abrir el menú de ordenamiento muestra las 3 opciones unificadas y no "Recomendados"
     await user.click(btnOrdenar)
+    expect(screen.getByRole('button', { name: /^Más recientes$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Mejor calificadas$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Cercanía$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Recomendados$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Recomendados$/i })).not.toBeInTheDocument()
   })
 
-  it('el botón de Filtros abre menú compacto con Cerca de (No especificar primero, Cerca de mí segundo)', async () => {
+  it('el panel de Filtros muestra listas unificadas (12 tipos, 8 colores, 11 marcas, 5 estilos, tallas agrupadas) sin Cerca de por barrio', async () => {
     const user = userEvent.setup()
     renderAt('/catalogo', routes)
 
@@ -66,25 +68,41 @@ describe('CatalogPage - Filtros compactos, Cerca de y Ordenar rediseñado', () =
     // Título del menú desplegable
     expect(screen.getByRole('heading', { level: 3, name: /Filtrar catálogo/i })).toBeInTheDocument()
 
-    // Sección Cerca de
-    expect(screen.getAllByText(/^Cerca de$/i).length).toBeGreaterThan(0)
-    expect(screen.getByRole('button', { name: /^No especificar$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Cerca de mí$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Chapinero$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Zona G$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Chicó$/i })).toBeInTheDocument()
+    // Categorías sin Cerca de por barrio
+    expect(screen.queryByRole('tab', { name: /^Cerca de$/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Tipo de prenda/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Camiseta$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Falda$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Conjunto$/i })).toBeInTheDocument()
 
-    // Otras categorías en el menú
-    expect(screen.getByText(/Tipo de prenda/i)).toBeInTheDocument()
-    expect(screen.getByText(/Talla disponible/i)).toBeInTheDocument()
-    expect(screen.getByText(/Rango de precio/i)).toBeInTheDocument()
-    expect(screen.getByText(/^Origen$/i)).toBeInTheDocument()
-    expect(screen.getByText(/^Marca$/i)).toBeInTheDocument()
-    expect(screen.getByText(/^Color$/i)).toBeInTheDocument()
-    expect(screen.getByText(/^Estilo$/i)).toBeInTheDocument()
+    // Tallas agrupadas por tipo de talla (XXL, 26, 45, Única)
+    await user.click(screen.getByRole('tab', { name: /Talla disponible/i }))
+    expect(screen.getByRole('button', { name: /^XXL$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^26$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^45$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Única$/i })).toBeInTheDocument()
+
+    // Colores unificados (incluye Beige y Plata)
+    await user.click(screen.getByRole('tab', { name: /^Color$/i }))
+    expect(screen.getByRole('button', { name: /^Beige$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Plata$/i })).toBeInTheDocument()
+
+    // 11 Marcas / tiendas unificadas
+    await user.click(screen.getByRole('tab', { name: /^Marca$/i }))
+    expect(screen.getByRole('button', { name: /^Ropero 57$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Sastrería Antonia$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Nora Vintage$/i })).toBeInTheDocument()
+
+    // 5 Estilos unificados
+    await user.click(screen.getByRole('tab', { name: /^Estilo$/i }))
+    expect(screen.getByRole('button', { name: /^Casual$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Formal$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Deportivo$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Urbano$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Vintage$/i })).toBeInTheDocument()
   })
 
-  it('permite filtrar por Cerca de y muestra el chip correspondiente', async () => {
+  it('permite filtrar por Estilo unificado y muestra el chip correspondiente', async () => {
     const user = userEvent.setup()
     renderAt('/catalogo', routes)
 
@@ -92,17 +110,12 @@ describe('CatalogPage - Filtros compactos, Cerca de y Ordenar rediseñado', () =
       expect(screen.getByRole('heading', { level: 1, name: /Todas las prendas/i })).toBeInTheDocument()
     })
 
-    // Abrir filtros
     await user.click(screen.getByRole('button', { name: /Filtros del catálogo/i }))
-
-    // Seleccionar Chapinero
-    await user.click(screen.getByRole('button', { name: /^Chapinero$/i }))
-
-    // Aplicar filtros
+    await user.click(screen.getByRole('tab', { name: /^Estilo$/i }))
+    await user.click(screen.getByRole('button', { name: /^Urbano$/i }))
     await user.click(screen.getByRole('button', { name: /Aplicar filtros/i }))
 
-    // Chip de filtro aplicado
-    expect(screen.getByText(/Cerca de: Chapinero/i)).toBeInTheDocument()
+    expect(screen.getByText(/Estilo: Urbano/i)).toBeInTheDocument()
   })
 
   it('permite guardar la búsqueda y activa su alerta', async () => {

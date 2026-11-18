@@ -15,11 +15,14 @@ const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
 }
 
 export function ItemCard({ item }: { item: ItemResponseDto }) {
-  const storeId = getStoreIdByName(item.tienda)
+  const storeName = item.tienda || item.marca || ''
+  const storeId = getStoreIdByName(storeName)
+  const imgPrincipal = item.imagen || item.fotografias?.[0] || ''
+  const fotos = item.imagenes?.length ? item.imagenes : item.fotografias
   const fotoSecundaria =
-    (item.imagenes && item.imagenes.length > 1 ? item.imagenes[1] : null) ||
+    (fotos && fotos.length > 1 ? fotos[1] : null) ||
     item.imagenSecundaria ||
-    (item.recorte && item.recorte !== item.imagen ? item.recorte : null)
+    (item.recorte && item.recorte !== imgPrincipal ? item.recorte : null)
   const tieneDescuento = Boolean(item.descuento && item.precioAnterior && item.precioAnterior > item.precio)
 
   return (
@@ -30,17 +33,19 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         className="relative block aspect-[3/4] w-full shrink-0 overflow-hidden rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
       >
         {/* Fondo uniforme: copia de la misma foto con blur fuerte (32px), scale 1.4, saturate 1.15 y opacidad 1 */}
-        <img
-          src={item.imagen}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          decoding="async"
-          className="pointer-events-none absolute inset-0 h-full w-full scale-[1.4] object-cover opacity-100 blur-[32px] saturate-[1.15]"
-        />
+        {imgPrincipal && (
+          <img
+            src={imgPrincipal}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            className="pointer-events-none absolute inset-0 h-full w-full scale-[1.4] object-cover opacity-100 blur-[32px] saturate-[1.15]"
+          />
+        )}
         {/* Foto principal completa (object-contain) con máscara de degradado en los 4 bordes para fundirse con el fondo */}
         <img
-          src={item.imagen}
+          src={imgPrincipal}
           alt={item.nombre}
           loading="lazy"
           decoding="async"
@@ -86,14 +91,18 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         <div>
           <div className="flex items-center gap-1 text-[0.625rem] font-bold uppercase tracking-[.14em]">
             <span className="text-[var(--color-accent)]">{item.estilo}</span>
-            <span className="text-[var(--color-text-muted)]">·</span>
-            <Link
-              to={`/tiendas/${storeId}`}
-              className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)] rounded"
-              title={`Ver tienda ${item.tienda}`}
-            >
-              {item.tienda} →
-            </Link>
+            {storeName && (
+              <>
+                <span className="text-[var(--color-text-muted)]">·</span>
+                <Link
+                  to={`/tiendas/${item.almacenId || storeId}`}
+                  className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)] rounded"
+                  title={`Ver tienda ${storeName}`}
+                >
+                  {storeName} →
+                </Link>
+              </>
+            )}
           </div>
           <h3 className="mt-1 line-clamp-2 text-xs font-semibold leading-snug text-[var(--color-text)]">
             <Link
@@ -138,9 +147,11 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
               {formatCOP(item.precio)}
             </span>
           </div>
-          <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
-            a {item.distanciaKm.toLocaleString('es-CO')} km
-          </span>
+          {item.distanciaKm > 0 && (
+            <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
+              a {item.distanciaKm.toLocaleString('es-CO', { maximumFractionDigits: 2 })} km
+            </span>
+          )}
         </div>
       </div>
 
@@ -148,8 +159,8 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
       <ContactButton
         icon
         className="absolute bottom-3 right-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        label={`Escribir a ${item.tienda} sobre ${item.nombre}`}
-        contacto={tiendaContacto(item.tienda)}
+        label={`Escribir a ${storeName || 'la tienda'} sobre ${item.nombre}`}
+        contacto={tiendaContacto(storeName || 'Tienda')}
         asunto={item.nombre}
         referenciaId={item.id}
       />
