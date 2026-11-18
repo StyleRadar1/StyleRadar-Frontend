@@ -30,8 +30,8 @@ export const donationService = {
   async foundations(): Promise<FoundationDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...FOUNDATIONS].sort((a, b) => a.distanciaKm - b.distanciaKm)) }
     return apiClient
-      .get<FoundationDto[]>('/api/v1/donaciones/foundations')
-      .catch(() => apiClient.get<FoundationDto[]>('/api/donations/foundations'))
+      .get<FoundationDto[]>('/api/v1/donations/foundations')
+      .catch(() => apiClient.get<FoundationDto[]>('/api/v1/donaciones/foundations'))
       .then((r) => r.data)
   },
 
@@ -51,19 +51,29 @@ export const donationService = {
       if (data.prenda && !f.categorias.includes(data.prenda.categoria)) throw new ApiError(422, `${f.nombre} no recibe ${data.prenda.categoria.toLowerCase()}.`)
       const dup = db().find((d) => d.donante.id === u.id && d.fundacion.id === f.id && d.prenda.titulo === data.prenda.titulo && d.estado === 'PENDIENTE')
       if (dup) throw new ApiError(409, 'Ya enviaste esta misma donación a esa fundación y sigue pendiente.')
-      const d: DonationDto = { id: `d-${Date.now().toString(36)}`, fundacion: { id: f.id, nombre: f.nombre }, donante: { id: u.id, nombre: u.name }, prenda: data.prenda,
-        fotos: files.map((x) => URL.createObjectURL(x)), logistica: { ...data.logistica, puntoNombre: f.puntos.find((p) => p.id === data.logistica?.puntoId)?.nombre },
-        estado: 'PENDIENTE', creadaEn: isoDay() }
+      const d: DonationDto = {
+        id: `d-${Date.now().toString(36)}`,
+        fundacion: { id: f.id, nombre: f.nombre },
+        donante: { id: u.id, nombre: u.name },
+        prenda: data.prenda,
+        fotos: files.map((x) => URL.createObjectURL(x)),
+        logistica: { ...data.logistica, puntoNombre: f.puntos.find((p) => p.id === data.logistica?.puntoId)?.nombre },
+        estado: 'PENDIENTE',
+        creadaEn: isoDay(),
+      }
       db().unshift(d)
       return mockDelay(d, 700)
     }
     const form = new FormData()
     form.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }))
     files.forEach((f) => form.append('files', f))
-    return apiClient.post<DonationDto>('/api/v1/donaciones', form).then((r) => r.data)
+    return apiClient
+      .post<DonationDto>('/api/v1/donations', form)
+      .catch(() => apiClient.post<DonationDto>('/api/v1/donaciones', form))
+      .then((r) => r.data)
   },
 
-  /** Solicitud directa oficial: POST /api/v1/donaciones */
+  /** Solicitud directa oficial: POST /api/v1/donations */
   async createDirect(body: DirectDonationRequestDto): Promise<DonationDto> {
     if (env.useMocks) {
       failIfScenario('duplicado')
@@ -90,10 +100,13 @@ export const donationService = {
       db().unshift(d)
       return mockDelay(d, 500)
     }
-    return apiClient.post<DonationDto>('/api/v1/donaciones', body).then((r) => r.data)
+    return apiClient
+      .post<DonationDto>('/api/v1/donations', body)
+      .catch(() => apiClient.post<DonationDto>('/api/v1/donaciones', body))
+      .then((r) => r.data)
   },
 
-  /** Reclamar prenda donada: POST /api/v1/donaciones/claim */
+  /** Reclamar prenda donada: POST /api/v1/donations/claims (SR-P5-N05) */
   async claim(body: ClaimDonationRequestDto): Promise<DonationDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
@@ -113,24 +126,32 @@ export const donationService = {
         },
         fotos: [],
         logistica: { modalidad: 'RECOGIDA', fecha: isoDay(), franja: '12:00 a 15:00' },
-        estado: 'PENDIENTE',
+        estado: 'APROBADA',
         creadaEn: isoDay(),
       }
       db().unshift(d)
       return mockDelay(d, 500)
     }
-    return apiClient.post<DonationDto>('/api/v1/donaciones/claim', body).then((r) => r.data)
+    return apiClient
+      .post<DonationDto>('/api/v1/donations/claims', body)
+      .catch(() => apiClient.post<DonationDto>('/api/v1/donaciones/claim', body))
+      .then((r) => r.data)
   },
 
-  /** RF-46: solicitudes de la fundación del representante (el backend filtra por token). */
-  async forMyFoundation(): Promise<DonationDto[]> {
+  /** RF-46: solicitudes de la fundación del representante (GET /api/v1/donations/foundations/{foundationId}/requests). */
+  async forMyFoundation(foundationId?: string): Promise<DonationDto[]> {
     if (env.useMocks) {
       failIfScenario('sin-permiso')
-      const fid = MOCK_FOUNDATION_OF[mockSessionUser()?.id ?? '']
+      const fid = foundationId || MOCK_FOUNDATION_OF[mockSessionUser()?.id ?? '']
       if (!fid) throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
       return mockDelay(db().filter((d) => d.fundacion.id === fid))
     }
-    return apiClient.get<DonationDto[]>('/api/v1/donaciones').then((r) => r.data)
+    const fid = foundationId || 'mine'
+    return apiClient
+      .get<DonationDto[]>(`/api/v1/donations/foundations/${encodeURIComponent(fid)}/requests`)
+      .catch(() => apiClient.get<DonationDto[]>('/api/v1/donations'))
+      .catch(() => apiClient.get<DonationDto[]>('/api/v1/donaciones'))
+      .then((r) => r.data)
   },
 
   /** RF-47 y RF-49: aprobar, rechazar, iniciar recogida o confirmar recepción. */
@@ -148,10 +169,13 @@ export const donationService = {
       if (body.estado === 'ENTREGADA') d.comprobante = { codigo: `SR-DON-${id.replace(/\W/g, '').slice(-4).toUpperCase().padStart(4, '0')}`, emitidoEn: isoDay() }
       return mockDelay({ ...d }, 500)
     }
-    return apiClient.patch<DonationDto>(`/api/v1/donaciones/${encodeURIComponent(id)}/status`, body).then((r) => r.data)
+    return apiClient
+      .patch<DonationDto>(`/api/v1/donations/${encodeURIComponent(id)}/status`, body)
+      .catch(() => apiClient.patch<DonationDto>(`/api/v1/donaciones/${encodeURIComponent(id)}/status`, body))
+      .then((r) => r.data)
   },
 
-  /** PATCH /api/v1/donaciones/{id}/decide */
+  /** PATCH /api/v1/donations/{id}/decision (SR-RF-47) */
   async decide(id: string | number, body: DecideDonationRequestDto): Promise<DonationDto> {
     if (env.useMocks) {
       const nuevoEstado: EstadoDonacion = body.approve ? 'APROBADA' : 'RECHAZADA'
@@ -160,27 +184,35 @@ export const donationService = {
         justificacion: body.reason ?? undefined,
       })
     }
-    return apiClient.patch<DonationDto>(`/api/v1/donaciones/${id}/decide`, body).then((r) => r.data)
+    return apiClient
+      .patch<DonationDto>(`/api/v1/donations/${id}/decision`, body)
+      .catch(() => apiClient.patch<DonationDto>(`/api/v1/donaciones/${id}/decide`, body))
+      .then((r) => r.data)
   },
 
-  /** PATCH /api/v1/donaciones/{id}/pickup */
+  /** PATCH /api/v1/donations/{id}/pickup */
   async schedulePickup(id: string | number, body: PickupDonationRequestDto): Promise<DonationDto> {
     if (env.useMocks) {
       return this.setStatus(String(id), {
         estado: 'EN_RECOGIDA',
       })
     }
-    return apiClient.patch<DonationDto>(`/api/v1/donaciones/${id}/pickup`, body).then((r) => r.data)
+    return apiClient
+      .patch<DonationDto>(`/api/v1/donations/${id}/pickup`, body)
+      .catch(() => apiClient.patch<DonationDto>(`/api/v1/donaciones/${id}/pickup`, body))
+      .then((r) => r.data)
   },
 
-  /** PATCH /api/v1/donaciones/{id}/confirm */
+  /** PATCH /api/v1/donations/{id}/confirmation (SR-RF-49) */
   async confirmReception(id: string | number, body: ConfirmDonationRequestDto): Promise<DonationDto> {
     if (env.useMocks) {
       return this.setStatus(String(id), {
         estado: 'ENTREGADA',
       })
     }
-    return apiClient.patch<DonationDto>(`/api/v1/donaciones/${id}/confirm`, body).then((r) => r.data)
+    return apiClient
+      .patch<DonationDto>(`/api/v1/donations/${id}/confirmation`, body)
+      .catch(() => apiClient.patch<DonationDto>(`/api/v1/donaciones/${id}/confirm`, body))
+      .then((r) => r.data)
   },
 }
-

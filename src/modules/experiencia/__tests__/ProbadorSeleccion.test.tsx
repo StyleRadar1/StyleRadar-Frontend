@@ -17,7 +17,6 @@ import {
   isGarmentFittable,
 } from '../utils/lookEngine'
 import {
-  hasSavedBodyMeasurements,
   saveBodyMeasurements,
 } from '../utils/bodyMeasurementsEngine'
 import type { BodyMeasurements } from '../types/bodyMeasurements.dto'

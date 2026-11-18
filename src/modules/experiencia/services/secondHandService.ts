@@ -40,14 +40,14 @@ export interface UploadPhotoResponse {
 
 const toLong = (value: string | number): number | null => {
   if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0 ? value : null
-  const clean = value.trim()
+  const clean = String(value).trim()
   if (!/^\d+$/.test(clean)) return null
   const parsed = Number(clean)
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null
 }
 
 export const secondHandService = {
-  /** Subida de fotografías en 2 pasos a Azure Blob: POST /api/v1/segunda-mano/fotos/upload */
+  /** Subida de fotografías a Azure Blob: POST /api/v1/second-hand/photos */
   async uploadPhoto(file: File): Promise<UploadPhotoResponse> {
     if (env.useMocks) {
       failIfScenario()
@@ -60,61 +60,77 @@ export const secondHandService = {
 
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('photo', file)
     return apiClient
-      .post<UploadPhotoResponse>('/api/v1/segunda-mano/fotos/upload', formData)
+      .post<UploadPhotoResponse>('/api/v1/second-hand/photos', formData)
+      .catch(() => apiClient.post<UploadPhotoResponse>('/api/v1/segunda-mano/fotos/upload', formData))
       .then((r) => r.data)
   },
 
-  /** GET /api/v1/segunda-mano?status=AVAILABLE&... */
+  /** GET /api/v1/second-hand/publications?status=AVAILABLE&... */
   async search(f: ListingFiltersDto): Promise<ListingDto[]> {
     if (env.useMocks) {
       failIfScenario()
       if (hasScenario('catalogo-vacio')) return mockDelay([])
       const q = (f.searchTerm || f.texto || '').trim().toLowerCase()
+      const colorQuery = (f.color || '').trim().toLowerCase()
+      const brandQuery = (f.brand || '').trim().toLowerCase()
+
       return mockDelay(
         db().filter(
           (l) =>
             (l.status === 'AVAILABLE' || l.estado === 'DISPONIBLE') &&
             (f.esDonacion === undefined || l.esDonacion === f.esDonacion) &&
-            (!q || `${l.titulo} ${l.marca} ${l.categoria} ${l.garmentName || ''}`.toLowerCase().includes(q)) &&
+            (!q || `${l.titulo} ${l.marca} ${l.categoria} ${l.garmentName || ''} ${l.color || ''}`.toLowerCase().includes(q)) &&
             (!f.conservacion?.length || f.conservacion.includes(l.conservacion)) &&
+            (!f.conservationStatus?.length || f.conservationStatus.includes(l.conservationStatus as any)) &&
             (!f.talla || l.talla === f.talla || l.size === f.talla) &&
+            (!f.size || l.size === f.size || l.talla === f.size) &&
             (!f.type || l.garmentType === f.type) &&
+            (!colorQuery || (l.color || '').toLowerCase().includes(colorQuery)) &&
+            (!brandQuery || (l.brand || l.marca || '').toLowerCase().includes(brandQuery)) &&
+            (!f.localidad || l.localidad === f.localidad) &&
             (!f.precioMin || l.precio >= f.precioMin) &&
             (!f.precioMax || l.precio <= f.precioMax) &&
-            (!f.minPrice || (l.price || l.precio) >= f.minPrice) &&
-            (!f.maxPrice || (l.price || l.precio) <= f.maxPrice)
+            (!f.minPrice || (l.price ?? l.precio) >= f.minPrice) &&
+            (!f.maxPrice || (l.price ?? l.precio) <= f.maxPrice)
         )
       )
     }
 
+    const params = {
+      status: 'AVAILABLE',
+      searchTerm: f.searchTerm || f.texto || undefined,
+      type: f.type,
+      size: f.size || f.talla,
+      conservationStatus: f.conservationStatus?.join(',') || f.conservacion?.join(',') || undefined,
+      style: f.style,
+      color: f.color,
+      brand: f.brand,
+      localidad: f.localidad,
+      minPrice: f.minPrice || f.precioMin,
+      maxPrice: f.maxPrice || f.precioMax,
+      esDonacion: f.esDonacion,
+    }
+
     return apiClient
-      .get<ListingDto[]>('/api/v1/segunda-mano', {
-        params: {
-          status: 'AVAILABLE',
-          searchTerm: f.searchTerm || f.texto || undefined,
-          type: f.type,
-          size: f.size || f.talla,
-          conservationStatus: f.conservationStatus?.join(',') || f.conservacion?.join(',') || undefined,
-          style: f.style,
-          color: f.color,
-          brand: f.brand,
-          localidad: f.localidad,
-          minPrice: f.minPrice || f.precioMin,
-          maxPrice: f.maxPrice || f.precioMax,
-          esDonacion: f.esDonacion,
-        },
-      })
+      .get<ListingDto[]>('/api/v1/second-hand/publications', { params })
+      .catch(() => apiClient.get<ListingDto[]>('/api/v1/segunda-mano', { params }))
       .then((r) => r.data)
   },
 
-  /** RF-37 a RF-39: publicaciones propias en cualquier estado */
-  async mine(): Promise<ListingDto[]> {
+  /** SR-P5-N04: publicaciones propias en cualquier estado (GET /api/v1/second-hand/publications/users/{userId}) */
+  async mine(userId?: string): Promise<ListingDto[]> {
     if (env.useMocks) {
       failIfScenario()
-      return mockDelay(db().filter((l) => l.vendedor.id === me().id))
+      const u = me()
+      return mockDelay(db().filter((l) => l.vendedor.id === u.id || l.userId === u.id))
     }
-    return apiClient.get<ListingDto[]>('/api/v1/segunda-mano/mine').then((r) => r.data)
+    const uid = userId || me().id
+    return apiClient
+      .get<ListingDto[]>(`/api/v1/second-hand/publications/users/${encodeURIComponent(uid)}`)
+      .catch(() => apiClient.get<ListingDto[]>('/api/v1/segunda-mano/mine'))
+      .then((r) => r.data)
   },
 
   async get(id: string): Promise<ListingDto> {
@@ -125,7 +141,8 @@ export const secondHandService = {
       return mockDelay(l)
     }
     return apiClient
-      .get<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`)
+      .get<ListingDto>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`)
+      .catch(() => apiClient.get<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`))
       .then((r) => r.data)
   },
 
@@ -135,18 +152,19 @@ export const secondHandService = {
       failIfScenario()
       return mockDelay(owned(id))
     }
-    return apiClient
-      .get<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`)
-      .then((r) => r.data)
+    return this.get(id)
   },
 
-  /** POST /api/v1/segunda-mano — RF-33 a RF-35: crea la publicación con hasta 4 fotos. */
+  /** POST /api/v1/second-hand/publications — RF-33 a RF-35: crea la publicación con hasta 4 fotos. */
   async create(data: ListingRequestDto, files: File[] = []): Promise<ListingDto> {
     if (env.useMocks) {
       failIfScenario()
       const u = me()
       const photoUrls = files.map((f) => URL.createObjectURL(f))
       const combinedPhotos = [...(data.photos || []), ...photoUrls]
+
+      const isDonation = !!data.esDonacion
+      const finalPrice = isDonation ? 0 : data.precio || data.price || 0
 
       const l: ListingDto = {
         id: `l-${Date.now().toString(36)}`,
@@ -166,9 +184,9 @@ export const secondHandService = {
         conservacion: data.conservacion || 'BUENO',
         localidad: data.localidad || 'CHAPINERO',
         barrio: 'Chapinero',
-        price: data.esDonacion ? 0 : data.precio || data.price || 0,
-        precio: data.esDonacion ? 0 : data.precio || data.price || 0,
-        esDonacion: !!data.esDonacion,
+        price: finalPrice,
+        precio: finalPrice,
+        esDonacion: isDonation,
         photos: combinedPhotos,
         fotos: combinedPhotos,
         status: 'AVAILABLE',
@@ -196,10 +214,13 @@ export const secondHandService = {
       photos: data.photos || [],
     }
 
-    return apiClient.post<ListingDto>('/api/v1/segunda-mano', payload).then((r) => r.data)
+    return apiClient
+      .post<ListingDto>('/api/v1/second-hand/publications', payload)
+      .catch(() => apiClient.post<ListingDto>('/api/v1/segunda-mano', payload))
+      .then((r) => r.data)
   },
 
-  /** PUT /api/v1/segunda-mano/{id} */
+  /** PUT /api/v1/second-hand/publications/{id} — RF-37 */
   async update(id: string, data: ListingRequestDto, files: File[] = []): Promise<ListingDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
@@ -217,27 +238,15 @@ export const secondHandService = {
       return mockDelay(l, 600)
     }
     return apiClient
-      .put<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`, data)
+      .put<ListingDto>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`, data)
+      .catch(() => apiClient.put<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`, data))
       .then((r) => r.data)
   },
 
-  /** PATCH /api/v1/segunda-mano/{id}/sell?userId={id}&compradorId={compradorId} */
+  /** PATCH /api/v1/second-hand/publications/{id}/sale */
   async markAsSold(id: string, compradorId = 'u-comprador'): Promise<ListingDto> {
-    if (env.useMocks) {
-      failIfScenario('conflicto')
-      const l = owned(id)
-      if (l.estado !== 'DISPONIBLE' && l.status !== 'AVAILABLE')
-        throw new ApiError(409, 'Esta prenda ya se vendió o donó.')
-      l.estado = 'VENDIDA'
-      l.status = 'SOLD'
-      return mockDelay(l, 500)
-    }
     const u = me()
-    return apiClient
-      .patch<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/sell`, null, {
-        params: { userId: u.id, compradorId },
-      })
-      .then((r) => r.data)
+    return this.sell(id, u.id, compradorId)
   },
 
   /** RF-38: marcar como vendida indicando vendedor (userId) y comprador (compradorId) por query string. */
@@ -260,23 +269,26 @@ export const secondHandService = {
       return mockDelay(l, 500)
     }
 
-    const uid = toLong(userStr)
-    const cid = toLong(compStr)
-    if (!uid || !cid) {
-      throw new ApiError(400, 'Revisa los datos e intenta de nuevo.', { compradorId: 'Elige un comprador válido.' })
-    }
+    const uid = toLong(userStr) || userStr
+    const cid = toLong(compStr) || compStr
     return apiClient
-      .patch<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/sell`, null, {
+      .patch<ListingDto>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}/sale`, null, {
         params: { userId: uid, compradorId: cid },
       })
+      .catch(() =>
+        apiClient.patch<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/sell`, null, {
+          params: { userId: uid, compradorId: cid },
+        })
+      )
       .then((r) => r.data)
   },
 
-  /** PATCH /api/v1/segunda-mano/{id}/donate?userId={id} */
+  /** RF-42: convertir publicación existente de venta en donación (PATCH /api/v1/second-hand/publications/{id}/donation?userId={id}) */
   async passToDonation(id: string): Promise<ListingDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
       const l = owned(id)
+      if (l.estado !== 'DISPONIBLE' && l.status !== 'AVAILABLE') throw new ApiError(409, 'Esta prenda ya se vendió o retiró.')
       l.status = 'IN_DONATION'
       l.esDonacion = true
       l.precio = 0
@@ -285,13 +297,18 @@ export const secondHandService = {
     }
     const u = me()
     return apiClient
-      .patch<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/donate`, null, {
+      .patch<ListingDto>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}/donation`, null, {
         params: { userId: u.id },
       })
+      .catch(() =>
+        apiClient.patch<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/donate`, null, {
+          params: { userId: u.id },
+        })
+      )
       .then((r) => r.data)
   },
 
-  /** PATCH /api/v1/segunda-mano/{id}/retire?userId={id} (204 No Content) */
+  /** RF-39: retirar publicación (DELETE /api/v1/second-hand/publications/{id}?userId={id}) */
   async retire(id: string): Promise<void> {
     if (env.useMocks) {
       failIfScenario('conflicto')
@@ -303,12 +320,19 @@ export const secondHandService = {
       return mockDelay(undefined, 500)
     }
     const u = me()
-    await apiClient.patch(`/api/v1/segunda-mano/${encodeURIComponent(id)}/retire`, null, {
-      params: { userId: u.id },
-    })
+    return apiClient
+      .delete(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`, {
+        params: { userId: u.id },
+      })
+      .catch(() =>
+        apiClient.patch(`/api/v1/segunda-mano/${encodeURIComponent(id)}/retire`, null, {
+          params: { userId: u.id },
+        })
+      )
+      .then(() => undefined)
   },
 
-  /** RF-39: retirar o cambiar estado manteniendo compatibilidad con pruebas. */
+  /** RF-39: cambiar estado manteniendo compatibilidad */
   async setStatus(id: string, body: ListingStatusRequestDto): Promise<ListingDto> {
     if (body.estado === 'VENDIDA' || body.estado === 'SOLD') {
       return this.markAsSold(id)
@@ -317,7 +341,7 @@ export const secondHandService = {
     return this.get(id)
   },
 
-  /** POST /api/v1/donaciones/claim para fundaciones */
+  /** SR-P5-N05: reclamar prenda disponible desde la Vitrina Abierta por una fundación (POST /api/v1/donations/claims) */
   async claimDonation(publicationId: string | number, foundationId: string | number, message?: string): Promise<void> {
     if (env.useMocks) {
       failIfScenario('conflicto')
@@ -327,6 +351,9 @@ export const secondHandService = {
       l.estado = 'VENDIDA'
       return mockDelay(undefined, 600)
     }
-    await apiClient.post('/api/v1/donaciones/claim', { publicationId, foundationId, message })
+    return apiClient
+      .post('/api/v1/donations/claims', { publicationId, foundationId, message })
+      .catch(() => apiClient.post('/api/v1/donaciones/claim', { publicationId, foundationId, message }))
+      .then(() => undefined)
   },
 }

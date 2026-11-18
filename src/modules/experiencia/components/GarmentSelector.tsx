@@ -1,20 +1,47 @@
 import { useState } from 'react'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
-import type { TryOnGarmentDto, ZonaPrenda } from '../types/tryon.dto'
+import type { GarmentValidationResponseDto, TryOnGarmentDto, ZonaPrenda } from '../types/tryon.dto'
 import { garmentProblem } from '../utils/garments'
 
-const ZONAS: [ZonaPrenda | 'TODAS', string][] = [['TODAS', 'Todas'], ['SUPERIOR', 'Parte de arriba'], ['INFERIOR', 'Parte de abajo']]
+const ZONAS: [ZonaPrenda | 'TODAS', string][] = [
+  ['TODAS', 'Todas'],
+  ['SUPERIOR', 'Parte de arriba'],
+  ['INFERIOR', 'Parte de abajo'],
+]
 
-/** RF-24: galería de prendas; las agotadas o incompatibles se ven pero no se pueden elegir. */
-export function GarmentSelector({ garments, loading, error, onRetry, selected, onSelect }: {
-  garments: TryOnGarmentDto[]; loading: boolean; error: unknown; onRetry: () => void
-  selected: string | null; onSelect: (id: string) => void
+/** RF-24: galería de prendas, selección de talla y validación de ajuste antropométrico. */
+export function GarmentSelector({
+  garments,
+  loading,
+  error,
+  onRetry,
+  selected,
+  onSelect,
+  selectedSize,
+  onSelectSize,
+  validation,
+  validatingSize = false,
+}: {
+  garments: TryOnGarmentDto[]
+  loading: boolean
+  error: unknown
+  onRetry: () => void
+  selected: string | null
+  onSelect: (id: string) => void
+  selectedSize?: string | null
+  onSelectSize?: (size: string) => void
+  validation?: GarmentValidationResponseDto | null
+  validatingSize?: boolean
 }) {
   const [zona, setZona] = useState<ZonaPrenda | 'TODAS'>('TODAS')
+
   if (loading) return <Loading label="Cargando prendas…" />
   if (error) return <ErrorState error={error} onRetry={onRetry} title="No pudimos cargar las prendas" />
   if (!garments.length) return <EmptyState title="Todavía no hay prendas para probar">Las tiendas aún no tienen prendas compatibles con el probador. Vuelve pronto.</EmptyState>
+
   const list = garments.filter((g) => zona === 'TODAS' || g.zona === zona)
+  const selectedGarment = garments.find((g) => g.id === selected)
+
   return (
     <div>
       <div role="group" aria-label="Filtrar por zona" className="flex flex-wrap gap-2">
@@ -34,6 +61,7 @@ export function GarmentSelector({ garments, loading, error, onRetry, selected, o
           </button>
         ))}
       </div>
+
       <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" aria-label="Prendas para probar">
         {list.map((g) => {
           const problem = garmentProblem(g)
@@ -48,7 +76,7 @@ export function GarmentSelector({ garments, loading, error, onRetry, selected, o
                 aria-label={`${g.nombre}, ${g.tienda}${problem ? `, ${problem.toLowerCase()}` : ''}`}
                 className={`group w-full overflow-hidden rounded-2xl border text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)] ${
                   on
-                    ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-focus-ring)] bg-[var(--color-surface)]'
+                    ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-focus-ring)] bg-[var(--color-surface)] shadow-md'
                     : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]'
                 } disabled:cursor-not-allowed disabled:opacity-50`}
               >
@@ -77,6 +105,68 @@ export function GarmentSelector({ garments, loading, error, onRetry, selected, o
           )
         })}
       </ul>
+
+      {/* Selector de talla y validación de compatibilidad anatómica (RF-24) */}
+      {selectedGarment && (
+        <div className="mt-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-4 shadow-sm" aria-label="Talla y compatibilidad de la prenda">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-accent)]">Talla para la prueba virtual</p>
+              <h3 className="text-sm font-bold text-[var(--color-text)]">Elige tu talla en «{selectedGarment.nombre}»</h3>
+            </div>
+            {selectedGarment.tallas.length > 0 && (
+              <div role="group" aria-label="Tallas disponibles" className="flex flex-wrap gap-1.5">
+                {selectedGarment.tallas.map((t) => {
+                  const isSizeActive = selectedSize === t
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => onSelectSize?.(t)}
+                      aria-pressed={isSizeActive}
+                      className={`min-w-9 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] ${
+                        isSizeActive
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] shadow-sm'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[var(--color-accent)]'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Validación de compatibilidad RF-24 */}
+          {validatingSize ? (
+            <p className="mt-3 text-xs text-[var(--color-text-muted)] animate-pulse">Comprobando compatibilidad de medidas con la prenda…</p>
+          ) : validation ? (
+            <div
+              role="status"
+              className={`mt-3 rounded-xl border p-3 text-xs ${
+                validation.sizeEligible === false
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <span className="text-base" aria-hidden="true">
+                  {validation.sizeEligible === false ? '⚠️' : '✓'}
+                </span>
+                <div>
+                  <p className="font-semibold">
+                    {validation.fitMessage || validation.validationMessage}
+                  </p>
+                  <p className="mt-0.5 text-[11px] opacity-80">
+                    Ajuste orientativo según tus medidas corporales registradas. No garantiza ajuste físico exacto.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }

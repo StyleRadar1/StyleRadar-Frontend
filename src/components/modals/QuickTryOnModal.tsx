@@ -1196,6 +1196,32 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   )
                 })}
               </div>
+
+              {/* Validación de compatibilidad de talla (RF-24) */}
+              {(() => {
+                const activeSize = pickerSelectedSize || garmentPickerItem.tallas[0] || 'M'
+                const fit = evaluateGarmentFit(garmentPickerItem, activeSize, userMeasurements)
+                return (
+                  <div
+                    style={{
+                      marginTop: '0.625rem',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '0.75rem',
+                      fontSize: '0.75rem',
+                      background: fit.apta ? 'rgba(30,107,58,0.12)' : 'rgba(217,119,6,0.12)',
+                      border: `1px solid ${fit.apta ? 'rgba(30,107,58,0.3)' : 'rgba(217,119,6,0.3)'}`,
+                      color: fit.apta ? 'var(--color-success-text, #144a27)' : 'var(--color-warning-text, #92400e)',
+                    }}
+                  >
+                    <p style={{ fontWeight: 700, margin: 0 }}>
+                      {fit.apta ? '✓' : '⚠️'} Ajuste estimado: {fit.veredicto} {fit.motivo ? `· ${fit.motivo}` : ''}
+                    </p>
+                    <p style={{ fontSize: '0.6875rem', opacity: 0.85, margin: '2px 0 0 0' }}>
+                      Validación anatómica orientativa (RF-24). No garantiza ajuste físico exacto.
+                    </p>
+                  </div>
+                )
+              })()}
             </div>
 
             {garmentPickerItem.coloresDisponibles && garmentPickerItem.coloresDisponibles.length > 1 && (

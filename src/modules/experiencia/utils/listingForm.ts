@@ -19,8 +19,8 @@ export interface ListingForm {
   talla: string
   size?: SizeEnum
   style?: StyleEnum
-  color?: string
-  localidad?: LocalidadEnum
+  color: string
+  localidad: LocalidadEnum
   marca: string
   descripcion: string
   precio: string
@@ -33,6 +33,7 @@ export const emptyListing = (): ListingForm => ({
   titulo: '',
   garmentName: '',
   categoria: '',
+  garmentType: undefined,
   talla: '',
   color: '',
   localidad: 'CHAPINERO',
