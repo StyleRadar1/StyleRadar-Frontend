@@ -755,7 +755,7 @@ html[data-tema="claro"] .cz-fullscreen {
   left: 36px;
   top: 10%;
   bottom: 24px;
-  width: 70px;
+  width: 95px;
   pointer-events: none;
   z-index: 1;
 }
@@ -765,7 +765,7 @@ html[data-tema="claro"] .cz-fullscreen {
   left: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: rgba(255, 255, 255, 0.42);
   font-size: 11px;
   font-weight: 700;
@@ -773,10 +773,69 @@ html[data-tema="claro"] .cz-fullscreen {
 }
 
 .cz-ruler-line {
-  width: 30px;
+  width: 24px;
   height: 1px;
   background: rgba(255, 255, 255, 0.25);
   box-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
+}
+
+.cz-ruler-size-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: #c4b5fd;
+  background: rgba(168, 85, 247, 0.2);
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Chip de contextura y morfología sobre el maniquí */
+.cz-mannequin-morphology-chip {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(18, 14, 28, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 9999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(168, 85, 247, 0.15);
+  z-index: 5;
+  pointer-events: none;
+  font-size: 11px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.cz-morphology-size {
+  font-weight: 800;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cz-morphology-dot {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.cz-morphology-height,
+.cz-morphology-weight {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cz-morphology-badge {
+  background: rgba(168, 85, 247, 0.25);
+  color: #e9d5ff;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-weight: 700;
+  border: 1px solid rgba(168, 85, 247, 0.4);
 }
 
 .cz-mannequin-3d-wrapper {

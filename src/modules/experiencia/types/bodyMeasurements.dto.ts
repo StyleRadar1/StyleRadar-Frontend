@@ -7,6 +7,7 @@ export interface BodyMeasurements {
   estatura: number // cm (140 - 210)
   peso?: number // kg (35 - 180)
   tallaHabitual: string // XS, S, M, L, XL, XXL, etc.
+  contextura?: string // Nombre del arquetipo (ej. 'Normal (M)', 'Atlético', etc.)
   pecho: number // cm (60 - 150)
   cintura: number // cm (45 - 140)
   cadera: number // cm (65 - 160)
@@ -27,4 +28,6 @@ export interface BodyDeformationFactors {
   hipScale: number
   shoulderScale: number
   silhouetteSrc: string
+  complexion?: string
+  bmi?: number
 }

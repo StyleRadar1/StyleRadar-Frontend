@@ -417,7 +417,7 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
     })
   })
 
-  it('muestra la regla métrica de altura vertical con marcas de 1,40m a 2,10m en el escenario', async () => {
+  it('muestra la regla métrica de altura vertical con marcas de 1,40m a 2,10m y etiquetas de tallas en el escenario', async () => {
     setupMeasurements()
     renderProbador('/probador')
 
@@ -427,6 +427,50 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
       expect(screen.getByText('1,70 m')).toBeInTheDocument()
       expect(screen.getByText('1,50 m')).toBeInTheDocument()
       expect(screen.getByText('1,40 m')).toBeInTheDocument()
+      expect(screen.getByText('XXL')).toBeInTheDocument()
+      expect(screen.getByText('XS')).toBeInTheDocument()
+    })
+  })
+
+  it('el maniquí adapta el ancho y muestra la contextura morfológica (scaleX) según las medidas corporales', async () => {
+    // Maniquí Muy Delgado (160 cm, 50 kg)
+    setupMeasurements({
+      estatura: 160,
+      peso: 50,
+      tallaHabitual: 'XS',
+      pecho: 80,
+      cintura: 66,
+      cadera: 82,
+    })
+    loginAs('u-1', 'Valentina Rojas')
+    const { unmount } = renderProbador('/probador')
+
+    await waitFor(() => {
+      const wrapper = screen.getByTestId('mannequin-wrapper')
+      expect(wrapper.style.transform).toContain('scaleY(0.91)')
+      // scaleX debe reflejar contextura delgada (< 0.90)
+      expect(wrapper.style.transform).toMatch(/scaleX\(0\.[78]\d*\)/)
+      expect(screen.getByText(/Muy Delgado/i)).toBeInTheDocument()
+    })
+
+    unmount()
+
+    // Maniquí Obeso Grande (170 cm, 130 kg)
+    setupMeasurements({
+      estatura: 170,
+      peso: 130,
+      tallaHabitual: 'XXL',
+      pecho: 134,
+      cintura: 130,
+      cadera: 132,
+    })
+    renderProbador('/probador')
+
+    await waitFor(() => {
+      const wrapper = screen.getByTestId('mannequin-wrapper')
+      // scaleX debe reflejar contextura ancha (> 1.35)
+      expect(wrapper.style.transform).toMatch(/scaleX\(1\.[345]\d*\)/)
+      expect(screen.getByText(/Obeso Grande/i)).toBeInTheDocument()
     })
   })
 })

@@ -1,8 +1,10 @@
 import { useState, useId } from 'react'
 import type { BodyMeasurements } from '../types/bodyMeasurements.dto'
 import {
+  BODY_ARCHETYPES,
   DEFAULT_BODY_MEASUREMENTS,
   computeBodyDeformation,
+  detectBodyArchetype,
   estimateMeasurements,
   saveBodyMeasurements,
   validateBodyMeasurements,
@@ -309,6 +311,57 @@ export function BodyMeasurementsWizardModal({
               </div>
             </div>
 
+            {/* Contexturas y arquetipos morfológicos oficiales */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  O elige tu contextura de referencia
+                </label>
+                <span className="text-[11px] text-purple-300 font-medium">
+                  {detectBodyArchetype(form).nombre}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1.5 rounded-2xl bg-white/5 border border-white/10">
+                {BODY_ARCHETYPES.map((arch) => {
+                  const isSelected = form.contextura === arch.id || detectBodyArchetype(form).id === arch.id
+                  return (
+                    <button
+                      key={arch.id}
+                      type="button"
+                      onClick={() => {
+                        setForm((prev) => ({
+                          ...prev,
+                          contextura: arch.id,
+                          estatura: arch.estatura,
+                          peso: arch.peso,
+                          tallaHabitual: arch.talla,
+                          pecho: arch.pecho,
+                          cintura: arch.cintura,
+                          cadera: arch.cadera,
+                          hombros: arch.hombros,
+                          cuerpoBase: arch.cuerpoBase || prev.cuerpoBase,
+                          esAproximado: false,
+                        }))
+                      }}
+                      className={`p-2 rounded-xl text-center border transition cursor-pointer ${
+                        isSelected
+                          ? 'border-purple-500 bg-purple-600/30 text-white font-bold ring-1 ring-purple-400'
+                          : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span className="block text-xs font-bold truncate">{arch.nombre}</span>
+                      <span className="block text-[10px] text-white/50 mt-0.5">
+                        {(arch.estatura / 100).toFixed(2)}m · {arch.peso}kg
+                      </span>
+                      <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] bg-purple-950/60 text-purple-200 border border-purple-500/20">
+                        Talla {arch.talla}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
             <div className="pt-4 flex items-center justify-between">
               <button
                 type="button"
@@ -449,7 +502,7 @@ export function BodyMeasurementsWizardModal({
                   className="relative h-full flex items-center justify-center"
                   style={{
                     transformOrigin: 'bottom center',
-                    transform: `scale(${deformation.heightScale})`,
+                    transform: `scaleY(${deformation.heightScale}) scaleX(${deformation.chestScale})`,
                     transition: 'transform 0.3s ease-out',
                   }}
                 >
@@ -457,15 +510,17 @@ export function BodyMeasurementsWizardModal({
                     src={deformation.silhouetteSrc}
                     alt="Vista previa del maniquí"
                     className="h-full object-contain filter drop-shadow(0 10px 25px rgba(0,0,0,0.5))"
-                    style={{
-                      transform: `scaleX(${deformation.chestScale})`,
-                      transition: 'transform 0.3s ease-out',
-                    }}
                   />
                 </div>
-                {/* Etiqueta de estatura sobre el stage */}
-                <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-purple-300 border border-purple-500/30">
-                  {(form.estatura / 100).toFixed(2)} m · {form.cuerpoBase.toUpperCase()}
+                {/* Etiqueta de morfología y medidas sobre el stage */}
+                <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-purple-200 border border-purple-500/30 flex items-center gap-1.5 shadow-lg">
+                  <span className="text-purple-400">Talla {form.tallaHabitual}</span>
+                  <span className="text-white/40">·</span>
+                  <span>{(form.estatura / 100).toFixed(2)} m</span>
+                  <span className="text-white/40">·</span>
+                  <span>{form.peso || 68} kg</span>
+                  <span className="text-white/40">·</span>
+                  <span className="bg-purple-600/30 text-purple-300 px-1.5 py-0.5 rounded-full">{deformation.complexion || 'Normal'}</span>
                 </div>
               </div>
 
@@ -473,7 +528,23 @@ export function BodyMeasurementsWizardModal({
               <div className="space-y-3 text-xs">
                 <div>
                   <div className="flex justify-between text-white/80 mb-1">
-                    <span>Pecho:</span>
+                    <span>Estatura:</span>
+                    <strong className="text-purple-300">{(form.estatura / 100).toFixed(2)} m ({form.estatura} cm)</strong>
+                  </div>
+                  <input
+                    type="range"
+                    min={140}
+                    max={210}
+                    value={form.estatura}
+                    onChange={(e) => updateField('estatura', Number(e.target.value))}
+                    className="w-full accent-purple-500 cursor-pointer"
+                    aria-label="Ajustar estatura"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-white/80 mb-1">
+                    <span>Pecho / Busto:</span>
                     <strong className="text-purple-300">{form.pecho} cm</strong>
                   </div>
                   <input
@@ -482,7 +553,7 @@ export function BodyMeasurementsWizardModal({
                     max={145}
                     value={form.pecho}
                     onChange={(e) => updateField('pecho', Number(e.target.value))}
-                    className="w-full accent-purple-500"
+                    className="w-full accent-purple-500 cursor-pointer"
                     aria-label="Ajustar pecho"
                   />
                 </div>
@@ -498,7 +569,7 @@ export function BodyMeasurementsWizardModal({
                     max={135}
                     value={form.cintura}
                     onChange={(e) => updateField('cintura', Number(e.target.value))}
-                    className="w-full accent-purple-500"
+                    className="w-full accent-purple-500 cursor-pointer"
                     aria-label="Ajustar cintura"
                   />
                 </div>
@@ -514,7 +585,7 @@ export function BodyMeasurementsWizardModal({
                     max={155}
                     value={form.cadera}
                     onChange={(e) => updateField('cadera', Number(e.target.value))}
-                    className="w-full accent-purple-500"
+                    className="w-full accent-purple-500 cursor-pointer"
                     aria-label="Ajustar cadera"
                   />
                 </div>

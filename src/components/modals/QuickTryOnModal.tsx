@@ -747,7 +747,18 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               cursor: isRotating.current ? 'grabbing' : 'grab',
             }}
           >
-            {/* Regla métrica de altura vertical */}
+            {/* Chip informativo de complexión y morfología activa */}
+            <div className="cz-mannequin-morphology-chip" aria-live="polite">
+              <span className="cz-morphology-size">Talla {bodyMeasurements?.tallaHabitual || 'M'}</span>
+              <span className="cz-morphology-dot">·</span>
+              <span className="cz-morphology-height">{((bodyMeasurements?.estatura || 175) / 100).toFixed(2)} m</span>
+              <span className="cz-morphology-dot">·</span>
+              <span className="cz-morphology-weight">{bodyMeasurements?.peso || 68} kg</span>
+              <span className="cz-morphology-dot">·</span>
+              <span className="cz-morphology-badge">{deformation.complexion || 'Normal (M)'}</span>
+            </div>
+
+            {/* Regla métrica de altura vertical con marcas anatómicas por talla */}
             <div className="cz-metric-ruler" aria-hidden="true">
               <div className="cz-ruler-mark" style={{ bottom: '90%' }}>
                 <span>2,10 m</span>
@@ -755,10 +766,27 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               </div>
               <div className="cz-ruler-mark" style={{ bottom: '78%' }}>
                 <span>1,90 m</span>
+                <span className="cz-ruler-size-tag">XXL</span>
+                <div className="cz-ruler-line" />
+              </div>
+              <div className="cz-ruler-mark" style={{ bottom: '74%' }}>
+                <span>1,85 m</span>
+                <span className="cz-ruler-size-tag">XL</span>
+                <div className="cz-ruler-line" />
+              </div>
+              <div className="cz-ruler-mark" style={{ bottom: '70%' }}>
+                <span>1,80 m</span>
+                <span className="cz-ruler-size-tag">L</span>
                 <div className="cz-ruler-line" />
               </div>
               <div className="cz-ruler-mark" style={{ bottom: '66%' }}>
                 <span>1,70 m</span>
+                <span className="cz-ruler-size-tag">S</span>
+                <div className="cz-ruler-line" />
+              </div>
+              <div className="cz-ruler-mark" style={{ bottom: '59%' }}>
+                <span>1,60 m</span>
+                <span className="cz-ruler-size-tag">XS</span>
                 <div className="cz-ruler-line" />
               </div>
               <div className="cz-ruler-mark" style={{ bottom: '54%' }}>

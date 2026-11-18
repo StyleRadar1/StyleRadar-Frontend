@@ -3,6 +3,87 @@ import type { BodyDeformationFactors, BodyMeasurements, BodyType } from '../type
 export const SR_BODY_MEASUREMENTS_KEY = 'sr_user_body_measurements'
 export const SR_BODY_SAVED_FLAG = 'sr_body_measurements_saved'
 
+export interface BodyArchetype {
+  id: string
+  nombre: string
+  estatura: number // cm
+  peso: number // kg
+  talla: string // XS, S, M, L, XL, XXL
+  pecho: number
+  cintura: number
+  cadera: number
+  hombros: number
+  cuerpoBase?: BodyType
+  descripcion?: string
+}
+
+/**
+ * 15 Arquetipos morfológicos oficiales basados en el sistema de complexiones de StyleRadar
+ */
+export const BODY_ARCHETYPES: BodyArchetype[] = [
+  { id: 'muy-delgado', nombre: 'Muy Delgado', estatura: 160, peso: 50, talla: 'XS', pecho: 80, cintura: 66, cadera: 82, hombros: 38 },
+  { id: 'delgado', nombre: 'Delgado', estatura: 165, peso: 55, talla: 'S', pecho: 86, cintura: 72, cadera: 88, hombros: 40 },
+  { id: 'normal-s', nombre: 'Normal (S)', estatura: 170, peso: 60, talla: 'S', pecho: 92, cintura: 76, cadera: 92, hombros: 42 },
+  { id: 'normal-m', nombre: 'Normal (M)', estatura: 175, peso: 68, talla: 'M', pecho: 96, cintura: 80, cadera: 98, hombros: 44 },
+  { id: 'normal-l', nombre: 'Normal (L)', estatura: 180, peso: 75, talla: 'L', pecho: 102, cintura: 84, cadera: 102, hombros: 46 },
+  { id: 'con-sobrepeso', nombre: 'Con Sobrepeso', estatura: 175, peso: 85, talla: 'L', pecho: 108, cintura: 96, cadera: 106, hombros: 45 },
+  { id: 'muy-grande', nombre: 'Muy Grande', estatura: 175, peso: 120, talla: 'XXL', pecho: 126, cintura: 122, cadera: 126, hombros: 48 },
+  { id: 'bajito-robusto', nombre: 'Bajito y Robusto', estatura: 160, peso: 80, talla: 'L', pecho: 106, cintura: 96, cadera: 104, hombros: 43 },
+  { id: 'alto-delgado', nombre: 'Alto y Delgado', estatura: 190, peso: 70, talla: 'M', pecho: 94, cintura: 76, cadera: 94, hombros: 45 },
+  { id: 'atletico', nombre: 'Atlético', estatura: 175, peso: 70, talla: 'M', pecho: 102, cintura: 78, cadera: 96, hombros: 48 },
+  { id: 'musculoso', nombre: 'Musculoso', estatura: 180, peso: 90, talla: 'XL', pecho: 114, cintura: 84, cadera: 102, hombros: 52 },
+  { id: 'barrigon', nombre: 'Barrigón', estatura: 175, peso: 90, talla: 'XL', pecho: 106, cintura: 108, cadera: 104, hombros: 45 },
+  { id: 'grande', nombre: 'Grande', estatura: 175, peso: 110, talla: 'XXL', pecho: 122, cintura: 114, cadera: 120, hombros: 48 },
+  { id: 'con-curvas', nombre: 'Con Curvas', estatura: 170, peso: 95, talla: 'XL', pecho: 112, cintura: 88, cadera: 122, hombros: 43, cuerpoBase: 'femenino' },
+  { id: 'obeso-grande', nombre: 'Obeso Grande', estatura: 170, peso: 130, talla: 'XXL', pecho: 134, cintura: 130, cadera: 132, hombros: 48 },
+]
+
+/**
+ * Detecta el arquetipo más afín o el IMC del usuario
+ */
+export function detectBodyArchetype(m?: Partial<BodyMeasurements> | null): {
+  id: string
+  nombre: string
+  bmi: number
+} {
+  const h = (m?.estatura || 175) / 100
+  const w = m?.peso || 68
+  const bmi = Number((w / (h * h)).toFixed(1))
+
+  if (m?.contextura) {
+    const found = BODY_ARCHETYPES.find(
+      (a) => a.id === m.contextura || a.nombre.toLowerCase() === m.contextura?.toLowerCase(),
+    )
+    if (found) {
+      return { id: found.id, nombre: found.nombre, bmi }
+    }
+  }
+
+  // Encuentra el arquetipo por distancia mínima ponderada
+  let best = BODY_ARCHETYPES[3] // Normal (M)
+  let bestDist = Infinity
+
+  const est = m?.estatura || 175
+  const p = m?.peso || 68
+  const pe = m?.pecho || 96
+  const ci = m?.cintura || 80
+
+  for (const arch of BODY_ARCHETYPES) {
+    const dist =
+      Math.pow((est - arch.estatura) / 15, 2) +
+      Math.pow((p - arch.peso) / 12, 2) +
+      Math.pow((pe - arch.pecho) / 10, 2) +
+      Math.pow((ci - arch.cintura) / 10, 2)
+
+    if (dist < bestDist) {
+      bestDist = dist
+      best = arch
+    }
+  }
+
+  return { id: best.id, nombre: best.nombre, bmi }
+}
+
 export const DEFAULT_BODY_MEASUREMENTS: BodyMeasurements = {
   cuerpoBase: 'femenino',
   unidades: 'metric',
@@ -266,17 +347,37 @@ export function computeBodyDeformation(m: BodyMeasurements | null): BodyDeformat
       hipScale: 1.0,
       shoulderScale: 1.0,
       silhouetteSrc: '/prototipo/assets/img/general/maniqui.png',
+      complexion: 'Normal (M)',
+      bmi: 22.2,
     }
   }
 
   // Escala de altura anclada al suelo (175 cm como estándar base)
   const heightScale = Math.max(0.75, Math.min(1.25, Number((m.estatura / 175).toFixed(2))))
 
-  // Escalas horizontales por zonas
-  const chestScale = Math.max(0.85, Math.min(1.25, (m.pecho || 96) / 96))
-  const waistScale = Math.max(0.82, Math.min(1.28, (m.cintura || 80) / 80))
-  const hipScale = Math.max(0.85, Math.min(1.25, (m.cadera || 98) / 98))
-  const shoulderScale = Math.max(0.88, Math.min(1.2, (m.hombros || 44) / 44))
+  // Detección de arquetipo e IMC
+  const { nombre: complexion, bmi } = detectBodyArchetype(m)
+
+  // Medidas y proporciones corporales
+  const pe = m.pecho || 96
+  const ci = m.cintura || 80
+  const ca = m.cadera || 98
+  const ho = m.hombros || 44
+
+  const measFactor = (pe / 96) * 0.45 + (ci / 80) * 0.35 + (ca / 98) * 0.20
+  const hM = (m.estatura || 175) / 100
+  const w = m.peso || (m.cuerpoBase === 'femenino' ? 60 : 68)
+  const userBmi = w / (hM * hM)
+  const bmiFactor = Math.sqrt(userBmi / 22.2)
+
+  // Factor de escala horizontal anatómica adaptativo (delgado ~0.80 hasta obeso grande ~1.48)
+  const rawWidth = measFactor * 0.6 + bmiFactor * 0.4
+  const chestScale = Math.max(0.78, Math.min(1.52, Number(rawWidth.toFixed(2))))
+
+  // Escalas horizontales por zonas anatómicas
+  const waistScale = Math.max(0.75, Math.min(1.50, Number((ci / 80).toFixed(2))))
+  const hipScale = Math.max(0.75, Math.min(1.50, Number((ca / 98).toFixed(2))))
+  const shoulderScale = Math.max(0.80, Math.min(1.35, Number((ho / 44).toFixed(2))))
 
   // Silueta base según cuerpo
   const silhouetteSrc =
@@ -291,5 +392,7 @@ export function computeBodyDeformation(m: BodyMeasurements | null): BodyDeformat
     hipScale,
     shoulderScale,
     silhouetteSrc,
+    complexion,
+    bmi,
   }
 }
