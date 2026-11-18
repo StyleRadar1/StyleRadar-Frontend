@@ -14,6 +14,14 @@ import {
   ESTILOS, MANIQUI_LABEL, MAX_ESTILOS, PLAN_LABEL, TALLAS_CALZADO, TALLAS_INFERIOR, TALLAS_SUPERIOR,
   type ActualizarPerfilDto, type Estilo, type Maniqui, type PerfilDto, type TallasDto,
 } from '../types/usuario.dto'
+import { BodyMeasurementsWizardModal } from '@/modules/experiencia/components/BodyMeasurementsWizardModal'
+import {
+  clearBodyMeasurements,
+  exportBodyMeasurementsJson,
+  getBodyMeasurements,
+  saveBodyMeasurements,
+} from '@/modules/experiencia/utils/bodyMeasurementsEngine'
+import type { BodyMeasurements } from '@/modules/experiencia/types/bodyMeasurements.dto'
 import { celularValido, iniciales, mesAnio } from '../utils/formato'
 import { ORDEN, TEXTOS_PERFIL, erroresDelServidor, type Errores } from '../utils/erroresPerfil'
 
@@ -109,6 +117,21 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
   const [errores, setErrores] = useState<Errores>({})
   const [saving, setSaving] = useState(false)
 
+  // Medidas anatómicas para el probador virtual vinculadas al perfil
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurements | null>(() => getBodyMeasurements(profile.id))
+  const [showWizard, setShowWizard] = useState(false)
+
+  const handleClearMeasurements = () => {
+    clearBodyMeasurements(profile.id)
+    setBodyMeasurements(null)
+    setAviso({ ok: true, text: 'Medidas anatómicas del probador restablecidas.' })
+  }
+
+  const handleExportMeasurements = () => {
+    exportBodyMeasurementsJson()
+    setAviso({ ok: true, text: 'Datos de medidas corporales exportados exitosamente.' })
+  }
+
   const setTalla = <K extends keyof TallasDto>(k: K, v: TallasDto[K]) => setTallas((t) => ({ ...t, [k]: v }))
 
   const toggleEstilo = (s: Estilo) => {
@@ -202,6 +225,101 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
           </select>
         </Campo>
 
+        {/* ═══════════════════════════════════════════════════════════
+            SECCIÓN: MEDIDAS CORPORALES PARA EL PROBADOR VIRTUAL
+            ═══════════════════════════════════════════════════════════ */}
+        <div className="md:col-span-3 rounded-2xl border border-purple-500/30 bg-purple-950/20 p-6 backdrop-blur-md">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-[.2em] text-[#c4b5fd]">
+                Probador Virtual StyleRadar
+              </span>
+              <h3 className="text-xl font-extrabold tracking-tight text-white mt-0.5">
+                Mis medidas corporales
+              </h3>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowWizard(true)}
+                className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-purple-900/40 hover:bg-purple-500 transition cursor-pointer"
+              >
+                {bodyMeasurements ? 'Modificar medidas del probador' : 'Configurar medidas del probador'}
+              </button>
+              {bodyMeasurements && (
+                <button
+                  type="button"
+                  onClick={handleExportMeasurements}
+                  className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10 transition cursor-pointer"
+                  title="Descargar mis datos corporales en JSON (Ley 1581)"
+                >
+                  📥 Descargar datos
+                </button>
+              )}
+            </div>
+          </div>
+
+          {bodyMeasurements ? (
+            <div className="mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <span className="text-white/50 block text-[11px]">Estatura:</span>
+                  <strong className="text-base text-white font-extrabold">
+                    {(bodyMeasurements.estatura / 100).toFixed(2).replace('.', ',')} m
+                  </strong>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <span className="text-white/50 block text-[11px]">Pecho / Busto:</span>
+                  <strong className="text-base text-purple-300 font-extrabold">
+                    {bodyMeasurements.pecho} cm
+                  </strong>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <span className="text-white/50 block text-[11px]">Cintura:</span>
+                  <strong className="text-base text-purple-300 font-extrabold">
+                    {bodyMeasurements.cintura} cm
+                  </strong>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <span className="text-white/50 block text-[11px]">Cadera:</span>
+                  <strong className="text-base text-purple-300 font-extrabold">
+                    {bodyMeasurements.cadera} cm
+                  </strong>
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center justify-between text-xs text-white/60 pt-3 border-t border-white/5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span>Silueta: <strong className="text-white capitalize">{bodyMeasurements.cuerpoBase}</strong></span>
+                  <span>·</span>
+                  <span>Talla habitual: <strong className="text-white">{bodyMeasurements.tallaHabitual}</strong></span>
+                  {bodyMeasurements.esAproximado && (
+                    <>
+                      <span>·</span>
+                      <span className="text-amber-300 bg-amber-950/40 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                        Estimación aproximada
+                      </span>
+                    </>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearMeasurements}
+                  className="text-[11px] text-white/40 hover:text-rose-400 underline transition cursor-pointer"
+                >
+                  Restablecer medidas
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-white/5 text-xs text-white/70">
+              <p>
+                Aún no has configurado tus medidas anatómicas. Configúralas para que el maniquí del probador se adapte a tu cuerpo real.
+              </p>
+            </div>
+          )}
+        </div>
+
         <fieldset className="md:col-span-3">
           <legend className={labelCls}>Estilos que más te gustan</legend>
           <p id="pf-estilos-hint" className="mt-1 text-xs text-white/60">Elige de 1 a {MAX_ESTILOS}. Los usamos para ordenar el catálogo y recomendarte playlists.</p>
@@ -221,6 +339,22 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
         <Button type="button" variant="secundario" onClick={descartar} disabled={saving}>Descartar cambios</Button>
         <Button type="submit" disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</Button>
       </div>
+
+      {showWizard && (
+        <BodyMeasurementsWizardModal
+          isOpen={showWizard}
+          onClose={() => setShowWizard(false)}
+          onSave={(m, persist) => {
+            saveBodyMeasurements(m, persist, profile.id)
+            setBodyMeasurements(m)
+            setShowWizard(false)
+            if (m.cuerpoBase === 'femenino' && maniqui !== 'MUJER') setManiqui('MUJER')
+            if (m.cuerpoBase === 'masculino' && maniqui !== 'HOMBRE') setManiqui('HOMBRE')
+            setAviso({ ok: true, text: 'Medidas corporales para el probador actualizadas exitosamente.' })
+          }}
+          initialMeasurements={bodyMeasurements}
+        />
+      )}
     </form>
   )
 }

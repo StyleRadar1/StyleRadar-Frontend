@@ -25,8 +25,13 @@ export const DEFAULT_BODY_MEASUREMENTS: BodyMeasurements = {
 /**
  * Obtiene las medidas corporales guardadas del usuario o null si no las ha configurado.
  */
-export function getBodyMeasurements(): BodyMeasurements | null {
+export function getBodyMeasurements(userId?: string): BodyMeasurements | null {
   try {
+    if (userId) {
+      const userKey = `${SR_BODY_MEASUREMENTS_KEY}_${userId}`
+      const rawUser = localStorage.getItem(userKey) || sessionStorage.getItem(userKey)
+      if (rawUser) return JSON.parse(rawUser)
+    }
     const raw = localStorage.getItem(SR_BODY_MEASUREMENTS_KEY) || sessionStorage.getItem(SR_BODY_MEASUREMENTS_KEY)
     if (raw) return JSON.parse(raw)
   } catch {
@@ -38,11 +43,17 @@ export function getBodyMeasurements(): BodyMeasurements | null {
 /**
  * Verifica si el usuario ya tiene medidas guardadas formalmente (no vacías).
  */
-export function hasSavedBodyMeasurements(): boolean {
+export function hasSavedBodyMeasurements(userId?: string): boolean {
   try {
+    if (userId) {
+      const userFlag =
+        localStorage.getItem(`${SR_BODY_SAVED_FLAG}_${userId}`) ||
+        sessionStorage.getItem(`${SR_BODY_SAVED_FLAG}_${userId}`)
+      if (userFlag === 'true' || userFlag === 'temporary') return true
+    }
     const flag = localStorage.getItem(SR_BODY_SAVED_FLAG) || sessionStorage.getItem(SR_BODY_SAVED_FLAG)
     if (flag === 'true' || flag === 'temporary') {
-      const data = getBodyMeasurements()
+      const data = getBodyMeasurements(userId)
       return data !== null && Boolean(data.estatura && data.pecho && data.cintura)
     }
   } catch {
@@ -52,11 +63,11 @@ export function hasSavedBodyMeasurements(): boolean {
 }
 
 /**
- * Guarda las medidas corporales.
+ * Guarda las medidas corporales vinculadas opcionalmente al ID del perfil de usuario.
  * Si persist es true, se almacena en localStorage con consentimiento.
  * Si es temporal, se guarda en sessionStorage sin persistencia a largo plazo.
  */
-export function saveBodyMeasurements(measurements: BodyMeasurements, persist: boolean): void {
+export function saveBodyMeasurements(measurements: BodyMeasurements, persist: boolean, userId?: string): void {
   try {
     const payload: BodyMeasurements = {
       ...measurements,
@@ -68,15 +79,33 @@ export function saveBodyMeasurements(measurements: BodyMeasurements, persist: bo
     if (persist) {
       localStorage.setItem(SR_BODY_MEASUREMENTS_KEY, json)
       localStorage.setItem(SR_BODY_SAVED_FLAG, 'true')
+      if (userId) {
+        localStorage.setItem(`${SR_BODY_MEASUREMENTS_KEY}_${userId}`, json)
+        localStorage.setItem(`${SR_BODY_SAVED_FLAG}_${userId}`, 'true')
+      }
       // También sincroniza el formato simplificado para el recomendador de tallas
-      localStorage.setItem('sr_user_measurements', JSON.stringify({
-        superior: measurements.tallaHabitual || 'M',
-        inferior: measurements.cintura <= 76 ? '28' : measurements.cintura <= 82 ? '30' : measurements.cintura <= 88 ? '32' : '34',
-        calzado: '38',
-      }))
+      localStorage.setItem(
+        'sr_user_measurements',
+        JSON.stringify({
+          superior: measurements.tallaHabitual || 'M',
+          inferior:
+            measurements.cintura <= 76
+              ? '28'
+              : measurements.cintura <= 82
+                ? '30'
+                : measurements.cintura <= 88
+                  ? '32'
+                  : '34',
+          calzado: '38',
+        }),
+      )
     } else {
       sessionStorage.setItem(SR_BODY_MEASUREMENTS_KEY, json)
       sessionStorage.setItem(SR_BODY_SAVED_FLAG, 'temporary')
+      if (userId) {
+        sessionStorage.setItem(`${SR_BODY_MEASUREMENTS_KEY}_${userId}`, json)
+        sessionStorage.setItem(`${SR_BODY_SAVED_FLAG}_${userId}`, 'temporary')
+      }
     }
   } catch {
     /* ignore */
@@ -86,13 +115,19 @@ export function saveBodyMeasurements(measurements: BodyMeasurements, persist: bo
 /**
  * Borra las medidas corporales y resetea las banderas (para pruebas o privacidad).
  */
-export function clearBodyMeasurements(): void {
+export function clearBodyMeasurements(userId?: string): void {
   try {
     localStorage.removeItem(SR_BODY_MEASUREMENTS_KEY)
     localStorage.removeItem(SR_BODY_SAVED_FLAG)
     localStorage.removeItem('sr_user_measurements')
     sessionStorage.removeItem(SR_BODY_MEASUREMENTS_KEY)
     sessionStorage.removeItem(SR_BODY_SAVED_FLAG)
+    if (userId) {
+      localStorage.removeItem(`${SR_BODY_MEASUREMENTS_KEY}_${userId}`)
+      localStorage.removeItem(`${SR_BODY_SAVED_FLAG}_${userId}`)
+      sessionStorage.removeItem(`${SR_BODY_MEASUREMENTS_KEY}_${userId}`)
+      sessionStorage.removeItem(`${SR_BODY_SAVED_FLAG}_${userId}`)
+    }
   } catch {
     /* ignore */
   }

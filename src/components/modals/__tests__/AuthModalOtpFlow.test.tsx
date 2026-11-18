@@ -64,4 +64,34 @@ describe('AuthModal - Flujo OTP y usabilidad', () => {
       expect(input.value).toBe(expected[i - 1])
     }
   })
+
+  it('al completar el registro con OTP abre el asistente de medidas corporales para el probador', async () => {
+    renderModal(true, 'register')
+
+    // Llenar formulario de registro con cuenta demo
+    fireEvent.change(screen.getByLabelText(/Nombre completo/i), { target: { value: 'Nueva Usuaria' } })
+    fireEvent.change(screen.getByLabelText(/^Correo/i), { target: { value: 'valen@correo.com' } })
+    fireEvent.change(screen.getByLabelText(/^Contraseña/i), { target: { value: 'password123' } })
+
+    // Marcar consentimientos legales obligatorios
+    const checkboxes = screen.getAllByRole('checkbox')
+    checkboxes.forEach((cb) => fireEvent.click(cb))
+
+    // Enviar registro
+    const btnCrear = screen.getByRole('button', { name: /Crear cuenta/i })
+    fireEvent.click(btnCrear)
+
+    // Pasa a pantalla de OTP
+    expect(await screen.findByText('Verifica que eres tú')).toBeInTheDocument()
+
+    // Autocompletar y verificar OTP
+    const btnAutoFill = screen.getByRole('button', { name: /Rellenar código válido/i })
+    fireEvent.click(btnAutoFill)
+
+    const btnVerificar = screen.getByRole('button', { name: /Confirmar y entrar/i })
+    fireEvent.click(btnVerificar)
+
+    // Debe abrir el asistente de medidas anatómicas para onboarding justo después de crear la cuenta
+    expect(await screen.findByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
+  })
 })

@@ -11,9 +11,12 @@ import { tomarRetorno } from '@/modules/core/api/retorno'
 import { ErrorCampo } from '@/modules/core/components/errores'
 import { correoValido } from '@/modules/identidad/utils/formato'
 import { ESPERA_429, TEXTOS_ACCESO, errorDeLogin } from '@/modules/identidad/utils/erroresAcceso'
-import { PASSWORD_MIN } from '@/modules/identidad/types/auth.dto'
+import { PASSWORD_MIN, type UserSessionDto } from '@/modules/identidad/types/auth.dto'
 import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
 import { consentService } from '@/modules/legal/services/consentService'
+import { BodyMeasurementsWizardModal } from '@/modules/experiencia/components/BodyMeasurementsWizardModal'
+import { saveBodyMeasurements } from '@/modules/experiencia/utils/bodyMeasurementsEngine'
+import type { BodyMeasurements } from '@/modules/experiencia/types/bodyMeasurements.dto'
 import './AuthModal.css'
 
 type DemoAccountRole = (typeof DEMO_ACCOUNTS)[number]['role']
@@ -138,6 +141,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Asistente de medidas corporales para onboarding justo después de crear la cuenta
+  const [showMeasurementsWizard, setShowMeasurementsWizard] = useState(false)
+  const [newlyRegisteredUser, setNewlyRegisteredUser] = useState<UserSessionDto | null>(null)
   const [infoMessage, setInfoMessage] = useState<string | null>(null)
 
   // Plan de errores: errores por campo, Reintentar (503) y bloqueo con cuenta regresiva (429).
@@ -780,13 +787,21 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         return
       }
       const user = await verifyOtp({ email: email.trim() || 'usuario@styleradar.co', codigoOtp: code })
-      if (activeTab === 'register' && user.role === 'ADMIN_ALMACEN') {
-        finishAuthAndNavigate('/tienda/suscripcion/activar')
-      } else if (activeTab === 'register' && user.role === 'REPRESENTANTE_FUNDACION') {
-        finishAuthAndNavigate('/fundacion')
-      } else {
-        entrarCon(user.role)
+      if (activeTab === 'register') {
+        if (user.role === 'ADMIN_ALMACEN') {
+          finishAuthAndNavigate('/tienda/suscripcion/activar')
+          return
+        }
+        if (user.role === 'REPRESENTANTE_FUNDACION') {
+          finishAuthAndNavigate('/fundacion')
+          return
+        }
+        // Justo después de crear la cuenta: abrir asistente de medidas para el probador y guardar en su perfil
+        setNewlyRegisteredUser(user)
+        setShowMeasurementsWizard(true)
+        return
       }
+      entrarCon(user.role)
     } catch (err: any) {
       const msg = err?.message || TEXTOS_ACCESO.otp
       setCamposErr({ otp: msg })
@@ -794,6 +809,23 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       if (err?.status === 429) bloquear(ESPERA_429)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleMeasurementsWizardSave = (measurements: BodyMeasurements, persist: boolean) => {
+    if (newlyRegisteredUser) {
+      saveBodyMeasurements(measurements, persist, newlyRegisteredUser.id)
+    }
+    setShowMeasurementsWizard(false)
+    if (newlyRegisteredUser) {
+      entrarCon(newlyRegisteredUser.role)
+    }
+  }
+
+  const handleMeasurementsWizardClose = () => {
+    setShowMeasurementsWizard(false)
+    if (newlyRegisteredUser) {
+      entrarCon(newlyRegisteredUser.role)
     }
   }
 
@@ -1320,6 +1352,15 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
           )}
         </div>
       </div>
+
+      {/* Modal de medidas corporales para onboarding justo después de crear la cuenta */}
+      {showMeasurementsWizard && newlyRegisteredUser && (
+        <BodyMeasurementsWizardModal
+          isOpen={showMeasurementsWizard}
+          onClose={handleMeasurementsWizardClose}
+          onSave={handleMeasurementsWizardSave}
+        />
+      )}
     </div>
   )
 }

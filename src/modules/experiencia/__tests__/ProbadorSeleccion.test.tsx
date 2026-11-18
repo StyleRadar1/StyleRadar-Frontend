@@ -174,28 +174,19 @@ describe('Pruebas adicionales de selección 9B (Flujo UI y probador)', () => {
     })
   })
 
-  it('enlace profundo sin sesión ni medidas: pide autenticación/asistente y carga la prenda al completarlo', async () => {
-    // Sin sesión ni medidas
+  it('enlace profundo sin sesión: pide autenticación y carga la prenda al iniciar sesión', async () => {
+    // Sin sesión
     renderProbador('/probador?prenda=p4&talla=32&color=Azul')
 
     await waitFor(() => {
-      // Muestra modal de inicio de sesión o asistente
+      // Muestra modal de inicio de sesión
       expect(screen.getByRole('dialog', { name: /Inicia sesión/i })).toBeInTheDocument()
     })
 
     // Simular que el usuario inicia sesión disparando el evento de login exitoso
     window.dispatchEvent(new CustomEvent('sr:login-success', { detail: { id: 'u-1', name: 'Valentina' } }))
 
-    // Debe abrir el asistente de medidas anatómicas si aún no las tiene
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
-    })
-
-    // Continuar con medidas temporales en el asistente para probar de inmediato
-    const btnTemp = screen.getByRole('button', { name: /Continuar con medidas temporales/i })
-    fireEvent.click(btnTemp)
-
-    // Prenda cargada intacta sin perderse
+    // Prenda cargada intacta en el maniquí
     await waitFor(() => {
       expect(screen.getByText('Jean ancho azul')).toBeInTheDocument()
       expect(screen.getByText('32')).toBeInTheDocument()
@@ -356,7 +347,7 @@ describe('Pruebas adicionales de selección 9B (Flujo UI y probador)', () => {
   })
 })
 
-describe('Asistente de medidas corporales y maniquí adaptable (Pasos 2, 3 y 4)', () => {
+describe('Comportamiento limpio del probador (las medidas ya no interrumpen en el probador)', () => {
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.clear()
@@ -367,193 +358,37 @@ describe('Asistente de medidas corporales y maniquí adaptable (Pasos 2, 3 y 4)'
     sessionStorage.clear()
   })
 
-  it('abre automáticamente el asistente de medidas de 4 pasos al entrar a /probador si el usuario tiene sesión pero no medidas', async () => {
+  it('no muestra modal emergente de medidas al entrar a /probador (se piden en registro y perfil)', async () => {
     loginAs('u-1', 'Valentina Rojas')
     renderProbador('/probador')
 
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
-      expect(screen.getByText(/Asistente de Medidas Anatómicas · Paso 1 de 4/i)).toBeInTheDocument()
-    })
+    // El probador no interrumpe con ningún asistente emergente
+    expect(screen.queryByRole('heading', { name: /Elige tu silueta base y unidades/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Mi look/i })).toBeInTheDocument()
   })
 
-  it('si no hay sesión al entrar a /probador sin medidas, pide autenticación y tras login abre el asistente', async () => {
-    renderProbador('/probador')
-
-    await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /Inicia sesión/i })).toBeInTheDocument()
-    })
-
-    // Login exitoso
-    window.dispatchEvent(new CustomEvent('sr:login-success', { detail: { id: 'u-1', name: 'Valentina' } }))
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
-    })
-  })
-
-  it('recorre los 4 pasos del asistente, valida consentimiento Ley 1581 y permite guardar permanentemente', async () => {
+  it('«Escoger prenda para probar» abre directamente el catálogo sin interceptar con medidas', async () => {
     loginAs('u-1', 'Valentina Rojas')
     renderProbador('/probador')
 
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
-    })
-
-    // Paso 1 -> 2
-    fireEvent.click(screen.getByRole('button', { name: /Continuar a estatura/i }))
+    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda para probar/i })
+    fireEvent.click(btnEscoger)
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Estatura, peso y talla/i })).toBeInTheDocument()
-    })
-
-    // Paso 2 -> 3
-    fireEvent.click(screen.getByRole('button', { name: /Continuar a medidas/i }))
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Tus medidas en centímetros/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /No sé mis medidas/i })).toBeInTheDocument()
-    })
-
-    // Paso 3 -> 4
-    fireEvent.click(screen.getByRole('button', { name: /Ver vista previa/i }))
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Vista previa y confirmación/i })).toBeInTheDocument()
-    })
-
-    // Intentar guardar sin marcar la casilla de consentimiento de la Ley 1581
-    const btnGuardarCuerpo = screen.getByRole('button', { name: /Guardar mi cuerpo/i })
-    fireEvent.click(btnGuardarCuerpo)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Debes autorizar el tratamiento de tus medidas corporales/i)).toBeInTheDocument()
-    })
-
-    // Marcar la casilla de autorización expresa (>18 años)
-    const consentCheckbox = screen.getByRole('checkbox')
-    expect(consentCheckbox).not.toBeChecked()
-    fireEvent.click(consentCheckbox)
-    expect(consentCheckbox).toBeChecked()
-
-    // Guardar exitosamente
-    fireEvent.click(btnGuardarCuerpo)
-
-    await waitFor(() => {
-      expect(hasSavedBodyMeasurements()).toBe(true)
-      expect(screen.getByTestId('body-measurements-summary')).toHaveTextContent(/1,75 m · Pecho 96 · Cintura 80 · Cadera 98 · Talla M/i)
-    })
-  })
-
-  it('la opción «No sé mis medidas» en el paso 3 calcula estimaciones automáticas marcadas como aproximadas', async () => {
-    loginAs('u-1', 'Valentina Rojas')
-    renderProbador('/probador')
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: /Continuar a estatura/i }))
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Estatura, peso y talla/i })).toBeInTheDocument()
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: /Continuar a medidas/i }))
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /No sé mis medidas/i })).toBeInTheDocument()
-    })
-
-    // Clic en estimar
-    fireEvent.click(screen.getByRole('button', { name: /No sé mis medidas/i }))
-
-    await waitFor(() => {
-      expect(screen.getByText(/Medidas estimadas aplicadas con éxito/i)).toBeInTheDocument()
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: /Ver vista previa/i }))
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Vista previa y confirmación/i })).toBeInTheDocument()
-    })
-
-    // Marcar consentimiento y guardar
-    const consentCheckbox = screen.getByRole('checkbox')
-    fireEvent.click(consentCheckbox)
-    fireEvent.click(screen.getByRole('button', { name: /Guardar mi cuerpo/i }))
-
-    await waitFor(() => {
-      expect(screen.getByText('Aprox.')).toBeInTheDocument()
-    })
-  })
-
-  it('permite continuar con medidas temporales sin guardado permanente en localStorage', async () => {
-    loginAs('u-1', 'Valentina Rojas')
-    renderProbador('/probador')
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
-    })
-
-    const btnTemp = screen.getByRole('button', { name: /Continuar con medidas temporales/i })
-    fireEvent.click(btnTemp)
-
-    await waitFor(() => {
-      expect(sessionStorage.getItem('sr_body_measurements_saved')).toBe('temporary')
-      expect(localStorage.getItem('sr_body_measurements_saved')).toBeNull()
-      expect(hasSavedBodyMeasurements()).toBe(true)
-    })
-  })
-
-  it('después de guardar, el asistente NO vuelve a abrirse solo al volver a entrar a /probador', async () => {
-    setupMeasurements()
-    loginAs('u-1', 'Valentina Rojas')
-    renderProbador('/probador')
-
-    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: /Seleccionar prendas del catálogo/i })).toBeInTheDocument()
       expect(screen.queryByRole('heading', { name: /Elige tu silueta base y unidades/i })).not.toBeInTheDocument()
-      expect(screen.getByTestId('body-measurements-summary')).toBeInTheDocument()
     })
   })
 
-  it('tarjeta «Mis medidas» en el panel izquierdo permite editar, borrar y descargar datos', async () => {
-    setupMeasurements()
+  it('la tarjeta de medidas ya no aparece en el panel izquierdo del probador', async () => {
     loginAs('u-1', 'Valentina Rojas')
     renderProbador('/probador')
 
-    await waitFor(() => {
-      expect(screen.getByTestId('body-measurements-summary')).toHaveTextContent(/1,75 m · Pecho 96 · Cintura 80 · Cadera 98 · Talla M/i)
-    })
-
-    // Botón Editar medidas abre el asistente
-    const btnEditar = screen.getByRole('button', { name: /Editar medidas/i })
-    fireEvent.click(btnEditar)
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
-    })
-
-    // Cerrar asistente
-    fireEvent.click(screen.getByRole('button', { name: /Cerrar asistente/i }))
-
-    // Botón Descargar mis datos
-    const btnDescargar = screen.getByRole('button', { name: /Descargar mis datos/i })
-    fireEvent.click(btnDescargar)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Datos corporales exportados/i)).toBeInTheDocument()
-    })
-
-    // Botón Borrar mis medidas reinicia a estado vacío
-    const btnBorrar = screen.getByRole('button', { name: /Borrar mis medidas/i })
-    fireEvent.click(btnBorrar)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Completa tus medidas para probar ropa realista/i)).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /Agregar mis medidas/i })).toBeInTheDocument()
-      expect(hasSavedBodyMeasurements()).toBe(false)
-    })
+    expect(screen.queryByRole('region', { name: /Mis medidas corporales/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Completa tus medidas para probar ropa realista/i)).not.toBeInTheDocument()
   })
 
-  it('el maniquí adapta su silueta y escala en altura (scaleY) según las medidas anatómicas del usuario', async () => {
+  it('el maniquí adapta su silueta y escala en altura (scaleY) según las medidas guardadas en el perfil', async () => {
     // 1. Maniquí masculino bajo (140 cm -> scaleY 0.8)
     setupMeasurements({ estatura: 140, cuerpoBase: 'masculino' })
     loginAs('u-1', 'Valentina Rojas')
@@ -593,30 +428,6 @@ describe('Asistente de medidas corporales y maniquí adaptable (Pasos 2, 3 y 4)'
       expect(screen.getByText('1,70 m')).toBeInTheDocument()
       expect(screen.getByText('1,50 m')).toBeInTheDocument()
       expect(screen.getByText('1,40 m')).toBeInTheDocument()
-    })
-  })
-
-  it('intercepta el botón «Escoger prenda para probar» si no hay medidas y abre el asistente antes de la selección', async () => {
-    loginAs('u-1', 'Valentina Rojas')
-    renderProbador('/probador')
-
-    // El auto-prompt abre el asistente de entrada. Lo cerramos para probar el botón manual
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
-    })
-    fireEvent.click(screen.getByRole('button', { name: /Cerrar asistente/i }))
-
-    await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: /Elige tu silueta base y unidades/i })).not.toBeInTheDocument()
-    })
-
-    // Ahora oprimimos «Escoger prenda para probar» sin medidas guardadas
-    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda para probar/i })
-    fireEvent.click(btnEscoger)
-
-    // Debe abrir el asistente de medidas antes de permitir la selección de catálogo
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
     })
   })
 })
