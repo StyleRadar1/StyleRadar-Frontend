@@ -124,6 +124,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/perfil', element: only(USER, <Profile />) },
       { path: '/perfil/pagos', element: only(USER, <BuyerPayments />) },
       { path: '/probador', element: page(<ProbadorVirtual />) },
+      { path: '/probador/arma-tu-look', element: page(<ProbadorVirtual />) },
       { path: '/probador/avanzado', element: only(USER, <TryOn />) },
       { path: '/segunda-mano', element: page(<SecondHand />) },
       { path: '/segunda-mano/publicar', element: only(USER_OR_STORE, <PublishListing />) },

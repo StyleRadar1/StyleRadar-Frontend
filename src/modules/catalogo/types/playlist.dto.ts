@@ -11,6 +11,8 @@ export type PlaylistVisibility = 'PUBLICA' | 'PRIVADA'
 export interface PlaylistItemDto extends ItemResponseDto {
   agregadaPor?: string
   noDisponible?: boolean
+  tallaSeleccionada?: string
+  colorSeleccionado?: string
 }
 
 export interface PlaylistDto {

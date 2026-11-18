@@ -1,33 +1,39 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
 import './QuickTryOnModal.css'
 import { readDimensions } from '@/modules/experiencia/utils/photoRules'
 import { TEXTO_FOTO, TRYON_ACCEPT, validarArchivoPrueba, validarDimensionesPrueba } from '@/modules/experiencia/utils/tryOnRules'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { ITEMS } from '@/modules/catalogo/mocks/items'
+import { MOCK_PLAYLISTS } from '@/modules/catalogo/mocks/playlists'
+import type { ItemResponseDto } from '@/modules/catalogo/types/item.dto'
+import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
+import {
+  LOOK_SLOTS,
+  SLOT_LABELS,
+  type FailedOutfitItem,
+  type LookSlot,
+  type LookState,
+  type UserMeasurements,
+  type WornItem,
+} from '@/modules/experiencia/types/look.dto'
+import {
+  clearLookFromStorage,
+  evaluateGarmentFit,
+  evaluatePlaylistOutfit,
+  getLayerForGarment,
+  getRecommendedSize,
+  getSlotForGarment,
+  getUserMeasurements,
+  isGarmentFittable,
+  loadLookFromStorage,
+  saveLookToStorage,
+  saveUserMeasurements,
+} from '@/modules/experiencia/utils/lookEngine'
+import { MeasurementAssistantModal } from '@/modules/experiencia/components/MeasurementAssistantModal'
+import { AuthModal } from './AuthModal'
 
-/* ================================================================
-   QuickTryOnModal — Probador Virtual Editorial Premium
-   Experiencia inmersiva full-screen: maniquí central con capas de
-   ropa superpuestas + panel lateral "Arma tu look" con catálogo.
-   ================================================================ */
-
-/* ---------- Tipos ---------- */
-export interface TryOnItem {
-  id: string
-  name: string
-  store: string
-  price: number
-  slot: string
-  color: string
-  layer: string
-  image: string
-}
-
-export interface TryOnCategory {
-  tab: string
-  slot: string | null
-  items: TryOnItem[]
-}
-
-/* ---------- Filtros de color para capas ---------- */
+/* ---------- Filtros de color para capas del maniquí ---------- */
 const COLOR_FILTERS: Record<string, string> = {
   blanco: 'none',
   celeste: 'sepia(1) hue-rotate(160deg) saturate(2.4) brightness(.9)',
@@ -41,7 +47,7 @@ const COLOR_FILTERS: Record<string, string> = {
   cuero_cafe: 'sepia(1) hue-rotate(10deg) saturate(2.2) brightness(.55)',
   gris: 'grayscale(1) brightness(.7)',
   vino: 'sepia(1) hue-rotate(300deg) saturate(2.6) brightness(.55)',
-  none: 'none',
+  default: 'none',
 }
 
 /* ---------- Rutas de capas del maniquí ---------- */
@@ -59,150 +65,366 @@ const LAYER_PATHS: Record<string, string> = {
   guantes: '/prototipo/assets/img/probador-capas/guantes.png',
 }
 
-/* Orden de renderizado Z de las capas (de atrás hacia adelante) */
+/* Orden de renderizado Z (de atrás hacia adelante: capa interior a capa exterior) */
 const LAYER_ORDER = [
-  'zapatos', 'tenis', 'camisa', 'pantalon', 'cinturon',
-  'corbata', 'saco', 'cuero', 'abrigo', 'bufanda', 'guantes',
+  'zapatos',
+  'tenis',
+  'camisa',
+  'pantalon',
+  'cinturon',
+  'corbata',
+  'saco',
+  'cuero',
+  'abrigo',
+  'bufanda',
+  'guantes',
 ]
 
-/* ---------- Catálogo de prendas ---------- */
-const CATEGORIES_DATA: TryOnCategory[] = [
-  {
-    tab: 'Camisas',
-    slot: 'camisa',
-    items: [
-      { id: 'cam-bl', name: 'Camisa Oxford blanca', store: 'The Local Lab', price: 165000, slot: 'camisa', color: 'blanco', layer: 'camisa', image: '/prototipo/assets/img/productos/camiseta-blanca-de-algodon.jpg' },
-      { id: 'cam-ce', name: 'Camisa celeste algodón', store: 'Nómada Studio', price: 149000, slot: 'camisa', color: 'celeste', layer: 'camisa', image: '/prototipo/assets/img/probador-miniaturas/camisa.png' },
-      { id: 'cam-ne', name: 'Camisa negra popelina', store: 'Luna Store', price: 139000, slot: 'camisa', color: 'negro', layer: 'camisa', image: '/prototipo/assets/img/productos/camisa-negra-de-popelina.jpg' },
-      { id: 'cam-hu', name: 'Camisa hueso de lino', store: 'Segunda mano', price: 48000, slot: 'camisa', color: 'hueso', layer: 'camisa', image: '/prototipo/assets/img/probador-miniaturas/camisa.png' },
-    ],
-  },
-  {
-    tab: 'Pantalones',
-    slot: 'pantalon',
-    items: [
-      { id: 'pan-gr', name: 'Pantalón de lana gris', store: 'Nómada Studio', price: 210000, slot: 'pantalon', color: 'carbon', layer: 'pantalon', image: '/prototipo/assets/img/probador-miniaturas/pantalon.png' },
-      { id: 'pan-ne', name: 'Pantalón sastre negro', store: 'The Local Lab', price: 189000, slot: 'pantalon', color: 'negro', layer: 'pantalon', image: '/prototipo/assets/img/productos/r1c4-pantalon-negro.jpg' },
-      { id: 'pan-ca', name: 'Chino camel', store: 'The Local Lab', price: 159000, slot: 'pantalon', color: 'camel', layer: 'pantalon', image: '/prototipo/assets/img/probador-miniaturas/pantalon.png' },
-      { id: 'pan-ma', name: 'Pantalón azul marino', store: 'Segunda mano', price: 62000, slot: 'pantalon', color: 'marino', layer: 'pantalon', image: '/prototipo/assets/img/probador-miniaturas/pantalon.png' },
-    ],
-  },
-  {
-    tab: 'Chaquetas',
-    slot: 'chaqueta',
-    items: [
-      { id: 'sac-ca', name: 'Saco de lana carbón', store: 'Nómada Studio', price: 395000, slot: 'chaqueta', color: 'carbon', layer: 'saco', image: '/prototipo/assets/img/productos/saco-de-lana-negro.jpg' },
-      { id: 'sac-ma', name: 'Saco azul marino', store: 'The Local Lab', price: 360000, slot: 'chaqueta', color: 'marino', layer: 'saco', image: '/prototipo/assets/img/productos/blazer-oversize.jpg' },
-      { id: 'sac-ol', name: 'Saco verde oliva', store: 'Segunda mano', price: 95000, slot: 'chaqueta', color: 'oliva', layer: 'saco', image: '/prototipo/assets/img/probador-miniaturas/saco.png' },
-      { id: 'cue-ne', name: 'Chaqueta cuero negra', store: 'Nómada Studio', price: 450000, slot: 'chaqueta', color: 'cuero_negro', layer: 'cuero', image: '/prototipo/assets/img/productos/chaqueta-con-arnes.jpg' },
-      { id: 'cue-ca', name: 'Chaqueta cuero café', store: 'Nómada Studio', price: 430000, slot: 'chaqueta', color: 'cuero_cafe', layer: 'cuero', image: '/prototipo/assets/img/probador-miniaturas/cuero.png' },
-    ],
-  },
-  {
-    tab: 'Abrigos',
-    slot: 'abrigo',
-    items: [
-      { id: 'abr-ca', name: 'Abrigo largo camel', store: 'Nómada Studio', price: 420000, slot: 'abrigo', color: 'camel', layer: 'abrigo', image: '/prototipo/assets/img/probador-miniaturas/abrigo.png' },
-      { id: 'abr-gr', name: 'Abrigo gris de lana', store: 'Segunda mano', price: 120000, slot: 'abrigo', color: 'gris', layer: 'abrigo', image: '/prototipo/assets/img/probador-miniaturas/abrigo.png' },
-      { id: 'abr-ne', name: 'Abrigo negro', store: 'The Local Lab', price: 390000, slot: 'abrigo', color: 'negro', layer: 'abrigo', image: '/prototipo/assets/img/productos/gabardina-de-cuero.jpg' },
-      { id: 'abr-vi', name: 'Abrigo vino', store: 'Nómada Studio', price: 410000, slot: 'abrigo', color: 'vino', layer: 'abrigo', image: '/prototipo/assets/img/probador-miniaturas/abrigo.png' },
-    ],
-  },
-  {
-    tab: 'Zapatos',
-    slot: 'zapatos',
-    items: [
-      { id: 'zap-ne', name: 'Oxford negros', store: 'Kicks Local', price: 290000, slot: 'zapatos', color: 'cuero_negro', layer: 'zapatos', image: '/prototipo/assets/img/productos/zapatos-oxford-negros.jpg' },
-      { id: 'zap-ca', name: 'Oxford café', store: 'Kicks Local', price: 290000, slot: 'zapatos', color: 'cuero_cafe', layer: 'zapatos', image: '/prototipo/assets/img/probador-miniaturas/zapatos.png' },
-      { id: 'ten-bl', name: 'Tenis blancos', store: 'Luna Store', price: 260000, slot: 'zapatos', color: 'blanco', layer: 'tenis', image: '/prototipo/assets/img/productos/casual-retro-blancos.jpg' },
-      { id: 'ten-gr', name: 'Tenis grises', store: 'Luna Store', price: 240000, slot: 'zapatos', color: 'gris', layer: 'tenis', image: '/prototipo/assets/img/probador-miniaturas/tenis.png' },
-    ],
-  },
-  {
-    tab: 'Accesorios',
-    slot: 'accesorios',
-    items: [
-      { id: 'cor-ne', name: 'Corbata negra de seda', store: 'The Local Lab', price: 55000, slot: 'corbata', color: 'negro', layer: 'corbata', image: '/prototipo/assets/img/productos/corbata-de-seda.jpg' },
-      { id: 'buf-gr', name: 'Bufanda espiga gris', store: 'Segunda mano', price: 38000, slot: 'bufanda', color: 'gris', layer: 'bufanda', image: '/prototipo/assets/img/probador-miniaturas/bufanda.png' },
-      { id: 'cint', name: 'Cinturón de cuero', store: 'Nómada Studio', price: 95000, slot: 'cinturon', color: 'cuero_cafe', layer: 'cinturon', image: '/prototipo/assets/img/productos/cinturon-de-cuero.jpg' },
-      { id: 'gua-ne', name: 'Guantes negros', store: 'Nómada Studio', price: 72000, slot: 'guantes', color: 'negro', layer: 'guantes', image: '/prototipo/assets/img/probador-miniaturas/guantes.png' },
-    ],
-  },
-]
-
-/* ---------- Formatear precio COP ---------- */
 function money(n: number): string {
   return '$' + n.toLocaleString('es-CO')
 }
 
-/* ---------- Componente Principal ---------- */
 interface QuickTryOnModalProps {
   isOpen: boolean
   onClose: () => void
   initialGarmentId?: string
 }
 
-export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
-  /* Estado del probador */
-  const [activeTab, setActiveTab] = useState('Camisas')
-  const [wearing, setWearing] = useState<Record<string, TryOnItem>>({})
+export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryOnModalProps) {
+  const [searchParams] = useSearchParams()
+  const { user } = useAuth()
+
+  /* Estado del look puesto */
+  const [wearing, setWearing] = useState<LookState>(() => loadLookFromStorage())
+  const [undoStack, setUndoStack] = useState<LookState[]>([])
+  const [redoStack, setRedoStack] = useState<LookState[]>([])
+
+  /* Estado de la cámara y vista del maniquí */
+  const [rotationAngle, setRotationAngle] = useState(0)
+  const [zoomLevel, setZoomLevel] = useState(1)
+  const [showFitMap, setShowFitMap] = useState(false)
+  const [compareItem, setCompareItem] = useState<{ item: ItemResponseDto; size1: string; size2: string } | null>(null)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  /* Estado del panel lateral / drawer de selección */
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [drawerTab, setDrawerTab] = useState<'catalogo' | 'playlists'>('catalogo')
+
+  /* Filtros del catálogo dentro del drawer */
+  const [catalogSearch, setCatalogSearch] = useState('')
+  const [selectedSlotFilter, setSelectedSlotFilter] = useState<string>('todos')
+  const [selectedStoreFilter, setSelectedStoreFilter] = useState<string>('todas')
+  const [selectedStyleFilter, setSelectedStyleFilter] = useState<string>('todos')
+  const [selectedSizeFilter, setSelectedSizeFilter] = useState<string>('todas')
+  const [simulateOffline, setSimulateOffline] = useState(false)
+
+  /* Modal de confirmación para reemplazar vs agregar en playlists */
+  const [pendingPlaylist, setPendingPlaylist] = useState<PlaylistDto | null>(null)
+  const [playlistNotice, setPlaylistNotice] = useState<{
+    resumen: string
+    fallidas: FailedOutfitItem[]
+  } | null>(null)
+
+  /* Modal de selección individual de prenda */
+  const [garmentPickerItem, setGarmentPickerItem] = useState<ItemResponseDto | null>(null)
+  const [pickerSelectedSize, setPickerSelectedSize] = useState<string>('')
+  const [pickerSelectedColor, setPickerSelectedColor] = useState<string>('')
+
+  /* Guardar look como playlist */
+  const [showSaveLookModal, setShowSaveLookModal] = useState(false)
+  const [newPlaylistName, setNewPlaylistName] = useState('')
+  const [newPlaylistDesc, setNewPlaylistDesc] = useState('')
+
+  /* Asistente de medidas y autenticación para enlaces profundos */
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showMeasurementModal, setShowMeasurementModal] = useState(false)
+  const [pendingDeepLinkGarment, setPendingDeepLinkGarment] = useState<{ id: string; talla?: string; color?: string } | null>(null)
+
+  /* Modo foto personal */
   const [sourceMode, setSourceMode] = useState<'mannequin' | 'photo'>('mannequin')
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
   const [photoError, setPhotoError] = useState('')
-  const [showGuide, setShowGuide] = useState(true)
   const [photoScale, setPhotoScale] = useState(1)
   const [photoOffset, setPhotoOffset] = useState({ x: 0, y: 0 })
   const fileRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
 
-  /* Computa el total y la cantidad de prendas activas */
-  const wornItems = Object.values(wearing)
-  const totalPrice = wornItems.reduce((sum, item) => sum + item.price, 0)
-  const totalCount = wornItems.length
-  const MAX_SLOTS = 4
+  /* Dragging de rotación del maniquí */
+  const isRotating = useRef(false)
+  const rotateStart = useRef(0)
 
-  /* Mapa de layers activas para renderizar en el maniquí */
-  const activeLayers: { layer: string; color: string; zIndex: number }[] = []
-  for (const item of wornItems) {
-    const zIndex = LAYER_ORDER.indexOf(item.layer)
-    if (zIndex >= 0 && LAYER_PATHS[item.layer]) {
-      activeLayers.push({ layer: item.layer, color: item.color, zIndex })
-    }
-  }
-  activeLayers.sort((a, b) => a.zIndex - b.zIndex)
+  /* Medidas del usuario */
+  const userMeasurements = useMemo<UserMeasurements>(() => getUserMeasurements(), [])
 
-  /* Vestir / desvestir prenda */
-  const toggleGarment = useCallback((item: TryOnItem) => {
-    setWearing(prev => {
-      const key = item.layer
-      // Si ya la lleva puesta, la quita
-      if (prev[key]?.id === item.id) {
-        const next = { ...prev }
-        delete next[key]
-        return next
-      }
-      // Si es del mismo slot pero otra prenda, la reemplaza
-      return { ...prev, [key]: item }
+  /* Guarda el look en storage cada vez que cambia */
+  useEffect(() => {
+    saveLookToStorage(wearing)
+  }, [wearing])
+
+  /* Notificación temporal (Toast) */
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev))
+    }, 4000)
+  }, [])
+
+  /* Push a la historia de deshacer */
+  const pushState = useCallback((next: LookState) => {
+    setUndoStack((prev) => [...prev, wearing])
+    setRedoStack([])
+    setWearing(next)
+  }, [wearing])
+
+  /* Deshacer */
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0) return
+    const prev = undoStack[undoStack.length - 1]
+    setUndoStack((s) => s.slice(0, -1))
+    setRedoStack((s) => [...s, wearing])
+    setWearing(prev)
+    showToast('Acción deshecha')
+  }, [undoStack, wearing, showToast])
+
+  /* Rehacer */
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return
+    const next = redoStack[redoStack.length - 1]
+    setRedoStack((s) => s.slice(0, -1))
+    setUndoStack((s) => [...s, wearing])
+    setWearing(next)
+    showToast('Acción rehecha')
+  }, [redoStack, wearing, showToast])
+
+  /* Quitar prenda de un espacio */
+  const removeGarment = useCallback((slot: LookSlot) => {
+    pushState({
+      ...wearing,
+      [slot]: undefined,
     })
-  }, [])
+    showToast(`Prenda quitada de ${SLOT_LABELS[slot]}`)
+  }, [wearing, pushState, showToast])
 
-  /* Resetear look */
-  const resetLook = useCallback(() => {
-    setWearing({})
-  }, [])
+  /* Quitar todo */
+  const resetAll = useCallback(() => {
+    if (Object.values(wearing).filter(Boolean).length === 0) return
+    pushState({})
+    clearLookFromStorage()
+    showToast('Look limpiado por completo')
+  }, [wearing, pushState, showToast])
 
-  /* Carga de foto */
+  /* Poner prenda directamente en el maniquí */
+  const wearGarment = useCallback((item: ItemResponseDto, talla: string, color: string) => {
+    const slot = getSlotForGarment(item)
+    const layer = getLayerForGarment(item, slot)
+    const fit = evaluateGarmentFit(item, talla)
+
+    const worn: WornItem = {
+      item,
+      talla,
+      color: color || item.color || 'default',
+      veredicto: fit.veredicto,
+      slot,
+      layer,
+    }
+
+    const nextState: LookState = {
+      ...wearing,
+      [slot]: worn,
+    }
+
+    pushState(nextState)
+    showToast(`${item.nombre} en talla ${talla} puesto en el maniquí`)
+  }, [wearing, pushState, showToast])
+
+  /* Carga de outfit desde Playlist */
+  const applyPlaylist = useCallback((playlist: PlaylistDto, mode: 'replace' | 'merge') => {
+    const rawItems = playlist.prendas.map((p) => ({
+      item: p,
+      talla: p.tallaSeleccionada,
+      color: p.colorSeleccionado,
+    }))
+
+    const result = evaluatePlaylistOutfit(rawItems, userMeasurements)
+
+    const baseState: LookState = mode === 'replace' ? {} : { ...wearing }
+    for (const w of result.puestas) {
+      baseState[w.slot] = w
+    }
+
+    pushState(baseState)
+    setPendingPlaylist(null)
+    setIsDrawerOpen(false)
+
+    setPlaylistNotice({
+      resumen: result.resumen,
+      fallidas: result.fallidas,
+    })
+    showToast(result.resumen)
+  }, [wearing, userMeasurements, pushState, showToast])
+
+  /* Manejo de enlaces profundos (?prenda=ID&talla=T&color=C o ?playlist=ID) */
+  const processedDeepLinkRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const prendaId = searchParams.get('prenda') || initialGarmentId
+    const tallaParam = searchParams.get('talla')
+    const colorParam = searchParams.get('color')
+    const playlistId = searchParams.get('playlist')
+
+    if (!prendaId && !playlistId) return
+
+    const key = `${prendaId || ''}_${tallaParam || ''}_${colorParam || ''}_${playlistId || ''}_${user?.id || 'anon'}`
+    if (processedDeepLinkRef.current === key) return
+
+    if (playlistId) {
+      const pl = MOCK_PLAYLISTS.find((p) => p.id === playlistId)
+      if (pl) {
+        processedDeepLinkRef.current = key
+        applyPlaylist(pl, 'replace')
+      }
+      return
+    }
+
+    if (prendaId) {
+      const item = ITEMS.find((it) => it.id === prendaId)
+      if (item) {
+        // Verificar si el usuario tiene sesión
+        if (!user) {
+          setPendingDeepLinkGarment({ id: prendaId, talla: tallaParam || undefined, color: colorParam || undefined })
+          setShowAuthModal(true)
+          return
+        }
+
+        // Verificar si tiene medidas guardadas
+        const savedMeasurements = localStorage.getItem('sr_user_measurements')
+        if (!savedMeasurements) {
+          setPendingDeepLinkGarment({ id: prendaId, talla: tallaParam || undefined, color: colorParam || undefined })
+          setShowMeasurementModal(true)
+          return
+        }
+
+        processedDeepLinkRef.current = key
+        const tallaFinal = tallaParam || getRecommendedSize(item, userMeasurements)
+        const colorFinal = colorParam || item.color || 'default'
+        wearGarment(item, tallaFinal, colorFinal)
+      }
+    }
+  }, [isOpen, searchParams, initialGarmentId, user, userMeasurements, wearGarment, applyPlaylist])
+
+  /* Escuchar inicio de sesión exitoso para reanudar prenda pendiente */
+  useEffect(() => {
+    const onLoginSuccess = () => {
+      setShowAuthModal(false)
+      const savedMeasurements = localStorage.getItem('sr_user_measurements')
+      if (!savedMeasurements) {
+        setShowMeasurementModal(true)
+      } else if (pendingDeepLinkGarment) {
+        const item = ITEMS.find((it) => it.id === pendingDeepLinkGarment.id)
+        if (item) {
+          const t = pendingDeepLinkGarment.talla || getRecommendedSize(item)
+          wearGarment(item, t, pendingDeepLinkGarment.color || item.color || 'default')
+          setPendingDeepLinkGarment(null)
+        }
+      }
+    }
+    window.addEventListener('sr:login-success', onLoginSuccess)
+    return () => window.removeEventListener('sr:login-success', onLoginSuccess)
+  }, [pendingDeepLinkGarment, wearGarment])
+
+  /* Callback al completar asistente de medidas */
+  const handleMeasurementComplete = useCallback((m: UserMeasurements) => {
+    saveUserMeasurements(m)
+    if (pendingDeepLinkGarment) {
+      const item = ITEMS.find((it) => it.id === pendingDeepLinkGarment.id)
+      if (item) {
+        const t = pendingDeepLinkGarment.talla || getRecommendedSize(item, m)
+        wearGarment(item, t, pendingDeepLinkGarment.color || item.color || 'default')
+        setPendingDeepLinkGarment(null)
+      }
+    }
+  }, [pendingDeepLinkGarment, wearGarment])
+
+  /* Tecla Escape para cerrar drawer o modal */
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showSaveLookModal) setShowSaveLookModal(false)
+        else if (compareItem) setCompareItem(null)
+        else if (showFitMap) setShowFitMap(false)
+        else if (garmentPickerItem) setGarmentPickerItem(null)
+        else if (isDrawerOpen) setIsDrawerOpen(false)
+        else onClose()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isOpen, isDrawerOpen, garmentPickerItem, showFitMap, compareItem, showSaveLookModal, onClose])
+
+  /* Drag rotación con ratón y táctil */
+  const handlePointerDownStage = (e: React.PointerEvent) => {
+    if (sourceMode === 'photo') return
+    isRotating.current = true
+    rotateStart.current = e.clientX - rotationAngle
+    ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
+  }
+
+  const handlePointerMoveStage = (e: React.PointerEvent) => {
+    if (!isRotating.current || sourceMode === 'photo') return
+    const delta = e.clientX - rotateStart.current
+    setRotationAngle(Math.max(-180, Math.min(180, delta)))
+  }
+
+  const handlePointerUpStage = () => {
+    isRotating.current = false
+  }
+
+  /* Zoom controls */
+  const zoomIn = () => setZoomLevel((z) => Math.min(1.6, z + 0.1))
+  const zoomOut = () => setZoomLevel((z) => Math.max(0.7, z - 0.1))
+  const resetCamera = () => {
+    setZoomLevel(1)
+    setRotationAngle(0)
+  }
+
+  /* Compartir imagen o enlace del look */
+  const handleShareLook = () => {
+    const garmentIds = Object.values(wearing)
+      .filter(Boolean)
+      .map((w) => w!.item.id)
+      .join(',')
+    const url = `${window.location.origin}/probador/arma-tu-look${garmentIds ? `?look=${encodeURIComponent(garmentIds)}` : ''}`
+    navigator.clipboard?.writeText(url).catch(() => {})
+    showToast('Enlace de look copiado al portapapeles sin datos personales')
+  }
+
+  /* Guardar look como playlist */
+  const handleConfirmSaveLook = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newPlaylistName.trim()) return
+    setShowSaveLookModal(false)
+    setNewPlaylistName('')
+    setNewPlaylistDesc('')
+    showToast(`Look "${newPlaylistName.trim()}" guardado exitosamente como playlist`)
+  }
+
+  /* Foto de usuario */
   const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    // Mismas reglas que el servidor del probador: JPG o PNG, hasta 5 MB, vertical y mínimo 300 × 400 px
     const bad = validarArchivoPrueba(file)
     if (bad) { setPhotoError(bad); return }
     const url = URL.createObjectURL(file)
     try {
       const { width, height } = await readDimensions(url)
-      if (!validarDimensionesPrueba(width, height)) { setPhotoError(`${TEXTO_FOTO.dimensionesTitulo}. ${TEXTO_FOTO.dimensiones}`); return }
+      if (!validarDimensionesPrueba(width, height)) {
+        setPhotoError(`${TEXTO_FOTO.dimensionesTitulo}. ${TEXTO_FOTO.dimensiones}`)
+        return
+      }
     } catch {
       setPhotoError(TEXTO_FOTO.ilegible); return
     } finally { URL.revokeObjectURL(url) }
@@ -217,72 +439,65 @@ export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
     reader.readAsDataURL(file)
   }, [])
 
-  /* Usar foto de ejemplo */
-  const useExample = useCallback(() => {
-    setPhotoError('')
-    setUserPhoto('/prototipo/assets/img/general/ref.jpg')
-    setSourceMode('photo')
-    setPhotoScale(1)
-    setPhotoOffset({ x: 0, y: 0 })
-  }, [])
+  /* Prendas activas en el look */
+  const wornList = Object.values(wearing).filter((w): w is WornItem => Boolean(w))
+  const totalPrice = wornList.reduce((sum, w) => sum + w.item.precio, 0)
+  const totalCount = wornList.length
 
-  /* Volver al maniquí */
-  const backToMannequin = useCallback(() => {
-    setSourceMode('mannequin')
-    setUserPhoto(null)
-  }, [])
+  /* Lista de layers para renderizar ordenadas por Z */
+  const activeLayers = wornList
+    .map((w) => ({
+      layer: w.layer,
+      color: (w.color || '').toLowerCase(),
+      zIndex: LAYER_ORDER.indexOf(w.layer),
+    }))
+    .filter((l) => l.zIndex >= 0 && LAYER_PATHS[l.layer])
+    .sort((a, b) => a.zIndex - b.zIndex)
 
-  /* Drag to move photo */
-  const isDragging = useRef(false)
-  const dragStart = useRef({ x: 0, y: 0 })
-
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (sourceMode !== 'photo') return
-    isDragging.current = true
-    dragStart.current = { x: e.clientX - photoOffset.x, y: e.clientY - photoOffset.y }
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-  }, [sourceMode, photoOffset])
-
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging.current) return
-    setPhotoOffset({
-      x: e.clientX - dragStart.current.x,
-      y: e.clientY - dragStart.current.y,
+  /* Catálogo filtrado dentro del drawer */
+  const filteredCatalog = useMemo(() => {
+    return ITEMS.filter((item) => {
+      if (catalogSearch.trim()) {
+        const q = catalogSearch.toLowerCase()
+        const matchName = item.nombre.toLowerCase().includes(q)
+        const matchStore = item.tienda.toLowerCase().includes(q)
+        const matchStyle = (item.estilo || '').toLowerCase().includes(q)
+        if (!matchName && !matchStore && !matchStyle) return false
+      }
+      if (selectedSlotFilter !== 'todos') {
+        const slot = getSlotForGarment(item)
+        if (slot !== selectedSlotFilter) return false
+      }
+      if (selectedStoreFilter !== 'todas') {
+        if (item.tienda !== selectedStoreFilter) return false
+      }
+      if (selectedStyleFilter !== 'todos') {
+        if (item.estilo !== selectedStyleFilter) return false
+      }
+      if (selectedSizeFilter !== 'todas') {
+        if (!item.tallas?.includes(selectedSizeFilter)) return false
+      }
+      return true
     })
-  }, [])
+  }, [catalogSearch, selectedSlotFilter, selectedStoreFilter, selectedStyleFilter, selectedSizeFilter])
 
-  const onPointerUp = useCallback(() => {
-    isDragging.current = false
-  }, [])
-
-  /* Zoom con rueda del mouse */
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    if (sourceMode !== 'photo') return
-    e.preventDefault()
-    setPhotoScale(prev => Math.max(0.3, Math.min(3, prev + (e.deltaY > 0 ? -0.05 : 0.05))))
-  }, [sourceMode])
-
-  /* Escape para cerrar */
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [isOpen, onClose])
-
-  /* Categoría activa */
-  const currentCategory = CATEGORIES_DATA.find(c => c.tab === activeTab)
+  /* Tiendas y estilos únicos para los filtros */
+  const tiendasDisponibles = useMemo(() => Array.from(new Set(ITEMS.map((i) => i.tienda))), [])
+  const estilosDisponibles = useMemo(() => Array.from(new Set(ITEMS.map((i) => i.estilo).filter(Boolean))), [])
 
   if (!isOpen) return null
 
   return (
-    <div className="cz-fullscreen" role="dialog" aria-modal="true" aria-label="Probador Virtual StyleRadar">
+    <div
+      className="cz-fullscreen"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Probador Virtual StyleRadar"
+    >
       {/* ═══════════════════════════════════════════════════════════════
-          1. BARRA DE NAVEGACIÓN SUPERIOR
+          1. BARRA SUPERIOR DE NAVEGACIÓN
           ═══════════════════════════════════════════════════════════════ */}
-      <nav className="cz-topbar">
+      <header className="cz-topbar" role="banner">
         <div className="cz-topbar-left">
           <button className="cz-nav-back" onClick={onClose} aria-label="Volver">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -299,225 +514,809 @@ export function QuickTryOnModal({ isOpen, onClose }: QuickTryOnModalProps) {
         </div>
 
         <div className="cz-topbar-right">
-          {sourceMode === 'photo' && (
-            <button className="cz-nav-pill" onClick={backToMannequin}>
+          {sourceMode === 'photo' ? (
+            <button className="cz-nav-pill" onClick={() => setSourceMode('mannequin')}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 119 9"/><path d="M3 21V12h9"/></svg>
-              Maniquí
+              Volver al Maniquí
             </button>
+          ) : (
+            <>
+              <button
+                className="cz-nav-pill"
+                onClick={() => setShowFitMap((v) => !v)}
+                aria-pressed={showFitMap}
+                title="Ver mapa de ajuste anatómico"
+              >
+                🗺️ Mapa de ajuste
+              </button>
+              <button
+                className="cz-nav-pill"
+                onClick={handleShareLook}
+                title="Compartir look sin datos personales"
+              >
+                🔗 Compartir look
+              </button>
+            </>
           )}
+
           {totalCount > 0 && (
-            <button className="cz-nav-pill cz-nav-pill-reset" onClick={resetLook}>
-              Limpiar todo
+            <button
+              className="cz-nav-pill cz-nav-pill-reset"
+              onClick={resetAll}
+              title="Quitar todas las prendas del look"
+            >
+              Quitar todo
             </button>
           )}
         </div>
-      </nav>
+      </header>
+
+      {/* Banner de aviso para playlists */}
+      {playlistNotice && (
+        <div className="cz-playlist-alert-banner" role="status" aria-live="polite">
+          <div className="cz-playlist-alert-content">
+            <span className="cz-alert-icon">ℹ️</span>
+            <span className="cz-alert-text">{playlistNotice.resumen}</span>
+            {playlistNotice.fallidas.length > 0 && playlistNotice.fallidas[0].tallaSugerida && (
+              <button
+                className="cz-alert-fix-btn"
+                onClick={() => {
+                  const target = playlistNotice.fallidas[0]
+                  wearGarment(target.item, target.tallaSugerida!, target.item.color || 'default')
+                  setPlaylistNotice(null)
+                }}
+              >
+                Cambiar a talla {playlistNotice.fallidas[0].tallaSugerida} y probar
+              </button>
+            )}
+            <button
+              className="cz-alert-dismiss-btn"
+              onClick={() => setPlaylistNotice(null)}
+              aria-label="Cerrar aviso"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast informativo */}
+      {toastMessage && (
+        <div className="cz-toast" role="alert" aria-live="assertive">
+          {toastMessage}
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════
-          2. CANVAS CENTRAL DEL MANIQUÍ
+          CUERPO PRINCIPAL: PANEL IZQUIERDO ("MI LOOK") + MANIQUÍ A LA DERECHA
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="cz-canvas-area">
-        {/* Glow ambiental difuso detrás del maniquí */}
-        <div className="cz-ambient-glow" aria-hidden="true" />
+      <main className="cz-probador-body">
+        {/* =========================================================
+            PANEL IZQUIERDO: «MI LOOK»
+            ========================================================= */}
+        <aside className="cz-left-panel" aria-label="Mi look actual">
+          <div className="cz-look-header">
+            <div>
+              <span className="cz-look-subtitle">Tu combinación actual</span>
+              <h1 className="cz-look-title">Mi look</h1>
+            </div>
+            <div className="cz-history-actions">
+              <button
+                className="cz-history-btn"
+                onClick={handleUndo}
+                disabled={undoStack.length === 0}
+                aria-label="Deshacer"
+                title="Deshacer última acción"
+              >
+                ↶ Deshacer
+              </button>
+              <button
+                className="cz-history-btn"
+                onClick={handleRedo}
+                disabled={redoStack.length === 0}
+                aria-label="Rehacer"
+                title="Rehacer acción"
+              >
+                ↷ Rehacer
+              </button>
+            </div>
+          </div>
 
-        <div
-          className="cz-mannequin-stage"
-          ref={canvasRef}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onWheel={onWheel}
-        >
-          {sourceMode === 'mannequin' ? (
-            <>
-              {/* Base del maniquí */}
-              <img
-                src="/prototipo/assets/img/general/maniqui.png"
-                alt="Maniquí base de cuerpo entero"
-                className="cz-mannequin-base"
-                draggable={false}
-              />
+          {/* Botones de acción principales */}
+          <div className="cz-primary-buttons-stack">
+            <button
+              className="cz-btn-primary-purple"
+              onClick={() => {
+                setDrawerTab('catalogo')
+                setIsDrawerOpen(true)
+              }}
+            >
+              <span>✨</span>
+              <span>Escoger prenda para probar</span>
+            </button>
 
-              {/* Capas de ropa superpuestas */}
-              {activeLayers.map(({ layer, color }) => (
+            <button
+              className="cz-btn-secondary-glass"
+              onClick={() => {
+                setDrawerTab('playlists')
+                setIsDrawerOpen(true)
+              }}
+            >
+              <span>📑</span>
+              <span>Escoger una playlist</span>
+            </button>
+          </div>
+
+          {/* Lista de prendas agrupadas por espacio */}
+          <div className="cz-slots-container" role="region" aria-label="Prendas por espacio">
+            {LOOK_SLOTS.map((slot) => {
+              const worn = wearing[slot]
+              return (
+                <div key={slot} className={`cz-slot-card ${worn ? 'cz-slot-card-occupied' : 'cz-slot-card-empty'}`}>
+                  <div className="cz-slot-header">
+                    <span className="cz-slot-badge">{SLOT_LABELS[slot]}</span>
+                    {worn && (
+                      <span className={`cz-fit-chip ${worn.veredicto.includes('perfecto') ? 'cz-fit-chip-perfect' : ''}`}>
+                        {worn.veredicto}
+                      </span>
+                    )}
+                  </div>
+
+                  {worn ? (
+                    <div className="cz-worn-item-body">
+                      <img
+                        src={worn.item.imagen}
+                        alt={worn.item.nombre}
+                        className="cz-worn-item-thumb"
+                        loading="lazy"
+                      />
+                      <div className="cz-worn-item-details">
+                        <span className="cz-worn-item-store">{worn.item.tienda}</span>
+                        <h2 className="cz-worn-item-name">{worn.item.nombre}</h2>
+                        <div className="cz-worn-item-meta">
+                          <span className="cz-meta-tag">Talla: <strong>{worn.talla}</strong></span>
+                          <span className="cz-meta-tag">Color: {worn.color}</span>
+                          <span className="cz-meta-price">{money(worn.item.precio)}</span>
+                        </div>
+
+                        <div className="cz-worn-item-actions">
+                          {worn.item.tallas && worn.item.tallas.length > 1 && (
+                            <button
+                              className="cz-action-link"
+                              onClick={() => {
+                                setGarmentPickerItem(worn.item)
+                                setPickerSelectedSize(worn.talla)
+                                setPickerSelectedColor(worn.color)
+                              }}
+                            >
+                              Cambiar talla
+                            </button>
+                          )}
+                          <button
+                            className="cz-action-link cz-action-remove"
+                            onClick={() => removeGarment(slot)}
+                          >
+                            Quitar
+                          </button>
+                          <Link
+                            to={`/catalogo/${worn.item.id}`}
+                            className="cz-action-link cz-action-store"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Ver en la tienda →
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="cz-empty-slot-placeholder">
+                      <span className="cz-empty-slot-text">Sin prenda en espacio {SLOT_LABELS[slot].toLowerCase()}</span>
+                      <button
+                        className="cz-empty-slot-add-btn"
+                        onClick={() => {
+                          setSelectedSlotFilter(slot)
+                          setDrawerTab('catalogo')
+                          setIsDrawerOpen(true)
+                        }}
+                      >
+                        + Agregar {SLOT_LABELS[slot].toLowerCase()}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Acciones de cierre del look */}
+          <div className="cz-look-footer">
+            <button
+              className="cz-save-look-btn"
+              disabled={totalCount === 0}
+              onClick={() => setShowSaveLookModal(true)}
+            >
+              Guardar look como playlist
+            </button>
+          </div>
+        </aside>
+
+        {/* =========================================================
+            STAGE DERECHO: MANIQUÍ + CONTROLES DE CÁMARA
+            ========================================================= */}
+        <section className="cz-stage-area" aria-label="Escenario del maniquí">
+          <div className="cz-ambient-glow" aria-hidden="true" />
+
+          {/* Maniquí central interactivo */}
+          <div
+            className="cz-mannequin-container"
+            ref={canvasRef}
+            onPointerDown={handlePointerDownStage}
+            onPointerMove={handlePointerMoveStage}
+            onPointerUp={handlePointerUpStage}
+            style={{
+              transform: `scale(${zoomLevel})`,
+              cursor: isRotating.current ? 'grabbing' : 'grab',
+            }}
+          >
+            {sourceMode === 'mannequin' ? (
+              <div
+                className="cz-mannequin-3d-wrapper"
+                style={{
+                  transform: `rotateY(${rotationAngle}deg)`,
+                  transition: isRotating.current ? 'none' : 'transform 0.25s ease-out',
+                }}
+              >
+                {/* Maniquí base */}
                 <img
-                  key={layer}
-                  src={LAYER_PATHS[layer]}
-                  alt=""
-                  className="cz-mannequin-layer"
+                  src="/prototipo/assets/img/general/maniqui.png"
+                  alt="Maniquí anatómico base"
+                  className="cz-mannequin-base"
+                  draggable={false}
+                />
+
+                {/* Capas activas superpuestas */}
+                {activeLayers.map(({ layer, color }) => (
+                  <img
+                    key={layer}
+                    src={LAYER_PATHS[layer]}
+                    alt=""
+                    className="cz-mannequin-layer"
+                    style={{
+                      filter: COLOR_FILTERS[color] || 'none',
+                      zIndex: LAYER_ORDER.indexOf(layer) + 10,
+                    }}
+                    draggable={false}
+                  />
+                ))}
+              </div>
+            ) : (
+              userPhoto && (
+                <img
+                  src={userPhoto}
+                  alt="Tu foto personal"
+                  className="cz-user-photo"
                   style={{
-                    filter: COLOR_FILTERS[color] || 'none',
-                    zIndex: LAYER_ORDER.indexOf(layer) + 10,
+                    transform: `translate(${photoOffset.x}px, ${photoOffset.y}px) scale(${photoScale})`,
                   }}
                   draggable={false}
                 />
-              ))}
-            </>
-          ) : (
-            /* Foto del usuario cargada */
-            userPhoto && (
-              <img
-                src={userPhoto}
-                alt="Tu foto"
-                className="cz-user-photo"
-                style={{
-                  transform: `translate(${photoOffset.x}px, ${photoOffset.y}px) scale(${photoScale})`,
-                  cursor: 'grab',
-                }}
-                draggable={false}
-              />
-            )
-          )}
+              )
+            )}
 
-          {/* Sombra del piso */}
-          <div className="cz-floor-shadow" aria-hidden="true" />
-        </div>
-
-        {/* Píldora flotante de precio */}
-        <div className="cz-price-pill" aria-live="polite">
-          <span className="cz-price-amount">{money(totalPrice)}</span>
-          <span className="cz-price-sep">·</span>
-          <span className="cz-price-count">
-            {totalCount}/{MAX_SLOTS} PRENDAS{totalCount === 0 ? ' TODAVÍA' : ''}
-          </span>
-        </div>
-
-        {/* Indicador zoom/drag si hay foto */}
-        {sourceMode === 'photo' && (
-          <div className="cz-photo-hint" aria-hidden="true">
-            Arrastra para mover · Scroll para zoom
+            <div className="cz-floor-shadow" aria-hidden="true" />
           </div>
-        )}
-      </div>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          3. PANEL LATERAL DERECHO — "ARMA TU LOOK"
-          ═══════════════════════════════════════════════════════════════ */}
-      <aside className="cz-panel" aria-label="Panel de catálogo de prendas">
-        {/* ---- Encabezado ---- */}
-        <div className="cz-panel-header">
-          <h2 className="cz-panel-title">
-            Arma tu <span>look</span>
-          </h2>
-          <p className="cz-panel-desc">
-            Elige hasta {MAX_SLOTS} prendas del catálogo y mira cómo se ven juntas.
-            Todo es inventario real de tiendas de Bogotá.
-          </p>
+          {/* Píldora de precio flotante */}
+          <div className="cz-price-pill" aria-live="polite">
+            <span className="cz-price-amount">{money(totalPrice)}</span>
+            <span className="cz-price-sep">·</span>
+            <span className="cz-price-count">
+              {totalCount}/5 PRENDAS{totalCount === 0 ? ' EN TU LOOK' : ''}
+            </span>
+          </div>
 
-          {/* Acordeón de guía */}
-          <button
-            className="cz-guide-toggle"
-            onClick={() => setShowGuide(prev => !prev)}
-            aria-expanded={showGuide}
-          >
-            <span className="cz-guide-q">{showGuide ? '▾' : '▸'} ¿Primera vez aquí?</span>
-          </button>
-          {showGuide && (
-            <div className="cz-guide-body">
-              <ol className="cz-guide-steps">
-                <li>Elige las prendas que te gusten del catálogo</li>
-                <li>El maniquí se viste en tiempo real</li>
-                <li>Carga tu foto para verte con el look</li>
-                <li>Guarda o comparte tu combinación</li>
-              </ol>
-              <button className="cz-guide-ok" onClick={() => setShowGuide(false)}>
-                ENTENDIDO
-              </button>
+          {/* Controles de cámara y rotación */}
+          <div className="cz-camera-controls" role="toolbar" aria-label="Controles de cámara del maniquí">
+            <button
+              className={`cz-camera-angle-btn ${rotationAngle === 0 ? 'active' : ''}`}
+              onClick={() => setRotationAngle(0)}
+              title="Vista de frente"
+            >
+              Frente
+            </button>
+            <button
+              className={`cz-camera-angle-btn ${rotationAngle === 90 ? 'active' : ''}`}
+              onClick={() => setRotationAngle(90)}
+              title="Vista lateral"
+            >
+              Lado
+            </button>
+            <button
+              className={`cz-camera-angle-btn ${rotationAngle === 180 ? 'active' : ''}`}
+              onClick={() => setRotationAngle(180)}
+              title="Vista posterior"
+            >
+              Espalda
+            </button>
+            <span className="cz-camera-divider" />
+            <button className="cz-camera-zoom-btn" onClick={zoomIn} title="Acercar">+</button>
+            <button className="cz-camera-zoom-btn" onClick={zoomOut} title="Alejar">−</button>
+            <button className="cz-camera-reset-btn" onClick={resetCamera} title="Restablecer vista">
+              Restablecer
+            </button>
+          </div>
+
+          {/* Panel desplegable: Mapa de ajuste anatómico */}
+          {showFitMap && (
+            <div className="cz-fit-map-overlay" role="dialog" aria-label="Mapa de ajuste por zonas">
+              <div className="cz-fit-map-card">
+                <div className="cz-fit-map-header">
+                  <h3>Mapa de ajuste anatómico</h3>
+                  <button onClick={() => setShowFitMap(false)} aria-label="Cerrar mapa">✕</button>
+                </div>
+                <div className="cz-fit-zones-grid">
+                  <div className="cz-fit-zone-row">
+                    <span className="cz-zone-name">Tórax / Busto:</span>
+                    <span className="cz-zone-val cz-zone-val-good">
+                      {wearing.superior ? wearing.superior.veredicto : 'Sin prenda superior'}
+                    </span>
+                  </div>
+                  <div className="cz-fit-zone-row">
+                    <span className="cz-zone-name">Cintura:</span>
+                    <span className="cz-zone-val cz-zone-val-good">
+                      {wearing.inferior ? wearing.inferior.veredicto : 'Sin prenda inferior'}
+                    </span>
+                  </div>
+                  <div className="cz-fit-zone-row">
+                    <span className="cz-zone-name">Cadera y tiro:</span>
+                    <span className="cz-zone-val">Ajuste anatómico regular</span>
+                  </div>
+                  <div className="cz-fit-zone-row">
+                    <span className="cz-zone-name">Calzado:</span>
+                    <span className="cz-zone-val">
+                      {wearing.calzado ? `Talla ${wearing.calzado.talla} estándar` : 'Sin calzado'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* ---- Bloque de carga de foto ---- */}
-        <div className="cz-upload-block">
-          <input
-            ref={fileRef}
-            type="file"
-            accept={TRYON_ACCEPT}
-            className="sr-only"
-            onChange={handlePhotoUpload}
-            aria-label="Cargar foto personal"
-          />
-          <button
-            className="cz-upload-btn"
-            onClick={() => fileRef.current?.click()}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
-            CARGAR FOTO
-          </button>
-          <button className="cz-example-btn" onClick={useExample}>
-            <img
-              src="/prototipo/assets/img/general/ref.jpg"
-              alt="Ejemplo"
-              className="cz-example-thumb"
+          {/* Bloque para cargar foto personal */}
+          <div className="cz-photo-toggle-bar">
+            <input
+              ref={fileRef}
+              type="file"
+              accept={TRYON_ACCEPT}
+              className="sr-only"
+              onChange={handlePhotoUpload}
+              aria-label="Cargar foto personal"
             />
-            USAR FOTO DE EJEMPLO
-          </button>
-          {photoError && <p role="alert" className="cz-upload-error" style={{ gridColumn: '1 / -1', margin: '8px 0 0', fontSize: 13, color: '#ffb4b4' }}>{photoError}</p>}
-        </div>
-
-        {/* ---- Filtros de categorías (pills) ---- */}
-        <div className="cz-filter-row" role="tablist" aria-label="Categorías de prendas">
-          {CATEGORIES_DATA.map(cat => (
             <button
-              key={cat.tab}
-              role="tab"
-              aria-selected={activeTab === cat.tab}
-              className={`cz-filter-pill${activeTab === cat.tab ? ' active' : ''}`}
-              onClick={() => setActiveTab(cat.tab)}
+              className="cz-photo-sub-btn"
+              onClick={() => fileRef.current?.click()}
             >
-              {cat.tab.toUpperCase()}
+              📷 Probar con mi foto
             </button>
-          ))}
-        </div>
+            {photoError && <p className="cz-photo-error">{photoError}</p>}
+          </div>
+        </section>
+      </main>
 
-        {/* ---- Grid de prendas ---- */}
-        <div className="cz-garment-grid" role="tabpanel" aria-label={`Prendas de ${activeTab}`}>
-          {currentCategory?.items.map(item => {
-            const isWorn = wearing[item.layer]?.id === item.id
-            return (
+      {/* ═══════════════════════════════════════════════════════════════
+          DRAWER LATERAL DE SELECCIÓN (CATÁLOGO Y PLAYLISTS)
+          ═══════════════════════════════════════════════════════════════ */}
+      {isDrawerOpen && (
+        <div className="cz-drawer-backdrop" onClick={() => setIsDrawerOpen(false)}>
+          <aside
+            className="cz-drawer-content"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Seleccionar prendas del catálogo o playlists"
+          >
+            <div className="cz-drawer-header">
+              <div className="cz-drawer-tabs" role="tablist">
+                <button
+                  role="tab"
+                  aria-selected={drawerTab === 'catalogo'}
+                  className={`cz-drawer-tab ${drawerTab === 'catalogo' ? 'active' : ''}`}
+                  onClick={() => setDrawerTab('catalogo')}
+                >
+                  Catálogo de tiendas
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={drawerTab === 'playlists'}
+                  className={`cz-drawer-tab ${drawerTab === 'playlists' ? 'active' : ''}`}
+                  onClick={() => setDrawerTab('playlists')}
+                >
+                  Playlists (Outfits)
+                </button>
+              </div>
               <button
-                key={item.id}
-                className={`cz-garment-card${isWorn ? ' active' : ''}`}
-                onClick={() => toggleGarment(item)}
-                aria-pressed={isWorn}
-                aria-label={`${item.name} de ${item.store} por ${money(item.price)}`}
+                className="cz-drawer-close-btn"
+                onClick={() => setIsDrawerOpen(false)}
+                aria-label="Cerrar panel de selección"
               >
-                <div className="cz-garment-img-wrap">
-                  <img src={item.image} alt={item.name} loading="lazy" />
-                  {isWorn && (
-                    <span className="cz-garment-check" aria-hidden="true">✓</span>
-                  )}
-                </div>
-                <div className="cz-garment-info">
-                  <span className="cz-garment-store">{item.store}</span>
-                  <span className="cz-garment-name">{item.name}</span>
-                  <span className="cz-garment-price">{money(item.price)}</span>
-                </div>
+                ✕
               </button>
-            )
-          })}
-        </div>
+            </div>
 
-        {/* ---- Botón masivo de guardar ---- */}
-        <button
-          className="cz-save-look"
-          disabled={totalCount === 0}
-          aria-label={totalCount > 0 ? `Guardar look de ${totalCount} prendas por ${money(totalPrice)}` : 'Selecciona prendas primero'}
-        >
-          {totalCount > 0 ? (
-            <>
-              Guardar look · {money(totalPrice)}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </>
-          ) : (
-            'Selecciona al menos una prenda'
-          )}
-        </button>
-      </aside>
+            {/* PESTAÑA: CATÁLOGO */}
+            {drawerTab === 'catalogo' && (
+              <div className="cz-drawer-tab-content">
+                {/* Barra de búsqueda y filtros */}
+                <div className="cz-catalog-filters-bar">
+                  <div className="cz-search-field-wrap">
+                    <input
+                      type="search"
+                      placeholder="Buscar por prenda, tienda o estilo…"
+                      value={catalogSearch}
+                      onChange={(e) => setCatalogSearch(e.target.value)}
+                      className="cz-search-input"
+                      aria-label="Buscar prenda en catálogo"
+                    />
+                  </div>
+
+                  <div className="cz-filter-selects-row">
+                    <select
+                      value={selectedSlotFilter}
+                      onChange={(e) => setSelectedSlotFilter(e.target.value)}
+                      className="cz-filter-select"
+                      aria-label="Filtrar por categoría de prenda"
+                    >
+                      <option value="todos">Todas las categorías</option>
+                      <option value="superior">Superior (Camisas, Buzos)</option>
+                      <option value="inferior">Inferior (Pantalones, Jeans)</option>
+                      <option value="abrigo">Abrigo (Chaquetas, Sacos)</option>
+                      <option value="calzado">Calzado (Zapatos, Tenis)</option>
+                      <option value="accesorios">Accesorios</option>
+                    </select>
+
+                    <select
+                      value={selectedStoreFilter}
+                      onChange={(e) => setSelectedStoreFilter(e.target.value)}
+                      className="cz-filter-select"
+                      aria-label="Filtrar por tienda aliada"
+                    >
+                      <option value="todas">Todas las tiendas</option>
+                      {tiendasDisponibles.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={selectedStyleFilter}
+                      onChange={(e) => setSelectedStyleFilter(e.target.value)}
+                      className="cz-filter-select"
+                      aria-label="Filtrar por estilo"
+                    >
+                      <option value="todos">Todos los estilos</option>
+                      {estilosDisponibles.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Grid de prendas del catálogo */}
+                {simulateOffline ? (
+                  <div className="cz-empty-state-box" role="alert">
+                    <span className="cz-empty-icon">⚠️</span>
+                    <h3>Sin conexión</h3>
+                    <p>No pudimos cargar el catálogo. Revisa tu conexión a internet.</p>
+                    <button className="cz-retry-btn" onClick={() => setSimulateOffline(false)}>
+                      Reintentar
+                    </button>
+                  </div>
+                ) : filteredCatalog.length === 0 ? (
+                  <div className="cz-empty-state-box">
+                    <span className="cz-empty-icon">🔍</span>
+                    <h3>No encontramos prendas</h3>
+                    <p>Intenta ajustar tus filtros de búsqueda o categoría.</p>
+                    <button
+                      className="cz-clear-filters-btn"
+                      onClick={() => {
+                        setCatalogSearch('')
+                        setSelectedSlotFilter('todos')
+                        setSelectedStoreFilter('todas')
+                        setSelectedStyleFilter('todos')
+                        setSelectedSizeFilter('todas')
+                      }}
+                    >
+                      Limpiar filtros
+                    </button>
+                  </div>
+                ) : (
+                  <div className="cz-catalog-grid" role="grid">
+                    {filteredCatalog.map((item) => {
+                      const fittable = isGarmentFittable(item)
+                      const recSize = fittable ? getRecommendedSize(item, userMeasurements) : ''
+                      const slot = getSlotForGarment(item)
+                      const isWorn = wearing[slot]?.item.id === item.id
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`cz-catalog-card ${!fittable ? 'cz-card-unfittable' : ''} ${isWorn ? 'cz-card-worn' : ''}`}
+                        >
+                          <div className="cz-card-img-wrap">
+                            <img src={item.imagen} alt={item.nombre} loading="lazy" />
+                            {!fittable && (
+                              <span className="cz-unfittable-badge">
+                                No disponible en el probador
+                              </span>
+                            )}
+                            {isWorn && (
+                              <span className="cz-worn-badge">✓ Puesta</span>
+                            )}
+                          </div>
+
+                          <div className="cz-card-info">
+                            <span className="cz-card-store">{item.tienda}</span>
+                            <h4 className="cz-card-name">{item.nombre}</h4>
+                            <span className="cz-card-price">{money(item.precio)}</span>
+
+                            {fittable && recSize && (
+                              <span className="cz-recommended-tag">
+                                Talla sugerida: <strong>{recSize}</strong>
+                              </span>
+                            )}
+
+                            <div className="cz-card-footer-actions">
+                              {fittable ? (
+                                <button
+                                  className="cz-select-garment-btn"
+                                  onClick={() => {
+                                    setGarmentPickerItem(item)
+                                    setPickerSelectedSize(recSize || item.tallas[0] || 'M')
+                                    setPickerSelectedColor(item.color || 'default')
+                                  }}
+                                >
+                                  Probar en el maniquí
+                                </button>
+                              ) : (
+                                <span className="cz-no-fit-label">Sin tabla de medidas</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PESTAÑA: PLAYLISTS */}
+            {drawerTab === 'playlists' && (
+              <div className="cz-drawer-tab-content">
+                <div className="cz-playlists-list">
+                  {MOCK_PLAYLISTS.map((pl) => (
+                    <div key={pl.id} className="cz-playlist-row-card">
+                      <img
+                        src={pl.portadaUrl || pl.prendas[0]?.imagen}
+                        alt={pl.nombre}
+                        className="cz-playlist-row-thumb"
+                      />
+                      <div className="cz-playlist-row-info">
+                        <h4 className="cz-playlist-row-title">{pl.nombre}</h4>
+                        <p className="cz-playlist-row-desc">{pl.descripcion}</p>
+                        <span className="cz-playlist-row-meta">
+                          Por {pl.creador.nombre} · {pl.prendas.length} prendas
+                        </span>
+
+                        {/* Muestra prendas de la playlist */}
+                        <div className="cz-playlist-items-preview">
+                          {pl.prendas.map((pr) => (
+                            <span
+                              key={pr.id}
+                              className={`cz-mini-item-pill ${pr.noDisponible || pr.retirada ? 'cz-mini-item-retired' : ''}`}
+                            >
+                              {pr.nombre}
+                              {pr.noDisponible || pr.retirada ? ' (Ya no está disponible)' : ''}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="cz-playlist-row-actions">
+                        <button
+                          className="cz-btn-try-outfit"
+                          onClick={() => {
+                            if (totalCount > 0) {
+                              setPendingPlaylist(pl)
+                            } else {
+                              applyPlaylist(pl, 'replace')
+                            }
+                          }}
+                        >
+                          Probar outfit completo
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODAL: SELECTOR DE TALLA Y COLOR ANTES DE PROBAR
+          ═══════════════════════════════════════════════════════════════ */}
+      {garmentPickerItem && (
+        <div className="cz-submodal-backdrop" onClick={() => setGarmentPickerItem(null)}>
+          <div
+            className="cz-submodal-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Elegir talla y color para ${garmentPickerItem.nombre}`}
+          >
+            <div className="cz-submodal-header">
+              <h3>{garmentPickerItem.nombre}</h3>
+              <button onClick={() => setGarmentPickerItem(null)} aria-label="Cerrar selector">✕</button>
+            </div>
+            <p className="cz-submodal-store">{garmentPickerItem.tienda} · {money(garmentPickerItem.precio)}</p>
+
+            <div className="cz-submodal-section">
+              <label className="cz-submodal-label">Selecciona tu talla:</label>
+              <div className="cz-sizes-picker-grid">
+                {garmentPickerItem.tallas.map((t) => {
+                  const rec = getRecommendedSize(garmentPickerItem, userMeasurements)
+                  const isRec = t === rec
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      className={`cz-size-btn ${pickerSelectedSize === t ? 'active' : ''}`}
+                      onClick={() => setPickerSelectedSize(t)}
+                    >
+                      {t} {isRec ? '★' : ''}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {garmentPickerItem.coloresDisponibles && garmentPickerItem.coloresDisponibles.length > 1 && (
+              <div className="cz-submodal-section">
+                <label className="cz-submodal-label">Color disponible:</label>
+                <div className="cz-colors-picker-row">
+                  {garmentPickerItem.coloresDisponibles.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`cz-color-btn ${pickerSelectedColor === c ? 'active' : ''}`}
+                      onClick={() => setPickerSelectedColor(c)}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button
+              className="cz-btn-confirm-wear"
+              onClick={() => {
+                wearGarment(
+                  garmentPickerItem,
+                  pickerSelectedSize || garmentPickerItem.tallas[0] || 'M',
+                  pickerSelectedColor || garmentPickerItem.color || 'default',
+                )
+                setGarmentPickerItem(null)
+                setIsDrawerOpen(false)
+              }}
+            >
+              Confirmar y probar en el maniquí
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODAL: REEMPLAZAR VS AGREGAR OUTFIT DE PLAYLIST
+          ═══════════════════════════════════════════════════════════════ */}
+      {pendingPlaylist && (
+        <div className="cz-submodal-backdrop" onClick={() => setPendingPlaylist(null)}>
+          <div
+            className="cz-submodal-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmación para probar outfit de playlist"
+          >
+            <h3>¿Cómo quieres probar esta playlist?</h3>
+            <p className="cz-confirm-text">
+              Ya tienes {totalCount} prendas en tu look actual. Puedes reemplazar tu combinación o mezclar las prendas compatibles.
+            </p>
+            <div className="cz-confirm-buttons-col">
+              <button
+                className="cz-btn-confirm-replace"
+                onClick={() => applyPlaylist(pendingPlaylist, 'replace')}
+              >
+                Reemplazar mi look actual
+              </button>
+              <button
+                className="cz-btn-confirm-merge"
+                onClick={() => applyPlaylist(pendingPlaylist, 'merge')}
+              >
+                Agregar a mi look
+              </button>
+              <button
+                className="cz-btn-confirm-cancel"
+                onClick={() => setPendingPlaylist(null)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODAL: GUARDAR LOOK COMO PLAYLIST
+          ═══════════════════════════════════════════════════════════════ */}
+      {showSaveLookModal && (
+        <div className="cz-submodal-backdrop" onClick={() => setShowSaveLookModal(false)}>
+          <div
+            className="cz-submodal-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Guardar look como playlist"
+          >
+            <h3>Guardar look como playlist</h3>
+            <p className="cz-confirm-text">
+              Crea una playlist pública o personal con las {totalCount} prendas de tu combinación.
+            </p>
+            <form onSubmit={handleConfirmSaveLook} className="cz-save-playlist-form">
+              <input
+                type="text"
+                placeholder="Nombre del outfit (ej. Noche en Chapinero)"
+                value={newPlaylistName}
+                onChange={(e) => setNewPlaylistName(e.target.value)}
+                required
+                className="cz-input-text"
+              />
+              <textarea
+                placeholder="Descripción opcional…"
+                value={newPlaylistDesc}
+                onChange={(e) => setNewPlaylistDesc(e.target.value)}
+                rows={3}
+                className="cz-input-textarea"
+              />
+              <button type="submit" className="cz-btn-confirm-replace">
+                Guardar playlist
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Asistente de medidas */}
+      {showMeasurementModal && (
+        <MeasurementAssistantModal
+          isOpen={showMeasurementModal}
+          onClose={() => setShowMeasurementModal(false)}
+          onComplete={handleMeasurementComplete}
+          pendingGarmentName={pendingDeepLinkGarment ? 'la prenda seleccionada' : undefined}
+        />
+      )}
+
+      {/* Modal de autenticación */}
+      {showAuthModal && (
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          initialTab="login"
+        />
+      )}
     </div>
   )
 }

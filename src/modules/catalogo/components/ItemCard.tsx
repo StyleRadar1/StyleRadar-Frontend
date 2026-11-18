@@ -81,8 +81,8 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         </div>
       </Link>
 
-      {/* Información compacta con padding reducido y espacio lateral para el botón flotante */}
-      <div className="flex flex-1 flex-col justify-between p-3.5 pb-3.5 pr-13">
+      {/* Información compacta con padding reducido */}
+      <div className="flex flex-1 flex-col justify-between p-3.5">
         <div>
           <div className="flex items-center gap-1 text-[0.625rem] font-bold uppercase tracking-[.14em]">
             <span className="text-[var(--color-accent)]">{item.estilo}</span>
@@ -142,17 +142,29 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
             a {item.distanciaKm.toLocaleString('es-CO')} km
           </span>
         </div>
-      </div>
 
-      {/* RF-73: escribirle a la tienda desde cualquier prenda. Va fuera del enlace para no anidar elementos interactivos */}
-      <ContactButton
-        icon
-        className="absolute bottom-3 right-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        label={`Escribir a ${item.tienda} sobre ${item.nombre}`}
-        contacto={tiendaContacto(item.tienda)}
-        asunto={item.nombre}
-        referenciaId={item.id}
-      />
+        {/* Acciones de la prenda: Probar en el maniquí (RF-7.2) y Escribir a la tienda */}
+        <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-[var(--color-border)]/40">
+          <Link
+            to={`/probador/arma-tu-look?prenda=${item.id}&talla=${item.tallas?.[0] || 'M'}&color=${encodeURIComponent(item.color || 'default')}`}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition py-1"
+            title="Probar en el maniquí"
+            aria-label={`Probar ${item.nombre} en el maniquí`}
+          >
+            <span>✨</span>
+            <span>Probar en el maniquí</span>
+          </Link>
+
+          <ContactButton
+            icon
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            label={`Escribir a ${item.tienda} sobre ${item.nombre}`}
+            contacto={tiendaContacto(item.tienda)}
+            asunto={item.nombre}
+            referenciaId={item.id}
+          />
+        </div>
+      </div>
     </div>
   )
 }

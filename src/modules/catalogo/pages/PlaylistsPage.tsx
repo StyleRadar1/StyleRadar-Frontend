@@ -525,12 +525,21 @@ export default function PlaylistsPage() {
 
                 {/* FILA DE ACCIONES DIFERENCIADA SI ES MÍA O NO */}
                 <div className="flex flex-wrap items-center gap-3 pt-2">
+                  {/* Botón principal Probar outfit completo en el probador virtual (RF-7.3) */}
+                  <Link
+                    to={`/probador?playlist=${selectedPlaylist.id}`}
+                    aria-label="Probar outfit completo en el probador"
+                    className="flex items-center gap-2 rounded-full bg-[#5013b8] hover:bg-[#6318e3] text-white text-xs font-bold px-6 py-2.5 shadow-lg shadow-purple-900/40 transition active:scale-95"
+                  >
+                    ▶ Probar outfit completo
+                  </Link>
+
                   {esMia ? (
                     <>
                       <button
                         type="button"
                         onClick={() => { setMostrarAgregarPrenda(true); setErrorAccion(null); setLimiteAlcanzado(false) }}
-                        className="flex items-center gap-2 rounded-full bg-[#5013b8] hover:bg-[#6318e3] text-white text-xs font-bold px-6 py-2.5 shadow-lg shadow-purple-900/40 transition active:scale-95"
+                        className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold px-5 py-2.5 transition active:scale-95"
                       >
                         + Agregar prendas
                       </button>
@@ -563,10 +572,11 @@ export default function PlaylistsPage() {
                   ) : (
                     <>
                       <Link
-                        to="/probador"
+                        to={`/probador?playlist=${selectedPlaylist.id}`}
+                        aria-label="Probar outfit completo en el probador"
                         className="flex items-center gap-2 rounded-full bg-[#5013b8] hover:bg-[#6318e3] text-white text-xs font-bold px-6 py-2.5 shadow-lg shadow-purple-900/40 transition active:scale-95"
                       >
-                        ▶ Probar el look
+                        ▶ Probar outfit completo
                       </Link>
                       <button
                         type="button"

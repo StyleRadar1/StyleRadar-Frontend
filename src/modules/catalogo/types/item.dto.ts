@@ -36,6 +36,9 @@ export interface ItemResponseDto {
   descripcion?: string
   esNuevo?: boolean
   esSegundaMano?: boolean
+  sinTablaMedidas?: boolean
+  noDisponibleEnProbador?: boolean
+  retirada?: boolean
 }
 
 export interface ItemFiltersDto {
