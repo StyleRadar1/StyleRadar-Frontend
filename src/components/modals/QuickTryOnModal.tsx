@@ -758,7 +758,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               <span className="cz-morphology-badge">{deformation.complexion || 'Normal (M)'}</span>
             </div>
 
-            {/* Regla métrica de altura vertical con marcas anatómicas por talla */}
+            {/* Regla métrica de altura vertical con marcas anatómicas por talla según silueta */}
             <div className="cz-metric-ruler" aria-hidden="true">
               <div className="cz-ruler-mark" style={{ bottom: '90%' }}>
                 <span>2,10 m</span>
@@ -766,31 +766,63 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               </div>
               <div className="cz-ruler-mark" style={{ bottom: '78%' }}>
                 <span>1,90 m</span>
-                <span className="cz-ruler-size-tag">XXL</span>
+                {bodyMeasurements?.cuerpoBase !== 'femenino' && <span className="cz-ruler-size-tag">XXL</span>}
                 <div className="cz-ruler-line" />
               </div>
-              <div className="cz-ruler-mark" style={{ bottom: '74%' }}>
-                <span>1,85 m</span>
-                <span className="cz-ruler-size-tag">XL</span>
-                <div className="cz-ruler-line" />
-              </div>
+              {bodyMeasurements?.cuerpoBase !== 'femenino' && (
+                <div className="cz-ruler-mark" style={{ bottom: '74%' }}>
+                  <span>1,85 m</span>
+                  <span className="cz-ruler-size-tag">XL</span>
+                  <div className="cz-ruler-line" />
+                </div>
+              )}
               <div className="cz-ruler-mark" style={{ bottom: '70%' }}>
                 <span>1,80 m</span>
-                <span className="cz-ruler-size-tag">L</span>
+                <span className="cz-ruler-size-tag">{bodyMeasurements?.cuerpoBase === 'femenino' ? 'XXL' : 'L'}</span>
                 <div className="cz-ruler-line" />
               </div>
+              {bodyMeasurements?.cuerpoBase === 'femenino' && (
+                <div className="cz-ruler-mark" style={{ bottom: '68%' }}>
+                  <span>1,75 m</span>
+                  <span className="cz-ruler-size-tag">XL</span>
+                  <div className="cz-ruler-line" />
+                </div>
+              )}
               <div className="cz-ruler-mark" style={{ bottom: '66%' }}>
                 <span>1,70 m</span>
-                <span className="cz-ruler-size-tag">S</span>
+                <span className="cz-ruler-size-tag">{bodyMeasurements?.cuerpoBase === 'femenino' ? 'L' : 'S'}</span>
                 <div className="cz-ruler-line" />
               </div>
-              <div className="cz-ruler-mark" style={{ bottom: '59%' }}>
-                <span>1,60 m</span>
-                <span className="cz-ruler-size-tag">XS</span>
-                <div className="cz-ruler-line" />
-              </div>
+              {bodyMeasurements?.cuerpoBase === 'femenino' ? (
+                <>
+                  <div className="cz-ruler-mark" style={{ bottom: '63%' }}>
+                    <span>1,65 m</span>
+                    <span className="cz-ruler-size-tag">M</span>
+                    <div className="cz-ruler-line" />
+                  </div>
+                  <div className="cz-ruler-mark" style={{ bottom: '60%' }}>
+                    <span>1,58 m</span>
+                    <span className="cz-ruler-size-tag">S</span>
+                    <div className="cz-ruler-line" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="cz-ruler-mark" style={{ bottom: '68%' }}>
+                    <span>1,75 m</span>
+                    <span className="cz-ruler-size-tag">M</span>
+                    <div className="cz-ruler-line" />
+                  </div>
+                  <div className="cz-ruler-mark" style={{ bottom: '59%' }}>
+                    <span>1,60 m</span>
+                    <span className="cz-ruler-size-tag">XS</span>
+                    <div className="cz-ruler-line" />
+                  </div>
+                </>
+              )}
               <div className="cz-ruler-mark" style={{ bottom: '54%' }}>
                 <span>1,50 m</span>
+                {bodyMeasurements?.cuerpoBase === 'femenino' && <span className="cz-ruler-size-tag">XS</span>}
                 <div className="cz-ruler-line" />
               </div>
               <div className="cz-ruler-mark" style={{ bottom: '46%' }}>

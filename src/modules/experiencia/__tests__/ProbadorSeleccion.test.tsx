@@ -432,9 +432,10 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
     })
   })
 
-  it('el maniquí adapta el ancho y muestra la contextura morfológica (scaleX) según las medidas corporales', async () => {
-    // Maniquí Muy Delgado (160 cm, 50 kg)
+  it('el maniquí adapta el ancho y muestra la contextura morfológica (scaleX) según las medidas corporales masculinas y femeninas', async () => {
+    // 1. Maniquí masculino Muy Delgado (160 cm, 50 kg)
     setupMeasurements({
+      cuerpoBase: 'masculino',
       estatura: 160,
       peso: 50,
       tallaHabitual: 'XS',
@@ -455,14 +456,15 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
 
     unmount()
 
-    // Maniquí Obeso Grande (170 cm, 130 kg)
+    // 2. Maniquí femenino Obesa Grande (165 cm, 120 kg)
     setupMeasurements({
-      estatura: 170,
-      peso: 130,
+      cuerpoBase: 'femenino',
+      estatura: 165,
+      peso: 120,
       tallaHabitual: 'XXL',
-      pecho: 134,
-      cintura: 130,
-      cadera: 132,
+      pecho: 128,
+      cintura: 120,
+      cadera: 130,
     })
     renderProbador('/probador')
 
@@ -470,7 +472,7 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
       const wrapper = screen.getByTestId('mannequin-wrapper')
       // scaleX debe reflejar contextura ancha (> 1.35)
       expect(wrapper.style.transform).toMatch(/scaleX\(1\.[345]\d*\)/)
-      expect(screen.getByText(/Obeso Grande/i)).toBeInTheDocument()
+      expect(screen.getByText(/Obesa Grande/i)).toBeInTheDocument()
     })
   })
 })

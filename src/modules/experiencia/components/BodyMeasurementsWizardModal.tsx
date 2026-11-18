@@ -1,11 +1,11 @@
 import { useState, useId } from 'react'
 import type { BodyMeasurements } from '../types/bodyMeasurements.dto'
 import {
-  BODY_ARCHETYPES,
   DEFAULT_BODY_MEASUREMENTS,
   computeBodyDeformation,
   detectBodyArchetype,
   estimateMeasurements,
+  getBodyArchetypes,
   saveBodyMeasurements,
   validateBodyMeasurements,
 } from '../utils/bodyMeasurementsEngine'
@@ -322,7 +322,7 @@ export function BodyMeasurementsWizardModal({
                 </span>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1.5 rounded-2xl bg-white/5 border border-white/10">
-                {BODY_ARCHETYPES.map((arch) => {
+                {getBodyArchetypes(form.cuerpoBase).map((arch) => {
                   const isSelected = form.contextura === arch.id || detectBodyArchetype(form).id === arch.id
                   return (
                     <button
