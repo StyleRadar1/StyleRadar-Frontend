@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { inventoryService } from '../services/inventoryService'
-import type { InventoryItemDto, InventorySummaryDto, CreateInventoryItemDto } from '../types/inventory.dto'
+import type { InventoryItemDto, InventorySummaryDto, CreateInventoryItemDto, UpdateInventoryItemDto } from '../types/inventory.dto'
 
 export function useInventory(tiendaId?: string) {
   const [items, setItems] = useState<InventoryItemDto[]>([])
@@ -45,6 +45,16 @@ export function useInventory(tiendaId?: string) {
       setItems((prev) => prev.map((it) => (it.id === prendaId ? updated : it)))
     },
     []
+  )
+
+  const updateItem = useCallback(
+    async (dto: UpdateInventoryItemDto) => {
+      const updated = await inventoryService.updateItem(dto)
+      setItems((prev) => prev.map((it) => (it.id === dto.prendaId ? updated : it)))
+      const sum = await inventoryService.getSummary(tiendaId)
+      setSummary(sum)
+    },
+    [tiendaId]
   )
 
   const toggleActive = useCallback(
@@ -96,6 +106,7 @@ export function useInventory(tiendaId?: string) {
     updateStock,
     removeSize,
     updatePrice,
+    updateItem,
     toggleActive,
     addItem,
     deleteItem,

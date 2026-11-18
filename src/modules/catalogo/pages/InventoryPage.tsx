@@ -9,12 +9,37 @@ import { errorKind, errorMessage, errorMessageAjeno, fieldErrors } from '@/modul
 import { formatCOP } from '@/modules/core/utils/format'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { useInventory } from '../hooks/useInventory'
-import type { InventoryItemDto, InventoryItemStatus } from '../types/inventory.dto'
+import { MAX_GARMENT_PHOTOS, MAX_GARMENT_PRICE, MAX_PHOTO_URL_LEN, validatePrendaFields } from '../services/inventoryService'
+import type { InventoryItemDto, InventoryItemStatus, TipoPrendaInventario } from '../types/inventory.dto'
+import {
+  COLORES_UNIFICADOS,
+  ESTILOS_UNIFICADOS,
+  TALLAS_POR_TIPO,
+  TIPOS_PRENDA_UNIFICADOS,
+} from '../types/item.dto'
 import './InventoryPage.css'
 
 /* Foto existente de la tienda (Luna Store) */
 const HERO_PHOTO = '/img/sesion/rol-tienda.jpg'
+const STORE_BRAND_NAME = 'Luna Store'
 const ITEMS_PER_PAGE = 8
+
+function defaultStockForTipoPrenda(tipo: TipoPrendaInventario): Record<string, number> {
+  const tallas = TALLAS_POR_TIPO[tipo]
+  const out: Record<string, number> = {}
+  tallas.forEach((t) => {
+    if (tipo === 'ROPA') {
+      out[t] = t === 'S' ? 2 : t === 'M' ? 4 : t === 'L' ? 2 : 0
+    } else if (tipo === 'PANTALON') {
+      out[t] = t === '30' || t === '32' ? 2 : 0
+    } else if (tipo === 'CALZADO') {
+      out[t] = t === '38' || t === '40' ? 2 : 0
+    } else {
+      out[t] = 3
+    }
+  })
+  return out
+}
 
 export default function InventoryPage() {
   const {
@@ -26,6 +51,7 @@ export default function InventoryPage() {
     updateStock,
     removeSize,
     updatePrice,
+    updateItem,
     toggleActive,
     addItem,
     deleteItem,
@@ -52,19 +78,31 @@ export default function InventoryPage() {
   const [cantidadUnidades, setCantidadUnidades] = useState<number>(0)
   const [guardandoUnidades, setGuardandoUnidades] = useState(false)
 
-  // Diálogo para agregar prenda nueva
+  // Diálogo para agregar prenda nueva (SR-RF-50 a SR-RF-54)
   const [mostrarAgregar, setMostrarAgregar] = useState(false)
   const [nuevoNombre, setNuevoNombre] = useState('')
-  const [nuevaImagen, setNuevaImagen] = useState('')
+  const [nuevaImagenUrlInput, setNuevaImagenUrlInput] = useState('')
   const [nuevasImagenes, setNuevasImagenes] = useState<string[]>([])
-  const [nuevoEstilo, setNuevoEstilo] = useState('Streetwear')
-  const [nuevaCategoria, setNuevaCategoria] = useState('Chaquetas')
+  const [nuevoTipo, setNuevoTipo] = useState<string>(TIPOS_PRENDA_UNIFICADOS[1])
+  const [nuevoColor, setNuevoColor] = useState<string>(COLORES_UNIFICADOS[0])
+  const [nuevoEstilo, setNuevoEstilo] = useState<string>(ESTILOS_UNIFICADOS[3])
+  const [nuevoTipoPrenda, setNuevoTipoPrenda] = useState<TipoPrendaInventario>('ROPA')
   const [nuevoPrecio, setNuevoPrecio] = useState(120000)
-  const [stockS, setStockS] = useState(2)
-  const [stockM, setStockM] = useState(4)
-  const [stockL, setStockL] = useState(2)
+  const [stockPorTallaForm, setStockPorTallaForm] = useState<Record<string, number>>(() => defaultStockForTipoPrenda('ROPA'))
   const [guardando, setGuardando] = useState(false)
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
+
+  // Diálogo para editar prenda (PUT /api/v1/prendas/{id}, SR-RF-55)
+  const [itemParaEditar, setItemParaEditar] = useState<InventoryItemDto | null>(null)
+  const [editNombre, setEditNombre] = useState('')
+  const [editTipo, setEditTipo] = useState<string>(TIPOS_PRENDA_UNIFICADOS[1])
+  const [editColor, setEditColor] = useState<string>(COLORES_UNIFICADOS[0])
+  const [editEstilo, setEditEstilo] = useState<string>(ESTILOS_UNIFICADOS[0])
+  const [editPrecio, setEditPrecio] = useState(0)
+  const [editFotos, setEditFotos] = useState<string[]>([])
+  const [editFotoUrlInput, setEditFotoUrlInput] = useState('')
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({})
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false)
 
   // Diálogo para eliminar prenda
   const [itemParaEliminar, setItemParaEliminar] = useState<InventoryItemDto | null>(null)
@@ -228,12 +266,12 @@ export default function InventoryPage() {
 
   const handleCerrarAgregar = useCallback(() => {
     setMostrarAgregar(false)
-    setNuevaImagen('')
+    setNuevaImagenUrlInput('')
     setNuevasImagenes([])
     setCreateErrors({})
   }, [])
 
-  // Subir fotos para la nueva prenda (hasta 4 ángulos: frontal, detalle, espalda, modelo)
+  // Subir fotos para la nueva prenda (1 a 5 fotos, SR-RF-51)
   const handleSubirFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files
     if (!fileList || fileList.length === 0) return
@@ -247,13 +285,13 @@ export default function InventoryPage() {
     }
 
     if (validFiles.length === 0) {
-      setCreateErrors((prev) => ({ ...prev, _global: 'Por favor selecciona archivos de imagen válidos (PNG, JPG o WEBP).' }))
+      setCreateErrors((prev) => ({ ...prev, fotografias: 'Por favor selecciona archivos de imagen válidos (PNG, JPG o WEBP).' }))
       return
     }
 
-    const remainingSlots = 4 - nuevasImagenes.length
+    const remainingSlots = MAX_GARMENT_PHOTOS - nuevasImagenes.length
     if (remainingSlots <= 0) {
-      setCreateErrors((prev) => ({ ...prev, _global: 'Ya alcanzaste el máximo de 4 fotos por prenda.' }))
+      setCreateErrors((prev) => ({ ...prev, fotografias: `Ya alcanzaste el máximo de ${MAX_GARMENT_PHOTOS} fotos por prenda.` }))
       return
     }
 
@@ -263,12 +301,8 @@ export default function InventoryPage() {
       reader.onload = () => {
         if (typeof reader.result === 'string') {
           const res = reader.result
-          setNuevasImagenes((prev) => {
-            if (prev.length >= 4) return prev
-            const next = [...prev, res]
-            if (next.length === 1) setNuevaImagen(res)
-            return next
-          })
+          setNuevasImagenes((prev) => (prev.length >= MAX_GARMENT_PHOTOS ? prev : [...prev, res]))
+          setCreateErrors((prev) => ({ ...prev, fotografias: '' }))
         }
       }
       reader.readAsDataURL(file)
@@ -276,30 +310,61 @@ export default function InventoryPage() {
     e.target.value = ''
   }
 
-  const handleQuitarFoto = (index: number) => {
-    setNuevasImagenes((prev) => {
-      const next = prev.filter((_, i) => i !== index)
-      setNuevaImagen(next[0] || '')
-      return next
-    })
+  const handleAgregarFotoUrl = () => {
+    const url = nuevaImagenUrlInput.trim()
+    if (!url) return
+    if (url.length > MAX_PHOTO_URL_LEN) {
+      setCreateErrors((prev) => ({ ...prev, fotografias: `Cada URL de foto puede tener máximo ${MAX_PHOTO_URL_LEN} caracteres.` }))
+      return
+    }
+    if (nuevasImagenes.length >= MAX_GARMENT_PHOTOS) {
+      setCreateErrors((prev) => ({ ...prev, fotografias: `Máximo ${MAX_GARMENT_PHOTOS} fotografías por prenda.` }))
+      return
+    }
+    setNuevasImagenes((prev) => [...prev, url])
+    setNuevaImagenUrlInput('')
+    setCreateErrors((prev) => ({ ...prev, fotografias: '' }))
   }
 
-  // Crear prenda nueva
+  const handleQuitarFoto = (index: number) => {
+    setNuevasImagenes((prev) => prev.filter((_, i) => i !== index))
+    setCreateErrors((prev) => ({ ...prev, fotografias: '' }))
+  }
+
+  const handleCambiarTipoPrenda = (tipoPrenda: TipoPrendaInventario) => {
+    setNuevoTipoPrenda(tipoPrenda)
+    setStockPorTallaForm(defaultStockForTipoPrenda(tipoPrenda))
+    setCreateErrors((prev) => ({ ...prev, tallas: '' }))
+  }
+
+  // Crear prenda nueva (POST /api/v1/prendas + POST /api/v1/inventario/lote)
   const handleCrearPrenda = async (e?: React.FormEvent) => {
     e?.preventDefault()
-    const errs: Record<string, string> = {}
-    if (!nuevoNombre.trim()) errs.nombre = 'Indica el nombre de la prenda.'
-    if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) errs.precio = 'El precio debe ser mayor a 0.'
-    if (
-      !Number.isInteger(stockS) || stockS < 0 ||
-      !Number.isInteger(stockM) || stockM < 0 ||
-      !Number.isInteger(stockL) || stockL < 0
-    ) {
+    const errs = validatePrendaFields({
+      nombre: nuevoNombre,
+      tipo: nuevoTipo,
+      color: nuevoColor,
+      estilo: nuevoEstilo,
+      precio: nuevoPrecio,
+      fotografias: nuevasImagenes,
+      requirePhoto: import.meta.env.VITE_USE_MOCKS === 'false',
+    })
+    if (Object.values(stockPorTallaForm).some((v) => !Number.isInteger(v) || v < 0)) {
       errs.tallas = 'Las cantidades por talla deben ser enteros mayores o iguales a 0.'
     }
     if (Object.keys(errs).length) {
       setCreateErrors(errs)
-      const firstId = errs.nombre ? 'nombrePrenda' : errs.precio ? 'precioPrenda' : 'tallaS'
+      const firstId = errs.nombre
+        ? 'nombrePrenda'
+        : errs.tipo
+          ? 'tipoPrenda'
+          : errs.color
+            ? 'colorPrenda'
+            : errs.estilo
+              ? 'estiloPrenda'
+              : errs.precio
+                ? 'precioPrenda'
+                : 'fotoPrenda'
       window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
       return
     }
@@ -307,36 +372,122 @@ export default function InventoryPage() {
     setGuardando(true)
     setCreateErrors({})
     try {
-      const fotosParaGuardar = nuevasImagenes.length > 0 ? nuevasImagenes : nuevaImagen ? [nuevaImagen] : []
       await addItem({
         nombre: nuevoNombre.trim(),
+        tipo: nuevoTipo,
+        color: nuevoColor,
         estilo: nuevoEstilo,
-        categoria: nuevaCategoria,
+        categoria: nuevoTipo,
+        tipoPrenda: nuevoTipoPrenda,
         precio: nuevoPrecio,
-        imagenUrl: fotosParaGuardar[0] || undefined,
-        imagenes: fotosParaGuardar.length > 0 ? fotosParaGuardar : undefined,
-        stockPorTalla: {
-          S: Number(stockS),
-          M: Number(stockM),
-          L: Number(stockL),
-        },
+        imagenUrl: nuevasImagenes[0] || undefined,
+        imagenes: nuevasImagenes.length > 0 ? nuevasImagenes : undefined,
+        fotografias: nuevasImagenes.length > 0 ? nuevasImagenes : undefined,
+        stockPorTalla: stockPorTallaForm,
       })
       setMostrarAgregar(false)
       setNuevoNombre('')
-      setNuevaImagen('')
+      setNuevaImagenUrlInput('')
       setNuevasImagenes([])
+      setStockPorTallaForm(defaultStockForTipoPrenda(nuevoTipoPrenda))
       showToast('¡Prenda incorporada al inventario del almacén!')
     } catch (err) {
       const fields = fieldErrors(err)
       if (Object.keys(fields).length) {
         setCreateErrors(fields)
-        const firstId = fields.nombre ? 'nombrePrenda' : fields.precio ? 'precioPrenda' : 'tallaS'
+        const firstId = fields.nombre ? 'nombrePrenda' : fields.precio ? 'precioPrenda' : 'tipoPrenda'
         window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
       } else if (!handleActionFailure(err)) {
         setCreateErrors({ _global: errorMessage(err, 'Error al registrar prenda.') })
       }
     } finally {
       setGuardando(false)
+    }
+  }
+
+  // Abrir edición de prenda (SR-RF-55: PUT /api/v1/prendas/{id})
+  const openEditarPrenda = (item: InventoryItemDto) => {
+    setItemParaEditar(item)
+    setEditNombre(item.nombre)
+    setEditTipo(
+      TIPOS_PRENDA_UNIFICADOS.includes(item.tipo as (typeof TIPOS_PRENDA_UNIFICADOS)[number])
+        ? (item.tipo as string)
+        : TIPOS_PRENDA_UNIFICADOS.includes(item.categoria as (typeof TIPOS_PRENDA_UNIFICADOS)[number])
+          ? item.categoria
+          : TIPOS_PRENDA_UNIFICADOS[1]
+    )
+    setEditColor(
+      COLORES_UNIFICADOS.includes(item.color as (typeof COLORES_UNIFICADOS)[number])
+        ? (item.color as string)
+        : COLORES_UNIFICADOS[0]
+    )
+    setEditEstilo(
+      ESTILOS_UNIFICADOS.includes(item.estilo as (typeof ESTILOS_UNIFICADOS)[number])
+        ? item.estilo
+        : ESTILOS_UNIFICADOS[0]
+    )
+    setEditPrecio(item.precio)
+    setEditFotos(
+      item.fotografias?.length
+        ? item.fotografias
+        : item.imagenes?.length
+          ? item.imagenes
+          : item.imagenUrl
+            ? [item.imagenUrl]
+            : []
+    )
+    setEditFotoUrlInput('')
+    setEditErrors({})
+  }
+
+  const handleGuardarEdicion = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!itemParaEditar) return
+    const errs = validatePrendaFields({
+      nombre: editNombre,
+      tipo: editTipo,
+      color: editColor,
+      estilo: editEstilo,
+      precio: editPrecio,
+      fotografias: editFotos,
+      requirePhoto: true,
+    })
+    if (Object.keys(errs).length) {
+      setEditErrors(errs)
+      const firstId = errs.nombre ? 'editNombrePrenda' : errs.precio ? 'editPrecioPrenda' : 'editTipoPrenda'
+      window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
+      return
+    }
+    setGuardandoEdicion(true)
+    setEditErrors({})
+    try {
+      const estabaRechazada = itemParaEditar.estadoPublicacion === 'RECHAZADA'
+      await updateItem({
+        prendaId: itemParaEditar.id,
+        nombre: editNombre.trim(),
+        tipo: editTipo,
+        color: editColor,
+        estilo: editEstilo,
+        precio: editPrecio,
+        fotografias: editFotos,
+      })
+      setItemParaEditar(null)
+      showToast(
+        estabaRechazada
+          ? 'Prenda actualizada y enviada de nuevo a revisión.'
+          : 'Prenda actualizada correctamente.'
+      )
+    } catch (err) {
+      const fields = fieldErrors(err)
+      if (Object.keys(fields).length) {
+        setEditErrors(fields)
+      } else if (handleActionFailure(err)) {
+        setItemParaEditar(null)
+      } else {
+        setEditErrors({ _global: errorMessage(err, 'No pudimos actualizar la prenda.') })
+      }
+    } finally {
+      setGuardandoEdicion(false)
     }
   }
 
@@ -454,9 +605,9 @@ export default function InventoryPage() {
 
   // Métricas calculadas sobre los datos del inventario
   const totalPrendas = summary?.totalPrendas ?? items.length
-  const disponibles = items.filter((x) => x.estado === 'DISPONIBLE').length
-  const bajoStock = summary?.bajoStock ?? items.filter((x) => x.estado === 'BAJO_STOCK').length
-  const agotados = summary?.agotados ?? items.filter((x) => x.estado === 'AGOTADO').length
+  const disponibles = items.filter((x) => x.estado === 'DISPONIBLE' || x.estado === 'NUEVA_PRENDA').length
+  const bajoStock = summary?.bajoStock ?? items.filter((x) => x.estado === 'ULTIMAS_UNIDADES').length
+  const agotados = summary?.agotados ?? items.filter((x) => x.estado === 'AGOTADA').length
 
   const nombreTienda = items[0]?.tiendaNombre?.toUpperCase() || 'LUNA STORE'
 
@@ -485,7 +636,9 @@ export default function InventoryPage() {
               disabled={isSuspended}
               onClick={() => {
                 setCreateErrors({})
-                setNuevaImagen('')
+                setNuevaImagenUrlInput('')
+                setNuevasImagenes([])
+                setStockPorTallaForm(defaultStockForTipoPrenda(nuevoTipoPrenda))
                 setMostrarAgregar(true)
               }}
             >
@@ -629,21 +782,21 @@ export default function InventoryPage() {
               <button
                 type="button"
                 role="tab"
-                aria-label="Pocas unidades (Bajo stock)"
-                aria-selected={filtroEstado === 'BAJO_STOCK'}
-                className={`inv-pill ${filtroEstado === 'BAJO_STOCK' ? 'is-active' : ''}`}
-                onClick={() => setFiltroEstado('BAJO_STOCK')}
+                aria-label="Últimas unidades (Bajo stock)"
+                aria-selected={filtroEstado === 'ULTIMAS_UNIDADES'}
+                className={`inv-pill ${filtroEstado === 'ULTIMAS_UNIDADES' ? 'is-active' : ''}`}
+                onClick={() => setFiltroEstado('ULTIMAS_UNIDADES')}
               >
-                Pocas unidades <span className="sr-only">Bajo stock</span>
+                Últimas unidades <span className="sr-only">Bajo stock</span>
               </button>
               <button
                 type="button"
                 role="tab"
-                aria-selected={filtroEstado === 'AGOTADO'}
-                className={`inv-pill ${filtroEstado === 'AGOTADO' ? 'is-active' : ''}`}
-                onClick={() => setFiltroEstado('AGOTADO')}
+                aria-selected={filtroEstado === 'AGOTADA'}
+                className={`inv-pill ${filtroEstado === 'AGOTADA' ? 'is-active' : ''}`}
+                onClick={() => setFiltroEstado('AGOTADA')}
               >
-                Agotado
+                Agotada
               </button>
             </div>
           </div>
@@ -788,8 +941,16 @@ export default function InventoryPage() {
                       </h3>
                       <p className="inv-card__price">{formatCOP(item.precio)}</p>
                       <p className="inv-card__meta">
+                        {item.tipo || item.categoria} · {item.color || 'Color'} · {item.estilo}
+                      </p>
+                      <p className="inv-card__meta">
                         Tallas: {tallasTexto || 'Única'} | Unidades: {item.stockTotal}
                       </p>
+                      {item.estadoPublicacion === 'RECHAZADA' && (
+                        <div className="mt-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 text-[11px] text-rose-200" role="alert">
+                          <strong>Publicación rechazada:</strong> {item.motivoRechazo || 'Revisa los datos y vuelve a enviarla.'}
+                        </div>
+                      )}
 
                       {/* Desglose y edición rápida de existencias por talla */}
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -852,19 +1013,24 @@ export default function InventoryPage() {
                       <FieldError id={`stock-err-${item.id}`} message={stockErrors[item.id]} />
 
                       <div className="inv-card__foot">
-                        {item.estado === 'DISPONIBLE' && (
+                        {(item.estado === 'DISPONIBLE' || item.estado === 'NUEVA_PRENDA') && (
                           <span className="inv-status inv-status--ok">
-                            <i className="inv-status__dot" /> Disponible
+                            <i className="inv-status__dot" /> {item.estado === 'NUEVA_PRENDA' ? 'Nueva prenda' : 'Disponible'}
                           </span>
                         )}
-                        {item.estado === 'BAJO_STOCK' && (
+                        {item.estado === 'ULTIMAS_UNIDADES' && (
                           <span className="inv-status inv-status--low">
-                            <i className="inv-status__dot" /> Pocas unidades
+                            <i className="inv-status__dot" /> Últimas unidades
                           </span>
                         )}
-                        {item.estado === 'AGOTADO' && (
+                        {item.estado === 'AGOTADA' && (
                           <span className="inv-status inv-status--out">
-                            <i className="inv-status__dot" /> Agotado
+                            <i className="inv-status__dot" /> Agotada
+                          </span>
+                        )}
+                        {item.estado === 'SUSPENDIDO' && (
+                          <span className="inv-status inv-status--out">
+                            <i className="inv-status__dot" /> Suspendida
                           </span>
                         )}
                         {item.estado === 'RETIRADO' && (
@@ -874,6 +1040,16 @@ export default function InventoryPage() {
                         )}
 
                         <div className="inv-card__actions">
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-violeta-claro hover:underline disabled:opacity-40"
+                            aria-label={`Editar prenda ${item.nombre}`}
+                            title="Editar prenda"
+                            disabled={isSuspended || item.estado === 'RETIRADO'}
+                            onClick={() => openEditarPrenda(item)}
+                          >
+                            Editar
+                          </button>
                           <button
                             type="button"
                             className="inv-icon-btn"
@@ -955,25 +1131,47 @@ export default function InventoryPage() {
                       <img src={item.imagenUrl} alt={item.nombre} className="inv-list-item__img" loading="lazy" />
                       <div>
                         <h3 className="font-bold text-sm text-grafito">{item.nombre}</h3>
-                        <p className="text-xs text-[var(--inv-text-muted)]">{item.categoria} · {item.estilo}</p>
+                        <p className="text-xs text-[var(--inv-text-muted)]">
+                          {item.tipo || item.categoria} · {item.color || 'Color'} · {item.estilo}
+                        </p>
+                        {item.estadoPublicacion === 'RECHAZADA' && (
+                          <p className="mt-1 text-xs font-semibold text-rose-500">
+                            Rechazada: {item.motivoRechazo || 'Revisa los datos y edítala.'}
+                          </p>
+                        )}
                       </div>
                       <span className="font-bold text-sm text-grafito">{formatCOP(item.precio)}</span>
                       <span className="text-xs text-[var(--inv-text-muted)]">Tallas: {tallasTexto} | {item.stockTotal} uds</span>
                       <div>
-                        {item.estado === 'DISPONIBLE' && (
-                          <span className="inv-status inv-status--ok"><i className="inv-status__dot" /> Disponible</span>
+                        {(item.estado === 'DISPONIBLE' || item.estado === 'NUEVA_PRENDA') && (
+                          <span className="inv-status inv-status--ok">
+                            <i className="inv-status__dot" /> {item.estado === 'NUEVA_PRENDA' ? 'Nueva prenda' : 'Disponible'}
+                          </span>
                         )}
-                        {item.estado === 'BAJO_STOCK' && (
-                          <span className="inv-status inv-status--low"><i className="inv-status__dot" /> Pocas unidades</span>
+                        {item.estado === 'ULTIMAS_UNIDADES' && (
+                          <span className="inv-status inv-status--low"><i className="inv-status__dot" /> Últimas unidades</span>
                         )}
-                        {item.estado === 'AGOTADO' && (
-                          <span className="inv-status inv-status--out"><i className="inv-status__dot" /> Agotado</span>
+                        {item.estado === 'AGOTADA' && (
+                          <span className="inv-status inv-status--out"><i className="inv-status__dot" /> Agotada</span>
+                        )}
+                        {item.estado === 'SUSPENDIDO' && (
+                          <span className="inv-status inv-status--out"><i className="inv-status__dot" /> Suspendida</span>
                         )}
                         {item.estado === 'RETIRADO' && (
                           <span className="inv-status inv-status--ret"><i className="inv-status__dot" /> Retirada</span>
                         )}
                       </div>
                       <div className="inv-card__actions">
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-violeta-claro hover:underline disabled:opacity-40"
+                          aria-label={`Editar prenda ${item.nombre}`}
+                          title="Editar prenda"
+                          disabled={isSuspended || item.estado === 'RETIRADO'}
+                          onClick={() => openEditarPrenda(item)}
+                        >
+                          Editar
+                        </button>
                         <button
                           type="button"
                           className="inv-icon-btn"
@@ -1189,7 +1387,7 @@ export default function InventoryPage() {
         )}
       </div>
 
-      {/* ── Modal para agregar prenda nueva (Conserva todos los campos y validaciones) ── */}
+      {/* ── Modal para agregar prenda nueva (SR-RF-50 a SR-RF-54) ── */}
       <ConfirmDialog
         open={mostrarAgregar}
         title="Agregar prenda al inventario"
@@ -1199,23 +1397,27 @@ export default function InventoryPage() {
         onCancel={handleCerrarAgregar}
       >
         <form onSubmit={handleCrearPrenda} className="space-y-4">
+          <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/70">
+            Marca asignada automáticamente según tu tienda: <strong className="text-white">{STORE_BRAND_NAME}</strong>
+          </p>
+
           <div>
             <div className="flex items-center justify-between">
               <label htmlFor="fotoPrenda" className="block text-xs font-semibold text-white/80">
-                Fotos de la prenda (hasta 4 ángulos)
+                Fotos de la prenda (1 a {MAX_GARMENT_PHOTOS} fotos)
               </label>
               <span className="text-[11px] font-bold text-violeta-claro">
-                {nuevasImagenes.length > 0 ? `${nuevasImagenes.length}/4 fotos` : '0/4 fotos'}
+                {nuevasImagenes.length}/{MAX_GARMENT_PHOTOS} fotos
               </span>
             </div>
             <p className="mt-0.5 text-[10px] text-white/50">
-              Muestra tu prenda en diferentes ángulos (1. Frontal, 2. Detalle textura, 3. Espalda, 4. Look en modelo).
+              La primera foto será la portada en el catálogo. Máximo {MAX_GARMENT_PHOTOS} fotos (URL de hasta {MAX_PHOTO_URL_LEN} caracteres).
             </p>
 
-            {/* Cuadrícula de fotos subidas */}
-            <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {['1. Frontal', '2. Detalle', '3. Espalda', '4. Look'].map((slotLabel, index) => {
-                const fotoUrl = nuevasImagenes[index] || (index === 0 ? nuevaImagen : null)
+            {/* Cuadrícula de hasta 5 fotos */}
+            <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {['1. Portada', '2. Detalle', '3. Espalda', '4. Look', '5. Extra'].map((slotLabel, index) => {
+                const fotoUrl = nuevasImagenes[index] ?? null
                 return (
                   <div
                     key={slotLabel}
@@ -1238,10 +1440,9 @@ export default function InventoryPage() {
                         </button>
                       </>
                     ) : (
-                      <div className="flex flex-col items-center text-center p-2 text-white/40">
-                        <span className="text-lg opacity-40">📷</span>
+                      <div className="flex flex-col items-center text-center p-1.5 text-white/40">
+                        <span className="text-base opacity-40">📷</span>
                         <span className="mt-1 text-[9px] font-medium">{slotLabel}</span>
-                        <span className="text-[8px] opacity-60">Vacío</span>
                       </div>
                     )}
                   </div>
@@ -1249,16 +1450,15 @@ export default function InventoryPage() {
               })}
             </div>
 
-            {nuevasImagenes.length < 4 && (
-              <div className="mt-3">
+            {nuevasImagenes.length < MAX_GARMENT_PHOTOS && (
+              <div className="mt-3 space-y-2">
                 <label
                   htmlFor="fotoPrenda"
-                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/30 bg-black/30 px-3 text-center transition hover:border-violeta-claro hover:bg-black/50"
+                  className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/30 bg-black/30 px-3 text-center transition hover:border-violeta-claro hover:bg-black/50"
                 >
                   <span className="text-xs font-medium text-white/90">
-                    📷 {nuevasImagenes.length === 0 ? 'Subir fotos de la prenda' : `+ Agregar otra foto (${nuevasImagenes.length}/4)`}
+                    📷 {nuevasImagenes.length === 0 ? 'Subir fotos de la prenda' : `+ Agregar otra foto (${nuevasImagenes.length}/${MAX_GARMENT_PHOTOS})`}
                   </span>
-                  <span className="text-[10px] text-white/50">PNG, JPG o WEBP</span>
                 </label>
                 <input
                   id="fotoPrenda"
@@ -1268,17 +1468,37 @@ export default function InventoryPage() {
                   onChange={handleSubirFoto}
                   className="sr-only"
                 />
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    maxLength={MAX_PHOTO_URL_LEN}
+                    value={nuevaImagenUrlInput}
+                    onChange={(e) => setNuevaImagenUrlInput(e.target.value)}
+                    placeholder="O pega URL de imagen (máx. 300 caracteres)"
+                    aria-label="URL de foto de prenda"
+                    className="flex-1 rounded-xl border border-white/20 bg-black/40 px-3 py-1.5 text-xs text-white outline-none focus:border-violeta-claro"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAgregarFotoUrl}
+                    className="rounded-xl border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+                  >
+                    Agregar URL
+                  </button>
+                </div>
               </div>
             )}
+            <FieldError id="fotosPrenda-err" message={createErrors.fotografias} />
           </div>
 
           <div>
             <label htmlFor="nombrePrenda" className="block text-xs font-semibold text-white/80">
-              Nombre de la prenda *
+              Nombre de la prenda * <span className="font-normal text-white/40">(3 a 60 caracteres)</span>
             </label>
             <input
               id="nombrePrenda"
               type="text"
+              maxLength={60}
               value={nuevoNombre}
               onChange={(e) => {
                 setNuevoNombre(e.target.value)
@@ -1292,10 +1512,42 @@ export default function InventoryPage() {
             <FieldError id="nombrePrenda-err" message={createErrors.nombre} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label htmlFor="tipoPrenda" className="block text-xs font-semibold text-white/80">
+                Tipo *
+              </label>
+              <select
+                id="tipoPrenda"
+                value={nuevoTipo}
+                onChange={(e) => setNuevoTipo(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+              >
+                {TIPOS_PRENDA_UNIFICADOS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <FieldError id="tipoPrenda-err" message={createErrors.tipo} />
+            </div>
+            <div>
+              <label htmlFor="colorPrenda" className="block text-xs font-semibold text-white/80">
+                Color *
+              </label>
+              <select
+                id="colorPrenda"
+                value={nuevoColor}
+                onChange={(e) => setNuevoColor(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+              >
+                {COLORES_UNIFICADOS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <FieldError id="colorPrenda-err" message={createErrors.color} />
+            </div>
             <div>
               <label htmlFor="estiloPrenda" className="block text-xs font-semibold text-white/80">
-                Estilo
+                Estilo *
               </label>
               <select
                 id="estiloPrenda"
@@ -1303,104 +1555,231 @@ export default function InventoryPage() {
                 onChange={(e) => setNuevoEstilo(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
               >
-                <option value="Streetwear">Streetwear</option>
-                <option value="Minimalista">Minimalista</option>
-                <option value="Sastre">Sastre</option>
-                <option value="Boho">Boho</option>
-                <option value="Vintage">Vintage</option>
+                {ESTILOS_UNIFICADOS.map((st) => (
+                  <option key={st} value={st}>{st}</option>
+                ))}
               </select>
+              <FieldError id="estiloPrenda-err" message={createErrors.estilo} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="precioPrenda" className="block text-xs font-semibold text-white/80">
+                Precio al público (COP) *
+              </label>
+              <input
+                id="precioPrenda"
+                type="number"
+                value={nuevoPrecio}
+                onChange={(e) => {
+                  setNuevoPrecio(Number(e.target.value))
+                  setCreateErrors((prev) => ({ ...prev, precio: '' }))
+                }}
+                aria-invalid={Boolean(createErrors.precio)}
+                aria-describedby={createErrors.precio ? 'precioPrenda-err' : undefined}
+                min={1}
+                max={MAX_GARMENT_PRICE}
+                step={1000}
+                className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+              />
+              <FieldError id="precioPrenda-err" message={createErrors.precio} />
             </div>
             <div>
-              <label htmlFor="catPrenda" className="block text-xs font-semibold text-white/80">
-                Categoría
+              <label htmlFor="tipoTallaPrenda" className="block text-xs font-semibold text-white/80">
+                Tipo de talla *
               </label>
               <select
-                id="catPrenda"
-                value={nuevaCategoria}
-                onChange={(e) => setNuevaCategoria(e.target.value)}
+                id="tipoTallaPrenda"
+                value={nuevoTipoPrenda}
+                onChange={(e) => handleCambiarTipoPrenda(e.target.value as TipoPrendaInventario)}
                 className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
               >
-                <option value="Chaquetas">Chaquetas</option>
-                <option value="Pantalones">Pantalones</option>
-                <option value="Camisas">Camisas</option>
-                <option value="Vestidos">Vestidos</option>
-                <option value="Buzos">Buzos</option>
+                <option value="ROPA">Ropa (XS a XXL)</option>
+                <option value="PANTALON">Pantalón (26 a 36)</option>
+                <option value="CALZADO">Calzado (34 a 45)</option>
+                <option value="UNICA">Talla única (Única)</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label htmlFor="precioPrenda" className="block text-xs font-semibold text-white/80">
-              Precio al público (COP) *
-            </label>
-            <input
-              id="precioPrenda"
-              type="number"
-              value={nuevoPrecio}
-              onChange={(e) => {
-                setNuevoPrecio(Number(e.target.value))
-                setCreateErrors((prev) => ({ ...prev, precio: '' }))
-              }}
-              aria-invalid={Boolean(createErrors.precio)}
-              aria-describedby={createErrors.precio ? 'precioPrenda-err' : undefined}
-              min={1000}
-              step={1000}
-              className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
-            />
-            <FieldError id="precioPrenda-err" message={createErrors.precio} />
-          </div>
-
-          <div>
-            <span className="block text-xs font-semibold text-white/80">Stock inicial por tallas</span>
-            <div className="mt-2 grid grid-cols-3 gap-3">
-              <div>
-                <label htmlFor="tallaS" className="text-[11px] text-white/60">Talla S</label>
-                <input
-                  id="tallaS"
-                  type="number"
-                  min={0}
-                  value={stockS}
-                  onChange={(e) => {
-                    setStockS(Number(e.target.value))
-                    setCreateErrors((prev) => ({ ...prev, tallas: '' }))
-                  }}
-                  className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
-                />
-              </div>
-              <div>
-                <label htmlFor="tallaM" className="text-[11px] text-white/60">Talla M</label>
-                <input
-                  id="tallaM"
-                  type="number"
-                  min={0}
-                  value={stockM}
-                  onChange={(e) => {
-                    setStockM(Number(e.target.value))
-                    setCreateErrors((prev) => ({ ...prev, tallas: '' }))
-                  }}
-                  className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
-                />
-              </div>
-              <div>
-                <label htmlFor="tallaL" className="text-[11px] text-white/60">Talla L</label>
-                <input
-                  id="tallaL"
-                  type="number"
-                  min={0}
-                  value={stockL}
-                  onChange={(e) => {
-                    setStockL(Number(e.target.value))
-                    setCreateErrors((prev) => ({ ...prev, tallas: '' }))
-                  }}
-                  className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
-                />
-              </div>
+            <span className="block text-xs font-semibold text-white/80">Stock inicial por tallas ({nuevoTipoPrenda})</span>
+            <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+              {TALLAS_POR_TIPO[nuevoTipoPrenda].map((talla) => (
+                <div key={talla}>
+                  <label htmlFor={`talla-${talla}`} className="text-[11px] text-white/60">Talla {talla}</label>
+                  <input
+                    id={`talla-${talla}`}
+                    type="number"
+                    min={0}
+                    value={stockPorTallaForm[talla] ?? 0}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setStockPorTallaForm((prev) => ({ ...prev, [talla]: val }))
+                      setCreateErrors((prev) => ({ ...prev, tallas: '' }))
+                    }}
+                    className="mt-0.5 w-full rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-center text-sm text-white"
+                  />
+                </div>
+              ))}
             </div>
             <FieldError id="tallasPrenda-err" message={createErrors.tallas} />
           </div>
 
           <FieldError id="crearPrenda-err" message={createErrors._global} />
         </form>
+      </ConfirmDialog>
+
+      {/* ── Modal para editar prenda (PUT /api/v1/prendas/{id}, SR-RF-55) ── */}
+      <ConfirmDialog
+        open={Boolean(itemParaEditar)}
+        title="Editar prenda del catálogo"
+        confirmLabel={guardandoEdicion ? 'Guardando...' : 'Guardar cambios'}
+        busy={guardandoEdicion}
+        onConfirm={() => { void handleGuardarEdicion() }}
+        onCancel={() => {
+          setItemParaEditar(null)
+          setEditErrors({})
+        }}
+      >
+        {itemParaEditar && (
+          <form onSubmit={handleGuardarEdicion} className="space-y-4">
+            <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/70">
+              Marca asignada: <strong className="text-white">{STORE_BRAND_NAME}</strong>
+            </p>
+            <div>
+              <label htmlFor="editNombrePrenda" className="block text-xs font-semibold text-white/80">
+                Nombre de la prenda *
+              </label>
+              <input
+                id="editNombrePrenda"
+                type="text"
+                maxLength={60}
+                value={editNombre}
+                onChange={(e) => {
+                  setEditNombre(e.target.value)
+                  setEditErrors((prev) => ({ ...prev, nombre: '' }))
+                }}
+                className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+              />
+              <FieldError id="editNombrePrenda-err" message={editErrors.nombre} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="editTipoPrenda" className="block text-xs font-semibold text-white/80">Tipo *</label>
+                <select
+                  id="editTipoPrenda"
+                  value={editTipo}
+                  onChange={(e) => setEditTipo(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+                >
+                  {TIPOS_PRENDA_UNIFICADOS.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="editColorPrenda" className="block text-xs font-semibold text-white/80">Color *</label>
+                <select
+                  id="editColorPrenda"
+                  value={editColor}
+                  onChange={(e) => setEditColor(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+                >
+                  {COLORES_UNIFICADOS.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="editEstiloPrenda" className="block text-xs font-semibold text-white/80">Estilo *</label>
+                <select
+                  id="editEstiloPrenda"
+                  value={editEstilo}
+                  onChange={(e) => setEditEstilo(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+                >
+                  {ESTILOS_UNIFICADOS.map((st) => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="editPrecioPrenda" className="block text-xs font-semibold text-white/80">Precio (COP) *</label>
+              <input
+                id="editPrecioPrenda"
+                type="number"
+                min={1}
+                max={MAX_GARMENT_PRICE}
+                step={1000}
+                value={editPrecio}
+                onChange={(e) => {
+                  setEditPrecio(Number(e.target.value))
+                  setEditErrors((prev) => ({ ...prev, precio: '' }))
+                }}
+                className="mt-1 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+              />
+              <FieldError id="editPrecioPrenda-err" message={editErrors.precio} />
+            </div>
+
+            <div>
+              <span className="block text-xs font-semibold text-white/80">
+                Fotografías ({editFotos.length}/{MAX_GARMENT_PHOTOS})
+              </span>
+              <ul className="mt-1.5 space-y-1">
+                {editFotos.map((url, idx) => (
+                  <li key={`${url}-${idx}`} className="flex items-center justify-between gap-2 rounded-lg bg-black/30 px-2.5 py-1 text-[11px] text-white/80">
+                    <span className="truncate">{idx === 0 ? 'Portada: ' : `Foto ${idx + 1}: `}{url}</span>
+                    {editFotos.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setEditFotos((prev) => prev.filter((_, i) => i !== idx))}
+                        className="text-rose-400 hover:underline"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {editFotos.length < MAX_GARMENT_PHOTOS && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="url"
+                    maxLength={MAX_PHOTO_URL_LEN}
+                    value={editFotoUrlInput}
+                    onChange={(e) => setEditFotoUrlInput(e.target.value)}
+                    placeholder="Nueva URL de foto (máx. 300 chars)"
+                    className="flex-1 rounded-xl border border-white/20 bg-black/40 px-3 py-1.5 text-xs text-white outline-none focus:border-violeta-claro"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const u = editFotoUrlInput.trim()
+                      if (!u) return
+                      if (u.length > MAX_PHOTO_URL_LEN) {
+                        setEditErrors((prev) => ({ ...prev, fotografias: `Máximo ${MAX_PHOTO_URL_LEN} caracteres.` }))
+                        return
+                      }
+                      setEditFotos((prev) => [...prev, u])
+                      setEditFotoUrlInput('')
+                      setEditErrors((prev) => ({ ...prev, fotografias: '' }))
+                    }}
+                    className="rounded-xl border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              )}
+              <FieldError id="editFotos-err" message={editErrors.fotografias} />
+            </div>
+            <FieldError id="editPrenda-err" message={editErrors._global} />
+          </form>
+        )}
       </ConfirmDialog>
 
       {/* ── Modal para editar precio ── */}
@@ -1506,8 +1885,8 @@ export default function InventoryPage() {
                 className="mt-1 w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
               >
                 <option value="Running de ciudad">Running de ciudad</option>
-                <option value="Minimal Bogotá">Minimal Bogotá</option>
-                <option value="Urbana Streetwear">Urbana Streetwear</option>
+                <option value="Estilo Casual">Estilo Casual</option>
+                <option value="Moda Urbana">Moda Urbana</option>
                 <option value="Nueva Colección">Nueva Colección</option>
               </select>
             </div>
