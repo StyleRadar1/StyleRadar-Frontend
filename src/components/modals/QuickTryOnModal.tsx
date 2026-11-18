@@ -28,9 +28,16 @@ import {
   isGarmentFittable,
   loadLookFromStorage,
   saveLookToStorage,
-  saveUserMeasurements,
 } from '@/modules/experiencia/utils/lookEngine'
-import { MeasurementAssistantModal } from '@/modules/experiencia/components/MeasurementAssistantModal'
+import type { BodyMeasurements } from '@/modules/experiencia/types/bodyMeasurements.dto'
+import {
+  clearBodyMeasurements,
+  computeBodyDeformation,
+  exportBodyMeasurementsJson,
+  getBodyMeasurements,
+  hasSavedBodyMeasurements,
+} from '@/modules/experiencia/utils/bodyMeasurementsEngine'
+import { BodyMeasurementsWizardModal } from '@/modules/experiencia/components/BodyMeasurementsWizardModal'
 import { AuthModal } from './AuthModal'
 
 /* ---------- Filtros de color para capas del maniquí ---------- */
@@ -135,10 +142,13 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   const [newPlaylistName, setNewPlaylistName] = useState('')
   const [newPlaylistDesc, setNewPlaylistDesc] = useState('')
 
-  /* Asistente de medidas y autenticación para enlaces profundos */
+  /* Asistente de medidas anatómicas y autenticación */
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [showMeasurementModal, setShowMeasurementModal] = useState(false)
+  const [showBodyWizard, setShowBodyWizard] = useState(false)
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurements | null>(() => getBodyMeasurements())
+  const [pendingActionAfterWizard, setPendingActionAfterWizard] = useState<'catalog' | 'playlist' | { slot: LookSlot } | null>(null)
   const [pendingDeepLinkGarment, setPendingDeepLinkGarment] = useState<{ id: string; talla?: string; color?: string } | null>(null)
+  const hasAutoPromptedRef = useRef(false)
 
   /* Modo foto personal */
   const [sourceMode, setSourceMode] = useState<'mannequin' | 'photo'>('mannequin')
@@ -299,10 +309,9 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
         }
 
         // Verificar si tiene medidas guardadas
-        const savedMeasurements = localStorage.getItem('sr_user_measurements')
-        if (!savedMeasurements) {
+        if (!hasSavedBodyMeasurements()) {
           setPendingDeepLinkGarment({ id: prendaId, talla: tallaParam || undefined, color: colorParam || undefined })
-          setShowMeasurementModal(true)
+          setShowBodyWizard(true)
           return
         }
 
@@ -314,13 +323,31 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     }
   }, [isOpen, searchParams, initialGarmentId, user, userMeasurements, wearGarment, applyPlaylist])
 
-  /* Escuchar inicio de sesión exitoso para reanudar prenda pendiente */
+  /* Auto-apertura del asistente de medidas la primera vez que se entra al probador */
+  useEffect(() => {
+    if (!isOpen) return
+    if (hasAutoPromptedRef.current) return
+
+    if (hasSavedBodyMeasurements()) {
+      hasAutoPromptedRef.current = true
+      return
+    }
+
+    hasAutoPromptedRef.current = true
+
+    if (user) {
+      setShowBodyWizard(true)
+    } else {
+      setShowAuthModal(true)
+    }
+  }, [isOpen, user])
+
+  /* Escuchar inicio de sesión exitoso para abrir asistente o reanudar prenda pendiente */
   useEffect(() => {
     const onLoginSuccess = () => {
       setShowAuthModal(false)
-      const savedMeasurements = localStorage.getItem('sr_user_measurements')
-      if (!savedMeasurements) {
-        setShowMeasurementModal(true)
+      if (!hasSavedBodyMeasurements()) {
+        setShowBodyWizard(true)
       } else if (pendingDeepLinkGarment) {
         const item = ITEMS.find((it) => it.id === pendingDeepLinkGarment.id)
         if (item) {
@@ -334,18 +361,113 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     return () => window.removeEventListener('sr:login-success', onLoginSuccess)
   }, [pendingDeepLinkGarment, wearGarment])
 
-  /* Callback al completar asistente de medidas */
-  const handleMeasurementComplete = useCallback((m: UserMeasurements) => {
-    saveUserMeasurements(m)
-    if (pendingDeepLinkGarment) {
-      const item = ITEMS.find((it) => it.id === pendingDeepLinkGarment.id)
-      if (item) {
-        const t = pendingDeepLinkGarment.talla || getRecommendedSize(item, m)
-        wearGarment(item, t, pendingDeepLinkGarment.color || item.color || 'default')
-        setPendingDeepLinkGarment(null)
+  /* Guardar medidas corporales desde el Asistente de 4 pasos */
+  const handleBodyMeasurementsSaved = useCallback(
+    (m: BodyMeasurements, _persist: boolean) => {
+      setBodyMeasurements(m)
+      setShowBodyWizard(false)
+      showToast('Medidas corporales actualizadas en el maniquí')
+
+      if (pendingActionAfterWizard === 'catalog') {
+        setPendingActionAfterWizard(null)
+        setDrawerTab('catalogo')
+        setIsDrawerOpen(true)
+      } else if (pendingActionAfterWizard === 'playlist') {
+        setPendingActionAfterWizard(null)
+        setDrawerTab('playlists')
+        setIsDrawerOpen(true)
+      } else if (typeof pendingActionAfterWizard === 'object' && pendingActionAfterWizard?.slot) {
+        setSelectedSlotFilter(pendingActionAfterWizard.slot)
+        setPendingActionAfterWizard(null)
+        setDrawerTab('catalogo')
+        setIsDrawerOpen(true)
+      } else if (pendingDeepLinkGarment) {
+        const item = ITEMS.find((it) => it.id === pendingDeepLinkGarment.id)
+        if (item) {
+          const t =
+            pendingDeepLinkGarment.talla ||
+            getRecommendedSize(item, {
+              superior: m.tallaHabitual,
+              inferior: m.cintura <= 76 ? '28' : m.cintura <= 82 ? '30' : m.cintura <= 88 ? '32' : '34',
+              calzado: '38',
+            })
+          wearGarment(item, t, pendingDeepLinkGarment.color || item.color || 'default')
+          setPendingDeepLinkGarment(null)
+        }
       }
+    },
+    [pendingActionAfterWizard, pendingDeepLinkGarment, wearGarment, showToast],
+  )
+
+  /* Acciones de la tarjeta «Mis medidas» */
+  const handleClearMeasurements = useCallback(() => {
+    clearBodyMeasurements()
+    setBodyMeasurements(null)
+    showToast('Medidas corporales borradas exitosamente')
+  }, [showToast])
+
+  const handleExportData = useCallback(() => {
+    exportBodyMeasurementsJson()
+    showToast('Datos corporales exportados')
+  }, [showToast])
+
+  const handleOpenWizardOrAuth = useCallback(() => {
+    if (!user) {
+      setShowAuthModal(true)
+      return
     }
-  }, [pendingDeepLinkGarment, wearGarment])
+    setShowBodyWizard(true)
+  }, [user])
+
+  /* Intercepción: abrir asistente antes de escoger prendas si no hay medidas */
+  const handlePickGarment = useCallback(() => {
+    if (!hasSavedBodyMeasurements()) {
+      if (!user) {
+        setPendingActionAfterWizard('catalog')
+        setShowAuthModal(true)
+        return
+      }
+      setPendingActionAfterWizard('catalog')
+      setShowBodyWizard(true)
+      return
+    }
+    setDrawerTab('catalogo')
+    setIsDrawerOpen(true)
+  }, [user])
+
+  const handlePickPlaylist = useCallback(() => {
+    if (!hasSavedBodyMeasurements()) {
+      if (!user) {
+        setPendingActionAfterWizard('playlist')
+        setShowAuthModal(true)
+        return
+      }
+      setPendingActionAfterWizard('playlist')
+      setShowBodyWizard(true)
+      return
+    }
+    setDrawerTab('playlists')
+    setIsDrawerOpen(true)
+  }, [user])
+
+  const handleAddSlot = useCallback(
+    (slot: LookSlot) => {
+      if (!hasSavedBodyMeasurements()) {
+        if (!user) {
+          setPendingActionAfterWizard({ slot })
+          setShowAuthModal(true)
+          return
+        }
+        setPendingActionAfterWizard({ slot })
+        setShowBodyWizard(true)
+        return
+      }
+      setSelectedSlotFilter(slot)
+      setDrawerTab('catalogo')
+      setIsDrawerOpen(true)
+    },
+    [user],
+  )
 
   /* Tecla Escape para cerrar drawer o modal */
   useEffect(() => {
@@ -453,6 +575,10 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     }))
     .filter((l) => l.zIndex >= 0 && LAYER_PATHS[l.layer])
     .sort((a, b) => a.zIndex - b.zIndex)
+
+  /* Deformación y adaptación anatómica del maniquí */
+  const deformation = useMemo(() => computeBodyDeformation(bodyMeasurements), [bodyMeasurements])
+  const formatHeight = (cm: number) => `${(cm / 100).toFixed(2).replace('.', ',')} m`
 
   /* Catálogo filtrado dentro del drawer */
   const filteredCatalog = useMemo(() => {
@@ -595,6 +721,75 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             PANEL IZQUIERDO: «MI LOOK»
             ========================================================= */}
         <aside className="cz-left-panel" aria-label="Mi look actual">
+          {/* ═══════════════════════════════════════════════════════════
+              TARJETA «MIS MEDIDAS» (SIEMPRE VISIBLE ARRIBA DE «MI LOOK»)
+              ═══════════════════════════════════════════════════════════ */}
+          <div className="cz-body-card" role="region" aria-label="Mis medidas corporales">
+            {bodyMeasurements ? (
+              <div className="cz-body-card-content cz-body-card-filled">
+                <div className="cz-body-card-top">
+                  <div className="cz-body-card-badge">
+                    <span className="cz-body-icon" aria-hidden="true">📏</span>
+                    <span className="cz-body-title">Mis medidas</span>
+                    {bodyMeasurements.esAproximado && (
+                      <span className="cz-body-approx-tag" title="Medidas estimadas automáticamente">Aprox.</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="cz-body-btn-edit"
+                    onClick={() => setShowBodyWizard(true)}
+                    aria-label="Editar medidas"
+                  >
+                    Editar medidas
+                  </button>
+                </div>
+
+                <p className="cz-body-summary-text" data-testid="body-measurements-summary">
+                  {formatHeight(bodyMeasurements.estatura)} · Pecho {bodyMeasurements.pecho} · Cintura {bodyMeasurements.cintura} · Cadera {bodyMeasurements.cadera} · Talla {bodyMeasurements.tallaHabitual}
+                </p>
+
+                <div className="cz-body-card-actions">
+                  <button
+                    type="button"
+                    className="cz-body-subaction-btn"
+                    onClick={handleExportData}
+                    title="Descargar mis datos corporales en JSON (Ley 1581)"
+                  >
+                    📥 Descargar mis datos
+                  </button>
+                  <button
+                    type="button"
+                    className="cz-body-subaction-btn cz-body-btn-delete"
+                    onClick={handleClearMeasurements}
+                    title="Borrar mis medidas guardadas y reiniciar"
+                  >
+                    🗑️ Borrar mis medidas
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="cz-body-card-content cz-body-card-empty">
+                <div className="cz-body-empty-info">
+                  <span className="cz-body-empty-icon" aria-hidden="true">🧍</span>
+                  <div>
+                    <strong className="cz-body-empty-title">Completa tus medidas para probar ropa realista</strong>
+                    <p className="cz-body-empty-desc">
+                      Personaliza el maniquí a tu estatura y proporciones reales.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="cz-btn-add-measurements"
+                  onClick={handleOpenWizardOrAuth}
+                >
+                  Agregar mis medidas
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="cz-look-header">
             <div>
               <span className="cz-look-subtitle">Tu combinación actual</span>
@@ -626,10 +821,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
           <div className="cz-primary-buttons-stack">
             <button
               className="cz-btn-primary-purple"
-              onClick={() => {
-                setDrawerTab('catalogo')
-                setIsDrawerOpen(true)
-              }}
+              onClick={handlePickGarment}
             >
               <span>✨</span>
               <span>Escoger prenda para probar</span>
@@ -637,10 +829,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
             <button
               className="cz-btn-secondary-glass"
-              onClick={() => {
-                setDrawerTab('playlists')
-                setIsDrawerOpen(true)
-              }}
+              onClick={handlePickPlaylist}
             >
               <span>📑</span>
               <span>Escoger una playlist</span>
@@ -714,11 +903,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                       <span className="cz-empty-slot-text">Sin prenda en espacio {SLOT_LABELS[slot].toLowerCase()}</span>
                       <button
                         className="cz-empty-slot-add-btn"
-                        onClick={() => {
-                          setSelectedSlotFilter(slot)
-                          setDrawerTab('catalogo')
-                          setIsDrawerOpen(true)
-                        }}
+                        onClick={() => handleAddSlot(slot)}
                       >
                         + Agregar {SLOT_LABELS[slot].toLowerCase()}
                       </button>
@@ -759,19 +944,46 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               cursor: isRotating.current ? 'grabbing' : 'grab',
             }}
           >
+            {/* Regla métrica de altura vertical */}
+            <div className="cz-metric-ruler" aria-hidden="true">
+              <div className="cz-ruler-mark" style={{ bottom: '90%' }}>
+                <span>2,10 m</span>
+                <div className="cz-ruler-line" />
+              </div>
+              <div className="cz-ruler-mark" style={{ bottom: '78%' }}>
+                <span>1,90 m</span>
+                <div className="cz-ruler-line" />
+              </div>
+              <div className="cz-ruler-mark" style={{ bottom: '66%' }}>
+                <span>1,70 m</span>
+                <div className="cz-ruler-line" />
+              </div>
+              <div className="cz-ruler-mark" style={{ bottom: '54%' }}>
+                <span>1,50 m</span>
+                <div className="cz-ruler-line" />
+              </div>
+              <div className="cz-ruler-mark" style={{ bottom: '46%' }}>
+                <span>1,40 m</span>
+                <div className="cz-ruler-line" />
+              </div>
+            </div>
+
             {sourceMode === 'mannequin' ? (
               <div
                 className="cz-mannequin-3d-wrapper"
+                data-testid="mannequin-wrapper"
                 style={{
-                  transform: `rotateY(${rotationAngle}deg)`,
-                  transition: isRotating.current ? 'none' : 'transform 0.25s ease-out',
+                  transform: `rotateY(${rotationAngle}deg) scaleY(${deformation.heightScale}) scaleX(${deformation.chestScale})`,
+                  transformOrigin: 'bottom center',
+                  transition: isRotating.current ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               >
-                {/* Maniquí base */}
+                {/* Maniquí base adaptable */}
                 <img
-                  src="/prototipo/assets/img/general/maniqui.png"
+                  src={deformation.silhouetteSrc}
                   alt="Maniquí anatómico base"
                   className="cz-mannequin-base"
+                  data-testid="mannequin-base-img"
                   draggable={false}
                 />
 
@@ -1299,15 +1511,13 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
         </div>
       )}
 
-      {/* Modal de Asistente de medidas */}
-      {showMeasurementModal && (
-        <MeasurementAssistantModal
-          isOpen={showMeasurementModal}
-          onClose={() => setShowMeasurementModal(false)}
-          onComplete={handleMeasurementComplete}
-          pendingGarmentName={pendingDeepLinkGarment ? 'la prenda seleccionada' : undefined}
-        />
-      )}
+      {/* Modal Asistente de Medidas Anatómicas (4 pasos) */}
+      <BodyMeasurementsWizardModal
+        isOpen={showBodyWizard}
+        onClose={() => setShowBodyWizard(false)}
+        onSave={handleBodyMeasurementsSaved}
+        initialMeasurements={bodyMeasurements}
+      />
 
       {/* Modal de autenticación */}
       {showAuthModal && (
