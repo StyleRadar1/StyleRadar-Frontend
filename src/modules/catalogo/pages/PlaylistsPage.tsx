@@ -10,7 +10,7 @@ import { AuthContext } from '@/modules/identidad/states/authContext'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { usePlaylists } from '../hooks/usePlaylists'
 import { ITEMS } from '../mocks/items'
-import { MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistVisibility } from '../types/playlist.dto'
+import { ESTILOS_PLAYLIST, MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistEstilo, type PlaylistVisibility } from '../types/playlist.dto'
 import './PlaylistsPage.css'
 
 export default function PlaylistsPage() {
@@ -28,6 +28,7 @@ export default function PlaylistsPage() {
     addItem,
     removeItem,
     like,
+    save,
   } = usePlaylists()
 
   // Estado de selección local o por URL
@@ -48,7 +49,12 @@ export default function PlaylistsPage() {
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [visibilidad, setVisibilidad] = useState<PlaylistVisibility>('PRIVADA')
+  const [estilo, setEstilo] = useState<PlaylistEstilo>('CASUAL')
+  const [prendasIniciales, setPrendasIniciales] = useState<string[]>(() =>
+    ITEMS[0]?.id ? [ITEMS[0].id] : []
+  )
   const [errorCrear, setErrorCrear] = useState<string | null>(null)
+  const [errorPrendasIniciales, setErrorPrendasIniciales] = useState<string | null>(null)
   /** 422 al agregar: la playlist llegó al límite de 15 prendas. */
   const [limiteAlcanzado, setLimiteAlcanzado] = useState(false)
   const [prendaParaAgregar, setPrendaParaAgregar] = useState<string>('')
@@ -92,7 +98,8 @@ export default function PlaylistsPage() {
     return playlists.filter(
       (p) =>
         !p.esGuardada &&
-        (p.creador?.email === usuarioEmail ||
+        (p.usuarioId === usuarioActual.id ||
+          p.creador?.email === usuarioEmail ||
           p.creador?.id === usuarioActual.id ||
           p.creador?.nombre.toLowerCase().includes('valentina'))
     )
@@ -104,10 +111,12 @@ export default function PlaylistsPage() {
       (p) =>
         p.esGuardada ||
         userSaved[p.id] ||
-        (p.creador?.email !== usuarioEmail &&
+        (p.usuarioId !== usuarioActual.id &&
+          p.creador?.id !== usuarioActual.id &&
+          p.creador?.email !== usuarioEmail &&
           !p.creador?.nombre.toLowerCase().includes('valentina'))
     )
-  }, [playlists, userSaved, usuarioEmail])
+  }, [playlists, userSaved, usuarioEmail, usuarioActual.id])
 
   // Lista activa para el carrusel 3D según la pestaña seleccionada
   const carouselPlaylists = useMemo(() => {
@@ -222,6 +231,7 @@ export default function PlaylistsPage() {
   const esMia = useMemo(() => {
     if (!selectedPlaylist) return false
     return (
+      selectedPlaylist.usuarioId === usuarioActual.id ||
       selectedPlaylist.creador?.email === usuarioEmail ||
       selectedPlaylist.creador?.id === usuarioActual.id ||
       selectedPlaylist.creador?.nombre.toLowerCase().includes('valentina')
@@ -246,20 +256,27 @@ export default function PlaylistsPage() {
       document.getElementById('pl-nombre')?.focus()
       return
     }
+    if (prendasIniciales.length < 1) {
+      setErrorPrendasIniciales('Selecciona al menos una prenda inicial.')
+      return
+    }
     setErrorCrear(null)
+    setErrorPrendasIniciales(null)
     try {
       const nueva = await createPlaylist({
         nombre: nombre.trim(),
         descripcion: descripcion.trim(),
         visibilidad,
-        portadaUrl: '/img/productos/sueter-de-canale-crudo.jpg',
-        prendaIds: [],
+        estilo,
+        prendaIds: prendasIniciales,
       })
       setMostrarCrear(false)
       setNombre('')
       setDescripcion('')
       setVisibilidad('PRIVADA')
-      showToast('Playlist creada con éxito. Ahora puedes agregar hasta 15 prendas.')
+      setEstilo('CASUAL')
+      setPrendasIniciales(ITEMS[0]?.id ? [ITEMS[0].id] : [])
+      showToast('Playlist creada con éxito. Ahora puedes administrar hasta 15 prendas.')
       handleSeleccionarPlaylist(nueva)
     } catch (er: unknown) {
       const r = errorDeCrear(er)
@@ -342,13 +359,18 @@ export default function PlaylistsPage() {
     }
   }
 
-  const handleGuardar = () => {
+  const handleGuardar = async () => {
     if (!selectedPlaylist) return
-    const isSaved = userSaved[selectedPlaylist.id]
-    setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: !isSaved }))
-    selectedPlaylist.esGuardada = !isSaved
-    selectedPlaylist.guardados += !isSaved ? 1 : -1
-    showToast(!isSaved ? 'Guardada en Mis playlists.' : 'Quitada de tu perfil.')
+    const nextSaved = !(selectedPlaylist.esGuardada ?? userSaved[selectedPlaylist.id])
+    setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: nextSaved }))
+    try {
+      const res = await save(selectedPlaylist.id)
+      setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: res.esGuardada }))
+      showToast(res.esGuardada ? 'Guardada en Mis playlists.' : 'Quitada de tu perfil.')
+    } catch (er: unknown) {
+      setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: !nextSaved }))
+      setErrorAccion(errorDeCrear(er).general ?? 'No pudimos actualizar tu playlist guardada.')
+    }
   }
 
   const handleMezclar = () => {
@@ -1394,6 +1416,27 @@ export default function PlaylistsPage() {
               </div>
 
               <div>
+                <label
+                  htmlFor="pl-estilo"
+                  className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1"
+                >
+                  Estilo
+                </label>
+                <select
+                  id="pl-estilo"
+                  value={estilo}
+                  onChange={(e) => setEstilo(e.target.value as PlaylistEstilo)}
+                  className="w-full rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-xs text-white outline-none focus:border-violeta"
+                >
+                  {ESTILOS_PLAYLIST.map((est) => (
+                    <option key={est} value={est}>
+                      {est.charAt(0) + est.slice(1).toLowerCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-2">
                   Visibilidad
                 </label>
@@ -1419,9 +1462,41 @@ export default function PlaylistsPage() {
                 </div>
               </div>
 
-              <p className="text-[11px] text-white/50">
-                Puedes agregar hasta {MAX_PLAYLIST_ITEMS} prendas (RNF-12).
-              </p>
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
+                  Prendas iniciales ({prendasIniciales.length}/{MAX_PLAYLIST_ITEMS})
+                </span>
+                <div className="max-h-32 space-y-1.5 overflow-y-auto rounded-xl border border-white/15 bg-black/40 p-2.5">
+                  {ITEMS.slice(0, 8).map((item) => {
+                    const checked = prendasIniciales.includes(item.id)
+                    return (
+                      <label key={item.id} className="flex cursor-pointer items-center gap-2 text-xs text-white/85">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setPrendasIniciales((prev) => {
+                              if (prev.includes(item.id)) return prev.filter((id) => id !== item.id)
+                              if (prev.length >= MAX_PLAYLIST_ITEMS) return prev
+                              return [...prev, item.id]
+                            })
+                            setErrorPrendasIniciales(null)
+                          }}
+                          className="rounded border-white/30 bg-black/60 text-violeta"
+                        />
+                        <span className="truncate">{item.nombre}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+                {errorPrendasIniciales ? (
+                  <p className="mt-1 text-[11px] text-[var(--sr-bad)]">{errorPrendasIniciales}</p>
+                ) : (
+                  <p className="mt-1 text-[11px] text-white/50">
+                    Debes seleccionar entre 1 y {MAX_PLAYLIST_ITEMS} prendas (RNF-12).
+                  </p>
+                )}
+              </div>
 
               <div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
                 <button
