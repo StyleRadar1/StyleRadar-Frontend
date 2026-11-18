@@ -133,6 +133,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/mensajes', element: only(ANY, <Messages />) },
       // Tienda (rutas de gestión y publicación protegidas por RequireStoreActiveSub; suscripción siempre accesible)
       { path: '/mi-tienda', element: onlyStoreActive(<MyStore />) },
+      { path: '/mi-tienda/inventario', element: onlyStoreActive(<Inventory />) },
       { path: '/tienda/inventario', element: onlyStoreActive(<Inventory />) },
       { path: '/tienda/informacion', element: onlyStoreActive(<StoreInfo />) },
       { path: '/tienda/estadisticas', element: onlyStoreActive(<StoreStats />) },

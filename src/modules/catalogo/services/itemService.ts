@@ -141,6 +141,14 @@ const matches = (it: ItemResponseDto, f: ItemFiltersDto) => {
   if (f.talla && f.talla !== 'Todas') {
     const wanted = f.talla.toLowerCase()
     if (!it.tallas.some((t) => t.toLowerCase() === wanted)) return false
+    if (f.tipoTalla) {
+      const tipoItem = it.tipo.toLowerCase()
+      if (f.tipoTalla === 'PANTALON' && tipoItem !== 'pantalón' && tipoItem !== 'pantalon') return false
+      if (f.tipoTalla === 'CALZADO' && tipoItem !== 'calzado') return false
+      if (f.tipoTalla === 'ROPA' && (tipoItem === 'calzado' || tipoItem === 'pantalón' || tipoItem === 'pantalon')) {
+        return false
+      }
+    }
   }
   if (f.precioMin && it.precio < f.precioMin) return false
   if (f.precioMax && it.precio > f.precioMax) return false

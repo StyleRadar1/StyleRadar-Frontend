@@ -165,6 +165,10 @@ export default function CatalogPage() {
   // Filtros del catálogo
   const [filtroTipo, setFiltroTipo] = useState<string>(params.get('tipo') ?? 'Todos')
   const [filtroTalla, setFiltroTalla] = useState<string>(params.get('talla') ?? 'Todas')
+  const [filtroTipoTalla, setFiltroTipoTalla] = useState<TipoTalla | null>(() => {
+    const t = params.get('talla')
+    return t ? (GRUPOS_TALLAS.find((g) => g.tallas.includes(t))?.id ?? null) : null
+  })
   const [filtroPrecio, setFiltroPrecio] = useState<number>(0)
   const [filtroOrigen, setFiltroOrigen] = useState<string>(params.get('origen') ?? 'Todos')
   const [filtroMarca, setFiltroMarca] = useState<string>(params.get('marca') ?? 'Todas')
@@ -286,6 +290,7 @@ export default function CatalogPage() {
       texto: texto.trim() || undefined,
       tipo: filtroTipo !== 'Todos' ? filtroTipo : undefined,
       talla: filtroTalla !== 'Todas' ? filtroTalla : undefined,
+      tipoTalla: filtroTalla !== 'Todas' ? (filtroTipoTalla ?? undefined) : undefined,
       precioMin: selectedPreset?.min,
       precioMax: selectedPreset?.max,
       origen: filtroOrigen !== 'Todos' ? filtroOrigen : undefined,
@@ -296,7 +301,7 @@ export default function CatalogPage() {
       lng: orden === 'DISTANCIA' ? coords?.lng : undefined,
       orden,
     }
-  }, [texto, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
+  }, [texto, filtroTipo, filtroTalla, filtroTipoTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
 
   const { items, loading, error, status } = useItems(activeFilters)
   const [storeSubTick, setStoreSubTick] = useState(0)
@@ -477,6 +482,7 @@ export default function CatalogPage() {
   const handleResetFiltros = () => {
     setFiltroTipo('Todos')
     setFiltroTalla('Todas')
+    setFiltroTipoTalla(null)
     setFiltroPrecio(0)
     setFiltroOrigen('Todos')
     setFiltroMarca('Todas')
@@ -538,7 +544,7 @@ export default function CatalogPage() {
               <button
                 type="button"
                 aria-pressed={filtroTalla === 'Todas'}
-                onClick={() => setFiltroTalla('Todas')}
+                onClick={() => { setFiltroTalla('Todas'); setFiltroTipoTalla(null) }}
                 className={`sr-filter-chip ${filtroTalla === 'Todas' ? 'sr-filter-chip--selected' : ''}`}
               >
                 <span>Todas</span>
@@ -551,13 +557,25 @@ export default function CatalogPage() {
                 </p>
                 <div className="sr-filter-chips-grid">
                   {grupo.tallas.map((sz) => {
-                    const isSelected = filtroTalla === sz
+                    const isSelected =
+                      filtroTalla === sz &&
+                      (filtroTipoTalla
+                        ? filtroTipoTalla === grupo.id
+                        : GRUPOS_TALLAS.find((g) => g.tallas.includes(sz))?.id === grupo.id)
                     return (
                       <button
-                        key={sz}
+                        key={`${grupo.id}-${sz}`}
                         type="button"
                         aria-pressed={isSelected}
-                        onClick={() => setFiltroTalla(isSelected ? 'Todas' : sz)}
+                        onClick={() => {
+                          if (isSelected) {
+                            setFiltroTalla('Todas')
+                            setFiltroTipoTalla(null)
+                          } else {
+                            setFiltroTalla(sz)
+                            setFiltroTipoTalla(grupo.id)
+                          }
+                        }}
                         className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                       >
                         <span>{sz}</span>
@@ -1165,8 +1183,8 @@ export default function CatalogPage() {
             )}
             {filtroTalla !== 'Todas' && (
               <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
-                Talla: {filtroTalla}
-                <button type="button" onClick={() => setFiltroTalla('Todas')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de talla">
+                Talla: {filtroTalla}{filtroTipoTalla ? ` (${GRUPOS_TALLAS.find((g) => g.id === filtroTipoTalla)?.label ?? ''})` : ''}
+                <button type="button" onClick={() => { setFiltroTalla('Todas'); setFiltroTipoTalla(null) }} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de talla">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />

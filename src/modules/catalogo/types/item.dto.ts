@@ -121,6 +121,7 @@ export interface ItemFiltersDto {
   tipo?: string
   color?: string
   talla?: string
+  tipoTalla?: TipoTalla
   precioMin?: number
   precioMax?: number
   origen?: string

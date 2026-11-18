@@ -953,7 +953,7 @@ export default function InventoryPage() {
                       )}
 
                       {/* Desglose y edición rápida de existencias por talla */}
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 mb-3 flex flex-wrap gap-1.5">
                         {Object.entries(item.stockPorTalla).map(([talla, cantidad]) => (
                           <div
                             key={talla}
@@ -1013,43 +1013,60 @@ export default function InventoryPage() {
                       <FieldError id={`stock-err-${item.id}`} message={stockErrors[item.id]} />
 
                       <div className="inv-card__foot">
-                        {(item.estado === 'DISPONIBLE' || item.estado === 'NUEVA_PRENDA') && (
-                          <span className="inv-status inv-status--ok">
-                            <i className="inv-status__dot" /> {item.estado === 'NUEVA_PRENDA' ? 'Nueva prenda' : 'Disponible'}
-                          </span>
-                        )}
-                        {item.estado === 'ULTIMAS_UNIDADES' && (
-                          <span className="inv-status inv-status--low">
-                            <i className="inv-status__dot" /> Últimas unidades
-                          </span>
-                        )}
-                        {item.estado === 'AGOTADA' && (
-                          <span className="inv-status inv-status--out">
-                            <i className="inv-status__dot" /> Agotada
-                          </span>
-                        )}
-                        {item.estado === 'SUSPENDIDO' && (
-                          <span className="inv-status inv-status--out">
-                            <i className="inv-status__dot" /> Suspendida
-                          </span>
-                        )}
-                        {item.estado === 'RETIRADO' && (
-                          <span className="inv-status inv-status--ret">
-                            <i className="inv-status__dot" /> Retirada
-                          </span>
-                        )}
+                        <div className="inv-card__foot-top">
+                          {(item.estado === 'DISPONIBLE' || item.estado === 'NUEVA_PRENDA') && (
+                            <span className="inv-status inv-status--ok">
+                              <i className="inv-status__dot" /> {item.estado === 'NUEVA_PRENDA' ? 'Nueva prenda' : 'Disponible'}
+                            </span>
+                          )}
+                          {item.estado === 'ULTIMAS_UNIDADES' && (
+                            <span className="inv-status inv-status--low">
+                              <i className="inv-status__dot" /> Últimas unidades
+                            </span>
+                          )}
+                          {item.estado === 'AGOTADA' && (
+                            <span className="inv-status inv-status--out">
+                              <i className="inv-status__dot" /> Agotada
+                            </span>
+                          )}
+                          {item.estado === 'SUSPENDIDO' && (
+                            <span className="inv-status inv-status--out">
+                              <i className="inv-status__dot" /> Suspendida
+                            </span>
+                          )}
+                          {item.estado === 'RETIRADO' && (
+                            <span className="inv-status inv-status--ret">
+                              <i className="inv-status__dot" /> Retirada
+                            </span>
+                          )}
+
+                          <div className="inv-card__foot-links">
+                            <button
+                              type="button"
+                              className="text-xs font-semibold text-violeta-claro hover:underline disabled:opacity-40"
+                              aria-label={`Editar prenda ${item.nombre}`}
+                              title="Editar prenda"
+                              disabled={isSuspended || item.estado === 'RETIRADO'}
+                              onClick={() => openEditarPrenda(item)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isSuspended}
+                              onClick={() => setItemParaToggle(item)}
+                              className={`text-xs font-semibold transition disabled:opacity-40 ${
+                                item.estado === 'RETIRADO'
+                                  ? 'text-emerald-500 hover:underline'
+                                  : 'text-amber-500 hover:underline'
+                              }`}
+                            >
+                              {item.estado === 'RETIRADO' ? 'Reactivar' : 'Retirar'}
+                            </button>
+                          </div>
+                        </div>
 
                         <div className="inv-card__actions">
-                          <button
-                            type="button"
-                            className="text-xs font-semibold text-violeta-claro hover:underline disabled:opacity-40"
-                            aria-label={`Editar prenda ${item.nombre}`}
-                            title="Editar prenda"
-                            disabled={isSuspended || item.estado === 'RETIRADO'}
-                            onClick={() => openEditarPrenda(item)}
-                          >
-                            Editar
-                          </button>
                           <button
                             type="button"
                             className="inv-icon-btn"
@@ -1088,18 +1105,6 @@ export default function InventoryPage() {
                             <svg viewBox="0 0 20 20">
                               <path d="M3 5h14M3 10h14M3 15h14" />
                             </svg>
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isSuspended}
-                            onClick={() => setItemParaToggle(item)}
-                            className={`text-xs font-semibold transition disabled:opacity-40 ${
-                              item.estado === 'RETIRADO'
-                                ? 'text-emerald-500 hover:underline'
-                                : 'text-amber-500 hover:underline'
-                            }`}
-                          >
-                            {item.estado === 'RETIRADO' ? 'Reactivar' : 'Retirar'}
                           </button>
                           <button
                             type="button"
