@@ -4,6 +4,7 @@ import { TIENDAS } from '@/modules/mapa/mocks/mapData'
 import { seedStores, seedPlaylists } from '@/modules/administracion/mocks/admin'
 import { ITEMS } from '../mocks/items'
 import { getStoreInventoryItemsSync } from './inventoryService'
+import { normalizeBackendItem } from './itemService'
 import type { ItemResponseDto } from '../types/item.dto'
 import type { MapPinDto } from '@/modules/mapa/types/map.dto'
 
@@ -53,6 +54,7 @@ export interface StorePublicDto {
   colecciones: StoreCollectionItem[]
   bannerNotice: string
   prendas: ItemResponseDto[]
+  novedades?: ItemResponseDto[]
   categorias: StoreCategoryItem[]
   coleccionDestacada: {
     titulo: string
@@ -79,6 +81,13 @@ export function getStoreIdByName(storeName: string): string {
   if (norm.includes('nómada') || norm.includes('nomada')) return 'nomada'
   if (norm.includes('kick')) return 'kicks'
   if (norm.includes('lab') || norm.includes('local lab')) return 'lab'
+  if (norm.includes('segunda mano')) return 'segunda-mano'
+  if (norm.includes('ropero')) return 'ropero'
+  if (norm.includes('norte')) return 'norte'
+  if (norm.includes('tweed')) return 'tweed'
+  if (norm.includes('antonia')) return 'antonia'
+  if (norm.includes('85')) return 'calle-85'
+  if (norm.includes('nora')) return 'nora'
   return norm.replace(/\s+/g, '-')
 }
 
@@ -174,6 +183,7 @@ export const storePublicService = {
     const existingNames = new Set(basePrendas.map((p) => p.nombre.toLowerCase()))
     const newFromInventory = inventoryPrendas.filter((p) => !existingNames.has(p.nombre.toLowerCase()))
     const prendas = [...basePrendas, ...newFromInventory]
+    const novedades = prendas.slice(0, 3)
 
     // Generar categorías de prendas reales de la tienda
     const catMap = new Map<string, { tipo: string; imagen: string; cantidad: number }>()
@@ -245,6 +255,7 @@ export const storePublicService = {
         ? `Abierto hoy · Horario ${mapPin.hours} · ${mapPin.dir}`
         : `Tienda local verificada en ${mapPin?.barrio || 'Bogotá'}`,
       prendas,
+      novedades,
       categorias,
       coleccionDestacada: {
         titulo: featuredCollection ? featuredCollection.title : `Colección ${mapPin?.cat || 'Urbana'} 2026`,
@@ -278,6 +289,43 @@ export const storePublicService = {
     }
   },
 
+  /** SR-RF-20: Novedades semanales de un almacén (máximo 3 prendas de los últimos 7 días). */
+  async getNovedades(id: string): Promise<ItemResponseDto[]> {
+    const cleanId = (id || '').trim().toLowerCase()
+    if (env.useMocks) {
+      return this.getById(cleanId)?.novedades ?? []
+    }
+    const r = await apiClient.get<Record<string, unknown>[]>(`/api/v1/almacenes/${encodeURIComponent(cleanId)}/novedades`)
+    return (Array.isArray(r.data) ? r.data : []).map(normalizeBackendItem).slice(0, 3)
+  },
+
+  /** SR-RF-22: Catálogo del almacén (GET /almacenes/{id}/catalogo) y tallas en GET /inventario/prenda/{prendaId}. */
+  async getCatalogo(id: string): Promise<ItemResponseDto[]> {
+    const cleanId = (id || '').trim().toLowerCase()
+    if (env.useMocks) {
+      return this.getById(cleanId)?.prendas ?? []
+    }
+    const r = await apiClient.get<Record<string, unknown>[]>(`/api/v1/almacenes/${encodeURIComponent(cleanId)}/catalogo`)
+    const items = (Array.isArray(r.data) ? r.data : []).map(normalizeBackendItem)
+    const withSizes = await Promise.all(
+      items.map(async (item) => {
+        if (item.tallas.length > 0) return item
+        try {
+          const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(item.id)}`).then((res) => res.data)
+          const list = Array.isArray(inv) ? inv : Array.isArray(inv?.tallas) ? inv.tallas : []
+          const tallas = list
+            .filter((t: any) => typeof t === 'string' || (t?.cantidad ?? t?.unidades ?? 1) > 0)
+            .map((t: any) => (typeof t === 'string' ? t : String(t?.talla ?? '')))
+            .filter(Boolean)
+          return { ...item, tallas }
+        } catch {
+          return item
+        }
+      })
+    )
+    return withSizes
+  },
+
   async getByIdAsync(id: string): Promise<StorePublicDto | null> {
     const syncData = this.getById(id)
     if (env.useMocks) {
@@ -285,34 +333,44 @@ export const storePublicService = {
     }
     const cleanId = (id || '').trim().toLowerCase()
     try {
-      const r = await apiClient.get<any>(`/api/v1/almacenes/${encodeURIComponent(cleanId)}`)
+      const [r, catalogoItems, novedadesItems] = await Promise.all([
+        apiClient.get<any>(`/api/v1/almacenes/${encodeURIComponent(cleanId)}`),
+        this.getCatalogo(cleanId).catch(() => syncData?.prendas ?? []),
+        this.getNovedades(cleanId).catch(() => []),
+      ])
       const d = r.data
-      if (!d) return syncData
+      if (!d && catalogoItems.length === 0) return syncData
+
+      const prendas = catalogoItems.length > 0 ? catalogoItems : (syncData?.prendas || [])
+      const novedades = novedadesItems.length > 0 ? novedadesItems.slice(0, 3) : prendas.slice(0, 3)
 
       return {
         id: cleanId,
-        nombre: d.nombre || syncData?.nombre || 'Tienda aliada',
-        categoria: d.categoria || syncData?.categoria || 'Moda local',
-        barrio: d.barrio || syncData?.barrio || 'Bogotá',
-        direccion: d.direccion || syncData?.direccion || 'Bogotá, Colombia',
-        distanciaKm: d.distanciaKm ? `${d.distanciaKm} km` : (syncData?.distanciaKm || '1,5 km'),
-        horario: d.horario || syncData?.horario || 'Lun a sáb · 10:00 a 20:00',
-        lngLat: [d.lng || d.longitud || syncData?.lngLat[0] || -74.0628, d.lat || d.latitud || syncData?.lngLat[1] || 4.6433],
-        telefono: d.telefono || syncData?.telefono || '+57 601 555 0123',
-        correo: d.correo || d.email || syncData?.correo || `${cleanId}@styleradar.co`,
-        nit: d.nit || syncData?.nit || '901.482.337-1',
-        representante: d.representante || syncData?.representante || 'Administrador de tienda',
-        aliadaDesde: d.aliadaDesde || syncData?.aliadaDesde || 'feb 2026',
-        verificacion: d.verificacion || d.estadoVerificacion || syncData?.verificacion || 'Verificada',
-        rating: d.rating ? String(d.rating) : (syncData?.rating || '4,8'),
-        reviews: d.reviews || syncData?.reviews || 150,
-        descripcion: d.descripcion || syncData?.descripcion || 'Tienda local de Bogotá aliada a StyleRadar.',
-        foto: d.foto || d.imagen || syncData?.foto || '/img/mapa/luna.jpg',
-        fotoEditorial: d.fotoEditorial || syncData?.fotoEditorial || (syncData?.foto || '/img/mapa/luna.jpg'),
-        fotosGaleria: (d.galeria && Array.isArray(d.galeria) && d.galeria.length > 0) ? d.galeria : (syncData?.fotosGaleria || []),
+        nombre: d?.nombre || syncData?.nombre || 'Tienda aliada',
+        categoria: d?.categoria || syncData?.categoria || 'Moda local',
+        barrio: d?.barrio || syncData?.barrio || 'Bogotá',
+        direccion: d?.direccion || syncData?.direccion || 'Bogotá, Colombia',
+        distanciaKm: typeof d?.distanciaKm === 'number'
+          ? `${d.distanciaKm.toFixed(2).replace('.', ',')} km`
+          : (d?.distanciaKm || syncData?.distanciaKm || '1,50 km'),
+        horario: d?.horario || syncData?.horario || 'Lun a sáb · 10:00 a 20:00',
+        lngLat: [d?.lng || d?.longitud || syncData?.lngLat[0] || -74.0628, d?.lat || d?.latitud || syncData?.lngLat[1] || 4.6433],
+        telefono: d?.telefono || syncData?.telefono || '+57 601 555 0123',
+        correo: d?.correo || d?.email || syncData?.correo || `${cleanId}@styleradar.co`,
+        nit: d?.nit || syncData?.nit || '901.482.337-1',
+        representante: d?.representante || syncData?.representante || 'Administrador de tienda',
+        aliadaDesde: d?.aliadaDesde || syncData?.aliadaDesde || 'feb 2026',
+        verificacion: d?.verificacion || d?.estadoVerificacion || syncData?.verificacion || 'Verificada',
+        rating: d?.rating ? String(d.rating) : (syncData?.rating || '4,8'),
+        reviews: d?.reviews || syncData?.reviews || 150,
+        descripcion: d?.descripcion || syncData?.descripcion || 'Tienda local de Bogotá aliada a StyleRadar.',
+        foto: d?.foto || d?.imagen || syncData?.foto || '/img/mapa/luna.jpg',
+        fotoEditorial: d?.fotoEditorial || syncData?.fotoEditorial || (syncData?.foto || '/img/mapa/luna.jpg'),
+        fotosGaleria: (d?.galeria && Array.isArray(d.galeria) && d.galeria.length > 0) ? d.galeria : (syncData?.fotosGaleria || []),
         colecciones: syncData?.colecciones || [],
-        bannerNotice: d.bannerNotice || syncData?.bannerNotice || '',
-        prendas: syncData?.prendas || [],
+        bannerNotice: d?.bannerNotice || syncData?.bannerNotice || '',
+        prendas,
+        novedades,
         categorias: syncData?.categorias || [],
         coleccionDestacada: syncData?.coleccionDestacada || {
           titulo: 'Colección destacada',
@@ -320,11 +378,11 @@ export const storePublicService = {
           descripcion: 'Prendas exclusivas disponibles en tienda.',
         },
         distintivos: syncData?.distintivos || [],
-        cifras: syncData?.cifras || {
-          prendasActivas: syncData?.prendas.length || 0,
-          categoriasCount: syncData?.categorias.length || 0,
-          playlists: 0,
-          aliadaDesde: 'feb 2026',
+        cifras: {
+          prendasActivas: prendas.length,
+          categoriasCount: syncData?.cifras?.categoriasCount ?? (syncData?.categorias.length || 0),
+          playlists: syncData?.cifras?.playlists ?? 0,
+          aliadaDesde: d?.aliadaDesde || syncData?.aliadaDesde || 'feb 2026',
         },
       }
     } catch {
