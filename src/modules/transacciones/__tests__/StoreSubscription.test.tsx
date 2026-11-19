@@ -37,7 +37,7 @@ describe('suscripción de la tienda (RF-67, RF-68)', () => {
   it('un pago rechazado avisa y no activa la suscripción', async () => {
     const user = userEvent.setup()
     vi.spyOn(storeSubscriptionService, 'pay').mockResolvedValue({
-      result: { orderId: 'MOCK_STORE_FAIL', status: 'rechazado', planName: 'Tienda aliada', amount: 89_000, method: 'PSE' },
+      result: { orderId: 'MOCK_STORE_FAIL', status: 'rechazado', planName: 'Tienda aliada', amount: 89_000, method: 'Mercado Pago' },
     })
     render(<StoreSubscriptionPage />)
     await user.click(await screen.findByRole('button', { name: 'Pagar y activar suscripción' }))

@@ -75,7 +75,7 @@ const RADAR_CARDS: RadarCardItem[] = [
     id: 'card-gateway',
     planKey: 'all',
     title: 'Pasarela Consolidada',
-    subtitle: 'MERCADO PAGO · PSE · TARJETAS',
+    subtitle: 'MERCADO PAGO · PASARELA OFICIAL',
     holder: 'TESORERÍA STYLERADAR',
     last4: '1107',
     fullNumber: '4024  0071  9928  1107',
