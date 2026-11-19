@@ -202,6 +202,17 @@ export function setMockBuyerPayments(userId: string, payments: PaymentDto[]): vo
   } catch { /* sin almacenamiento */ }
 }
 
+function getCurrentUserRole(): string | null {
+  try {
+    const raw = localStorage.getItem('sr_user')
+    if (raw) {
+      const u = JSON.parse(raw) as { role?: string }
+      return u.role ?? null
+    }
+  } catch { /* noop */ }
+  return null
+}
+
 const me = () => {
   const u = mockSessionUser()
   if (!u) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
@@ -243,6 +254,10 @@ export const userPlanService = {
    *   con `renewalEnabled: false` (RN-01). Al vencer `periodEndsAt`, `evaluateVigencia` pasa a RADAR.
    */
   async change(plan: PlanUsuario): Promise<MiPlanDto> {
+    const role = getCurrentUserRole()
+    if (role && role !== 'COMPRADOR') {
+      throw new ApiError(403, 'Tu cuenta no puede cambiar a ese plan.')
+    }
     if (env.useMocks) {
       failIfScenario('conflicto')
       fallarSiDemoPlan()

@@ -45,26 +45,26 @@ describe('suscripción de la tienda (RF-67, RF-68)', () => {
     expect(screen.getByText('Periodo gratuito')).toBeInTheDocument()
   })
 
-  it('cancelar la renovación pide confirmación y deja la suscripción activa hasta el fin del periodo', async () => {
+  it('cancelar la suscripción pide confirmación y deja la suscripción activa hasta el fin del periodo', async () => {
     const user = userEvent.setup()
     await storeSubscriptionService.pay()
     render(<StoreSubscriptionPage />)
-    await user.click(await screen.findByRole('button', { name: 'Cancelar renovación' }))
-    const dialogo = screen.getByRole('dialog', { name: '¿Cancelar la renovación?' })
-    expect(dialogo).toHaveTextContent('no se devuelve el tiempo restante')
-    await user.click(within(dialogo).getByRole('button', { name: 'Sí, cancelar renovación' }))
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancelar renovación' })).not.toBeInTheDocument(), slow)
+    await user.click(await screen.findByRole('button', { name: 'Cancelar suscripción' }))
+    const dialogo = screen.getByRole('dialog', { name: '¿Cancelar suscripción?' })
+    expect(dialogo).toHaveTextContent('No se emitirán reembolsos proporcionales')
+    await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancelar suscripción' })).not.toBeInTheDocument(), slow)
     expect(screen.getByText('Activa')).toBeInTheDocument()
   })
 
-  it('"Mantener suscripción" cierra el diálogo sin cambiar nada', async () => {
+  it('"Conservar suscripción" cierra el diálogo sin cambiar nada', async () => {
     const user = userEvent.setup()
     await storeSubscriptionService.pay()
     render(<StoreSubscriptionPage />)
-    await user.click(await screen.findByRole('button', { name: 'Cancelar renovación' }))
-    await user.click(screen.getByRole('button', { name: 'Mantener suscripción' }))
+    await user.click(await screen.findByRole('button', { name: 'Cancelar suscripción' }))
+    await user.click(screen.getByRole('button', { name: 'Conservar suscripción' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Cancelar renovación' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar suscripción' })).toBeInTheDocument()
   })
 })
 

@@ -1,9 +1,9 @@
 import { useCallback, useContext, useState } from 'react'
 import { Button } from '@/modules/core/design-system'
-import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
+import { CancelSubscriptionButton } from '../components/CancelSubscriptionButton'
 import { PayerEmailForm } from '../components/PayerEmailForm'
 import { StoreSuspendedBanner } from '../components/StoreSuspendedBanner'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
@@ -45,10 +45,6 @@ export default function StoreSubscriptionPage() {
   const [paying, setPaying] = useState(false)
   const [outcome, setOutcome] = useState<CheckoutResultDto | null>(null)
   const [payError, setPayError] = useState<unknown>(null)
-  const [askCancel, setAskCancel] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
-  const [cancelError, setCancelError] = useState<unknown>(null)
-  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
 
   // RF-96: Estado para reintento de pago rechazado con PayerEmailForm
   const [retryPaymentTarget, setRetryPaymentTarget] = useState<PaymentDto | null>(null)
@@ -94,20 +90,6 @@ export default function StoreSubscriptionPage() {
       setPaying(false)
     }
   }, [retryPaymentTarget, reload])
-
-  const cancel = useCallback(async () => {
-    setCancelling(true)
-    setCancelError(null)
-    try {
-      await storeSubscriptionService.cancelRenewal()
-      reload()
-    } catch (e) {
-      setCancelError(e)
-    } finally {
-      setCancelling(false)
-      setAskCancel(false)
-    }
-  }, [reload])
 
   if (!data) {
     return (
@@ -218,9 +200,7 @@ export default function StoreSubscriptionPage() {
           </div>
         )}
 
-        {paymentNotice && <div role="status" className="store-subscription__notice"><strong>Actualización de medio de pago</strong><p>{paymentNotice}</p></div>}
         {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
-        {!!cancelError && <div className="store-subscription__error"><ErrorState error={cancelError} title="No se canceló la renovación" /></div>}
 
         <article className="store-subscription__plan">
           <span className="store-subscription__badge">● {STATUS_LABEL[sub.status].toUpperCase()}</span>
@@ -237,18 +217,19 @@ export default function StoreSubscriptionPage() {
             <span>Desde: <b>{startedAt}</b></span>
             <span>Método: <b>{lastPayment?.method ?? 'Sin método registrado'}</b></span>
           </div>
-          <div className="store-subscription__actions">
+          <div className="store-subscription__actions flex flex-wrap items-center gap-3">
             {sub.status !== 'ACTIVA' && (
               <Button onClick={() => { void pay() }} disabled={paying}>
                 {paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}
               </Button>
             )}
-            {sub.status === 'ACTIVA' && sub.renewalEnabled && (
-              <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>
-            )}
-            <Button variant="secundario" onClick={() => setPaymentNotice('La gestión directa de métodos (tarjeta / PSE) quedará habilitada con la pasarela del API Gateway.')}>
-              Cambiar método de pago
-            </Button>
+            <CancelSubscriptionButton
+              tipo="tienda"
+              status={sub.status}
+              renewalEnabled={sub.renewalEnabled}
+              fechaFin={nextCharge}
+              onUpdated={reload}
+            />
           </div>
           <p className="mt-3 text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]/50 pt-2">
             El plan y la actividad comercial de tu tienda se rigen por las{' '}
@@ -319,19 +300,6 @@ export default function StoreSubscriptionPage() {
           )}
         </section>
       </div>
-
-      <ConfirmDialog
-        open={askCancel}
-        title="¿Cancelar la renovación?"
-        confirmLabel="Sí, cancelar renovación"
-        cancelLabel="Mantener suscripción"
-        danger
-        busy={cancelling}
-        onConfirm={() => { void cancel() }}
-        onCancel={() => setAskCancel(false)}
-      >
-        Dejaremos de cobrarte automáticamente en Mercado Pago. Tu suscripción sigue activa hasta el {fecha(sub.periodEndsAt)} y no se devuelve el tiempo restante.
-      </ConfirmDialog>
     </section>
   )
 }

@@ -35,6 +35,8 @@ export default function StoreActivateSubscriptionPage() {
   const [conflictError, setConflictError] = useState(false)
   const [lastResult, setLastResult] = useState<CheckoutResultDto | null>(null)
   const [lastEmail, setLastEmail] = useState<string>(user?.email ?? '')
+  const [nit, setNit] = useState('')
+  const [nitError, setNitError] = useState<string | null>(null)
 
   const orderParam = params.get('orden')
   const estadoParam = params.get('estado')
@@ -42,6 +44,12 @@ export default function StoreActivateSubscriptionPage() {
 
   const handleContinueToPayment = useCallback(
     async (payerEmail: string) => {
+      const cleanNit = nit.trim()
+      if (!cleanNit || !/^\d{9}$/.test(cleanNit)) {
+        setNitError('Ingresa un NIT válido de 9 dígitos.')
+        return
+      }
+      setNitError(null)
       setPaying(true)
       setGatewayError(null)
       setConflictError(false)
@@ -53,7 +61,12 @@ export default function StoreActivateSubscriptionPage() {
             : orderParam === 'MOCK_STORE_FAIL' || estadoParam === 'rechazado'
               ? 'MOCK_STORE_FAIL'
               : 'MOCK_STORE_OK'
-        const res = await storeSubscriptionService.activateFromOnboarding(payerEmail, mockOrder)
+        const res = await storeSubscriptionService.activateFromOnboarding(
+          payerEmail,
+          mockOrder,
+          cleanNit,
+          user?.id ?? 'almacen-1',
+        )
         if (res.redirectTo) {
           window.location.assign(res.redirectTo)
           return
@@ -72,7 +85,7 @@ export default function StoreActivateSubscriptionPage() {
         setPaying(false)
       }
     },
-    [orderParam, estadoParam, reload],
+    [nit, orderParam, estadoParam, user?.id, reload],
   )
 
   if (loading && !data) {
@@ -258,10 +271,49 @@ export default function StoreActivateSubscriptionPage() {
             ))}
           </ul>
 
-          <div className="border-t border-[var(--sr-border,var(--color-border))] pt-5">
+          <div className="border-t border-[var(--sr-border,var(--color-border))] pt-5 space-y-4">
+            <div className="flex flex-col gap-1.5 text-left">
+              <label
+                htmlFor="store-nit-input"
+                className="text-xs font-semibold uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]"
+              >
+                NIT del almacén <span aria-hidden="true" className="text-[var(--color-accent)]">*</span>
+              </label>
+              <input
+                id="store-nit-input"
+                name="nit"
+                type="text"
+                maxLength={9}
+                value={nit}
+                disabled={paying}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 9)
+                  setNit(val)
+                  if (nitError && /^\d{9}$/.test(val)) setNitError(null)
+                }}
+                placeholder="Ej. 900123456 (9 dígitos)"
+                aria-required="true"
+                aria-invalid={!!nitError}
+                aria-describedby={nitError ? 'store-nit-error' : 'store-nit-hint'}
+                className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-[var(--sr-text-primary,var(--color-text))] bg-[var(--sr-surface,var(--color-surface))] placeholder:text-[var(--sr-text-muted,var(--color-text-muted))] outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                  nitError
+                    ? 'border-[var(--color-danger-border,#ef4444)]'
+                    : 'border-[var(--sr-border,var(--color-border))] focus:border-[var(--sr-accent,var(--color-accent))]'
+                }`}
+              />
+              <span id="store-nit-hint" className="text-xs text-[var(--sr-text-muted,var(--color-text-muted))]">
+                NIT del almacén obligatorio de 9 dígitos.
+              </span>
+              {nitError && (
+                <p id="store-nit-error" role="alert" className="text-xs font-semibold text-[var(--color-danger-text,#ff8a8a)]">
+                  {nitError}
+                </p>
+              )}
+            </div>
+
             <PayerEmailForm
               defaultEmail={lastEmail || user?.email || ''}
-              submitLabel={lastResult?.status === 'rechazado' ? 'Reintentar pago en Mercado Pago' : 'Continuar a Mercado Pago'}
+              submitLabel={lastResult?.status === 'rechazado' ? 'Reintentar pago' : 'Pagar con Mercado Pago'}
               busyLabel="Redirigiendo a Mercado Pago…"
               busy={paying}
               errorMessage={gatewayError}

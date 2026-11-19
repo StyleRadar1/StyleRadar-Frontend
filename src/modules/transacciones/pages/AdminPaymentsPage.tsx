@@ -1,13 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { Card, Badge, Button } from '@/modules/core/design-system'
+import { useCallback, useMemo, useState } from 'react'
+import { Card, Badge } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
-import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { Aviso, ErrorCampo } from '@/modules/core/components/errores'
+import { Aviso } from '@/modules/core/components/errores'
 import { errorKind } from '@/modules/core/api/errors'
-import { errorDeReembolso, TEXTOS_PAGOS } from '../utils/erroresPagos'
+import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
-import { paymentService, calcRevenue, getRefundableBalance } from '../services/paymentService'
+import { calcRevenue } from '../services/paymentService'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
 import '@/styles/verdelo-dashboard.css'
 
@@ -112,19 +111,10 @@ const FLOW_BARS = [
 export default function AdminPaymentsPage() {
   const [filters, setFilters] = useState<PaymentFiltersDto>({})
   const stableFilters = useMemo(() => filters, [filters])
-  const { data: payments, loading, error, reload, setData } = usePayments(stableFilters)
+  const { data: payments, loading, error, reload } = usePayments(stableFilters)
   const [selected, setSelected] = useState<PaymentDto | null>(null)
-  const [refundTarget, setRefundTarget] = useState<PaymentDto | null>(null)
-  const [refundAmount, setRefundAmount] = useState<string>('')
-  const [refundReason, setRefundReason] = useState('')
-  const [refundError, setRefundError] = useState<string | null>(null)
-  const [refunding, setRefunding] = useState(false)
-  const amountInputRef = useRef<HTMLInputElement>(null)
-  const reasonInputRef = useRef<HTMLTextAreaElement>(null)
-  /** Error debajo del campo motivo (400). */
-  const [motivoErr, setMotivoErr] = useState<string | null>(null)
-  /** Aviso de la página: 403 u otro error al reembolsar. */
-  const [avisoPagos, setAvisoPagos] = useState<{ permiso: boolean; texto?: string } | null>(null)
+  /** Aviso de la página: 403 u otro error de permisos. */
+  const [avisoPagos] = useState<{ permiso: boolean; texto?: string } | null>(null)
 
   // Estado de las tarjetas 3D apiladas estilo Verdelo
   const [activeCardIdx, setActiveCardIdx] = useState(0)
@@ -159,81 +149,6 @@ export default function AdminPaymentsPage() {
     setFilters((prev) => ({ ...prev, [key]: value || undefined }))
   }, [])
 
-  const openRefundModal = useCallback((payment: PaymentDto) => {
-    const balance = getRefundableBalance(payment)
-    setRefundTarget(payment)
-    setRefundAmount(String(balance))
-    setRefundReason('')
-    setRefundError(null)
-  }, [])
-
-  const handleCancelRefund = useCallback(() => {
-    setRefundTarget(null)
-    setRefundError(null)
-    setMotivoErr(null)
-  }, [])
-
-  const handleRefund = useCallback(async () => {
-    if (!refundTarget) return
-
-    // 400 · reembolso sin motivo: se valida antes de enviar y el mensaje va debajo del campo.
-    if (!refundReason.trim()) {
-      setMotivoErr(TEXTOS_PAGOS.motivo)
-      document.getElementById('refund-motivo')?.focus()
-      reasonInputRef.current?.focus()
-      return
-    }
-
-    const maxRefundable = getRefundableBalance(refundTarget)
-    const numAmount = Number(refundAmount)
-
-    if (!refundAmount.trim() || Number.isNaN(numAmount) || numAmount <= 0) {
-      setRefundError('El monto a reembolsar debe ser mayor que 0.')
-      amountInputRef.current?.focus()
-      return
-    }
-    if (numAmount > maxRefundable) {
-      setRefundError('El monto solicitado supera el saldo disponible para reembolsar.')
-      amountInputRef.current?.focus()
-      return
-    }
-
-    setRefunding(true)
-    setRefundError(null)
-    setMotivoErr(null)
-    setAvisoPagos(null)
-    try {
-      const updated = await paymentService.refund({
-        paymentId: refundTarget.id,
-        amount: numAmount,
-        reason: refundReason.trim(),
-      })
-      setData((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-      setSelected(updated)
-      setRefundTarget(null)
-      setRefundReason('')
-      setRefundAmount('')
-    } catch (e) {
-      const err = errorDeReembolso(e)
-      if (err.tipo === 'motivo') {
-        // El diálogo sigue abierto y el motivo queda como estaba escrito.
-        setMotivoErr(err.texto)
-        document.getElementById('refund-motivo')?.focus()
-        reasonInputRef.current?.focus()
-      } else {
-        setRefundTarget(null)
-        setSelected(null)
-        setAvisoPagos(err.tipo === 'permiso' ? { permiso: true } : { permiso: false, texto: err.texto })
-        setRefundError(
-          e instanceof Error && e.message
-            ? e.message
-            : 'No fue posible procesar el reembolso. Inténtalo nuevamente.',
-        )
-      }
-    } finally {
-      setRefunding(false)
-    }
-  }, [refundTarget, refundAmount, refundReason, setData])
 
   const cycleCard = (dir: 1 | -1) => {
     setFlippedCardId(null)
@@ -753,10 +668,7 @@ export default function AdminPaymentsPage() {
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <Badge tone={STATUS_TONES[selected.status]}>{STATUS_LABELS[selected.status]}</Badge>
-              {selected.status === 'aprobado' && (selected.refundedAmount ?? 0) > 0 && (selected.refundedAmount ?? 0) < selected.amount && (
-                <Badge tone="arena">Reembolso parcial</Badge>
-              )}
-            </div>
+              </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div><dt className="text-white/50">Usuario</dt><dd className="font-semibold">{selected.userName}</dd></div>
               <div><dt className="text-white/50">Correo</dt><dd>{selected.userEmail}</dd></div>
@@ -772,10 +684,6 @@ export default function AdminPaymentsPage() {
                       {formatCOP(selected.refundedAmount ?? selected.amount)} / {formatCOP(selected.amount)}
                     </dd>
                   </div>
-                  <div>
-                    <dt className="text-white/50">Saldo reembolsable</dt>
-                    <dd className="font-mono font-semibold">{formatCOP(getRefundableBalance(selected))}</dd>
-                  </div>
                 </>
               )}
               {selected.refundReason && (
@@ -785,111 +693,10 @@ export default function AdminPaymentsPage() {
                 </>
               )}
             </dl>
-            {selected.status === 'aprobado' && getRefundableBalance(selected) > 0 && (
-              <Button
-                variant="secundario"
-                className="mt-6 w-full border-[#c0392b] text-[#ff8a8a]"
-                onClick={() => { openRefundModal(selected); setMotivoErr(null) }}
-              >
-                {(selected.refundedAmount ?? 0) > 0 ? 'Reembolsar saldo restante' : 'Reembolsar'}
-              </Button>
-            )}
           </div>
         </div>
       )}
 
-      {/* Diálogo de reembolso (RF-98: total o parcial) */}
-      <ConfirmDialog
-        open={!!refundTarget}
-        title="¿Reembolsar este pago?"
-        confirmLabel="Confirmar reembolso"
-        danger
-        busy={refunding}
-        onConfirm={handleRefund}
-        onCancel={handleCancelRefund}
-      >
-        {refundTarget && (
-          <div className="space-y-3 text-left">
-            <p className="text-sm">
-              Pago <strong>{refundTarget.id}</strong> por <strong>{formatCOP(refundTarget.amount)}</strong> a {refundTarget.userName}.
-              {(refundTarget.refundedAmount ?? 0) > 0 && (
-                <span>
-                  {' '}Ya reembolsado: <strong>{formatCOP(refundTarget.refundedAmount ?? 0)}</strong>.
-                </span>
-              )}
-              {' '}Saldo reembolsable disponible: <strong>{formatCOP(getRefundableBalance(refundTarget))}</strong>.
-            </p>
-
-            <div>
-              <label htmlFor="refund-motivo" className="block text-sm font-semibold">
-                Motivo <span aria-hidden="true" className="text-[#ff8a8a]">*</span>
-              </label>
-              <textarea
-                ref={reasonInputRef}
-                id="refund-motivo"
-                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none focus:border-violeta aria-[invalid=true]:border-[var(--sr-bad)]"
-                rows={3}
-                value={refundReason}
-                onChange={(e) => {
-                  setRefundReason(e.target.value)
-                  if (motivoErr && e.target.value.trim()) setMotivoErr(null)
-                  if (refundError) setRefundError(null)
-                }}
-                placeholder="Describe por qué se reembolsa este pago…"
-                required
-                aria-invalid={!!motivoErr}
-                aria-describedby={motivoErr ? 'refund-motivo-err' : undefined}
-              />
-              {motivoErr && (
-                <div className="mt-1.5">
-                  <ErrorCampo id="refund-motivo">{motivoErr}</ErrorCampo>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="refund-amount-input" className="block text-sm font-semibold">
-                Monto a reembolsar <span className="text-[#ff8a8a]">*</span>
-              </label>
-              <input
-                ref={amountInputRef}
-                id="refund-amount-input"
-                type="number"
-                min={1}
-                max={getRefundableBalance(refundTarget)}
-                step={100}
-                value={refundAmount}
-                onChange={(e) => {
-                  setRefundAmount(e.target.value)
-                  if (refundError) setRefundError(null)
-                }}
-                aria-invalid={
-                  !refundAmount.trim() ||
-                  Number(refundAmount) <= 0 ||
-                  Number(refundAmount) > getRefundableBalance(refundTarget)
-                }
-                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 font-mono text-sm outline-none focus:border-violeta"
-              />
-              {refundAmount.trim() !== '' && Number(refundAmount) <= 0 && (
-                <p role="alert" className="mt-1 text-xs font-semibold text-[#ff8a8a]">
-                  El monto a reembolsar debe ser mayor que 0.
-                </p>
-              )}
-              {Number(refundAmount) > getRefundableBalance(refundTarget) && (
-                <p role="alert" className="mt-1 text-xs font-semibold text-[#ff8a8a]">
-                  El monto solicitado supera el saldo disponible para reembolsar.
-                </p>
-              )}
-            </div>
-
-            {refundError && !motivoErr && (
-              <p role="alert" aria-live="assertive" className="rounded-xl bg-[#ff8a8a]/15 p-2.5 text-xs font-semibold text-[#ffb4b4]">
-                {refundError}
-              </p>
-            )}
-          </div>
-        )}
-      </ConfirmDialog>
     </section>
   )
 }

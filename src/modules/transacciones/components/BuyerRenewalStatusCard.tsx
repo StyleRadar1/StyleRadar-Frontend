@@ -1,10 +1,8 @@
-import { useState } from 'react'
-import { errorMessage } from '@/modules/core/api/errors'
-import { Badge, Button } from '@/modules/core/design-system'
+import { Badge } from '@/modules/core/design-system'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { CancelSubscriptionButton } from './CancelSubscriptionButton'
 import { useUserPlan } from '../hooks/useUserPlan'
-import { userPlanService } from '../services/userPlanService'
 
 const RADAR_PLUS_PRICE = 14_900
 
@@ -19,45 +17,49 @@ const formatFechaCobro = (iso?: string) =>
     : '9 de diciembre de 2026'
 
 /**
- * RF-95: Muestra en /planes y /perfil para el comprador con Radar+:
- * "Próximo cobro: {fecha} · {valor}" y el estado de la renovación automática (Activa/Desactivada),
- * con la acción para desactivarla o reactivarla.
+ * RF-95, E.2: Muestra en /planes y /perfil para el comprador con Radar+:
+ * "Próximo cobro: {fecha} · {valor}" y el estado de la renovación automática,
+ * con el botón oficial "Cancelar suscripción".
  */
 export function BuyerRenewalStatusCard() {
   const { user } = useAuth()
   const isBuyer = user?.role === 'COMPRADOR'
   const { plan, details } = useUserPlan(isBuyer)
-  const [busy, setBusy] = useState(false)
-  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null)
 
-  if (!isBuyer || plan !== 'RADAR_PLUS') return null
+  if (!isBuyer) return null
+
+  if (plan === 'RADAR') {
+    return (
+      <div
+        role="region"
+        aria-label="Estado del plan Radar"
+        className="mt-4 rounded-2xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-4 text-sm text-[var(--sr-text-primary,var(--color-text))]"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="font-bold">Plan actual:</span>
+              <Badge tone="arena">Radar (Gratuito)</Badge>
+            </div>
+            <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+              Tu plan es gratuito, no tiene cobros periódicos.
+            </p>
+          </div>
+          <CancelSubscriptionButton
+            tipo="comprador"
+            renewalEnabled={false}
+            isFreePlan
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (plan !== 'RADAR_PLUS') return null
 
   const renewalActive = details?.renewalEnabled !== false
   const fechaTexto = formatFechaCobro(details?.proximoCobro ?? details?.periodEndsAt)
   const valorTexto = formatCOP(RADAR_PLUS_PRICE)
-
-  const handleToggleRenewal = async () => {
-    if (busy) return
-    setBusy(true)
-    setFeedback(null)
-    try {
-      const next = !renewalActive
-      await userPlanService.setRenewal(next)
-      setFeedback({
-        ok: true,
-        text: next
-          ? `Renovación automática activada. Próximo cobro: ${fechaTexto} · ${valorTexto}.`
-          : `La renovación automática está desactivada. Radar+ sigue activo hasta ${fechaTexto}.`,
-      })
-    } catch (err) {
-      setFeedback({
-        ok: false,
-        text: errorMessage(err, 'No fue posible actualizar la renovación automática.'),
-      })
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <div
@@ -80,34 +82,13 @@ export function BuyerRenewalStatusCard() {
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant={renewalActive ? 'secundario' : 'primario'}
-          disabled={busy}
-          onClick={() => {
-            void handleToggleRenewal()
-          }}
-        >
-          {busy
-            ? 'Actualizando…'
-            : renewalActive
-              ? 'Desactivar renovación'
-              : 'Reactivar renovación'}
-        </Button>
+        <CancelSubscriptionButton
+          tipo="comprador"
+          status="RADAR_PLUS"
+          renewalEnabled={renewalActive}
+          fechaFin={fechaTexto}
+        />
       </div>
-
-      {feedback && (
-        <p
-          role={feedback.ok ? 'status' : 'alert'}
-          className={`mt-3 rounded-xl p-2.5 text-xs font-semibold ${
-            feedback.ok
-              ? 'bg-[#9be3b4]/10 text-[#9be3b4]'
-              : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'
-          }`}
-        >
-          {feedback.text}
-        </p>
-      )}
     </div>
   )
 }

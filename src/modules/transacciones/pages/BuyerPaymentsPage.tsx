@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { PayerEmailForm } from '../components/PayerEmailForm'
+import { planService } from '../services/planService'
 import { userPlanService } from '../services/userPlanService'
 import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
 
@@ -37,6 +39,9 @@ export function BuyerPaymentsSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentDto | null>(null)
+  const [retryTarget, setRetryTarget] = useState<PaymentDto | null>(null)
+  const [retrying, setRetrying] = useState(false)
+  const [retryError, setRetryError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -135,10 +140,13 @@ export function BuyerPaymentsSection() {
                       {p.status === 'rechazado' && (
                         <button
                           type="button"
-                          onClick={() => navigate('/pago/resultado?orden=MOCK_ORDER_FAIL')}
+                          onClick={() => {
+                            setRetryTarget(p)
+                            setRetryError(null)
+                          }}
                           className="rounded-lg bg-[var(--sr-accent,var(--color-accent))] px-3 py-1.5 text-xs font-bold text-[var(--color-text-on-accent,#ffffff)]"
                         >
-                          Reintentar
+                          Reintentar pago
                         </button>
                       )}
                     </div>
@@ -149,6 +157,54 @@ export function BuyerPaymentsSection() {
           </tbody>
         </table>
       </div>
+
+      {retryTarget && (
+        <Card className="border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--sr-border,var(--color-border))] pb-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                Reintentar pago rechazado
+              </p>
+              <h3 className="mt-0.5 text-lg font-extrabold">
+                {retryTarget.planName} · {formatCOP(retryTarget.amount)}
+              </h3>
+              <p className="mt-1 text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                El pago no fue aprobado. Puedes intentarlo nuevamente.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRetryTarget(null)}
+              className="text-xs font-semibold text-[var(--sr-text-secondary,var(--color-text-muted))] hover:underline"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div className="mt-4">
+            <PayerEmailForm
+              defaultEmail={retryTarget.userEmail}
+              submitLabel="Reintentar pago"
+              busyLabel="Preparando reintento…"
+              busy={retrying}
+              errorMessage={retryError}
+              onCancel={() => setRetryTarget(null)}
+              onSubmit={async (payerEmail) => {
+                setRetrying(true)
+                setRetryError(null)
+                try {
+                  await planService.createCheckout(retryTarget.planId, payerEmail)
+                  setRetryTarget(null)
+                  navigate('/pago/resultado?orden=MOCK_ORDER_OK')
+                } catch (e) {
+                  setRetryError(e instanceof Error ? e.message : 'No fue posible reintentar el pago.')
+                } finally {
+                  setRetrying(false)
+                }
+              }}
+            />
+          </div>
+        </Card>
+      )}
 
       {selectedReceipt && (
         <Card className="border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-5">

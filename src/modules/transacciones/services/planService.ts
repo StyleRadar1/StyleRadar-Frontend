@@ -46,6 +46,17 @@ export function readLastCheckoutMeta(): LastCheckoutMeta | null {
   }
 }
 
+function getCurrentUserRole(): string | null {
+  try {
+    const raw = localStorage.getItem('sr_user')
+    if (raw) {
+      const u = JSON.parse(raw) as { role?: string }
+      return u.role ?? null
+    }
+  } catch { /* noop */ }
+  return null
+}
+
 export const planService = {
   /** Devuelve los planes de usuario (Radar y Radar+). */
   getPlans(): Promise<PlanDto[]> {
@@ -83,6 +94,10 @@ export const planService = {
 
   /** Crea una preferencia de pago (mock: devuelve un initPoint simulado). */
   createCheckout(planId: string, payerEmail?: string): Promise<CheckoutResponseDto> {
+    const role = getCurrentUserRole()
+    if (role && role !== 'COMPRADOR') {
+      return Promise.reject(new ApiError(403, 'Tu cuenta no puede cambiar a ese plan.'))
+    }
     if (payerEmail !== undefined && !isValidPayerEmail(payerEmail)) {
       return Promise.reject(new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.'))
     }

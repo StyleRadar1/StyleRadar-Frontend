@@ -204,9 +204,17 @@ export const storeSubscriptionService = {
    * Valida correo (400), verifica que no tenga suscripción ACTIVA ni pago PENDIENTE (403),
    * y actualiza el estado a PENDIENTE o ACTIVA según el resultado de Mercado Pago.
    */
-  async activateFromOnboarding(payerEmail: string, orderId = 'MOCK_STORE_OK'): Promise<StorePayResult> {
+  async activateFromOnboarding(
+    payerEmail: string,
+    orderId = 'MOCK_STORE_OK',
+    nit?: string,
+    almacenId?: string,
+  ): Promise<StorePayResult> {
     if (!isValidPayerEmail(payerEmail)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.')
+    }
+    if (nit !== undefined && !/^\d{9}$/.test(nit.trim())) {
+      throw new ApiError(400, 'Ingresa un NIT válido de 9 dígitos.')
     }
     const before = readMockStoreSubscription()
     if (
@@ -218,7 +226,11 @@ export const storeSubscriptionService = {
     }
     if (!env.useMocks) {
       const r = await apiClient
-        .post<CheckoutResponseDto>(`${BASE}/checkout`, { payerEmail: payerEmail.trim() })
+        .post<CheckoutResponseDto>(`${BASE}/checkout`, {
+          payerEmail: payerEmail.trim(),
+          nit: nit?.trim(),
+          almacenId,
+        })
         .then((res) => res.data)
       return { redirectTo: r.initPoint }
     }
@@ -248,6 +260,7 @@ export const storeSubscriptionService = {
         : result.status === 'pendiente'
           ? 'PENDIENTE'
           : state.subscription.status
+    const endPeriod = addOneMonth()
     const next: StoreSubscriptionStateDto = {
       subscription: {
         ...state.subscription,
@@ -255,12 +268,37 @@ export const storeSubscriptionService = {
         planName: STORE_PLAN.name,
         amount: STORE_PLAN.price,
         payerEmail: resolvedEmail,
-        ...(result.status === 'aprobado' ? { periodEndsAt: addOneMonth(), renewalEnabled: true } : {}),
+        nit: nit?.trim() ?? state.subscription.nit,
+        almacenId: almacenId ?? state.subscription.almacenId ?? u?.id,
+        ...(result.status === 'aprobado'
+          ? {
+              periodEndsAt: endPeriod,
+              fechaFin: endPeriod,
+              renewalEnabled: true,
+              autoRenovacion: true,
+            }
+          : {}),
       },
       payments: [payment, ...state.payments],
     }
     writeState(next)
     return { result: { ...result, payerEmail: resolvedEmail } }
+  },
+
+  /**
+   * RF-68: Reactiva la renovación automática.
+   */
+  async reactivateRenewal(): Promise<StoreSubscriptionDto> {
+    if (!env.useMocks) return apiClient.post<StoreSubscriptionDto>(`${BASE}/reactivate-renewal`).then((r) => r.data)
+    failIfScenario('conflicto')
+    const state = readMockStoreSubscription()
+    const subscription: StoreSubscriptionDto = {
+      ...state.subscription,
+      renewalEnabled: true,
+      autoRenovacion: true,
+    }
+    writeState({ ...state, subscription })
+    return mockDelay(subscription, 250)
   },
 
   /**

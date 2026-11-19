@@ -34,10 +34,3 @@ export interface PaymentFiltersDto {
   dateTo?: string
   search?: string
 }
-
-/** Payload para solicitar un reembolso. */
-export interface RefundRequestDto {
-  paymentId: string
-  reason: string
-  amount?: number
-}

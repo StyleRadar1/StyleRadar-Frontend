@@ -180,6 +180,18 @@ function PlansSelector() {
   // Solo opciones de comprador (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
   const buyerPlans = plans.filter((p) => p.id === 'free' || p.id === 'plus')
 
+  useEffect(() => {
+    if (user && user.role !== 'COMPRADOR') {
+      if (user.role === 'ADMIN_ALMACEN') {
+        navigate('/tienda/suscripcion', { replace: true })
+      } else if (user.role === 'ADMIN_STYLERADAR') {
+        navigate('/admin/pagos', { replace: true })
+      } else {
+        navigate('/planes', { replace: true })
+      }
+    }
+  }, [user, navigate])
+
   const handleSelect = useCallback(async (plan: PlanDto, payerEmail?: string) => {
     if (plan.price === 0) return // Radar es gratis, no requiere checkout
 

@@ -28,10 +28,10 @@ const renderAt = (path: string) => render(
 )
 
 describe('cambio de plan con pago (RF-100)', () => {
-  it('"Cambiar a Radar+" en /planes lleva al pago en lugar de cambiar el plan directo', async () => {
+  it('Activar Radar+ en /planes lleva al pago en lugar de cambiar el plan directo', async () => {
     const user = userEvent.setup()
     renderAt('/planes')
-    await user.click(await screen.findByRole('button', { name: 'Cambiar a Radar+' }, slow))
+    await user.click(await screen.findByRole('button', { name: /Activar Radar\+|Cambiar a Radar\+/ }, slow))
     expect(await screen.findByRole('heading', { name: 'Elige tu plan' })).toBeInTheDocument()
     expect((await userPlanService.mine()).plan).toBe('RADAR')
   })

@@ -8,6 +8,8 @@ import type { CheckoutResultDto } from './plan.dto'
 export type StoreSubscriptionStatus = 'SIN_SUSCRIPCION' | 'PENDIENTE' | 'PRUEBA' | 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA'
 
 export interface StoreSubscriptionDto {
+  id?: string
+  suscripcionId?: string
   status: StoreSubscriptionStatus
   planName: string
   amount: number
@@ -17,8 +19,12 @@ export interface StoreSubscriptionDto {
   trialEndsAt?: string
   /** Fin del periodo pagado (solo en ACTIVA). */
   periodEndsAt?: string
+  fechaFin?: string
   /** En false la renovación fue cancelada: la suscripción sigue activa hasta `periodEndsAt`. */
   renewalEnabled: boolean
+  autoRenovacion?: boolean
+  nit?: string
+  almacenId?: string
 }
 
 /** Suscripción más el historial de pagos propios de la tienda (RF-97). */
