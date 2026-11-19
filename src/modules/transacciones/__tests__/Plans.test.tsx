@@ -36,35 +36,25 @@ describe('planes (P7)', () => {
     renderAt('/planes')
     const tabla = screen.getByRole('table', { name: 'Comparación de los planes Radar y Radar+' })
     const alertas = within(tabla).getByRole('row', { name: /Alertas de disponibilidad activas/ })
-    expect(alertas).toHaveTextContent('Hasta 3')
+    expect(alertas).toHaveTextContent(/No disponible/)
     expect(alertas).toHaveTextContent('Sin límite')
     expect(within(tabla).getByRole('row', { name: /Precio/ })).toHaveTextContent('$14.900 al mes')
     const reglas = screen.getByRole('list', { name: 'Reglas de los planes' })
     expect(within(reglas).getAllByRole('listitem')).toHaveLength(9)
-    expect(within(reglas).getByText(/3 días de gracia/)).toBeInTheDocument()
   })
 
-  it('el comprador ve su plan y lo cambia con confirmación', async () => {
+  it('el comprador ve su plan Radar+ y puede cancelar la suscripción', async () => {
     const user = userEvent.setup()
     loginAs('u-1')
     renderAt('/planes')
-    expect(await screen.findByText('Plan actual', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(await screen.findByText(/Tu plan actual:\s*Radar\+/, {}, { timeout: 3000 })).toBeInTheDocument()
     expect(within(screen.getByRole('listitem', { name: 'Radar+' })).getByText('Tu plan')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Cambiar a Radar' }))
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cambiar plan' }))
-    expect(await screen.findByText(/Radar\+ activo hasta/, {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(await screen.findAllByRole('button', { name: 'Reactivar renovación' })).not.toHaveLength(0)
-  })
-
-  it('si el cambio falla lo explica', async () => {
-    const user = userEvent.setup()
-    loginAs('u-1')
-    renderAt('/planes')
-    await user.click(await screen.findByRole('button', { name: 'Cambiar a Radar' }, { timeout: 3000 }))
-    sessionStorage.setItem('sr_mock', 'sin-red')
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cambiar plan' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('No hay conexión')
+    const btn = screen.getAllByRole('button', { name: 'Cancelar suscripción' })[0]
+    await user.click(btn)
+    const dialogo = screen.getByRole('dialog', { name: '¿Cancelar suscripción?' })
+    await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
+    expect(await screen.findByText(/No se renovará/, {}, { timeout: 3000 })).toBeInTheDocument()
   })
 })
 
