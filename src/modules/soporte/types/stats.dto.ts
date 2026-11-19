@@ -32,8 +32,8 @@ export interface FoundationStatsDto {
     deTiendas: number
     dePersonas: number
   }
-  /** Meta de prendas del mes en curso. */
-  meta: { etiqueta: string; recibidas: number; objetivo: number }
+  /** Meta de prendas del mes en curso (puede ser null si no está definida). */
+  meta?: { etiqueta: string; recibidas: number; objetivo: number } | null
   /** Tipo de ropa que llega, en porcentaje del total recibido. */
   porTipo: { tipo: string; pct: number }[]
   /** Solicitudes en curso por estado. */

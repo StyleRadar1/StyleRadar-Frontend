@@ -139,7 +139,7 @@ export default function StoreStatsPage() {
         <div className="store-stats__tools"><div className="store-stats__period" role="group" aria-label="Periodo de estadísticas">{(['7', '30', '90'] as const).map((value) => <button key={value} type="button" aria-pressed={period === value} onClick={() => setPeriod(value)}>{periodLabels[value]}</button>)}</div><button type="button" className="store-stats__export" onClick={exportCsv}>↓ <span>Exportar a Excel</span></button></div>
       </header>
       <div className="store-stats__kpis">
-        <article><p>Visitas a tu tienda</p><strong>{period === '30' ? '2.145' : period === '7' ? '486' : '6.418'}</strong><span>▲ 14.6% vs. periodo anterior</span></article>
+        <article><p>Visitas a la página de la tienda</p><strong>{period === '30' ? '2.145' : period === '7' ? '486' : '6.418'}</strong><span>▲ 14.6% vs. periodo anterior</span></article>
         <article><p>Mensajes recibidos</p><strong>{period === '30' ? '165' : period === '7' ? '38' : '492'}</strong><span>▲ 6.5% vs. periodo anterior</span></article>
         <article><p>Guardadas en wishlist</p><strong>{period === '30' ? '729' : period === '7' ? '164' : '2.187'}</strong><span>▲ 13% vs. periodo anterior</span></article>
       </div>

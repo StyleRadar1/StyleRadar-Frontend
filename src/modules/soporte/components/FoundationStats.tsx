@@ -16,7 +16,12 @@ export function FoundationStatsView() {
   if (loading) return <Loading label="Cargando estadísticas de tu fundación…" />
   if (error) return <ErrorState error={error} onRetry={reload} />
   if (!stats) return <EmptyState title="Sin datos">Cuando recibas donaciones, verás los indicadores aquí.</EmptyState>
-  const meta = pct(stats.meta.recibidas, stats.meta.objetivo)
+  const metaObj = stats.meta
+  const meta = metaObj && metaObj.objetivo > 0 ? pct(metaObj.recibidas, metaObj.objetivo) : 0
+  const metaTexto = metaObj && metaObj.objetivo > 0
+    ? `${metaObj.recibidas} de ${metaObj.objetivo} prendas recibidas en ${metaObj.etiqueta} (${meta}%).`
+    : 'Sin meta definida para este periodo.'
+  const metaEtiqueta = metaObj?.etiqueta ?? 'este mes'
 
   return (
     <section className="text-[var(--color-text)]">
@@ -38,8 +43,8 @@ export function FoundationStatsView() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {months.length > 0 && <MonthlyRequests months={months} />}
-        <Panel title="Meta mensual de prendas" text={`${stats.meta.recibidas} de ${stats.meta.objetivo} prendas recibidas en ${stats.meta.etiqueta} (${meta}%).`}>
-          <Gauge value={meta} label={`Meta de prendas de ${stats.meta.etiqueta}: ${meta}% alcanzado`} caption={`de la meta de ${stats.meta.etiqueta}`} />
+        <Panel title="Meta mensual de prendas" text={metaTexto}>
+          <Gauge value={meta} label={`Meta de prendas de ${metaEtiqueta}: ${meta}% alcanzado`} caption={`de la meta de ${metaEtiqueta}`} />
         </Panel>
         <Panel title="Prendas por tipo" text="Qué tipo de ropa llega con más frecuencia a la fundación.">
           <Donut label="Prendas por tipo" data={stats.porTipo.map((t) => ({ nombre: t.tipo, valor: t.pct }))} />
@@ -111,7 +116,7 @@ function exportar(nombre: string, s: FoundationStatsDto, months: FoundationMonth
     ['Prendas recibidas en total', s.totalPrendasRecibidas],
     ['Donaciones de tiendas aliadas', s.donaciones.deTiendas],
     ['Donaciones de personas', s.donaciones.dePersonas],
-    [`Meta de ${s.meta.etiqueta}`, `${s.meta.recibidas} de ${s.meta.objetivo}`],
+    [`Meta de ${s.meta?.etiqueta ?? 'este mes'}`, s.meta ? `${s.meta.recibidas} de ${s.meta.objetivo}` : 'Sin meta'],
     [],
     ['Mes', 'De personas', 'De tiendas', 'Total'],
     ...months.map((m) => [m.etiqueta, m.personas, m.tiendas, m.total]),

@@ -65,7 +65,7 @@ function StoreStatsView() {
         </div>
       </div>
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <KpiCard label="Visitas a tu tienda" kpi={stats.kpis.visitas} />
+        <KpiCard label="Visitas a la página de la tienda" kpi={stats.kpis.visitas} />
         <KpiCard label="Mensajes recibidos" kpi={stats.kpis.mensajes} />
         <KpiCard label="Guardadas en wishlist" kpi={stats.kpis.wishlist} />
       </div>
