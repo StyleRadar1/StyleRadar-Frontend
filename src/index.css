@@ -122,7 +122,7 @@ html[data-tema="oscuro"] {
   --probador-pill-text: #e8dccb;
   --probador-accent: #e8dccb;
 
-  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  /* Tokens fijos del Hero Landing (modo oscuro por defecto) */
   --hero-fg: #ffffff;
   --hero-fg-muted: rgba(255, 255, 255, 0.75);
   --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));
@@ -230,10 +230,10 @@ html[data-tema="claro"] {
   --probador-pill-text: #ffffff;
   --probador-accent: #48119a;
 
-  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  /* Tokens del Hero Landing adaptados a modo claro */
   --hero-fg: #ffffff;
-  --hero-fg-muted: rgba(255, 255, 255, 0.75);
-  --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));
+  --hero-fg-muted: rgba(255, 255, 255, 0.85);
+  --hero-overlay: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.12) 36%, rgba(15, 23, 42, 0.38) 64%, #f8f9fa 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(15, 23, 42, 0.5));
   --hero-sub-bg: rgba(35, 30, 37, 0.75);
   --hero-sub-border: rgba(255, 255, 255, 0.2);
   --hero-btn-primary-bg: #48119a;
@@ -332,7 +332,7 @@ html[data-tema="daltonico"] {
   --probador-pill-text: #e8dccb;
   --probador-accent: #e8dccb;
 
-  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  /* Tokens fijos del Hero Landing (modo oscuro por defecto) */
   --hero-fg: #ffffff;
   --hero-fg-muted: rgba(255, 255, 255, 0.75);
   --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));

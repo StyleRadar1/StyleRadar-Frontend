@@ -8,7 +8,46 @@
 .sr-map-page-shell {
   position: relative;
   width: 100%;
-  background: transparent;
+  min-height: 100vh;
+  background-color: #121216;
+  background-image: 
+    linear-gradient(180deg, rgba(18, 18, 22, 0.92) 0%, rgba(18, 18, 22, 0.78) 40%, rgba(18, 18, 22, 0.88) 75%, rgba(18, 18, 22, 0.98) 100%),
+    radial-gradient(circle at 50% 25%, rgba(139, 92, 246, 0.12), transparent 60%),
+    url('/img/backgrounds/mapa-noche.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+html[data-theme="light"] .sr-map-page-shell,
+html[data-theme="claro"] .sr-map-page-shell,
+html[data-tema="claro"] .sr-map-page-shell {
+  background-color: #f8f9fa;
+  background-image: 
+    linear-gradient(180deg, rgba(248, 249, 250, 0.94) 0%, rgba(248, 249, 250, 0.85) 40%, rgba(248, 249, 250, 0.92) 75%, rgba(248, 249, 250, 0.98) 100%),
+    radial-gradient(circle at 50% 25%, rgba(139, 92, 246, 0.08), transparent 60%),
+    url('/img/backgrounds/mapa-noche.jpg');
+}
+
+.sr-map-landing-section {
+  position: relative;
+  background-color: #121216;
+  background-image: 
+    linear-gradient(180deg, rgba(18, 18, 22, 0.92) 0%, rgba(18, 18, 22, 0.75) 45%, rgba(18, 18, 22, 0.88) 80%, rgba(18, 18, 22, 0.98) 100%),
+    radial-gradient(circle at 50% 30%, rgba(139, 92, 246, 0.14), transparent 65%),
+    url('/img/backgrounds/mapa-noche.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+html[data-theme="light"] .sr-map-landing-section,
+html[data-theme="claro"] .sr-map-landing-section,
+html[data-tema="claro"] .sr-map-landing-section {
+  background-color: #f8f9fa;
+  background-image: 
+    linear-gradient(180deg, rgba(248, 249, 250, 0.94) 0%, rgba(248, 249, 250, 0.84) 45%, rgba(248, 249, 250, 0.92) 80%, rgba(248, 249, 250, 0.98) 100%),
+    radial-gradient(circle at 50% 30%, rgba(139, 92, 246, 0.08), transparent 65%),
+    url('/img/backgrounds/mapa-noche.jpg');
 }
 
 .sr-map-layout-wrap {
