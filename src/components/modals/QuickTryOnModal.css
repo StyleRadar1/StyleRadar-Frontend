@@ -737,6 +737,8 @@ html[data-tema="claro"] .cz-fullscreen {
 
 .cz-mannequin-container {
   position: relative;
+  width: 100%;
+  max-width: 620px;
   height: 74vh;
   max-height: 700px;
   display: flex;
@@ -752,7 +754,7 @@ html[data-tema="claro"] .cz-fullscreen {
 /* Regla métrica de altura vertical */
 .cz-metric-ruler {
   position: absolute;
-  left: 36px;
+  left: 16px;
   top: 10%;
   bottom: 24px;
   width: 95px;

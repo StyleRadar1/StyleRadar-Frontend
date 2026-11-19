@@ -28,6 +28,8 @@ export interface BodyDeformationFactors {
   hipScale: number
   shoulderScale: number
   silhouetteSrc: string
+  silhouetteSideSrc?: string
+  silhouetteBackSrc?: string
   complexion?: string
   bmi?: number
 }

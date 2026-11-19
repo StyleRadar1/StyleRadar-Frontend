@@ -452,6 +452,45 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   /* Deformación y adaptación anatómica del maniquí */
   const deformation = useMemo(() => computeBodyDeformation(bodyMeasurements), [bodyMeasurements])
 
+  /* Selección de silueta y rotación según el ángulo de cámara activo (Frente, Lado, Espalda) */
+  const { currentSilhouette, currentRotationAngle, isFlipped, isBackView } = useMemo(() => {
+    const norm = ((rotationAngle % 360) + 360) % 360
+    if (norm >= 45 && norm < 135) {
+      // Vista Lateral derecha (Lado)
+      return {
+        currentSilhouette: deformation.silhouetteSideSrc || deformation.silhouetteSrc,
+        currentRotationAngle: (norm - 90) * 0.35,
+        isFlipped: false,
+        isBackView: false,
+      }
+    } else if (norm >= 135 && norm < 225) {
+      // Vista Posterior (Espalda)
+      return {
+        currentSilhouette: deformation.silhouetteBackSrc || deformation.silhouetteSrc,
+        currentRotationAngle: (norm - 180) * 0.35,
+        isFlipped: false,
+        isBackView: true,
+      }
+    } else if (norm >= 225 && norm < 315) {
+      // Vista Lateral izquierda (Lado opuesto)
+      return {
+        currentSilhouette: deformation.silhouetteSideSrc || deformation.silhouetteSrc,
+        currentRotationAngle: (norm - 270) * 0.35,
+        isFlipped: true,
+        isBackView: false,
+      }
+    } else {
+      // Vista Frontal (Frente)
+      const frontAngle = norm > 180 ? norm - 360 : norm
+      return {
+        currentSilhouette: deformation.silhouetteSrc,
+        currentRotationAngle: frontAngle * 0.35,
+        isFlipped: false,
+        isBackView: false,
+      }
+    }
+  }, [rotationAngle, deformation])
+
   /* Catálogo filtrado dentro del drawer */
   const filteredCatalog = useMemo(() => {
     return ITEMS.filter((item) => {
@@ -836,14 +875,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                 className="cz-mannequin-3d-wrapper"
                 data-testid="mannequin-wrapper"
                 style={{
-                  transform: `rotateY(${rotationAngle}deg) scaleY(${deformation.heightScale}) scaleX(${deformation.chestScale})`,
+                  transform: `rotateY(${currentRotationAngle}deg) scaleY(${deformation.heightScale}) scaleX(${isFlipped ? -deformation.chestScale : deformation.chestScale})`,
                   transformOrigin: 'bottom center',
                   transition: isRotating.current ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               >
-                {/* Maniquí base adaptable */}
+                {/* Maniquí base adaptable según ángulo (frente, lado o espalda) */}
                 <img
-                  src={deformation.silhouetteSrc}
+                  src={currentSilhouette}
                   alt="Maniquí anatómico base"
                   className="cz-mannequin-base"
                   data-testid="mannequin-base-img"
@@ -858,8 +897,9 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                     alt=""
                     className="cz-mannequin-layer"
                     style={{
-                      filter: COLOR_FILTERS[color] || 'none',
+                      filter: (COLOR_FILTERS[color] || 'none') + (isBackView ? ' brightness(0.92)' : ''),
                       zIndex: LAYER_ORDER.indexOf(layer) + 10,
+                      opacity: (rotationAngle === 90 || (rotationAngle >= 45 && rotationAngle < 135)) ? 0.35 : 1,
                     }}
                     draggable={false}
                   />
