@@ -313,7 +313,7 @@ export default function StoreActivateSubscriptionPage() {
 
             <PayerEmailForm
               defaultEmail={lastEmail || user?.email || ''}
-              submitLabel={lastResult?.status === 'rechazado' ? 'Reintentar pago' : 'Pagar con Mercado Pago'}
+              submitLabel="Pagar con Mercado Pago"
               busyLabel="Redirigiendo a Mercado Pago…"
               busy={paying}
               errorMessage={gatewayError}

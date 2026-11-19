@@ -74,17 +74,9 @@ export default function PlansPage() {
       if (p.id === 'RADAR_PLUS') {
         if (plan === 'RADAR_PLUS') {
           return (
-            <div className="mt-auto space-y-2">
-              <p className="rounded-xl border border-arena/50 px-5 py-2 text-center text-xs font-semibold text-arena">
-                Tu plan actual
-              </p>
-              <CancelSubscriptionButton
-                tipo="comprador"
-                status="RADAR_PLUS"
-                renewalEnabled={details?.renewalEnabled !== false}
-                fechaFin={fechaFinRadarPlus}
-              />
-            </div>
+            <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
+              Tu plan actual
+            </p>
           )
         }
         return (
@@ -137,7 +129,7 @@ export default function PlansPage() {
 
       {comprador && plan && (
         <p className="mt-4 text-sm text-[var(--sr-hero-text)]">
-          Tu plan actual: <b>{PLAN_LABEL[plan]}</b>
+          {`Tu plan actual: ${PLAN_LABEL[plan]}`}
         </p>
       )}
 

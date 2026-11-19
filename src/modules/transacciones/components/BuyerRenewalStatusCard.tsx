@@ -78,7 +78,7 @@ export function BuyerRenewalStatusCard() {
           <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
             {renewalActive
               ? `Próximo cobro: ${fechaTexto} · ${valorTexto}`
-              : `Radar+ activo hasta ${fechaTexto}. No se renovará · Próximo cobro: ${fechaTexto} · ${valorTexto} (pausado)`}
+              : `Radar+ activo hasta ${fechaTexto} · Próximo cobro pausado`}
           </p>
         </div>
 

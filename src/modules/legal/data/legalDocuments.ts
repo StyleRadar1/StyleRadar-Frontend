@@ -353,10 +353,7 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
           `Las transacciones en Style Radar se procesan de manera segura a través de pasarelas de pago colombianas certificadas (${PROVIDER_INFO.pasarelaPagos}), admitiendo:`,
         ],
         bullets: [
-          `Tarjetas de crédito y débito nacionales e internacionales (Visa, Mastercard, American Express).`,
-          `Transferencias bancarias en línea mediante el botón PSE.`,
-          `Billeteras digitales colombianas (Nequi, Daviplata).`,
-          `Pagos en efectivo en puntos autorizados de recaudo (Efecty, SuRed), con tiempos límite de pago para reserva de inventario.`,
+          `Pagos con tarjeta de crédito, débito y transferencias procesados exclusivamente a través de la pasarela certificada Mercado Pago Colombia.`,
         ],
       },
       {
@@ -678,7 +675,7 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
         numeral: '1.',
         title: 'Preguntas Frecuentes de Compradores',
         paragraphs: [
-          `¿Cómo realizo una compra en Style Radar? Explora el catálogo, selecciona tu prenda y talla, y pulsa en comprar para ser dirigido al pago seguro con PSE, tarjeta o Efecty. La tienda despachará directamente tu pedido a tu dirección en Bogotá.`,
+          `¿Cómo realizo una compra en Style Radar? Explora el catálogo, selecciona tu prenda y talla, y pulsa en comprar para ser dirigido al pago seguro con Mercado Pago. La tienda despachará directamente tu pedido a tu dirección en Bogotá.`,
           `¿Cómo funciona el probador virtual? Puedes probar prendas sobre un maniquí base predefinido, o subir de forma 100% voluntaria tu propia foto para una experiencia personalizada protegida por nuestra Política de Privacidad.`,
           `¿Puedo devolver una prenda si no me queda? Sí. Cuentas con 5 días hábiles desde la entrega para ejercer el Derecho de Retracto, siempre que la prenda esté nueva y no sea ropa interior o de uso íntimo.`,
         ],

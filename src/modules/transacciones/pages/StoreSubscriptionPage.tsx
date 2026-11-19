@@ -186,7 +186,7 @@ export default function StoreSubscriptionPage() {
             </p>
             <PayerEmailForm
               defaultEmail={defaultRetryEmail}
-              submitLabel="Continuar a Mercado Pago"
+              submitLabel="Pagar con Mercado Pago"
               busyLabel="Generando nuevo intento…"
               busy={paying}
               errorMessage={retryErrorMsg}

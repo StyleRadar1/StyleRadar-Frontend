@@ -183,7 +183,7 @@ export function BuyerPaymentsSection() {
           <div className="mt-4">
             <PayerEmailForm
               defaultEmail={retryTarget.userEmail}
-              submitLabel="Reintentar pago"
+              submitLabel="Pagar con Mercado Pago"
               busyLabel="Preparando reintento…"
               busy={retrying}
               errorMessage={retryError}
@@ -246,8 +246,8 @@ export function BuyerPaymentsSection() {
               <dd className="font-mono">{selectedReceipt.mpReference ?? selectedReceipt.id}</dd>
             </div>
             <div>
-              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Medio de pago</dt>
-              <dd>{selectedReceipt.method}</dd>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Método</dt>
+              <dd>{selectedReceipt.method || 'Mercado Pago'}</dd>
             </div>
             <div>
               <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Correo asociado</dt>

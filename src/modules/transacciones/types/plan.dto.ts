@@ -81,6 +81,8 @@ export const PLANES: PlanInfo[] = [
 ]
 
 /** Plan de suscripción de StyleRadar. Tabla provisional del equipo. */
+import type { PaymentMethod } from './payment.dto'
+
 export interface PlanDto {
   id: 'free' | 'plus' | 'store'
   name: string
@@ -112,7 +114,7 @@ export interface CheckoutResultDto {
   status: CheckoutStatus
   planName: string
   amount: number
-  method?: string
+  method?: PaymentMethod
   payerEmail?: string
   planId?: 'free' | 'plus' | 'store'
 }
