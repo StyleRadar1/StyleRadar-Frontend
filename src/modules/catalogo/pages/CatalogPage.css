@@ -7,9 +7,7 @@
 .sr-catalog-page {
   min-height: 100vh;
   background-color: #0d0a14;
-  background-image:
-    linear-gradient(180deg, rgba(13, 10, 20, 0.88) 0%, rgba(13, 10, 20, 0.72) 40%, rgba(13, 10, 20, 0.88) 80%, rgba(13, 10, 20, 0.98) 100%),
-    url('/img/backgrounds/catalogo-noche.jpg');
+  background-image: url('/img/backgrounds/catalogo-noche.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -20,9 +18,7 @@ html[data-theme="light"] .sr-catalog-page,
 html[data-theme="claro"] .sr-catalog-page,
 html[data-tema="claro"] .sr-catalog-page {
   background-color: #f8f9fa;
-  background-image:
-    linear-gradient(180deg, rgba(248, 249, 250, 0.92) 0%, rgba(248, 249, 250, 0.80) 40%, rgba(248, 249, 250, 0.90) 80%, rgba(248, 249, 250, 0.98) 100%),
-    url('/img/backgrounds/catalogo-dia.jpg');
+  background-image: url('/img/backgrounds/catalogo-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -36,9 +32,7 @@ html[data-tema="claro"] .sr-catalog-page {
   position: relative;
   z-index: 10;
   width: 100%;
-  background-image:
-    linear-gradient(180deg, rgba(20, 16, 33, 0.86) 0%, rgba(14, 11, 23, 0.78) 55%, rgba(20, 16, 33, 0.90) 100%),
-    url('/img/backgrounds/catalogo-noche.jpg');
+  background-image: url('/img/backgrounds/catalogo-noche.jpg');
   background-size: cover;
   background-position: center center;
   color: #f8fafc;
@@ -56,9 +50,7 @@ html[data-tema="claro"] .sr-catalog-page {
 
 html[data-theme="light"] .sr-rack-section,
 html[data-tema="claro"] .sr-rack-section {
-  background-image:
-    linear-gradient(180deg, rgba(252, 251, 249, 0.88) 0%, rgba(244, 238, 228, 0.80) 55%, rgba(250, 248, 245, 0.92) 100%),
-    url('/img/backgrounds/catalogo-dia.jpg');
+  background-image: url('/img/backgrounds/catalogo-dia.jpg');
   background-size: cover;
   background-position: center center;
   color: #262626;

@@ -10,9 +10,7 @@
   overflow: clip;
   color: var(--sr-white);
   background-color: #0b0813;
-  background-image:
-    linear-gradient(180deg, rgba(11, 8, 19, 0.72) 0%, rgba(11, 8, 19, 0.55) 30%, rgba(11, 8, 19, 0.78) 70%, rgba(11, 8, 19, 0.95) 100%),
-    url('/img/backgrounds/landing-noche.jpg');
+  background-image: url('/img/backgrounds/landing-noche.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -24,11 +22,9 @@ html[data-theme="light"] .sr-landing,
 html[data-theme="claro"] .sr-landing,
 html[data-tema="claro"] .sr-landing {
   --sr-white: #0f172a;
-  --sr-muted: #475569;
-  background-color: #f8f9fa;
-  background-image:
-    linear-gradient(180deg, rgba(248, 249, 250, 0.82) 0%, rgba(248, 249, 250, 0.65) 30%, rgba(248, 249, 250, 0.82) 70%, rgba(248, 249, 250, 0.98) 100%),
-    url('/img/backgrounds/landing-dia.jpg');
+  --sr-muted: #334155;
+  background-color: #f1f3f5;
+  background-image: url('/img/backgrounds/landing-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
