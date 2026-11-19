@@ -1,25 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Logo } from '@/modules/core/design-system'
-import { heroSlides, type SlideItem } from '@/data/landingData'
+import { heroSlides } from '@/data/landingData'
 import { CursorHanger } from './CursorHanger'
-import { useTheme } from '@/modules/core/theme/ThemeContext'
 
 export function Hero() {
   const heroRef = useRef<HTMLElement | null>(null)
-  const { resolvedTheme } = useTheme()
-  const isLight = resolvedTheme === 'light'
-
-  const slides: SlideItem[] = useMemo(() => [
-    {
-      id: 0,
-      src: isLight ? '/img/backgrounds/landing-dia.jpg' : '/img/backgrounds/landing-noche.jpg',
-      alt: isLight ? 'Panorámica de Bogotá de día con Cerros Orientales' : 'Panorámica nocturna de Bogotá iluminada',
-      position: 'center center',
-    },
-    ...heroSlides,
-  ], [isLight])
-
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
@@ -38,10 +24,10 @@ export function Hero() {
   useEffect(() => {
     if (isPaused || prefersReducedMotion) return
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length)
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
     }, 5500)
     return () => clearInterval(timer)
-  }, [isPaused, prefersReducedMotion, slides.length])
+  }, [isPaused, prefersReducedMotion])
 
   const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
@@ -66,7 +52,7 @@ export function Hero() {
     >
       {/* Carrusel de diapositivas de fondo */}
       <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
-        {slides.map((slide, index) => (
+        {heroSlides.map((slide, index) => (
           <img
             key={slide.id}
             src={slide.src}
@@ -171,7 +157,7 @@ export function Hero() {
               {String(currentSlide + 1).padStart(2, '0')}
             </span>{' '}
             <span className="text-[var(--hero-fg-muted)] opacity-60">/</span>{' '}
-            <span className="text-[var(--hero-fg-muted)]">{String(slides.length).padStart(2, '0')}</span>
+            <span className="text-[var(--hero-fg-muted)]">{String(heroSlides.length).padStart(2, '0')}</span>
           </span>
           <button
             type="button"

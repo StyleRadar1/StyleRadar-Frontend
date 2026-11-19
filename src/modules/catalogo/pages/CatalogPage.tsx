@@ -748,7 +748,7 @@ export default function CatalogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent px-4 py-8 sm:px-8 selection:bg-[var(--color-accent)] selection:text-[var(--color-text-on-accent)]">
+    <div className="sr-catalog-page min-h-screen px-4 py-8 sm:px-8 selection:bg-[var(--color-accent)] selection:text-[var(--color-text-on-accent)]">
       <section className="mx-auto max-w-6xl">
         {/* Migas de pan */}
         <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">

@@ -253,7 +253,8 @@ export default function TryOnPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12">
+    <div className="sr-probador-page min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-12">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Probador virtual · Bogotá</p>
@@ -587,5 +588,6 @@ export default function TryOnPage() {
         Conforme a la Ley 1581 de 2012, revocar tu consentimiento suprime tu autorización biométrica y purga cualquier fotografía frontal activa asociada a tu cuenta.
       </ConfirmDialog>
     </section>
+  </div>
   )
 }

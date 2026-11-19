@@ -4,6 +4,30 @@
    Tipografía: Poppins
    ========================================================================== */
 
+.sr-catalog-page {
+  min-height: 100vh;
+  background-color: #0d0a14;
+  background-image:
+    linear-gradient(180deg, rgba(13, 10, 20, 0.88) 0%, rgba(13, 10, 20, 0.72) 40%, rgba(13, 10, 20, 0.88) 80%, rgba(13, 10, 20, 0.98) 100%),
+    url('/img/backgrounds/catalogo-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-catalog-page,
+html[data-theme="claro"] .sr-catalog-page,
+html[data-tema="claro"] .sr-catalog-page {
+  background-color: #f8f9fa;
+  background-image:
+    linear-gradient(180deg, rgba(248, 249, 250, 0.92) 0%, rgba(248, 249, 250, 0.80) 40%, rgba(248, 249, 250, 0.90) 80%, rgba(248, 249, 250, 0.98) 100%),
+    url('/img/backgrounds/catalogo-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
 .sr-rack-section {
   --sr-hanger-wire: #262626;
   --sr-hanger-shoulder: #262626;

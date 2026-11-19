@@ -595,3 +595,28 @@ html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
 ::view-transition-new(root) {
   z-index: 2;
 }
+
+/* Fondo adaptable para la página del Probador Virtual (/probador) */
+.sr-probador-page {
+  min-height: 100vh;
+  background-color: #0e0b16;
+  background-image:
+    linear-gradient(180deg, rgba(14, 11, 22, 0.88) 0%, rgba(14, 11, 22, 0.72) 40%, rgba(14, 11, 22, 0.88) 80%, rgba(14, 11, 22, 0.98) 100%),
+    url('/img/backgrounds/probador-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-probador-page,
+html[data-theme="claro"] .sr-probador-page,
+html[data-tema="claro"] .sr-probador-page {
+  background-color: #f8f6fc;
+  background-image:
+    linear-gradient(180deg, rgba(248, 246, 252, 0.92) 0%, rgba(248, 246, 252, 0.80) 40%, rgba(248, 246, 252, 0.90) 80%, rgba(248, 246, 252, 0.98) 100%),
+    url('/img/backgrounds/probador-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
