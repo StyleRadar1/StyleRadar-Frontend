@@ -14,6 +14,7 @@ import { userPlanService } from '../services/userPlanService'
 import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
 import { PagoRechazado } from '../components/PagoRechazado'
 import { PLAN_CHANGED } from '../services/userPlanService'
+import { isPlanCompatibleWithRole } from '../constants/plansByRole'
 import { avisoDePlan, TEXTOS_PLAN, type AvisoPlan } from '../utils/erroresPlan'
 
 /* ─── Subcomponente: resultado del pago ─── */
@@ -143,8 +144,9 @@ function PlanCard({
         ) : (
           <PayerEmailForm
             defaultEmail={defaultEmail}
-            submitLabel="Suscribirme"
-            busyLabel="Preparando el pago…"
+            invalidMessage={plan.id === 'plus' ? 'Ingresa un correo electrónico válido para activar Radar+.' : undefined}
+            submitLabel="Pagar con Mercado Pago"
+            busyLabel="Redirigiendo a Mercado Pago…"
             busy={busy}
             errorMessage={errorMessage}
             onSubmit={(payerEmail) => onSelect(plan, payerEmail)}
@@ -177,8 +179,8 @@ function PlansSelector() {
   const { plan: userPlan } = useUserPlan(user?.role === 'COMPRADOR')
   const currentPlan = userPlan === 'RADAR_PLUS' ? 'plus' : userPlan === 'RADAR' ? 'free' : null
 
-  // Solo opciones de comprador (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
-  const buyerPlans = plans.filter((p) => p.id === 'free' || p.id === 'plus')
+  // Solo opciones de comprador según PLANS_BY_ROLE (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
+  const buyerPlans = plans.filter((p) => isPlanCompatibleWithRole(p.id, user?.role || 'COMPRADOR'))
 
   useEffect(() => {
     if (user && user.role !== 'COMPRADOR') {

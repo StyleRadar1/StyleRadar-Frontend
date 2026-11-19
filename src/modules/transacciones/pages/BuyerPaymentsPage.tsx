@@ -196,7 +196,7 @@ export function BuyerPaymentsSection() {
                   setRetryTarget(null)
                   navigate('/pago/resultado?orden=MOCK_ORDER_OK')
                 } catch (e) {
-                  setRetryError(e instanceof Error ? e.message : 'No fue posible reintentar el pago.')
+                  setRetryError(e instanceof Error ? e.message : 'No fue posible generar un nuevo intento de pago.')
                 } finally {
                   setRetrying(false)
                 }

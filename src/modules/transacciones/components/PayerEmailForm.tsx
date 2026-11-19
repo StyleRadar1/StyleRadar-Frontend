@@ -3,11 +3,14 @@ import { Button } from '@/modules/core/design-system'
 import { isValidPayerEmail } from '../utils/validation'
 
 export const PAYER_EMAIL_INVALID_MSG = 'Ingresa un correo electrónico válido para realizar el pago.'
+export const PAYER_EMAIL_RADAR_PLUS_INVALID_MSG = 'Ingresa un correo electrónico válido para activar Radar+.'
 export const PAYMENT_INIT_ERROR_MSG = 'No fue posible iniciar el pago en este momento. Inténtalo nuevamente.'
 
 export interface PayerEmailFormProps {
   /** Correo precargado de la cuenta autenticada (editable). */
   defaultEmail?: string
+  /** Mensaje de validación de formato incorrecto (E.1). */
+  invalidMessage?: string
   /** Texto del botón principal de envío. */
   submitLabel?: string
   /** Texto del botón mientras se procesa el cobro. */
@@ -33,6 +36,7 @@ export interface PayerEmailFormProps {
  */
 export function PayerEmailForm({
   defaultEmail = '',
+  invalidMessage,
   submitLabel = 'Pagar con Mercado Pago',
   busyLabel = 'Procesando…',
   busy = false,
@@ -43,6 +47,7 @@ export function PayerEmailForm({
   cancelLabel = 'Cancelar',
   className = '',
 }: PayerEmailFormProps) {
+  const actualInvalidMsg = invalidMessage || PAYER_EMAIL_INVALID_MSG
   const uid = useId()
   const inputId = `payer-email-${uid}`
   const errorId = `payer-email-err-${uid}`
@@ -62,7 +67,7 @@ export function PayerEmailForm({
   const handleBlur = () => {
     setTouched(true)
     if (!isValidPayerEmail(email)) {
-      setValidationError(PAYER_EMAIL_INVALID_MSG)
+      setValidationError(actualInvalidMsg)
     } else {
       setValidationError(null)
     }
@@ -79,7 +84,7 @@ export function PayerEmailForm({
     e.preventDefault()
     setTouched(true)
     if (!isValidPayerEmail(email)) {
-      setValidationError(PAYER_EMAIL_INVALID_MSG)
+      setValidationError(actualInvalidMsg)
       inputRef.current?.focus()
       return
     }

@@ -40,7 +40,7 @@ describe('cambio de plan con pago (RF-100)', () => {
     const user = userEvent.setup()
     renderAt('/suscripcion')
     expect(await screen.findByRole('button', { name: 'Plan actual' }, slow)).toBeDisabled()
-    await user.click(screen.getByRole('button', { name: 'Suscribirme' }))
+    await user.click(screen.getByRole('button', { name: /Pagar con Mercado Pago|Suscribirme/ }))
     expect(await screen.findByRole('heading', { name: '¡Listo!' }, slow)).toBeInTheDocument()
     expect((await userPlanService.mine()).plan).toBe('RADAR_PLUS')
   })

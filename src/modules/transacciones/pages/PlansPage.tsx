@@ -5,6 +5,7 @@ import { BuyerRenewalStatusCard } from '../components/BuyerRenewalStatusCard'
 import { CancelSubscriptionButton } from '../components/CancelSubscriptionButton'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
+import { isPlanCompatibleWithRole } from '../constants/plansByRole'
 import { COMPARATIVA, PLAN_LABEL, PLANES, REGLAS, type PlanInfo } from '../types/plan.dto'
 
 const REGISTRO: Record<string, [string, string]> = {
@@ -14,33 +15,16 @@ const REGISTRO: Record<string, [string, string]> = {
   FUNDACION: ['/registro?tipo=fundacion', 'Registrar mi fundación'],
 }
 
-const formatFechaVigencia = (iso?: string) =>
-  iso
-    ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-      })
-    : '9 de diciembre de 2026'
-
 /** P7 · Planes: lo que ofrece StyleRadar y lo que incluye cada plan (RF-100 y RF-101 para el comprador). */
 export default function PlansPage() {
   const { user } = useAuth()
   const comprador = user?.role === 'COMPRADOR'
-  const { plan, details } = useUserPlan(comprador)
+  const { plan } = useUserPlan(comprador)
   const navigate = useNavigate()
 
   const visiblePlans = user
-    ? PLANES.filter((p) => {
-        if (comprador) return p.id === 'RADAR' || p.id === 'RADAR_PLUS'
-        if (user.role === 'ADMIN_ALMACEN') return p.id === 'TIENDA'
-        if (user.role === 'REPRESENTANTE_FUNDACION') return p.id === 'FUNDACION'
-        return false
-      })
+    ? PLANES.filter((p) => isPlanCompatibleWithRole(p.id, user.role))
     : PLANES
-
-  const fechaFinRadarPlus = formatFechaVigencia(details?.periodEndsAt ?? details?.proximoCobro)
 
   const accion = (p: PlanInfo) => {
     if (!user) {
@@ -102,9 +86,16 @@ export default function PlansPage() {
     }
     if (user.role === 'REPRESENTANTE_FUNDACION' && p.id === 'FUNDACION') {
       return (
-        <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
-          Plan de tu organización
-        </p>
+        <div className="mt-auto space-y-2">
+          <p className="rounded-xl border border-arena/50 px-5 py-2 text-center text-xs font-semibold text-arena">
+            Tu plan
+          </p>
+          <CancelSubscriptionButton
+            tipo="comprador"
+            renewalEnabled={false}
+            isFreePlan
+          />
+        </div>
       )
     }
     return null

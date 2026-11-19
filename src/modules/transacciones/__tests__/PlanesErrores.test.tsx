@@ -41,7 +41,7 @@ describe('Planes y pago · errores del plan (Cristian)', () => {
     setMockPlan('u-1', 'RADAR')
     const user = userEvent.setup()
     renderAt('/suscripcion')
-    await user.click(await screen.findByRole('button', { name: 'Suscribirme' }, slow))
+    await user.click(await screen.findByRole('button', { name: /Pagar con Mercado Pago|Suscribirme/ }, slow))
     expect(await screen.findByText(TEXTOS_PLAN.datos.titulo, {}, slow)).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '¡Listo!' })).not.toBeInTheDocument()
   })

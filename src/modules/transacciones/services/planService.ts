@@ -4,8 +4,10 @@ import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { isValidPayerEmail } from '../utils/validation'
+import { isPlanCompatibleWithRole } from '../constants/plansByRole'
 import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import { PLANS, MOCK_CHECKOUT_RESPONSE, MOCK_CHECKOUT_RESULTS } from '../mocks/plans'
+import type { Role } from '@/modules/core/types/roles'
 import type { PlanDto, PlanIntentDto, CheckoutResponseDto, CheckoutResultDto } from '../types/plan.dto'
 
 const INTENT_KEY = 'sr_plan_intent'
@@ -46,11 +48,11 @@ export function readLastCheckoutMeta(): LastCheckoutMeta | null {
   }
 }
 
-function getCurrentUserRole(): string | null {
+function getCurrentUserRole(): Role | null {
   try {
     const raw = localStorage.getItem('sr_user')
     if (raw) {
-      const u = JSON.parse(raw) as { role?: string }
+      const u = JSON.parse(raw) as { role?: Role }
       return u.role ?? null
     }
   } catch { /* noop */ }
@@ -95,11 +97,14 @@ export const planService = {
   /** Crea una preferencia de pago (mock: devuelve un initPoint simulado). */
   createCheckout(planId: string, payerEmail?: string): Promise<CheckoutResponseDto> {
     const role = getCurrentUserRole()
-    if (role && role !== 'COMPRADOR') {
+    if (role && (!isPlanCompatibleWithRole(planId, role) || role !== 'COMPRADOR')) {
       return Promise.reject(new ApiError(403, 'Tu cuenta no puede cambiar a ese plan.'))
     }
     if (payerEmail !== undefined && !isValidPayerEmail(payerEmail)) {
-      return Promise.reject(new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.'))
+      const msg = planId === 'plus'
+        ? 'Ingresa un correo electrónico válido para activar Radar+.'
+        : 'Ingresa un correo electrónico válido para realizar el pago.'
+      return Promise.reject(new ApiError(400, msg))
     }
     if (env.useMocks) {
       failIfScenario()
