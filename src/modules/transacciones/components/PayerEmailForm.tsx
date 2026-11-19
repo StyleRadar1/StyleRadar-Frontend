@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/modules/core/design-system'
-import { correoValido } from '@/modules/identidad/utils/formato'
+import { isValidPayerEmail } from '../utils/validation'
 
 export const PAYER_EMAIL_INVALID_MSG = 'Ingresa un correo electrónico válido para realizar el pago.'
 export const PAYMENT_INIT_ERROR_MSG = 'No fue posible iniciar el pago en este momento. Inténtalo nuevamente.'
@@ -28,12 +28,12 @@ export interface PayerEmailFormProps {
 }
 
 /**
- * Formulario compartido de Correo del pagador (RF-67, RF-93, RF-96, RF-100).
- * Valida formato al salir del campo y al enviar; mueve el foco al campo si hay error.
+ * Formulario compartido de Correo del pagador (RF-67, RF-93, RF-96, RF-100, E.1).
+ * Valida formato estricto al salir del campo y al enviar; mueve el foco al campo si hay error.
  */
 export function PayerEmailForm({
   defaultEmail = '',
-  submitLabel = 'Continuar a Mercado Pago',
+  submitLabel = 'Pagar con Mercado Pago',
   busyLabel = 'Procesando…',
   busy = false,
   disabled = false,
@@ -61,7 +61,7 @@ export function PayerEmailForm({
 
   const handleBlur = () => {
     setTouched(true)
-    if (!correoValido(email)) {
+    if (!isValidPayerEmail(email)) {
       setValidationError(PAYER_EMAIL_INVALID_MSG)
     } else {
       setValidationError(null)
@@ -70,7 +70,7 @@ export function PayerEmailForm({
 
   const handleChange = (val: string) => {
     setEmail(val)
-    if (validationError && correoValido(val)) {
+    if (validationError && isValidPayerEmail(val)) {
       setValidationError(null)
     }
   }
@@ -78,7 +78,7 @@ export function PayerEmailForm({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     setTouched(true)
-    if (!correoValido(email)) {
+    if (!isValidPayerEmail(email)) {
       setValidationError(PAYER_EMAIL_INVALID_MSG)
       inputRef.current?.focus()
       return

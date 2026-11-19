@@ -2,7 +2,7 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
-import { correoValido } from '@/modules/identidad/utils/formato'
+import { isValidPayerEmail } from '../utils/validation'
 import { MOCK_CHECKOUT_RESPONSE, STORE_PLAN } from '../mocks/plans'
 import type { PaymentDto } from '../types/payment.dto'
 import type { CheckoutResponseDto } from '../types/plan.dto'
@@ -145,7 +145,7 @@ export const storeSubscriptionService = {
    * En mocks no hay redirección: se resuelve con `orderId` (por defecto uno aprobado).
    */
   async pay(orderId = 'MOCK_STORE_OK', payerEmail?: string): Promise<StorePayResult> {
-    if (payerEmail !== undefined && !correoValido(payerEmail)) {
+    if (payerEmail !== undefined && !isValidPayerEmail(payerEmail)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.')
     }
     if (!env.useMocks) {
@@ -205,7 +205,7 @@ export const storeSubscriptionService = {
    * y actualiza el estado a PENDIENTE o ACTIVA según el resultado de Mercado Pago.
    */
   async activateFromOnboarding(payerEmail: string, orderId = 'MOCK_STORE_OK'): Promise<StorePayResult> {
-    if (!correoValido(payerEmail)) {
+    if (!isValidPayerEmail(payerEmail)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.')
     }
     const before = readMockStoreSubscription()
@@ -268,7 +268,7 @@ export const storeSubscriptionService = {
    * Crea una nueva transacción por el mismo valor y conserva el pago rechazado original en el historial.
    */
   async retryPayment(paymentId: string, payerEmail: string, orderId = 'MOCK_STORE_OK'): Promise<StorePayResult> {
-    if (!correoValido(payerEmail)) {
+    if (!isValidPayerEmail(payerEmail)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.')
     }
     const before = readMockStoreSubscription()

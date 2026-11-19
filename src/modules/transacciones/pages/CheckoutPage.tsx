@@ -67,7 +67,7 @@ function CheckoutResult() {
   const icons: Record<string, string> = { aprobado: '✅', pendiente: '⏳', rechazado: '❌' }
   const messages: Record<string, string> = {
     aprobado: '¡Tu pago fue aprobado! Ya tienes acceso a todos los beneficios de tu plan.',
-    pendiente: 'Tu pago está pendiente. Si elegiste Efecty, acércate a un punto autorizado para completar el pago.',
+    pendiente: 'Tu pago continúa pendiente de confirmación.',
     rechazado: 'El pago no fue aprobado. Puedes intentarlo nuevamente.',
   }
 

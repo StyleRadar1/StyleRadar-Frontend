@@ -3,7 +3,7 @@ import { MENSAJES } from '@/modules/core/api/mensajes'
 import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
-import { correoValido } from '@/modules/identidad/utils/formato'
+import { isValidPayerEmail } from '../utils/validation'
 import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import { PLANS, MOCK_CHECKOUT_RESPONSE, MOCK_CHECKOUT_RESULTS } from '../mocks/plans'
 import type { PlanDto, PlanIntentDto, CheckoutResponseDto, CheckoutResultDto } from '../types/plan.dto'
@@ -83,7 +83,7 @@ export const planService = {
 
   /** Crea una preferencia de pago (mock: devuelve un initPoint simulado). */
   createCheckout(planId: string, payerEmail?: string): Promise<CheckoutResponseDto> {
-    if (payerEmail !== undefined && !correoValido(payerEmail)) {
+    if (payerEmail !== undefined && !isValidPayerEmail(payerEmail)) {
       return Promise.reject(new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.'))
     }
     if (env.useMocks) {
@@ -131,7 +131,7 @@ export const planService = {
     payerEmail: string,
     nextStatus: 'aprobado' | 'pendiente' | 'rechazado' = 'aprobado',
   ): Promise<CheckoutResultDto> {
-    if (!correoValido(payerEmail)) {
+    if (!isValidPayerEmail(payerEmail)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.')
     }
     if (originalOrder.status !== 'rechazado') {

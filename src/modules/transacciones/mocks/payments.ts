@@ -1,7 +1,7 @@
 import type { PaymentDto, PaymentMethod, PaymentStatus } from '../types/payment.dto'
 
 const names = ['Ana Torres', 'Luis García', 'María López', 'Carlos Sánchez', 'Sofía Herrera', 'Diego Ramírez', 'Laura Cortés', 'Andrés Peña', 'Camila Ríos', 'Juan Morales']
-const methods: PaymentMethod[] = ['Mercado Pago', 'PSE', 'Efecty', 'Nequi']
+const methods: PaymentMethod[] = ['Mercado Pago']
 const statuses: PaymentStatus[] = ['aprobado', 'aprobado', 'aprobado', 'rechazado', 'pendiente', 'reembolsado']
 
 function mockPayment(i: number): PaymentDto {
@@ -59,7 +59,7 @@ export const MOCK_BUYER_PAYMENTS: Record<string, PaymentDto[]> = {
       amount: 14_900,
       currency: 'COP',
       mpReference: 'MP-88410092',
-      method: 'PSE',
+      method: 'Mercado Pago',
       date: '2026-10-09',
       status: 'aprobado',
     },
@@ -74,7 +74,7 @@ export const MOCK_BUYER_PAYMENTS: Record<string, PaymentDto[]> = {
       amount: 14_900,
       currency: 'COP',
       mpReference: 'MP-87990314',
-      method: 'Nequi',
+      method: 'Mercado Pago',
       date: '2026-09-09',
       status: 'rechazado',
     },

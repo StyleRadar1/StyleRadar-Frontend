@@ -3,8 +3,8 @@ import type { Role } from '@/modules/core/types/roles'
 /** Estado de un pago según ms-pagos-suscripciones. */
 export type PaymentStatus = 'aprobado' | 'rechazado' | 'pendiente' | 'reembolsado'
 
-/** Método de pago visible en el front. */
-export type PaymentMethod = 'Mercado Pago' | 'PSE' | 'Efecty' | 'Nequi'
+/** Método de pago visible en el front (único medio: Mercado Pago, E.3). */
+export type PaymentMethod = 'Mercado Pago'
 
 /** DTO de un pago individual devuelto por el gateway. */
 export interface PaymentDto {
