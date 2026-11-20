@@ -69,13 +69,13 @@ export function useTryOnJob() {
   }, [])
 
   /** Inicia una prueba. Ignora la llamada si ya hay una en curso. */
-  const start = useCallback(async (photoId: string, garmentId: string, selectedSize?: string) => {
+  const start = useCallback(async (photoId: string, garmentId: string, selectedSize?: string, photoUrl?: string) => {
     if (busy.current) return
     busy.current = true
     stop()
     setState({ phase: 'creating' })
     try {
-      const created = await tryOnService.createJob({ photoId, garmentId, selectedSize }, newKey())
+      const created = await tryOnService.createJob({ photoId, garmentId, selectedSize, photoUrl, biometricConsent: true }, newKey())
       setState({ phase: 'waiting', jobId: created.jobId, progress: 0 })
       poll(created.jobId, Date.now())
     } catch (e) {

@@ -73,8 +73,18 @@ export const donationService = {
       .then((r) => r.data)
   },
 
-  /** Solicitud directa oficial: POST /api/v1/donations */
+  /** Solicitud directa oficial: POST /api/v1/donations (SR-RF-45) */
   async createDirect(body: DirectDonationRequestDto): Promise<DonationDto> {
+    const payload = {
+      ...body,
+      deliveryProposal: body.deliveryProposal || (body.deliveryMode ? {
+        mode: body.deliveryMode,
+        point: body.deliveryPoint,
+        startTime: body.pickupWindowStart,
+        endTime: body.pickupWindowEnd,
+      } : undefined),
+    }
+
     if (env.useMocks) {
       failIfScenario('duplicado')
       const u = mockSessionUser()
@@ -93,7 +103,11 @@ export const donationService = {
           descripcion: body.message || 'Donación directa de prenda',
         },
         fotos: [],
-        logistica: { modalidad: 'ENTREGA_EN_PUNTO', fecha: isoDay(), franja: '8:00 a 12:00' },
+        logistica: {
+          modalidad: (body.deliveryProposal?.mode as any) || (body.deliveryMode as any) || 'ENTREGA_EN_PUNTO',
+          fecha: body.deliveryProposal?.startTime || isoDay(),
+          franja: '8:00 a 12:00',
+        },
         estado: 'PENDIENTE',
         creadaEn: isoDay(),
       }
@@ -101,8 +115,8 @@ export const donationService = {
       return mockDelay(d, 500)
     }
     return apiClient
-      .post<DonationDto>('/api/v1/donations', body)
-      .catch(() => apiClient.post<DonationDto>('/api/v1/donaciones', body))
+      .post<DonationDto>('/api/v1/donations', payload)
+      .catch(() => apiClient.post<DonationDto>('/api/v1/donaciones', payload))
       .then((r) => r.data)
   },
 

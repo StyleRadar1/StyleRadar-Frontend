@@ -135,7 +135,7 @@ export default function TryOnPage() {
       const nextCount = tryOnUses + 1
       setTryOnPhotoUses(nextCount, userId)
       setTryOnUsesState(nextCount)
-      job.start(photo.photoId, garment.id, selectedSize || garment.tallas[0])
+      job.start(photo.photoId, garment.id, selectedSize || garment.tallas[0], photo.photoUrl)
     }
   }
 

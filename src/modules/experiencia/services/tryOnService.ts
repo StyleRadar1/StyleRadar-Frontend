@@ -98,6 +98,21 @@ export const tryOnService = {
       .then((r) => r.data)
   },
 
+  /** RF-23: consultar foto/silueta activa del usuario (GET /api/v1/try-on/photos/{userId}) */
+  async getActivePhoto(userId?: string): Promise<PhotoUploadResponseDto | null> {
+    if (env.useMocks) {
+      failIfScenario()
+      if (mock.photos.size === 0) return mockDelay(null)
+      const photoId = Array.from(mock.photos).pop()!
+      return mockDelay({ photoId, photoUrl: '' })
+    }
+    const uid = userId || mockSessionUser()?.id || ''
+    return apiClient
+      .get<PhotoUploadResponseDto>(`/api/v1/try-on/photos/${encodeURIComponent(uid)}`)
+      .then((r) => r.data)
+      .catch(() => null)
+  },
+
   /** RF-23: sube la foto frontal con progreso real de subida. */
   async uploadPhoto(file: File, onProgress?: (pct: number) => void, signal?: AbortSignal): Promise<PhotoUploadResponseDto> {
     if (env.useMocks) {
@@ -116,6 +131,7 @@ export const tryOnService = {
     }
     const form = new FormData()
     form.append('photo', file)
+    form.append('biometricConsent', 'true')
     return apiClient.post<PhotoUploadResponseDto>('/api/v1/try-on/photos', form, {
       timeout: 60000,
       signal,
@@ -128,6 +144,10 @@ export const tryOnService = {
    * duplicados si la petición se reenvía (doble clic o red inestable).
    */
   async createJob(req: TryOnJobRequestDto, idempotencyKey: string): Promise<TryOnJobCreatedDto> {
+    const payload: TryOnJobRequestDto = {
+      ...req,
+      biometricConsent: req.biometricConsent ?? true,
+    }
     if (env.useMocks) {
       failIfScenario()
       if (hasScenario('consentimiento') && !mock.consent) throw new ApiError(400, 'Falta el consentimiento (Ley 1581).', 'CONSENT_REQUIRED')
@@ -146,7 +166,7 @@ export const tryOnService = {
       mock.quotas.remainingCount = Math.max(0, mock.quotas.monthlyLimit - mock.quotas.usedCount)
       return mockDelay({ jobId, status: 'PENDING' as const }, 250)
     }
-    return apiClient.post<TryOnJobCreatedDto>('/api/v1/try-on/jobs', req, { headers: { 'Idempotency-Key': idempotencyKey } }).then((r) => r.data)
+    return apiClient.post<TryOnJobCreatedDto>('/api/v1/try-on/jobs', payload, { headers: { 'Idempotency-Key': idempotencyKey } }).then((r) => r.data)
   },
 
   /** RF-25/26: estado del job. Solo el dueño lo puede consultar (403 si no). */
@@ -238,7 +258,12 @@ export const tryOnService = {
       userId: uid,
       termsVersion: 'v1.0-LEY1581-2026',
       accepted: true,
-      purposes: ['VIRTUAL_TRY_ON_INFERENCE', 'TEMPORARY_SILHOUETTE_STORAGE'],
+      purposes: [
+        'PROBADOR_VIRTUAL',
+        'ALMACENAMIENTO_TEMPORAL_FOTOGRAFIA',
+        'VIRTUAL_TRY_ON_INFERENCE',
+        'TEMPORARY_SILHOUETTE_STORAGE',
+      ],
     })
   },
 
