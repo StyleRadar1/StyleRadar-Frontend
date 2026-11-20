@@ -11,7 +11,7 @@ function applyFilters(payments: PaymentDto[], f: PaymentFiltersDto): PaymentDto[
     if (f.dateTo && p.date > f.dateTo) return false
     if (f.search) {
       const q = f.search.toLowerCase()
-      if (!`${p.id} ${p.userName} ${p.userEmail}`.toLowerCase().includes(q)) return false
+      if (!`${p.pagoId ?? p.id} ${p.suscripcionId ?? ''} ${p.suscriptorId ?? p.userId}`.toLowerCase().includes(q)) return false
     }
     return true
   })
@@ -29,11 +29,11 @@ describe('filtros de pagos', () => {
     expect(result.every((p) => p.planId === 'plus')).toBe(true)
   })
 
-  it('filtra por búsqueda de nombre', () => {
+  it('filtra por búsqueda de suscriptorId', () => {
     const first = MOCK_PAYMENTS[0]
-    const result = applyFilters(MOCK_PAYMENTS, { search: first.userName })
+    const result = applyFilters(MOCK_PAYMENTS, { search: first.suscriptorId })
     expect(result.length).toBeGreaterThan(0)
-    expect(result.every((p) => p.userName === first.userName)).toBe(true)
+    expect(result.every((p) => p.suscriptorId === first.suscriptorId)).toBe(true)
   })
 
   it('filtra por rango de fechas', () => {

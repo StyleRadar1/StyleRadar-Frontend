@@ -8,6 +8,7 @@ export interface CancelSubscriptionButtonProps {
   tipo: 'comprador' | 'tienda'
   renewalEnabled: boolean
   fechaFin?: string
+  planName?: string
   status?: string
   isFreePlan?: boolean
   onUpdated?: () => void
@@ -15,13 +16,14 @@ export interface CancelSubscriptionButtonProps {
 }
 
 /**
- * Botón y modal oficial "Cancelar suscripción" (E.2, RF-70, RF-101).
- * Explica que conserva beneficios hasta {fechaFin}, no cobra siguiente ciclo, y no hay reembolso proporcional.
+ * Botón y modal oficial "Cancelar suscripción" (E.2, RF-68, RF-101).
+ * Explica que conserva beneficios hasta {fechaFin}, no cobra siguiente ciclo y no hay devolución por el tiempo restante
  */
 export function CancelSubscriptionButton({
   tipo,
   renewalEnabled,
   fechaFin = 'fin del periodo',
+  planName,
   status = 'ACTIVA',
   isFreePlan = false,
   onUpdated,
@@ -30,6 +32,7 @@ export function CancelSubscriptionButton({
   const [openModal, setOpenModal] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const effectivePlanName = planName ?? (tipo === 'comprador' ? 'Radar+' : 'Tienda aliada')
 
   if (isFreePlan) {
     return (
@@ -37,7 +40,7 @@ export function CancelSubscriptionButton({
         <Button variant="secundario" disabled className="opacity-60 cursor-not-allowed">
           Cancelar suscripción
         </Button>
-        <p className="mt-1">Tu plan es gratuito, no tiene cobros que cancelar.</p>
+        <p className="mt-1">Tu plan es gratuito, no tiene cobros que cancelar</p>
       </div>
     )
   }
@@ -48,7 +51,7 @@ export function CancelSubscriptionButton({
         <Button variant="secundario" disabled className="opacity-60 cursor-not-allowed">
           Cancelar suscripción
         </Button>
-        <p className="mt-1">No hay una suscripción activa para cancelar.</p>
+        <p className="mt-1">No hay una suscripción activa para cancelar</p>
       </div>
     )
   }
@@ -58,10 +61,10 @@ export function CancelSubscriptionButton({
       <div className={`flex flex-col gap-2 ${className}`}>
         <div className="rounded-xl border border-arena/40 bg-white/[.04] p-3 text-xs text-[var(--sr-text-primary,var(--color-text))]">
           <p className="font-semibold text-arena">
-            Activa hasta {fechaFin}. No se renovará.
+            {effectivePlanName} · Activa hasta {fechaFin}. No se renovará
           </p>
           <p className="mt-0.5 text-[var(--sr-text-muted,var(--color-text-muted))]">
-            Tu renovación automática está desactivada. Conservarás los beneficios hasta la fecha límite.
+            La renovación automática está desactivada
           </p>
         </div>
         <div>
@@ -90,6 +93,11 @@ export function CancelSubscriptionButton({
     )
   }
 
+  const fallbackCancelErr =
+    tipo === 'comprador'
+      ? 'No fue posible cancelar la renovación de Radar+'
+      : 'No fue posible desactivar la renovación. Inténtalo nuevamente'
+
   const handleConfirmCancel = async () => {
     setBusy(true)
     setError(null)
@@ -102,7 +110,7 @@ export function CancelSubscriptionButton({
       setOpenModal(false)
       onUpdated?.()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No fue posible cancelar la renovación.')
+      setError(e instanceof Error && e.message ? e.message.replace(/\.$/, '') : fallbackCancelErr)
     } finally {
       setBusy(false)
     }
@@ -134,13 +142,13 @@ export function CancelSubscriptionButton({
       >
         <div className="space-y-2 text-left text-sm text-[var(--sr-text-primary,var(--color-text))]">
           <p>
-            Al cancelar la suscripción, conservarás el acceso a los beneficios hasta el final de tu ciclo de facturación (<strong>{fechaFin}</strong>).
+            Al cancelar la suscripción de <strong>{effectivePlanName}</strong>, conservarás el acceso a los beneficios hasta el final de tu ciclo de facturación (<strong>{fechaFin}</strong>)
           </p>
           <p>
-            No se cobrará el siguiente ciclo ni se generarán cobros automáticos en Mercado Pago.
+            Se desactiva la renovación automática y no se cobrará el siguiente ciclo en Mercado Pago
           </p>
           <p className="text-xs text-[var(--sr-text-muted,var(--color-text-muted))]">
-            Nota: No se emitirán reembolsos proporcionales del periodo en curso.
+            No hay devolución por el tiempo restante
           </p>
           {error && (
             <p role="alert" className="mt-2 text-xs font-semibold text-[#ff8a8a]">

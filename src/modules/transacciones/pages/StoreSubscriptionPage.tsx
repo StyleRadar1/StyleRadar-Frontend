@@ -18,6 +18,7 @@ const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = {
   PENDIENTE: 'Pendiente',
   PRUEBA: 'Periodo gratuito',
   ACTIVA: 'Activa',
+  VENCIDA: 'Vencida',
   SUSPENDIDA: 'Suspendida',
   CANCELADA: 'Cancelada',
 }
@@ -25,7 +26,6 @@ const PAYMENT_LABEL: Record<PaymentStatus, string> = {
   aprobado: 'Aprobado',
   rechazado: 'Rechazado',
   pendiente: 'Pendiente',
-  reembolsado: 'Reembolsado',
 }
 
 const fecha = (iso?: string) => iso

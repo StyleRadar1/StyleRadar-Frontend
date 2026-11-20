@@ -51,7 +51,7 @@ describe('suscripción de la tienda (RF-67, RF-68)', () => {
     render(<StoreSubscriptionPage />)
     await user.click(await screen.findByRole('button', { name: 'Cancelar suscripción' }))
     const dialogo = screen.getByRole('dialog', { name: '¿Cancelar suscripción?' })
-    expect(dialogo).toHaveTextContent('No se emitirán reembolsos proporcionales')
+    expect(dialogo).toHaveTextContent('No hay devolución por el tiempo restante')
     await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancelar suscripción' })).not.toBeInTheDocument(), slow)
     expect(screen.getByText('Activa')).toBeInTheDocument()

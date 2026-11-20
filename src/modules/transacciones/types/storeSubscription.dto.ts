@@ -1,25 +1,45 @@
-import type { PaymentDto } from './payment.dto'
+import type { PaymentDto, SubscriptionStatus } from './payment.dto'
 import type { CheckoutResultDto } from './plan.dto'
 
 /**
- * Suscripción de una tienda aliada (RF-67, RF-68). Los 30 primeros días son gratis; después se paga
- * el plan Tienda aliada para mantener el catálogo activo. Forma provisional hasta tener el Swagger de ms-pagos.
+ * Suscripción de una tienda aliada (RF-67, RF-68, B.1).
+ * Estados oficiales v4: PENDIENTE, ACTIVA, VENCIDA, CANCELADA y SUSPENDIDA (más PRUEBA / SIN_SUSCRIPCION para UI previa).
  */
-export type StoreSubscriptionStatus = 'SIN_SUSCRIPCION' | 'PENDIENTE' | 'PRUEBA' | 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA'
+export type StoreSubscriptionStatus =
+  | SubscriptionStatus
+  | 'SIN_SUSCRIPCION'
+  | 'PRUEBA'
+
+/** RF-67: salida al iniciar suscripción de almacén */
+export interface StoreSubscriptionInitOutputDto {
+  suscripcionId: string
+  ordenId: string
+  estado: SubscriptionStatus
+  initPoint: string
+}
+
+/** RF-99: suscripcionAlmacen */
+export interface SuscripcionAlmacenDto {
+  suscripcionId: string
+  almacenId: string
+  estado: SubscriptionStatus
+}
 
 export interface StoreSubscriptionDto {
   id?: string
   suscripcionId?: string
   status: StoreSubscriptionStatus
+  estado?: SubscriptionStatus
   planName: string
   amount: number
   /** Correo del pagador asociado a la suscripción (RF-67, RF-93). */
   payerEmail?: string
   /** Fin de los 30 días gratis (solo en PRUEBA). */
   trialEndsAt?: string
-  /** Fin del periodo pagado (solo en ACTIVA). */
+  /** Inicio y fin del periodo pagado (RF-94). */
+  fechaInicio?: string | null
   periodEndsAt?: string
-  fechaFin?: string
+  fechaFin?: string | null
   /** En false la renovación fue cancelada: la suscripción sigue activa hasta `periodEndsAt`. */
   renewalEnabled: boolean
   autoRenovacion?: boolean
@@ -37,4 +57,5 @@ export interface StoreSubscriptionStateDto {
 export interface StorePayResult {
   redirectTo?: string
   result?: CheckoutResultDto
+  output?: StoreSubscriptionInitOutputDto
 }

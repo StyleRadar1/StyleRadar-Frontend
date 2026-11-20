@@ -1,22 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 
-describe('reembolso con motivo obligatorio', () => {
-  it('no permite motivo vacío', () => {
-    const reason = ''
-    expect(reason.trim()).toBe('')
-  })
-
-  it('no permite motivo con solo espacios', () => {
-    const reason = '   '
-    expect(reason.trim()).toBe('')
-  })
-
-  it('acepta motivo con texto', () => {
-    const reason = 'Solicitud del usuario'
-    expect(reason.trim().length).toBeGreaterThan(0)
-  })
-})
-
 describe('intención de plan en localStorage', () => {
   const INTENT_KEY = 'sr_plan_intent'
   const TTL_MS = 30 * 60 * 1000

@@ -12,14 +12,12 @@ const STATUS_BADGE_LABEL: Record<PaymentStatus, string> = {
   aprobado: 'APROBADO',
   rechazado: 'RECHAZADO',
   pendiente: 'PENDIENTE',
-  reembolsado: 'REEMBOLSADO',
 }
 
 const STATUS_TONE: Record<PaymentStatus, 'violeta' | 'arena' | 'lavanda'> = {
   aprobado: 'violeta',
   rechazado: 'arena',
   pendiente: 'lavanda',
-  reembolsado: 'arena',
 }
 
 const formatFecha = (iso: string) =>
@@ -118,12 +116,6 @@ export function BuyerPaymentsSection() {
                   </td>
                   <td className="p-4">
                     <Badge tone={STATUS_TONE[p.status]}>{STATUS_BADGE_LABEL[p.status]}</Badge>
-                    {p.status === 'reembolsado' && (
-                      <p className="mt-1 text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                        Reembolsado: {formatCOP(p.refundedAmount ?? p.amount)} {currency}
-                        {p.refundReason ? ` · ${p.refundReason}` : ''}
-                      </p>
-                    )}
                   </td>
                   <td className="p-4 font-mono text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
                     {ref}
@@ -250,19 +242,9 @@ export function BuyerPaymentsSection() {
               <dd>{selectedReceipt.method || 'Mercado Pago'}</dd>
             </div>
             <div>
-              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Correo asociado</dt>
-              <dd className="truncate">{selectedReceipt.userEmail}</dd>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">suscripcionId</dt>
+              <dd className="font-mono">{selectedReceipt.suscripcionId ?? 'SUB-USR-001'}</dd>
             </div>
-            {selectedReceipt.refundReason && (
-              <div className="sm:col-span-3">
-                <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Información del reembolso</dt>
-                <dd className="font-semibold">
-                  {formatCOP(selectedReceipt.refundedAmount ?? selectedReceipt.amount)}{' '}
-                  {selectedReceipt.currency ?? 'COP'} · Motivo: {selectedReceipt.refundReason}
-                  {selectedReceipt.refundDate ? ` (${formatFecha(selectedReceipt.refundDate)})` : ''}
-                </dd>
-              </div>
-            )}
           </dl>
         </Card>
       )}

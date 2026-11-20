@@ -14,14 +14,12 @@ const STATUS_TONES: Record<PaymentStatus, 'violeta' | 'arena' | 'lavanda'> = {
   aprobado: 'violeta',
   rechazado: 'arena',
   pendiente: 'lavanda',
-  reembolsado: 'arena',
 }
 
 const STATUS_LABELS: Record<PaymentStatus, string> = {
-  aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
-  pendiente: 'Pendiente',
-  reembolsado: 'Reembolsado',
+  aprobado: 'APROBADO',
+  rechazado: 'RECHAZADO',
+  pendiente: 'PENDIENTE',
 }
 
 interface RadarCardItem {
@@ -100,12 +98,12 @@ const BALANCE_SERIES = [
 ]
 
 const FLOW_BARS = [
-  { mes: 'Abr', entradas: 1240000, reembolsos: 120000 },
-  { mes: 'May', entradas: 1490000, reembolsos: 150000 },
-  { mes: 'Jun', entradas: 1420000, reembolsos: 130000 },
-  { mes: 'Jul', entradas: 1850000, reembolsos: 170000 },
-  { mes: 'Ago', entradas: 2120000, reembolsos: 180000 },
-  { mes: 'Sep', entradas: 2380000, reembolsos: 153000 },
+  { mes: 'Abr', entradas: 1240000, pendientes: 120000 },
+  { mes: 'May', entradas: 1490000, pendientes: 150000 },
+  { mes: 'Jun', entradas: 1420000, pendientes: 130000 },
+  { mes: 'Jul', entradas: 1850000, pendientes: 170000 },
+  { mes: 'Ago', entradas: 2120000, pendientes: 180000 },
+  { mes: 'Sep', entradas: 2380000, pendientes: 153000 },
 ]
 
 export default function AdminPaymentsPage() {
@@ -125,21 +123,18 @@ export default function AdminPaymentsPage() {
 
   const statsSummary = useMemo(() => {
     const approved = payments.filter((p) => p.status === 'aprobado')
-    const refunded = payments.filter((p) => p.status === 'reembolsado' || (p.refundedAmount ?? 0) > 0)
+    const rejected = payments.filter((p) => p.status === 'rechazado')
     const pending = payments.filter((p) => p.status === 'pendiente')
     const approvedSum = approved.reduce((acc, p) => acc + p.amount, 0)
-    const refundedSum = payments.reduce(
-      (acc, p) => acc + (p.refundedAmount ?? (p.status === 'reembolsado' ? p.amount : 0)),
-      0,
-    )
+    const pendingSum = pending.reduce((acc, p) => acc + p.amount, 0)
     const plusSum = approved.filter((p) => p.planId === 'plus').reduce((acc, p) => acc + p.amount, 0)
     const storeSum = approved.filter((p) => p.planId === 'store').reduce((acc, p) => acc + p.amount, 0)
     return {
       approvedCount: approved.length,
-      refundedCount: refunded.length,
+      rejectedCount: rejected.length,
       pendingCount: pending.length,
       approvedSum,
-      refundedSum,
+      pendingSum,
       plusSum,
       storeSum,
     }
@@ -189,12 +184,12 @@ export default function AdminPaymentsPage() {
             Resumen financiero · StyleRadar Bogotá
           </p>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight md:text-5xl">Pagos</h1>
-          <p className="mt-1 text-sm text-white/70">Estado de los pagos, pasarelas activas, reintentos y reembolsos.</p>
+          <p className="mt-1 text-sm text-white/70">Estado de los pagos de suscripciones de almacenes y compradores</p>
         </div>
         <Card className="sr-verdelo-panel text-right">
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Ingresos netos</p>
+          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Ingresos aprobados</p>
           <p className="mt-1 text-2xl font-extrabold tabular-nums">{formatCOP(revenue)}</p>
-          <p className="text-xs text-white/55">Aprobados − reembolsos</p>
+          <p className="text-xs text-white/55">Solo pagos aprobados</p>
         </Card>
       </div>
 
@@ -362,7 +357,7 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
 
-        {/* Columna derecha: Balance Conjunto (arriba) + Entradas y Reembolsos (abajo) */}
+        {/* Columna derecha: Balance Conjunto (arriba) + Cobros aprobados y pendientes (abajo) */}
         <div className="flex flex-col gap-5 lg:col-span-7">
           {/* Panel superior: Balance conjunto con curva brillante y proyección */}
           <div className="sr-verdelo-panel rounded-3xl p-6">
@@ -390,13 +385,13 @@ export default function AdminPaymentsPage() {
               </div>
             </div>
 
-            {/* Píldoras de resumen por periodo (Hoy / Semana / Mes / Año) */}
+            {/* Píldoras de resumen por periodo (Hoy / Semana / Mes / Pendientes) */}
             <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {[
                 { label: 'Hoy', val: formatCOP(Math.round((revenue || 2227000) * 0.08)), delta: '+4.2%', up: true },
                 { label: 'Esta semana', val: formatCOP(Math.round((revenue || 2227000) * 0.32)), delta: '+9.1%', up: true },
                 { label: 'Este mes', val: formatCOP(revenue || 2227000), delta: '+14.8%', up: true },
-                { label: 'Reembolsos', val: formatCOP(statsSummary.refundedSum), delta: `${statsSummary.refundedCount} casos`, up: false },
+                { label: 'Pendientes', val: formatCOP(statsSummary.pendingSum), delta: `${statsSummary.pendingCount} pagos`, up: false },
               ].map((pill) => (
                 <div
                   key={pill.label}
@@ -499,12 +494,12 @@ export default function AdminPaymentsPage() {
             </div>
           </div>
 
-          {/* Panel inferior: Entradas y reembolsos (barras tipo cápsula como "Money in & out" en Verdelo) */}
+          {/* Panel inferior: Cobros aprobados y pendientes */}
           <div className="sr-verdelo-panel rounded-3xl p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h2 className="text-base font-bold text-blanco">Entradas y reembolsos</h2>
-                <p className="text-xs text-lavanda/75">Comparativa mensual de cobros aprobados frente a devoluciones.</p>
+                <h2 className="text-base font-bold text-blanco">Cobros aprobados y pendientes</h2>
+                <p className="text-xs text-lavanda/75">Comparativa mensual de suscripciones aprobadas y en espera</p>
               </div>
               <div className="flex items-center gap-4 text-xs text-lavanda">
                 <span className="flex items-center gap-1.5">
@@ -513,7 +508,7 @@ export default function AdminPaymentsPage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <i aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-arena" />
-                  Reembolsos ({statsSummary.refundedCount})
+                  Pendientes ({statsSummary.pendingCount})
                 </span>
               </div>
             </div>
@@ -521,7 +516,7 @@ export default function AdminPaymentsPage() {
             <div className="mt-4 grid grid-cols-6 gap-3">
               {FLOW_BARS.map((bar) => {
                 const inPct = Math.round((bar.entradas / 2500000) * 100)
-                const outPct = Math.max(12, Math.round((bar.reembolsos / 600000) * 100))
+                const pendingPct = Math.max(12, Math.round((bar.pendientes / 600000) * 100))
                 return (
                   <div key={bar.mes} className="flex flex-col items-center">
                     <div className="flex h-24 w-full items-end justify-center gap-1.5 rounded-2xl bg-white/[0.03] px-2 py-2">
@@ -535,8 +530,8 @@ export default function AdminPaymentsPage() {
                       <div className="flex h-full w-3 items-end rounded-full bg-white/[0.06] sm:w-3.5">
                         <span
                           className="w-full rounded-full bg-gradient-to-t from-arena/60 to-arena"
-                          style={{ height: `${outPct}%` }}
-                          title={`Reembolsos ${bar.mes}: ${formatCOP(bar.reembolsos)}`}
+                          style={{ height: `${pendingPct}%` }}
+                          title={`Pendientes ${bar.mes}: ${formatCOP(bar.pendientes)}`}
                         />
                       </div>
                     </div>
@@ -549,32 +544,32 @@ export default function AdminPaymentsPage() {
         </div>
       </div>
 
-      {/* Filtros */}
+      {/* Filtros (RF-75: filtro opcional por estado PENDIENTE, APROBADO, RECHAZADO) */}
       <Card className="sr-verdelo-panel mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <input
           type="search"
-          placeholder="Buscar por usuario o ID…"
+          placeholder="Buscar por pagoId, suscripcionId o suscriptorId…"
           className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/40 focus:border-violeta-claro"
           onChange={(e) => handleFilter('search', e.target.value)}
         />
         <select
+          aria-label="Filtrar por estado"
           className="rounded-xl border border-white/15 bg-[#1b1824] px-3 py-2 text-sm text-blanco"
           onChange={(e) => handleFilter('status', e.target.value)}
           defaultValue=""
         >
           <option value="">Todos los estados</option>
-          <option value="aprobado">Aprobado</option>
-          <option value="rechazado">Rechazado</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="reembolsado">Reembolsado</option>
+          <option value="pendiente">PENDIENTE</option>
+          <option value="aprobado">APROBADO</option>
+          <option value="rechazado">RECHAZADO</option>
         </select>
         <select
+          aria-label="Filtrar por plan"
           className="rounded-xl border border-white/15 bg-[#1b1824] px-3 py-2 text-sm text-blanco"
           onChange={(e) => handleFilter('planId', e.target.value)}
           defaultValue=""
         >
           <option value="">Todos los planes</option>
-          <option value="free">Radar</option>
           <option value="plus">Radar+</option>
           <option value="store">Tienda aliada</option>
         </select>
@@ -600,7 +595,7 @@ export default function AdminPaymentsPage() {
         </div>
       )}
 
-      {/* Tabla */}
+      {/* Tabla (RF-75: pagoId, suscripcionId, suscriptorId sin correos ni nombres, valor (COP), estado, fecha, referencia) */}
       {loading ? (
         <Loading label="Cargando pagos…" />
       ) : error && errorKind(error) === 'permiso' ? (
@@ -608,90 +603,77 @@ export default function AdminPaymentsPage() {
       ) : error ? (
         <div className="mt-6"><ErrorState error={error} onRetry={reload} /></div>
       ) : payments.length === 0 ? (
-        <div className="mt-6"><EmptyState title="No hay pagos">Ajusta los filtros o revisa más tarde.</EmptyState></div>
+        <div className="mt-6"><EmptyState title="No hay pagos de suscripciones registrados">Ajusta los filtros o revisa más tarde</EmptyState></div>
       ) : (
         <div className="sr-verdelo-panel mt-6 overflow-x-auto rounded-3xl p-5">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-[.16em] text-arena">
-                <th className="pb-3 pr-4">ID</th>
-                <th className="pb-3 pr-4">Usuario</th>
-                <th className="pb-3 pr-4">Plan</th>
-                <th className="pb-3 pr-4 text-right">Monto</th>
-                <th className="pb-3 pr-4">Método</th>
+                <th className="pb-3 pr-4">pagoId</th>
+                <th className="pb-3 pr-4">suscripcionId</th>
+                <th className="pb-3 pr-4">suscriptorId</th>
+                <th className="pb-3 pr-4 text-right">Valor (COP)</th>
+                <th className="pb-3 pr-4">Estado</th>
                 <th className="pb-3 pr-4">Fecha</th>
-                <th className="pb-3">Estado</th>
+                <th className="pb-3 pr-4">Referencia</th>
+                <th className="pb-3">Método</th>
               </tr>
             </thead>
             <tbody>
-              {payments.map((p) => (
-                <tr
-                  key={p.id}
-                  className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.06]"
-                  onClick={() => setSelected(p)}
-                >
-                  <td className="py-3.5 pr-4 font-mono text-xs text-lavanda">{p.id}</td>
-                  <td className="py-3.5 pr-4 font-semibold text-blanco">{p.userName}</td>
-                  <td className="py-3.5 pr-4 text-white/80">{p.planName}</td>
-                  <td className="py-3.5 pr-4 text-right font-mono font-bold text-arena">
-                    <div>{formatCOP(p.amount)}</div>
-                    {(p.refundedAmount ?? 0) > 0 && (
-                      <div className="text-[0.6875rem] font-normal text-[#ff8a8a]">
-                        Reembolsado: {formatCOP(p.refundedAmount ?? 0)} / {formatCOP(p.amount)}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-3.5 pr-4 text-white/75">{p.method}</td>
-                  <td className="py-3.5 pr-4 text-white/70">{p.date}</td>
-                  <td className="py-3.5">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Badge tone={STATUS_TONES[p.status]}>{STATUS_LABELS[p.status]}</Badge>
-                      {p.status === 'aprobado' && (p.refundedAmount ?? 0) > 0 && (p.refundedAmount ?? 0) < p.amount && (
-                        <Badge tone="arena">Reembolso parcial</Badge>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {payments.map((p) => {
+                const pagoId = p.pagoId ?? p.id
+                const suscripcionId = p.suscripcionId ?? `SUB-${p.id}`
+                const suscriptorId = p.suscriptorId ?? p.userId
+                const valor = p.valor ?? p.amount
+                const fecha = p.fecha ?? p.date
+                const referencia = p.referencia ?? p.mpReference ?? pagoId
+                return (
+                  <tr
+                    key={pagoId}
+                    className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.06]"
+                    onClick={() => setSelected(p)}
+                  >
+                    <td className="py-3.5 pr-4 font-mono text-xs text-lavanda">{pagoId}</td>
+                    <td className="py-3.5 pr-4 font-mono text-xs text-white/80">{suscripcionId}</td>
+                    <td className="py-3.5 pr-4 font-mono text-xs font-semibold text-blanco">{suscriptorId}</td>
+                    <td className="py-3.5 pr-4 text-right font-mono font-bold text-arena">
+                      {formatCOP(valor)} COP
+                    </td>
+                    <td className="py-3.5 pr-4">
+                      <Badge tone={STATUS_TONES[p.status]}>{p.estado ?? STATUS_LABELS[p.status]}</Badge>
+                    </td>
+                    <td className="py-3.5 pr-4 text-white/70">{fecha}</td>
+                    <td className="py-3.5 pr-4 font-mono text-xs text-white/75">{referencia}</td>
+                    <td className="py-3.5 text-white/75">Mercado Pago</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Detalle del pago (panel lateral) */}
+      {/* Detalle del pago (panel lateral, sin correos ni nombres del suscriptor según RF-75) */}
       {selected && (
         <div className="fixed inset-0 z-40 flex justify-end bg-black/60 backdrop-blur-sm" onClick={() => setSelected(null)}>
           <div className="sr-verdelo-panel h-full w-full max-w-md overflow-y-auto p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
-              <h2 className="text-xl font-bold">Pago {selected.id}</h2>
+              <h2 className="text-xl font-bold">Pago {selected.pagoId ?? selected.id}</h2>
               <button type="button" className="text-2xl text-white/50 hover:text-white" onClick={() => setSelected(null)}>×</button>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <Badge tone={STATUS_TONES[selected.status]}>{STATUS_LABELS[selected.status]}</Badge>
-              </div>
+              <Badge tone={STATUS_TONES[selected.status]}>{selected.estado ?? STATUS_LABELS[selected.status]}</Badge>
+            </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div><dt className="text-white/50">Usuario</dt><dd className="font-semibold">{selected.userName}</dd></div>
-              <div><dt className="text-white/50">Correo</dt><dd>{selected.userEmail}</dd></div>
+              <div><dt className="text-white/50">pagoId</dt><dd className="font-mono font-semibold">{selected.pagoId ?? selected.id}</dd></div>
+              <div><dt className="text-white/50">suscripcionId</dt><dd className="font-mono">{selected.suscripcionId ?? `SUB-${selected.id}`}</dd></div>
+              <div><dt className="text-white/50">suscriptorId</dt><dd className="font-mono font-semibold">{selected.suscriptorId ?? selected.userId}</dd></div>
               <div><dt className="text-white/50">Plan</dt><dd>{selected.planName}</dd></div>
-              <div><dt className="text-white/50">Monto total</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.amount)}</dd></div>
-              <div><dt className="text-white/50">Método</dt><dd>{selected.method}</dd></div>
-              <div><dt className="text-white/50">Fecha</dt><dd>{selected.date}</dd></div>
-              {((selected.refundedAmount ?? 0) > 0 || selected.status === 'reembolsado') && (
-                <>
-                  <div>
-                    <dt className="text-white/50">Monto reembolsado</dt>
-                    <dd className="font-mono font-semibold text-[#ff8a8a]">
-                      {formatCOP(selected.refundedAmount ?? selected.amount)} / {formatCOP(selected.amount)}
-                    </dd>
-                  </div>
-                </>
-              )}
-              {selected.refundReason && (
-                <>
-                  <div className="col-span-2"><dt className="text-white/50">Motivo del reembolso</dt><dd className="text-[#ff8a8a]">{selected.refundReason}</dd></div>
-                  <div><dt className="text-white/50">Fecha de reembolso</dt><dd>{selected.refundDate}</dd></div>
-                </>
-              )}
+              <div><dt className="text-white/50">Valor (COP)</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.valor ?? selected.amount)} COP</dd></div>
+              <div><dt className="text-white/50">Estado</dt><dd>{selected.estado ?? STATUS_LABELS[selected.status]}</dd></div>
+              <div><dt className="text-white/50">Fecha</dt><dd>{selected.fecha ?? selected.date}</dd></div>
+              <div><dt className="text-white/50">Referencia</dt><dd className="font-mono">{selected.referencia ?? selected.mpReference ?? selected.id}</dd></div>
+              <div><dt className="text-white/50">Método</dt><dd>Mercado Pago</dd></div>
             </dl>
           </div>
         </div>

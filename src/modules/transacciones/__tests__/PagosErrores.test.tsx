@@ -7,14 +7,13 @@ import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 const slow = { timeout: 4000 }
 const abrir = () => render(<MemoryRouter><AdminPaymentsPage /></MemoryRouter>)
 
-describe('Admin · Pagos (C.1: sin reembolso, permisos)', { timeout: 15000 }, () => {
+describe('Admin · Pagos (RF-75: consulta y permisos)', { timeout: 15000 }, () => {
   afterEach(() => { vi.restoreAllMocks(); sessionStorage.clear() })
 
-  it('C.1: no existe botón de Reembolsar en la vista de pagos de administración', async () => {
+  it('RF-75: muestra la tabla de pagos de suscripciones en administración', async () => {
     abrir()
-    await screen.findByRole('table', {}, slow)
-    expect(screen.queryByRole('button', { name: 'Reembolsar' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Reembolsar saldo restante' })).not.toBeInTheDocument()
+    const table = await screen.findByRole('table', {}, slow)
+    expect(table).toBeInTheDocument()
   })
 
   it('403 al cargar (no es administrador): muestra mensaje de sin permiso y sin Reintentar', async () => {
