@@ -142,11 +142,33 @@ export const adminFoundationService = {
   },
 }
 
+function toAdminPlaylistDto(p: Record<string, any>): AdminPlaylistDto {
+  return {
+    id: String(p.id ?? ''),
+    nombre: p.nombre || '',
+    creador: p.creador?.nombre || p.usuarioId || (typeof p.creador === 'string' ? p.creador : ''),
+    meGusta: Number(p.likes ?? p.meGusta ?? 0),
+    guardados: Number(p.guardados ?? 0),
+    prendas: typeof p.totalPrendas === 'number'
+      ? p.totalPrendas
+      : Array.isArray(p.prendas)
+        ? p.prendas.length
+        : Number(p.prendas ?? 0),
+    destacada: Boolean(p.destacada),
+  }
+}
+
 export const adminPlaylistService = {
   /** Playlists públicas ordenadas por interacción (me gusta + guardados × 2). */
   async list(): Promise<AdminPlaylistDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...db().playlists].sort((a, b) => interaccion(b) - interaccion(a))) }
-    return apiClient.get<AdminPlaylistDto[]>(API.playlists).then((r) => r.data)
+    const r = await apiClient.get<any>('/api/v1/playlists/populares')
+    const rows: Record<string, any>[] = Array.isArray(r.data)
+      ? r.data
+      : Array.isArray(r.data?.content)
+        ? r.data.content
+        : []
+    return rows.map(toAdminPlaylistDto).sort((a, b) => interaccion(b) - interaccion(a))
   },
   /** Destaca o quita del inicio. Máximo tres destacadas. */
   async setFeatured(id: string, destacada: boolean): Promise<AdminPlaylistDto> {
@@ -161,7 +183,9 @@ export const adminPlaylistService = {
       p.destacada = destacada
       return mockDelay(p, 250)
     }
-    return apiClient.put<AdminPlaylistDto>(`${API.playlists}/${encodeURIComponent(id)}/destacada`, { destacada }).then((r) => r.data)
+    const url = `/api/v1/playlists/${encodeURIComponent(id)}/destacar`
+    const r = destacada ? await apiClient.put<any>(url) : await apiClient.delete<any>(url)
+    return r.data ? { ...toAdminPlaylistDto(r.data), destacada } : { id, nombre: '', creador: '', meGusta: 0, guardados: 0, prendas: 0, destacada }
   },
 }
 

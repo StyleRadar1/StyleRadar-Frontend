@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import { env } from '@/configs/env'
 import { tokenStorage } from './tokenStorage'
-import { camposDelError, kindFromStatus, MENSAJES, type CamposConError } from './mensajes'
+import { camposDelError, kindFromStatus, MENSAJES, mensajePorCodigo, type CamposConError } from './mensajes'
 import { guardarRetorno } from './retorno'
 import { avisarSinConexion } from './conexion'
 
@@ -29,9 +29,11 @@ apiClient.interceptors.request.use((config) => {
 export class ApiError extends Error {
   readonly status: number
   readonly fields: CamposConError
-  /** Código de negocio del backend (errorCode), p. ej. CONSENT_REQUIRED. Sirve para elegir el texto, nunca se muestra. */
+  /** Código de negocio del backend (`code` / `errorCode`), p. ej. PRENDA_NO_ENCONTRADA. Sirve para elegir el texto, nunca se muestra crudo. */
   readonly code?: string
-  constructor(status: number, message: string, fieldsOrCode: CamposConError | string = {}, code?: string) {
+  /** Marca temporal ISO-8601 devuelta por ProblemDetail. */
+  readonly timestamp?: string
+  constructor(status: number, message: string, fieldsOrCode: CamposConError | string = {}, code?: string, timestamp?: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status
@@ -42,10 +44,11 @@ export class ApiError extends Error {
       this.fields = fieldsOrCode
       this.code = code
     }
+    this.timestamp = timestamp
   }
 }
 
-/** Convierte la respuesta de error de axios en un ApiError con mensaje seguro. */
+/** Convierte la respuesta de error de axios en un ApiError con mensaje seguro (priorizando `code` sobre HTTP status). */
 export function aApiError(error: AxiosError<unknown>): ApiError {
   const status = error.response?.status ?? 0
   const data = error.response?.data
@@ -61,9 +64,11 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
   if (import.meta.env.DEV) {
     console.warn(`[api] ${status || 'sin respuesta'} ${error.config?.method?.toUpperCase() ?? ''} ${error.config?.url ?? ''}`, data ?? error.message)
   }
-  const obj = typeof data === 'object' && data !== null ? (data as { errorCode?: unknown; code?: unknown }) : undefined
-  const code = typeof obj?.errorCode === 'string' ? obj.errorCode : typeof obj?.code === 'string' ? obj.code : undefined
-  return new ApiError(status, MENSAJES[kindFromStatus(status)], camposDelError(data), code)
+  const obj = typeof data === 'object' && data !== null ? (data as { errorCode?: unknown; code?: unknown; timestamp?: unknown }) : undefined
+  const code = typeof obj?.code === 'string' ? obj.code : typeof obj?.errorCode === 'string' ? obj.errorCode : undefined
+  const timestamp = typeof obj?.timestamp === 'string' ? obj.timestamp : undefined
+  const message = mensajePorCodigo(code) ?? MENSAJES[kindFromStatus(status)]
+  return new ApiError(status, message, camposDelError(data), code, timestamp)
 }
 
 apiClient.interceptors.response.use(

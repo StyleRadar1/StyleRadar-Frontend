@@ -231,8 +231,8 @@ export default function BubbleColumn({
                     <span className={`sr-bubble-type-tag ${pin.tipo}`}>
                       {isStore ? 'Tienda' : 'Fundación'}
                     </span>
-                    <span className="sr-bubble-dot-sep">·</span>
-                    <span className="sr-bubble-barrio">{pin.barrio}</span>
+                    {pin.barrio ? <span className="sr-bubble-dot-sep">·</span> : null}
+                    {pin.barrio ? <span className="sr-bubble-barrio">{pin.barrio}</span> : null}
                     {pin.d ? <span className="sr-bubble-dist">· {pin.d}</span> : null}
                   </span>
                 </div>

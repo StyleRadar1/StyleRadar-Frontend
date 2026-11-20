@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect, useContext } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Loading } from '@/modules/core/components/Status'
-import { ApiError } from '@/modules/core/api/apiClient'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
+import { env } from '@/configs/env'
 import { errorKind } from '@/modules/core/api/errors'
 import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
 import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
@@ -16,7 +17,7 @@ import { getWishlistIds, setWishlistIds } from '@/modules/transacciones/services
 import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { ItemCard } from '../components/ItemCard'
 import { SizeGuideModal } from '../components/SizeGuideModal'
-import { itemService } from '../services/itemService'
+import { extractAvailableTallasFromInventory, itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
 import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
@@ -86,14 +87,26 @@ export default function ItemDetailPage() {
     setShowWishlistGate(false)
   }
 
-  // Carga de la prenda principal y similares
+  // Carga de la prenda principal, tallas desde inventario y similares (SR-RF-16)
   const loader = useCallback(async () => {
     if (!id) throw new ApiError(404, 'Prenda no especificada.')
-    const prendaData = await itemService.getById(id)
-    const similaresData = await itemService.search({ estilo: prendaData.estilo })
+    const [prendaData, similaresData] = await Promise.all([
+      itemService.getById(id),
+      itemService.getSimilar(id).catch(() => [] as ItemResponseDto[]),
+    ])
+    let tallas = prendaData.tallas
+    if (!env.useMocks && tallas.length === 0) {
+      try {
+        const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(id)}`).then((r) => r.data)
+        const extraidas = extractAvailableTallasFromInventory(inv)
+        if (extraidas.length > 0) tallas = extraidas
+      } catch {
+        // Mantiene tallas vacías si inventario no responde
+      }
+    }
     return {
-      prenda: prendaData,
-      similares: similaresData.filter((x) => x.id !== prendaData.id).slice(0, 4),
+      prenda: { ...prendaData, tallas },
+      similares: similaresData.filter((x) => x.id !== prendaData.id).slice(0, 10),
     }
   }, [id])
 
@@ -200,11 +213,12 @@ export default function ItemDetailPage() {
     }
   }, [prenda])
 
-  // Galería multi-ángulo: hasta 4 fotos en distintos ángulos (Frontal, Detalle, Espalda, Look)
+  // Galería multi-ángulo: hasta 5 fotos (SR-RF-51)
   const imagenesDisponibles = useMemo(() => {
     if (!prenda) return []
-    if (prenda.imagenes && prenda.imagenes.length > 0) {
-      return prenda.imagenes.slice(0, 4)
+    const fuente = prenda.imagenes?.length ? prenda.imagenes : prenda.fotografias
+    if (fuente && fuente.length > 0) {
+      return fuente.slice(0, 5)
     }
     const list: string[] = [prenda.imagen]
     if (prenda.imagenSecundaria && !list.includes(prenda.imagenSecundaria)) {
@@ -213,10 +227,10 @@ export default function ItemDetailPage() {
     if (prenda.recorte && !list.includes(prenda.recorte)) {
       list.push(prenda.recorte)
     }
-    return list.slice(0, 4)
+    return list.filter(Boolean).slice(0, 5)
   }, [prenda])
 
-  const ANGLE_LABELS = ['Frontal', 'Detalle', 'Espalda', 'Look completo']
+  const ANGLE_LABELS = ['Frontal', 'Detalle', 'Espalda', 'Look completo', 'Vista adicional']
 
   const imagenActiva = imagenSeleccionada ?? (imagenesDisponibles[indiceImagen] || prenda?.imagen || '')
 
@@ -341,8 +355,12 @@ export default function ItemDetailPage() {
                   <span className="inline-flex items-center gap-2 rounded-full border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] px-3.5 py-1 text-[11px] font-bold tracking-wider text-[var(--sr-acento-primario,var(--color-accent))] shadow-sm backdrop-blur-md">
                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)] animate-ping" />
                     <span>{prenda.tienda === 'Segunda mano' ? 'MODA CIRCULAR BOGOTÁ' : 'DISEÑO INDEPENDIENTE BOGOTÁ'}</span>
-                    <span className="text-[var(--color-text-muted)]">·</span>
-                    <span className="text-[var(--color-text)] uppercase">{prenda.barrio}</span>
+                    {prenda.barrio && (
+                      <>
+                        <span className="text-[var(--color-text-muted)]">·</span>
+                        <span className="text-[var(--color-text)] uppercase">{prenda.barrio}</span>
+                      </>
+                    )}
                   </span>
                 </div>
 
@@ -528,30 +546,13 @@ export default function ItemDetailPage() {
                     {prenda.nombre}
                   </h1>
 
-                  {/* Precio destacado con descuento (si aplica) */}
-                  {prenda.descuento && prenda.precioAnterior && prenda.precioAnterior > prenda.precio ? (
-                    <div className="mt-3">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm line-through text-[var(--color-text-muted)] font-medium">
-                          {formatCOP(prenda.precioAnterior)}
-                        </span>
-                        <span className="text-2xl font-black text-rose-500">
-                          {formatCOP(prenda.precio)}
-                        </span>
-                        <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-                          -{prenda.descuento}%
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
-                    </div>
-                  ) : (
-                    <div className="mt-3">
-                      <p className="text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
-                        {formatCOP(prenda.precio)}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
-                    </div>
-                  )}
+                  {/* Precio final */}
+                  <div className="mt-3">
+                    <p className="text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
+                      {formatCOP(prenda.precio)}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
+                  </div>
 
                   {/* c) Descripción corta (3-5 líneas) con "Leer más" (si existe en los datos) */}
                   {prenda.descripcion && (
@@ -581,7 +582,7 @@ export default function ItemDetailPage() {
                       <span className="font-semibold text-[var(--color-text)]">Disponibilidad en tienda real</span>
                     </div>
                     <p className="mt-1 text-[var(--color-text-muted)] text-[0.6875rem] leading-relaxed">
-                      Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong> ({prenda.barrio}).
+                      Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong>{prenda.barrio ? ` (${prenda.barrio})` : ''}.
                     </p>
                     {/* RF-73: Contactar a la tienda */}
                     <ContactButton
@@ -799,7 +800,7 @@ export default function ItemDetailPage() {
                   </div>
                   <div>
                     <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">SECTOR</p>
-                    <p className="text-xs font-bold text-[var(--color-text)]">{prenda.barrio}</p>
+                    <p className="text-xs font-bold text-[var(--color-text)]">{prenda.barrio || 'Bogotá'}</p>
                   </div>
                 </div>
 
@@ -813,7 +814,9 @@ export default function ItemDetailPage() {
                   </div>
                   <div>
                     <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">CERCANÍA</p>
-                    <p className="text-xs font-bold text-[var(--color-text)]">a {prenda.distanciaKm} km</p>
+                    <p className="text-xs font-bold text-[var(--color-text)]">
+                      {prenda.distanciaKm > 0 ? `a ${prenda.distanciaKm.toLocaleString('es-CO', { maximumFractionDigits: 2 })} km` : 'Bogotá'}
+                    </p>
                   </div>
                 </div>
 
@@ -840,10 +843,10 @@ export default function ItemDetailPage() {
             <div className="border-t border-[var(--sr-border-subtle,var(--color-border))] pt-10">
               <div className="flex items-end justify-between">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--sr-acento-primario,var(--color-accent))]">RF-16</span>
-                  <h2 className="mt-1 text-2xl font-bold text-[var(--color-text)]">Prendas similares de estilo {prenda.estilo}</h2>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--sr-acento-primario,var(--color-accent))]">Recomendaciones</span>
+                  <h2 className="mt-1 text-2xl font-bold text-[var(--color-text)]">Prendas similares</h2>
                   <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                    Otras opciones disponibles en almacenes de Bogotá con estética compatible.
+                    Otras opciones disponibles con tipo o estilo compatible.
                   </p>
                 </div>
                 <Link to={`/catalogo?estilo=${encodeURIComponent(prenda.estilo)}`} className="text-xs font-semibold text-[var(--sr-acento-primario,var(--color-accent))] hover:underline">

@@ -60,18 +60,21 @@ export default function ModerationPage() {
   const handleModerationError = (err: unknown, selectId?: string): boolean => {
     const kind = errorKind(err)
     const fields = fieldErrors(err)
-    if (selectId && (fields.motivo || (err instanceof ApiError && err.status === 400))) {
-      setErrorMotivo(fields.motivo ?? 'Selecciona el motivo de rechazo.')
+    if (selectId && (fields.motivo || (err instanceof ApiError && (err.code === 'MOTIVO_REQUERIDO' || err.status === 400)))) {
+      setErrorMotivo(fields.motivo ?? (err instanceof ApiError && err.code === 'MOTIVO_REQUERIDO' ? errorMessage(err) : 'Selecciona el motivo de rechazo.'))
       window.setTimeout(() => document.getElementById(selectId)?.focus(), 0)
       return true
     }
-    if ((err instanceof ApiError && err.status === 422) || kind === 'conflicto') {
+    if ((err instanceof ApiError && (err.code === 'PRENDA_NO_PENDIENTE' || err.status === 422)) || kind === 'conflicto') {
       setItemParaAprobar(null)
       setItemParaRechazar(null)
       setLoteParaAprobar(null)
       setLoteParaRechazar(null)
       setErrorMotivo(null)
-      setToast({ tone: 'warn', text: 'Ya fue moderado — actualizamos la lista' })
+      setToast({
+        tone: 'warn',
+        text: err instanceof ApiError && err.code ? errorMessage(err) : 'Ya fue moderado — actualizamos la lista',
+      })
       void reload()
       return true
     }
@@ -150,7 +153,7 @@ export default function ModerationPage() {
       {/* Encabezado */}
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-arena">Administración · RF-61</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-arena">Administración</span>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
             Moderación de publicaciones
           </h1>

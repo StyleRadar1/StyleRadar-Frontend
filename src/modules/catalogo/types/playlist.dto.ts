@@ -8,6 +8,9 @@ export const MAX_PLAYLIST_ITEMS = 15
 
 export type PlaylistVisibility = 'PUBLICA' | 'PRIVADA'
 
+export const ESTILOS_PLAYLIST = ['CASUAL', 'FORMAL', 'DEPORTIVO', 'URBANO', 'VINTAGE'] as const
+export type PlaylistEstilo = (typeof ESTILOS_PLAYLIST)[number]
+
 export interface PlaylistItemDto extends ItemResponseDto {
   agregadaPor?: string
   noDisponible?: boolean
@@ -19,12 +22,14 @@ export interface PlaylistDto {
   id: string
   nombre: string
   descripcion: string
+  usuarioId?: string
   creador: {
     id: string
     nombre: string
     email?: string
   }
   visibilidad: PlaylistVisibility
+  estilo?: PlaylistEstilo
   portadaUrl?: string
   prendas: PlaylistItemDto[]
   likes: number
@@ -39,6 +44,9 @@ export interface CreatePlaylistDto {
   nombre: string
   descripcion?: string
   visibilidad: PlaylistVisibility
+  estilo?: PlaylistEstilo
   portadaUrl?: string
   prendaIds?: string[]
 }
+
+export type UpdatePlaylistDto = Partial<CreatePlaylistDto>
