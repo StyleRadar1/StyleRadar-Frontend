@@ -18,6 +18,8 @@ interface Props {
  * Solo aplica al comprador con sesión: el backend también valida el plan, esto es la experiencia de uso.
  * Si el plan no se puede consultar se muestra el contenido; el servicio rechazará lo que no corresponda.
  */
+export const FEATURE_REQUIRES_RADAR_PLUS_MSG = 'Esta función está disponible en el plan Radar+'
+
 export function PlanGate({ title, text, forceLock, children }: Props) {
   const user = useContext(AuthContext)?.user
   const applies = user?.role === 'COMPRADOR'
@@ -31,8 +33,13 @@ export function PlanGate({ title, text, forceLock, children }: Props) {
         <rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" />
       </svg>
       <p className="mt-3 text-lg font-semibold">{title}</p>
+      <p className="mt-1 text-xs font-semibold text-arena">{FEATURE_REQUIRES_RADAR_PLUS_MSG}</p>
       <p className="mx-auto mt-1 max-w-md text-sm text-white/75">{text}</p>
-      <Link to="/planes" className="mt-5 inline-flex rounded-xl bg-violeta px-5 py-3 text-sm font-semibold">Ver planes</Link>
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+        <Link to="/planes" className="inline-flex rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco">Ver planes</Link>
+        <Link to="/suscripcion" className="inline-flex rounded-xl border border-violeta-claro/60 bg-violeta/20 px-4 py-2.5 text-xs font-semibold text-blanco">Activar Radar+</Link>
+        <Link to="/catalogo" className="inline-flex rounded-xl border border-white/20 px-4 py-2.5 text-xs font-semibold text-white/80">Continuar en Radar</Link>
+      </div>
     </div>
   )
 }

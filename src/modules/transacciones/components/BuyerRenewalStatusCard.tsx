@@ -3,6 +3,8 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CancelSubscriptionButton } from './CancelSubscriptionButton'
 import { useUserPlan } from '../hooks/useUserPlan'
+import { getTryOnPhotoUses } from '../services/userPlanService'
+import { PLAN_LIMITS } from '../types/plan.dto'
 
 const RADAR_PLUS_PRICE = 14_900
 
@@ -17,9 +19,8 @@ const formatFechaCobro = (iso?: string) =>
     : '9 de diciembre de 2026'
 
 /**
- * RF-95, E.2: Muestra en /planes y /perfil para el comprador con Radar+:
- * "Próximo cobro: {fecha} · {valor}" y el estado de la renovación automática,
- * con el botón oficial "Cancelar suscripción".
+ * RF-95, RF-102, E.2: Muestra en /planes y /perfil para el comprador:
+ * el estado de la renovación automática, próximo cobro, límite aplicado del probador con foto propia y el botón "Cancelar suscripción".
  */
 export function BuyerRenewalStatusCard() {
   const { user } = useAuth()
@@ -27,6 +28,9 @@ export function BuyerRenewalStatusCard() {
   const { plan, details } = useUserPlan(isBuyer)
 
   if (!isBuyer) return null
+
+  const uses = getTryOnPhotoUses(user?.id ?? 'u-1')
+  const disponibles = Math.max(0, PLAN_LIMITS.probadorFoto - uses)
 
   if (plan === 'RADAR') {
     return (
@@ -42,7 +46,7 @@ export function BuyerRenewalStatusCard() {
               <Badge tone="arena">Radar (Gratuito)</Badge>
             </div>
             <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-              Tu plan es gratuito, no tiene cobros periódicos.
+              Límite aplicado: Probador con maniquí (sin probador con foto propia ni alertas de disponibilidad)
             </p>
           </div>
           <CancelSubscriptionButton
@@ -79,6 +83,9 @@ export function BuyerRenewalStatusCard() {
             {renewalActive
               ? `Próximo cobro: ${fechaTexto} · ${valorTexto}`
               : `Radar+ activo hasta ${fechaTexto} · Próximo cobro pausado`}
+          </p>
+          <p className="text-xs font-semibold text-arena">
+            Usos disponibles del probador con foto propia: {disponibles} de {PLAN_LIMITS.probadorFoto} ({uses} usados)
           </p>
         </div>
 

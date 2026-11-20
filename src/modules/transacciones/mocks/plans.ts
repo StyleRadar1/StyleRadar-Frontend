@@ -9,7 +9,6 @@ export const PLANS: PlanDto[] = [
     period: 'gratis',
     features: [
       'Catálogo de prendas de Bogotá',
-      'Wishlist de hasta 20 prendas',
       'Probador con maniquí',
       'Mapa de tiendas',
       'Segunda mano y donaciones',
@@ -23,9 +22,8 @@ export const PLANS: PlanDto[] = [
     highlighted: true,
     features: [
       'Todo lo del plan Radar',
-      'Probador con foto propia',
-      'Alertas de precio y talla',
-      'Wishlist sin límite',
+      'Probador con foto propia hasta 30 usos',
+      'Alertas de disponibilidad',
       'Soporte prioritario',
     ],
   },
