@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { ApiError } from '@/modules/core/api/apiClient'
+import { errorMessage } from '@/modules/core/api/errors'
 import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
 import { env } from '@/configs/env'
 import { mapService } from '../services/mapService'
@@ -82,7 +83,11 @@ export default function MapPage() {
         setAviso({
           tono: 'error',
           titulo: 'No pudimos filtrar por categoría',
-          texto: status === 0 ? 'Revisa tu internet e intenta de nuevo.' : 'Intenta en unos minutos.',
+          texto: e instanceof ApiError && e.code
+            ? errorMessage(e)
+            : status === 0
+              ? 'Revisa tu internet e intenta de nuevo.'
+              : 'Intenta en unos minutos.',
         })
       }
     }
@@ -105,9 +110,25 @@ export default function MapPage() {
       setPideUbicacion(false)
     } catch (e) {
       const status = e instanceof ApiError ? e.status : 0
+      if (e instanceof ApiError && e.code === 'COORDENADA_FUERA_DE_RANGO') {
+        setAviso({ tono: 'error', titulo: 'Ubicación inválida', texto: errorMessage(e) })
+        return
+      }
       if (status === 400) { setPideUbicacion(true); return }
-      if (status === 422) { setRadioError(TEXTO_RADIO); setRadio(RADIO_KM.inicial); return }
-      setAviso({ tono: 'error', titulo: 'No pudimos buscar tiendas cercanas', texto: status === 0 ? 'Revisa tu internet e intenta de nuevo.' : 'Intenta en unos minutos.' })
+      if (status === 422) {
+        setRadioError(e instanceof ApiError && e.code === 'RADIO_INVALIDO' ? errorMessage(e) : TEXTO_RADIO)
+        setRadio(RADIO_KM.inicial)
+        return
+      }
+      setAviso({
+        tono: 'error',
+        titulo: 'No pudimos buscar tiendas cercanas',
+        texto: e instanceof ApiError && e.code
+          ? errorMessage(e)
+          : status === 0
+            ? 'Revisa tu internet e intenta de nuevo.'
+            : 'Intenta en unos minutos.',
+      })
     }
   }, [categoriaId])
 

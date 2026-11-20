@@ -302,7 +302,7 @@ export default function CatalogPage() {
     }
   }, [texto, filtroTipo, filtroTalla, filtroTipoTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
 
-  const { items, loading, error, status } = useItems(activeFilters)
+  const { items, loading, error, status, code: itemsErrorCode } = useItems(activeFilters)
   const [storeSubTick, setStoreSubTick] = useState(0)
 
   useEffect(() => {
@@ -312,7 +312,8 @@ export default function CatalogPage() {
   }, [])
 
   const sinUbicacion = coords === null
-  const mostrarPideUbicacion = sinUbicacion && (pideUbicacion || (orden === 'DISTANCIA' && status === 400))
+  const mostrarPideUbicacion =
+    sinUbicacion && (pideUbicacion || (orden === 'DISTANCIA' && (status === 400 || itemsErrorCode === 'UBICACION_REQUERIDA')))
 
   // Deduplicación garantizada por ID e imagen al construir la lista de la grilla (queda el primero)
   // RF-99: oculta prendas de tiendas con suscripción SUSPENDIDA y actualiza conteos

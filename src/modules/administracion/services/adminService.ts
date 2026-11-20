@@ -149,7 +149,11 @@ function toAdminPlaylistDto(p: Record<string, any>): AdminPlaylistDto {
     creador: p.creador?.nombre || p.usuarioId || (typeof p.creador === 'string' ? p.creador : ''),
     meGusta: Number(p.likes ?? p.meGusta ?? 0),
     guardados: Number(p.guardados ?? 0),
-    prendas: Array.isArray(p.prendas) ? p.prendas.length : Number(p.prendas ?? 0),
+    prendas: typeof p.totalPrendas === 'number'
+      ? p.totalPrendas
+      : Array.isArray(p.prendas)
+        ? p.prendas.length
+        : Number(p.prendas ?? 0),
     destacada: Boolean(p.destacada),
   }
 }
@@ -158,8 +162,13 @@ export const adminPlaylistService = {
   /** Playlists públicas ordenadas por interacción (me gusta + guardados × 2). */
   async list(): Promise<AdminPlaylistDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...db().playlists].sort((a, b) => interaccion(b) - interaccion(a))) }
-    const r = await apiClient.get<any[]>('/api/v1/playlists/populares')
-    return (Array.isArray(r.data) ? r.data : []).map(toAdminPlaylistDto).sort((a, b) => interaccion(b) - interaccion(a))
+    const r = await apiClient.get<any>('/api/v1/playlists/populares')
+    const rows: Record<string, any>[] = Array.isArray(r.data)
+      ? r.data
+      : Array.isArray(r.data?.content)
+        ? r.data.content
+        : []
+    return rows.map(toAdminPlaylistDto).sort((a, b) => interaccion(b) - interaccion(a))
   },
   /** Destaca o quita del inicio. Máximo tres destacadas. */
   async setFeatured(id: string, destacada: boolean): Promise<AdminPlaylistDto> {

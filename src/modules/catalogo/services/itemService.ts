@@ -87,7 +87,12 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
     estado: typeof r.estado === 'string' ? r.estado : undefined,
     disponible: typeof r.disponible === 'boolean' ? r.disponible : undefined,
     fechaPublicacion: typeof r.fechaPublicacion === 'string' ? r.fechaPublicacion : undefined,
-    motivoRechazo: typeof r.motivoRechazo === 'string' ? r.motivoRechazo : undefined,
+    motivoRechazo:
+      typeof r.motivoRechazo === 'string'
+        ? r.motivoRechazo
+        : typeof r.motivo === 'string'
+          ? r.motivo
+          : undefined,
     distanciaKm: typeof r.distanciaKm === 'number' ? r.distanciaKm : 0,
     recorte: typeof r.recorte === 'string' ? r.recorte : undefined,
     tipoGancho: r.tipoGancho === 'hombros' || r.tipoGancho === 'pinzas' ? r.tipoGancho : undefined,
@@ -97,6 +102,49 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
     esNuevo: typeof r.esNuevo === 'boolean' ? r.esNuevo : undefined,
     esSegundaMano: typeof r.esSegundaMano === 'boolean' ? r.esSegundaMano : undefined,
   }
+}
+
+/**
+ * Extrae `{ talla: stockDisponible }` desde `GET /api/v1/inventario/prenda/{prendaId}`
+ * soportando tanto el objeto desglosado (`sedes[].variantes[]`) como listas planas.
+ */
+export function extractStockMapFromInventory(inv: unknown): Record<string, number> {
+  const map: Record<string, number> = {}
+  if (!inv || typeof inv !== 'object') return map
+  const obj = inv as Record<string, any>
+
+  if (Array.isArray(obj.sedes)) {
+    for (const sede of obj.sedes) {
+      if (!sede || sede.activo === false) continue
+      const variantes = Array.isArray(sede.variantes) ? sede.variantes : []
+      for (const v of variantes) {
+        if (!v?.talla) continue
+        const key = String(v.talla)
+        const qty = Number(v.stockDisponible ?? v.cantidad ?? v.unidades ?? 0)
+        map[key] = (map[key] ?? 0) + (Number.isFinite(qty) ? Math.max(0, qty) : 0)
+      }
+    }
+    return map
+  }
+
+  const list = Array.isArray(inv) ? inv : Array.isArray(obj.tallas) ? obj.tallas : []
+  for (const entry of list) {
+    if (typeof entry === 'string') {
+      map[entry] = (map[entry] ?? 0) + 1
+    } else if (entry?.talla) {
+      const key = String(entry.talla)
+      const qty = Number(entry.stockDisponible ?? entry.cantidad ?? entry.unidades ?? 0)
+      map[key] = (map[key] ?? 0) + (Number.isFinite(qty) ? Math.max(0, qty) : 0)
+    }
+  }
+  return map
+}
+
+/** Devuelve las tallas con stock disponible > 0 desde la respuesta de inventario por prenda. */
+export function extractAvailableTallasFromInventory(inv: unknown): string[] {
+  return Object.entries(extractStockMapFromInventory(inv))
+    .filter(([, qty]) => qty > 0)
+    .map(([talla]) => talla)
 }
 
 const matches = (it: ItemResponseDto, f: ItemFiltersDto) => {

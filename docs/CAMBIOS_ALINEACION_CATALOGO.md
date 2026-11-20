@@ -1,4 +1,4 @@
-# Cambios de Alineación Back–Front (Catálogo, Inventario, Geolocalización y Playlists)
+# Cambios de Alineación Back–Front (Catálogo, Inventario, Geolocalización, Playlists y Errores por `code`)
 
 **Rama:** `feature/carlos-alineacion-back-front` (base: `UNIFICADO-REACT`)  
 **Autor:** Carlos Sánchez
@@ -8,105 +8,87 @@
 ## 1. Alcance y exclusiones
 
 - **Módulos trabajados:**
+  - `src/modules/core`: Soporte transversal de errores `ProblemDetail` (`code` y `timestamp`) en `apiClient.ts`, `errors.ts` y `mensajes.ts` (y su prueba en `MensajesSeguros.test.ts`).
   - `src/modules/catalogo`: Catálogo público, detalle de prenda, inventario de tienda, Mi Tienda, página pública de tienda, moderación y playlists (`ms-item-catalogo`, `ms-inventario`, `ms-playlist`).
   - `src/modules/mapa`: Mapa de Bogotá, pines de tiendas/fundaciones, categorías, resumen de catálogo, fundaciones cercanas y cálculo de distancia (`ms-geolocalizacion` + `ms-item-catalogo`).
-  - `src/modules/administracion`: únicamente `adminPlaylistService` dentro de `src/modules/administracion/services/adminService.ts` (`ms-playlist` · populares y destacar).
-  - `src/modules/experiencia`: únicamente `foundations()` dentro de `src/modules/experiencia/services/donationService.ts` (`ms-geolocalizacion`).
+  - `src/modules/administracion`: `adminPlaylistService` en `adminService.ts` y manejo de `LIMITE_DESTACADAS` en `AdminPlaylistsPage.tsx` (`ms-playlist`).
+  - `src/modules/experiencia`: únicamente `foundations()` dentro de `donationService.ts` (`ms-geolocalizacion`).
 
 - **Exclusiones deliberadas (no tocadas a propósito):**
   - **Landing (`src/modules/landing` y `src/components/landing`):** Intacta al 100 % para evitar conflictos de merge con los ajustes de estilos que está realizando Kevin.
   - **Enrutamiento (`src/app/router.tsx`):** Sin diferencias respecto a `UNIFICADO-REACT` (se conservó `/tienda/inventario` como única ruta de inventario).
-  - **Servicios de otros microservicios (`identidad`, `transacciones`, `soporte` y resto de `administracion` / `experiencia`):** No modificados.
+  - **Servicios propios de otros microservicios (`identidad`, `transacciones`, `soporte` y resto de `administracion` / `experiencia`):** No modificados; `MENSAJES_POR_CODIGO` convive sin alterar códigos existentes como `LIMITE_PLAN`.
 
 ---
 
 ## 2. Archivos nuevos
 
-- **Ningún archivo de código nuevo.** Toda la alineación de DTOs, servicios, hooks, mocks, vistas y pruebas se implementó sobre archivos ya existentes de `UNIFICADO-REACT`.
+- **Ningún archivo de código nuevo.** Toda la alineación de DTOs, servicios, hooks, mocks, manejo de errores, vistas y pruebas se implementó sobre archivos ya existentes de `UNIFICADO-REACT`.
 - **`docs/CAMBIOS_ALINEACION_CATALOGO.md`:** Único archivo creado en la rama, para documentar esta entrega y facilitar el merge final del equipo (no se tocó el `README.md` raíz).
 
 ---
 
 ## 3. Archivos modificados (destacando compartidos)
 
-> **Total frente a `UNIFICADO-REACT`:** 33 archivos modificados (`M`), 0 eliminados.
+> **Total frente a `UNIFICADO-REACT`:** 42 archivos modificados (`M`), 1 archivo nuevo (`docs/CAMBIOS_ALINEACION_CATALOGO.md`), 0 eliminados.
 
 ### Archivos compartidos o propensos a conflicto al hacer merge (revisar con prioridad)
 
 | Archivo | Qué se cambió | Qué debe conservarse al hacer merge |
 |---|---|---|
-| `src/modules/administracion/services/adminService.ts` | Solo se ajustó `adminPlaylistService`: en modo API consume `GET /api/v1/playlists/populares` y `PUT`/`DELETE /api/v1/playlists/{id}/destacar`, mapeando a `AdminPlaylistDto`. | **Preservar** `adminStoreService` y `adminFoundationService` de otras ramas; **conservar** nuestro `toAdminPlaylistDto` y las rutas `/playlists/populares` + `/destacar` en `adminPlaylistService`. |
-| `src/modules/experiencia/services/donationService.ts` | Solo se actualizó `foundations(coords?)` en modo API para consultar `GET /api/v1/fundaciones/cercanas` con `{ lat, lng, radioKm }`. | **Preservar** el resto de métodos de donaciones del módulo `experiencia`; **conservar** el endpoint `/api/v1/fundaciones/cercanas` en `foundations()`. |
+| `src/modules/core/api/apiClient.ts`, `errors.ts` y `mensajes.ts` | `ApiError` ahora guarda `code` y `timestamp` de `ProblemDetail`; `MENSAJES_POR_CODIGO` y `mensajePorCodigo()` seleccionan el texto amigable según `code` manteniendo fallback por estado HTTP cuando no llega `code`. | **Preservar** `MENSAJES` y `camposDelError` existentes; **conservar** `MENSAJES_POR_CODIGO`, `mensajePorCodigo` y `timestamp` en `aApiError()` / `errorMessage()`. |
+| `src/modules/administracion/services/adminService.ts` y `pages/AdminPlaylistsPage.tsx` | Solo se ajustó `adminPlaylistService` (`GET /api/v1/playlists/populares` paginado vía `content` o lista y `PUT`/`DELETE /api/v1/playlists/{id}/destacar`, leyendo `totalPrendas`) y el manejo de `code === 'LIMITE_DESTACADAS'`. | **Preservar** `adminStoreService` y `adminFoundationService`; **conservar** `toAdminPlaylistDto`, las rutas reales y la detección de `LIMITE_DESTACADAS`. |
+| `src/modules/experiencia/services/donationService.ts` | Solo se actualizó `foundations(coords?)` en modo API para consultar `GET /api/v1/fundaciones/cercanas` con `{ lat, lng, radioKm }`. | **Preservar** el resto de métodos de donaciones del módulo `experiencia`; **conservar** `/api/v1/fundaciones/cercanas`. |
 | `src/modules/catalogo/types/item.dto.ts` | Fuente única de constantes unificadas (`TIPOS_PRENDA_UNIFICADOS`, `COLORES_UNIFICADOS`, `ESTILOS_UNIFICADOS`, `MARCAS_TIENDAS_UNIFICADAS`, `TALLAS_POR_TIPO`, `ORDENES_UNIFICADOS`), `tipoTalla?` y `lat`/`lng` en `ItemFiltersDto`. | **No revertir** estas constantes compartidas; otros módulos pueden importarlas en lugar de duplicar listas. |
-| `src/modules/catalogo/pages/CatalogPage.tsx` | Panel con los 12 tipos, 8 colores, 11 marcas/tiendas, 5 estilos, tallas agrupadas (selección independiente de `34`/`36` por grupo `tipoTalla`), solo 3 ordenamientos (`RECIENTES`, `REPUTACION`, `DISTANCIA`) con GPS/zonas y sin filtro `cercaDe` ni `Para ti`. | **Conservar** `filtroTipoTalla`, los 3 ordenamientos y el envío de `lat`/`lng` (sin reintroducir `cercaDe`, `rel`, `new`, `rep` ni `Streetwear`/`Techwear`). |
-| `src/modules/catalogo/pages/InventoryPage.tsx` y `InventoryPage.css` | Nuevos estados (`ULTIMAS_UNIDADES`, `AGOTADA`, `RETIRADO`), alerta con `motivoRechazo`, selector `tipoPrenda`, máximo 5 fotos, sin input de marca, modal de edición (`PUT /api/v1/prendas/{id}`) y pie `.inv-card__foot` en 2 filas (`.inv-card__foot-top` + `.inv-card__actions`) para evitar desborde. | **Conservar** el formulario sin campo `marca`, el layout en dos filas del footer de tarjeta y `white-space: nowrap` en `.inv-status`. |
-| `src/modules/catalogo/pages/PlaylistsPage.tsx` | Selector de `estilo` (`CASUAL`..`VINTAGE`), selección de 1 a 15 prendas iniciales al crear, lectura de `usuarioId` en `esMia`/`creadasPorTi` y conexión real de `handleGuardar` con `usePlaylists().save()`. | **Conservar** `estilo`, `prendasIniciales` obligatorias (>= 1) y la compatibilidad con `usuarioId` sin romper `creador`. |
-| `src/modules/mapa/pages/MapPage.tsx` y `MapCard.tsx` | Filtro por categoría de almacén (`categoriaId`), distancia con coma decimal a 2 dígitos (`formatDistanciaKm`), consulta de `/almacenes/{id}/catalogo/resumen` (hasta 4 prendas + `totalPrendas`) y render condicional sin campos inventados. | **Conservar** `<p>Lo que ofrece</p>` exacto (tests), el uso de `categoriaId` y el render condicional en `MapCard.tsx`. |
+| `src/modules/catalogo/pages/CatalogPage.tsx` y `CatalogPage.css` | Panel unificado (12 tipos, 8 colores, 11 marcas/tiendas, 5 estilos, tallas agrupadas con `34`/`36` independientes por `tipoTalla`), 3 ordenamientos (`RECIENTES`, `REPUTACION`, `DISTANCIA` con `UBICACION_REQUERIDA`), sin `cercaDe`, sin barra superior `CatalogMegaMenu`, sin descuentos ni etiquetas del perchero (renombrado a `RELEVANTE`) y con animación colapsable `.sr-rack-collapse` al filtrar. | **Conservar** `filtroTipoTalla`, los 3 ordenamientos, la ausencia de barra superior/descuentos y `.sr-rack-collapse` (no reintroducir `cercaDe`, `rel`, `new`, `rep` ni `CatalogMegaMenu`). |
+| `src/modules/catalogo/pages/InventoryPage.tsx` y `InventoryPage.css` | Estados `ULTIMAS_UNIDADES`/`AGOTADA`/`RETIRADO`, alerta con `motivoRechazo`, `tipoPrenda`, máx. 5 fotos, sin input de marca, modal de edición, pie `.inv-card__foot` en 2 filas y manejo por `code` (`ALMACEN_SUSPENDIDO`, `INVENTARIO_SUSPENDIDO`, `ACCESO_DENEGADO`, `PRENDA_RETIRADA`, `PRENDA_YA_RETIRADA`, `FOTOGRAFIAS_EXCEDIDAS`). | **Conservar** el formulario sin `marca`, el layout en dos filas del footer de tarjeta y el manejo de errores por `code`. |
+| `src/modules/catalogo/pages/PlaylistsPage.tsx` y `utils/erroresPlaylist.ts` | Selector de `estilo` (`CASUAL`..`VINTAGE`), 1–15 prendas iniciales, lectura de `usuarioId`, conexión de `handleGuardar` a `save()` y manejo por `code` (`PLAYLIST_SIN_PRENDAS`, `DESCRIPCION_MUY_LARGA`, `USUARIO_NO_AUTENTICADO`, `PRENDA_YA_EN_PLAYLIST`, `LIMITE_PRENDAS_PLAYLIST`, `PRENDA_NO_ESTA_EN_PLAYLIST`). | **Conservar** `estilo`, `prendasIniciales` obligatorias (>= 1), `usuarioId` y el mapeo de códigos de error. |
+| `src/modules/mapa/pages/MapPage.tsx` y `MapCard.tsx` | Filtro por `categoriaId`, distancia con coma decimal a 2 dígitos (`formatDistanciaKm`), `/almacenes/{id}/catalogo/resumen` (4 prendas + `totalPrendas`), render condicional sin datos ficticios y manejo de errores por `code` (`COORDENADA_FUERA_DE_RANGO`, `RADIO_INVALIDO`). | **Conservar** `<p>Lo que ofrece</p>` exacto, `categoriaId`, el render condicional en `MapCard.tsx` y el manejo por `code`. |
 
 ### Resto de archivos modificados por módulo
 
+- **Pruebas Core (`src/modules/core/__tests__`):**
+  - `MensajesSeguros.test.ts`: Caso nuevo que verifica la prioridad de `ProblemDetail.code` y captura de `timestamp`.
 - **Catálogo (`src/modules/catalogo`):**
-  - `services/itemService.ts`: Normalización de respuesta del back (`fotografias[0]`, `almacenId`), `getSimilar(id)` (`GET /api/v1/prendas/{id}/similares`), limpieza de query params y filtrado mock por `tipoTalla` (`ROPA`/`PANTALON`/`CALZADO`/`UNICA`).
-  - `components/CatalogMegaMenu.tsx`: Estilos y tipos alineados con las listas unificadas (`Urbano`, `Formal`, `Deportivo`, singular en `tipo`).
-  - `components/ItemCard.tsx`: Lectura compatible con `fotografias[0]` y tienda desde `almacenId`.
-  - `pages/ItemDetailPage.tsx`: Sección titulada **«Prendas similares»** conectada a `itemService.getSimilar(id)` y consulta de tallas en `/api/v1/inventario/prenda/{id}`.
-  - `mocks/items.ts`: Estilos alineados (`Casual`, `Formal`, `Deportivo`, `Urbano`, `Vintage`) y `Enterizo` → `Conjunto`.
+  - `services/itemService.ts`: Normalización de respuesta (`fotografias[0]`, `almacenId`, `motivoRechazo ?? motivo`), `extractStockMapFromInventory()` / `extractAvailableTallasFromInventory()` (compatibles con `sedes[].variantes[]`), `getSimilar(id)` y filtrado mock por `tipoTalla`.
+  - `hooks/useItems.ts`: Exposición y resolución de error según `code`.
+  - `components/ItemCard.tsx`: Sin cambio de foto en hover y sin badges ni precios de descuento.
+  - `components/CatalogMegaMenu.tsx`: Valores alineados (ya no se renderiza en `CatalogPage.tsx`).
+  - `pages/ItemDetailPage.tsx`: Sección **«Prendas similares»** (`getSimilar`), tallas desde `extractAvailableTallasFromInventory()` y precio sin bloque de descuento.
+  - `mocks/items.ts`: Estilos alineados, `Enterizo` → `Conjunto`, galerías limpias (sin fotos de otras prendas) y sin `precioAnterior`/`descuento`.
   - `__tests__/Catalog.test.tsx`: Pruebas actualizadas para los 3 ordenamientos y listas unificadas sin `cercaDe`.
-
 - **Inventario y Tienda (`src/modules/catalogo`):**
-  - `types/inventory.dto.ts`: Enums `DISPONIBLE | ULTIMAS_UNIDADES | NUEVA_PRENDA | AGOTADA | SUSPENDIDO | RETIRADO`, `PublicationStatus` (`PENDIENTE | APROBADA | RECHAZADA | RETIRADA`), `PrendaRequestDto`, `InventarioLoteRequestDto`, `UpdateInventoryItemDto`.
-  - `mocks/inventory.ts`: Mocks con `ULTIMAS_UNIDADES`, `AGOTADA`, tallas de pantalón y ejemplo rechazado (`inv-5`).
-  - `services/inventoryService.ts` y `hooks/useInventory.ts`: `validatePrendaFields`, asignación automática de marca desde la tienda, conexión a `POST /api/v1/prendas`, `POST /api/v1/inventario/lote`, `PUT /api/v1/prendas/{id}`, `PATCH /api/v1/inventario/prenda/{prendaId}/sede/{sedeId}/tallas/{talla}`, `DELETE /api/v1/prendas/{id}` y paso automático de `RECHAZADA` → `PENDIENTE` al editar.
-  - `pages/MiTiendaPage.tsx`: Tallas, estilos, estados y tipos alineados; soporte de marca automática.
-  - `services/storePublicService.ts` y `pages/StorePage.tsx`: Mapeo de las 11 tiendas, consumo de `GET /api/v1/almacenes/{id}/catalogo`, `/inventario/prenda/{prendaId}` y `GET /api/v1/almacenes/{id}/novedades` (máximo 3 prendas semanales).
-
+  - `types/inventory.dto.ts`: Nuevos estados, `PrendaRequestDto`, `InventarioLoteRequestDto` (incluye `fechaPublicacion`), `UpdateInventoryItemDto`.
+  - `mocks/inventory.ts`: Estados actualizados, tallas de pantalón y ejemplo rechazado (`inv-5`).
+  - `services/inventoryService.ts` y `hooks/useInventory.ts`: Validaciones (`validatePrendaFields`), marca automática desde tienda, lectura de `sedes[].variantes[]` y `motivoRechazo ?? motivo`, conexión a `/api/v1/prendas` y `/api/v1/inventario/*` (con `fechaPublicacion` en lote) y transición `RECHAZADA` → `PENDIENTE` al editar.
+  - `pages/MiTiendaPage.tsx`: Tallas, estilos, estados y tipos alineados; marca automática.
+  - `services/storePublicService.ts` y `pages/StorePage.tsx`: 11 tiendas, `/almacenes/{id}/catalogo` + `extractAvailableTallasFromInventory()`, y `/almacenes/{id}/novedades` (máximo 3 prendas).
 - **Moderación (`src/modules/catalogo`):**
-  - `types/moderation.dto.ts`: Añadido `almacenId?`, `BackendModerationRequestDto` y `ModerationPendingResponseDto` (grupos).
-  - `services/moderationService.ts` y `hooks/useModeration.ts`: Parseo de `{ tipoPublicador, total, grupos }` en `GET /api/v1/prendas/pendientes`, envío de `{ decision: 'APROBADA' | 'RECHAZADA', motivo, moderadorId }` y `almacenId` en lote, y eliminación de llamada HTTP a `/api/v1/prendas/historial` (se usa historial en sesión).
-
+  - `types/moderation.dto.ts`, `services/moderationService.ts`, `hooks/useModeration.ts`, `pages/ModerationPage.tsx`: Grupos en `/pendientes`, envío de `decision`/`motivo`/`moderadorId` + `almacenId`, historial en sesión (sin `/historial`) y manejo de `MOTIVO_REQUERIDO` / `PRENDA_NO_PENDIENTE`.
 - **Playlists (`src/modules/catalogo`):**
-  - `types/playlist.dto.ts`: `ESTILOS_PLAYLIST`, `PlaylistEstilo`, `usuarioId?`, `UpdatePlaylistDto`.
-  - `services/playlistService.ts` y `hooks/usePlaylists.ts`: `normalizePlaylist` (mapeando `usuarioId`), mínimo 1 prenda y `estilo` al crear, lectura de `likes` y `guardados` desde la playlist devuelta por `/like` y `/guardar`, y método `save()`.
-
+  - `types/playlist.dto.ts`, `services/playlistService.ts`, `hooks/usePlaylists.ts`: `ESTILOS_PLAYLIST`, `usuarioId`, soporte desglosado en `playlist.prendas` (`prendaId`, `nombrePrenda`, `disponible === false`), envío de `nombrePrenda` en `addItem`, lectura de `likes`/`guardados` de la respuesta completa y `save()`.
 - **Mapa (`src/modules/mapa`):**
-  - `types/map.dto.ts`: `CATEGORIAS_ALMACEN` (7 categorías incluyendo `Calzado`), `categoriaId?`, `totalPrendas?` y campos descriptivos opcionales en `MapPinDto`.
-  - `utils/mapUtils.ts`: `filterPins(pins, filter, categoriaId?)` y `formatDistanciaKm(km)` (`"1,25 km"`).
-  - `services/mapService.ts`: `getAll({ lat, lng, radioKm, categoriaId })` sin datos falsos de respaldo en modo API, `nearbyFoundations` (`/api/v1/fundaciones/cercanas`) y `getCatalogSummary` (`/api/v1/almacenes/{id}/catalogo/resumen`).
-  - `components/BubbleColumn.tsx`: Render condicional de `pin.barrio` opcional.
-  - `mocks/mapData.ts`: Categorías alineadas (`Deportivo`, `Vintage`, `Calzado`, `Urbano`) con `categoriaId` y distancia con dos decimales y coma.
+  - `types/map.dto.ts`, `utils/mapUtils.ts`, `services/mapService.ts`, `components/BubbleColumn.tsx`, `mocks/mapData.ts`: `CATEGORIAS_ALMACEN` (con `Calzado`), `formatDistanciaKm`, `/fundaciones/cercanas`, `/almacenes/{id}/catalogo/resumen`, render condicional sin datos de ejemplo.
 
 ---
 
 ## 4. Cambios críticos de contrato (no revertir en el merge)
 
-### Rutas REST esperadas por el backend
-- **Catálogo (`ms-item-catalogo`):**
-  - `GET /api/v1/prendas` (usa `orden=RECIENTES | REPUTACION | DISTANCIA`, `lat`, `lng`; **no enviar** `cercaDe`, `origen`, `categoria` ni ordenamientos viejos).
-  - `GET /api/v1/prendas/{id}/similares` (sección «Prendas similares», máx. 10).
-  - `POST /api/v1/prendas`, `PUT /api/v1/prendas/{id}`, `DELETE /api/v1/prendas/{id}` (no usar `/api/v1/inventario/prenda`, `/precio`, `/stock` ni `/toggle-estado`).
-  - `GET /api/v1/almacenes/{id}/catalogo`, `/catalogo/resumen` (máx. 4 prendas), `/novedades` (máx. 3 prendas).
-  - `GET /api/v1/prendas/pendientes` (formato `{ tipoPublicador, total, grupos }`) y `PUT /api/v1/prendas/{id}/moderacion` / `.../almacenes/{almacenId}/moderacion` (sin `GET /api/v1/prendas/historial`).
-- **Inventario (`ms-inventario`):**
-  - `POST /api/v1/inventario/lote` (`{ prendaId, sedeId, tipoPrenda, tallas }`).
-  - `PATCH /api/v1/inventario/prenda/{prendaId}/sede/{sedeId}/tallas/{talla}` (`{ unidades }`).
-  - `GET /api/v1/inventario/prenda/{prendaId}` y `GET /api/v1/inventario/sedes/{sedeId}/disponibles`.
-- **Geolocalización (`ms-geolocalizacion`):**
-  - `GET /api/v1/almacenes` (recibe `lat`, `lng`, `radioKm`, `categoriaId`).
-  - `GET /api/v1/almacenes/{id}/distancia?lat&lng` (formato mostrado con coma decimal y 2 decimales).
-  - `GET /api/v1/fundaciones/cercanas?lat&lng&radioKm`.
-- **Playlists (`ms-playlist`):**
-  - `GET/POST /api/v1/playlists`, `POST /api/v1/playlists/{id}/like` y `/guardar` (devuelven el objeto playlist con `likes` y `guardados`).
-  - `GET /api/v1/playlists/populares` y `PUT` / `DELETE /api/v1/playlists/{id}/destacar` (en reemplazo de `/api/v1/admin/playlists*`).
+### Rutas REST y formato de errores (`ProblemDetail`)
+- **Errores estándar (`ProblemDetail`):** Todos los servicios devuelven `{ type, title, status, detail, instance, code, timestamp }` (y `errors` en 400 de validación). En el front **no** se muestra `detail` del backend directamente salvo `fields` (`errors`), sino el mensaje mapeado desde `MENSAJES_POR_CODIGO[code]`.
+- **Códigos `code` soportados:** `PARAMETRO_INVALIDO`, `DATOS_INVALIDOS`, `RANGO_PRECIO_INVALIDO`, `UBICACION_REQUERIDA`, `PRENDA_NO_ENCONTRADA`, `ALMACEN_NO_ENCONTRADO`, `COORDENADA_FUERA_DE_RANGO`, `RADIO_INVALIDO`, `INVENTARIO_NO_ENCONTRADO`, `ALMACEN_SUSPENDIDO`, `FOTOGRAFIAS_EXCEDIDAS`, `TALLA_INVALIDA`, `CANTIDAD_INVALIDA`, `INVENTARIO_SUSPENDIDO`, `ACCESO_DENEGADO`, `PRENDA_RETIRADA`, `TALLA_NO_REGISTRADA`, `PRENDA_YA_RETIRADA`, `PRENDA_NO_PENDIENTE`, `MOTIVO_REQUERIDO`, `PLAYLIST_SIN_PRENDAS`, `USUARIO_NO_AUTENTICADO`, `PLAYLIST_NO_ENCONTRADA`, `DESCRIPCION_MUY_LARGA`, `LIMITE_PRENDAS_PLAYLIST`, `PRENDA_YA_EN_PLAYLIST`, `PRENDA_NO_ESTA_EN_PLAYLIST`, `PLAYLIST_PRIVADA`, `LIMITE_DESTACADAS`, `ERROR_INTERNO`.
+- **Rutas principales:**
+  - `ms-item-catalogo`: `GET /api/v1/prendas` (`orden=RECIENTES | REPUTACION | DISTANCIA`, `lat`, `lng`), `GET /api/v1/prendas/{id}/similares`, `POST/PUT/DELETE /api/v1/prendas`, `GET /api/v1/almacenes/{id}/catalogo`, `/catalogo/resumen`, `/novedades`, `GET /api/v1/prendas/pendientes` (`{ tipoPublicador, total, grupos }`), `PUT .../moderacion` (sin `/historial`).
+  - `ms-inventario`: `POST /api/v1/inventario/lote` (incluye `fechaPublicacion`), `PATCH /api/v1/inventario/prenda/{prendaId}/sede/{sedeId}/tallas/{talla}` (`{ unidades }`), `GET /api/v1/inventario/prenda/{prendaId}` (`sedes[].variantes[]`), `GET /api/v1/inventario/sedes/{sedeId}/disponibles`.
+  - `ms-geolocalizacion`: `GET /api/v1/almacenes` (`lat`, `lng`, `radioKm`, `categoriaId`), `GET /api/v1/almacenes/{id}/distancia?lat&lng`, `GET /api/v1/fundaciones/cercanas?lat&lng&radioKm`.
+  - `ms-playlist`: `GET/POST /api/v1/playlists`, `POST /api/v1/playlists/{id}/prendas` (`{ prendaId, nombrePrenda }`), `POST .../like` y `.../guardar`, `GET /api/v1/playlists/populares` (`Page` con `content`), `PUT/DELETE /api/v1/playlists/{id}/destacar`.
 
-### Listas unificadas y enums
-- **Tipos de prenda (12):** `Saco`, `Chaqueta`, `Buzo`, `Suéter`, `Camisa`, `Camiseta`, `Pantalón`, `Falda`, `Vestido`, `Conjunto`, `Calzado`, `Accesorio`.
+### Listas unificadas, enums y validaciones
+- **Tipos (12):** `Saco`, `Chaqueta`, `Buzo`, `Suéter`, `Camisa`, `Camiseta`, `Pantalón`, `Falda`, `Vestido`, `Conjunto`, `Calzado`, `Accesorio`.
 - **Colores (8):** `Negro`, `Blanco`, `Gris`, `Azul`, `Café`, `Beige`, `Crudo`, `Plata`.
-- **Estilos (5):** `Casual`, `Formal`, `Deportivo`, `Urbano`, `Vintage` (en playlist en mayúsculas: `CASUAL`, `FORMAL`, `DEPORTIVO`, `URBANO`, `VINTAGE`).
-- **Marcas / Tiendas (11):** `Kicks Local`, `Luna Store`, `Nómada Studio`, `Segunda mano`, `The Local Lab`, `Ropero 57`, `Norte Denim`, `Casa Tweed`, `Sastrería Antonia`, `Calle 85 Store`, `Nora Vintage`.
-- **Tallas por `TipoTalla` / `TipoPrendaInventario`:** `ROPA` (`XS`–`XXL`), `PANTALON` (`26`–`36`), `CALZADO` (`34`–`45`), `UNICA` (`Única`).
-- **Categorías de almacén (mapa):** `Casual`, `Formal`, `Deportivo`, `Urbano`, `Vintage`, `Accesorios`, `Calzado`.
-- **Estados:** Inventario (`DISPONIBLE`, `ULTIMAS_UNIDADES`, `NUEVA_PRENDA`, `AGOTADA`, `SUSPENDIDO`, `RETIRADO`), Publicación (`PENDIENTE`, `APROBADA`, `RECHAZADA`, `RETIRADA`) y Moderación (`decision: 'APROBADA' | 'RECHAZADA'`, `moderadorId`).
-
-### Validaciones obligatorias en front
-- **Prendas:** `nombre` 3–60 caracteres; `tipo`, `color` y `estilo` obligatorios (≤ 20); `marca` tomada automáticamente de la tienda (no se pide en formulario, ≤ 30); `precio` > 0 y ≤ `10.000.000` COP; **1 a 5 fotografías** (URL ≤ 300 caracteres).
-- **Playlists:** `estilo` obligatorio y entre **1 y 15 prendas** (`prendaIds`) al crear; campo de autor leído por `usuarioId` (texto) con respaldo en `creador`.
+- **Estilos (5):** `Casual`, `Formal`, `Deportivo`, `Urbano`, `Vintage` (`CASUAL..VINTAGE` en playlists).
+- **Marcas / Tiendas (11):** `Kicks Local`, `Luna Store`, `Nómada Studio`, `Segunda mano`, `The Local Lab`, `Ropero 57`, `Norte Denim`, `Casa Tweed`, `Sastrería Antonia`, `Calle 85 Store`, `Nora Vintage` (la marca sale automáticamente de la tienda al publicar).
+- **Tallas:** `ROPA` (`XS`–`XXL`), `PANTALON` (`26`–`36`), `CALZADO` (`34`–`45`), `UNICA` (`Única`), con selección diferenciada por grupo en catálogo.
+- **Categorías mapa (7):** `Casual`, `Formal`, `Deportivo`, `Urbano`, `Vintage`, `Accesorios`, `Calzado`.
+- **Estados:** Inventario (`DISPONIBLE`, `ULTIMAS_UNIDADES`, `NUEVA_PRENDA`, `AGOTADA`, `SUSPENDIDO`, `RETIRADO`), Publicación (`PENDIENTE`, `APROBADA`, `RECHAZADA`, `RETIRADA`) y Moderación (`APROBADA`, `RECHAZADA` con `motivo` y `moderadorId`).
+- **Validaciones:** Prenda (`nombre` 3–60, `tipo`/`color`/`estilo` ≤ 20, `marca` ≤ 30 automática, `precio` ≤ 10.000.000 COP, 1–5 fotos con URL ≤ 300, sin descuentos en UI de catálogo); Playlist (`estilo` y 1–15 prendas al crear, `usuarioId` texto).

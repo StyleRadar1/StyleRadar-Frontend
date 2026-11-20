@@ -25,7 +25,10 @@ export default function AdminPlaylistsPage() {
       setData((l) => l.map((x) => (x.id === n.id ? { ...n } : x)))
       setMsg({ tone: 'ok', text: n.destacada ? `«${n.nombre}» se destaca en el inicio.` : `«${n.nombre}» ya no se destaca en el inicio.` })
     } catch (e) {
-      if (errorKind(e) === 'conflicto' || (e instanceof ApiError && e.status === 422)) {
+      if (
+        (e instanceof ApiError && (e.code === 'LIMITE_DESTACADAS' || e.status === 422)) ||
+        errorKind(e) === 'conflicto'
+      ) {
         setMsg({ tone: 'warn', text: 'Ya hay 3 destacadas. Quita una primero' })
         reload()
       } else {

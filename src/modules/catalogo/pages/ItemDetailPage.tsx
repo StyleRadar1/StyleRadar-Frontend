@@ -17,7 +17,7 @@ import { getWishlistIds, setWishlistIds } from '@/modules/transacciones/services
 import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { ItemCard } from '../components/ItemCard'
 import { SizeGuideModal } from '../components/SizeGuideModal'
-import { itemService } from '../services/itemService'
+import { extractAvailableTallasFromInventory, itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
 import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
@@ -98,12 +98,8 @@ export default function ItemDetailPage() {
     if (!env.useMocks && tallas.length === 0) {
       try {
         const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(id)}`).then((r) => r.data)
-        const lista = Array.isArray(inv) ? inv : Array.isArray(inv?.tallas) ? inv.tallas : []
-        const extraidas = lista
-          .filter((t: any) => typeof t === 'string' || (t?.cantidad ?? t?.unidades ?? 1) > 0)
-          .map((t: any) => (typeof t === 'string' ? t : String(t?.talla ?? '')))
-          .filter(Boolean)
-        if (extraidas.length > 0) tallas = Array.from(new Set(extraidas))
+        const extraidas = extractAvailableTallasFromInventory(inv)
+        if (extraidas.length > 0) tallas = extraidas
       } catch {
         // Mantiene tallas vacías si inventario no responde
       }

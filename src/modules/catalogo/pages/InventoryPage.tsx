@@ -214,6 +214,19 @@ export default function InventoryPage() {
 
   const handleActionFailure = (err: unknown): boolean => {
     const kind = errorKind(err)
+    if (err instanceof ApiError && (err.code === 'INVENTARIO_SUSPENDIDO' || err.code === 'ALMACEN_SUSPENDIDO')) {
+      setSuspendedByAction(true)
+      return true
+    }
+    if (err instanceof ApiError && err.code === 'ACCESO_DENEGADO') {
+      showToast(errorMessage(err), 'warn')
+      return true
+    }
+    if (err instanceof ApiError && (err.code === 'PRENDA_RETIRADA' || err.code === 'PRENDA_YA_RETIRADA')) {
+      showToast(errorMessage(err), 'warn', 'Actualizamos el inventario.')
+      void reload()
+      return true
+    }
     if (kind === 'permiso') {
       if (err instanceof ApiError && !err.message.toLowerCase().includes('no existe')) {
         setSuspendedByAction(true)
@@ -393,9 +406,12 @@ export default function InventoryPage() {
       showToast('¡Prenda incorporada al inventario del almacén!')
     } catch (err) {
       const fields = fieldErrors(err)
+      if (err instanceof ApiError && err.code === 'FOTOGRAFIAS_EXCEDIDAS' && !fields.fotografias) {
+        fields.fotografias = errorMessage(err)
+      }
       if (Object.keys(fields).length) {
         setCreateErrors(fields)
-        const firstId = fields.nombre ? 'nombrePrenda' : fields.precio ? 'precioPrenda' : 'tipoPrenda'
+        const firstId = fields.nombre ? 'nombrePrenda' : fields.precio ? 'precioPrenda' : fields.fotografias ? 'fotoPrenda' : 'tipoPrenda'
         window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
       } else if (!handleActionFailure(err)) {
         setCreateErrors({ _global: errorMessage(err, 'Error al registrar prenda.') })
@@ -479,6 +495,9 @@ export default function InventoryPage() {
       )
     } catch (err) {
       const fields = fieldErrors(err)
+      if (err instanceof ApiError && err.code === 'FOTOGRAFIAS_EXCEDIDAS' && !fields.fotografias) {
+        fields.fotografias = errorMessage(err)
+      }
       if (Object.keys(fields).length) {
         setEditErrors(fields)
       } else if (handleActionFailure(err)) {

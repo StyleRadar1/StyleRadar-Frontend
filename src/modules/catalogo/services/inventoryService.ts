@@ -2,6 +2,7 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
+import { extractStockMapFromInventory } from './itemService'
 import type { Estilo, ItemResponseDto } from '../types/item.dto'
 import type {
   InventoryItemDto,
@@ -132,7 +133,12 @@ function normalizeBackendInventoryItem(
     stockTotal: total,
     estado: statusFromBack,
     estadoPublicacion: (prenda.estado as PublicationStatus) || undefined,
-    motivoRechazo: typeof prenda.motivoRechazo === 'string' ? prenda.motivoRechazo : undefined,
+    motivoRechazo:
+      typeof prenda.motivoRechazo === 'string'
+        ? prenda.motivoRechazo
+        : typeof prenda.motivo === 'string'
+          ? prenda.motivo
+          : undefined,
     actualizadoEn: String(prenda.fechaPublicacion ?? prenda.actualizadoEn ?? new Date().toISOString()),
   }
 }
@@ -172,12 +178,7 @@ export const inventoryService = {
         if (!stock) {
           try {
             const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(pid)}`).then((r) => r.data)
-            const map: Record<string, number> = {}
-            const list = Array.isArray(inv) ? inv : Array.isArray(inv?.tallas) ? inv.tallas : []
-            for (const entry of list) {
-              if (entry?.talla) map[String(entry.talla)] = Number(entry.cantidad ?? entry.unidades ?? 0)
-            }
-            stock = map
+            stock = extractStockMapFromInventory(inv)
           } catch {
             stock = {}
           }
@@ -490,6 +491,10 @@ export const inventoryService = {
       sedeId: dto.sedeId ?? DEFAULT_SEDE_ID,
       tipoPrenda: dto.tipoPrenda ?? 'ROPA',
       tallas: Object.entries(dto.stockPorTalla).map(([talla, cantidad]) => ({ talla, cantidad })),
+      fechaPublicacion:
+        typeof createdPrenda.fechaPublicacion === 'string'
+          ? createdPrenda.fechaPublicacion
+          : new Date().toISOString(),
     }
     await apiClient.post('/api/v1/inventario/lote', lotePayload)
 

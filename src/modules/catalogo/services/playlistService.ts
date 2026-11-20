@@ -20,10 +20,12 @@ function normalizePlaylist(raw: any): PlaylistDto {
   const prendasRaw: any[] = Array.isArray(raw?.prendas) ? raw.prendas : []
   const prendas: PlaylistItemDto[] = prendasRaw.map((item) => ({
     ...item,
-    id: String(item?.id ?? ''),
-    nombre: item?.nombre ?? '',
+    id: String(item?.prendaId ?? item?.id ?? ''),
+    nombre: item?.nombrePrenda ?? item?.nombre ?? '',
     precio: Number(item?.precio ?? 0),
     imagen: item?.imagen || (Array.isArray(item?.fotografias) && item.fotografias[0]) || item?.imagenUrl || '',
+    disponible: typeof item?.disponible === 'boolean' ? item.disponible : undefined,
+    noDisponible: item?.disponible === false || Boolean(item?.noDisponible),
   }))
   return {
     id: String(raw?.id ?? ''),
@@ -150,7 +152,7 @@ export const playlistService = {
     return apiClient.delete(`/api/v1/playlists/${id}`).then(() => true)
   },
 
-  addItem(playlistId: string, itemId: string): Promise<PlaylistDto> {
+  addItem(playlistId: string, itemId: string, nombrePrenda?: string): Promise<PlaylistDto> {
     if (env.useMocks) {
       const pl = MOCK_PLAYLISTS.find((p) => p.id === playlistId)
       if (!pl) return Promise.reject(new ApiError(404, 'Playlist no encontrada.'))
@@ -170,7 +172,13 @@ export const playlistService = {
       return mockDelay(pl)
     }
 
-    return apiClient.post<any>(`/api/v1/playlists/${playlistId}/prendas`, { prendaId: itemId }).then((r) => normalizePlaylist(r.data))
+    const fallbackNombre = nombrePrenda ?? ITEMS.find((it) => it.id === itemId)?.nombre
+    return apiClient
+      .post<any>(`/api/v1/playlists/${playlistId}/prendas`, {
+        prendaId: itemId,
+        ...(fallbackNombre ? { nombrePrenda: fallbackNombre } : {}),
+      })
+      .then((r) => normalizePlaylist(r.data))
   },
 
   removeItem(playlistId: string, itemId: string): Promise<PlaylistDto> {

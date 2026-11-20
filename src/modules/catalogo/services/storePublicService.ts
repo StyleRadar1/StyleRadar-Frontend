@@ -4,7 +4,7 @@ import { TIENDAS } from '@/modules/mapa/mocks/mapData'
 import { seedStores, seedPlaylists } from '@/modules/administracion/mocks/admin'
 import { ITEMS } from '../mocks/items'
 import { getStoreInventoryItemsSync } from './inventoryService'
-import { normalizeBackendItem } from './itemService'
+import { extractAvailableTallasFromInventory, normalizeBackendItem } from './itemService'
 import type { ItemResponseDto } from '../types/item.dto'
 import type { MapPinDto } from '@/modules/mapa/types/map.dto'
 
@@ -312,12 +312,7 @@ export const storePublicService = {
         if (item.tallas.length > 0) return item
         try {
           const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(item.id)}`).then((res) => res.data)
-          const list = Array.isArray(inv) ? inv : Array.isArray(inv?.tallas) ? inv.tallas : []
-          const tallas = list
-            .filter((t: any) => typeof t === 'string' || (t?.cantidad ?? t?.unidades ?? 1) > 0)
-            .map((t: any) => (typeof t === 'string' ? t : String(t?.talla ?? '')))
-            .filter(Boolean)
-          return { ...item, tallas }
+          return { ...item, tallas: extractAvailableTallasFromInventory(inv) }
         } catch {
           return item
         }

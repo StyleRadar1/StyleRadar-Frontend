@@ -69,6 +69,7 @@ export interface InventarioLoteRequestDto {
   sedeId: string
   tipoPrenda: TipoPrendaInventario
   tallas: InventarioLoteTallaDto[]
+  fechaPublicacion?: string
 }
 
 export interface UpdateStockDto {
