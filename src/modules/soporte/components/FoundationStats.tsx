@@ -6,6 +6,8 @@ import type { FoundationMonthDto, FoundationStatsDto } from '../types/stats.dto'
 import { DataTable, Donut, Gauge, GroupedBars, Kpi, Panel, Swatch, TableToggle } from './charts'
 import { descargarCsv, pct, SERIE } from '../utils/charts'
 
+export const FOUNDATION_NO_MONTHLY_GOAL_MSG = 'Tu fundación aún no tiene una meta mensual de prendas'
+
 /** Estadísticas de la fundación (RF-82 a 85) con el diseño del prototipo. */
 export function FoundationStatsView() {
   const { user } = useAuth()
@@ -15,20 +17,22 @@ export function FoundationStatsView() {
 
   if (loading) return <Loading label="Cargando estadísticas de tu fundación…" />
   if (error) return <ErrorState error={error} onRetry={reload} />
-  if (!stats) return <EmptyState title="Sin datos">Cuando recibas donaciones, verás los indicadores aquí.</EmptyState>
+  if (!stats) return <EmptyState title="Sin datos">Cuando recibas donaciones, verás los indicadores aquí</EmptyState>
   const metaObj = stats.meta
-  const meta = metaObj && metaObj.objetivo > 0 ? pct(metaObj.recibidas, metaObj.objetivo) : 0
-  const metaTexto = metaObj && metaObj.objetivo > 0
-    ? `${metaObj.recibidas} de ${metaObj.objetivo} prendas recibidas en ${metaObj.etiqueta} (${meta}%).`
-    : 'Sin meta definida para este periodo.'
+  const hasMeta = !!metaObj && metaObj.objetivo > 0
+  const meta = hasMeta ? Math.round((metaObj.recibidas / metaObj.objetivo) * 100) : null
+  const metaTexto = hasMeta && meta !== null
+    ? `${metaObj.recibidas} de ${metaObj.objetivo} prendas recibidas en ${metaObj.etiqueta} (${meta}%)`
+    : FOUNDATION_NO_MONTHLY_GOAL_MSG
   const metaEtiqueta = metaObj?.etiqueta ?? 'este mes'
+  const recibidasAcumuladas = metaObj?.recibidas ?? stats.totalPrendasRecibidas
 
   return (
     <section className="text-[var(--color-text)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl text-[var(--color-text)]">Estadísticas de tu fundación</h1>
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">Donaciones y solicitudes recibidas por {nombre} · Solo tú y StyleRadar ven estos datos.</p>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">Donaciones y solicitudes recibidas por {nombre} · Solo tú y StyleRadar ven estos datos</p>
         </div>
         <button type="button" onClick={() => exportar(nombre, stats, months)} className="rounded-xl border border-[var(--color-border)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface)] text-[var(--color-text)]">
           Exportar a Excel
@@ -44,10 +48,21 @@ export function FoundationStatsView() {
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {months.length > 0 && <MonthlyRequests months={months} />}
         <Panel title="Meta mensual de prendas" text={metaTexto}>
-          <Gauge value={meta} label={`Meta de prendas de ${metaEtiqueta}: ${meta}% alcanzado`} caption={`de la meta de ${metaEtiqueta}`} />
+          {hasMeta && meta !== null ? (
+            <Gauge value={meta} label={`Meta de prendas de ${metaEtiqueta}: ${meta}% alcanzado`} caption={`de la meta de ${metaEtiqueta}`} />
+          ) : (
+            <div className="py-6 text-center" role="status">
+              <p className="text-sm font-semibold">{FOUNDATION_NO_MONTHLY_GOAL_MSG}</p>
+              <p className="mt-2 text-2xl font-extrabold">{recibidasAcumuladas.toLocaleString('es-CO')} prendas recibidas acumuladas</p>
+            </div>
+          )}
         </Panel>
-        <Panel title="Prendas por tipo" text="Qué tipo de ropa llega con más frecuencia a la fundación.">
-          <Donut label="Prendas por tipo" data={stats.porTipo.map((t) => ({ nombre: t.tipo, valor: t.pct }))} />
+        <Panel title="Prendas por tipo" text="Qué tipo de ropa llega con más frecuencia a la fundación">
+          {stats.porTipo.length === 0 || stats.totalPrendasRecibidas === 0 ? (
+            <EmptyState title="Sin prendas recibidas">Aún no hay prendas registradas por tipo</EmptyState>
+          ) : (
+            <Donut label="Prendas por tipo" data={stats.porTipo.map((t) => ({ nombre: t.tipo, valor: t.pct }))} />
+          )}
         </Panel>
         <ByStatus data={stats.porEstado} />
       </div>

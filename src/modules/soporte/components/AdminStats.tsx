@@ -71,8 +71,19 @@ export function AdminStatsView() {
         {income && <Income data={income} />}
         <LiveUsers />
         {income && (
-          <Panel title="Meta de ingresos" text={`${formatCOP(income.mesActual.ingresosNetos)} de ${formatCOP(income.mesActual.meta)} (${income.mesActual.porcentajeAvance}% de la meta de ${income.mesActual.mes}).`}>
-            <Gauge value={income.mesActual.porcentajeAvance} label={`Avance de la meta de ingresos de ${mesCorto}: ${income.mesActual.porcentajeAvance}%`} caption={`de la meta de ingresos de ${mesCorto}`} />
+          <Panel
+            title="Meta de ingresos"
+            text={
+              income.mesActual.meta && income.mesActual.meta > 0
+                ? `${formatCOP(income.mesActual.ingresosNetos)} de ${formatCOP(income.mesActual.meta)} (${income.mesActual.porcentajeAvance}% de la meta de ${income.mesActual.mes})`
+                : `${formatCOP(income.mesActual.ingresosNetos)} · sin meta definida`
+            }
+          >
+            {income.mesActual.meta && income.mesActual.meta > 0 ? (
+              <Gauge value={income.mesActual.porcentajeAvance} label={`Avance de la meta de ingresos de ${mesCorto}: ${income.mesActual.porcentajeAvance}%`} caption={`de la meta de ingresos de ${mesCorto}`} />
+            ) : (
+              <p role="status" className="py-6 text-center text-sm font-semibold text-[var(--color-text-muted)]">sin meta definida</p>
+            )}
           </Panel>
         )}
         {accounts && (
@@ -185,7 +196,7 @@ function DailyActivity({ data }: { data: AdminDailyDto }) {
 function Income({ data }: { data: AdminIncomeDto }) {
   const [tabla, setTabla] = useState(false)
   return (
-    <Panel title="Ingresos por suscripciones" text="Pagos aprobados por mes (reembolsos descontados)." action={<TableToggle on={tabla} onChange={setTabla} />}>
+    <Panel title="Ingresos por suscripciones" text="Pagos aprobados por mes" action={<TableToggle on={tabla} onChange={setTabla} />}>
       {tabla
         ? <DataTable caption="Ingresos por suscripciones por mes" head={['Mes', 'Usuarios (Radar+)', 'Tiendas aliadas', 'Total']} rows={data.historico.map((h) => [MES_LARGO[h.mes] ?? h.mes, formatCOP(h.usuarios), formatCOP(h.tiendas), formatCOP(h.total)])} />
         : <GroupedBars label="Ingresos por suscripciones" series={['Usuarios (Radar+)', 'Tiendas aliadas']} fmt={milesCOP}

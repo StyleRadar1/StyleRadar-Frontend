@@ -25,7 +25,7 @@ export interface MiPlanDto {
   pendingRenewal?: boolean
 }
 
-/** Lo que solo tiene Radar+ y se muestra con candado en el plan Radar (RF-102, sin wishlist). */
+/** Lo que solo tiene Radar+ y se muestra con candado en el plan Radar (RF-102). */
 export type FuncionPago = 'probador-foto' | 'alertas-sin-limite'
 
 /**

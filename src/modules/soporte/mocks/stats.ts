@@ -8,13 +8,22 @@ import type {
 /* ─── Tienda (RF-76 a 81) ─── */
 
 export const MOCK_STORE_STATS: Record<StatsPeriod, StoreStatsDto> = {
-  '7d': { periodo: '7d', kpis: { visitas: { valor: 312, variacionPct: 8.1, direccion: 'up' }, mensajes: { valor: 24, variacionPct: -3.0, direccion: 'down' }, wishlist: { valor: 98, variacionPct: 5.5, direccion: 'up' } } },
-  '30d': { periodo: '30d', kpis: { visitas: { valor: 1284, variacionPct: 12.4, direccion: 'up' }, mensajes: { valor: 94, variacionPct: 4.1, direccion: 'up' }, wishlist: { valor: 412, variacionPct: -2.3, direccion: 'down' } } },
-  '90d': { periodo: '90d', kpis: { visitas: { valor: 3650, variacionPct: 15.0, direccion: 'up' }, mensajes: { valor: 280, variacionPct: 6.2, direccion: 'up' }, wishlist: { valor: 1120, variacionPct: 1.8, direccion: 'up' } } },
+  '7d': { periodo: '7_DIAS', kpis: { visitas: { valor: 312, variacionPct: 8.1, direccion: 'up', periodoAnterior: 288 }, mensajes: { valor: 24, variacionPct: -3.0, direccion: 'down', periodoAnterior: 25 } } },
+  '30d': { periodo: '30_DIAS', kpis: { visitas: { valor: 1284, variacionPct: 12.4, direccion: 'up', periodoAnterior: 1142 }, mensajes: { valor: 94, variacionPct: 4.1, direccion: 'up', periodoAnterior: 90 } } },
+  '90d': { periodo: '90_DIAS', kpis: { visitas: { valor: 3650, variacionPct: 15.0, direccion: 'up', periodoAnterior: 3174 }, mensajes: { valor: 280, variacionPct: 6.2, direccion: 'up', periodoAnterior: 264 } } },
+  '7_DIAS': { periodo: '7_DIAS', kpis: { visitas: { valor: 312, variacionPct: 8.1, direccion: 'up', periodoAnterior: 288 }, mensajes: { valor: 24, variacionPct: -3.0, direccion: 'down', periodoAnterior: 25 } } },
+  '30_DIAS': { periodo: '30_DIAS', kpis: { visitas: { valor: 1284, variacionPct: 12.4, direccion: 'up', periodoAnterior: 1142 }, mensajes: { valor: 94, variacionPct: 4.1, direccion: 'up', periodoAnterior: 90 } } },
+  '90_DIAS': { periodo: '90_DIAS', kpis: { visitas: { valor: 3650, variacionPct: 15.0, direccion: 'up', periodoAnterior: 3174 }, mensajes: { valor: 280, variacionPct: 6.2, direccion: 'up', periodoAnterior: 264 } } },
 }
 
 export const MOCK_STORE_INVENTORY: StoreInventoryDto = {
-  disponibles: 34, ultimasUnidades: 8, agotadas: 5, total: 47,
+  disponibles: 34,
+  ultimasUnidades: 8,
+  agotadas: 5,
+  total: 47,
+  prendasDisponibles: { cantidad: 34, porcentaje: 72.34 },
+  prendasUltimasUnidades: { cantidad: 8, porcentaje: 17.02 },
+  prendasAgotadas: { cantidad: 5, porcentaje: 10.64 },
 }
 
 /* ─── Fundación (RF-82 a 85) ─── */
@@ -22,9 +31,47 @@ export const MOCK_STORE_INVENTORY: StoreInventoryDto = {
 export const MOCK_FOUNDATION_STATS: FoundationStatsDto = {
   totalPrendasRecibidas: 420,
   donaciones: { total: 55, deTiendas: 21, dePersonas: 34 },
+  solicitudesPersonas: [
+    { mes: '2026-04', cantidad: 17 },
+    { mes: '2026-05', cantidad: 19 },
+    { mes: '2026-06', cantidad: 21 },
+    { mes: '2026-07', cantidad: 17 },
+    { mes: '2026-08', cantidad: 18 },
+    { mes: '2026-09', cantidad: 15 },
+  ],
+  solicitudesTiendas: [
+    { mes: '2026-04', cantidad: 3 },
+    { mes: '2026-05', cantidad: 6 },
+    { mes: '2026-06', cantidad: 4 },
+    { mes: '2026-07', cantidad: 5 },
+    { mes: '2026-08', cantidad: 7 },
+    { mes: '2026-09', cantidad: 7 },
+  ],
   meta: { etiqueta: 'septiembre 2026', recibidas: 99, objetivo: 180 },
-  porTipo: [{ tipo: 'Chaquetas', pct: 44 }, { tipo: 'Calzado', pct: 26 }, { tipo: 'Suéteres', pct: 17 }, { tipo: 'Pantalones', pct: 13 }],
-  porEstado: [{ estado: 'Pendiente', cantidad: 5 }, { estado: 'Aceptada', cantidad: 7 }, { estado: 'Recogida', cantidad: 3 }, { estado: 'Recibida', cantidad: 31 }],
+  porTipo: [
+    { tipo: 'Chaquetas', cantidad: 185, pct: 44, porcentaje: 44.05 },
+    { tipo: 'Calzado', cantidad: 109, pct: 26, porcentaje: 25.95 },
+    { tipo: 'Suéteres', cantidad: 71, pct: 17, porcentaje: 16.90 },
+    { tipo: 'Pantalones', cantidad: 55, pct: 13, porcentaje: 13.10 },
+  ],
+  prendasPorTipo: [
+    { tipo: 'Chaquetas', cantidad: 185, porcentaje: 44.05 },
+    { tipo: 'Calzado', cantidad: 109, porcentaje: 25.95 },
+    { tipo: 'Suéteres', cantidad: 71, porcentaje: 16.90 },
+    { tipo: 'Pantalones', cantidad: 55, porcentaje: 13.10 },
+  ],
+  porEstado: [
+    { estado: 'Pendiente', cantidad: 5, porcentaje: 10.87 },
+    { estado: 'Aceptada', cantidad: 7, porcentaje: 15.22 },
+    { estado: 'Recogida', cantidad: 3, porcentaje: 6.52 },
+    { estado: 'Recibida', cantidad: 31, porcentaje: 67.39 },
+  ],
+  solicitudesPorEstado: [
+    { estado: 'Pendiente', cantidad: 5, porcentaje: 10.87 },
+    { estado: 'Aceptada', cantidad: 7, porcentaje: 15.22 },
+    { estado: 'Recogida', cantidad: 3, porcentaje: 6.52 },
+    { estado: 'Recibida', cantidad: 31, porcentaje: 67.39 },
+  ],
 }
 
 /** Mismos datos del prototipo (vista «Ver como tabla» de Solicitudes por mes). */
@@ -50,6 +97,10 @@ export const MOCK_ADMIN_INDICATORS: AdminIndicatorsDto = {
   prendasPublicadas: 67,
   playlistsCreadas: 422,
   donacionesMes: 95,
+  pendientesPorGrupo: [
+    { tipoPublicador: 'TIENDA', publicadorId: 'alm-1', cantidad: 3 },
+    { tipoPublicador: 'USUARIO', publicadorId: 'usr-2', cantidad: 2 },
+  ],
 }
 
 const DIAS: [number, number, number][] = [
@@ -59,11 +110,29 @@ const DIAS: [number, number, number][] = [
 ]
 export const MOCK_ADMIN_DAILY: AdminDailyDto = {
   mes: 'septiembre 2026',
-  dias: DIAS.map(([busquedas, registros, publicaciones], i) => ({ etiqueta: `${i + 1} sep`, busquedas, registros, publicaciones })),
+  dias: DIAS.map(([busquedas, registros, publicaciones], i) => ({
+    etiqueta: `${i + 1} sep`,
+    fecha: `2026-09-${String(i + 1).padStart(2, '0')}`,
+    busquedas,
+    registros,
+    publicaciones,
+  })),
+  busquedasPorDia: DIAS.map(([busquedas], i) => ({
+    fecha: `2026-09-${String(i + 1).padStart(2, '0')}`,
+    busquedas,
+  })),
+  publicacionesPorDia: DIAS.map(([, , publicaciones], i) => ({
+    fecha: `2026-09-${String(i + 1).padStart(2, '0')}`,
+    publicaciones,
+  })),
+  registrosPorDia: DIAS.map(([, registros], i) => ({
+    fecha: `2026-09-${String(i + 1).padStart(2, '0')}`,
+    registros,
+  })),
 }
 
 export const MOCK_ADMIN_INCOME: AdminIncomeDto = {
-  mesActual: { mes: 'sep', ingresosNetos: 222_700, reembolsosDescontados: 29_800, meta: 1_000_000, porcentajeAvance: 22 },
+  mesActual: { mes: 'sep', ingresosNetos: 222_700, meta: 1_000_000, porcentajeAvance: 22 },
   historico: [
     { mes: 'jun', usuarios: 89_400, tiendas: 356_000, total: 445_400 },
     { mes: 'jul', usuarios: 74_500, tiendas: 356_000, total: 430_500 },
