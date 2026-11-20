@@ -28,10 +28,9 @@ interface RadarCardItem {
   title: string
   subtitle: string
   holder: string
-  last4: string
-  fullNumber: string
-  expiry: string
-  cvv: string
+  channelCode: string
+  gateway: string
+  currency: string
   gradient: string
   accent: string
   fallbackAmount: number
@@ -45,10 +44,9 @@ const RADAR_CARDS: RadarCardItem[] = [
     title: 'Radar+ Membresía',
     subtitle: 'SUSCRIPCIONES DE USUARIOS',
     holder: 'STYLERADAR BOGOTÁ · B2C',
-    last4: '4819',
-    fullNumber: '5412  7519  3840  4819',
-    expiry: '09/28',
-    cvv: '842',
+    channelCode: 'MP-B2C-01',
+    gateway: 'Mercado Pago',
+    currency: 'COP',
     gradient: 'linear-gradient(135deg, rgba(72, 17, 154, 0.96) 0%, rgba(123, 77, 216, 0.88) 55%, rgba(44, 24, 78, 0.96) 100%)',
     accent: '#E8DCCB',
     fallbackAmount: 447000,
@@ -60,10 +58,9 @@ const RADAR_CARDS: RadarCardItem[] = [
     title: 'Tienda Aliada Pro',
     subtitle: 'PLANES COMERCIALES B2B',
     holder: 'BOUTIQUES VERIFICADAS',
-    last4: '9024',
-    fullNumber: '4539  8812  0041  9024',
-    expiry: '12/28',
-    cvv: '319',
+    channelCode: 'MP-B2B-02',
+    gateway: 'Mercado Pago',
+    currency: 'COP',
     gradient: 'linear-gradient(135deg, rgba(58, 48, 42, 0.96) 0%, rgba(142, 118, 92, 0.88) 52%, rgba(38, 34, 44, 0.98) 100%)',
     accent: '#B9B9CA',
     fallbackAmount: 1780000,
@@ -75,10 +72,9 @@ const RADAR_CARDS: RadarCardItem[] = [
     title: 'Pasarela Consolidada',
     subtitle: 'MERCADO PAGO · PASARELA OFICIAL',
     holder: 'TESORERÍA STYLERADAR',
-    last4: '1107',
-    fullNumber: '4024  0071  9928  1107',
-    expiry: '06/29',
-    cvv: '605',
+    channelCode: 'MP-TOTAL-03',
+    gateway: 'Mercado Pago',
+    currency: 'COP',
     gradient: 'linear-gradient(135deg, rgba(45, 39, 66, 0.97) 0%, rgba(92, 74, 138, 0.9) 55%, rgba(28, 25, 38, 0.98) 100%)',
     accent: '#E8DCCB',
     fallbackAmount: 2227000,
@@ -283,7 +279,7 @@ export default function AdminPaymentsPage() {
                       <div className="flex items-end justify-between border-t border-white/15 pt-2.5 text-xs">
                         <div>
                           <p className="font-mono text-xs tracking-[.18em] text-white/90">
-                            •••• •••• •••• {card.last4}
+                            {card.channelCode} · {card.currency}
                           </p>
                           <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-white/65">
                             {card.holder}
@@ -300,11 +296,11 @@ export default function AdminPaymentsPage() {
                       <div className=" -mx-5 mt-1 h-9 bg-black/80" aria-hidden="true" />
                       <div className="space-y-2">
                         <div className="flex items-center justify-between rounded-lg bg-white/10 px-3 py-1.5 font-mono text-xs">
-                          <span className="tracking-widest text-arena">{card.fullNumber}</span>
-                          <span className="rounded bg-violeta px-2 py-0.5 text-[10px] font-bold">CVV {card.cvv}</span>
+                          <span className="tracking-widest text-arena">{card.gateway}</span>
+                          <span className="rounded bg-violeta px-2 py-0.5 text-[10px] font-bold">{card.currency}</span>
                         </div>
                         <div className="flex justify-between text-[11px] text-lavanda">
-                          <span>Vence: <b className="text-blanco">{card.expiry}</b></span>
+                          <span>Canal: <b className="text-blanco">{card.channelCode}</b></span>
                           <span> Meta mensual: <b className="text-arena">{formatCOP(card.targetAmount)}</b></span>
                         </div>
                       </div>
@@ -491,6 +487,13 @@ export default function AdminPaymentsPage() {
                   <span key={b.mes}>{b.mes}</span>
                 ))}
               </div>
+              <ul className="sr-only" aria-label="Resumen textual de evolución de ingresos">
+                {BALANCE_SERIES.map((b) => (
+                  <li key={b.mes}>
+                    {b.mes}: {formatCOP(b.real ?? b.proyeccion ?? 0)} ({b.real !== null ? 'Real' : 'Proyección'})
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 

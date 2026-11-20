@@ -281,7 +281,8 @@ export default function StoreSubscriptionPage() {
                         {p.status === 'rechazado' && sub.status !== 'ACTIVA' && (
                           <button
                             type="button"
-                            className="rounded-lg bg-violeta px-3 py-1.5 text-xs font-bold text-blanco hover:bg-violeta-claro shadow-sm"
+                            disabled={paying}
+                            className="rounded-lg bg-violeta px-3 py-1.5 text-xs font-bold text-blanco hover:bg-violeta-claro shadow-sm disabled:opacity-50"
                             onClick={() => {
                               setRetryPaymentTarget(p)
                               setShowRetryForm(true)

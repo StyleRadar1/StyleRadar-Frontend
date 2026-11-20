@@ -143,11 +143,12 @@ export function BuyerPaymentsSection() {
                       {p.status === 'rechazado' && (
                         <button
                           type="button"
+                          disabled={retrying}
                           onClick={() => {
                             setRetryTarget(p)
                             setRetryError(null)
                           }}
-                          className="rounded-lg bg-[var(--sr-accent,var(--color-accent))] px-3 py-1.5 text-xs font-bold text-[var(--color-text-on-accent,#ffffff)]"
+                          className="rounded-lg bg-[var(--sr-accent,var(--color-accent))] px-3 py-1.5 text-xs font-bold text-[var(--color-text-on-accent,#ffffff)] disabled:opacity-50"
                         >
                           Reintentar pago
                         </button>
