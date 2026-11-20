@@ -493,11 +493,7 @@ export default function PlaylistsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-xs font-bold tracking-widest uppercase text-white/50">
-                    PLAYLIST DE ESTILO · {selectedPlaylist.visibilidad === 'PRIVADA' ? '🔒 PRIVADA' : '👁️ PÚBLICA'}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violeta/20 border border-violeta/40 px-2.5 py-0.5 text-[10px] font-bold text-violeta-claro">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    En tornamesa
+                    PLAYLIST DE ESTILO · {selectedPlaylist.visibilidad === 'PRIVADA' ? 'PRIVADA' : 'PÚBLICA'}
                   </span>
                 </div>
 
@@ -520,12 +516,11 @@ export default function PlaylistsPage() {
                   </span>
                 </div>
 
-                {/* Métricas e información RNF-12 */}
+                {/* Métricas e información de la playlist */}
                 <div className="text-xs sm:text-sm text-white/50 space-x-1.5 mb-3">
                   <span className="font-semibold text-white/80">
                     {prendas.length}/15 prendas
                   </span>
-                  <span className="text-white/30 font-mono">(RNF-12)</span>
                   <span>·</span>
                   <span>{formatCOP(totalDisponible)} disponibles</span>
                   <span>·</span>
@@ -595,7 +590,7 @@ export default function PlaylistsPage() {
                         onClick={handleMezclar}
                         className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold px-5 py-2.5 transition active:scale-95"
                       >
-                        🔀 Mezclar
+                        Mezclar
                       </button>
                       <button
                         type="button"
@@ -859,7 +854,7 @@ export default function PlaylistsPage() {
                     </select>
                   </div>
                   <p className="text-[11px] text-white/40">
-                    Límite del sistema: hasta 15 prendas por playlist (RNF-12).
+                    Límite del sistema: hasta 15 prendas por playlist.
                   </p>
                 </div>
               )}
@@ -943,7 +938,7 @@ export default function PlaylistsPage() {
                         visibilidad === 'PUBLICA' ? 'bg-violeta text-white' : 'text-white/60 hover:text-white'
                       }`}
                     >
-                      👁️ Pública
+                      Pública
                     </button>
                     <button
                       type="button"
@@ -952,7 +947,7 @@ export default function PlaylistsPage() {
                         visibilidad === 'PRIVADA' ? 'bg-violeta text-white' : 'text-white/60 hover:text-white'
                       }`}
                     >
-                      🔒 Privada
+                      Privada
                     </button>
                   </div>
                 </div>
@@ -1046,7 +1041,7 @@ export default function PlaylistsPage() {
               Mis playlists
             </h2>
             <p className="mt-2 text-xs text-[var(--sr-hero-text-muted)]">
-              Las que creaste y las que guardaste de otras personas. Hasta 15 prendas (RNF-12).
+              Las que creaste y las que guardaste de otras personas. Hasta 15 prendas.
             </p>
           </div>
           <Button
@@ -1506,7 +1501,7 @@ export default function PlaylistsPage() {
                       visibilidad === 'PUBLICA' ? 'bg-violeta text-white' : 'text-white/60 hover:text-white'
                     }`}
                   >
-                    👁️ Pública
+                    Pública
                   </button>
                   <button
                     type="button"
@@ -1515,7 +1510,7 @@ export default function PlaylistsPage() {
                       visibilidad === 'PRIVADA' ? 'bg-violeta text-white' : 'text-white/60 hover:text-white'
                     }`}
                   >
-                    🔒 Privada
+                    Privada
                   </button>
                 </div>
               </div>
@@ -1551,7 +1546,7 @@ export default function PlaylistsPage() {
                   <p className="mt-1 text-[11px] text-[var(--sr-bad)]">{errorPrendasIniciales}</p>
                 ) : (
                   <p className="mt-1 text-[11px] text-white/50">
-                    Debes seleccionar entre 1 y {MAX_PLAYLIST_ITEMS} prendas (RNF-12).
+                    Debes seleccionar entre 1 y {MAX_PLAYLIST_ITEMS} prendas.
                   </p>
                 )}
               </div>

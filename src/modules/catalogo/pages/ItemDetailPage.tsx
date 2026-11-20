@@ -842,7 +842,7 @@ export default function ItemDetailPage() {
             <div className="border-t border-[var(--sr-border-subtle,var(--color-border))] pt-10">
               <div className="flex items-end justify-between">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--sr-acento-primario,var(--color-accent))]">RF-16</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--sr-acento-primario,var(--color-accent))]">Recomendaciones</span>
                   <h2 className="mt-1 text-2xl font-bold text-[var(--color-text)]">Prendas similares</h2>
                   <p className="mt-1 text-xs text-[var(--color-text-muted)]">
                     Otras opciones disponibles con tipo o estilo compatible.

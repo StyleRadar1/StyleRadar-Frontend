@@ -153,7 +153,7 @@ export default function ModerationPage() {
       {/* Encabezado */}
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-arena">Administración · RF-61</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-arena">Administración</span>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
             Moderación de publicaciones
           </h1>

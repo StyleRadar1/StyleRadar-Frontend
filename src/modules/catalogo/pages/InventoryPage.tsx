@@ -642,7 +642,7 @@ export default function InventoryPage() {
         <div className="inv-hero__inner">
           <span className="inv-hero__eyebrow">INVENTARIO · {nombreTienda}</span>
           <h1 id="inv-heading" className="inv-hero__title" aria-label="Mi inventario · Inventario de la tienda">
-            Mi inventario <span className="sr-only">de la tienda (RF-50 a RF-60)</span>
+            Mi inventario <span className="sr-only">de la tienda</span>
           </h1>
           <p className="inv-hero__subtitle">
             Gestiona tus prendas, tallas y unidades disponibles.

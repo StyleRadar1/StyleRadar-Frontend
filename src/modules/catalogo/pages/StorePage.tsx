@@ -366,7 +366,7 @@ export default function StorePage() {
         <section className="sr-store-items-section" aria-label="Novedades de la semana">
           <div className="sr-store-items-header">
             <div>
-              <span className="sr-store-section-kicker">ÚLTIMOS 7 DÍAS · SR-RF-20</span>
+              <span className="sr-store-section-kicker">ÚLTIMOS 7 DÍAS</span>
               <h2 className="sr-store-section-title">Novedades de la semana</h2>
               <p className="sr-store-section-sub">
                 Hasta 3 ingresos recientes en {store.nombre}.
