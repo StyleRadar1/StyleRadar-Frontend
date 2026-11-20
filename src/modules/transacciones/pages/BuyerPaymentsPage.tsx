@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Badge, Button, Card } from '@/modules/core/design-system'
-import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
+import { EmptyState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { PayerEmailForm } from '../components/PayerEmailForm'
 import { planService } from '../services/planService'
@@ -64,13 +64,24 @@ export function BuyerPaymentsSection() {
 
   if (error) {
     return (
-      <ErrorState
-        error={error}
-        onRetry={() => {
-          void load()
-        }}
-        title="No pudimos cargar tu historial de pagos"
-      />
+      <div
+        role="alert"
+        aria-live="assertive"
+        className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-danger-border,rgba(239,68,68,0.4))] bg-[var(--color-danger-bg,rgba(239,68,68,0.12))] p-5 text-[var(--sr-text-primary,var(--color-text))]"
+      >
+        <p className="text-sm font-semibold">
+          No pudimos cargar tu historial. Inténtalo en unos minutos
+        </p>
+        <Button
+          type="button"
+          variant="primario"
+          onClick={() => {
+            void load()
+          }}
+        >
+          Reintentar
+        </Button>
+      </div>
     )
   }
 
@@ -161,7 +172,7 @@ export function BuyerPaymentsSection() {
                 {retryTarget.planName} · {formatCOP(retryTarget.amount)}
               </h3>
               <p className="mt-1 text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                El pago no fue aprobado. Puedes intentarlo nuevamente.
+                El pago no fue aprobado. Puedes intentarlo nuevamente
               </p>
             </div>
             <button
@@ -188,7 +199,7 @@ export function BuyerPaymentsSection() {
                   setRetryTarget(null)
                   navigate('/pago/resultado?orden=MOCK_ORDER_OK')
                 } catch (e) {
-                  setRetryError(e instanceof Error ? e.message : 'No fue posible generar un nuevo intento de pago.')
+                  setRetryError(e instanceof Error ? e.message.replace(/\.$/, '') : 'No fue posible generar un nuevo intento de pago')
                 } finally {
                   setRetrying(false)
                 }

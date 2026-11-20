@@ -33,9 +33,9 @@ const fecha = (iso?: string) => iso
   : '—'
 
 const OUTCOME: Record<CheckoutResultDto['status'], { title: string; text: string; alert: boolean }> = {
-  aprobado: { title: '¡Pago aprobado!', text: 'Tu suscripción quedó activa y tu catálogo sigue visible en el radar.', alert: false },
-  pendiente: { title: 'Pago pendiente', text: 'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado.', alert: false },
-  rechazado: { title: 'Pago rechazado', text: 'El pago no fue aprobado. Puedes intentarlo nuevamente. La suscripción no se activó.', alert: true },
+  aprobado: { title: 'Tu suscripción fue reactivada', text: 'Tu suscripción quedó activa y tu catálogo sigue visible en el radar', alert: false },
+  pendiente: { title: 'Pago pendiente', text: 'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado', alert: false },
+  rechazado: { title: 'Pago rechazado', text: 'El pago no fue aprobado. Puedes intentarlo nuevamente. La suscripción no se activó', alert: true },
 }
 
 export default function StoreSubscriptionPage() {
@@ -83,8 +83,8 @@ export default function StoreSubscriptionPage() {
     } catch (err) {
       setRetryErrorMsg(
         err instanceof Error && err.message
-          ? err.message
-          : 'No fue posible generar un nuevo intento de pago.',
+          ? err.message.replace(/\.$/, '')
+          : 'No fue posible generar un nuevo intento de pago',
       )
     } finally {
       setPaying(false)
@@ -132,10 +132,10 @@ export default function StoreSubscriptionPage() {
           <div className="store-subscription__alert" role="alert">
             <span className="store-subscription__alert-icon">⚠</span>
             <div>
-              <strong>El pago no fue aprobado. Puedes intentarlo nuevamente.</strong>
+              <strong>El pago no fue aprobado. Puedes intentarlo nuevamente</strong>
               <p>
                 El pago del {fecha(failedPayment.date)} con {failedPayment.method} fue rechazado ({formatCOP(failedPayment.amount)}).
-                Genera un nuevo intento indicando el correo del pagador para activar tu suscripción.
+                Genera un nuevo intento indicando el correo del pagador para activar tu suscripción
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

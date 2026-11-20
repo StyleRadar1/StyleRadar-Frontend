@@ -98,12 +98,12 @@ export const planService = {
   createCheckout(planId: string, payerEmail?: string): Promise<CheckoutResponseDto> {
     const role = getCurrentUserRole()
     if (role && (!isPlanCompatibleWithRole(planId, role) || role !== 'COMPRADOR')) {
-      return Promise.reject(new ApiError(403, 'Tu cuenta no puede cambiar a ese plan.'))
+      return Promise.reject(new ApiError(403, 'Tu cuenta no puede cambiar a ese plan'))
     }
     if (payerEmail !== undefined && !isValidPayerEmail(payerEmail)) {
       const msg = planId === 'plus'
-        ? 'Ingresa un correo electrónico válido para activar Radar+.'
-        : 'Ingresa un correo electrónico válido para realizar el pago.'
+        ? 'Ingresa un correo electrónico válido para activar Radar+'
+        : 'Ingresa un correo electrónico válido para realizar el pago'
       return Promise.reject(new ApiError(400, msg))
     }
     if (env.useMocks) {
@@ -123,19 +123,28 @@ export const planService = {
     return apiClient.post<CheckoutResponseDto>('/api/pagos/checkout', { planId, payerEmail }).then((r) => r.data)
   },
 
-  /** Consulta el estado del pago al backend (ignora el status de la query de MP). */
+  /** Consulta el estado del pago al backend (ignora el status de la query de MP, RF-94). */
   getCheckoutResult(orderId: string): Promise<CheckoutResultDto> {
     if (env.useMocks) {
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('sr_demo_plan') === '401') {
+        return Promise.reject(new ApiError(401, 'Tu pago continúa pendiente de confirmación'))
+      }
       const custom = readCustomOrders()[orderId]
       const base = custom ?? MOCK_CHECKOUT_RESULTS[orderId]
       if (!base) {
         return Promise.reject(new ApiError(404, MENSAJES['no-existe']))
       }
       const meta = readLastCheckoutMeta()
+      const today = new Date().toISOString().slice(0, 10)
+      const nextMonth = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10)
+      const isApproved = base.status === 'aprobado'
       const result: CheckoutResultDto = {
         ...base,
         payerEmail: base.payerEmail ?? meta?.payerEmail,
         planId: base.planId ?? (base.planName === 'Tienda aliada' ? 'store' : 'plus'),
+        estadoSuscripcion: isApproved ? 'ACTIVA' : 'PENDIENTE',
+        fechaInicio: isApproved ? (base.fechaInicio ?? today) : null,
+        fechaFin: isApproved ? (base.fechaFin ?? nextMonth) : null,
       }
       return mockDelay(result)
     }
@@ -144,24 +153,24 @@ export const planService = {
 
   /**
    * RF-96: Genera un nuevo intento de pago a partir de un pago RECHAZADO,
-   * conservando el valor y el plan originales con una nueva referencia.
+   * conservando el valor y el plan originales con una nueva referencia (nace PENDIENTE).
    */
   async retryRejectedPayment(
     originalOrder: CheckoutResultDto,
     payerEmail: string,
-    nextStatus: 'aprobado' | 'pendiente' | 'rechazado' = 'aprobado',
+    nextStatus: 'aprobado' | 'pendiente' | 'rechazado' = 'pendiente',
   ): Promise<CheckoutResultDto> {
     if (!isValidPayerEmail(payerEmail)) {
-      throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago.')
+      throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
     }
     if (originalOrder.status !== 'rechazado') {
-      throw new ApiError(400, 'Solo se pueden reintentar pagos rechazados.')
+      throw new ApiError(400, 'Solo se pueden reintentar pagos rechazados')
     }
     if (env.useMocks) {
       try {
         failIfScenario()
       } catch {
-        throw new ApiError(500, 'No fue posible generar un nuevo intento de pago.')
+        throw new ApiError(503, 'No fue posible generar un nuevo intento de pago')
       }
       const newOrderId = `MP-RETRY-${Math.floor(100000 + Math.random() * 900000)}`
       const newOrder: CheckoutResultDto = {
@@ -172,6 +181,9 @@ export const planService = {
         method: 'Mercado Pago',
         payerEmail: payerEmail.trim(),
         planId: originalOrder.planId ?? (originalOrder.planName === 'Tienda aliada' ? 'store' : 'plus'),
+        estadoSuscripcion: nextStatus === 'aprobado' ? 'ACTIVA' : 'PENDIENTE',
+        fechaInicio: nextStatus === 'aprobado' ? new Date().toISOString().slice(0, 10) : null,
+        fechaFin: nextStatus === 'aprobado' ? new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) : null,
       }
       saveCustomOrderResult(newOrder)
       return mockDelay(newOrder, 300)

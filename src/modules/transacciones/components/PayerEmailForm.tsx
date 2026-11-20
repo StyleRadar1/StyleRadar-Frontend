@@ -2,9 +2,9 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/modules/core/design-system'
 import { isValidPayerEmail } from '../utils/validation'
 
-export const PAYER_EMAIL_INVALID_MSG = 'Ingresa un correo electrónico válido para realizar el pago.'
-export const PAYER_EMAIL_RADAR_PLUS_INVALID_MSG = 'Ingresa un correo electrónico válido para activar Radar+.'
-export const PAYMENT_INIT_ERROR_MSG = 'No fue posible iniciar el pago en este momento. Inténtalo nuevamente.'
+export const PAYER_EMAIL_INVALID_MSG = 'Ingresa un correo electrónico válido para realizar el pago'
+export const PAYER_EMAIL_RADAR_PLUS_INVALID_MSG = 'Ingresa un correo electrónico válido para activar Radar+'
+export const PAYMENT_INIT_ERROR_MSG = 'No fue posible iniciar el pago en este momento. Inténtalo nuevamente'
 
 export interface PayerEmailFormProps {
   /** Correo precargado de la cuenta autenticada (editable). */
@@ -140,9 +140,19 @@ export function PayerEmailForm({
         <div
           role="alert"
           aria-live="assertive"
-          className="rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.35))] bg-[var(--color-danger-bg,rgba(239,68,68,0.12))] p-3 text-xs font-semibold text-[var(--color-danger-text,#ffb4b4)]"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.35))] bg-[var(--color-danger-bg,rgba(239,68,68,0.12))] p-3 text-xs font-semibold text-[var(--color-danger-text,#ffb4b4)]"
         >
-          {errorMessage}
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            disabled={busy || disabled}
+            onClick={() => {
+              if (isValidPayerEmail(email)) void onSubmit(email.trim())
+            }}
+            className="rounded-lg border border-current px-2.5 py-1 text-[11px] font-bold hover:bg-white/10 disabled:opacity-50"
+          >
+            Reintentar
+          </button>
         </div>
       )}
 

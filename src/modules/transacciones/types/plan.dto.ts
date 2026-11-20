@@ -81,7 +81,39 @@ export const PLANES: PlanInfo[] = [
 ]
 
 /** Plan de suscripción de StyleRadar. Tabla provisional del equipo. */
-import type { PaymentMethod } from './payment.dto'
+import type { PaymentMethod, SubscriptionStatus } from './payment.dto'
+
+/** RF-100 y RF-103: suscripcionRadarPlus */
+export interface SuscripcionRadarPlusDto {
+  suscripcionId: string
+  usuarioId?: string
+  estado: SubscriptionStatus
+  fechaInicio: string | null
+  fechaFin: string | null
+}
+
+/** RF-101: salida al cancelar renovación */
+export interface CancelacionPlanOutputDto {
+  nombrePlanCancelado: string
+  fechaFin: string
+}
+
+/** RF-102 y RF-103: planVigente, planAplicado y resultado de uso */
+export interface PlanVigenteDto {
+  nombre: 'Radar' | 'Radar+'
+  fechaFin: string | null
+}
+
+export interface PlanAplicadoDto {
+  nombre: 'Radar' | 'Radar+'
+}
+
+export interface VerificacionBeneficioResultDto {
+  planVigente: { nombre: 'Radar' | 'Radar+' }
+  fechaFin: string | null
+  planAplicado: { nombre: 'Radar' | 'Radar+' }
+  resultadoDeUso: boolean
+}
 
 export interface PlanDto {
   id: 'free' | 'plus' | 'store'
@@ -104,6 +136,9 @@ export interface PlanIntentDto {
 export interface CheckoutResponseDto {
   initPoint: string
   preferenceId: string
+  suscripcionId?: string
+  ordenId?: string
+  estado?: SubscriptionStatus
 }
 
 /** Estado del pago consultado al backend tras la redirección. */
@@ -117,4 +152,7 @@ export interface CheckoutResultDto {
   method?: PaymentMethod
   payerEmail?: string
   planId?: 'free' | 'plus' | 'store'
+  estadoSuscripcion?: SubscriptionStatus
+  fechaInicio?: string | null
+  fechaFin?: string | null
 }

@@ -13,11 +13,11 @@ import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { CheckoutResultDto } from '../types/plan.dto'
 
 export const STORE_ALREADY_SUBSCRIBED_MSG =
-  'Tu almacén ya tiene una suscripción activa o un pago pendiente.'
+  'Tu almacén ya tiene una suscripción activa o un pago pendiente'
 export const STORE_PENDING_PAYMENT_MSG =
-  'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado.'
+  'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado'
 export const STORE_REJECTED_PAYMENT_MSG =
-  'El pago no fue aprobado. Puedes intentarlo nuevamente.'
+  'El pago no fue aprobado. Puedes intentarlo nuevamente'
 
 /**
  * RF-67: Paso obligatorio inmediatamente después del registro del almacén.
@@ -46,7 +46,7 @@ export default function StoreActivateSubscriptionPage() {
     async (payerEmail: string) => {
       const cleanNit = nit.trim()
       if (!cleanNit || !/^\d{9}$/.test(cleanNit)) {
-        setNitError('Ingresa un NIT válido de 9 dígitos.')
+        setNitError('Ingresa un NIT válido de 9 dígitos')
         return
       }
       setNitError(null)
