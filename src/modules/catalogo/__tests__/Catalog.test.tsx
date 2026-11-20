@@ -1,7 +1,8 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import CatalogPage from '../pages/CatalogPage'
+import { itemService } from '../services/itemService'
 import { loginAs, renderAt } from '../../experiencia/__tests__/helpers'
 
 const routes = [
@@ -10,6 +11,8 @@ const routes = [
 ]
 
 describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () => {
+  afterEach(() => { vi.restoreAllMocks() })
+
   it('renderiza encabezado limpio sin chips superiores y sin sección Para ti', async () => {
     renderAt('/catalogo', routes)
 
@@ -131,5 +134,30 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
     await user.click(btnGuardar)
 
     expect(await screen.findByText('Guardamos «Catálogo completo»')).toBeInTheDocument()
+  })
+
+  it('muestra estado vacío propio cuando no hay ninguna prenda en el catálogo (sin filtros)', async () => {
+    vi.spyOn(itemService, 'search').mockResolvedValue([])
+    renderAt('/catalogo', routes)
+
+    expect(await screen.findByRole('heading', { level: 3, name: /Aún no hay prendas en el catálogo/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Quitar filtros/i })).not.toBeInTheDocument()
+    expect(document.querySelector('.sr-rack-collapse')).toHaveClass('sr-rack-collapse--hidden')
+  })
+
+  it('muestra estado vacío de filtros con botón Quitar filtros cuando la búsqueda no arroja resultados', async () => {
+    const user = userEvent.setup()
+    renderAt('/catalogo', routes)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Todas las prendas/i })).toBeInTheDocument()
+    })
+
+    const input = screen.getByRole('textbox', { name: /Buscar prendas/i })
+    await user.type(input, 'prenda-que-no-existe-xyz')
+    await user.click(screen.getByRole('button', { name: /^Buscar$/i }))
+
+    expect(await screen.findByRole('heading', { level: 3, name: /No encontramos prendas con esos filtros/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Quitar filtros/i })).toBeInTheDocument()
   })
 })

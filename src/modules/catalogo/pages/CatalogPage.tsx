@@ -492,7 +492,8 @@ export default function CatalogPage() {
     setParams(new URLSearchParams())
   }
 
-  const mostrarPerchero = filtrosActivosCount === 0 && texto.trim().length === 0
+  const hayAlgunFiltro = filtrosActivosCount > 0 || texto.trim().length > 0
+  const mostrarPerchero = !hayAlgunFiltro && (loading || uniqueItems.length > 0)
 
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
@@ -1324,17 +1325,28 @@ export default function CatalogPage() {
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-[var(--color-text)]">No encontramos prendas con esos filtros</h3>
-              <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
-                Prueba cambiando el tipo de prenda, ajustando la ubicación o eliminando algún filtro.
-              </p>
-              <button
-                type="button"
-                onClick={handleResetFiltros}
-                className="mt-6 rounded-xl bg-[var(--color-accent)] px-6 py-2.5 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-              >
-                Quitar filtros
-              </button>
+              {hayAlgunFiltro ? (
+                <>
+                  <h3 className="text-lg font-bold text-[var(--color-text)]">No encontramos prendas con esos filtros</h3>
+                  <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
+                    Prueba cambiando el tipo de prenda, ajustando la ubicación o eliminando algún filtro.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResetFiltros}
+                    className="mt-6 rounded-xl bg-[var(--color-accent)] px-6 py-2.5 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                  >
+                    Quitar filtros
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold text-[var(--color-text)]">Aún no hay prendas en el catálogo</h3>
+                  <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
+                    Todavía no hay prendas publicadas disponibles en este momento. Vuelve pronto para explorar nuevas colecciones.
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>

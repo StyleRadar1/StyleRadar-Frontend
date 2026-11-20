@@ -1068,282 +1068,340 @@ export default function PlaylistsPage() {
         {/* ========================================================== */}
         {/* SECCIÓN FULL-SCREEN: CARRUSEL 3D COVERFLOW DE VINILOS */}
         {/* ========================================================== */}
-        {carouselPlaylists.length > 0 && (
-          <section
-            aria-label="Selección en vinilo"
-            className="sr-vinyl-showcase"
-          >
-            <div className="sr-vinyl-showcase__stage">
-              {/* Barra superior centrada: Pestañas de filtrado */}
-              <div className="sr-vinyl-showcase__top">
-                <div
-                  className="sr-vinyl-tabs"
-                  role="tablist"
-                  aria-label="Filtrar colecciones en el vinilo"
+        <section
+          aria-label="Selección en vinilo"
+          className="sr-vinyl-showcase"
+        >
+          <div className="sr-vinyl-showcase__stage">
+            {/* Barra superior centrada: Pestañas de filtrado */}
+            <div className="sr-vinyl-showcase__top">
+              <div
+                className="sr-vinyl-tabs"
+                role="tablist"
+                aria-label="Filtrar colecciones en el vinilo"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={carouselTab === 'todas'}
+                  onClick={() => {
+                    setCarouselTab('todas')
+                    setVinylStepIndex(0)
+                  }}
+                  className={`sr-vinyl-tabs__btn ${
+                    carouselTab === 'todas' ? 'is-active' : ''
+                  }`}
                 >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={carouselTab === 'todas'}
-                    onClick={() => {
-                      setCarouselTab('todas')
-                      setVinylStepIndex(0)
-                    }}
-                    className={`sr-vinyl-tabs__btn ${
-                      carouselTab === 'todas' ? 'is-active' : ''
-                    }`}
-                  >
-                    Todas ({playlists.length})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={carouselTab === 'creadas'}
-                    onClick={() => {
-                      setCarouselTab('creadas')
-                      setVinylStepIndex(0)
-                    }}
-                    className={`sr-vinyl-tabs__btn ${
-                      carouselTab === 'creadas' ? 'is-active' : ''
-                    }`}
-                  >
-                    Creadas por ti ({creadasPorTi.length})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={carouselTab === 'guardadas'}
-                    onClick={() => {
-                      setCarouselTab('guardadas')
-                      setVinylStepIndex(0)
-                    }}
-                    className={`sr-vinyl-tabs__btn ${
-                      carouselTab === 'guardadas' ? 'is-active' : ''
-                    }`}
-                  >
-                    Guardadas ({guardadas.length})
-                  </button>
-                </div>
+                  Todas ({playlists.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={carouselTab === 'creadas'}
+                  onClick={() => {
+                    setCarouselTab('creadas')
+                    setVinylStepIndex(0)
+                  }}
+                  className={`sr-vinyl-tabs__btn ${
+                    carouselTab === 'creadas' ? 'is-active' : ''
+                  }`}
+                >
+                  Creadas por ti ({creadasPorTi.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={carouselTab === 'guardadas'}
+                  onClick={() => {
+                    setCarouselTab('guardadas')
+                    setVinylStepIndex(0)
+                  }}
+                  className={`sr-vinyl-tabs__btn ${
+                    carouselTab === 'guardadas' ? 'is-active' : ''
+                  }`}
+                >
+                  Guardadas ({guardadas.length})
+                </button>
               </div>
+            </div>
 
-              {/* Título de póster gigante y centrado */}
-              {currentVinylPlaylist && (
-                <div className="sr-vinyl-center-hero">
-                  <div className="sr-vinyl-active-badge">
-                    <span>● Colección activa</span>
+            {carouselPlaylists.length > 0 ? (
+              <>
+                {/* Título de póster gigante y centrado */}
+                {currentVinylPlaylist && (
+                  <div className="sr-vinyl-center-hero">
+                    <div className="sr-vinyl-active-badge">
+                      <span>● Colección activa</span>
+                    </div>
+
+                    <Link
+                      to={`/playlists/${currentVinylPlaylist.id}`}
+                      onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
+                      className="sr-vinyl-center-title-link"
+                      title={`Ver colección ${currentVinylPlaylist.nombre}`}
+                    >
+                      <AnimatePresence mode="wait">
+                        <motion.h2
+                          key={currentVinylPlaylist.id}
+                          initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={prefersReducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.97 }}
+                          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                          className="sr-vinyl-active-title"
+                        >
+                          {currentVinylPlaylist.nombre}
+                        </motion.h2>
+                      </AnimatePresence>
+                    </Link>
+
+                    <div className="sr-vinyl-active-meta">
+                      <span>
+                        {currentVinylPlaylist.prendas.length}{' '}
+                        {currentVinylPlaylist.prendas.length === 1 ? 'prenda' : 'prendas'}
+                      </span>
+                      <span>·</span>
+                      <span>Por {currentVinylPlaylist.creador?.nombre || 'Valentina'}</span>
+                      <span className="sr-vinyl-active-meta__chip">
+                        {currentVinylPlaylist.visibilidad || 'Pública'}
+                      </span>
+                    </div>
                   </div>
+                )}
 
-                  <Link
-                    to={`/playlists/${currentVinylPlaylist.id}`}
-                    onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
-                    className="sr-vinyl-center-title-link"
-                    title={`Ver colección ${currentVinylPlaylist.nombre}`}
-                  >
-                    <AnimatePresence mode="wait">
-                      <motion.h2
-                        key={currentVinylPlaylist.id}
-                        initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={prefersReducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.97 }}
-                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                        className="sr-vinyl-active-title"
-                      >
-                        {currentVinylPlaylist.nombre}
-                      </motion.h2>
-                    </AnimatePresence>
-                  </Link>
-
-                  <div className="sr-vinyl-active-meta">
-                    <span>
-                      {currentVinylPlaylist.prendas.length}{' '}
-                      {currentVinylPlaylist.prendas.length === 1 ? 'prenda' : 'prendas'}
-                    </span>
-                    <span>·</span>
-                    <span>Por {currentVinylPlaylist.creador?.nombre || 'Valentina'}</span>
-                    <span className="sr-vinyl-active-meta__chip">
-                      {currentVinylPlaylist.visibilidad || 'Pública'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Pista 3D con disco central y discos laterales en perspectiva */}
-              <div className="sr-vinyl-coverflow-track">
-                {vinylCoverflowSlots.map(({ playlist: pl, offset, isCenter }) => {
-                  if (isCenter) {
-                    return (
-                      <div
-                        key={pl.id}
-                        className="sr-vinyl-slot sr-vinyl-slot--center cursor-pointer"
-                        onClick={() => {
-                          setSelectedLocalId(pl.id)
-                          navigate(`/playlists/${pl.id}`)
-                        }}
-                        title={`Ver prendas de ${pl.nombre}`}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
+                {/* Pista 3D con disco central y discos laterales en perspectiva */}
+                <div className="sr-vinyl-coverflow-track">
+                  {vinylCoverflowSlots.map(({ playlist: pl, offset, isCenter }) => {
+                    if (isCenter) {
+                      return (
+                        <div
+                          key={pl.id}
+                          className="sr-vinyl-slot sr-vinyl-slot--center cursor-pointer"
+                          onClick={() => {
                             setSelectedLocalId(pl.id)
                             navigate(`/playlists/${pl.id}`)
-                          }
-                        }}
-                      >
-                        <div className="sr-vinyl-disc-idle">
-                          <div
-                            ref={discRef}
-                            role="slider"
-                            tabIndex={0}
-                            aria-label={`Disco de vinilo central: ${pl.nombre}. Pulsa para abrir la colección`}
-                            aria-valuemin={1}
-                            aria-valuemax={carouselPlaylists.length}
-                            aria-valuenow={
-                              (((vinylStepIndex % carouselPlaylists.length) +
-                                carouselPlaylists.length) %
-                                carouselPlaylists.length) +
-                              1
+                          }}
+                          title={`Ver prendas de ${pl.nombre}`}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setSelectedLocalId(pl.id)
+                              navigate(`/playlists/${pl.id}`)
                             }
-                            onKeyDown={(e) => {
-                              if (e.key === 'ArrowLeft') {
-                                e.stopPropagation()
-                                stepVinylPlaylist(-1)
+                          }}
+                        >
+                          <div className="sr-vinyl-disc-idle">
+                            <div
+                              ref={discRef}
+                              role="slider"
+                              tabIndex={0}
+                              aria-label={`Disco de vinilo central: ${pl.nombre}. Pulsa para abrir la colección`}
+                              aria-valuemin={1}
+                              aria-valuemax={carouselPlaylists.length}
+                              aria-valuenow={
+                                (((vinylStepIndex % carouselPlaylists.length) +
+                                  carouselPlaylists.length) %
+                                  carouselPlaylists.length) +
+                                1
                               }
-                              if (e.key === 'ArrowRight') {
-                                e.stopPropagation()
-                                stepVinylPlaylist(1)
-                              }
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                setSelectedLocalId(pl.id)
-                                navigate(`/playlists/${pl.id}`)
-                              }
-                            }}
-                            className="sr-vinyl-disc-interactive"
-                          >
-                            <div className="sr-vinyl-label">
-                              <img
-                                src={
-                                  pl.portadaUrl ||
-                                  '/img/productos/sueter-de-canale-crudo.jpg'
+                              onKeyDown={(e) => {
+                                if (e.key === 'ArrowLeft') {
+                                  e.stopPropagation()
+                                  stepVinylPlaylist(-1)
                                 }
-                                alt={pl.nombre}
-                                className="sr-vinyl-label__art"
-                                draggable={false}
-                              />
-                              <div className="sr-vinyl-label__art-overlay" />
-                              <div className="sr-vinyl-label__ring" />
-                              <div className="sr-vinyl-spindle" />
+                                if (e.key === 'ArrowRight') {
+                                  e.stopPropagation()
+                                  stepVinylPlaylist(1)
+                                }
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  setSelectedLocalId(pl.id)
+                                  navigate(`/playlists/${pl.id}`)
+                                }
+                              }}
+                              className="sr-vinyl-disc-interactive"
+                            >
+                              <div className="sr-vinyl-label">
+                                <img
+                                  src={
+                                    pl.portadaUrl ||
+                                    '/img/productos/sueter-de-canale-crudo.jpg'
+                                  }
+                                  alt={pl.nombre}
+                                  className="sr-vinyl-label__art"
+                                  draggable={false}
+                                />
+                                <div className="sr-vinyl-label__art-overlay" />
+                                <div className="sr-vinyl-label__ring" />
+                                <div className="sr-vinyl-spindle" />
+                              </div>
                             </div>
                           </div>
                         </div>
+                      )
+                    }
+
+                    // Discos laterales
+                    return (
+                      <div
+                        key={`${pl.id}-${offset}`}
+                        className={`sr-vinyl-slot sr-vinyl-slot--lateral sr-vinyl-slot--offset-${offset}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => stepVinylPlaylist(offset)}
+                          className="sr-vinyl-disc-interactive sr-vinyl-disc--lateral"
+                          aria-label={`Girar a playlist ${pl.nombre}`}
+                          title={`Girar a ${pl.nombre}`}
+                        >
+                          <div className="sr-vinyl-label">
+                            <img
+                              src={
+                                pl.portadaUrl ||
+                                '/img/productos/sueter-de-canale-crudo.jpg'
+                              }
+                              alt={pl.nombre}
+                              className="sr-vinyl-label__art"
+                              draggable={false}
+                            />
+                            <div className="sr-vinyl-label__art-overlay" />
+                            <div className="sr-vinyl-label__ring" />
+                            <div className="sr-vinyl-spindle" />
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedLocalId(pl.id)
+                            navigate(`/playlists/${pl.id}`)
+                          }}
+                          className="sr-vinyl-slot__lateral-caption"
+                          title={`Ver colección ${pl.nombre}`}
+                        >
+                          {pl.nombre}
+                        </button>
                       </div>
                     )
-                  }
-
-                  // Discos laterales
-                  return (
-                    <div
-                      key={`${pl.id}-${offset}`}
-                      className={`sr-vinyl-slot sr-vinyl-slot--lateral sr-vinyl-slot--offset-${offset}`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => stepVinylPlaylist(offset)}
-                        className="sr-vinyl-disc-interactive sr-vinyl-disc--lateral"
-                        aria-label={`Girar a playlist ${pl.nombre}`}
-                        title={`Girar a ${pl.nombre}`}
-                      >
-                        <div className="sr-vinyl-label">
-                          <img
-                            src={
-                              pl.portadaUrl ||
-                              '/img/productos/sueter-de-canale-crudo.jpg'
-                            }
-                            alt={pl.nombre}
-                            className="sr-vinyl-label__art"
-                            draggable={false}
-                          />
-                          <div className="sr-vinyl-label__art-overlay" />
-                          <div className="sr-vinyl-label__ring" />
-                          <div className="sr-vinyl-spindle" />
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedLocalId(pl.id)
-                          navigate(`/playlists/${pl.id}`)
-                        }}
-                        className="sr-vinyl-slot__lateral-caption"
-                        title={`Ver colección ${pl.nombre}`}
-                      >
-                        {pl.nombre}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Controles discretos e indicador de posición centrados */}
-              <div className="sr-vinyl-controls-center">
-                <div className="sr-vinyl-controls__bar">
-                  <button
-                    type="button"
-                    onClick={() => stepVinylPlaylist(-1)}
-                    aria-label="Colección anterior en el vinilo"
-                    className="sr-vinyl-controls__btn"
-                  >
-                    ‹
-                  </button>
-                  <span
-                    className="sr-vinyl-controls__counter"
-                    aria-live="polite"
-                  >
-                    {(((vinylStepIndex % carouselPlaylists.length) +
-                      carouselPlaylists.length) %
-                      carouselPlaylists.length) +
-                      1}{' '}
-                    / {carouselPlaylists.length}
-                  </span>
-                  <div className="sr-vinyl-controls__dots" role="tablist" aria-label="Posición de la colección">
-                    {carouselPlaylists.map((pl, idx) => {
-                      const activePos =
-                        ((vinylStepIndex % carouselPlaylists.length) +
-                          carouselPlaylists.length) %
-                        carouselPlaylists.length
-                      return (
-                        <button
-                          key={pl.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={activePos === idx}
-                          aria-label={`Mostrar desde ${pl.nombre}`}
-                          onClick={() => jumpToVinylPlaylist(idx)}
-                          className={`sr-vinyl-controls__dot ${
-                            activePos === idx ? 'is-active' : ''
-                          }`}
-                        />
-                      )
-                    })}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => stepVinylPlaylist(1)}
-                    aria-label="Siguiente colección en el vinilo"
-                    className="sr-vinyl-controls__btn"
-                  >
-                    ›
-                  </button>
+                  })}
                 </div>
-                <span className="sr-vinyl-controls__hint">
-                  Toca el vinilo para ver la colección · Usa las flechas o los discos laterales para navegar
-                </span>
+
+                {/* Controles discretos e indicador de posición centrados */}
+                <div className="sr-vinyl-controls-center">
+                  <div className="sr-vinyl-controls__bar">
+                    <button
+                      type="button"
+                      onClick={() => stepVinylPlaylist(-1)}
+                      aria-label="Colección anterior en el vinilo"
+                      className="sr-vinyl-controls__btn"
+                    >
+                      ‹
+                    </button>
+                    <span
+                      className="sr-vinyl-controls__counter"
+                      aria-live="polite"
+                    >
+                      {(((vinylStepIndex % carouselPlaylists.length) +
+                        carouselPlaylists.length) %
+                        carouselPlaylists.length) +
+                        1}{' '}
+                      / {carouselPlaylists.length}
+                    </span>
+                    <div className="sr-vinyl-controls__dots" role="tablist" aria-label="Posición de la colección">
+                      {carouselPlaylists.map((pl, idx) => {
+                        const activePos =
+                          ((vinylStepIndex % carouselPlaylists.length) +
+                            carouselPlaylists.length) %
+                          carouselPlaylists.length
+                        return (
+                          <button
+                            key={pl.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={activePos === idx}
+                            aria-label={`Mostrar desde ${pl.nombre}`}
+                            onClick={() => jumpToVinylPlaylist(idx)}
+                            className={`sr-vinyl-controls__dot ${
+                              activePos === idx ? 'is-active' : ''
+                            }`}
+                          />
+                        )
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => stepVinylPlaylist(1)}
+                      aria-label="Siguiente colección en el vinilo"
+                      className="sr-vinyl-controls__btn"
+                    >
+                      ›
+                    </button>
+                  </div>
+                  <span className="sr-vinyl-controls__hint">
+                    Toca el vinilo para ver la colección · Usa las flechas o los discos laterales para navegar
+                  </span>
+                </div>
+              </>
+            ) : !loading && (
+              <div className="rounded-3xl border border-[var(--color-border,rgba(255,255,255,0.1))] bg-[var(--color-surface,rgba(255,255,255,0.03))] p-10 text-center backdrop-blur-xl max-w-lg mx-auto my-8 text-[var(--sr-hero-text)] shadow-sm">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[var(--color-border,rgba(255,255,255,0.15))] bg-[var(--color-surface-raised,rgba(255,255,255,0.06))] text-[var(--sr-hero-text-muted)]">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <circle cx="12" cy="12" r="2.5" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-[var(--sr-hero-text)]">
+                  {playlists.length === 0 || carouselTab === 'todas'
+                    ? 'Aún no hay playlists disponibles'
+                    : carouselTab === 'creadas'
+                      ? 'Aún no has creado ninguna playlist'
+                      : 'No tienes playlists guardadas'}
+                </h3>
+                <p className="mt-2 text-xs text-[var(--sr-hero-text-muted)] max-w-md mx-auto leading-relaxed">
+                  {playlists.length === 0 || carouselTab === 'todas'
+                    ? 'Todavía no se han publicado colecciones de estilo. Crea la primera playlist con tus prendas favoritas.'
+                    : carouselTab === 'creadas'
+                      ? 'Arma tu primera colección de hasta 15 prendas de distintas tiendas locales.'
+                      : 'Explora las colecciones de la comunidad y guárdalas en tu perfil para tenerlas a mano.'}
+                </p>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  {playlists.length === 0 || carouselTab !== 'guardadas' ? (
+                    <>
+                      <Button
+                        variant="primario"
+                        onClick={() => setMostrarCrear(true)}
+                      >
+                        + Nueva playlist
+                      </Button>
+                      {carouselTab !== 'todas' && playlists.length > 0 && (
+                        <Button
+                          variant="secundario"
+                          onClick={() => {
+                            setCarouselTab('todas')
+                            setVinylStepIndex(0)
+                          }}
+                        >
+                          Ver todas las playlists
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <Button
+                      variant="primario"
+                      onClick={() => {
+                        setCarouselTab('todas')
+                        setVinylStepIndex(0)
+                      }}
+                    >
+                      Explorar playlists
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          </section>
-        )}
+            )}
+          </div>
+        </section>
       </section>
 
       {/* MODAL CREAR PLAYLIST */}
