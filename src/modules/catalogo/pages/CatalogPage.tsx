@@ -9,7 +9,6 @@ import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertServi
 import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
 import { ItemCard } from '../components/ItemCard'
 import { ItemGridSkeleton } from '../components/ItemCardSkeleton'
-import { CatalogMegaMenu } from '../components/CatalogMegaMenu'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
 import {
@@ -492,20 +491,7 @@ export default function CatalogPage() {
     setParams(new URLSearchParams())
   }
 
-  const handleMegaMenuFilter = (f: { tipo?: string; estilo?: string; origen?: string; texto?: string }) => {
-    if (f.tipo !== undefined) setFiltroTipo(f.tipo)
-    if (f.estilo !== undefined) setFiltroEstilo(f.estilo)
-    if (f.origen !== undefined) setFiltroOrigen(f.origen)
-    if (f.texto !== undefined) setTexto(f.texto)
-    const next = new URLSearchParams(params)
-    if (f.tipo && f.tipo !== 'Todos') next.set('tipo', f.tipo)
-    else if (f.tipo === 'Todos') next.delete('tipo')
-    if (f.estilo && f.estilo !== 'Todos') next.set('estilo', f.estilo)
-    else if (f.estilo === 'Todos') next.delete('estilo')
-    if (f.origen && f.origen !== 'Todos') next.set('origen', f.origen)
-    else if (f.origen === 'Todos') next.delete('origen')
-    setParams(next)
-  }
+  const mostrarPerchero = filtrosActivosCount === 0 && texto.trim().length === 0
 
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
@@ -897,14 +883,6 @@ export default function CatalogPage() {
           )}
         </div>
 
-        {/* MENÚ HORIZONTAL DE CATEGORÍAS Y MEGA-MENÚ DE SUBFILTROS EN HOVER (ESTILO GOTRENDIER) */}
-        <CatalogMegaMenu
-          onSelectFilter={handleMegaMenuFilter}
-          activeTipo={filtroTipo}
-          activeEstilo={filtroEstilo}
-          activeOrigen={filtroOrigen}
-        />
-
         {/* BARRA DE HERRAMIENTAS: Filtros (botón mediano) + Guardar búsqueda + Ordenar (diseño uniforme) */}
         <div className="relative z-30 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)] mb-6">
           {/* LADO IZQUIERDO: Botón Filtros mediano con badge y contenedor relativo para el panel flotante */}
@@ -1294,12 +1272,17 @@ export default function CatalogPage() {
           </Aviso>
         )}
 
-        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ROPA CON DESCUENTO Y ESPECIALES) */}
-        <div className="relative z-10 mb-10">
-          <HangingSpecialsRack
-            filtroTipo={filtroTipo}
-            filtroEstilo={filtroEstilo}
-          />
+        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (RELEVANTE) — se pliega suavemente al filtrar */}
+        <div
+          className={`sr-rack-collapse ${mostrarPerchero ? '' : 'sr-rack-collapse--hidden'}`}
+          aria-hidden={!mostrarPerchero}
+        >
+          <div className="sr-rack-collapse__inner">
+            <HangingSpecialsRack
+              filtroTipo={filtroTipo}
+              filtroEstilo={filtroEstilo}
+            />
+          </div>
         </div>
 
         {/* LISTADO PRINCIPAL DEL CATÁLOGO */}
@@ -1360,10 +1343,8 @@ export default function CatalogPage() {
 }
 
 /* ============================================================================
- * Sección de "Prendas colgadas en una barra" (Ropa con descuento y especiales)
+ * Sección de "Prendas colgadas en una barra" (Selección relevante del catálogo)
  * ============================================================================ */
-
-type RackBadgeVariant = 'discount' | 'new' | 'stock'
 
 interface HangingRackGarment {
   id: string
@@ -1371,7 +1352,6 @@ interface HangingRackGarment {
   tienda: string
   barrio?: string
   precio: number
-  originalPrice?: number
   imagen: string
   recorte?: string
   tipoGancho: 'hombros' | 'pinzas'
@@ -1379,39 +1359,12 @@ interface HangingRackGarment {
   estilo: string
   anclaY?: number
   bajada?: number
-  badge?: {
-    text: string
-    variant: RackBadgeVariant
-  }
 }
 
 const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
   .filter((it): it is ItemResponseDto & { recorte: string } => Boolean(it.recorte))
   .map((found) => {
     const tipoNorm = found.tipo === 'Suéter' ? 'Saco' : found.tipo
-    let badge: HangingRackGarment['badge']
-    let originalPrice: number | undefined
-
-    if (found.id === 'p19') {
-      badge = { text: '-20% DCTO', variant: 'discount' }
-      originalPrice = Math.round(found.precio * 1.25)
-    } else if (found.id === 'p27') {
-      badge = { text: '-30% OFERTA', variant: 'discount' }
-      originalPrice = Math.round(found.precio * 1.42)
-    } else if (found.id === 'p23') {
-      badge = { text: '-15% DCTO', variant: 'discount' }
-      originalPrice = Math.round(found.precio * 1.18)
-    } else if (found.id === 'p24') {
-      badge = { text: 'ESPECIAL', variant: 'stock' }
-    } else if (found.id === 'p26') {
-      badge = { text: 'POPULAR', variant: 'new' }
-    } else if (found.id === 'p22') {
-      badge = { text: 'DROP LOCAL', variant: 'new' }
-    } else if (found.id === 'p18') {
-      badge = { text: 'ÚNICA PIEZA', variant: 'stock' }
-    } else if (found.id === 'p25') {
-      badge = { text: 'DESTACADO', variant: 'new' }
-    }
 
     return {
       id: found.id,
@@ -1419,7 +1372,6 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
       tienda: found.tienda,
       barrio: found.barrio,
       precio: found.precio,
-      originalPrice,
       imagen: found.imagen,
       recorte: found.recorte,
       tipoGancho: found.tipoGancho ?? 'hombros',
@@ -1427,7 +1379,6 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
       bajada: found.bajada ?? 0,
       tipoFiltro: tipoNorm,
       estilo: found.estilo,
-      badge,
     }
   })
 
@@ -1676,14 +1627,14 @@ function HangingSpecialsRack({
   return (
     <section
       className="sr-rack-section"
-      aria-label="Ropa con descuento y piezas especiales en Bogotá"
+      aria-label="Selección relevante en tiendas locales de Bogotá"
       onKeyDown={handleKeyDown}
     >
       {/* 1. Encabezado pequeño centrado en mayúsculas con separador vertical fino */}
       <header className="sr-rack-header">
-        <span className="sr-rack-kicker">ROPA CON DESCUENTO & ESPECIALES</span>
+        <span className="sr-rack-kicker">RELEVANTE</span>
         <span className="sr-rack-divider" aria-hidden="true" />
-        <span className="sr-rack-kicker sr-rack-kicker--muted">OFERTAS Y POPULARES · TIENDAS LOCALES BOGOTÁ</span>
+        <span className="sr-rack-kicker sr-rack-kicker--muted">SELECCIÓN DESTACADA · TIENDAS LOCALES BOGOTÁ</span>
       </header>
 
       {/* 2. Barra metálica horizontal fina + prendas colgadas de ganchos */}
@@ -1692,7 +1643,7 @@ function HangingSpecialsRack({
         tabIndex={0}
         role="region"
         aria-roledescription="carrusel"
-        aria-label="Perchero interactivo de prendas en descuento"
+        aria-label="Perchero interactivo de prendas relevantes"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
@@ -1737,7 +1688,7 @@ function HangingSpecialsRack({
                 type="button"
                 data-offset={offset}
                 aria-pressed={isCenter}
-                aria-label={`${garment.nombre}${garment.badge ? ` (${garment.badge.text})` : ''}`}
+                aria-label={garment.nombre}
                 onClick={() => {
                   if (didDrag.current) {
                     didDrag.current = false
@@ -1761,15 +1712,6 @@ function HangingSpecialsRack({
                       <ClipsHangerFrontSvg bajada={garment.bajada} />
                     ) : (
                       <ShoulderHangerFrontSvg bajada={garment.bajada} />
-                    )}
-
-                    {/* Etiqueta en pill sujeta al gancho con hilo */}
-                    {garment.badge && (
-                      <span
-                        className={`sr-rack-badge sr-rack-badge--${garment.badge.variant}`}
-                      >
-                        {garment.badge.text}
-                      </span>
                     )}
 
                     {/* Prenda recortada sola, sin marco rectangular ni fondo */}
@@ -1803,14 +1745,7 @@ function HangingSpecialsRack({
       <div className="sr-rack-footer">
         <p className="sr-rack-title">{featured.nombre}</p>
         <p className="sr-rack-meta">
-          {featured.tienda} · {featured.originalPrice ? (
-            <>
-              <span className="line-through opacity-50 mr-1.5">{formatCOP(featured.originalPrice)}</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCOP(featured.precio)}</span>
-            </>
-          ) : (
-            formatCOP(featured.precio)
-          )}
+          {featured.tienda} · {formatCOP(featured.precio)}
         </p>
 
         <Link

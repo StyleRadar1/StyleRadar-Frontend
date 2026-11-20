@@ -550,30 +550,13 @@ export default function ItemDetailPage() {
                     {prenda.nombre}
                   </h1>
 
-                  {/* Precio destacado con descuento (si aplica) */}
-                  {prenda.descuento && prenda.precioAnterior && prenda.precioAnterior > prenda.precio ? (
-                    <div className="mt-3">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm line-through text-[var(--color-text-muted)] font-medium">
-                          {formatCOP(prenda.precioAnterior)}
-                        </span>
-                        <span className="text-2xl font-black text-rose-500">
-                          {formatCOP(prenda.precio)}
-                        </span>
-                        <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-                          -{prenda.descuento}%
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
-                    </div>
-                  ) : (
-                    <div className="mt-3">
-                      <p className="text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
-                        {formatCOP(prenda.precio)}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
-                    </div>
-                  )}
+                  {/* Precio final */}
+                  <div className="mt-3">
+                    <p className="text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
+                      {formatCOP(prenda.precio)}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
+                  </div>
 
                   {/* c) Descripción corta (3-5 líneas) con "Leer más" (si existe en los datos) */}
                   {prenda.descripcion && (

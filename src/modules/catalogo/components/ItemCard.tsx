@@ -18,12 +18,6 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
   const storeName = item.tienda || item.marca || ''
   const storeId = getStoreIdByName(storeName)
   const imgPrincipal = item.imagen || item.fotografias?.[0] || ''
-  const fotos = item.imagenes?.length ? item.imagenes : item.fotografias
-  const fotoSecundaria =
-    (fotos && fotos.length > 1 ? fotos[1] : null) ||
-    item.imagenSecundaria ||
-    (item.recorte && item.recorte !== imgPrincipal ? item.recorte : null)
-  const tieneDescuento = Boolean(item.descuento && item.precioAnterior && item.precioAnterior > item.precio)
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm transition duration-200 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-md">
@@ -50,29 +44,11 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
           loading="lazy"
           decoding="async"
           style={MAIN_PHOTO_MASK_STYLE}
-          className={`relative z-10 h-full w-full object-contain transition-all duration-300 motion-reduce:transition-none ${
-            fotoSecundaria ? 'group-hover:opacity-0' : 'group-hover:scale-[1.03]'
-          }`}
+          className="relative z-10 h-full w-full object-contain transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.03]"
         />
-        {/* Segunda foto al pasar el mouse (hover lookbook / ángulo alternativo estilo Stradivarius/Shein) */}
-        {fotoSecundaria && (
-          <img
-            src={fotoSecundaria}
-            alt={`${item.nombre} vista alternativa`}
-            loading="lazy"
-            decoding="async"
-            style={MAIN_PHOTO_MASK_STYLE}
-            className="absolute inset-0 z-20 h-full w-full object-contain opacity-0 transition-opacity duration-300 motion-reduce:transition-none group-hover:opacity-100"
-          />
-        )}
 
-        {/* Badges superiores (Descuento, Nuevo, Circular) */}
+        {/* Badges superiores (Nuevo, Circular) */}
         <div className="absolute left-2.5 top-2.5 z-30 flex flex-col items-start gap-1">
-          {tieneDescuento && (
-            <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
-              -{item.descuento}%
-            </span>
-          )}
           {item.esNuevo && (
             <span className="rounded-md bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
               Nuevo
@@ -134,16 +110,7 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         </div>
         <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
           <div className="flex items-baseline gap-1.5">
-            {tieneDescuento && item.precioAnterior && (
-              <span className="text-[0.6875rem] line-through text-[var(--color-text-muted)]">
-                {formatCOP(item.precioAnterior)}
-              </span>
-            )}
-            <span
-              className={`text-sm font-semibold ${
-                tieneDescuento ? 'text-rose-500 font-bold' : 'text-[var(--color-text)]'
-              }`}
-            >
+            <span className="text-sm font-semibold text-[var(--color-text)]">
               {formatCOP(item.precio)}
             </span>
           </div>
