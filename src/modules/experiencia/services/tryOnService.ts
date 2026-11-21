@@ -114,7 +114,7 @@ export const tryOnService = {
   },
 
   /** RF-23: sube la foto frontal con progreso real de subida. */
-  async uploadPhoto(file: File, onProgress?: (pct: number) => void, signal?: AbortSignal): Promise<PhotoUploadResponseDto> {
+  async uploadPhoto(file: File, onProgress?: (pct: number) => void, signal?: AbortSignal, userId?: string): Promise<PhotoUploadResponseDto> {
     if (env.useMocks) {
       for (const pct of [15, 40, 70, 100]) {
         if (signal?.aborted) throw new ApiError(0, 'Subida cancelada.')
@@ -132,6 +132,7 @@ export const tryOnService = {
     const form = new FormData()
     form.append('photo', file)
     form.append('biometricConsent', 'true')
+    if (userId) form.append('userId', String(userId))
     return apiClient.post<PhotoUploadResponseDto>('/api/v1/try-on/photos', form, {
       timeout: 60000,
       signal,
@@ -198,7 +199,13 @@ export const tryOnService = {
         completedAt: new Date(job.created + MOCK_JOB_TIMES.done).toISOString(),
       }, 120)
     }
-    return apiClient.get<TryOnJobStatusDto>(`/api/v1/try-on/jobs/${encodeURIComponent(jobId)}`).then((r) => r.data)
+    return apiClient
+      .get<TryOnJobStatusDto>(`/api/v1/try-on/jobs/${encodeURIComponent(jobId)}`)
+      .then((r) => ({
+        ...r.data,
+        resultUrl: r.data.resultImageUrl || r.data.resultUrl,
+        resultImageUrl: r.data.resultImageUrl || r.data.resultUrl,
+      }))
   },
 
   /** SR-P5-N03: consultar historial de pruebas virtuales del usuario */
@@ -222,7 +229,11 @@ export const tryOnService = {
     }
     return apiClient
       .get<TryOnJobStatusDto[]>('/api/v1/try-on/jobs', { params: { userId } })
-      .then((r) => r.data)
+      .then((r) => r.data.map((j) => ({
+        ...j,
+        resultUrl: j.resultImageUrl || j.resultUrl,
+        resultImageUrl: j.resultImageUrl || j.resultUrl,
+      })))
   },
 
   /** SR-P5-N01: consultar estado de consentimiento biométrico */

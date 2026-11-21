@@ -36,6 +36,8 @@ export interface GarmentValidationResponseDto {
   sizeEligible?: boolean | null
   fitMessage?: string
   quotaAvailable?: boolean
+  eligibleForTryOn?: boolean
+  replacedGarmentIds?: string[]
 }
 
 /** SR-P5-N01: Gestión de consentimiento biométrico (Ley 1581) */
