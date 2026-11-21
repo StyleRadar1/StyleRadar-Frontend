@@ -11,7 +11,7 @@ import { tomarRetorno } from '@/modules/core/api/retorno'
 import { ErrorCampo } from '@/modules/core/components/errores'
 import { correoValido } from '@/modules/identidad/utils/formato'
 import { errorDeLogin, errorDeOtp } from '@/modules/identidad/utils/erroresAcceso'
-import { PASSWORD_MIN, type UserSessionDto } from '@/modules/identidad/types/auth.dto'
+import { NAME_MAX, NAME_MIN, NEIGHBORHOOD_MAX, PASSWORD_MAX, PASSWORD_MIN, type UserSessionDto } from '@/modules/identidad/types/auth.dto'
 import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
 import { consentService } from '@/modules/legal/services/consentService'
 import { BodyMeasurementsWizardModal } from '@/modules/experiencia/components/BodyMeasurementsWizardModal'
@@ -101,6 +101,9 @@ function resetCard(card: HTMLElement | null) {
   })
 }
 
+/** Mínimo de la contraseña al iniciar sesión: 8 con el back real; 4 en demostración, donde las cuentas usan 1234. */
+const LOGIN_MIN = env.useMocks ? DEMO_PASSWORD.length : PASSWORD_MIN
+
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
@@ -122,6 +125,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   // Campos para registro
   const [fullName, setFullName] = useState('')
+  const [barrio, setBarrio] = useState('')
   const [role, setRole] = useState<'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'>('BUYER')
   const [previewRole, setPreviewRole] = useState<DemoAccountRole | null>(null)
 
@@ -145,7 +149,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   // Asistente de medidas corporales para onboarding justo después de crear la cuenta
   const [showMeasurementsWizard, setShowMeasurementsWizard] = useState(false)
   const [newlyRegisteredUser, setNewlyRegisteredUser] = useState<UserSessionDto | null>(null)
-  const [infoMessage, setInfoMessage] = useState<string | null>(null)
 
   // Plan de errores: errores por campo, Reintentar (503) y bloqueo con cuenta regresiva (429).
   const [camposErr, setCamposErr] = useState<{ email?: string; password?: string; otp?: string }>({})
@@ -257,7 +260,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       setActiveTab(initialTab)
       setStep('form')
       setError('')
-      setInfoMessage(null)
       setPreviewRole(null)
       setRendered(true)
     }
@@ -503,31 +505,15 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     }, 60)
   }
 
-  const handleForgotPassword = async () => {
-    if (!email.trim() || !email.includes('@')) {
-      setError('Escribe tu correo arriba para enviarte el enlace de recuperación.')
-      return
-    }
-    setLoading(true)
-    setError('')
-    setInfoMessage(null)
-    try {
-      const res = await authService.recoverPassword(email)
-      setInfoMessage(res.mensaje)
-    } catch (err: any) {
-      setError(err?.message || 'No se pudo procesar la solicitud de recuperación.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (espera > 0) return
     // 400: se valida antes de enviar y el mensaje va debajo de cada campo.
     const campos: { email?: string; password?: string } = {}
     if (!correoValido(email)) campos.email = 'Escribe un correo válido, por ejemplo nombre@correo.com.'
-    if (password.length < 4) campos.password = 'La contraseña tiene al menos 4 caracteres.'
+    // D7: de 8 a 30 caracteres. En demostración las cuentas de prueba usan 1234, por eso ahí basta con 4.
+    if (password.length < LOGIN_MIN) campos.password = `La contraseña tiene al menos ${LOGIN_MIN} caracteres.`
+    else if (password.length > PASSWORD_MAX) campos.password = `La contraseña tiene máximo ${PASSWORD_MAX} caracteres.`
     setCamposErr(campos)
     setReintentar(false)
     setError('')
@@ -566,12 +552,26 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   const handleRegisterSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!email || password.length < PASSWORD_MIN || !fullName) {
-      setError(
-        password.length < PASSWORD_MIN
-          ? `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`
-          : 'Por favor completa todos los campos requeridos.',
-      )
+    // SR-RF-01: nombre de 2 a 100, correo válido, contraseña de 8 a 30 y barrio de máximo 100.
+    const nombreLimpio = fullName.trim()
+    if (!email || !nombreLimpio) {
+      setError('Por favor completa todos los campos requeridos.')
+      return
+    }
+    if (nombreLimpio.length < NAME_MIN || nombreLimpio.length > NAME_MAX) {
+      setError(`El nombre debe tener entre ${NAME_MIN} y ${NAME_MAX} caracteres.`)
+      return
+    }
+    if (!correoValido(email)) {
+      setError('Escribe un correo válido, por ejemplo nombre@correo.com.')
+      return
+    }
+    if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX) {
+      setError(`La contraseña debe tener entre ${PASSWORD_MIN} y ${PASSWORD_MAX} caracteres.`)
+      return
+    }
+    if (barrio.trim().length > NEIGHBORHOOD_MAX) {
+      setError(`El barrio no puede superar ${NEIGHBORHOOD_MAX} caracteres.`)
       return
     }
     // Validación estricta de consentimientos legales (Colombia Ley 1581 / Ley 1480)
@@ -592,7 +592,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       cErr.reglasFundacion = 'Debes aceptar las Reglas para Fundaciones y Donaciones.'
     }
 
-    const isTestEmail = email.trim().toLowerCase() === 'valen@correo.com'
+    // Atajo de las pruebas de demostración; con el back real el consentimiento es obligatorio (dataPolicyAccepted).
+    const isTestEmail = env.useMocks && email.trim().toLowerCase() === 'valen@correo.com'
     if (!isTestEmail && Object.keys(cErr).length > 0) {
       setConsentErrors(cErr)
       setError('Por favor acepta las autorizaciones y consentimientos obligatorios.')
@@ -624,10 +625,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         if (!isDemo) {
           try {
             await authService.register({
-              nombre: fullName.trim(),
+              name: nombreLimpio,
               email: email.trim(),
               password,
-              aceptaHabeasData: consentState.aceptaDatos,
+              neighborhood: barrio,
+              dataPolicyAccepted: consentState.aceptaDatos,
               aceptaTerminos: consentState.aceptaTerminos,
               role,
             })
@@ -640,10 +642,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         }
       } else {
         const r = await authRegister({
-          nombre: fullName.trim(),
+          name: nombreLimpio,
           email: email.trim(),
           password,
-          aceptaHabeasData: consentState.aceptaDatos,
+          neighborhood: barrio,
+          dataPolicyAccepted: consentState.aceptaDatos,
           aceptaTerminos: consentState.aceptaTerminos,
           role,
         })
@@ -1022,21 +1025,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       />
                       <span>Recordarme</span>
                     </label>
-                    <button
-                      type="button"
-                      className="sr-forgot"
-                      disabled={loading}
-                      onClick={() => { void handleForgotPassword() }}
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
                   </div>
-
-                  {infoMessage && (
-                    <div role="status" className="rounded-lg bg-emerald-950/80 border border-emerald-500/40 p-2.5 text-xs font-semibold text-emerald-200">
-                      {infoMessage}
-                    </div>
-                  )}
 
                   <button
                     type="submit"
@@ -1143,6 +1132,19 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   </div>
 
                   <div className="sr-field">
+                    <label htmlFor="suBarrio">Barrio (opcional)</label>
+                    <input
+                      id="suBarrio"
+                      type="text"
+                      value={barrio}
+                      maxLength={NEIGHBORHOOD_MAX}
+                      onChange={(e) => setBarrio(e.target.value)}
+                      placeholder="Ej. Chapinero"
+                      autoComplete="address-level3"
+                    />
+                  </div>
+
+                  <div className="sr-field">
                     <label htmlFor="suPass">Contraseña</label>
                     <div className="sr-pw">
                       <input
@@ -1150,7 +1152,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                         type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Mín. 6 caracteres"
+                        placeholder="De 8 a 30 caracteres"
                       />
                       <button
                         type="button"

@@ -101,14 +101,15 @@ export function errorDeGoogle(e: unknown): string {
 }
 
 /** Nombres que puede usar el servidor para los campos del registro → los del formulario. */
-const CAMPOS_REGISTRO: Record<string, 'nombre' | 'email' | 'password'> = {
+const CAMPOS_REGISTRO: Record<string, 'nombre' | 'email' | 'barrio' | 'password'> = {
   nombre: 'nombre', name: 'nombre', fullName: 'nombre',
   email: 'email', correo: 'email',
   password: 'password', contrasena: 'password', contraseña: 'password',
+  neighborhood: 'barrio', barrio: 'barrio',
 }
 
-export function camposDeRegistro(campos: CamposConError): Partial<Record<'nombre' | 'email' | 'password', string>> {
-  const out: Partial<Record<'nombre' | 'email' | 'password', string>> = {}
+export function camposDeRegistro(campos: CamposConError): Partial<Record<'nombre' | 'email' | 'barrio' | 'password', string>> {
+  const out: Partial<Record<'nombre' | 'email' | 'barrio' | 'password', string>> = {}
   for (const [k, v] of Object.entries(campos)) { const c = CAMPOS_REGISTRO[k]; if (c && !out[c]) out[c] = v }
   return out
 }

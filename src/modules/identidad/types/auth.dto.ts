@@ -68,15 +68,34 @@ export interface ResendOtpResponseDto {
  * registran aquí: solicitan ser aliadas (S3), y el administrador no se registra.
  */
 export interface RegisterRequestDto {
-  nombre: string
+  name: string
   email: string
   password: string
+  /** Opcional: de 7 a 20 caracteres. Si la persona no lo escribe no se envía. */
+  phone?: string
+  /** Opcional: máximo 100 caracteres. */
+  neighborhood?: string
+  /** Habeas Data (Ley 1581): debe ser verdadero. */
+  dataPolicyAccepted: boolean
+  /** Solo del front (no va en el cuerpo de POST /api/v1/users). */
   maniqui?: Maniqui
   aceptaTerminos?: boolean
-  aceptaHabeasData?: boolean
-  telefono?: string
   role?: Role
 }
 
-export const PASSWORD_MIN = 6
-export const PASSWORD_MIN_BACKEND = 8
+/** Cuerpo de POST /api/v1/users (SR-RF-01). */
+export interface CreateUserRequestDto {
+  name: string
+  email: string
+  phone?: string
+  neighborhood?: string
+  password: string
+  dataPolicyAccepted: boolean
+}
+
+/** Contraseña de 8 a 30 caracteres en registro e inicio de sesión (D7). */
+export const PASSWORD_MIN = 8
+export const PASSWORD_MAX = 30
+export const NAME_MIN = 2
+export const NAME_MAX = 100
+export const NEIGHBORHOOD_MAX = 100
