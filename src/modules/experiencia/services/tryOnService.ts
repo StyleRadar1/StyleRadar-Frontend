@@ -37,7 +37,26 @@ export const tryOnService = {
       failIfScenario()
       return mockDelay(hasScenario('catalogo-vacio') ? [] : TRYON_GARMENTS)
     }
-    return apiClient.get<TryOnGarmentDto[]>('/api/v1/try-on/garments').then((r) => r.data)
+    return apiClient
+      .get<TryOnGarmentDto[]>('/api/v1/try-on/garments')
+      .catch(() =>
+        apiClient.get<any[]>('/api/v1/items').then((r) =>
+          r.data.map((item: any) => ({
+            id: String(item.id),
+            nombre: item.name || item.nombre || 'Prenda',
+            tienda: item.storeName || item.tienda || 'StyleRadar Store',
+            imagen: item.imageUrl || item.imagen || '',
+            zona: (item.category === 'TOP' || item.categoria === 'Camisas' || item.categoria === 'Chaquetas'
+              ? 'SUPERIOR'
+              : item.category === 'BOTTOM' || item.categoria === 'Pantalones' || item.categoria === 'Faldas'
+              ? 'INFERIOR'
+              : 'NO_COMPATIBLE') as any,
+            tallas: item.sizes || item.tallas || ['S', 'M', 'L', 'XL'],
+            disponible: item.available ?? true,
+          }))
+        )
+      )
+      .then((r) => (Array.isArray(r) ? r : (r as any).data || []))
   },
 
   /** RF-24: validación de compatibilidad de prenda y talla con medidas */

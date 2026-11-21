@@ -4,6 +4,7 @@ import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { FOUNDATIONS, seedDonations } from '../mocks/secondHand'
 import { isoDay } from '../utils/dates'
+import { secondHandService } from './secondHandService'
 import {
   SIGUIENTE,
   type ClaimDonationRequestDto,
@@ -110,13 +111,53 @@ export const donationService = {
       db().unshift(d)
       return mockDelay(d, 700)
     }
-    const form = new FormData()
-    form.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }))
-    files.forEach((f) => form.append('files', f))
-    return apiClient
-      .post<DonationDto>('/api/v1/donations', form)
-      .catch(() => apiClient.post<DonationDto>('/api/v1/donaciones', form))
-      .then((r) => r.data)
+    if (data.publicationId) {
+      return this.createDirect({
+        publicationId: data.publicationId,
+        foundationId: data.fundacionId,
+        donorId: data.donorId || 101,
+        message: data.prenda?.descripcion || data.message,
+        deliveryMode: data.logistica?.modalidad,
+        deliveryPoint: data.logistica?.direccion || 'Sede Fundación',
+        pickupWindowStart: data.logistica?.fecha,
+      })
+    }
+
+    // Si la donación se crea desde cero en el formulario libre:
+    // 1. Subir fotos a Azure Blob Storage
+    const photoUrls: string[] = []
+    for (const f of files) {
+      try {
+        const up = await secondHandService.uploadPhoto(f)
+        if (up.photoUrl) photoUrls.push(up.photoUrl)
+      } catch {
+        // En caso de fallo de red en foto individual
+      }
+    }
+
+    // 2. Crear la publicación benéfica (esDonacion: true, price: 0) en ms-segunda-vida
+    const pub = await secondHandService.create({
+      titulo: data.prenda?.titulo || 'Prenda donada',
+      descripcion: data.prenda?.descripcion || 'Donación benéfica',
+      categoria: data.prenda?.categoria || 'Chaquetas',
+      marca: 'Donación',
+      talla: data.prenda?.talla || 'M',
+      conservacion: data.prenda?.conservacion || 'BUENO',
+      precio: 0,
+      esDonacion: true,
+      photos: photoUrls,
+    })
+
+    // 3. Crear la solicitud de donación formal vinculada a la publicación creada
+    return this.createDirect({
+      publicationId: pub.id,
+      foundationId: data.fundacionId,
+      donorId: data.donorId || 101,
+      message: data.prenda?.descripcion || data.message,
+      deliveryMode: data.logistica?.modalidad,
+      deliveryPoint: data.logistica?.direccion || 'Sede Fundación',
+      pickupWindowStart: data.logistica?.fecha,
+    })
   },
 
   /** Solicitud directa oficial: POST /api/v1/donations (SR-RF-45) */
