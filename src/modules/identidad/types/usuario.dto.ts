@@ -53,23 +53,69 @@ export interface TallasDto {
   calzado: TallaCalzado
 }
 
-export const ESTILOS = ['Formal', 'Casual', 'Urbana', 'Deportivo', 'Vintage'] as const
-export type Estilo = (typeof ESTILOS)[number]
-export const MAX_ESTILOS = 4
+/**
+ * SR-RF-03: estilos del perfil (códigos del contrato en inglés, de 1 a 5).
+ * Los textos que ve la persona siguen en español.
+ */
+export const STYLES = ['CASUAL', 'FORMAL', 'SPORTY', 'URBAN', 'VINTAGE'] as const
+export type StyleCode = (typeof STYLES)[number]
+export const STYLE_LABEL: Record<StyleCode, string> = {
+  CASUAL: 'Casual', FORMAL: 'Formal', SPORTY: 'Deportivo', URBAN: 'Urbano', VINTAGE: 'Vintage',
+}
+export const MIN_ESTILOS = 1
+export const MAX_ESTILOS = 5
 
-/** Perfil de la persona con sesión (GET /api/usuarios/me). RF-03 a RF-06. */
-export interface PerfilDto {
-  id: string
-  nombre: string
-  correo: string
-  celular: string
-  barrio: string
-  maniqui: Maniqui
-  tallas: TallasDto
-  estilos: Estilo[]
-  plan: Plan
-  miembroDesde: string
+/** SR-RF-04: tallas por tipo de prenda. TOP de XS a XXL, BOTTOM de 26 a 36 y FOOTWEAR de 34 a 45. */
+export const SIZES_TOP = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
+export const SIZES_BOTTOM = ['26', '28', '30', '32', '34', '36'] as const
+export const SIZES_FOOTWEAR = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'] as const
+export type GarmentType = 'TOP' | 'BOTTOM' | 'FOOTWEAR'
+export const GARMENT_TYPES: readonly GarmentType[] = ['TOP', 'BOTTOM', 'FOOTWEAR']
+export const SIZES_BY_TYPE: Record<GarmentType, readonly string[]> = { TOP: SIZES_TOP, BOTTOM: SIZES_BOTTOM, FOOTWEAR: SIZES_FOOTWEAR }
+export const GARMENT_LABEL: Record<GarmentType, string> = { TOP: 'Talla superior', BOTTOM: 'Talla inferior', FOOTWEAR: 'Calzado' }
+/** Varias tallas por tipo; un tipo sin tallas no se envía. */
+export type SizesByGarmentType = Partial<Record<GarmentType, string[]>>
+
+/** Respuesta de GET y PUT /api/v1/users/{id}, /style-preferences y /sizes (SR-RF-03, SR-RF-04 y anexo D15). */
+export interface UserProfileDto {
+  id: string | number
+  name: string
+  email: string
+  phone?: string | null
+  neighborhood?: string | null
+  emailVerified: boolean
+  registeredAt: string
+  stylePreferences: StyleCode[]
+  usualSizes: string[]
+  sizesByGarmentType: SizesByGarmentType
 }
 
-/** PUT /api/usuarios/me. El correo, el plan y la fecha de registro no se cambian desde el perfil. */
-export type ActualizarPerfilDto = Pick<PerfilDto, 'nombre' | 'celular' | 'barrio' | 'maniqui' | 'tallas' | 'estilos'>
+/**
+ * Perfil que usa la pantalla (F-12): los campos del contrato más dos datos solo del front
+ * que el documento de ms-usuarios no define (maniquí del probador y plan).
+ */
+export interface PerfilDto {
+  id: string
+  name: string
+  email: string
+  phone: string
+  neighborhood: string
+  emailVerified: boolean
+  registeredAt: string
+  stylePreferences: StyleCode[]
+  usualSizes: string[]
+  sizesByGarmentType: SizesByGarmentType
+  maniqui: Maniqui
+  /** Solo en datos de prueba: con el back real el plan lo da ms-pagos, no ms-usuarios. */
+  plan?: Plan
+}
+
+/** Lo que se edita en el perfil. El correo, el plan y la fecha de registro no se cambian desde aquí. */
+export type ActualizarPerfilDto = Pick<PerfilDto, 'name' | 'phone' | 'neighborhood' | 'maniqui' | 'stylePreferences' | 'sizesByGarmentType'>
+
+/** Cuerpo de PUT /api/v1/users/{id} (anexo D15: propuesta por confirmar con ms-usuarios). */
+export interface UpdateUserRequestDto {
+  name: string
+  phone?: string
+  neighborhood?: string
+}

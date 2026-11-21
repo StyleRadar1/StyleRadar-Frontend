@@ -14,6 +14,12 @@ export function iniciales(nombre: string): string {
 /** Quita tildes y mayúsculas para buscar. */
 export const normalizar = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
+/** SR-RF-01 y anexo D15: teléfono de 7 a 20 caracteres con dígitos, +, -, espacios y paréntesis. */
+export const telefonoValido = (s: string) => {
+  const t = s.trim()
+  return t.length >= 7 && t.length <= 20 && /^[\d+\-\s()]+$/.test(t) && /\d/.test(t)
+}
+
 /** Celular colombiano: 10 dígitos que empiezan en 3, con o sin +57 y espacios. */
 export const celularValido = (s: string) => /^(\+?57)?3\d{9}$/.test(s.replace(/[\s-]/g, ''))
 

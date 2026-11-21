@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import { aRol } from '@/modules/core/types/roles'
+import { env } from '@/configs/env'
 import { aResultado, aSesion, authService } from '../services/authService'
+import { usuarioService } from '../services/usuarioService'
 import type { LoginRequestDto, LoginResponseDto, LoginResult, RegisterRequestDto, UserSessionDto, VerifyOtpRequestDto } from '../types/auth.dto'
 import { AuthContext } from './authContext'
 
@@ -41,6 +43,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(sesion)
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('sr:login-success', { detail: sesion }))
+    }
+    // El login de ms-auth no trae el nombre: se lee del perfil (GET /api/v1/users/{id}) y se actualiza la sesión.
+    if (!env.useMocks) {
+      usuarioService.get(sesion.id).then((p) => {
+        if (!p.name) return
+        setUser((u) => {
+          if (!u || u.id !== sesion.id) return u
+          const next = { ...u, name: p.name }
+          saveUser(next)
+          return next
+        })
+      }).catch(() => { /* se queda con el nombre provisional */ })
     }
     return sesion
   }, [])

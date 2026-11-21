@@ -21,15 +21,16 @@ export const USUARIOS_BASE: UsuarioAdminDto[] = [
 /** Perfiles de prueba por id de usuario. El de Valentina es el del prototipo. */
 export const PERFILES_BASE: Record<string, PerfilDto> = {
   'u-1': {
-    id: 'u-1', nombre: 'Valentina Rojas', correo: 'usuario@styleradar.co', celular: '+57 310 555 0142', barrio: 'Chapinero',
-    maniqui: 'HOMBRE', tallas: { superior: 'M', inferior: '30', calzado: '38' }, estilos: ['Formal', 'Casual', 'Urbana'],
-    plan: 'RADAR_PLUS', miembroDesde: '2025-03-04',
+    id: 'u-1', name: 'Valentina Rojas', email: 'usuario@styleradar.co', phone: '+57 310 555 0142', neighborhood: 'Chapinero',
+    emailVerified: true, registeredAt: '2025-03-04T10:00:00Z',
+    stylePreferences: ['FORMAL', 'CASUAL', 'URBAN'], usualSizes: ['M'],
+    sizesByGarmentType: { TOP: ['M'], BOTTOM: ['30'], FOOTWEAR: ['38'] },
+    maniqui: 'HOMBRE', plan: 'RADAR_PLUS',
   },
 }
 
-/** Perfil inicial de una cuenta nueva (sin tallas ni estilos elegidos todavía). */
-export const perfilNuevo = (id: string, nombre: string, correo: string): PerfilDto => ({
-  id, nombre, correo, celular: '', barrio: '', maniqui: 'MUJER',
-  tallas: { superior: 'M', inferior: '30', calzado: '38' }, estilos: [], plan: 'RADAR',
-  miembroDesde: new Date().toISOString().slice(0, 10),
+/** Perfil inicial de una cuenta nueva: sin tallas ni estilos elegidos todavía (SR-RF-01). */
+export const perfilNuevo = (id: string, name: string, email: string, neighborhood = ''): PerfilDto => ({
+  id, name, email, phone: '', neighborhood, emailVerified: false, registeredAt: new Date().toISOString(),
+  stylePreferences: [], usualSizes: [], sizesByGarmentType: {}, maniqui: 'MUJER', plan: 'RADAR',
 })
