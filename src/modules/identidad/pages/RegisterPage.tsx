@@ -96,7 +96,7 @@ export default function RegisterPage() {
     })
 
     try {
-      const user = await register({
+      const r = await register({
         nombre: nombre.trim(),
         email: email.trim(),
         password,
@@ -105,7 +105,9 @@ export default function RegisterPage() {
         aceptaHabeasData: consentState.aceptaDatos,
         ...(esTienda ? { role: 'STORE_ADMIN' as const } : {}),
       })
-      const target = user.role === 'STORE_ADMIN' ? '/tienda/suscripcion/activar' : ROLE_HOME[user.role]
+      // Correo sin verificar (SR-RF-01): el código OTP se ingresa en el modal de inicio de sesión.
+      if (r.kind === 'otp') { navigate('/?login', { replace: true }); return }
+      const target = r.user.role === 'STORE_ADMIN' ? '/tienda/suscripcion/activar' : ROLE_HOME[r.user.role]
       navigate(target, { replace: true })
     } catch (err) {
       const kind = errorKind(err)

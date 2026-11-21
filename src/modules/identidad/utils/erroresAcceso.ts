@@ -1,4 +1,5 @@
-import { errorKind, fieldErrors, MENSAJES, type CamposConError } from '@/modules/core/api/errors'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind, fieldErrors, MENSAJES, MENSAJES_POR_CODIGO, type CamposConError } from '@/modules/core/api/errors'
 
 /**
  * Textos de error de Iniciar sesión y Crear cuenta (plan de errores · Cristian).
@@ -12,12 +13,20 @@ export const TEXTOS_ACCESO = {
   google: 'No pudimos entrar con Google.',
   otp: 'El código no es correcto o ya venció. Revísalo o pide otro.',
   otpLimite: 'Fallaste el código 3 veces. Espera un momento y pide otro.',
+  otpVencido: 'El código venció. Pide uno nuevo.',
+  otpEsperaReenvio: 'Espera un momento para pedir un código nuevo.',
   registro: 'No pudimos crear la cuenta con esos datos.',
   campos: 'Revisa los datos marcados.',
 } as const
 
-/** Segundos de espera cuando el servidor responde 429 (el plan no define otro valor). */
+/** Segundos de espera cuando el servidor responde 429 sin decir cuánto (SR-RF-02 y SR-RF-92 usan 60). */
 export const ESPERA_429 = 60
+
+/** Espera que pide el servidor (retryAfterSeconds o Retry-After, F-05); si no la manda, 60 segundos. */
+export const esperaDe = (e: unknown): number =>
+  e instanceof ApiError && e.retryAfterSeconds !== undefined ? e.retryAfterSeconds : ESPERA_429
+
+const codigoDe = (e: unknown) => (e instanceof ApiError ? e.code?.toUpperCase() : undefined)
 
 export type ErrorAcceso = {
   /** Mensaje general; vacío cuando todo está en los campos. */
@@ -40,9 +49,46 @@ export function errorDeLogin(e: unknown): ErrorAcceso {
     case 'sesion':
     case 'no-existe': return { ...base, mensaje: TEXTOS_ACCESO.credenciales }
     case 'permiso': return { ...base, mensaje: TEXTOS_ACCESO.bloqueada }
-    case 'limite': return { ...base, mensaje: TEXTOS_ACCESO.limite, esperar: ESPERA_429 }
+    case 'limite': return {
+      ...base,
+      // FA-15: correo sin verificar y aún corre la espera tras 3 códigos equivocados.
+      mensaje: codigoDe(e) === 'OTP_RESEND_BLOCKED' ? TEXTOS_ACCESO.otpEsperaReenvio : TEXTOS_ACCESO.limite,
+      esperar: esperaDe(e),
+    }
     case 'sin-conexion': return { ...base, mensaje: MENSAJES['sin-conexion'], reintentar: true }
     default: return { ...base, mensaje: TEXTOS_ACCESO.servicio, reintentar: true }
+  }
+}
+
+export type ErrorOtp = {
+  mensaje: string
+  /** Segundos que quedan bloqueados Confirmar y Pedir otro código. */
+  esperar: number
+  /** La verificación ya no existe (OTP_SESSION_NOT_FOUND) o se acabaron los reenvíos: hay que iniciar sesión otra vez. */
+  volverAlLogin: boolean
+}
+
+/** F-04: mensaje del código OTP según el `code` de ms-auth (SR-RF-92), en lugar del «Tu sesión venció» genérico. */
+export function errorDeOtp(e: unknown): ErrorOtp {
+  const base: ErrorOtp = { mensaje: TEXTOS_ACCESO.otp, esperar: 0, volverAlLogin: false }
+  switch (codigoDe(e)) {
+    case 'OTP_INCORRECT': {
+      const n = e instanceof ApiError ? e.attemptsRemaining : undefined
+      if (n === undefined) return base
+      return { ...base, mensaje: `El código no es correcto. Te ${n === 1 ? 'queda 1 intento' : `quedan ${n} intentos`}.` }
+    }
+    case 'OTP_EXPIRED': return { ...base, mensaje: TEXTOS_ACCESO.otpVencido }
+    case 'OTP_ATTEMPTS_EXHAUSTED': return { ...base, mensaje: TEXTOS_ACCESO.otpLimite, esperar: esperaDe(e) }
+    case 'OTP_RESEND_BLOCKED': return { ...base, mensaje: TEXTOS_ACCESO.otpEsperaReenvio, esperar: esperaDe(e) }
+    case 'OTP_SESSION_NOT_FOUND': return { ...base, mensaje: MENSAJES_POR_CODIGO.OTP_SESSION_NOT_FOUND, volverAlLogin: true }
+    case 'RESENDS_EXHAUSTED': return { ...base, mensaje: MENSAJES_POR_CODIGO.RESENDS_EXHAUSTED, volverAlLogin: true }
+  }
+  switch (errorKind(e)) {
+    case 'limite': return { ...base, mensaje: TEXTOS_ACCESO.limite, esperar: esperaDe(e) }
+    case 'sin-conexion': return { ...base, mensaje: MENSAJES['sin-conexion'] }
+    case 'servidor': return { ...base, mensaje: TEXTOS_ACCESO.servicio }
+    case 'datos': return { ...base, mensaje: fieldErrors(e).otpCode ?? TEXTOS_ACCESO.otp }
+    default: return base
   }
 }
 

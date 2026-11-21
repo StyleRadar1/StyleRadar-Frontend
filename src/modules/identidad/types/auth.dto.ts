@@ -1,12 +1,16 @@
 import type { Role } from '@/modules/core/types/roles'
 import type { Maniqui } from './usuario.dto'
 
-/** DTOs de CADCHE-Authentication-Service. Ajustar a los del Swagger cuando esté publicado. */
+/**
+ * DTOs de ms-auth según el documento de requerimientos v2 (SR-RF-02 y SR-RF-92) y la hoja Contrato:
+ * nombres en inglés y los datos de la sesión en la raíz de la respuesta (F-01 · F-28).
+ */
 export interface LoginRequestDto {
   email: string
   password: string
 }
 
+/** Datos de la sesión que usa el front (se arman con la respuesta de ms-auth). */
 export interface UserSessionDto {
   id: string
   name: string
@@ -19,28 +23,44 @@ export interface GoogleLoginRequestDto {
   idToken: string
 }
 
+/** Respuesta de POST /api/v1/auth/login, /oauth2/google y /otp/verify. */
 export interface LoginResponseDto {
-  token: string
-  user: UserSessionDto
-  requiereOtp?: boolean
-  otpExpiraEnSegundos?: number
-  intentosOtpRestantes?: number
+  /** null cuando el correo no está verificado y hay que ingresar el código (otpRequired). */
+  accessToken: string | null
+  tokenType?: string
+  expiresIn?: number
+  userId: string | number
+  roles: string[]
+  email: string
+  emailVerified?: boolean
+  otpRequired?: boolean
+  otpExpiresInSeconds?: number
+  otpAttemptsRemaining?: number
+  message?: string
+  /** Solo en modo demostración: el contrato de ms-auth no trae el nombre. */
+  name?: string
 }
+
+/** Resultado del inicio de sesión: entra directo, o primero pide el código porque el correo no está verificado. */
+export type LoginResult =
+  | { kind: 'session'; user: UserSessionDto }
+  | { kind: 'otp'; email: string; expiresInSeconds?: number; attemptsRemaining?: number }
 
 export interface VerifyOtpRequestDto {
   email: string
-  codigoOtp: string
+  otpCode: string
 }
 
 export interface ResendOtpRequestDto {
   email: string
 }
 
+/** Respuesta de POST /api/v1/auth/otp/resend. */
 export interface ResendOtpResponseDto {
-  email?: string
-  mensaje?: string
-  expiraEnSegundos?: number
-  intentosRestantes?: number
+  message?: string
+  expiresInSeconds?: number
+  attemptsRemaining?: number
+  resendsRemaining?: number
 }
 
 /**

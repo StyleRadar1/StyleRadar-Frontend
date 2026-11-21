@@ -10,7 +10,7 @@ import { env } from '@/configs/env'
 import { tomarRetorno } from '@/modules/core/api/retorno'
 import { ErrorCampo } from '@/modules/core/components/errores'
 import { correoValido } from '@/modules/identidad/utils/formato'
-import { ESPERA_429, TEXTOS_ACCESO, errorDeLogin } from '@/modules/identidad/utils/erroresAcceso'
+import { errorDeLogin, errorDeOtp } from '@/modules/identidad/utils/erroresAcceso'
 import { PASSWORD_MIN, type UserSessionDto } from '@/modules/identidad/types/auth.dto'
 import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
 import { consentService } from '@/modules/legal/services/consentService'
@@ -108,7 +108,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
-  const { register: authRegister, verifyOtp } = useAuth()
+  const { login, register: authRegister, verifyOtp } = useAuth()
   const navigate = useNavigate()
 
   const [rendered, setRendered] = useState(isOpen)
@@ -152,6 +152,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   const [reintentar, setReintentar] = useState(false)
   const [otpFallos, setOtpFallos] = useState(0)
   const [otpAviso, setOtpAviso] = useState('')
+  /** Vigencia del código en segundos, según ms-auth (SR-RF-92: 5 minutos). */
+  const [otpVigencia, setOtpVigencia] = useState(300)
   const [bloqueoHasta, setBloqueoHasta] = useState(0)
   const [ahora, setAhora] = useState(() => Date.now())
   const espera = Math.max(0, Math.ceil((bloqueoHasta - ahora) / 1000))
@@ -487,6 +489,20 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   /** Después de entrar vuelve a la página donde estaba (sesión vencida); si no, al inicio de su rol. */
   const entrarCon = (rol: keyof typeof ROLE_HOME) => finishAuthAndNavigate(tomarRetorno() ?? ROLE_HOME[rol])
 
+  /** Pasa a la pantalla del código OTP con los 6 campos vacíos. */
+  const irAlCodigo = (vigencia?: number) => {
+    setOtp(['', '', '', '', '', ''])
+    setOtpFallos(0)
+    setCamposErr({})
+    setOtpAviso('')
+    if (vigencia) setOtpVigencia(vigencia)
+    if (cardRef.current) cardRef.current.scrollTop = 0
+    setStep('otp')
+    setTimeout(() => {
+      document.getElementById('otp-input-0')?.focus()
+    }, 60)
+  }
+
   const handleForgotPassword = async () => {
     if (!email.trim() || !email.includes('@')) {
       setError('Escribe tu correo arriba para enviarte el enlace de recuperación.')
@@ -522,17 +538,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setLoading(true)
 
     try {
-      // Validar credenciales contra el servicio (para disparar 401, 403, 429, 503 si fallan)
-      await authService.login({ email, password })
-
-      // Al oprimir Entrar (incluso con cuentas demo), pasar a la pantalla del código OTP
-      if (cardRef.current) {
-        cardRef.current.scrollTop = 0
+      // SR-RF-02: con el correo verificado entra directo; si no está verificado, ms-auth envía el código (FA-13).
+      const r = await login({ email, password })
+      if (r.kind === 'session') {
+        entrarCon(r.user.role)
+        return
       }
-      setStep('otp')
-      setTimeout(() => {
-        document.getElementById('otp-input-0')?.focus()
-      }, 60)
+      irAlCodigo(r.expiresInSeconds)
     } catch (err) {
       const r = errorDeLogin(err)
       setCamposErr({ email: r.campos.email ?? r.campos.correo, password: r.campos.password })
@@ -627,7 +639,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
           }
         }
       } else {
-        await authRegister({
+        const r = await authRegister({
           nombre: fullName.trim(),
           email: email.trim(),
           password,
@@ -635,6 +647,12 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
           aceptaTerminos: consentState.aceptaTerminos,
           role,
         })
+        if (r.kind === 'session') {
+          despuesDeRegistrarse(r.user)
+          return
+        }
+        irAlCodigo(r.expiresInSeconds)
+        return
       }
     } catch (err) {
       const r = errorDeLogin(err)
@@ -644,13 +662,22 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       setLoading(false)
     }
 
-    if (cardRef.current) {
-      cardRef.current.scrollTop = 0
+    irAlCodigo()
+  }
+
+  /** Después de crear la cuenta: tienda a activar su plan, fundación a su panel y comprador al asistente de medidas. */
+  const despuesDeRegistrarse = (user: UserSessionDto) => {
+    if (user.role === 'STORE_ADMIN') {
+      finishAuthAndNavigate('/tienda/suscripcion/activar')
+      return
     }
-    setStep('otp')
-    setTimeout(() => {
-      document.getElementById('otp-input-0')?.focus()
-    }, 60)
+    if (user.role === 'FOUNDATION_REPRESENTATIVE') {
+      finishAuthAndNavigate('/fundacion')
+      return
+    }
+    // Justo después de crear la cuenta: abrir asistente de medidas para el probador y guardar en su perfil
+    setNewlyRegisteredUser(user)
+    setShowMeasurementsWizard(true)
   }
 
   const handleOtpChange = (index: number, val: string) => {
@@ -754,12 +781,39 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     }, 20)
   }
 
-  const pedirOtroCodigo = () => {
+  /** SR-RF-92 FA-07: pide un código nuevo (anula el anterior y da otros 3 intentos). */
+  const pedirOtroCodigo = async () => {
     if (espera > 0) return
-    setOtp(['', '', '', '', '', ''])
-    setOtpFallos(0)
+    const destino = email.trim()
+    setError('')
     setCamposErr({})
-    setOtpAviso(`Te enviamos un código nuevo a ${email}.`)
+    try {
+      const res = await authService.resendOtp({ email: destino })
+      setOtp(['', '', '', '', '', ''])
+      setOtpFallos(0)
+      if (res.expiresInSeconds) setOtpVigencia(res.expiresInSeconds)
+      setOtpAviso(`Te enviamos un código nuevo a ${destino}.`)
+      document.getElementById('otp-input-0')?.focus()
+    } catch (err) {
+      fallaDelCodigo(err)
+    }
+  }
+
+  /** Muestra el error del código según su `code`; si la verificación ya no existe, vuelve al inicio de sesión. */
+  const fallaDelCodigo = (err: unknown) => {
+    const r = errorDeOtp(err)
+    setOtpAviso('')
+    if (r.volverAlLogin) {
+      setActiveTab('login')
+      setStep('form')
+      setCamposErr({})
+      setError(r.mensaje)
+      return
+    }
+    setOtpFallos((n) => n + 1)
+    setOtp(['', '', '', '', '', ''])
+    setCamposErr({ otp: r.mensaje })
+    if (r.esperar) bloquear(r.esperar)
     document.getElementById('otp-input-0')?.focus()
   }
 
@@ -776,37 +830,14 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setError('')
     setOtpAviso('')
     try {
-      // Demostración: el código 000000 hace de código equivocado o vencido.
-      if (code === '000000') {
-        const fallos = otpFallos + 1
-        setOtpFallos(fallos)
-        setOtp(['', '', '', '', '', ''])
-        if (fallos >= 3) { setCamposErr({ otp: TEXTOS_ACCESO.otpLimite }); bloquear(ESPERA_429) }
-        else setCamposErr({ otp: TEXTOS_ACCESO.otp })
-        document.getElementById('otp-input-0')?.focus()
-        return
-      }
-      const user = await verifyOtp({ email: email.trim() || 'usuario@styleradar.co', codigoOtp: code })
+      const user = await verifyOtp({ email: email.trim() || 'usuario@styleradar.co', otpCode: code })
       if (activeTab === 'register') {
-        if (user.role === 'STORE_ADMIN') {
-          finishAuthAndNavigate('/tienda/suscripcion/activar')
-          return
-        }
-        if (user.role === 'FOUNDATION_REPRESENTATIVE') {
-          finishAuthAndNavigate('/fundacion')
-          return
-        }
-        // Justo después de crear la cuenta: abrir asistente de medidas para el probador y guardar en su perfil
-        setNewlyRegisteredUser(user)
-        setShowMeasurementsWizard(true)
+        despuesDeRegistrarse(user)
         return
       }
       entrarCon(user.role)
-    } catch (err: any) {
-      const msg = err?.message || TEXTOS_ACCESO.otp
-      setCamposErr({ otp: msg })
-      setError(msg)
-      if (err?.status === 429) bloquear(ESPERA_429)
+    } catch (err) {
+      fallaDelCodigo(err)
     } finally {
       setLoading(false)
     }
@@ -1016,22 +1047,20 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Entrando…' : 'Entrar'}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setError('')
-                      setCamposErr({})
-                      if (!email.trim()) setEmail('usuario@styleradar.co')
-                      if (cardRef.current) cardRef.current.scrollTop = 0
-                      setStep('otp')
-                      setTimeout(() => {
-                        document.getElementById('otp-input-0')?.focus()
-                      }, 60)
-                    }}
-                    className="w-full text-center text-xs font-semibold text-white/70 hover:text-white pt-1"
-                  >
-                    ¿Prefieres ingresar con código temporal? <b className="text-arena font-bold underline underline-offset-2">Entrar con OTP →</b>
-                  </button>
+                  {/* Solo en demostración: con ms-auth el código existe únicamente después de un inicio de sesión con el correo sin verificar. */}
+                  {env.useMocks && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError('')
+                        if (!email.trim()) setEmail('usuario@styleradar.co')
+                        irAlCodigo()
+                      }}
+                      className="w-full text-center text-xs font-semibold text-white/70 hover:text-white pt-1"
+                    >
+                      ¿Prefieres ingresar con código temporal? <b className="text-arena font-bold underline underline-offset-2">Entrar con OTP →</b>
+                    </button>
+                  )}
                 </form>
               ) : (
                 <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3" noValidate>
@@ -1233,19 +1262,19 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               <h2>Verifica que eres tú</h2>
               <p className="sr-sub">
                 {email ? (
-                  <>Enviamos un código de 6 dígitos a <b className="text-white">{email}</b>. Vence en 10 minutos.</>
+                  <>Enviamos un código de 6 dígitos a <b className="text-white">{email}</b>. Vence en {Math.max(1, Math.round(otpVigencia / 60))} minutos.</>
                 ) : (
                   <>Ingresa tu código de 6 dígitos para continuar.</>
                 )}
               </p>
 
               {/* Banner informativo de modo prueba para evitar confusión */}
-              <div className="rounded-xl bg-[#48119a]/25 border border-[#48119a]/50 p-2.5 text-center text-xs text-white/90">
+              {env.useMocks && <div className="rounded-xl bg-[#48119a]/25 border border-[#48119a]/50 p-2.5 text-center text-xs text-white/90">
                 <span className="block text-[11px] text-[#E8DCCB] font-bold uppercase tracking-wider mb-0.5">
                   Modo demostración activo
                 </span>
                 No necesitas esperar un correo externo. Haz clic en el botón de abajo o escribe <b className="text-arena font-mono font-bold">123456</b>.
-              </div>
+              </div>}
 
               {error && (
                 <div role="alert" className="sr-auth-err flex items-center gap-2">
@@ -1289,7 +1318,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               {camposErr.otp && <div className="flex justify-center"><ErrorCampo key={otpFallos} id="authOtp">{camposErr.otp}</ErrorCampo></div>}
 
               {/* Botón de un solo clic para autocompletar el código de prueba */}
-              <div className="flex flex-wrap items-center justify-center gap-2">
+              {env.useMocks && <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   id="btnAutoFillOtp"
@@ -1307,7 +1336,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                 >
                   <span>Probar error (000000)</span>
                 </button>
-              </div>
+              </div>}
 
               <button type="submit" disabled={loading || espera > 0} className="sr-auth-submit mt-1">
                 {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Verificando…' : 'Confirmar y entrar'}
@@ -1326,16 +1355,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                 <span>¿No recibiste el código?</span>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const targetEmail = email.trim() || 'usuario@styleradar.co'
-                    try {
-                      await authService.resendOtp({ email: targetEmail })
-                      setError('')
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : 'Error al reenviar código.')
-                    }
-                  }}
-                  className="font-semibold text-[#E8DCCB] hover:underline"
+                  onClick={pedirOtroCodigo}
+                  disabled={espera > 0}
+                  className="font-semibold text-[#E8DCCB] hover:underline disabled:opacity-50"
                 >
                   Reenviar código
                 </button>

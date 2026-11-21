@@ -56,9 +56,11 @@ export class ApiError extends Error {
 export function aApiError(error: AxiosError<unknown>): ApiError {
   const status = error.response?.status ?? 0
   const data = error.response?.data
-  if (status === 401) {
+  if (status === 401 && tokenStorage.get()) {
     // Había sesión y venció: se guarda la página para volver a ella al iniciar sesión otra vez.
-    if (tokenStorage.get()) guardarRetorno()
+    // Sin token (contraseña mala, código OTP equivocado, logout ya limpio) no hay sesión que vencer:
+    // avisar aquí abría el aviso de sesión vencida y repetía el logout sin fin.
+    guardarRetorno()
     tokenStorage.clear()
     window.dispatchEvent(new Event('sr:sesion-expirada'))
   }

@@ -1,10 +1,11 @@
 import { createContext } from 'react'
-import type { LoginRequestDto, RegisterRequestDto, UserSessionDto, VerifyOtpRequestDto } from '../types/auth.dto'
+import type { LoginRequestDto, LoginResult, RegisterRequestDto, UserSessionDto, VerifyOtpRequestDto } from '../types/auth.dto'
 
 export interface AuthState {
   user: UserSessionDto | null
-  login: (payload: LoginRequestDto) => Promise<UserSessionDto>
-  register: (payload: RegisterRequestDto) => Promise<UserSessionDto>
+  /** Entra directo ('session') o pide el código OTP cuando el correo no está verificado ('otp'). */
+  login: (payload: LoginRequestDto) => Promise<LoginResult>
+  register: (payload: RegisterRequestDto) => Promise<LoginResult>
   verifyOtp: (payload: VerifyOtpRequestDto) => Promise<UserSessionDto>
   /** Actualiza los datos visibles de la sesión (por ejemplo, el nombre después de editar el perfil). */
   updateUser: (changes: Partial<Pick<UserSessionDto, 'name'>>) => void
