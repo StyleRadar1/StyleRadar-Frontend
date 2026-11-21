@@ -1,10 +1,14 @@
-import { useContext, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useContext, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { hasScenario } from '@/modules/core/api/mockScenario'
 import { ErrorCard } from '@/modules/core/components/ErrorScene'
 import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { AuthContext } from '@/modules/identidad/states/authContext'
+import { env } from '@/configs/env'
+import { errorKind, errorMessage } from '@/modules/core/api/errors'
+import { storeSettingsService } from '../services/storeSettingsService'
+import type { StoreResponseDto } from '../types/store.dto'
 import './MiTiendaPage.css'
 import './MiTiendaDashboard.css'
 
@@ -85,6 +89,19 @@ function readCollections(): StoreCollection[] {
   }
 }
 
+/** F-19: lo que trae ms-tiendas del almacén de la Tienda; lo que no trae se queda como estaba. */
+function legalDesdeServidor(store: StoreResponseDto): Partial<LegalStoreInfo> {
+  return {
+    nit: store.nit,
+    ...(store.tradeName ? { legalName: store.tradeName } : {}),
+    ...(store.phone ? { phone: store.phone } : {}),
+    ...(store.contactEmail ? { email: store.contactEmail } : {}),
+  }
+}
+
+/** Texto cuando no se pudo leer el almacén de la Tienda (GET /users/{userId}/store). */
+const SIN_ALMACEN = 'Tu cuenta todavía no tiene un almacén asociado. Escríbele a soporte de StyleRadar para que lo asignen.'
+
 function readLegalInfo(): LegalStoreInfo {
   try {
     const saved = localStorage.getItem(STORAGE_LEGAL_KEY)
@@ -151,6 +168,25 @@ export default function MiTiendaPage() {
   const [legalInfo, setLegalInfo] = useState<LegalStoreInfo>(readLegalInfo)
   const [editingInfo, setEditingInfo] = useState(false)
   const [legalDraft, setLegalDraft] = useState<LegalStoreInfo>(readLegalInfo)
+
+  /* F-19: el NIT del almacén sale de ms-tiendas (GET /api/v1/users/{userId}/store). Con datos de prueba se usa el guardado. */
+  const [storeError, setStoreError] = useState('')
+  const userId = user?.id ? String(user.id) : ''
+  useEffect(() => {
+    if (env.useMocks || !userId) return
+    let active = true
+    storeSettingsService.getMyStore(userId)
+      .then((store) => {
+        if (!active) return
+        const desdeServidor = legalDesdeServidor(store)
+        setLegalInfo((li) => ({ ...li, ...desdeServidor }))
+        setLegalDraft((li) => ({ ...li, ...desdeServidor }))
+      })
+      .catch((e) => {
+        if (active) setStoreError(errorKind(e) === 'no-existe' ? SIN_ALMACEN : errorMessage(e, 'No pudimos cargar los datos de tu almacén.'))
+      })
+    return () => { active = false }
+  }, [userId])
 
   /* Fotos de la tienda */
   const [storeGallery, setStoreGallery] = useState<StoreGalleryPhoto[]>(readGallery)
@@ -402,6 +438,7 @@ export default function MiTiendaPage() {
           <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para pagar con otro medio y mantener tu tienda visible.</p></div>
           <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
         </div>
+        {storeError && <ErrorBanner tone="warn" icon="info" title={storeError} />}
         {verificationError && (
           <ErrorBanner tone="warn" icon="info" title={verificationError}>
             Nuestro equipo ya está revisando los documentos de tu tienda. Te avisaremos cuando finalice la revisión.
