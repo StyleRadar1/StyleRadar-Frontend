@@ -5,8 +5,20 @@ import { env } from '@/configs/env'
 import { seedConversations, seedMessages } from '../mocks/chat'
 import { MAX_MENSAJE, TIPO_ESPEJO, type ConversacionDto, type IniciarConversacionDto, type MensajeDto } from '../types/chat.dto'
 
-/** Rutas del API Gateway hacia ms-chat. Provisionales hasta tener el Swagger. */
-const BASE = '/api/chat/conversations'
+/** Rutas de ms-chat según su Swagger, vía API Gateway. */
+const MIS_CONVERSACIONES = '/api/v1/users/conversations'
+const BANDEJA_ALMACEN = '/api/v1/stores/conversations'
+const conversacion = (id: string) => `/api/v1/conversations/${encodeURIComponent(id)}/messages`
+/** Cada tipo de conversación se abre desde su propia ruta: tienda (SR-RF-73), vendedor (SR-RF-40) o donación (GJ-57). */
+const inicio = (req: IniciarConversacionDto) =>
+  req.contacto.tipo === 'TIENDA' ? `/api/v1/stores/${encodeURIComponent(req.contacto.id)}/conversations`
+  : req.contacto.tipo === 'VENDEDOR' ? `/api/v1/second-hand/publications/${encodeURIComponent(req.referenciaId ?? '')}/conversations`
+  : `/api/v1/donations/${encodeURIComponent(req.referenciaId ?? '')}/conversations`
+
+/** Rol de la sesión: el almacén lee su bandeja; las demás cuentas, «mis conversaciones». */
+const rolDeSesion = (): string | null => {
+  try { return JSON.parse(localStorage.getItem('sr_user') ?? 'null')?.role ?? null } catch { return null }
+}
 
 /** Se dispara cuando cambia algo que mueve el contador de mensajes sin leer del menú. */
 export const CHAT_CHANGED = 'sr:chat'
@@ -41,7 +53,10 @@ export const chatService = {
       failIfScenario()
       return mockDelay([...(db().convs[me().id] ?? [])].sort((a, b) => b.actualizadaEn.localeCompare(a.actualizadaEn)))
     }
-    return apiClient.get<ConversacionDto[]>(BASE).then((r) => r.data)
+    const rol = rolDeSesion()
+    // El administrador de StyleRadar no tiene conversaciones: no hay nada que pedir
+    if (rol === 'ADMIN_STYLERADAR') return []
+    return apiClient.get<ConversacionDto[]>(rol === 'ADMIN_ALMACEN' ? BANDEJA_ALMACEN : MIS_CONVERSACIONES).then((r) => r.data)
   },
 
   /** Total de mensajes sin leer, para el ícono de mensajes del menú. */
@@ -73,7 +88,8 @@ export const chatService = {
       db().msgs[c.id] = []
       return mockDelay(c, 300)
     }
-    return apiClient.post<ConversacionDto>(BASE, req).then((r) => r.data)
+    // Cuerpo provisional {texto}: es el primer mensaje que pide el endpoint. Ajustar al esquema del Swagger.
+    return apiClient.post<ConversacionDto>(inicio(req), { texto: req.primerMensaje ?? `Hola, me interesa: ${req.asunto}` }).then((r) => r.data)
   },
 
   /** Al abrir la conversación sus mensajes quedan leídos. */
@@ -84,7 +100,7 @@ export const chatService = {
       if (c.noLeidos) { c.noLeidos = 0; changed() }
       return mockDelay(db().msgs[id] ?? [])
     }
-    const r = await apiClient.get<MensajeDto[]>(`${BASE}/${encodeURIComponent(id)}/messages`)
+    const r = await apiClient.get<MensajeDto[]>(conversacion(id))
     changed()
     return r.data
   },
@@ -108,6 +124,6 @@ export const chatService = {
       }
       return mockDelay(m, 300)
     }
-    return apiClient.post<MensajeDto>(`${BASE}/${encodeURIComponent(id)}/messages`, { texto: t }).then((r) => r.data)
+    return apiClient.post<MensajeDto>(conversacion(id), { texto: t }).then((r) => r.data)
   },
 }

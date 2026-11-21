@@ -61,6 +61,16 @@ describe('búsquedas y alertas (RF-28 a RF-32)', () => {
     expect(screen.queryByRole('switch', { name: /Chaqueta de cuero M/ })).not.toBeInTheDocument()
   })
 
+  it('cancelar el seguimiento de una prenda la deja apagada, no la borra', async () => {
+    const user = userEvent.setup()
+    renderAt('/alertas', routes)
+    await user.click(await screen.findByRole('button', { name: 'Cancelar seguimiento de Tenis retro gris' }, { timeout: 3000 }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar seguimiento' }))
+    expect(await screen.findByText('Cancelaste el seguimiento de «Tenis retro gris».')).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'Alerta para Tenis retro gris' })).toHaveAttribute('aria-checked', 'false')
+    expect(screen.queryByRole('button', { name: 'Cancelar seguimiento de Tenis retro gris' })).not.toBeInTheDocument()
+  })
+
   it('con Radar+ no hay límite ni candado', async () => {
     const user = userEvent.setup()
     setMockPlan('u-1', 'RADAR_PLUS')

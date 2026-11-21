@@ -119,12 +119,37 @@ export default function ItemDetailPage() {
   // 403 y 404 se ven igual: la prenda no existe o no está disponible para esta persona
   const noExiste = !!error && (errorKind(error) === 'no-existe' || errorKind(error) === 'permiso')
 
+  // ¿Ya sigo esta prenda (y talla)? Así el botón dice «Cancelar seguimiento» en lugar de pedir otra alerta
+  const [seguimiento, setSeguimiento] = useState<string | null>(null)
+  const prendaId = prenda?.id
+  useEffect(() => {
+    if (!prendaId || !isBuyer) return
+    let activo = true
+    alertService.check(prendaId, tallaSeleccionada || undefined).then((r) => { if (activo) setSeguimiento(r.suscrita && r.alertaId ? r.alertaId : null) })
+    return () => { activo = false }
+  }, [prendaId, tallaSeleccionada, isBuyer])
+
   const crearAlerta = async () => {
     if (!prenda || ocupado) return
     setOcupado('alerta'); setAviso(null)
     try {
-      await alertService.createAlert(prenda.id, prenda.nombre, prenda.tienda, tallaSeleccionada || undefined)
+      const a = await alertService.createAlert(prenda.id, prenda.nombre, prenda.tienda, tallaSeleccionada || undefined)
+      setSeguimiento(a.id)
       setAviso({ tono: 'exito', titulo: 'Te avisaremos cuando llegue', texto: 'La encuentras en «Mis búsquedas y alertas».', accion: 'ver-alertas' })
+    } catch (e) {
+      // 409: ya la sigues; el botón pasa a «Cancelar seguimiento»
+      if (e instanceof ApiError && e.status === 409) alertService.check(prenda.id, tallaSeleccionada || undefined).then((r) => { if (r.suscrita && r.alertaId) setSeguimiento(r.alertaId) })
+      setAviso(avisoAlerta(e))
+    } finally { setOcupado(null) }
+  }
+
+  const cancelarSeguimiento = async () => {
+    if (!prenda || ocupado || seguimiento === null) return
+    setOcupado('alerta'); setAviso(null)
+    try {
+      await alertService.cancelAlert(seguimiento)
+      setSeguimiento(null)
+      setAviso({ tono: 'info', titulo: 'Cancelaste el seguimiento', texto: 'Ya no te avisaremos cuando llegue esta prenda.' })
     } catch (e) {
       setAviso(avisoAlerta(e))
     } finally { setOcupado(null) }
@@ -749,8 +774,8 @@ export default function ItemDetailPage() {
                       <button type="button" onClick={reservar} disabled={!!ocupado} className={`${BTN_PRINCIPAL} flex-1`}>
                         {ocupado === 'reserva' ? 'Reservando…' : 'Reservar en tienda'}
                       </button>
-                      <button type="button" onClick={crearAlerta} disabled={!!ocupado} className={`${BTN_SECUNDARIO} flex-1`}>
-                        {ocupado === 'alerta' ? 'Creando alerta…' : 'Avisarme cuando llegue'}
+                      <button type="button" onClick={seguimiento === null ? crearAlerta : cancelarSeguimiento} disabled={!!ocupado} className={`${BTN_SECUNDARIO} flex-1`}>
+                        {ocupado === 'alerta' ? (seguimiento === null ? 'Creando alerta…' : 'Cancelando…') : seguimiento === null ? 'Avisarme cuando llegue' : 'Cancelar seguimiento'}
                       </button>
                     </div>
                     {aviso && (

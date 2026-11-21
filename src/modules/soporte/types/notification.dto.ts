@@ -37,7 +37,11 @@ export interface AlertasResumenDto {
   busquedas: BusquedaGuardadaDto[]
 }
 
-export type TipoNotificacion = 'NUEVA_COINCIDENCIA' | 'DISPONIBILIDAD_RESTABLECIDA' | 'MENSAJE'
+/** Los 9 tipos de aviso del servicio, más los nombres de los datos de prueba anteriores. */
+export type TipoNotificacion =
+  | 'REPOSICION_STOCK' | 'COINCIDENCIA_BUSQUEDA' | 'MENSAJE_NUEVO' | 'CAMBIO_DONACION' | 'MODERACION_PRENDA'
+  | 'SOLICITUD_DONACION' | 'PRENDA_VENDIDA' | 'PAGO_CONFIRMADO' | 'SISTEMA'
+  | 'NUEVA_COINCIDENCIA' | 'DISPONIBILIDAD_RESTABLECIDA' | 'MENSAJE'
 
 /** RF-31: aviso que se muestra en la campana. */
 export interface NotificacionDto {

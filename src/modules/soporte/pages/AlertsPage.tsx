@@ -80,13 +80,14 @@ export default function AlertsPage() {
     inFlight.current = true; setBusy(remove.id); setMsg(null)
     try {
       if (remove.kind === 'alerta') {
-        await alertService.removeAlert(remove.id)
-        setData((d) => ({ ...d, alertas: d.alertas.filter((x) => x.id !== remove.id) }))
+        await alertService.cancelAlert(remove.id)
+        // El servicio la desactiva, no la borra: se queda en la lista como apagada y se puede volver a encender
+        setData((d) => ({ ...d, alertas: d.alertas.map((x) => (x.id === remove.id ? { ...x, activa: false } : x)) }))
       } else {
         await alertService.removeSearch(remove.id)
         setData((d) => ({ ...d, busquedas: d.busquedas.filter((x) => x.id !== remove.id) }))
       }
-      setMsg({ ok: true, text: `Eliminaste «${remove.nombre}».` })
+      setMsg({ ok: true, text: remove.kind === 'alerta' ? `Cancelaste el seguimiento de «${remove.nombre}».` : `Eliminaste «${remove.nombre}».` })
     } catch (e) {
       const m = errorAlerta(e)
       if (m.quitar) quitar(remove.kind, remove.id)
@@ -175,7 +176,9 @@ export default function AlertsPage() {
                       <p className="text-sm text-[var(--color-text-muted)]">{a.tienda} · desde el {dia(a.creadaEn)}</p>
                     </div>
                     <Toggle label={`Alerta para ${a.prenda}`} on={a.activa} locked={!a.activa && lleno} busy={busy === a.id} onChange={(v) => toggle('alerta', a.id, v, a.prenda)} />
-                    <button type="button" disabled={busy === a.id} onClick={() => setRemove({ kind: 'alerta', id: a.id, nombre: a.prenda })} className="rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-danger)]" aria-label={`Eliminar ${a.prenda}`}>Eliminar</button>
+                    {a.activa && (
+                      <button type="button" disabled={busy === a.id} onClick={() => setRemove({ kind: 'alerta', id: a.id, nombre: a.prenda })} className="rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-danger)]" aria-label={`Cancelar seguimiento de ${a.prenda}`}>Cancelar seguimiento</button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -186,8 +189,8 @@ export default function AlertsPage() {
         )}
 
       <ConfirmDialog open={!!remove} busy={!!remove && busy === remove.id} danger onCancel={() => setRemove(null)} onConfirm={confirmRemove}
-        title={remove?.kind === 'busqueda' ? '¿Eliminar la búsqueda guardada?' : '¿Eliminar la alerta?'} confirmLabel="Eliminar">
-        {remove?.kind === 'busqueda' ? `«${remove.nombre}» y su alerta dejarán de estar en tu cuenta.` : `Ya no te avisaremos cuando «${remove?.nombre}» vuelva a estar disponible.`}
+        title={remove?.kind === 'busqueda' ? '¿Eliminar la búsqueda guardada?' : '¿Cancelar el seguimiento?'} confirmLabel={remove?.kind === 'busqueda' ? 'Eliminar' : 'Cancelar seguimiento'}>
+        {remove?.kind === 'busqueda' ? `«${remove.nombre}» y su alerta dejarán de estar en tu cuenta.` : `Ya no te avisaremos cuando «${remove?.nombre}» vuelva a estar disponible. Podrás activarlo de nuevo desde esta lista.`}
       </ConfirmDialog>
     </section>
   )
