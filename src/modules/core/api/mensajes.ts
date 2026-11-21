@@ -66,6 +66,26 @@ export const MENSAJES_POR_CODIGO: Record<string, string> = {
   PLAYLIST_PRIVADA: 'No tienes permisos para consultar esta playlist privada.',
   LIMITE_DESTACADAS: 'Límite máximo de 3 playlists destacadas alcanzado.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intenta de nuevo en unos minutos.',
+
+  // Códigos en inglés acordados con ms-auth, ms-usuarios y ms-tiendas (hoja Contrato · F-25 y F-29).
+  // Los de la cuenta nunca dicen si el correo existe ni si la cuenta está bloqueada.
+  INVALID_DATA: 'Revisa los datos marcados.',
+  INVALID_CREDENTIALS: 'El correo o la contraseña son incorrectos.',
+  ACCOUNT_NOT_ACTIVE: 'No pudimos iniciar sesión. Si sigue pasando, escribe a soporte.',
+  ACCESS_DENIED: 'No tienes permiso para hacer esto.',
+  UNAUTHENTICATED: 'Tu sesión venció, vuelve a iniciar sesión.',
+  INVALID_TOKEN: 'Tu sesión venció, vuelve a iniciar sesión.',
+  RATE_LIMIT_EXCEEDED: 'Hiciste demasiados intentos. Espera un momento para volver a intentarlo.',
+  SERVICE_UNAVAILABLE: 'El servicio no está disponible en este momento. Intenta en unos minutos.',
+  INTERNAL_ERROR: 'Ocurrió un error inesperado. Intenta de nuevo en unos minutos.',
+  OTP_INCORRECT: 'El código no es correcto. Revísalo e intenta de nuevo.',
+  OTP_EXPIRED: 'El código venció. Pide uno nuevo.',
+  OTP_ATTEMPTS_EXHAUSTED: 'Fallaste el código 3 veces. Espera un momento y pide otro.',
+  OTP_RESEND_BLOCKED: 'Espera un momento para pedir un código nuevo.',
+  OTP_SESSION_NOT_FOUND: 'Tu verificación venció. Inicia sesión de nuevo para recibir otro código.',
+  RESENDS_EXHAUSTED: 'Ya pediste el código muchas veces. Inicia sesión de nuevo para recibir otro.',
+  FILE_TOO_LARGE: 'El archivo es muy grande. Elige uno más liviano.',
+  BUSINESS_RULE_VIOLATION: 'No se pudo completar la acción. Revisa los datos e intenta de nuevo.',
 }
 
 /** Devuelve el mensaje amigable asociado a un `code` del backend, si existe en el catálogo. */

@@ -33,6 +33,10 @@ export class ApiError extends Error {
   readonly code?: string
   /** Marca temporal ISO-8601 devuelta por ProblemDetail. */
   readonly timestamp?: string
+  /** Intentos que le quedan a la persona (ProblemDetail.attemptsRemaining, p. ej. en OTP_INCORRECT). */
+  attemptsRemaining?: number
+  /** Segundos de espera antes de reintentar (ProblemDetail.retryAfterSeconds o cabecera Retry-After en los 429). */
+  retryAfterSeconds?: number
   constructor(status: number, message: string, fieldsOrCode: CamposConError | string = {}, code?: string, timestamp?: string) {
     super(message)
     this.name = 'ApiError'
@@ -64,11 +68,34 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
   if (import.meta.env.DEV) {
     console.warn(`[api] ${status || 'sin respuesta'} ${error.config?.method?.toUpperCase() ?? ''} ${error.config?.url ?? ''}`, data ?? error.message)
   }
-  const obj = typeof data === 'object' && data !== null ? (data as { errorCode?: unknown; code?: unknown; timestamp?: unknown }) : undefined
+  const obj = typeof data === 'object' && data !== null
+    ? (data as { errorCode?: unknown; code?: unknown; timestamp?: unknown; attemptsRemaining?: unknown; retryAfterSeconds?: unknown })
+    : undefined
   const code = typeof obj?.code === 'string' ? obj.code : typeof obj?.errorCode === 'string' ? obj.errorCode : undefined
   const timestamp = typeof obj?.timestamp === 'string' ? obj.timestamp : undefined
   const message = mensajePorCodigo(code) ?? MENSAJES[kindFromStatus(status)]
-  return new ApiError(status, message, camposDelError(data), code, timestamp)
+  const apiError = new ApiError(status, message, camposDelError(data), code, timestamp)
+  const intentos = numeroNoNegativo(obj?.attemptsRemaining)
+  if (intentos !== undefined) apiError.attemptsRemaining = intentos
+  const espera = numeroNoNegativo(obj?.retryAfterSeconds) ?? numeroNoNegativo(cabecera(error, 'retry-after'))
+  if (espera !== undefined) apiError.retryAfterSeconds = espera
+  return apiError
+}
+
+/** Número entero mayor o igual a 0 (acepta "60" como texto, como llega en la cabecera Retry-After). */
+function numeroNoNegativo(x: unknown): number | undefined {
+  const n = typeof x === 'number' ? x : typeof x === 'string' && x.trim() !== '' ? Number(x) : NaN
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : undefined
+}
+
+function cabecera(error: AxiosError<unknown>, nombre: string): unknown {
+  const headers = error.response?.headers as Record<string, unknown> | { get?: (n: string) => unknown } | undefined
+  if (!headers) return undefined
+  if (typeof (headers as { get?: unknown }).get === 'function') {
+    const v = (headers as { get: (n: string) => unknown }).get(nombre)
+    if (v !== undefined && v !== null) return v
+  }
+  return (headers as Record<string, unknown>)[nombre]
 }
 
 apiClient.interceptors.response.use(
