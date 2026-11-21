@@ -146,8 +146,8 @@ export const authService = {
       const user: UserSessionDto = { id: `u-n${registradas.length + 1}`, name: payload.name.trim(), email, role }
       registradas.push({ ...user, password: payload.password, verificado: false })
       agregarUsuarioMock({
-        id: user.id, nombre: user.name, correo: email, rol: role, plan: 'RADAR', estado: 'ACTIVA', barrio: payload.neighborhood?.trim() ?? '',
-        miembroDesde: new Date().toISOString().slice(0, 10),
+        id: user.id, name: user.name, email, roles: [role], accountStatus: 'ACTIVE', neighborhood: payload.neighborhood?.trim() ?? '',
+        registeredAt: new Date().toISOString(),
       })
       return this.login({ email, password: payload.password })
     }

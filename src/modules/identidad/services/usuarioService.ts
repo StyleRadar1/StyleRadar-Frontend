@@ -3,12 +3,14 @@ import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { MENSAJES } from '@/modules/core/api/mensajes'
 import { env } from '@/configs/env'
+import { aRol } from '@/modules/core/types/roles'
 import { PERFILES_BASE, USUARIOS_BASE, perfilNuevo } from '../mocks/usuarios'
 import {
-  GARMENT_TYPES,
-  type ActualizarPerfilDto, type CambioEstadoDto, type PerfilDto, type SizesByGarmentType, type UpdateUserRequestDto,
-  type UserProfileDto, type UsuarioAdminDto,
+  ADMIN_PAGE_SIZE_MAX, ADMIN_Q_MAX, GARMENT_TYPES, REASON_MAX,
+  type ActualizarPerfilDto, type AdminUserDto, type AdminUsersQuery, type ChangeStatusRequestDto, type PageDto,
+  type PerfilDto, type SizesByGarmentType, type UpdateUserRequestDto, type UserProfileDto,
 } from '../types/usuario.dto'
+import { normalizar } from '../utils/formato'
 
 /** Solo datos de prueba: con este barrio el guardado responde 400 con errores por campo. */
 export const BARRIO_DEMO_400 = 'prueba-400'
@@ -16,7 +18,7 @@ export const BARRIO_DEMO_400 = 'prueba-400'
 export const DEMO_ESTADO = { sinPermiso: 'u-12', noExiste: 'u-11' } as const
 
 /* Estado de los datos de prueba: vive mientras la pestaña esté abierta. */
-let usuarios: UsuarioAdminDto[] = structuredClone(USUARIOS_BASE)
+let usuarios: AdminUserDto[] = structuredClone(USUARIOS_BASE)
 let perfiles: Record<string, PerfilDto> = structuredClone(PERFILES_BASE)
 
 /** Vuelve los datos de prueba a su estado inicial (lo usan las pruebas). */
@@ -26,9 +28,58 @@ export function resetUsuariosMock() {
 }
 
 /** Registra en los datos de prueba una cuenta creada con el registro. */
-export function agregarUsuarioMock(u: UsuarioAdminDto) {
+export function agregarUsuarioMock(u: AdminUserDto) {
   usuarios = [u, ...usuarios.filter((x) => x.id !== u.id)]
-  perfiles[u.id] = perfilNuevo(u.id, u.nombre, u.correo, u.barrio)
+  perfiles[u.id] = perfilNuevo(u.id, u.name, u.email, u.neighborhood ?? '')
+}
+
+/** Convierte la cuenta que manda ms-usuarios (id numérico, roles en lista) a la de la pantalla. */
+export function aUsuarioAdmin(dto: AdminUserDto): AdminUserDto {
+  return {
+    ...dto,
+    id: String(dto.id),
+    name: dto.name ?? '',
+    email: dto.email ?? '',
+    neighborhood: dto.neighborhood ?? '',
+    roles: (dto.roles ?? []).map((r) => aRol(r)).filter((r): r is NonNullable<typeof r> => !!r),
+  }
+}
+
+const VACIA: PageDto<AdminUserDto> = { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0, first: true, last: true }
+
+/** Solo los filtros con valor y dentro de los límites del documento (q ≤ 100, page ≥ 0, size 1–100). */
+export function filtrosParaEnviar(f: AdminUsersQuery): Record<string, string | number> {
+  const out: Record<string, string | number> = {}
+  if (f.status) out.status = f.status
+  if (f.role) out.role = f.role
+  const q = f.q?.trim().slice(0, ADMIN_Q_MAX)
+  if (q) out.q = q
+  out.page = Math.max(0, Math.floor(f.page ?? 0))
+  out.size = Math.min(ADMIN_PAGE_SIZE_MAX, Math.max(1, Math.floor(f.size ?? 20)))
+  return out
+}
+
+/** Búsqueda de prueba con las mismas reglas que el back: estado, rol, nombre o correo y una página. */
+function buscarMock(f: AdminUsersQuery): PageDto<AdminUserDto> {
+  const p = filtrosParaEnviar(f)
+  const q = typeof p.q === 'string' ? normalizar(p.q) : ''
+  const todas = usuarios.filter((u) => (!f.status || u.accountStatus === f.status)
+    && (!f.role || u.roles.includes(f.role))
+    && (!q || normalizar(`${u.name} ${u.email}`).includes(q)))
+  const page = Number(p.page), size = Number(p.size)
+  const totalPages = Math.ceil(todas.length / size)
+  return {
+    content: structuredClone(todas.slice(page * size, page * size + size)),
+    page, size, totalElements: todas.length, totalPages, first: page === 0, last: page >= totalPages - 1,
+  }
+}
+
+/** Solo datos de prueba: validaciones del PATCH /status (EX-02, EX-03, EX-04, EX-08). */
+function validarCambioMock(u: AdminUserDto, body: ChangeStatusRequestDto) {
+  if (!body.status) throw new ApiError(400, MENSAJES.datos, { status: 'El estado es obligatorio.' })
+  if (body.status === 'BLOCKED' && !body.reason?.trim()) throw new ApiError(400, MENSAJES.datos, { reasonValid: 'El bloqueo exige un motivo no vacío' })
+  if ((body.reason?.length ?? 0) > REASON_MAX) throw new ApiError(400, MENSAJES.datos, { reason: `El motivo admite hasta ${REASON_MAX} caracteres.` })
+  if (u.accountStatus === body.status) throw new ApiError(403, MENSAJES.permiso)
 }
 
 /** Id de la persona con sesión: las rutas de ms-usuarios van por {id}, sin /me (D2 · D15 · F-32). */
@@ -86,28 +137,49 @@ const ordenados = (l: string[]) => [...l].sort()
 
 /** ms-usuarios (8120) a través del API Gateway. */
 export const usuarioService = {
-  /** RF-66: lista para el administrador. */
-  async list(): Promise<UsuarioAdminDto[]> {
+  /** SR-RF-66: búsqueda del administrador con filtros y paginación (GET /api/v1/admin/users). */
+  async listAdmin(filtros: AdminUsersQuery = {}): Promise<PageDto<AdminUserDto>> {
     if (env.useMocks) {
       failIfScenario()
-      return mockDelay(usuarios)
+      return mockDelay(buscarMock(filtros))
     }
-    return apiClient.get<UsuarioAdminDto[]>('/api/usuarios').then((r) => r.data)
+    return apiClient.get<PageDto<AdminUserDto>>('/api/v1/admin/users', { params: filtrosParaEnviar(filtros) })
+      .then((r) => ({ ...VACIA, ...r.data, content: (r.data?.content ?? []).map(aUsuarioAdmin) }))
   },
 
-  /** RF-66: cambia una cuenta a Activa, Inactiva o Bloqueada. */
-  async setStatus(id: string, body: CambioEstadoDto): Promise<UsuarioAdminDto> {
+  /** SR-RF-66: detalle de una cuenta con su auditoría (GET /api/v1/admin/users/{id}). */
+  async getAdmin(id: string): Promise<AdminUserDto> {
+    if (env.useMocks) {
+      failIfScenario()
+      const u = usuarios.find((x) => x.id === id)
+      if (!u) throw new ApiError(404, 'Esa cuenta ya no existe.')
+      return mockDelay(structuredClone(u))
+    }
+    return apiClient.get<AdminUserDto>(`/api/v1/admin/users/${encodeURIComponent(id)}`).then((r) => aUsuarioAdmin(r.data))
+  },
+
+  /** SR-RF-66: cambia una cuenta a Activa, Inactiva o Bloqueada (PATCH /api/v1/admin/users/{id}/status). */
+  async setStatus(id: string, body: ChangeStatusRequestDto): Promise<AdminUserDto> {
+    const reason = body.reason?.trim()
+    const envio: ChangeStatusRequestDto = { status: body.status, ...(reason ? { reason } : {}) }
     if (env.useMocks) {
       failIfScenario('conflicto')
       // Demostración de los errores del plan con datos de prueba.
       if (id === DEMO_ESTADO.sinPermiso) throw new ApiError(403, MENSAJES.permiso)
+      if (String(mockSessionUser()?.id) === id) throw new ApiError(403, MENSAJES.permiso) // EX-07: la propia cuenta
       if (id === DEMO_ESTADO.noExiste) usuarios = usuarios.filter((x) => x.id !== id) // «la borraron» mientras se veía la lista
       const u = usuarios.find((x) => x.id === id)
       if (!u) throw new ApiError(404, 'Esa cuenta ya no existe.')
-      u.estado = body.estado
-      return mockDelay(u, 250)
+      validarCambioMock(u, envio)
+      Object.assign(u, {
+        accountStatus: envio.status,
+        statusChangedAt: new Date().toISOString(),
+        statusChangedBy: mockSessionUser()?.id ?? null,
+        statusChangeReason: envio.reason ?? null,
+      })
+      return mockDelay(structuredClone(u), 250)
     }
-    return apiClient.patch<UsuarioAdminDto>(`/api/usuarios/${encodeURIComponent(id)}/estado`, body).then((r) => r.data)
+    return apiClient.patch<AdminUserDto>(`/api/v1/admin/users/${encodeURIComponent(id)}/status`, envio).then((r) => aUsuarioAdmin(r.data))
   },
 
   /** Anexo D15: perfil de una cuenta (GET /api/v1/users/{id}). El comprador solo puede ver el suyo. */
@@ -147,7 +219,7 @@ export const usuarioService = {
       Object.assign(p, structuredClone({ ...body, sizesByGarmentType: sizes }))
       p.usualSizes = sizes.TOP ?? []
       const fila = usuarios.find((x) => x.id === p.id)
-      if (fila) { fila.nombre = p.name; fila.barrio = p.neighborhood }
+      if (fila) { fila.name = p.name; fila.neighborhood = p.neighborhood }
       return mockDelay(p, 400)
     }
 

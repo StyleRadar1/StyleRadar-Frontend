@@ -6,6 +6,13 @@ export function mesAnio(iso: string): string {
   return y && m ? `${MESES[m - 1]} ${y}` : '—'
 }
 
+/** Fecha y hora de Bogotá para la auditoría: «2 mar 2026, 10:20 a. m.». Vacío o inválido → «—». */
+export function fechaHora(iso?: string | null): string {
+  const d = iso ? new Date(iso) : null
+  if (!d || Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
+}
+
 /** Iniciales para el avatar: «Valentina Rojas» → «VR». */
 export function iniciales(nombre: string): string {
   return nombre.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || '?'

@@ -17,6 +17,7 @@ import LandingPage from '@/modules/landing/pages/LandingPage'
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
 const AdminUsers = lazy(() => import('@/modules/identidad/pages/AdminUsersPage'))
+const AdminUserDetail = lazy(() => import('@/modules/identidad/pages/AdminUserDetailPage'))
 const Catalog = lazy(() => import('@/modules/catalogo/pages/CatalogPage'))
 const ItemDetail = lazy(() => import('@/modules/catalogo/pages/ItemDetailPage'))
 const MapPage = lazy(() => import('@/modules/mapa/pages/MapPage'))
@@ -154,6 +155,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/admin', element: <Navigate to="/admin/estadisticas" replace /> },
       { path: '/admin/estadisticas', element: page(<Stats />) },
       { path: '/admin/usuarios', element: page(<AdminUsers />) },
+      { path: '/admin/usuarios/:id', element: page(<AdminUserDetail />) },
       { path: '/admin/tiendas', element: page(<AdminStores />) },
       { path: '/admin/tiendas/:id', element: page(<AdminStoreDetail />) },
       { path: '/admin/fundaciones', element: page(<AdminFoundations />) },
