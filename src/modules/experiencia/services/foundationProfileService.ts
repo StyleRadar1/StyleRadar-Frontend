@@ -17,6 +17,9 @@ export const foundationProfileService = {
       if (!p) throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
       return mockDelay(p)
     }
-    return apiClient.get<FoundationProfileDto>('/api/donations/foundations/me').then((r) => r.data)
+    return apiClient
+      .get<FoundationProfileDto>('/api/v1/donaciones/foundations/me')
+      .catch(() => apiClient.get<FoundationProfileDto>('/api/donations/foundations/me'))
+      .then((r) => r.data)
   },
 }

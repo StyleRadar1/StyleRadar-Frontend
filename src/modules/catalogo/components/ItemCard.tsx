@@ -15,12 +15,9 @@ const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
 }
 
 export function ItemCard({ item }: { item: ItemResponseDto }) {
-  const storeId = getStoreIdByName(item.tienda)
-  const fotoSecundaria =
-    (item.imagenes && item.imagenes.length > 1 ? item.imagenes[1] : null) ||
-    item.imagenSecundaria ||
-    (item.recorte && item.recorte !== item.imagen ? item.recorte : null)
-  const tieneDescuento = Boolean(item.descuento && item.precioAnterior && item.precioAnterior > item.precio)
+  const storeName = item.tienda || item.marca || ''
+  const storeId = getStoreIdByName(storeName)
+  const imgPrincipal = item.imagen || item.fotografias?.[0] || ''
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm transition duration-200 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-md">
@@ -30,44 +27,28 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         className="relative block aspect-[3/4] w-full shrink-0 overflow-hidden rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
       >
         {/* Fondo uniforme: copia de la misma foto con blur fuerte (32px), scale 1.4, saturate 1.15 y opacidad 1 */}
-        <img
-          src={item.imagen}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          decoding="async"
-          className="pointer-events-none absolute inset-0 h-full w-full scale-[1.4] object-cover opacity-100 blur-[32px] saturate-[1.15]"
-        />
+        {imgPrincipal && (
+          <img
+            src={imgPrincipal}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            className="pointer-events-none absolute inset-0 h-full w-full scale-[1.4] object-cover opacity-100 blur-[32px] saturate-[1.15]"
+          />
+        )}
         {/* Foto principal completa (object-contain) con máscara de degradado en los 4 bordes para fundirse con el fondo */}
         <img
-          src={item.imagen}
+          src={imgPrincipal}
           alt={item.nombre}
           loading="lazy"
           decoding="async"
           style={MAIN_PHOTO_MASK_STYLE}
-          className={`relative z-10 h-full w-full object-contain transition-all duration-300 motion-reduce:transition-none ${
-            fotoSecundaria ? 'group-hover:opacity-0' : 'group-hover:scale-[1.03]'
-          }`}
+          className="relative z-10 h-full w-full object-contain transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.03]"
         />
-        {/* Segunda foto al pasar el mouse (hover lookbook / ángulo alternativo estilo Stradivarius/Shein) */}
-        {fotoSecundaria && (
-          <img
-            src={fotoSecundaria}
-            alt={`${item.nombre} vista alternativa`}
-            loading="lazy"
-            decoding="async"
-            style={MAIN_PHOTO_MASK_STYLE}
-            className="absolute inset-0 z-20 h-full w-full object-contain opacity-0 transition-opacity duration-300 motion-reduce:transition-none group-hover:opacity-100"
-          />
-        )}
 
-        {/* Badges superiores (Descuento, Nuevo, Circular) */}
+        {/* Badges superiores (Nuevo, Circular) */}
         <div className="absolute left-2.5 top-2.5 z-30 flex flex-col items-start gap-1">
-          {tieneDescuento && (
-            <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
-              -{item.descuento}%
-            </span>
-          )}
           {item.esNuevo && (
             <span className="rounded-md bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
               Nuevo
@@ -81,19 +62,23 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         </div>
       </Link>
 
-      {/* Información compacta con padding reducido y espacio lateral para el botón flotante */}
-      <div className="flex flex-1 flex-col justify-between p-3.5 pb-3.5 pr-13">
+      {/* Información compacta con padding reducido */}
+      <div className="flex flex-1 flex-col justify-between p-3.5">
         <div>
           <div className="flex items-center gap-1 text-[0.625rem] font-bold uppercase tracking-[.14em]">
             <span className="text-[var(--color-accent)]">{item.estilo}</span>
-            <span className="text-[var(--color-text-muted)]">·</span>
-            <Link
-              to={`/tiendas/${storeId}`}
-              className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)] rounded"
-              title={`Ver tienda ${item.tienda}`}
-            >
-              {item.tienda} →
-            </Link>
+            {storeName && (
+              <>
+                <span className="text-[var(--color-text-muted)]">·</span>
+                <Link
+                  to={`/tiendas/${item.almacenId || storeId}`}
+                  className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)] rounded"
+                  title={`Ver tienda ${storeName}`}
+                >
+                  {storeName} →
+                </Link>
+              </>
+            )}
           </div>
           <h3 className="mt-1 line-clamp-2 text-xs font-semibold leading-snug text-[var(--color-text)]">
             <Link
@@ -125,34 +110,39 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         </div>
         <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
           <div className="flex items-baseline gap-1.5">
-            {tieneDescuento && item.precioAnterior && (
-              <span className="text-[0.6875rem] line-through text-[var(--color-text-muted)]">
-                {formatCOP(item.precioAnterior)}
-              </span>
-            )}
-            <span
-              className={`text-sm font-semibold ${
-                tieneDescuento ? 'text-rose-500 font-bold' : 'text-[var(--color-text)]'
-              }`}
-            >
+            <span className="text-sm font-semibold text-[var(--color-text)]">
               {formatCOP(item.precio)}
             </span>
           </div>
-          <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
-            a {item.distanciaKm.toLocaleString('es-CO')} km
-          </span>
+          {item.distanciaKm > 0 && (
+            <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
+              a {item.distanciaKm.toLocaleString('es-CO', { maximumFractionDigits: 2 })} km
+            </span>
+          )}
+        </div>
+
+        {/* Acciones de la prenda: Probar en el maniquí (RF-7.2) y Escribir a la tienda */}
+        <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-[var(--color-border)]/40">
+          <Link
+            to={`/probador/arma-tu-look?prenda=${item.id}&talla=${item.tallas?.[0] || 'M'}&color=${encodeURIComponent(item.color || 'default')}`}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition py-1"
+            title="Probar en el maniquí"
+            aria-label={`Probar ${item.nombre} en el maniquí`}
+          >
+            <span>✨</span>
+            <span>Probar en el maniquí</span>
+          </Link>
+
+          <ContactButton
+            icon
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            label={`Escribir a ${storeName || 'la tienda'} sobre ${item.nombre}`}
+            contacto={tiendaContacto(storeName || 'Tienda')}
+            asunto={item.nombre}
+            referenciaId={item.id}
+          />
         </div>
       </div>
-
-      {/* RF-73: escribirle a la tienda desde cualquier prenda. Va fuera del enlace para no anidar elementos interactivos */}
-      <ContactButton
-        icon
-        className="absolute bottom-3 right-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        label={`Escribir a ${item.tienda} sobre ${item.nombre}`}
-        contacto={tiendaContacto(item.tienda)}
-        asunto={item.nombre}
-        referenciaId={item.id}
-      />
     </div>
   )
 }

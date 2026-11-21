@@ -7,11 +7,15 @@ const BOGOTA_FALLBACK: [[number, number], [number, number]] = [
   [-74.0, 4.77],
 ]
 
-/** Filtra los pines según el filtro activo. */
-export function filterPins(pins: MapPinDto[], filter: MapFilter): MapPinDto[] {
-  if (filter === 'tiendas') return pins.filter((p) => p.tipo === 'tienda')
-  if (filter === 'fundaciones') return pins.filter((p) => p.tipo === 'fundacion')
-  return pins
+/** Filtra los pines según el filtro activo y categoría opcional. */
+export function filterPins(pins: MapPinDto[], filter: MapFilter, categoriaId?: string): MapPinDto[] {
+  let result = pins
+  if (filter === 'tiendas') result = result.filter((p) => p.tipo === 'tienda')
+  else if (filter === 'fundaciones') result = result.filter((p) => p.tipo === 'fundacion')
+  if (categoriaId) {
+    result = result.filter((p) => p.tipo === 'tienda' && p.categoriaId === categoriaId)
+  }
+  return result
 }
 
 /** Calcula los límites geográficos que encuadran todos los puntos. */
@@ -40,13 +44,19 @@ export function findPin(pins: MapPinDto[], id: string): MapPinDto | undefined {
   return pins.find((p) => p.id === id)
 }
 
-/** Ordena los pines por distancia ascendente (parsea "1,2 km" → 1.2). */
+/** Ordena los pines por distancia ascendente (parsea "1,25 km" → 1.25). */
 export function sortByDistance(pins: MapPinDto[]): MapPinDto[] {
-  const parseKm = (s: string): number => {
+  const parseKm = (s?: string): number => {
+    if (!s) return 999
     const m = s.match(/([\d,.]+)/)
     return m ? parseFloat(m[1].replace(',', '.')) : 999
   }
   return [...pins].sort((a, b) => parseKm(a.d) - parseKm(b.d))
+}
+
+/** Formatea kilómetros con dos decimales y coma decimal (e.g. 1.25 → "1,25 km"). */
+export function formatDistanciaKm(km: number): string {
+  return `${km.toFixed(2).replace('.', ',')} km`
 }
 
 /** Ubicación de la persona (del navegador o del centro de un barrio). */

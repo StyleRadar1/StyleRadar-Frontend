@@ -1,5 +1,5 @@
 import { ApiError } from '@/modules/core/api/apiClient'
-import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
+import { errorKind, errorMessage, fieldErrors, mensajePorCodigo } from '@/modules/core/api/errors'
 import { MAX_PLAYLIST_ITEMS } from '../types/playlist.dto'
 
 /** Textos de error de Playlists (plan de errores · Cristian). */
@@ -20,8 +20,18 @@ export const MAX_NOMBRE_PLAYLIST = 40
 
 const CAMPOS_NOMBRE = ['nombre', 'name', 'titulo', 'title']
 
-/** Error al crear la playlist → mensaje debajo del nombre (400 y 422) o mensaje general. */
+/** Error al crear la playlist → mensaje por `code`, debajo del nombre (400/422) o mensaje general. */
 export function errorDeCrear(e: unknown): { campo?: string; general?: string } {
+  if (e instanceof ApiError) {
+    if (
+      e.code === 'PLAYLIST_SIN_PRENDAS' ||
+      e.code === 'DESCRIPCION_MUY_LARGA' ||
+      e.code === 'USUARIO_NO_AUTENTICADO' ||
+      e.code === 'ACCESO_DENEGADO'
+    ) {
+      return { general: mensajePorCodigo(e.code) ?? errorMessage(e) }
+    }
+  }
   const kind = errorKind(e)
   if (kind === 'datos') {
     const campos = fieldErrors(e)
@@ -35,11 +45,16 @@ export function errorDeCrear(e: unknown): { campo?: string; general?: string } {
 
 /**
  * Error al agregar una prenda → mensaje junto a la acción.
- * 422: si la prenda ya estaba es «repetida»; si no, es el límite de 15 prendas.
+ * Prioriza `code` del backend (`PRENDA_YA_EN_PLAYLIST`, `LIMITE_PRENDAS_PLAYLIST`); en mocks usa 422 + `yaEstaba`.
  */
 export function errorDeAgregar(e: unknown, yaEstaba: boolean): { texto: string; limite: boolean } {
-  if (e instanceof ApiError && e.status === 422) {
-    return yaEstaba ? { texto: TEXTOS_PLAYLIST.repetida, limite: false } : { texto: TEXTOS_PLAYLIST.limite, limite: true }
+  if (e instanceof ApiError) {
+    if (e.code === 'PRENDA_YA_EN_PLAYLIST') return { texto: TEXTOS_PLAYLIST.repetida, limite: false }
+    if (e.code === 'LIMITE_PRENDAS_PLAYLIST') return { texto: TEXTOS_PLAYLIST.limite, limite: true }
+    if (e.code === 'PRENDA_NO_ESTA_EN_PLAYLIST') return { texto: errorMessage(e), limite: false }
+    if (e.status === 422) {
+      return yaEstaba ? { texto: TEXTOS_PLAYLIST.repetida, limite: false } : { texto: TEXTOS_PLAYLIST.limite, limite: true }
+    }
   }
   return { texto: errorMessage(e, 'No se pudo agregar la prenda.'), limite: false }
 }

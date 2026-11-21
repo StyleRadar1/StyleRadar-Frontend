@@ -9,27 +9,34 @@ import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertServi
 import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
 import { ItemCard } from '../components/ItemCard'
 import { ItemGridSkeleton } from '../components/ItemCardSkeleton'
-import { CatalogMegaMenu } from '../components/CatalogMegaMenu'
 import { useItems } from '../hooks/useItems'
 import { ITEMS } from '../mocks/items'
-import type { ItemFiltersDto, ItemResponseDto } from '../types/item.dto'
+import {
+  COLORES_UNIFICADOS,
+  ESTILOS_UNIFICADOS,
+  MARCAS_TIENDAS_UNIFICADAS,
+  ORDENES_UNIFICADOS,
+  TALLAS_POR_TIPO,
+  TIPOS_PRENDA_UNIFICADOS,
+  type ItemFiltersDto,
+  type ItemResponseDto,
+  type OrdenCatalogo,
+  type TipoTalla,
+} from '../types/item.dto'
 import './CatalogPage.css'
 
-// Tipos de prenda
-const TIPOS_PRENDA = [
-  'Todos',
-  'Saco',
-  'Pantalón',
-  'Buzo',
-  'Chaqueta',
-  'Calzado',
-  'Accesorio',
+// Tipos de prenda unificados (12)
+const TIPOS_PRENDA = ['Todos', ...TIPOS_PRENDA_UNIFICADOS] as const
+
+// Tallas disponibles agrupadas por tipo de talla (SR-RF-10)
+const GRUPOS_TALLAS: { id: TipoTalla; label: string; tallas: readonly string[] }[] = [
+  { id: 'ROPA', label: 'Ropa', tallas: TALLAS_POR_TIPO.ROPA },
+  { id: 'PANTALON', label: 'Pantalón', tallas: TALLAS_POR_TIPO.PANTALON },
+  { id: 'CALZADO', label: 'Calzado', tallas: TALLAS_POR_TIPO.CALZADO },
+  { id: 'UNICA', label: 'Talla única', tallas: TALLAS_POR_TIPO.UNICA },
 ]
 
-// Tallas disponibles
-const TALLAS = ['Todas', 'XS', 'S', 'M', 'L', 'XL', '28', '30', '32', '38', '39', '40']
-
-// Presets de precio
+// Presets de precio (SR-RF-11)
 const PRECIOS_PRESETS = [
   { label: 'Cualquier precio', min: undefined, max: undefined },
   { label: 'Hasta $100.000', min: undefined, max: 100000 },
@@ -45,56 +52,35 @@ const ORIGENES = [
   { id: 'segunda-mano', label: 'Segunda mano' },
 ]
 
-// Opciones de ubicación Cerca de (localidades y barrios de Bogotá)
-const OPCIONES_CERCA_DE = [
-  'No especificar',
-  'Cerca de mí',
-  'Chapinero',
-  'Zona G',
-  'Chicó',
-  'Usaquén',
-  'Cedritos',
-  'Teusaquillo',
-  'Centro',
-  'Suba',
-  'Engativá',
-  'Fontibón',
-  'Kennedy',
-  'Bosa',
-] as const
+// Coordenadas de referencia por zona de Bogotá para calcular lat/lng cuando no se comparte GPS
+const ZONAS_BOGOTA_COORDS: Record<string, { lat: number; lng: number }> = {
+  Chapinero: { lat: 4.6433, lng: -74.0628 },
+  'Zona G': { lat: 4.6525, lng: -74.056 },
+  Chicó: { lat: 4.6766, lng: -74.0504 },
+  Usaquén: { lat: 4.6974, lng: -74.0305 },
+  Teusaquillo: { lat: 4.6256, lng: -74.0722 },
+  Suba: { lat: 4.7431, lng: -74.0886 },
+  Kennedy: { lat: 4.62, lng: -74.1534 },
+}
 
-// Marcas o tiendas del radar
-const MARCAS = [
-  'Todas',
-  'Kicks Local',
-  'Luna Store',
-  'Nómada Studio',
-  'Segunda mano',
-  'The Local Lab',
-] as const
+// Marcas o tiendas del radar (11 tiendas unificadas, SR-RF-12)
+const MARCAS = ['Todas', ...MARCAS_TIENDAS_UNIFICADAS] as const
 
-// Colores disponibles
-const COLORES = ['Todos', 'Negro', 'Blanco', 'Azul', 'Crudo', 'Gris', 'Café']
+// Colores disponibles unificados (8 colores, SR-RF-09)
+const COLORES = ['Todos', ...COLORES_UNIFICADOS] as const
 
-// Los cinco estilos oficiales de StyleRadar
-const ESTILOS = [
-  'Todos',
-  'Streetwear',
-  'Elegante',
-  'Casual',
-  'Vintage',
-  'Techwear',
-] as const
+// Los cinco estilos unificados de StyleRadar (SR-RF-13)
+const ESTILOS = ['Todos', ...ESTILOS_UNIFICADOS] as const
 
-// Opciones de ordenamiento (con Cercanía)
-const OPCIONES_ORDEN = [
-  { id: 'rel', label: 'Recomendados' },
-  { id: 'new', label: 'Más recientes' },
-  { id: 'cerca', label: 'Cercanía' },
-  { id: 'rep', label: 'Mejor calificadas' },
-  { id: 'asc', label: 'Precio: menor a mayor' },
-  { id: 'desc', label: 'Precio: mayor a menor' },
-]
+// Opciones de ordenamiento unificadas (SR-RF-14, SR-RF-15)
+const OPCIONES_ORDEN = ORDENES_UNIFICADOS
+
+function normOrdenParam(raw: string | null): OrdenCatalogo {
+  const up = (raw ?? '').toUpperCase().trim()
+  if (up === 'DISTANCIA' || up === 'CERCA' || up === 'CERCANIA') return 'DISTANCIA'
+  if (up === 'REPUTACION' || up === 'REP') return 'REPUTACION'
+  return 'RECIENTES'
+}
 
 /** Aviso al guardar la búsqueda: qué pasó y qué botón lo resuelve. */
 interface AvisoBusqueda { tono: TonoAviso; titulo: string; texto: string; accion?: 'reintentar' | 'planes' | 'login' | 'ver' }
@@ -119,7 +105,7 @@ export default function CatalogPage() {
 
   // Estados de búsqueda y orden
   const [texto, setTexto] = useState(params.get('q') ?? '')
-  const [orden, setOrden] = useState<string>(params.get('orden') ?? 'rel')
+  const [orden, setOrden] = useState<OrdenCatalogo>(() => normOrdenParam(params.get('orden')))
 
   // Menús desplegables
   const [menuFiltrosAbierto, setMenuFiltrosAbierto] = useState(false)
@@ -128,10 +114,10 @@ export default function CatalogPage() {
   const botonFiltrosRef = useRef<HTMLButtonElement>(null)
   const ordenRef = useRef<HTMLDivElement>(null)
 
-  type CategoriaId = 'cercaDe' | 'tipo' | 'talla' | 'precio' | 'origen' | 'marca' | 'color' | 'estilo'
+  type CategoriaId = 'tipo' | 'talla' | 'precio' | 'origen' | 'marca' | 'color' | 'estilo'
 
   // Categoría activa en el selector de dos columnas
-  const [categoriaActiva, setCategoriaActiva] = useState<CategoriaId>('cercaDe')
+  const [categoriaActiva, setCategoriaActiva] = useState<CategoriaId>('tipo')
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const prevMenuAbiertoRef = useRef(false)
 
@@ -176,9 +162,12 @@ export default function CatalogPage() {
   }, [menuFiltrosAbierto, categoriaActiva])
 
   // Filtros del catálogo
-  const [filtroCercaDe, setFiltroCercaDe] = useState<string>(params.get('cerca') ?? 'No especificar')
   const [filtroTipo, setFiltroTipo] = useState<string>(params.get('tipo') ?? 'Todos')
   const [filtroTalla, setFiltroTalla] = useState<string>(params.get('talla') ?? 'Todas')
+  const [filtroTipoTalla, setFiltroTipoTalla] = useState<TipoTalla | null>(() => {
+    const t = params.get('talla')
+    return t ? (GRUPOS_TALLAS.find((g) => g.tallas.includes(t))?.id ?? null) : null
+  })
   const [filtroPrecio, setFiltroPrecio] = useState<number>(0)
   const [filtroOrigen, setFiltroOrigen] = useState<string>(params.get('origen') ?? 'Todos')
   const [filtroMarca, setFiltroMarca] = useState<string>(params.get('marca') ?? 'Todas')
@@ -186,7 +175,6 @@ export default function CatalogPage() {
   const [filtroEstilo, setFiltroEstilo] = useState<string>(params.get('estilo') ?? 'Todos')
 
   const CATEGORIAS_CONFIG: { id: CategoriaId; label: string; count: number }[] = useMemo(() => [
-    { id: 'cercaDe', label: 'Cerca de', count: filtroCercaDe !== 'No especificar' ? 1 : 0 },
     { id: 'tipo', label: 'Tipo de prenda', count: filtroTipo !== 'Todos' ? 1 : 0 },
     { id: 'talla', label: 'Talla disponible', count: filtroTalla !== 'Todas' ? 1 : 0 },
     { id: 'precio', label: 'Rango de precio', count: filtroPrecio !== 0 ? 1 : 0 },
@@ -194,12 +182,12 @@ export default function CatalogPage() {
     { id: 'marca', label: 'Marca', count: filtroMarca !== 'Todas' ? 1 : 0 },
     { id: 'color', label: 'Color', count: filtroColor !== 'Todos' ? 1 : 0 },
     { id: 'estilo', label: 'Estilo', count: filtroEstilo !== 'Todos' ? 1 : 0 },
-  ], [filtroCercaDe, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
+  ], [filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
 
-  // Al abrir el panel: empieza en la primera categoría con filtros aplicados, o en 'cercaDe'
+  // Al abrir el panel: empieza en la primera categoría con filtros aplicados, o en 'tipo'
   useEffect(() => {
     if (menuFiltrosAbierto && !prevMenuAbiertoRef.current) {
-      const primeraConFiltro = CATEGORIAS_CONFIG.find((cat) => cat.count > 0)?.id ?? 'cercaDe'
+      const primeraConFiltro = CATEGORIAS_CONFIG.find((cat) => cat.count > 0)?.id ?? 'tipo'
       setCategoriaActiva(primeraConFiltro)
     }
     prevMenuAbiertoRef.current = menuFiltrosAbierto
@@ -210,8 +198,10 @@ export default function CatalogPage() {
   const [avisoBusqueda, setAvisoBusqueda] = useState<AvisoBusqueda | null>(null)
   const [guardando, setGuardando] = useState(false)
 
-  // Ordenar por cercanía necesita saber desde dónde (400 del catálogo si no hay ubicación)
+  // Ordenar por cercanía (DISTANCIA) necesita lat y lng (400 del catálogo si no hay ubicación)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [pideUbicacion, setPideUbicacion] = useState(false)
+  const [mostrarZonasUbicacion, setMostrarZonasUbicacion] = useState(false)
   const [ubicacionError, setUbicacionError] = useState('')
 
   // Cerrar menús al hacer clic fuera
@@ -282,7 +272,6 @@ export default function CatalogPage() {
   // Contador de filtros activos (excluyendo defaults)
   const filtrosActivosCount = useMemo(() => {
     let count = 0
-    if (filtroCercaDe !== 'No especificar') count++
     if (filtroTipo !== 'Todos') count++
     if (filtroTalla !== 'Todas') count++
     if (filtroPrecio !== 0) count++
@@ -291,7 +280,7 @@ export default function CatalogPage() {
     if (filtroColor !== 'Todos') count++
     if (filtroEstilo !== 'Todos') count++
     return count
-  }, [filtroCercaDe, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
+  }, [filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
 
   // Filtros combinados para el hook
   const activeFilters = useMemo<ItemFiltersDto>(() => {
@@ -300,18 +289,20 @@ export default function CatalogPage() {
       texto: texto.trim() || undefined,
       tipo: filtroTipo !== 'Todos' ? filtroTipo : undefined,
       talla: filtroTalla !== 'Todas' ? filtroTalla : undefined,
+      tipoTalla: filtroTalla !== 'Todas' ? (filtroTipoTalla ?? undefined) : undefined,
       precioMin: selectedPreset?.min,
       precioMax: selectedPreset?.max,
       origen: filtroOrigen !== 'Todos' ? filtroOrigen : undefined,
       marca: filtroMarca !== 'Todas' ? filtroMarca : undefined,
-      cercaDe: filtroCercaDe !== 'No especificar' ? filtroCercaDe : undefined,
       color: filtroColor !== 'Todos' ? filtroColor : undefined,
       estilo: filtroEstilo !== 'Todos' ? filtroEstilo : undefined,
+      lat: orden === 'DISTANCIA' ? coords?.lat : undefined,
+      lng: orden === 'DISTANCIA' ? coords?.lng : undefined,
       orden,
     }
-  }, [texto, filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroCercaDe, filtroColor, filtroEstilo, orden])
+  }, [texto, filtroTipo, filtroTalla, filtroTipoTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
 
-  const { items, loading, error, status } = useItems(activeFilters)
+  const { items, loading, error, status, code: itemsErrorCode } = useItems(activeFilters)
   const [storeSubTick, setStoreSubTick] = useState(0)
 
   useEffect(() => {
@@ -320,8 +311,9 @@ export default function CatalogPage() {
     return () => window.removeEventListener(STORE_SUB_CHANGED, onSubChanged)
   }, [])
 
-  const sinUbicacion = filtroCercaDe === 'No especificar'
-  const mostrarPideUbicacion = sinUbicacion && (pideUbicacion || (orden === 'cerca' && status === 400))
+  const sinUbicacion = coords === null
+  const mostrarPideUbicacion =
+    sinUbicacion && (pideUbicacion || (orden === 'DISTANCIA' && (status === 400 || itemsErrorCode === 'UBICACION_REQUERIDA')))
 
   // Deduplicación garantizada por ID e imagen al construir la lista de la grilla (queda el primero)
   // RF-99: oculta prendas de tiendas con suscripción SUSPENDIDA y actualiza conteos
@@ -415,31 +407,45 @@ export default function CatalogPage() {
     setParams(next)
   }
 
-  const handleCambiarOrden = (nuevoOrden: string) => {
-    // Sin ubicación no hay desde dónde medir: se pide antes de ordenar
-    if (nuevoOrden === 'cerca' && sinUbicacion) { setPideUbicacion(true); setUbicacionError(''); return }
+  const handleCambiarOrden = (nuevoOrden: OrdenCatalogo) => {
+    // Sin ubicación (lat/lng) no hay desde dónde medir: se pide antes de ordenar por DISTANCIA (400 en back)
+    if (nuevoOrden === 'DISTANCIA' && sinUbicacion) {
+      setPideUbicacion(true)
+      setMostrarZonasUbicacion(false)
+      setUbicacionError('')
+      return
+    }
     setPideUbicacion(false)
+    setMostrarZonasUbicacion(false)
     setOrden(nuevoOrden)
     const next = new URLSearchParams(params)
-    if (nuevoOrden && nuevoOrden !== 'rel') next.set('orden', nuevoOrden); else next.delete('orden')
+    if (nuevoOrden && nuevoOrden !== 'RECIENTES') next.set('orden', nuevoOrden); else next.delete('orden')
     setParams(next)
   }
 
-  const elegirCercaDe = (loc: string) => {
-    setFiltroCercaDe(loc)
-    if (pideUbicacion && loc !== 'No especificar') {
-      setPideUbicacion(false)
-      setOrden('cerca')
-      const next = new URLSearchParams(params); next.set('orden', 'cerca'); setParams(next)
-    }
+  const activarDistanciaConCoords = (nextCoords: { lat: number; lng: number }) => {
+    setCoords(nextCoords)
+    setPideUbicacion(false)
+    setMostrarZonasUbicacion(false)
+    setOrden('DISTANCIA')
+    const next = new URLSearchParams(params)
+    next.set('orden', 'DISTANCIA')
+    setParams(next)
   }
 
   const usarMiUbicacion = () => {
     setUbicacionError('')
-    if (!('geolocation' in navigator)) { setUbicacionError('Tu navegador no comparte la ubicación. Elige tu barrio.'); return }
+    if (!('geolocation' in navigator)) {
+      setUbicacionError('Tu navegador no comparte la ubicación. Elige tu zona.')
+      setMostrarZonasUbicacion(true)
+      return
+    }
     navigator.geolocation.getCurrentPosition(
-      () => elegirCercaDe('Mi ubicación'),
-      () => { setUbicacionError('No pudimos usar tu ubicación. Elige tu barrio.'); setMenuFiltrosAbierto(true) },
+      (pos) => activarDistanciaConCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        setUbicacionError('No pudimos usar tu ubicación. Elige una zona de Bogotá.')
+        setMostrarZonasUbicacion(true)
+      },
       { timeout: 10000, maximumAge: 300000 },
     )
   }
@@ -474,9 +480,9 @@ export default function CatalogPage() {
 
   // Limpiar todos los filtros
   const handleResetFiltros = () => {
-    setFiltroCercaDe('No especificar')
     setFiltroTipo('Todos')
     setFiltroTalla('Todas')
+    setFiltroTipoTalla(null)
     setFiltroPrecio(0)
     setFiltroOrigen('Todos')
     setFiltroMarca('Todas')
@@ -486,51 +492,13 @@ export default function CatalogPage() {
     setParams(new URLSearchParams())
   }
 
-  const handleMegaMenuFilter = (f: { tipo?: string; estilo?: string; origen?: string; texto?: string }) => {
-    if (f.tipo !== undefined) setFiltroTipo(f.tipo)
-    if (f.estilo !== undefined) setFiltroEstilo(f.estilo)
-    if (f.origen !== undefined) setFiltroOrigen(f.origen)
-    if (f.texto !== undefined) setTexto(f.texto)
-    const next = new URLSearchParams(params)
-    if (f.tipo && f.tipo !== 'Todos') next.set('tipo', f.tipo)
-    else if (f.tipo === 'Todos') next.delete('tipo')
-    if (f.estilo && f.estilo !== 'Todos') next.set('estilo', f.estilo)
-    else if (f.estilo === 'Todos') next.delete('estilo')
-    if (f.origen && f.origen !== 'Todos') next.set('origen', f.origen)
-    else if (f.origen === 'Todos') next.delete('origen')
-    setParams(next)
-  }
+  const hayAlgunFiltro = filtrosActivosCount > 0 || texto.trim().length > 0
+  const mostrarPerchero = !hayAlgunFiltro && (loading || uniqueItems.length > 0)
 
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
   const renderOpcionesCategoria = () => {
     switch (categoriaActiva) {
-      case 'cercaDe':
-        return (
-          <div className="sr-filter-chips-grid">
-            {OPCIONES_CERCA_DE.map((loc) => {
-              const isSelected = filtroCercaDe === loc
-              const isDefault = loc === 'No especificar'
-              return (
-                <button
-                  key={loc}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => elegirCercaDe(isSelected && !isDefault ? 'No especificar' : loc)}
-                  className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
-                >
-                  <span>{loc}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        )
       case 'tipo':
         return (
           <div className="sr-filter-chips-grid">
@@ -559,28 +527,58 @@ export default function CatalogPage() {
         )
       case 'talla':
         return (
-          <div className="sr-filter-chips-grid">
-            {TALLAS.map((sz) => {
-              const isSelected = filtroTalla === sz
-              const isDefault = sz === 'Todas'
-              return (
-                <button
-                  key={sz}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => setFiltroTalla(isSelected && !isDefault ? 'Todas' : sz)}
-                  className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
-                >
-                  <span>{sz}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
-                </button>
-              )
-            })}
+          <div className="space-y-3">
+            <div className="sr-filter-chips-grid">
+              <button
+                type="button"
+                aria-pressed={filtroTalla === 'Todas'}
+                onClick={() => { setFiltroTalla('Todas'); setFiltroTipoTalla(null) }}
+                className={`sr-filter-chip ${filtroTalla === 'Todas' ? 'sr-filter-chip--selected' : ''}`}
+              >
+                <span>Todas</span>
+              </button>
+            </div>
+            {GRUPOS_TALLAS.map((grupo) => (
+              <div key={grupo.id}>
+                <p className="mb-1.5 text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                  {grupo.label}
+                </p>
+                <div className="sr-filter-chips-grid">
+                  {grupo.tallas.map((sz) => {
+                    const isSelected =
+                      filtroTalla === sz &&
+                      (filtroTipoTalla
+                        ? filtroTipoTalla === grupo.id
+                        : GRUPOS_TALLAS.find((g) => g.tallas.includes(sz))?.id === grupo.id)
+                    return (
+                      <button
+                        key={`${grupo.id}-${sz}`}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          if (isSelected) {
+                            setFiltroTalla('Todas')
+                            setFiltroTipoTalla(null)
+                          } else {
+                            setFiltroTalla(sz)
+                            setFiltroTipoTalla(grupo.id)
+                          }
+                        }}
+                        className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
+                      >
+                        <span>{sz}</span>
+                        {isSelected && (
+                          <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )
       case 'precio':
@@ -871,7 +869,7 @@ export default function CatalogPage() {
                   Tendencias en tiendas de Bogotá
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {['Blazer oversize', 'Chaqueta de nylon', 'Hoodie', 'Jean ancho', 'Segunda mano', 'Techwear'].map((trend) => (
+                  {['Blazer oversize', 'Chaqueta de nylon', 'Hoodie', 'Jean ancho', 'Segunda mano', 'Urbano'].map((trend) => (
                     <button
                       key={trend}
                       type="button"
@@ -886,14 +884,6 @@ export default function CatalogPage() {
             </div>
           )}
         </div>
-
-        {/* MENÚ HORIZONTAL DE CATEGORÍAS Y MEGA-MENÚ DE SUBFILTROS EN HOVER (ESTILO GOTRENDIER) */}
-        <CatalogMegaMenu
-          onSelectFilter={handleMegaMenuFilter}
-          activeTipo={filtroTipo}
-          activeEstilo={filtroEstilo}
-          activeOrigen={filtroOrigen}
-        />
 
         {/* BARRA DE HERRAMIENTAS: Filtros (botón mediano) + Guardar búsqueda + Ordenar (diseño uniforme) */}
         <div className="relative z-30 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)] mb-6">
@@ -1098,7 +1088,7 @@ export default function CatalogPage() {
                   Ordenar:
                 </span>
                 <span className="text-[var(--color-text)] text-xs">
-                  {opcionOrdenActual?.label ?? 'Recomendados'}
+                  {opcionOrdenActual?.label ?? 'Más recientes'}
                 </span>
                 <svg
                   className={`h-3 w-3 text-[var(--color-text-muted)] transition-transform ${menuOrdenAbierto ? 'rotate-180' : ''}`}
@@ -1160,17 +1150,6 @@ export default function CatalogPage() {
         {filtrosActivosCount > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
             <span className="text-[0.6875rem] text-[var(--color-text-muted)]">Filtros aplicados:</span>
-            {filtroCercaDe !== 'No especificar' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
-                Cerca de: {filtroCercaDe}
-                <button type="button" onClick={() => setFiltroCercaDe('No especificar')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de ubicación">
-                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </span>
-            )}
             {filtroTipo !== 'Todos' && (
               <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
                 Tipo: {filtroTipo}
@@ -1184,8 +1163,8 @@ export default function CatalogPage() {
             )}
             {filtroTalla !== 'Todas' && (
               <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
-                Talla: {filtroTalla}
-                <button type="button" onClick={() => setFiltroTalla('Todas')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de talla">
+                Talla: {filtroTalla}{filtroTipoTalla ? ` (${GRUPOS_TALLAS.find((g) => g.id === filtroTipoTalla)?.label ?? ''})` : ''}
+                <button type="button" onClick={() => { setFiltroTalla('Todas'); setFiltroTipoTalla(null) }} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de talla">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -1258,14 +1237,28 @@ export default function CatalogPage() {
           </div>
         )}
 
-        {/* 400 · ordenar por cercanía sin ubicación: se pide antes, sin error técnico */}
+        {/* 400 · ordenar por cercanía sin ubicación: se pide lat/lng antes, sin error técnico */}
         {mostrarPideUbicacion && (
           <Aviso tono="info" className="mb-6" titulo="Activa tu ubicación para ordenar por cercanía" onCerrar={() => setPideUbicacion(false)}
             acciones={<>
               <button type="button" onClick={usarMiUbicacion} className={BTN_PRINCIPAL}>Usar mi ubicación</button>
-              <button type="button" onClick={() => { setMenuFiltrosAbierto(true); menuRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }} className={BTN_SECUNDARIO}>Elegir barrio</button>
+              <button type="button" onClick={() => setMostrarZonasUbicacion((prev) => !prev)} className={BTN_SECUNDARIO}>Elegir barrio</button>
             </>}>
-            <p>También puedes elegir tu barrio.</p>
+            <p>Comparte tu ubicación GPS o selecciona una zona de referencia en Bogotá.</p>
+            {mostrarZonasUbicacion && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {Object.entries(ZONAS_BOGOTA_COORDS).map(([zona, c]) => (
+                  <button
+                    key={zona}
+                    type="button"
+                    onClick={() => activarDistanciaConCoords(c)}
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)]"
+                  >
+                    {zona}
+                  </button>
+                ))}
+              </div>
+            )}
             {ubicacionError && <p className="mt-1 text-[var(--color-danger-text,#ffb4b4)]">{ubicacionError}</p>}
           </Aviso>
         )}
@@ -1281,12 +1274,17 @@ export default function CatalogPage() {
           </Aviso>
         )}
 
-        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (ROPA CON DESCUENTO Y ESPECIALES) */}
-        <div className="relative z-10 mb-10">
-          <HangingSpecialsRack
-            filtroTipo={filtroTipo}
-            filtroEstilo={filtroEstilo}
-          />
+        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (RELEVANTE) — se pliega suavemente al filtrar */}
+        <div
+          className={`sr-rack-collapse ${mostrarPerchero ? '' : 'sr-rack-collapse--hidden'}`}
+          aria-hidden={!mostrarPerchero}
+        >
+          <div className="sr-rack-collapse__inner">
+            <HangingSpecialsRack
+              filtroTipo={filtroTipo}
+              filtroEstilo={filtroEstilo}
+            />
+          </div>
         </div>
 
         {/* LISTADO PRINCIPAL DEL CATÁLOGO */}
@@ -1296,7 +1294,7 @@ export default function CatalogPage() {
               Prendas encontradas ({uniqueItems.length})
             </h2>
             <span className="text-xs text-[var(--color-text-muted)] font-mono">
-              {orden === 'cerca' ? 'Ordenado por cercanía' : `Orden: ${opcionOrdenActual?.label}`}
+              {orden === 'DISTANCIA' ? 'Ordenado por cercanía' : `Orden: ${opcionOrdenActual?.label ?? 'Más recientes'}`}
             </span>
           </div>
 
@@ -1327,17 +1325,28 @@ export default function CatalogPage() {
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-[var(--color-text)]">No encontramos prendas con esos filtros</h3>
-              <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
-                Prueba cambiando el tipo de prenda, ajustando la ubicación o eliminando algún filtro.
-              </p>
-              <button
-                type="button"
-                onClick={handleResetFiltros}
-                className="mt-6 rounded-xl bg-[var(--color-accent)] px-6 py-2.5 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-              >
-                Quitar filtros
-              </button>
+              {hayAlgunFiltro ? (
+                <>
+                  <h3 className="text-lg font-bold text-[var(--color-text)]">No encontramos prendas con esos filtros</h3>
+                  <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
+                    Prueba cambiando el tipo de prenda, ajustando la ubicación o eliminando algún filtro.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResetFiltros}
+                    className="mt-6 rounded-xl bg-[var(--color-accent)] px-6 py-2.5 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                  >
+                    Quitar filtros
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold text-[var(--color-text)]">Aún no hay prendas en el catálogo</h3>
+                  <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
+                    Todavía no hay prendas publicadas disponibles en este momento. Vuelve pronto para explorar nuevas colecciones.
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -1347,18 +1356,15 @@ export default function CatalogPage() {
 }
 
 /* ============================================================================
- * Sección de "Prendas colgadas en una barra" (Ropa con descuento y especiales)
+ * Sección de "Prendas colgadas en una barra" (Selección relevante del catálogo)
  * ============================================================================ */
-
-type RackBadgeVariant = 'discount' | 'new' | 'stock'
 
 interface HangingRackGarment {
   id: string
   nombre: string
   tienda: string
-  barrio: string
+  barrio?: string
   precio: number
-  originalPrice?: number
   imagen: string
   recorte?: string
   tipoGancho: 'hombros' | 'pinzas'
@@ -1366,39 +1372,12 @@ interface HangingRackGarment {
   estilo: string
   anclaY?: number
   bajada?: number
-  badge?: {
-    text: string
-    variant: RackBadgeVariant
-  }
 }
 
 const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
   .filter((it): it is ItemResponseDto & { recorte: string } => Boolean(it.recorte))
   .map((found) => {
     const tipoNorm = found.tipo === 'Suéter' ? 'Saco' : found.tipo
-    let badge: HangingRackGarment['badge']
-    let originalPrice: number | undefined
-
-    if (found.id === 'p19') {
-      badge = { text: '-20% DCTO', variant: 'discount' }
-      originalPrice = Math.round(found.precio * 1.25)
-    } else if (found.id === 'p27') {
-      badge = { text: '-30% OFERTA', variant: 'discount' }
-      originalPrice = Math.round(found.precio * 1.42)
-    } else if (found.id === 'p23') {
-      badge = { text: '-15% DCTO', variant: 'discount' }
-      originalPrice = Math.round(found.precio * 1.18)
-    } else if (found.id === 'p24') {
-      badge = { text: 'ESPECIAL', variant: 'stock' }
-    } else if (found.id === 'p26') {
-      badge = { text: 'POPULAR', variant: 'new' }
-    } else if (found.id === 'p22') {
-      badge = { text: 'DROP LOCAL', variant: 'new' }
-    } else if (found.id === 'p18') {
-      badge = { text: 'ÚNICA PIEZA', variant: 'stock' }
-    } else if (found.id === 'p25') {
-      badge = { text: 'DESTACADO', variant: 'new' }
-    }
 
     return {
       id: found.id,
@@ -1406,7 +1385,6 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
       tienda: found.tienda,
       barrio: found.barrio,
       precio: found.precio,
-      originalPrice,
       imagen: found.imagen,
       recorte: found.recorte,
       tipoGancho: found.tipoGancho ?? 'hombros',
@@ -1414,7 +1392,6 @@ const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
       bajada: found.bajada ?? 0,
       tipoFiltro: tipoNorm,
       estilo: found.estilo,
-      badge,
     }
   })
 
@@ -1663,14 +1640,14 @@ function HangingSpecialsRack({
   return (
     <section
       className="sr-rack-section"
-      aria-label="Ropa con descuento y piezas especiales en Bogotá"
+      aria-label="Selección relevante en tiendas locales de Bogotá"
       onKeyDown={handleKeyDown}
     >
       {/* 1. Encabezado pequeño centrado en mayúsculas con separador vertical fino */}
       <header className="sr-rack-header">
-        <span className="sr-rack-kicker">ROPA CON DESCUENTO & ESPECIALES</span>
+        <span className="sr-rack-kicker">RELEVANTE</span>
         <span className="sr-rack-divider" aria-hidden="true" />
-        <span className="sr-rack-kicker sr-rack-kicker--muted">OFERTAS Y POPULARES · TIENDAS LOCALES BOGOTÁ</span>
+        <span className="sr-rack-kicker sr-rack-kicker--muted">SELECCIÓN DESTACADA · TIENDAS LOCALES BOGOTÁ</span>
       </header>
 
       {/* 2. Barra metálica horizontal fina + prendas colgadas de ganchos */}
@@ -1679,7 +1656,7 @@ function HangingSpecialsRack({
         tabIndex={0}
         role="region"
         aria-roledescription="carrusel"
-        aria-label="Perchero interactivo de prendas en descuento"
+        aria-label="Perchero interactivo de prendas relevantes"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
@@ -1724,7 +1701,7 @@ function HangingSpecialsRack({
                 type="button"
                 data-offset={offset}
                 aria-pressed={isCenter}
-                aria-label={`${garment.nombre}${garment.badge ? ` (${garment.badge.text})` : ''}`}
+                aria-label={garment.nombre}
                 onClick={() => {
                   if (didDrag.current) {
                     didDrag.current = false
@@ -1748,15 +1725,6 @@ function HangingSpecialsRack({
                       <ClipsHangerFrontSvg bajada={garment.bajada} />
                     ) : (
                       <ShoulderHangerFrontSvg bajada={garment.bajada} />
-                    )}
-
-                    {/* Etiqueta en pill sujeta al gancho con hilo */}
-                    {garment.badge && (
-                      <span
-                        className={`sr-rack-badge sr-rack-badge--${garment.badge.variant}`}
-                      >
-                        {garment.badge.text}
-                      </span>
                     )}
 
                     {/* Prenda recortada sola, sin marco rectangular ni fondo */}
@@ -1790,14 +1758,7 @@ function HangingSpecialsRack({
       <div className="sr-rack-footer">
         <p className="sr-rack-title">{featured.nombre}</p>
         <p className="sr-rack-meta">
-          {featured.tienda} · {featured.originalPrice ? (
-            <>
-              <span className="line-through opacity-50 mr-1.5">{formatCOP(featured.originalPrice)}</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCOP(featured.precio)}</span>
-            </>
-          ) : (
-            formatCOP(featured.precio)
-          )}
+          {featured.tienda} · {formatCOP(featured.precio)}
         </p>
 
         <Link

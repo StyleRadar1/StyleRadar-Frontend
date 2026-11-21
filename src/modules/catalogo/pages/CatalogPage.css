@@ -1089,12 +1089,52 @@ html[data-cvd='on'] .sr-filter-cat-btn--active {
   }
 }
 
+/* Contenedor colapsable animado para ocultar el perchero al aplicar filtros */
+.sr-rack-collapse {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-rows: 1fr;
+  margin-bottom: 2.5rem;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition:
+    grid-template-rows 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 300ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-bottom 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 0s;
+}
+
+.sr-rack-collapse--hidden {
+  grid-template-rows: 0fr;
+  margin-bottom: 0;
+  opacity: 0;
+  transform: translateY(-0.75rem);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    grid-template-rows 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 240ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-bottom 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 420ms;
+}
+
+.sr-rack-collapse__inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sr-filter-spacer,
   .sr-filter-panel-card,
   .sr-filter-tabpanel-content,
   .sr-filter-range-bar,
-  .sr-filter-range-thumb {
+  .sr-filter-range-thumb,
+  .sr-rack-collapse,
+  .sr-rack-collapse--hidden {
     animation: none !important;
     transition: none !important;
   }

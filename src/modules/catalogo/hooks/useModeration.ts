@@ -76,19 +76,21 @@ export function useModeration() {
   )
 
   const approvePublisher = useCallback(
-    async (publicador: string) => {
-      await moderationService.decidePublisherBatch({ publicador, aprobado: true })
+    async (publicador: string, almacenId?: string) => {
+      const resolvedId = almacenId ?? data.items.find((x) => x.publicador === publicador)?.almacenId
+      await moderationService.decidePublisherBatch({ publicador, almacenId: resolvedId, aprobado: true })
       reload()
     },
-    [reload]
+    [data.items, reload]
   )
 
   const rejectPublisher = useCallback(
-    async (publicador: string, motivo: string) => {
-      await moderationService.decidePublisherBatch({ publicador, aprobado: false, motivo })
+    async (publicador: string, motivo: string, almacenId?: string) => {
+      const resolvedId = almacenId ?? data.items.find((x) => x.publicador === publicador)?.almacenId
+      await moderationService.decidePublisherBatch({ publicador, almacenId: resolvedId, aprobado: false, motivo })
       reload()
     },
-    [reload]
+    [data.items, reload]
   )
 
   return {

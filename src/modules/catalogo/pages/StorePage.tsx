@@ -360,6 +360,55 @@ export default function StorePage() {
       )}
 
       {/* ────────────────────────────────────────────────────────── */}
+      {/* 3B. NOVEDADES SEMANALES (SR-RF-20 · máx. 3 prendas 7 días) */}
+      {/* ────────────────────────────────────────────────────────── */}
+      {store.novedades && store.novedades.length > 0 && (
+        <section className="sr-store-items-section" aria-label="Novedades de la semana">
+          <div className="sr-store-items-header">
+            <div>
+              <span className="sr-store-section-kicker">ÚLTIMOS 7 DÍAS</span>
+              <h2 className="sr-store-section-title">Novedades de la semana</h2>
+              <p className="sr-store-section-sub">
+                Hasta 3 ingresos recientes en {store.nombre}.
+              </p>
+            </div>
+          </div>
+          <div className="sr-store-items-grid">
+            {store.novedades.slice(0, 3).map((nov) => (
+              <article key={`nov-${nov.id}`} className="sr-store-item-card">
+                <div className="sr-store-item-card__media">
+                  <Link to={`/catalogo/${nov.id}`} className="sr-store-item-card__img-link">
+                    <img
+                      src={nov.imagen}
+                      alt={nov.nombre}
+                      className="sr-store-item-card__img"
+                      loading="lazy"
+                    />
+                  </Link>
+                  <div className="sr-store-item-card__badges">
+                    <span className="sr-store-item-card__badge is-new">NOVEDAD</span>
+                  </div>
+                </div>
+                <div className="sr-store-item-card__body">
+                  <div className="sr-store-item-card__meta">
+                    <span>{nov.tipo}</span>
+                    <span>·</span>
+                    <span>{nov.estilo}</span>
+                  </div>
+                  <h3 className="sr-store-item-card__title">
+                    <Link to={`/catalogo/${nov.id}`}>{nov.nombre}</Link>
+                  </h3>
+                  <div className="sr-store-item-card__footer">
+                    <strong className="sr-store-item-card__price">{formatCOP(nov.precio)}</strong>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ────────────────────────────────────────────────────────── */}
       {/* 4. PRENDAS DE LA TIENDA (Cuadrícula interactiva)          */}
       {/* ────────────────────────────────────────────────────────── */}
       <section id="prendas" className="sr-store-items-section" aria-label="Prendas de la tienda">

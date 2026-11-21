@@ -31,6 +31,49 @@ export const MENSAJES: Record<ErrorKind, string> = {
   servidor: 'El servicio no está disponible en este momento. Intenta en unos minutos.',
 }
 
+/**
+ * Mensajes por código de negocio (`ProblemDetail.code`) definidos en el análisis de requerimientos (19/11/2026).
+ * El backend envía `code` en MAYÚSCULAS_CON_GUION_BAJO; el front elige el mensaje seguro según este valor.
+ */
+export const MENSAJES_POR_CODIGO: Record<string, string> = {
+  PARAMETRO_INVALIDO: 'Falta un dato o tiene un formato inválido.',
+  DATOS_INVALIDOS: 'La solicitud tiene campos inválidos. Revisa los datos marcados.',
+  RANGO_PRECIO_INVALIDO: 'El precio mínimo no puede ser mayor que el precio máximo.',
+  UBICACION_REQUERIDA: 'Para ordenar por distancia se debe indicar la ubicación (lat y lng).',
+  PRENDA_NO_ENCONTRADA: 'La prenda que buscas ya no existe o no está disponible.',
+  ALMACEN_NO_ENCONTRADO: 'El almacén consultado no existe o ya no está disponible.',
+  COORDENADA_FUERA_DE_RANGO: 'La coordenada está fuera de rango (latitud entre -90 y 90, longitud entre -180 y 180).',
+  RADIO_INVALIDO: 'La distancia del radio de búsqueda no puede ser negativa ni salir del rango permitido.',
+  INVENTARIO_NO_ENCONTRADO: 'Esta prenda todavía no tiene tallas disponibles.',
+  ALMACEN_SUSPENDIDO: 'El almacén está suspendido y no puede publicar prendas.',
+  FOTOGRAFIAS_EXCEDIDAS: 'La prenda puede tener máximo 5 fotografías.',
+  TALLA_INVALIDA: 'La talla seleccionada no corresponde al tipo de prenda.',
+  CANTIDAD_INVALIDA: 'La cantidad de unidades no puede ser negativa.',
+  INVENTARIO_SUSPENDIDO: 'El inventario de la sede está suspendido por mora.',
+  ACCESO_DENEGADO: 'No tienes permisos para modificar este recurso.',
+  PRENDA_RETIRADA: 'No se puede editar una prenda retirada.',
+  TALLA_NO_REGISTRADA: 'La talla indicada no está registrada para esta prenda en la sede.',
+  PRENDA_YA_RETIRADA: 'La prenda ya está retirada.',
+  PRENDA_NO_PENDIENTE: 'Solo se pueden moderar prendas pendientes.',
+  MOTIVO_REQUERIDO: 'El rechazo debe tener un motivo.',
+  PLAYLIST_SIN_PRENDAS: 'La playlist debe tener al menos una prenda.',
+  USUARIO_NO_AUTENTICADO: 'Inicia sesión para continuar con esta acción.',
+  PLAYLIST_NO_ENCONTRADA: 'Esta playlist no existe o no está disponible.',
+  DESCRIPCION_MUY_LARGA: 'La descripción no puede superar los 300 caracteres.',
+  LIMITE_PRENDAS_PLAYLIST: 'La playlist no admite más de 15 prendas.',
+  PRENDA_YA_EN_PLAYLIST: 'La prenda ya se encuentra asociada a esta playlist.',
+  PRENDA_NO_ESTA_EN_PLAYLIST: 'La prenda no pertenece a la playlist.',
+  PLAYLIST_PRIVADA: 'No tienes permisos para consultar esta playlist privada.',
+  LIMITE_DESTACADAS: 'Límite máximo de 3 playlists destacadas alcanzado.',
+  ERROR_INTERNO: 'Ocurrió un error inesperado. Intenta de nuevo en unos minutos.',
+}
+
+/** Devuelve el mensaje amigable asociado a un `code` del backend, si existe en el catálogo. */
+export function mensajePorCodigo(code?: string): string | undefined {
+  if (!code) return undefined
+  return MENSAJES_POR_CODIGO[code.trim().toUpperCase()]
+}
+
 /** 403 y 404 sobre datos de otra persona: el mismo texto, para no revelar qué existe. */
 export const NO_EXISTE_O_SIN_ACCESO = 'No existe o no tienes acceso.'
 

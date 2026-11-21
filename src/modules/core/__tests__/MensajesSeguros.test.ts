@@ -1,7 +1,7 @@
 import { AxiosError, AxiosHeaders } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { aApiError, ApiError } from '../api/apiClient'
-import { camposDelError, errorKind, errorMessage, errorMessageAjeno, fieldErrors, MENSAJES, NO_EXISTE_O_SIN_ACCESO } from '../api/errors'
+import { camposDelError, errorKind, errorMessage, errorMessageAjeno, fieldErrors, MENSAJES, MENSAJES_POR_CODIGO, NO_EXISTE_O_SIN_ACCESO } from '../api/errors'
 import { guardarRetorno, tomarRetorno } from '../api/retorno'
 
 const respuesta = (status: number, data: unknown) => {
@@ -33,6 +33,20 @@ describe('mensajes seguros (plan de errores · antes de empezar)', () => {
 
   it('los textos escritos por el React (mocks) se siguen mostrando', () => {
     expect(errorMessage(new ApiError(409, 'Ya hay 3 destacadas. Quita una primero.'))).toBe('Ya hay 3 destacadas. Quita una primero.')
+  })
+
+  it('elige el texto según el campo code (ProblemDetail) cuando viene del backend y conserva timestamp', () => {
+    const ts = '2026-11-19T21:20:00Z'
+    const e1 = aApiError(respuesta(404, { type: 'about:blank', title: 'Recurso no encontrado', status: 404, detail: 'No existe la prenda 3f2a9c1e-0000', code: 'PRENDA_NO_ENCONTRADA', timestamp: ts }))
+    expect(e1.code).toBe('PRENDA_NO_ENCONTRADA')
+    expect(e1.timestamp).toBe(ts)
+    expect(errorMessage(e1)).toBe(MENSAJES_POR_CODIGO.PRENDA_NO_ENCONTRADA)
+
+    const e2 = aApiError(respuesta(422, { detail: 'Almacen suspendido internamente', code: 'ALMACEN_SUSPENDIDO', timestamp: ts }))
+    expect(errorMessage(e2)).toBe(MENSAJES_POR_CODIGO.ALMACEN_SUSPENDIDO)
+
+    const e3 = aApiError(respuesta(409, { detail: 'Max 3 destacadas', code: 'LIMITE_DESTACADAS', timestamp: ts }))
+    expect(errorMessage(e3)).toBe(MENSAJES_POR_CODIGO.LIMITE_DESTACADAS)
   })
 
   it('el detalle técnico va a la consola solo en desarrollo', () => {

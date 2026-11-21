@@ -90,6 +90,8 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
   const [texto, setTexto] = useState('')
   const [cons, setCons] = useState<Conservacion[]>([])
   const [talla, setTalla] = useState('')
+  const [color, setColor] = useState('')
+  const [brand, setBrand] = useState('')
   const [tipo, setTipo] = useState<GarmentType | ''>('')
   const [localidad, setLocalidad] = useState<LocalidadEnum | ''>('')
   const [min, setMin] = useState('')
@@ -122,14 +124,17 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
       searchTerm: texto || undefined,
       conservacion: cons,
       talla: talla || undefined,
+      size: talla || undefined,
       type: tipo || undefined,
+      color: color || undefined,
+      brand: brand || undefined,
       localidad: localidad || undefined,
       precioMin: nMin || undefined,
       precioMax: nMax || undefined,
       esDonacion: esDonacionTab,
       status: 'AVAILABLE',
     }),
-    [texto, cons, talla, tipo, localidad, nMin, nMax, esDonacionTab]
+    [texto, cons, talla, color, brand, tipo, localidad, nMin, nMax, esDonacionTab]
   )
 
   const load = useCallback(() => {
@@ -154,12 +159,14 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
     setTexto('')
     setCons([])
     setTalla('')
+    setColor('')
+    setBrand('')
     setTipo('')
     setLocalidad('')
     setMin('')
     setMax('')
   }
-  const active = !!(texto || cons.length || talla || tipo || localidad || min || max)
+  const active = !!(texto || cons.length || talla || color || brand || tipo || localidad || min || max)
 
   const handleClaim = async () => {
     if (!claimingItem || claimBusy) return
@@ -259,6 +266,32 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
               <option key={t}>{t}</option>
             ))}
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="sh-col" className="text-sm font-semibold text-[var(--color-text)]">
+            Color
+          </label>
+          <input
+            id="sh-col"
+            className={inputCls}
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            placeholder="Ej. Negro, Azul, Blanco"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="sh-brand" className="text-sm font-semibold text-[var(--color-text)]">
+            Marca
+          </label>
+          <input
+            id="sh-brand"
+            className={inputCls}
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            placeholder="Ej. Zara, Levi's, Mango"
+          />
         </div>
 
         <div className="flex flex-col gap-1.5">

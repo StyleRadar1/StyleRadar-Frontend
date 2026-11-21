@@ -75,4 +75,70 @@ describe('Playlists · errores del plan (Cristian)', () => {
     renderAt('/playlists/privada-de-otra', routes)
     expect(await screen.findByRole('heading', { name: TEXTOS_PLAYLIST.noDisponible })).toBeInTheDocument()
   })
+
+  it('estado vacío cuando no hay ninguna playlist disponible', async () => {
+    vi.spyOn(playlistService, 'getAll').mockResolvedValue([])
+    renderAt('/playlists', routes)
+
+    expect(await screen.findByRole('heading', { level: 3, name: /Aún no hay playlists disponibles/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Todas \(0\)/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Creadas por ti \(0\)/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Guardadas \(0\)/i })).toBeInTheDocument()
+  })
+
+  it('mantiene las pestañas visibles y muestra estado vacío al entrar a una pestaña sin playlists', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(playlistService, 'getAll').mockResolvedValue([
+      {
+        id: 'pl-ajena',
+        nombre: 'Playlist de otro usuario',
+        descripcion: 'Colección de prueba',
+        visibilidad: 'PUBLICA',
+        estilo: 'CASUAL',
+        usuarioId: 'u-otro',
+        creador: { id: 'u-otro', nombre: 'Carlos S.', email: 'carlos@styleradar.co' },
+        prendas: [],
+        likes: 1,
+        guardados: 0,
+        esGuardada: false,
+        fechaCreacion: '2026-11-19T00:00:00Z',
+      },
+    ])
+    renderAt('/playlists', routes)
+
+    const tabCreadas = await screen.findByRole('tab', { name: /Creadas por ti \(0\)/i })
+    await user.click(tabCreadas)
+
+    expect(await screen.findByRole('heading', { level: 3, name: /Aún no has creado ninguna playlist/i })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Ver todas las playlists/i }))
+    expect(screen.getByRole('heading', { level: 2, name: /Playlist de otro usuario/i })).toBeInTheDocument()
+  })
+
+  it('muestra estado vacío en la pestaña Guardadas cuando el usuario no tiene guardadas', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(playlistService, 'getAll').mockResolvedValue([
+      {
+        id: 'pl-mia',
+        nombre: 'Mi colección privada',
+        descripcion: 'Colección propia',
+        visibilidad: 'PRIVADA',
+        estilo: 'CASUAL',
+        usuarioId: 'u-1',
+        creador: { id: 'u-1', nombre: 'Valentina R.', email: 'usuario@styleradar.co' },
+        prendas: [],
+        likes: 0,
+        guardados: 0,
+        esGuardada: false,
+        fechaCreacion: '2026-11-19T00:00:00Z',
+      },
+    ])
+    renderAt('/playlists', routes)
+
+    const tabGuardadas = await screen.findByRole('tab', { name: /Guardadas \(0\)/i })
+    await user.click(tabGuardadas)
+
+    expect(await screen.findByRole('heading', { level: 3, name: /No tienes playlists guardadas/i })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Explorar playlists/i }))
+    expect(screen.getByRole('heading', { level: 2, name: /Mi colección privada/i })).toBeInTheDocument()
+  })
 })

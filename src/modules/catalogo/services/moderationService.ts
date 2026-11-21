@@ -1,29 +1,75 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
-import { mockDelay } from '@/modules/core/api/mock'
+import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { MOCK_MODERATION_ITEMS, MOCK_MODERATION_HISTORY } from '../mocks/moderation'
 import type {
-  ModerationItemDto,
+  BackendModerationRequestDto,
   ModerationDecisionDto,
   ModerationHistoryItemDto,
+  ModerationItemDto,
+  ModerationPendingGroupDto,
+  ModerationPendingResponseDto,
 } from '../types/moderation.dto'
 
 export interface ModerationBatchDecisionDto {
   publicador: string
+  almacenId?: string
   aprobado: boolean
   motivo?: string
+  moderadorId?: string
+}
+
+const sessionHistory: ModerationHistoryItemDto[] = []
+
+function getModeratorId(explicitId?: string): string {
+  return explicitId || mockSessionUser()?.id || 'admin-1'
+}
+
+function mapPendingGroups(data: ModerationPendingResponseDto | ModerationItemDto[]): ModerationItemDto[] {
+  if (Array.isArray(data)) return data
+  const grupos: ModerationPendingGroupDto[] = Array.isArray(data?.grupos) ? data.grupos : []
+  const tipoGrupo = data?.tipoPublicador?.toUpperCase() === 'SEGUNDA_MANO' ? 'Segunda mano' : 'Catálogo'
+  const flat: ModerationItemDto[] = []
+
+  for (const grupo of grupos) {
+    const almacenId = grupo.almacenId ? String(grupo.almacenId) : undefined
+    const publicador = grupo.nombreAlmacen || grupo.publicador || almacenId || 'Almacén'
+    const tipoPubRaw = grupo.tipoPublicador ?? data?.tipoPublicador ?? ''
+    const isPersona = String(tipoPubRaw).toUpperCase().includes('PERSONA') || String(tipoPubRaw).toUpperCase().includes('SEGUNDA')
+    const publicaciones = grupo.prendas ?? grupo.publicaciones ?? []
+
+    for (const p of publicaciones) {
+      flat.push({
+        id: String(p.id ?? ''),
+        almacenId: p.almacenId ? String(p.almacenId) : almacenId,
+        titulo: p.titulo || p.nombre || '',
+        publicador: p.publicador || publicador,
+        tipoPublicador: p.tipoPublicador === 'Persona' || isPersona ? 'Persona' : 'Tienda',
+        tipo: p.tipo === 'Segunda mano' || isPersona ? 'Segunda mano' : tipoGrupo,
+        precio: Number(p.precio ?? 0),
+        fecha: p.fecha || p.fechaPublicacion || 'Hoy',
+        imagen: p.imagen || (Array.isArray(p.fotografias) && p.fotografias[0]) || '',
+        categoria: p.categoria || p.tipo || '',
+        tallas: Array.isArray(p.tallas) ? p.tallas : [],
+        nota: p.nota || p.estilo || undefined,
+      })
+    }
+  }
+  return flat
 }
 
 export const moderationService = {
   getPending(): Promise<ModerationItemDto[]> {
     if (env.useMocks) return mockDelay([...MOCK_MODERATION_ITEMS])
-    return apiClient.get<ModerationItemDto[]>('/api/v1/prendas/pendientes').then((r) => r.data)
+    return apiClient
+      .get<ModerationPendingResponseDto | ModerationItemDto[]>('/api/v1/prendas/pendientes')
+      .then((r) => mapPendingGroups(r.data))
   },
 
   getHistory(): Promise<ModerationHistoryItemDto[]> {
     if (env.useMocks) return mockDelay([...MOCK_MODERATION_HISTORY])
-    return apiClient.get<ModerationHistoryItemDto[]>('/api/v1/prendas/historial').then((r) => r.data)
+    return Promise.resolve([...sessionHistory])
   },
 
   decide(decision: ModerationDecisionDto): Promise<void> {
@@ -49,7 +95,12 @@ export const moderationService = {
       })
       return mockDelay(undefined, 250)
     }
-    return apiClient.put(`/api/v1/prendas/${decision.itemId}/moderacion`, decision).then(() => undefined)
+    const payload: BackendModerationRequestDto = {
+      decision: decision.aprobado ? 'APROBADA' : 'RECHAZADA',
+      ...(decision.aprobado ? {} : { motivo: decision.motivo || decision.comentario }),
+      moderadorId: getModeratorId(decision.moderadorId),
+    }
+    return apiClient.put(`/api/v1/prendas/${encodeURIComponent(decision.itemId)}/moderacion`, payload).then(() => undefined)
   },
 
   decidePublisherBatch(batch: ModerationBatchDecisionDto): Promise<void> {
@@ -77,7 +128,15 @@ export const moderationService = {
       }
       return mockDelay(undefined, 350)
     }
-    return apiClient.put(`/api/v1/prendas/pendientes/almacenes/${encodeURIComponent(batch.publicador)}/moderacion`, batch).then(() => undefined)
+    const targetId = batch.almacenId || batch.publicador
+    const payload: BackendModerationRequestDto = {
+      decision: batch.aprobado ? 'APROBADA' : 'RECHAZADA',
+      ...(batch.aprobado ? {} : { motivo: batch.motivo }),
+      moderadorId: getModeratorId(batch.moderadorId),
+    }
+    return apiClient
+      .put(`/api/v1/prendas/pendientes/almacenes/${encodeURIComponent(targetId)}/moderacion`, payload)
+      .then(() => undefined)
   },
 }
 
