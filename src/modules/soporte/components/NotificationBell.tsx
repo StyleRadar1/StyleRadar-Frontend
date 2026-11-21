@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { useUnreadCount } from '../hooks/useUnreadCount'
-import { notificationService } from '../services/notificationService'
+import { NOTIFICATIONS_CHANGED, notificationService } from '../services/notificationService'
+import { abrirCampana } from '../services/notificationStream'
 import type { NotificacionDto } from '../types/notification.dto'
 
 const hora = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
@@ -17,6 +18,12 @@ export function NotificationBell() {
   const box = useRef<HTMLDivElement>(null)
   const panelId = useId()
   const navigate = useNavigate()
+
+  // Tiempo real: cada aviso nuevo sube el contador y, si la campana ya cargó, entra arriba sin repetirse
+  useEffect(() => abrirCampana((n) => {
+    window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED))
+    setList((l) => (l && !l.some((x) => x.id === n.id) ? [n, ...l] : l))
+  }), [])
 
   useEffect(() => {
     if (!open) return

@@ -4,9 +4,11 @@ import { failIfScenario, failWithScenario } from '@/modules/core/api/mockScenari
 import { env } from '@/configs/env'
 import { seedNotifications } from '../mocks/notifications'
 import type { NotificacionDto } from '../types/notification.dto'
+import { aNotificacion } from '../utils/notificaciones'
 
-/** Rutas del API Gateway hacia ms-notificaciones. Provisionales hasta tener el Swagger. */
-const BASE = '/api/notifications'
+/** Rutas de ms-notificaciones según su Swagger, vía API Gateway. «me» es el usuario del token. */
+export const NOTIFICACIONES = '/api/v1/users/me/notifications'
+const BASE = NOTIFICACIONES
 /** La campana escucha este evento para actualizar el contador sin esperar a la próxima consulta. */
 export const NOTIFICATIONS_CHANGED = 'sr:notificaciones'
 
@@ -26,12 +28,15 @@ export const notificationService = {
   /** RF-31: avisos más recientes primero. */
   async list(): Promise<NotificacionDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...mine()].sort((a, b) => b.creadaEn.localeCompare(a.creadaEn))) }
-    return apiClient.get<NotificacionDto[]>(BASE, { params: { page: 0, size: 20 } }).then((r) => r.data)
+    // Sin parámetros devuelve un arreglo; con page y size, una página con `content`
+    const { data } = await apiClient.get<unknown>(BASE, { params: { page: 0, size: 50 } })
+    const filas = Array.isArray(data) ? data : ((data as { content?: unknown[] } | null)?.content ?? [])
+    return filas.map(aNotificacion)
   },
 
   async unreadCount(): Promise<number> {
     if (env.useMocks) { failIfScenario(); return mockDelay(mine().filter((n) => !n.leida).length, 150) }
-    return apiClient.get<{ count: number }>(`${BASE}/unread-count`).then((r) => r.data.count)
+    return apiClient.get<{ cantidadNoLeidas: number }>(`${BASE}/unread/count`).then((r) => r.data.cantidadNoLeidas ?? 0)
   },
 
   async markRead(id: string): Promise<void> {
