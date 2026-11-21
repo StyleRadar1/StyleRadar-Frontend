@@ -36,7 +36,7 @@ describe('RegisterPage (RF-01)', () => {
     }
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     expect(await screen.findByRole('heading', { name: 'Catálogo' })).toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('sr_user') ?? '{}')).toMatchObject({ name: 'Ana María Gómez', role: 'COMPRADOR' })
+    expect(JSON.parse(localStorage.getItem('sr_user') ?? '{}')).toMatchObject({ name: 'Ana María Gómez', role: 'BUYER' })
     expect(localStorage.getItem('sr_token')).toBeTruthy()
   })
 

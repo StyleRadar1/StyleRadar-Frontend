@@ -1,16 +1,25 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { tokenStorage } from '@/modules/core/api/tokenStorage'
+import { aRol } from '@/modules/core/types/roles'
 import { authService } from '../services/authService'
 import type { LoginRequestDto, LoginResponseDto, RegisterRequestDto, UserSessionDto, VerifyOtpRequestDto } from '../types/auth.dto'
 import { AuthContext } from './authContext'
 
 const USER_KEY = 'sr_user'
 
-const readUser = (): UserSessionDto | null => {
-  try { return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null') } catch { return null }
-}
 const saveUser = (user: UserSessionDto) => {
   try { localStorage.setItem(USER_KEY, JSON.stringify(user)) } catch { /* sin almacenamiento */ }
+}
+/** Lee la sesión guardada. Si quedó con un rol anterior en español, lo pasa al rol en inglés y la vuelve a guardar. */
+const readUser = (): UserSessionDto | null => {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(USER_KEY) ?? 'null') as UserSessionDto | null
+    if (!guardado) return null
+    const role = aRol(guardado.role)
+    if (!role) return null
+    if (role !== guardado.role) saveUser({ ...guardado, role })
+    return { ...guardado, role }
+  } catch { return null }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

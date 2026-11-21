@@ -6,7 +6,7 @@ import { loginAs, renderAt } from './helpers'
 
 const routes = [{ path: '/fundacion/estadisticas', element: <StatsPage /> }]
 
-beforeEach(() => { localStorage.clear(); loginAs('f-1', 'Fundación Abrigo Bogotá', 'REPRESENTANTE_FUNDACION') })
+beforeEach(() => { localStorage.clear(); loginAs('f-1', 'Fundación Abrigo Bogotá', 'FOUNDATION_REPRESENTATIVE') })
 
 describe('estadísticas de la fundación (RF-82 a 85)', () => {
   it('muestra los indicadores, la meta sin «NaN» y los gráficos con sus números', async () => {

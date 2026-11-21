@@ -39,7 +39,7 @@ describe('AdminUsersPage (RF-66)', () => {
     expect(screen.getByText('Julián Rincón')).toBeInTheDocument()
     expect(screen.getByText('1 cuenta')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Todas/ }))
-    await user.selectOptions(screen.getByLabelText('Rol'), 'ADMIN_ALMACEN')
+    await user.selectOptions(screen.getByLabelText('Rol'), 'STORE_ADMIN')
     expect(screen.getByText('Luna Store')).toBeInTheDocument()
     expect(screen.getByText('1 cuenta')).toBeInTheDocument()
   })

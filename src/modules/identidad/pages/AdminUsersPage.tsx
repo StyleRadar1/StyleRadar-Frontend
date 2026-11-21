@@ -20,7 +20,7 @@ type Cambio = { user: UsuarioAdminDto; to: EstadoCuenta }
 type Aviso = { ok: boolean; text: string; undo?: Cambio }
 
 const ROLES_FILTRO: [FiltroRol, string][] = [
-  ['TODOS', 'Todos los roles'], ['COMPRADOR', 'Usuarios'], ['ADMIN_ALMACEN', 'Tiendas'], ['REPRESENTANTE_FUNDACION', 'Fundaciones'],
+  ['TODOS', 'Todos los roles'], ['BUYER', 'Usuarios'], ['STORE_ADMIN', 'Tiendas'], ['FOUNDATION_REPRESENTATIVE', 'Fundaciones'],
 ]
 
 /* RNF-07: en celular cada fila de la tabla se ve como una tarjeta con sus etiquetas. */

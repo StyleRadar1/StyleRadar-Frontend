@@ -41,7 +41,7 @@ export function ContactButton({ label, primary, icon, className = '', ...req }: 
       : <Link to="/login" state={{ from: location.pathname }} className={`${cls} ${className}`}>Inicia sesión para escribir</Link>
   }
   // El administrador no tiene conversaciones, y nadie se escribe a sí mismo
-  if (user.role === 'ADMIN_STYLERADAR') return null
+  if (user.role === 'STYLERADAR_ADMIN') return null
   if (user.id === req.contacto.id) return icon ? null : <p className="text-xs text-white/55">Es tu publicación</p>
 
   const start = async () => {

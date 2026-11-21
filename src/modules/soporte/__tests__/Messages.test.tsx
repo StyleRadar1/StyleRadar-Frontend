@@ -66,14 +66,14 @@ describe('mensajes (RF-40, RF-41 y RF-73)', () => {
   })
 
   it('la tienda ve las preguntas de sus clientes', async () => {
-    loginAs('t-1', 'Luna Store', 'ADMIN_ALMACEN')
+    loginAs('t-1', 'Luna Store', 'STORE_ADMIN')
     renderAt('/mensajes', routes)
     expect(await screen.findByText('Mateo P.', {}, { timeout: 3000 })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Filtrar conversaciones' })).toBeInTheDocument()
   })
 
   it('el administrador ve el estado vacío', async () => {
-    loginAs('a-1', 'Mariana Bernal', 'ADMIN_STYLERADAR')
+    loginAs('a-1', 'Mariana Bernal', 'STYLERADAR_ADMIN')
     renderAt('/mensajes', routes)
     expect(await screen.findByText('No hay conversaciones', {}, { timeout: 3000 })).toBeInTheDocument()
   })

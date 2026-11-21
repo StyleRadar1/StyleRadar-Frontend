@@ -10,17 +10,17 @@ import { UserMenu } from './UserMenu'
 
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/segunda-mano', 'Segunda mano'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
-  COMPRADOR: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/segunda-mano', 'Segunda mano'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
-  ADMIN_ALMACEN: [['/mi-tienda', 'Mi tienda'], ['/tienda/inventario', 'Inventario'], ['/donar', 'Donaciones'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
-  REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
-  ADMIN_STYLERADAR: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
+  BUYER: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/segunda-mano', 'Segunda mano'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
+  STORE_ADMIN: [['/mi-tienda', 'Mi tienda'], ['/tienda/inventario', 'Inventario'], ['/donar', 'Donaciones'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
+  FOUNDATION_REPRESENTATIVE: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
+  STYLERADAR_ADMIN: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
 }
 
 export function Navbar() {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const links = LINKS[user?.role ?? 'GUEST']
-  const esAdmin = user?.role === 'ADMIN_STYLERADAR'
+  const esAdmin = user?.role === 'STYLERADAR_ADMIN'
   const homePath = user ? ROLE_HOME[user.role] : '/'
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     `whitespace-nowrap px-3.5 py-1.5 text-sm font-medium transition ${
@@ -47,12 +47,12 @@ export function Navbar() {
         </div>
         <div className="ml-auto flex items-center gap-2 md:ml-2">
           {/* Con sesión, el tema está en el menú de cuenta; para tienda y fundación se muestra directo en barra */}
-          {(!user || user.role === 'ADMIN_ALMACEN' || user.role === 'REPRESENTANTE_FUNDACION') && <ThemeSelect className="max-md:hidden" />}
+          {(!user || user.role === 'STORE_ADMIN' || user.role === 'FOUNDATION_REPRESENTATIVE') && <ThemeSelect className="max-md:hidden" />}
           {user ? (
             <>
               {/* RF-73: la tienda (y quien compra o la fundación) responde desde el ícono de mensajes */}
-              {user.role !== 'ADMIN_STYLERADAR' && <MessagesLink />}
-              {user.role === 'COMPRADOR' && <NotificationBell />}
+              {user.role !== 'STYLERADAR_ADMIN' && <MessagesLink />}
+              {user.role === 'BUYER' && <NotificationBell />}
               <UserMenu />
             </>
           ) : (
@@ -64,7 +64,7 @@ export function Navbar() {
       {open && (
         <div className="flex flex-col gap-1 border-t border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/95 px-4 py-3 md:hidden">
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls} onClick={() => setOpen(false)}>{label}</NavLink>)}
-          {(!user || user.role === 'ADMIN_ALMACEN' || user.role === 'REPRESENTANTE_FUNDACION') && <ThemeSelect className="px-3 py-2" />}
+          {(!user || user.role === 'STORE_ADMIN' || user.role === 'FOUNDATION_REPRESENTATIVE') && <ThemeSelect className="px-3 py-2" />}
         </div>
       )}
     </header>

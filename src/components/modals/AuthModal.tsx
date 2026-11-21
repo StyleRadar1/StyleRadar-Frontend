@@ -41,10 +41,10 @@ const AUTH_CAP: Record<PicKey, [string, string]> = {
 }
 
 const ROLE_TO_PIC: Record<DemoAccountRole, PicKey> = {
-  COMPRADOR: 'user',
-  ADMIN_ALMACEN: 'store',
-  REPRESENTANTE_FUNDACION: 'found',
-  ADMIN_STYLERADAR: 'admin',
+  BUYER: 'user',
+  STORE_ADMIN: 'store',
+  FOUNDATION_REPRESENTATIVE: 'found',
+  STYLERADAR_ADMIN: 'admin',
 }
 
 function prefersReducedMotion(): boolean {
@@ -122,7 +122,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   // Campos para registro
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<'COMPRADOR' | 'ADMIN_ALMACEN' | 'REPRESENTANTE_FUNDACION'>('COMPRADOR')
+  const [role, setRole] = useState<'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'>('BUYER')
   const [previewRole, setPreviewRole] = useState<DemoAccountRole | null>(null)
 
   // OTP 6 dígitos
@@ -573,10 +573,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     if (!consentState.esMayorDeEdad) {
       cErr.edad = 'Debes confirmar que eres mayor de 18 años.'
     }
-    if (role === 'ADMIN_ALMACEN' && !consentState.aceptaReglasTienda) {
+    if (role === 'STORE_ADMIN' && !consentState.aceptaReglasTienda) {
       cErr.reglasTienda = 'Debes aceptar las Reglas para Tiendas y Marcas Aliadas.'
     }
-    if (role === 'REPRESENTANTE_FUNDACION' && !consentState.aceptaReglasFundacion) {
+    if (role === 'FOUNDATION_REPRESENTATIVE' && !consentState.aceptaReglasFundacion) {
       cErr.reglasFundacion = 'Debes aceptar las Reglas para Fundaciones y Donaciones.'
     }
 
@@ -788,11 +788,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       }
       const user = await verifyOtp({ email: email.trim() || 'usuario@styleradar.co', codigoOtp: code })
       if (activeTab === 'register') {
-        if (user.role === 'ADMIN_ALMACEN') {
+        if (user.role === 'STORE_ADMIN') {
           finishAuthAndNavigate('/tienda/suscripcion/activar')
           return
         }
-        if (user.role === 'REPRESENTANTE_FUNDACION') {
+        if (user.role === 'FOUNDATION_REPRESENTATIVE') {
           finishAuthAndNavigate('/fundacion')
           return
         }
@@ -1043,10 +1043,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       <button
                         type="button"
                         role="radio"
-                        aria-checked={role === 'COMPRADOR'}
+                        aria-checked={role === 'BUYER'}
                         onClick={() => {
-                          setRole('COMPRADOR')
-                          setPreviewRole('COMPRADOR')
+                          setRole('BUYER')
+                          setPreviewRole('BUYER')
                         }}
                       >
                         <b>Usuario</b>
@@ -1055,10 +1055,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       <button
                         type="button"
                         role="radio"
-                        aria-checked={role === 'ADMIN_ALMACEN'}
+                        aria-checked={role === 'STORE_ADMIN'}
                         onClick={() => {
-                          setRole('ADMIN_ALMACEN')
-                          setPreviewRole('ADMIN_ALMACEN')
+                          setRole('STORE_ADMIN')
+                          setPreviewRole('STORE_ADMIN')
                         }}
                       >
                         <b>Tienda</b>
@@ -1067,10 +1067,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       <button
                         type="button"
                         role="radio"
-                        aria-checked={role === 'REPRESENTANTE_FUNDACION'}
+                        aria-checked={role === 'FOUNDATION_REPRESENTATIVE'}
                         onClick={() => {
-                          setRole('REPRESENTANTE_FUNDACION')
-                          setPreviewRole('REPRESENTANTE_FUNDACION')
+                          setRole('FOUNDATION_REPRESENTATIVE')
+                          setPreviewRole('FOUNDATION_REPRESENTATIVE')
                         }}
                       >
                         <b>Fundación</b>
@@ -1081,9 +1081,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
                   <div className="sr-field">
                     <label htmlFor="suName">
-                      {role === 'ADMIN_ALMACEN'
+                      {role === 'STORE_ADMIN'
                         ? 'Nombre de la tienda'
-                        : role === 'REPRESENTANTE_FUNDACION'
+                        : role === 'FOUNDATION_REPRESENTATIVE'
                           ? 'Nombre de la fundación'
                           : 'Nombre completo'}
                     </label>
@@ -1093,9 +1093,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder={
-                        role === 'ADMIN_ALMACEN'
+                        role === 'STORE_ADMIN'
                           ? 'Ej. Luna Store'
-                          : role === 'REPRESENTANTE_FUNDACION'
+                          : role === 'FOUNDATION_REPRESENTATIVE'
                             ? 'Ej. Fundación Abrigo Bogotá'
                             : 'Ej. Valentina Rojas'
                       }
@@ -1179,9 +1179,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   >
                     {loading
                       ? 'Creando cuenta…'
-                      : role === 'ADMIN_ALMACEN'
+                      : role === 'STORE_ADMIN'
                         ? 'Registrar mi tienda'
-                        : role === 'REPRESENTANTE_FUNDACION'
+                        : role === 'FOUNDATION_REPRESENTATIVE'
                           ? 'Registrar mi fundación'
                           : 'Crear cuenta'}
                   </button>

@@ -25,7 +25,7 @@ const formatFechaCobro = (iso?: string) =>
  */
 export function BuyerRenewalStatusCard() {
   const { user } = useAuth()
-  const isBuyer = user?.role === 'COMPRADOR'
+  const isBuyer = user?.role === 'BUYER'
   const { plan, details } = useUserPlan(isBuyer)
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null)

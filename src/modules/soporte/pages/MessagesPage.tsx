@@ -15,10 +15,10 @@ import {
 import { NO_DISPONIBLE } from '../utils/chatErrors'
 
 const VACIO: Record<Role, string> = {
-  COMPRADOR: 'Cuando le escribas a quien vende, a una tienda o a una fundación, la conversación aparecerá aquí.',
-  ADMIN_ALMACEN: 'Cuando un cliente te escriba desde tu página, lo verás aquí.',
-  REPRESENTANTE_FUNDACION: 'Cuando aceptes una donación y coordines la entrega, la conversación con quien dona aparecerá aquí.',
-  ADMIN_STYLERADAR: 'El administrador no tiene conversaciones.',
+  BUYER: 'Cuando le escribas a quien vende, a una tienda o a una fundación, la conversación aparecerá aquí.',
+  STORE_ADMIN: 'Cuando un cliente te escriba desde tu página, lo verás aquí.',
+  FOUNDATION_REPRESENTATIVE: 'Cuando aceptes una donación y coordines la entrega, la conversación con quien dona aparecerá aquí.',
+  STYLERADAR_ADMIN: 'El administrador no tiene conversaciones.',
 }
 
 export default function MessagesPage() {
@@ -70,7 +70,7 @@ export default function MessagesPage() {
       ) : !convs.length ? (
         <div className="mt-8">
           <EmptyState title="No hay conversaciones">
-            {VACIO[user?.role ?? 'COMPRADOR']}
+            {VACIO[user?.role ?? 'BUYER']}
           </EmptyState>
         </div>
       ) : actual && !conv ? (

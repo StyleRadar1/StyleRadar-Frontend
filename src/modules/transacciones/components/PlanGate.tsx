@@ -20,7 +20,7 @@ interface Props {
  */
 export function PlanGate({ title, text, forceLock, children }: Props) {
   const user = useContext(AuthContext)?.user
-  const applies = user?.role === 'COMPRADOR'
+  const applies = user?.role === 'BUYER'
   const { plan, error } = useUserPlan(applies)
 
   if (!applies || error || plan === 'RADAR_PLUS' || forceLock === false) return children ?? null

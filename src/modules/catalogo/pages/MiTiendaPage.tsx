@@ -318,7 +318,7 @@ export default function MiTiendaPage() {
   const requestedStoreId = searchParams.get('tiendaId')
   const forbidden = (requestedStoreId !== null && requestedStoreId !== 't-1')
     || hasScenario('sin-permiso')
-    || (user !== null && user.role !== 'ADMIN_ALMACEN')
+    || (user !== null && user.role !== 'STORE_ADMIN')
 
   if (forbidden) {
     return (

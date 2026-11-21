@@ -29,7 +29,7 @@ beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
 
 describe('módulo de administración', () => {
   it('tiene la barra lateral con todas las secciones del prototipo y sus insignias', async () => {
-    loginAs('a-1', 'Mariana Bernal', 'ADMIN_STYLERADAR')
+    loginAs('a-1', 'Mariana Bernal', 'STYLERADAR_ADMIN')
     renderAdmin()
     const nav = screen.getByRole('navigation', { name: 'Administración' })
     expect(within(nav).getByRole('link', { name: 'Estadísticas' })).toHaveAttribute('aria-current', 'page')
@@ -44,7 +44,7 @@ describe('módulo de administración', () => {
   })
 
   it('solo entra el administrador', () => {
-    loginAs('u-1', 'Valentina Rojas', 'COMPRADOR')
+    loginAs('u-1', 'Valentina Rojas', 'BUYER')
     renderAdmin()
     expect(screen.getByText('Catálogo')).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Administración' })).not.toBeInTheDocument()
@@ -52,7 +52,7 @@ describe('módulo de administración', () => {
 
   it('pide confirmación para cerrar sesión', async () => {
     const user = userEvent.setup()
-    loginAs('a-1', 'Mariana Bernal', 'ADMIN_STYLERADAR')
+    loginAs('a-1', 'Mariana Bernal', 'STYLERADAR_ADMIN')
     renderAdmin('/admin/usuarios')
     await user.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cerrar sesión' }))
@@ -61,7 +61,7 @@ describe('módulo de administración', () => {
 })
 
 describe('estadísticas del administrador (RF-86 a 91)', () => {
-  beforeEach(() => loginAs('a-1', 'Mariana Bernal', 'ADMIN_STYLERADAR'))
+  beforeEach(() => loginAs('a-1', 'Mariana Bernal', 'STYLERADAR_ADMIN'))
 
   it('muestra los siete indicadores con sus variaciones', async () => {
     renderAdmin()

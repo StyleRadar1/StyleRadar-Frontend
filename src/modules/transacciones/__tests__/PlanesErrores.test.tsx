@@ -12,7 +12,7 @@ const slow = { timeout: 4000 }
 
 beforeEach(() => {
   localStorage.setItem('sr_token', 'demo-u-1')
-  localStorage.setItem('sr_user', JSON.stringify({ id: 'u-1', name: 'Prueba', email: 'u-1@styleradar.co', role: 'COMPRADOR' }))
+  localStorage.setItem('sr_user', JSON.stringify({ id: 'u-1', name: 'Prueba', email: 'u-1@styleradar.co', role: 'BUYER' }))
   setMockPlan('u-1', 'RADAR_PLUS')
 })
 afterEach(() => { sessionStorage.clear(); localStorage.clear(); window.history.replaceState(null, '', '/') })

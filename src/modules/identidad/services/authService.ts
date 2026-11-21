@@ -62,7 +62,7 @@ export const authService = {
       if (DEMO_ACCOUNTS.some((a) => a.email === email) || registradas.some((a) => a.email === email)) {
         throw new ApiError(409, TEXTOS_ACCESO.registro)
       }
-      const role = payload.role ?? 'COMPRADOR'
+      const role = payload.role ?? 'BUYER'
       const user: UserSessionDto = { id: `u-n${registradas.length + 1}`, name: payload.nombre.trim(), email, role }
       registradas.push({ ...user, password: payload.password })
       agregarUsuarioMock({

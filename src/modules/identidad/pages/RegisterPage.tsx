@@ -103,9 +103,9 @@ export default function RegisterPage() {
         maniqui,
         aceptaTerminos: consentState.aceptaTerminos,
         aceptaHabeasData: consentState.aceptaDatos,
-        ...(esTienda ? { role: 'ADMIN_ALMACEN' as const } : {}),
+        ...(esTienda ? { role: 'STORE_ADMIN' as const } : {}),
       })
-      const target = user.role === 'ADMIN_ALMACEN' ? '/tienda/suscripcion/activar' : ROLE_HOME[user.role]
+      const target = user.role === 'STORE_ADMIN' ? '/tienda/suscripcion/activar' : ROLE_HOME[user.role]
       navigate(target, { replace: true })
     } catch (err) {
       const kind = errorKind(err)
@@ -239,7 +239,7 @@ export default function RegisterPage() {
                 })
               }}
               errors={consentErrors}
-              role="COMPRADOR"
+              role="BUYER"
               showPromociones={true}
             />
 

@@ -174,7 +174,7 @@ function PlansSelector() {
   const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
   // El plan de la persona se lee de un único lugar: useUserPlan (el mismo que usan /planes y los candados).
-  const { plan: userPlan } = useUserPlan(user?.role === 'COMPRADOR')
+  const { plan: userPlan } = useUserPlan(user?.role === 'BUYER')
   const currentPlan = userPlan === 'RADAR_PLUS' ? 'plus' : userPlan === 'RADAR' ? 'free' : null
 
   // Solo opciones de comprador (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)

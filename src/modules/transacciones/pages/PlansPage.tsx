@@ -33,7 +33,7 @@ const formatFechaVigencia = (iso?: string) =>
 /** P7 · Planes: lo que ofrece StyleRadar y lo que incluye cada plan (RF-100 y RF-101 para el comprador). */
 export default function PlansPage() {
   const { user } = useAuth()
-  const comprador = user?.role === 'COMPRADOR'
+  const comprador = user?.role === 'BUYER'
   const { plan, details } = useUserPlan(comprador)
   const navigate = useNavigate()
   const [cambio, setCambio] = useState<PlanUsuario | null>(null)
@@ -110,7 +110,7 @@ export default function PlansPage() {
       // Subir a Radar+ pasa por el pago (/suscripcion); bajar a Radar pide confirmación y conserva beneficios hasta fin de periodo.
       return <button type="button" onClick={() => (id === 'RADAR_PLUS' ? navigate('/suscripcion') : setCambio(id))} className={`mt-auto rounded-xl px-5 py-3 text-sm font-semibold ${p.destacado ? 'bg-violeta' : 'border border-white/25'}`}>Cambiar a {p.nombre}</button>
     }
-    if (user.role === 'ADMIN_ALMACEN' && p.id === 'TIENDA') {
+    if (user.role === 'STORE_ADMIN' && p.id === 'TIENDA') {
       return <Link to="/tienda/suscripcion" className="mt-auto block rounded-xl border border-white/25 px-5 py-3 text-center text-sm font-semibold">Ver mi suscripción</Link>
     }
     return null

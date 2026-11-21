@@ -16,7 +16,7 @@ const renderAt = (path: string, routes: [string, ReactNode][]) => render(
 )
 const T = { timeout: 3000 }
 
-beforeEach(() => { resetAdminMock(); sessionStorage.clear(); localStorage.setItem('sr_user', JSON.stringify({ id: 'a-1', name: 'Mariana Bernal', role: 'ADMIN_STYLERADAR' })) })
+beforeEach(() => { resetAdminMock(); sessionStorage.clear(); localStorage.setItem('sr_user', JSON.stringify({ id: 'a-1', name: 'Mariana Bernal', role: 'STYLERADAR_ADMIN' })) })
 
 describe('Admin › Tiendas', () => {
   it('lista las tiendas, busca, filtra por verificación y ordena', async () => {

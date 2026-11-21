@@ -43,7 +43,7 @@ const SECCIONES: { to?: string; label: string; icon: keyof typeof ICONOS; badge?
  */
 export function AdminLayout() {
   return (
-    <RequireRole roles={['ADMIN_STYLERADAR']}>
+    <RequireRole roles={['STYLERADAR_ADMIN']}>
       <AdminShell />
     </RequireRole>
   )
