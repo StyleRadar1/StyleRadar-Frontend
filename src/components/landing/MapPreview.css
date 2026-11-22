@@ -16,7 +16,7 @@ html[data-theme="light"] .pe-mapa,
 html[data-theme="claro"] .pe-mapa,
 html[data-tema="claro"] .pe-mapa {
   background-color: #f8f9fa;
-  background-image: url('/img/backgrounds/mapa-noche.jpg');
+  background-image: url('/img/backgrounds/mapa-dia.jpg');
 }
 
 .pe-mapa .pe-in {

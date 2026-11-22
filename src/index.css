@@ -601,3 +601,45 @@ html[data-tema="claro"] .sr-probador-page {
   background-position: center top;
   background-attachment: fixed;
 }
+
+/* Fondo adaptable para Donaciones y Segunda Mano (/segunda-mano, /donar, /segunda-mano/publicar) */
+.sr-donaciones-page {
+  min-height: 100vh;
+  background-color: #0d0a14;
+  background-image: url('/img/backgrounds/donaciones-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-donaciones-page,
+html[data-theme="claro"] .sr-donaciones-page,
+html[data-tema="claro"] .sr-donaciones-page {
+  background-color: #f8f6fc;
+  background-image: url('/img/backgrounds/donaciones-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* Fondo adaptable para Playlists (/playlists) */
+.sr-playlist-page {
+  min-height: 100vh;
+  background-color: #15121b;
+  background-image: url('/img/backgrounds/playlist-noche.png');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-playlist-page,
+html[data-theme="claro"] .sr-playlist-page,
+html[data-tema="claro"] .sr-playlist-page {
+  background-color: #f6f4fa;
+  background-image: url('/img/backgrounds/playlist-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}

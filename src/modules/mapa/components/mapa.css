@@ -20,7 +20,7 @@ html[data-theme="light"] .sr-map-page-shell,
 html[data-theme="claro"] .sr-map-page-shell,
 html[data-tema="claro"] .sr-map-page-shell {
   background-color: #f8f9fa;
-  background-image: url('/img/backgrounds/mapa-noche.jpg');
+  background-image: url('/img/backgrounds/mapa-dia.jpg');
 }
 
 .sr-map-landing-section {
@@ -35,7 +35,7 @@ html[data-theme="light"] .sr-map-landing-section,
 html[data-theme="claro"] .sr-map-landing-section,
 html[data-tema="claro"] .sr-map-landing-section {
   background-color: #f8f9fa;
-  background-image: url('/img/backgrounds/mapa-noche.jpg');
+  background-image: url('/img/backgrounds/mapa-dia.jpg');
 }
 
 .sr-map-layout-wrap {

@@ -56,21 +56,24 @@ export default function DonatePage() {
   }
 
   if (done) return (
-    <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Solicitud enviada</p>
-      <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">Gracias por donar</h1>
-      <p className="mt-3 text-[var(--color-text-muted)]">{done.fundacion.nombre} revisará «{done.prenda.titulo}». Propusiste {formatDay(done.logistica.fecha)}, de {done.logistica.franja}. Te avisaremos cuando la acepten.</p>
-      <div className="mt-8 flex flex-wrap justify-center gap-2">
-        <Link to="/segunda-mano" className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm">Volver a Segunda vida</Link>
-        <button type="button" onClick={() => { setForm(emptyDonation()); setDone(null); setStep(0) }} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Donar otra prenda</button>
-      </div>
-    </section>
+    <div className="sr-donaciones-page min-h-screen">
+      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Solicitud enviada</p>
+        <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">Gracias por donar</h1>
+        <p className="mt-3 text-[var(--color-text-muted)]">{done.fundacion.nombre} revisará «{done.prenda.titulo}». Propusiste {formatDay(done.logistica.fecha)}, de {done.logistica.franja}. Te avisaremos cuando la acepten.</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
+          <Link to="/segunda-mano" className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm">Volver a Segunda vida</Link>
+          <button type="button" onClick={() => { setForm(emptyDonation()); setDone(null); setStep(0) }} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Donar otra prenda</button>
+        </div>
+      </section>
+    </div>
   )
 
   const shown = foundations.filter((f) => !onlyCompatible || !foundationProblem(f, form.categoria))
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12">
+    <div className="sr-donaciones-page min-h-screen">
+      <section className="mx-auto max-w-3xl px-4 py-12">
       <div className="mb-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-4 text-xs text-[var(--color-text-muted)] flex flex-wrap items-center justify-between gap-3 shadow-sm">
         <span>
           🎁 <strong>Estás donando prendas a fundaciones aliadas ($0 COP)</strong>. Si deseas vender tu ropa usada a otros usuarios:
@@ -157,5 +160,6 @@ export default function DonatePage() {
         </div>
       </form>
     </section>
+  </div>
   )
 }

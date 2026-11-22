@@ -394,7 +394,7 @@ export default function PlaylistsPage() {
         role="dialog"
         aria-modal="false"
         aria-label={`Detalle de ${selectedPlaylist.nombre}`}
-        className="min-h-screen bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
+        className="sr-playlist-page min-h-screen bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white"
       >
         <style>{`
           @keyframes spinSlow {
@@ -1005,7 +1005,7 @@ export default function PlaylistsPage() {
   // VISTA LISTA DE PLAYLISTS CON VINILO PROTAGONISTA
   // ==========================================
   return (
-    <div className="min-h-screen bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden">
+    <div className="sr-playlist-page min-h-screen bg-transparent text-[var(--sr-hero-text)] px-4 py-8 sm:px-8 selection:bg-violeta selection:text-white overflow-x-hidden">
       <style>{`
         @keyframes spinSlow {
           from { transform: rotate(0deg); }
