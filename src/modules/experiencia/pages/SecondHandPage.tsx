@@ -422,6 +422,12 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
                         alt={l.garmentName || l.titulo}
                         loading="lazy"
                         className="h-full w-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          if (!target.src.includes('gabardina-gris.jpg')) {
+                            target.src = '/img/catalogo/gabardina-gris.jpg'
+                          }
+                        }}
                       />
                       {l.esDonacion && (
                         <span className="absolute top-2 left-2 rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-[11px] font-bold shadow-md">
