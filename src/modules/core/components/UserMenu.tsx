@@ -10,9 +10,9 @@ import { ROLE_DOT, avatarCls } from './roleTone'
 
 /** Accesos del menú de cuenta según el rol (los mismos del prototipo, con las rutas de la app). */
 const ITEMS: Record<Role, [string, string][]> = {
-  COMPRADOR: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/segunda-mano', 'Mis publicaciones (Segunda mano)'], ['/donar', 'Donar a fundación'], ['/alertas', 'Mis búsquedas y alertas'], ['/planes', 'Mi plan']],
-  ADMIN_ALMACEN: [['/tienda/inventario', 'Mi tienda'], ['/donar', 'Donar a fundación'], ['/tienda/suscripcion', 'Mi suscripción']],
-  REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
+  COMPRADOR: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/segunda-mano', 'Mis publicaciones (Segunda mano)'], ['/donar', 'Donar a fundación'], ['/alertas', 'Mis búsquedas y alertas'], ['/avisos/preferencias', 'Preferencias de avisos'], ['/planes', 'Mi plan']],
+  ADMIN_ALMACEN: [['/tienda/inventario', 'Mi tienda'], ['/donar', 'Donar a fundación'], ['/tienda/suscripcion', 'Mi suscripción'], ['/avisos/preferencias', 'Preferencias de avisos']],
+  REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas'], ['/avisos/preferencias', 'Preferencias de avisos']],
   ADMIN_STYLERADAR: [['/admin/estadisticas', 'Estadísticas'], ['/admin/usuarios', 'Usuarios'], ['/admin/pagos', 'Pagos']],
 }
 

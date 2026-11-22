@@ -37,11 +37,16 @@ export interface AlertasResumenDto {
   busquedas: BusquedaGuardadaDto[]
 }
 
-/** Los 9 tipos de aviso del servicio, más los nombres de los datos de prueba anteriores. */
-export type TipoNotificacion =
-  | 'REPOSICION_STOCK' | 'COINCIDENCIA_BUSQUEDA' | 'MENSAJE_NUEVO' | 'CAMBIO_DONACION' | 'MODERACION_PRENDA'
-  | 'SOLICITUD_DONACION' | 'PRENDA_VENDIDA' | 'PAGO_CONFIRMADO' | 'SISTEMA'
-  | 'NUEVA_COINCIDENCIA' | 'DISPONIBILIDAD_RESTABLECIDA' | 'MENSAJE'
+/** Los 9 tipos de aviso de ms-notificaciones (el back dirige cada aviso al usuario del evento, no al rol). */
+export const TIPOS_AVISO = [
+  'REPOSICION_STOCK', 'COINCIDENCIA_BUSQUEDA', 'MENSAJE_NUEVO', 'CAMBIO_DONACION', 'MODERACION_PRENDA',
+  'SOLICITUD_DONACION', 'PRENDA_VENDIDA', 'PAGO_CONFIRMADO', 'SISTEMA',
+] as const
+export type TipoNotificacion = (typeof TIPOS_AVISO)[number]
+
+/** SR-RF-105: cada tipo llega siempre a la plataforma; el correo es adicional. */
+export type CanalAviso = 'SOLO_PLATAFORMA' | 'CORREO_Y_PLATAFORMA'
+export interface PreferenciaAvisoDto { tipo: TipoNotificacion; canal: CanalAviso }
 
 /** RF-31: aviso que se muestra en la campana. */
 export interface NotificacionDto {

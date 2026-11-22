@@ -1,10 +1,13 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '@/modules/core/api/apiClient'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { useUnreadCount } from '../hooks/useUnreadCount'
 import { NOTIFICATIONS_CHANGED, notificationService } from '../services/notificationService'
 import { abrirCampana } from '../services/notificationStream'
 import type { NotificacionDto } from '../types/notification.dto'
+import { INFO_AVISO } from '../utils/tiposAviso'
+import { IconoAviso } from './IconoAviso'
 
 const hora = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 
@@ -13,6 +16,10 @@ export function NotificationBell() {
   const count = useUnreadCount(true)
   const [open, setOpen] = useState(false)
   const [list, setList] = useState<NotificacionDto[] | null>(null)
+  const [pagina, setPagina] = useState(0)
+  const [hayMas, setHayMas] = useState(false)
+  const [cargandoMas, setCargandoMas] = useState(false)
+  const rol = useContext(AuthContext)?.user?.role
   const [error, setError] = useState('')
   const [aviso, setAviso] = useState('')
   const box = useRef<HTMLDivElement>(null)
@@ -28,8 +35,8 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return
     let active = true
-    notificationService.list()
-      .then((l) => { if (active) { setList(l); setError('') } })
+    notificationService.page(0)
+      .then((p) => { if (active) { setList(p.items); setPagina(0); setHayMas(p.hasNext); setError('') } })
       .catch(() => { if (active) setError('No pudimos cargar tus avisos. Intenta en unos minutos.') })
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
     const onClick = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false) }
@@ -37,6 +44,18 @@ export function NotificationBell() {
     document.addEventListener('mousedown', onClick)
     return () => { active = false; document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onClick) }
   }, [open])
+
+  // Al llegar al final de la lista se piden más avisos, sin botón
+  const cargarMas = useCallback(async () => {
+    if (cargandoMas || !hayMas) return
+    setCargandoMas(true)
+    try {
+      const p = await notificationService.page(pagina + 1)
+      setList((l) => [...(l ?? []), ...p.items.filter((n) => !(l ?? []).some((x) => x.id === n.id))])
+      setPagina((n) => n + 1)
+      setHayMas(p.hasNext)
+    } catch { setHayMas(false) } finally { setCargandoMas(false) }
+  }, [cargandoMas, hayMas, pagina])
 
   const openItem = async (n: NotificacionDto) => {
     setOpen(false)
@@ -86,12 +105,13 @@ export function NotificationBell() {
             : !list ? <p role="status" className="px-1 py-3 text-sm text-white/60">Cargando…</p>
             : !list.length ? <p className="px-1 py-3 text-sm text-white/70">Sin notificaciones. Aquí te avisaremos cuando vuelva una prenda o llegue algo que buscas.</p>
             : (
-              <ul className="max-h-80 space-y-1 overflow-y-auto">
+              <ul className="max-h-80 space-y-1 overflow-y-auto" onScroll={(e) => { const t = e.currentTarget; if (t.scrollTop + t.clientHeight >= t.scrollHeight - 48) void cargarMas() }}>
                 {list.map((n) => (
                   <li key={n.id}>
                     <button type="button" onClick={() => openItem(n)} className={`w-full rounded-xl p-3 text-left hover:bg-white/5 ${n.leida ? 'text-white/65' : ''}`}>
                       <span className="flex items-center gap-2 text-sm font-semibold">
                         {!n.leida && <i aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-violeta-claro" />}
+                        <span title={INFO_AVISO[n.tipo].titulo} className="shrink-0 text-white/70"><IconoAviso tipo={n.tipo} /></span>
                         {n.titulo}{!n.leida && <span className="sr-only"> (sin leer)</span>}
                       </span>
                       <span className="mt-0.5 block text-xs text-white/70">{n.detalle}</span>
@@ -99,9 +119,11 @@ export function NotificationBell() {
                     </button>
                   </li>
                 ))}
+                {cargandoMas && <li role="status" className="px-3 py-2 text-center text-xs text-white/60">Cargando más…</li>}
               </ul>
             )}
-          <Link to="/alertas" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Ver búsquedas y alertas</Link>
+          {rol === 'COMPRADOR' && <Link to="/alertas" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Ver búsquedas y alertas</Link>}
+          <Link to="/avisos/preferencias" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Preferencias de avisos</Link>
         </div>
       )}
     </div>

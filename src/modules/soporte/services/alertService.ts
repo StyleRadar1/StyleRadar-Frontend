@@ -206,8 +206,8 @@ export const alertService = {
       r.alertas.unshift(nueva)
       return mockDelay(nueva, 250)
     }
-    // tipoAlerta provisional: confirmar el nombre exacto con el Swagger de ms-notificaciones
-    const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS, { tipoAlerta: 'PRENDA_AGOTADA', itemId: prendaId, tallaObjetivo: talla || undefined, canal: 'IN_APP' })
+    // tipoAlerta del back: ITEM_AGOTADO (prenda agotada) o BUSQUEDA_GUARDADA
+    const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS, { tipoAlerta: 'ITEM_AGOTADO', itemId: prendaId, tallaObjetivo: talla || undefined, canal: 'IN_APP' })
     return { id: String(data.id ?? data.alertaId ?? ''), prendaId, prenda: talla ? `${prenda} · talla ${talla}` : prenda, tienda, activa: true, creadaEn: new Date().toISOString() }
   },
 }

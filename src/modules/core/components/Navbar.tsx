@@ -52,7 +52,8 @@ export function Navbar() {
             <>
               {/* RF-73: la tienda (y quien compra o la fundación) responde desde el ícono de mensajes */}
               {user.role !== 'ADMIN_STYLERADAR' && <MessagesLink />}
-              {user.role === 'COMPRADOR' && <NotificationBell />}
+              {/* Misma campana para persona, tienda y fundación: los avisos llegan por usuario, no por rol */}
+              {user.role !== 'ADMIN_STYLERADAR' && <NotificationBell />}
               <UserMenu />
             </>
           ) : (

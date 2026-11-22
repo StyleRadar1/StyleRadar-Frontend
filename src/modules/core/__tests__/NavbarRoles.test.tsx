@@ -25,6 +25,23 @@ describe('menú según el rol', () => {
     expect(screen.queryByLabelText('Tema de color')).not.toBeInTheDocument()
   })
 
+  it('la campana de notificaciones se ve para persona, tienda y fundación, pero no para el administrador', () => {
+    const roles: [string, string, Role, boolean][] = [
+      ['u-1', 'Valentina Rojas', 'COMPRADOR', true],
+      ['t-1', 'Luna Store', 'ADMIN_ALMACEN', true],
+      ['f-1', 'Fundación Abrigo', 'REPRESENTANTE_FUNDACION', true],
+      ['a-1', 'Mariana Bernal', 'ADMIN_STYLERADAR', false],
+    ]
+    for (const [id, name, role, ve] of roles) {
+      localStorage.clear()
+      loginAs(id, name, `${id}@styleradar.co`, role)
+      const { unmount } = renderNav()
+      const campana = screen.queryByRole('button', { name: /^Notificaciones/ })
+      if (ve) expect(campana).toBeInTheDocument(); else expect(campana).not.toBeInTheDocument()
+      unmount()
+    }
+  })
+
   it('el administrador ve la franja de modo administrador y la etiqueta Admin', () => {
     loginAs('a-1', 'Mariana Bernal', 'admin@styleradar.co', 'ADMIN_STYLERADAR')
     renderNav()

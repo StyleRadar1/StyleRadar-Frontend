@@ -42,6 +42,7 @@ const BuyerPayments = lazy(() => import('@/modules/transacciones/pages/BuyerPaym
 const AdminPayments = lazy(() => import('@/modules/transacciones/pages/AdminPaymentsPage'))
 const Alerts = lazy(() => import('@/modules/soporte/pages/AlertsPage'))
 const Messages = lazy(() => import('@/modules/soporte/pages/MessagesPage'))
+const AvisosPreferencias = lazy(() => import('@/modules/soporte/pages/PreferencesPage'))
 const Stats = lazy(() => import('@/modules/soporte/pages/StatsPage'))
 const AdminStores = lazy(() => import('@/modules/administracion/pages/AdminStoresPage'))
 const AdminStoreDetail = lazy(() => import('@/modules/administracion/pages/AdminStoreDetailPage'))
@@ -132,6 +133,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/donar', element: only(USER_OR_STORE, <Donate />) },
       { path: '/alertas', element: only(USER, <Alerts />) },
       { path: '/mensajes', element: only(ANY, <Messages />) },
+      { path: '/avisos/preferencias', element: only(['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION'], <AvisosPreferencias />) },
       // Tienda (rutas de gestión y publicación protegidas por RequireStoreActiveSub; suscripción siempre accesible)
       { path: '/mi-tienda', element: onlyStoreActive(<MyStore />) },
       { path: '/tienda/inventario', element: onlyStoreActive(<Inventory />) },
