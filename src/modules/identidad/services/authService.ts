@@ -14,6 +14,7 @@ import type {
   VerifyOtpRequestDto,
 } from '../types/auth.dto'
 import { agregarUsuarioMock } from './usuarioService'
+import { aLoginResponse } from '../utils/sesionReal'
 import { TEXTOS_ACCESO } from '../utils/erroresAcceso'
 
 /**
@@ -51,7 +52,7 @@ export const authService = {
       if (!user || payload.password !== DEMO_PASSWORD) throw new ApiError(401, TEXTOS_ACCESO.credenciales)
       return mockDelay({ token: `demo-${user.id}`, user })
     }
-    return apiClient.post<LoginResponseDto>('/api/v1/auth/login', payload).then((res) => res.data)
+    return apiClient.post<unknown>('/api/v1/auth/login', payload).then((res) => aLoginResponse(res.data))
   },
 
   /** RF-01: crea la cuenta y devuelve la sesión iniciada o pide verificación OTP. */
@@ -94,7 +95,7 @@ export const authService = {
       const user = registradas.find((a) => a.email === email) || DEMO_ACCOUNTS.find((a) => a.email === email) || DEMO_ACCOUNTS[0]
       return mockDelay({ token: `demo-${user.id}`, user })
     }
-    return apiClient.post<LoginResponseDto>('/api/v1/auth/otp/verificar', payload).then((res) => res.data)
+    return apiClient.post<unknown>('/api/v1/auth/otp/verificar', payload).then((res) => aLoginResponse(res.data))
   },
 
   /** Reenviar código OTP con espera de 60s */
@@ -124,7 +125,7 @@ export const authService = {
       if (!user) throw new ApiError(401, TEXTOS_ACCESO.google)
       return mockDelay({ token: `demo-${user.id}`, user })
     }
-    return apiClient.post<LoginResponseDto>('/api/v1/auth/oauth2/google', payload).then((res) => res.data)
+    return apiClient.post<unknown>('/api/v1/auth/oauth2/google', payload).then((res) => aLoginResponse(res.data))
   },
 
   /** Recuperación de contraseña (envío de enlace o token a correo) */

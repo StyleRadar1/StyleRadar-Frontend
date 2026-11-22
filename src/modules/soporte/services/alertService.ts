@@ -29,7 +29,7 @@ async function aResumen(data: unknown): Promise<AlertasResumenDto> {
     const activa = String(r.estado ?? 'ACTIVA').toUpperCase() === 'ACTIVA'
     const creadaEn = texto(r.fechaCreacion ?? r.creadaEn) ?? new Date().toISOString()
     const busqueda = texto(r.busquedaGuardadaId)
-    if (busqueda) busquedas.push({ id, nombre: 'Búsqueda guardada', descripcion: 'Te avisamos cuando llegue algo que coincida', alerta: activa, coincidenciasNuevas: 0, creadaEn })
+    if (busqueda) busquedas.push({ id, nombre: texto(r.nombreBusqueda) ?? 'Búsqueda guardada', descripcion: 'Te avisamos cuando llegue algo que coincida', alerta: activa, coincidenciasNuevas: 0, creadaEn })
     else {
       const talla = texto(r.tallaObjetivo)
       alertas.push({ id, prendaId: String(r.itemId ?? ''), prenda: talla ? `Prenda agotada · talla ${talla}` : 'Prenda agotada', tienda: '', activa, creadaEn })
