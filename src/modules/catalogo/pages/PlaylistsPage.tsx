@@ -1,6 +1,7 @@
 import { useState, useMemo, useContext, useEffect, useCallback, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { env } from '@/configs/env'
 import { Button } from '@/modules/core/design-system'
 import { ErrorState } from '@/modules/core/components/Status'
 import { Aviso, ErrorCampo, EscenaError } from '@/modules/core/components/errores'
@@ -21,6 +22,9 @@ export default function PlaylistsPage() {
 
   const {
     playlists,
+    myPlaylists,
+    savedPlaylists,
+    featuredPlaylists,
     loading,
     error,
     reload,
@@ -29,7 +33,7 @@ export default function PlaylistsPage() {
     removeItem,
     like,
     save,
-  } = usePlaylists()
+  } = usePlaylists(user?.id)
 
   // Estado de selección local o por URL
   const [selectedLocalId, setSelectedLocalId] = useState<string | null>(null)
@@ -61,14 +65,13 @@ export default function PlaylistsPage() {
 
   // Like y guardado local para playlist activa
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({})
-  const [userSaved, setUserSaved] = useState<Record<string, boolean>>({
-    '3': true,
-    'pl-2': true,
-  })
+  const [userSaved, setUserSaved] = useState<Record<string, boolean>>((): Record<string, boolean> =>
+    env.useMocks ? { '3': true, 'pl-2': true } : {}
+  )
 
   // Estado del carrusel 3D
   const [carouselIndex, setCarouselIndex] = useState(0)
-  const [carouselTab, setCarouselTab] = useState<'todas' | 'creadas' | 'guardadas'>('todas')
+  const [carouselTab, setCarouselTab] = useState<'todas' | 'destacadas' | 'creadas' | 'guardadas'>('todas')
 
   const usuarioActual = user ?? { id: 'u-1', name: 'Valentina R.', email: 'usuario@styleradar.co' }
   const usuarioEmail = (user && 'email' in user ? (user as { email?: string }).email : undefined) ?? 'usuario@styleradar.co'
@@ -78,12 +81,23 @@ export default function PlaylistsPage() {
     setTimeout(() => setMensajeExito(null), 3500)
   }
 
+  // Unión deduplicada de playlists (incluye privadas de /me, guardadas y destacadas)
+  const allUniquePlaylists = useMemo(() => {
+    const map = new Map<string, PlaylistDto>()
+    for (const list of [playlists, myPlaylists, savedPlaylists, featuredPlaylists]) {
+      for (const p of list) {
+        if (!map.has(p.id)) map.set(p.id, p)
+      }
+    }
+    return Array.from(map.values())
+  }, [playlists, myPlaylists, savedPlaylists, featuredPlaylists])
+
   // Playlist seleccionada actualmente
   const selectedPlaylist = useMemo(() => {
     if (!activeId) return null
     const norm = activeId.replace(/^p/, '')
     return (
-      playlists.find(
+      allUniquePlaylists.find(
         (p) =>
           p.id === activeId ||
           p.id.replace(/^p/, '') === norm ||
@@ -91,39 +105,36 @@ export default function PlaylistsPage() {
           (activeId === '3' && p.nombre.toLowerCase().includes('oficina'))
       ) ?? null
     )
-  }, [playlists, activeId])
+  }, [allUniquePlaylists, activeId])
 
-  // Playlists creadas por la usuaria
-  const creadasPorTi = useMemo(() => {
-    return playlists.filter(
-      (p) =>
-        !p.esGuardada &&
-        (p.usuarioId === usuarioActual.id ||
-          p.creador?.email === usuarioEmail ||
-          p.creador?.id === usuarioActual.id ||
-          p.creador?.nombre.toLowerCase().includes('valentina'))
-    )
-  }, [playlists, usuarioEmail, usuarioActual.id])
+  // Playlists creadas por la usuaria (GET /api/v1/playlists/me)
+  const creadasPorTi = myPlaylists
 
-  // Playlists guardadas
+  // Playlists destacadas (GET /api/v1/playlists/destacadas)
+  const destacadas = featuredPlaylists
+
+  // Playlists guardadas (GET /api/v1/playlists/me/guardadas + cambios locales en sesión)
   const guardadas = useMemo(() => {
-    return playlists.filter(
-      (p) =>
-        p.esGuardada ||
-        userSaved[p.id] ||
-        (p.usuarioId !== usuarioActual.id &&
-          p.creador?.id !== usuarioActual.id &&
-          p.creador?.email !== usuarioEmail &&
-          !p.creador?.nombre.toLowerCase().includes('valentina'))
-    )
-  }, [playlists, userSaved, usuarioEmail, usuarioActual.id])
+    const byId = new Map<string, PlaylistDto>()
+    for (const p of savedPlaylists) {
+      if (userSaved[p.id] === false) continue
+      byId.set(p.id, p)
+    }
+    for (const p of allUniquePlaylists) {
+      if (userSaved[p.id] === true && !byId.has(p.id)) {
+        byId.set(p.id, p)
+      }
+    }
+    return Array.from(byId.values())
+  }, [savedPlaylists, allUniquePlaylists, userSaved])
 
   // Lista activa para el carrusel 3D según la pestaña seleccionada
   const carouselPlaylists = useMemo(() => {
+    if (carouselTab === 'destacadas') return destacadas
     if (carouselTab === 'creadas') return creadasPorTi
     if (carouselTab === 'guardadas') return guardadas
     return playlists
-  }, [carouselTab, creadasPorTi, guardadas, playlists])
+  }, [carouselTab, destacadas, creadasPorTi, guardadas, playlists])
 
   // Clamp carouselIndex si cambia el tamaño de la lista
   useEffect(() => {
@@ -361,7 +372,11 @@ export default function PlaylistsPage() {
 
   const handleGuardar = async () => {
     if (!selectedPlaylist) return
-    const nextSaved = !(selectedPlaylist.esGuardada ?? userSaved[selectedPlaylist.id])
+    const curSaved =
+      userSaved[selectedPlaylist.id] !== undefined
+        ? userSaved[selectedPlaylist.id]
+        : Boolean(selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === selectedPlaylist.id))
+    const nextSaved = !curSaved
     setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: nextSaved }))
     try {
       const res = await save(selectedPlaylist.id)
@@ -409,7 +424,10 @@ export default function PlaylistsPage() {
     const totalDisponible = disponibles.reduce((acc, p) => acc + p.precio, 0)
     const tiendasUnicas = Array.from(new Set(prendas.map((p) => p.tienda)))
     const isLiked = userLikes[selectedPlaylist.id]
-    const isSaved = userSaved[selectedPlaylist.id] || selectedPlaylist.esGuardada
+    const isSaved =
+      userSaved[selectedPlaylist.id] !== undefined
+        ? userSaved[selectedPlaylist.id]
+        : Boolean(selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === selectedPlaylist.id))
 
     return (
       <section
@@ -1102,6 +1120,20 @@ export default function PlaylistsPage() {
                 <button
                   type="button"
                   role="tab"
+                  aria-selected={carouselTab === 'destacadas'}
+                  onClick={() => {
+                    setCarouselTab('destacadas')
+                    setVinylStepIndex(0)
+                  }}
+                  className={`sr-vinyl-tabs__btn ${
+                    carouselTab === 'destacadas' ? 'is-active' : ''
+                  }`}
+                >
+                  Destacadas ({destacadas.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
                   aria-selected={carouselTab === 'creadas'}
                   onClick={() => {
                     setCarouselTab('creadas')
@@ -1357,21 +1389,44 @@ export default function PlaylistsPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-bold text-[var(--sr-hero-text)]">
-                  {playlists.length === 0 || carouselTab === 'todas'
-                    ? 'Aún no hay playlists disponibles'
-                    : carouselTab === 'creadas'
-                      ? 'Aún no has creado ninguna playlist'
-                      : 'No tienes playlists guardadas'}
+                  {carouselTab === 'destacadas'
+                    ? 'Aún no hay playlists destacadas'
+                    : playlists.length === 0 || carouselTab === 'todas'
+                      ? 'Aún no hay playlists disponibles'
+                      : carouselTab === 'creadas'
+                        ? 'Aún no has creado ninguna playlist'
+                        : 'No tienes playlists guardadas'}
                 </h3>
                 <p className="mt-2 text-xs text-[var(--sr-hero-text-muted)] max-w-md mx-auto leading-relaxed">
-                  {playlists.length === 0 || carouselTab === 'todas'
-                    ? 'Todavía no se han publicado colecciones de estilo. Crea la primera playlist con tus prendas favoritas.'
-                    : carouselTab === 'creadas'
-                      ? 'Arma tu primera colección de hasta 15 prendas de distintas tiendas locales.'
-                      : 'Explora las colecciones de la comunidad y guárdalas en tu perfil para tenerlas a mano.'}
+                  {carouselTab === 'destacadas'
+                    ? 'Todavía no hay colecciones destacadas por StyleRadar. Explora todas las playlists de la comunidad.'
+                    : playlists.length === 0 || carouselTab === 'todas'
+                      ? 'Todavía no se han publicado colecciones de estilo. Crea la primera playlist con tus prendas favoritas.'
+                      : carouselTab === 'creadas'
+                        ? 'Arma tu primera colección de hasta 15 prendas de distintas tiendas locales.'
+                        : 'Explora las colecciones de la comunidad y guárdalas en tu perfil para tenerlas a mano.'}
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                  {playlists.length === 0 || carouselTab !== 'guardadas' ? (
+                  {carouselTab === 'destacadas' ? (
+                    playlists.length > 0 ? (
+                      <Button
+                        variant="primario"
+                        onClick={() => {
+                          setCarouselTab('todas')
+                          setVinylStepIndex(0)
+                        }}
+                      >
+                        Explorar playlists
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primario"
+                        onClick={() => setMostrarCrear(true)}
+                      >
+                        + Nueva playlist
+                      </Button>
+                    )
+                  ) : playlists.length === 0 || carouselTab !== 'guardadas' ? (
                     <>
                       <Button
                         variant="primario"

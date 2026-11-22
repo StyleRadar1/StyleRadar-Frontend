@@ -1,16 +1,63 @@
 import { useCallback } from 'react'
+import { env } from '@/configs/env'
+import { mockSessionUser } from '@/modules/core/api/mock'
+import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import { useResource } from '@/modules/core/hooks/useResource'
-import { playlistService } from '../services/playlistService'
+import { isOwnedPlaylist, isSavedPlaylist, playlistService } from '../services/playlistService'
 import type { CreatePlaylistDto, PlaylistDto, UpdatePlaylistDto } from '../types/playlist.dto'
 
-export function usePlaylists() {
-  const loader = useCallback(() => playlistService.getAll(), [])
-  const { data: playlists, error, loading, reload, setData } = useResource<PlaylistDto[]>(loader, [])
+interface PlaylistsBundle {
+  all: PlaylistDto[]
+  mine: PlaylistDto[]
+  saved: PlaylistDto[]
+  featured: PlaylistDto[]
+}
+
+const INITIAL_BUNDLE: PlaylistsBundle = { all: [], mine: [], saved: [], featured: [] }
+
+function mapInBundle(bundle: PlaylistsBundle, playlistId: string, updater: (p: PlaylistDto) => PlaylistDto): PlaylistsBundle {
+  const mapList = (list: PlaylistDto[]) => list.map((p) => (p.id === playlistId ? updater(p) : p))
+  return {
+    all: mapList(bundle.all),
+    mine: mapList(bundle.mine),
+    saved: mapList(bundle.saved),
+    featured: mapList(bundle.featured),
+  }
+}
+
+export function usePlaylists(userId?: string) {
+  const loader = useCallback(async (): Promise<PlaylistsBundle> => {
+    if (env.useMocks) {
+      const all = await playlistService.getAll()
+      const user = mockSessionUser() ?? { id: userId ?? 'u-1', email: 'usuario@styleradar.co' }
+      return {
+        all,
+        mine: all.filter((p) => isOwnedPlaylist(p, user)),
+        saved: all.filter((p) => isSavedPlaylist(p, user)),
+        featured: all.filter((p) => Boolean(p.destacada)),
+      }
+    }
+
+    const hasToken = Boolean(tokenStorage.get())
+    const [all, mine, saved, featured] = await Promise.all([
+      playlistService.getAll(),
+      hasToken ? playlistService.getMine().catch(() => [] as PlaylistDto[]) : Promise.resolve([] as PlaylistDto[]),
+      hasToken ? playlistService.getSaved().catch(() => [] as PlaylistDto[]) : Promise.resolve([] as PlaylistDto[]),
+      playlistService.getFeatured().catch(() => [] as PlaylistDto[]),
+    ])
+    return { all, mine, saved, featured }
+  }, [userId])
+
+  const { data: bundle, error, loading, reload, setData } = useResource<PlaylistsBundle>(loader, INITIAL_BUNDLE)
 
   const createPlaylist = useCallback(
     async (dto: CreatePlaylistDto) => {
       const created = await playlistService.create(dto)
-      setData((prev) => [created, ...prev])
+      setData((prev) => ({
+        ...prev,
+        all: [created, ...prev.all],
+        mine: [created, ...prev.mine],
+      }))
       return created
     },
     [setData]
@@ -19,7 +66,7 @@ export function usePlaylists() {
   const addItem = useCallback(
     async (playlistId: string, itemId: string) => {
       const updated = await playlistService.addItem(playlistId, itemId)
-      setData((prev) => prev.map((p) => (p.id === playlistId ? updated : p)))
+      setData((prev) => mapInBundle(prev, playlistId, () => updated))
     },
     [setData]
   )
@@ -27,7 +74,7 @@ export function usePlaylists() {
   const removeItem = useCallback(
     async (playlistId: string, itemId: string) => {
       const updated = await playlistService.removeItem(playlistId, itemId)
-      setData((prev) => prev.map((p) => (p.id === playlistId ? updated : p)))
+      setData((prev) => mapInBundle(prev, playlistId, () => updated))
     },
     [setData]
   )
@@ -35,9 +82,7 @@ export function usePlaylists() {
   const like = useCallback(
     async (playlistId: string) => {
       const res = await playlistService.toggleLike(playlistId)
-      setData((prev) =>
-        prev.map((p) => (p.id === playlistId ? { ...p, likes: res.likes } : p))
-      )
+      setData((prev) => mapInBundle(prev, playlistId, (p) => ({ ...p, likes: res.likes })))
     },
     [setData]
   )
@@ -45,11 +90,22 @@ export function usePlaylists() {
   const save = useCallback(
     async (playlistId: string) => {
       const res = await playlistService.toggleSave(playlistId)
-      setData((prev) =>
-        prev.map((p) =>
-          p.id === playlistId ? { ...p, guardados: res.guardados, esGuardada: res.esGuardada } : p
-        )
-      )
+      setData((prev) => {
+        const next = mapInBundle(prev, playlistId, (p) => ({
+          ...p,
+          guardados: res.guardados,
+          esGuardada: res.esGuardada,
+        }))
+        if (res.esGuardada) {
+          const found =
+            next.all.find((p) => p.id === playlistId) ??
+            next.featured.find((p) => p.id === playlistId) ??
+            next.mine.find((p) => p.id === playlistId)
+          const saved = found && !next.saved.some((p) => p.id === playlistId) ? [found, ...next.saved] : next.saved
+          return { ...next, saved }
+        }
+        return { ...next, saved: next.saved.filter((p) => p.id !== playlistId) }
+      })
       return res
     },
     [setData]
@@ -58,14 +114,17 @@ export function usePlaylists() {
   const updatePlaylist = useCallback(
     async (id: string, dto: UpdatePlaylistDto) => {
       const updated = await playlistService.update(id, dto)
-      setData((prev) => prev.map((p) => (p.id === id ? updated : p)))
+      setData((prev) => mapInBundle(prev, id, () => updated))
       return updated
     },
     [setData]
   )
 
   return {
-    playlists,
+    playlists: bundle.all,
+    myPlaylists: bundle.mine,
+    savedPlaylists: bundle.saved,
+    featuredPlaylists: bundle.featured,
     loading,
     error,
     reload,
