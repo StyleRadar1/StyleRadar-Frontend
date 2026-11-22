@@ -643,3 +643,95 @@ html[data-tema="claro"] .sr-playlist-page {
   background-position: center top;
   background-attachment: fixed;
 }
+
+/* Fondo adaptable para Planes y Membresías (/planes) */
+.sr-planes-page {
+  min-height: 100vh;
+  background-color: #0b0813;
+  background-image: url('/img/backgrounds/planes-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-planes-page,
+html[data-theme="claro"] .sr-planes-page,
+html[data-tema="claro"] .sr-planes-page {
+  background-color: #f8f6fc;
+  background-image: url('/img/backgrounds/planes-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* Fondo adaptable para Tiendas e Inventario (/tiendas/:id, /mi-tienda, /tienda/inventario, /tienda/suscripcion) */
+.sr-tienda-page,
+.inv-page,
+.store-subscription {
+  min-height: 100vh;
+  background-color: #0d0a14 !important;
+  background-image: url('/img/backgrounds/tienda-noche.jpg') !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-attachment: fixed !important;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-tienda-page,
+html[data-theme="light"] .inv-page,
+html[data-theme="light"] .store-subscription,
+html[data-theme="claro"] .sr-tienda-page,
+html[data-theme="claro"] .inv-page,
+html[data-theme="claro"] .store-subscription,
+html[data-tema="claro"] .sr-tienda-page,
+html[data-tema="claro"] .inv-page,
+html[data-tema="claro"] .store-subscription {
+  background-color: #f8f9fa !important;
+  background-image: url('/img/backgrounds/tienda-dia.jpg') !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-attachment: fixed !important;
+}
+
+/* Fondo adaptable para Mensajes y Soporte (/mensajes) */
+.sr-mensajes-page {
+  min-height: 100vh;
+  background-color: #0f0d18;
+  background-image: url('/img/backgrounds/mensajes-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-mensajes-page,
+html[data-theme="claro"] .sr-mensajes-page,
+html[data-tema="claro"] .sr-mensajes-page {
+  background-color: #faf8fc;
+  background-image: url('/img/backgrounds/mensajes-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* Fondo adaptable para Perfil de Usuario (/perfil, /perfil/pagos) */
+.sr-perfil-page {
+  min-height: 100vh;
+  background-color: #120e1e;
+  background-image: url('/img/backgrounds/perfil-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-perfil-page,
+html[data-theme="claro"] .sr-perfil-page,
+html[data-tema="claro"] .sr-perfil-page {
+  background-color: #f7f5fa;
+  background-image: url('/img/backgrounds/perfil-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}

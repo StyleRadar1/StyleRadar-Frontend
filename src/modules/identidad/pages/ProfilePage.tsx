@@ -36,8 +36,9 @@ export default function ProfilePage() {
   if (error || !profile) return <section className="mx-auto max-w-6xl px-4 py-12"><ErrorState error={error} onRetry={reload} title="No pudimos cargar tu perfil" /></section>
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12">
-      <PlanDegradedBanner />
+    <div className="sr-perfil-page min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-12">
+        <PlanDegradedBanner />
       <header className="flex flex-wrap items-center justify-between gap-5 border-b border-white/10 pb-8">
         <div className="flex flex-wrap items-center gap-5">
           <span aria-hidden="true" className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-violeta text-3xl font-extrabold text-blanco md:h-24 md:w-24 md:text-4xl">{iniciales(profile.nombre)}</span>
@@ -94,7 +95,8 @@ export default function ProfilePage() {
         /* La key reinicia el formulario cuando llegan datos nuevos del servidor. */
         <ProfileForm key={JSON.stringify(profile)} profile={profile} onSave={save} aviso={aviso} setAviso={setAviso} />
       )}
-    </section>
+      </section>
+    </div>
   )
 }
 
