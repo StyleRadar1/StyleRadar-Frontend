@@ -125,7 +125,7 @@ export function ConversationList({ conversations, selectedId, onSelect, classNam
                     </span>
                     <span className="mt-0.5 flex items-center justify-between gap-2">
                       <span className={`truncate text-sm ${sinLeer ? 'text-[var(--sr-text-primary)]' : 'text-[var(--sr-text-secondary)]'}`}>
-                        {c.ultimoMensaje ?? 'Aún no hay mensajes'}
+                        {c.ultimoMensaje ?? 'Abre la conversación para ver los mensajes'}
                       </span>
                       {sinLeer && (
                         <span

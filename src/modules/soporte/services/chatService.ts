@@ -3,6 +3,9 @@ import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario, failWithScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { seedConversations, seedMessages } from '../mocks/chat'
+import { aNotificacion } from '../utils/notificaciones'
+import { aConversacion, aMensaje, filasDe, idDelOtro, necesitaNombre } from './chatMapper'
+import { NOTIFICACIONES } from './notificationService'
 import { MAX_MENSAJE, TIPO_ESPEJO, type ConversacionDto, type IniciarConversacionDto, type MensajeDto } from '../types/chat.dto'
 
 /** Rutas de ms-chat según su Swagger, vía API Gateway. */
@@ -11,13 +14,54 @@ const BANDEJA_ALMACEN = '/api/v1/stores/conversations'
 const conversacion = (id: string) => `/api/v1/conversations/${encodeURIComponent(id)}/messages`
 /** Cada tipo de conversación se abre desde su propia ruta: tienda (SR-RF-73), vendedor (SR-RF-40) o donación (GJ-57). */
 const inicio = (req: IniciarConversacionDto) =>
-  req.contacto.tipo === 'TIENDA' ? `/api/v1/stores/${encodeURIComponent(req.contacto.id)}/conversations`
+  req.contacto.tipo === 'TIENDA' ? `/api/v1/stores/${encodeURIComponent(req.nit ?? req.contacto.id)}/conversations`
   : req.contacto.tipo === 'VENDEDOR' ? `/api/v1/second-hand/publications/${encodeURIComponent(req.referenciaId ?? '')}/conversations`
   : `/api/v1/donations/${encodeURIComponent(req.referenciaId ?? '')}/conversations`
 
 /** Rol de la sesión: el almacén lee su bandeja; las demás cuentas, «mis conversaciones». */
 const rolDeSesion = (): string | null => {
   try { return JSON.parse(localStorage.getItem('sr_user') ?? 'null')?.role ?? null } catch { return null }
+}
+
+/** Pide todas las páginas de una lista de ms-chat (hasta 100 por página, tope de 10 páginas). */
+async function todas(ruta: string, size: number): Promise<Record<string, unknown>[]> {
+  const filas: Record<string, unknown>[] = []
+  for (let page = 0; page < 10; page++) {
+    const { data } = await apiClient.get<unknown>(ruta, { params: { page, size } })
+    const p = filasDe(data)
+    filas.push(...p.filas)
+    if (page + 1 >= p.totalPages) break
+  }
+  return filas
+}
+
+/** ms-chat no guarda nombres: se piden a ms-usuarios por id y se recuerdan. Si falla, queda «Usuario #id». */
+const nombresConocidos = new Map<string, string>()
+async function nombreDe(uid: string): Promise<void> {
+  if (!uid || nombresConocidos.has(uid)) return
+  try {
+    const { data } = await apiClient.get<{ nombre?: string; name?: string }>(`/api/v1/usuarios/${encodeURIComponent(uid)}`)
+    const n = data?.nombre ?? data?.name
+    if (n) nombresConocidos.set(uid, n)
+  } catch { /* se queda con el nombre de respaldo */ }
+}
+
+/**
+ * Los «sin leer» del chat viven en ms-notificaciones: cada mensaje nuevo genera un aviso MENSAJE_NUEVO
+ * con enlace a la conversación. Devuelve, por conversación, los ids de los avisos sin leer.
+ */
+async function avisosDeChat(): Promise<Map<string, string[]>> {
+  const porConversacion = new Map<string, string[]>()
+  try {
+    const { data } = await apiClient.get<unknown>(NOTIFICACIONES, { params: { page: 0, size: 100, unreadOnly: true } })
+    const filas = filasDe(data).filas
+    for (const raw of filas) {
+      const n = aNotificacion(raw)
+      const m = n.enlace?.match(/^\/mensajes\?c=([^&]+)/)
+      if (n.tipo === 'MENSAJE_NUEVO' && !n.leida && m) porConversacion.set(m[1], [...(porConversacion.get(m[1]) ?? []), n.id])
+    }
+  } catch { /* sin avisos: los contadores quedan en cero */ }
+  return porConversacion
 }
 
 /** Se dispara cuando cambia algo que mueve el contador de mensajes sin leer del menú. */
@@ -56,7 +100,13 @@ export const chatService = {
     const rol = rolDeSesion()
     // El administrador de StyleRadar no tiene conversaciones: no hay nada que pedir
     if (rol === 'ADMIN_STYLERADAR') return []
-    return apiClient.get<ConversacionDto[]>(rol === 'ADMIN_ALMACEN' ? BANDEJA_ALMACEN : MIS_CONVERSACIONES).then((r) => r.data)
+    const miId = String(mockSessionUser()?.id ?? '')
+    const [filas, avisos] = await Promise.all([todas(rol === 'ADMIN_ALMACEN' ? BANDEJA_ALMACEN : MIS_CONVERSACIONES, 100), avisosDeChat()])
+    const ctx = { me: miId, rol, nombres: nombresConocidos }
+    await Promise.all([...new Set(filas.filter((f) => necesitaNombre(f, ctx)).map((f) => idDelOtro(f, miId)))].map(nombreDe))
+    return filas
+      .map((f) => aConversacion(f, ctx, avisos.get(String(f.id))?.length ?? 0))
+      .sort((a, b) => b.actualizadaEn.localeCompare(a.actualizadaEn))
   },
 
   /** Total de mensajes sin leer, para el ícono de mensajes del menú. */
@@ -89,7 +139,12 @@ export const chatService = {
       return mockDelay(c, 300)
     }
     // Cuerpo provisional {texto}: es el primer mensaje que pide el endpoint. Ajustar al esquema del Swagger.
-    return apiClient.post<ConversacionDto>(inicio(req), { texto: req.primerMensaje ?? `Hola, me interesa: ${req.asunto}` }).then((r) => r.data)
+    // Tienda y segunda mano llevan el primer mensaje ({ text }); la donación no lleva cuerpo
+    const cuerpo = req.contacto.tipo === 'TIENDA' || req.contacto.tipo === 'VENDEDOR'
+      ? { text: req.primerMensaje ?? `Hola, me interesa: ${req.asunto}` }
+      : undefined
+    const { data } = await apiClient.post<Record<string, unknown>>(inicio(req), cuerpo)
+    return aConversacion(data, { me: String(mockSessionUser()?.id ?? ''), rol: rolDeSesion(), nombres: nombresConocidos })
   },
 
   /** Al abrir la conversación sus mensajes quedan leídos. */
@@ -100,7 +155,12 @@ export const chatService = {
       if (c.noLeidos) { c.noLeidos = 0; changed() }
       return mockDelay(db().msgs[id] ?? [])
     }
-    const r = await apiClient.get<MensajeDto[]>(conversacion(id))
+    // Vienen paginados y en orden cronológico (los más antiguos primero): se juntan todas las páginas
+    const filas = await todas(conversacion(id), 100)
+    // Abrir la conversación deja leídos sus avisos de mensaje nuevo; eso baja el contador del menú
+    const pendientes = (await avisosDeChat()).get(id) ?? []
+    await Promise.allSettled(pendientes.map((aviso) => apiClient.patch(`${NOTIFICACIONES}/${encodeURIComponent(aviso)}/read`)))
+    const r = { data: filas.map(aMensaje) }
     changed()
     return r.data
   },
@@ -124,6 +184,6 @@ export const chatService = {
       }
       return mockDelay(m, 300)
     }
-    return apiClient.post<MensajeDto>(conversacion(id), { texto: t }).then((r) => r.data)
+    return apiClient.post<unknown>(conversacion(id), { text: t }).then((r) => aMensaje(r.data))
   },
 }

@@ -773,6 +773,7 @@ export default function StorePage() {
             <ContactButton
               label={`Escribir a ${store.nombre}`}
               contacto={tiendaContacto(store.nombre)}
+              nit={store.nit}
               asunto={`Consulta sobre ${store.nombre}`}
               className="sr-store-btn sr-store-btn--outline"
             />
