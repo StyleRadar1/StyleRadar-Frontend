@@ -8,12 +8,13 @@ interface Props {
   cancelLabel?: string
   danger?: boolean
   busy?: boolean
+  confirmDisabled?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
 
 /** Diálogo de confirmación accesible: atrapa el foco, cierra con Escape y lo devuelve al cerrar. */
-export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel = 'Cancelar', danger, busy, onConfirm, onCancel }: Props) {
+export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel = 'Cancelar', danger, busy, confirmDisabled, onConfirm, onCancel }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const titleId = useId()
 
@@ -43,7 +44,7 @@ export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel
         {children && <div className="mt-2 text-sm text-white/75">{children}</div>}
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={onCancel} disabled={busy} className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold">{cancelLabel}</button>
-          <button type="button" onClick={onConfirm} disabled={busy}
+          <button type="button" onClick={onConfirm} disabled={busy || confirmDisabled}
             className={`rounded-xl px-4 py-2 text-sm font-semibold ${danger ? 'bg-[#c0392b]' : 'bg-violeta'} disabled:opacity-60`}>
             {busy ? 'Procesando…' : confirmLabel}
           </button>

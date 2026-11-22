@@ -720,14 +720,20 @@ export default function ItemDetailPage() {
                       <span>{guardadoPlaylist ? 'En tu playlist de estilo' : 'Guardar en playlist'}</span>
                     </button>
 
-                    {/* Enlace directo para probarse la prenda en el probador virtual / maniquí (RF-7.2 / RF-57) */}
-                    <Link
-                      to={`/probador?prenda=${prenda.id}&talla=${tallaSeleccionada || prenda.tallas[0] || 'M'}&color=${encodeURIComponent(prenda.color || 'default')}`}
-                      aria-label="Probarme esta prenda en el probador - Probar en el maniquí"
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/60 px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition backdrop-blur-md shadow-[0_2px_12px_rgba(168,85,247,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
-                    >
-                      <span>✨ Probar en el maniquí</span>
-                    </Link>
+                    {/* Enlace directo para probarse la prenda en el probador virtual / maniquí (RF-24 / RF-57) */}
+                    {prenda.noDisponibleEnProbador || /^(Calzado|Tenis|Zapatos|Botas|Accesorio|Cinturón|Bufanda|Bolso|Gorra|Gafas|Chaqueta|Abrigo|Gabardina)$/i.test(prenda.tipo || '') ? (
+                      <div className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-2.5 text-center text-xs text-[var(--color-text-muted)]">
+                        La prenda no está disponible o no admite prueba virtual.
+                      </div>
+                    ) : (
+                      <Link
+                        to={`/probador?prenda=${prenda.id}&talla=${tallaSeleccionada || prenda.tallas[0] || 'M'}&color=${encodeURIComponent(prenda.color || 'default')}`}
+                        aria-label="Probarme esta prenda en el probador - Probar en el maniquí"
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/60 px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition backdrop-blur-md shadow-[0_2px_12px_rgba(168,85,247,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                      >
+                        <span>✨ Probar en el maniquí</span>
+                      </Link>
+                    )}
 
                     {/* Reserva en tienda (ms-inventario) y alerta de disponibilidad (ms-notificaciones) */}
                     <div className="flex flex-wrap gap-2 pt-1">

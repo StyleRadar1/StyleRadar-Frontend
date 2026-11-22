@@ -23,7 +23,17 @@ import type {
   TryOnQuotaDto,
 } from '../types/tryon.dto'
 
-/** Probador virtual: RF-23 (foto), RF-24 (prenda/talla), RF-25 (job), RF-26 (resultado), SR-P5-N01 (consentimiento), SR-P5-N02 (cuotas) y SR-P5-N03 (historial). */
+const HISTORY_STATUS_LABEL: Record<string, string> = {
+  PENDING: 'En cola',
+  QUEUED: 'En cola',
+  PROCESSING: 'Procesando',
+  COMPLETED: 'Completada',
+  FAILED: 'Fallida',
+  CANCELLED: 'Cancelada',
+  EXPIRED: 'Expirada',
+}
+
+/** Probador virtual: RF-23 (foto), RF-24 (prenda/talla), RF-25 (job), RF-26 (resultado), RF-27 (borrado), SR-RF-107 (consentimiento), SR-RF-108 (cuotas) y SR-RF-109 (historial). */
 export default function TryOnPage() {
   const auth = useContext(AuthContext)
   const user = auth?.user ?? null
@@ -47,10 +57,13 @@ export default function TryOnPage() {
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
 
-  /* Consentimiento biométrico (SR-P5-N01) */
+  /* Consentimiento biométrico (SR-P5-N01 / SR-RF-107) */
   const [consentStatus, setConsentStatus] = useState<BiometricConsentStatusDto | null>(null)
   const [confirmRevokeConsent, setConfirmRevokeConsent] = useState(false)
   const [revokingConsent, setRevokingConsent] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
+  const [zoneNotice, setZoneNotice] = useState<string | null>(null)
+  const [photoPurged, setPhotoPurged] = useState(false)
 
   const [confirmDel, setConfirmDel] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -183,8 +196,9 @@ export default function TryOnPage() {
     setRevokingConsent(true)
     try {
       await tryOnService.revokeConsent(userId)
-      setConsentStatus(null)
+      setConsentStatus({ userId, accepted: false, termsVersion: 'v1.0-LEY1581-2026' })
       setPhoto(null)
+      setPhotoPurged(true)
       job.reset()
       setDelMsg({ ok: true, text: 'Revocaste tu consentimiento biométrico. Tu foto y registros fueron purgados.' })
     } catch {
@@ -234,6 +248,7 @@ export default function TryOnPage() {
       await tryOnService.deletePhoto(photo.photoId)
       job.reset()
       setPhoto(null)
+      setPhotoPurged(true)
       setDelMsg({ ok: true, text: 'Eliminamos tu foto y los resultados generados con ella.' })
     } catch {
       setDelMsg({ ok: false, text: 'No tenemos confirmación de que tu foto se haya borrado. Intenta de nuevo.' })
@@ -279,22 +294,62 @@ export default function TryOnPage() {
         Sube tu foto frontal autorizada, elige una prenda y su talla, valida la compatibilidad corporal y genera tu visualización virtual. Tu foto es privada conforme a la Ley 1581 de 2012 y puedes eliminarla o revocar el consentimiento en cualquier momento.
       </p>
 
-      {/* Barra de consentimiento y privacidad biométrica (SR-P5-N01) */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-3.5 text-xs text-[var(--color-text)] shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
-          <span>
-            <strong>Tratamiento biométrico:</strong> {consentStatus?.accepted ? 'Autorizado (Ley 1581 / v1.0)' : 'Pendiente de autorización expresa'}
-          </span>
+      {/* Barra de consentimiento y privacidad biométrica (SR-P5-N01 / SR-RF-107) */}
+      <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-3.5 text-xs text-[var(--color-text)] shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex h-2 w-2 rounded-full ${consentStatus?.accepted ? 'bg-emerald-500' : 'bg-amber-500'}`}
+              aria-hidden="true"
+            />
+            <span>
+              <strong>Tratamiento biométrico:</strong>{' '}
+              {consentStatus?.accepted
+                ? `Consentimiento activo (Ley 1581 · ${consentStatus.termsVersion || 'v1.0-LEY1581-2026'})`
+                : 'Revocado / Pendiente de autorización expresa'}
+            </span>
+          </div>
+          {consentStatus?.accepted ? (
+            <button
+              type="button"
+              onClick={() => setConfirmRevokeConsent(true)}
+              className="font-semibold text-[var(--color-danger-text,#ff8a8a)] hover:underline"
+            >
+              Revocar consentimiento y eliminar mis datos
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setConsentChecked(false); setConsent('foto') }}
+              className="font-semibold text-[var(--color-accent)] hover:underline"
+            >
+              Abrir detalle legal (Ley 1581)
+            </button>
+          )}
         </div>
-        {consentStatus?.accepted && (
-          <button
-            type="button"
-            onClick={() => setConfirmRevokeConsent(true)}
-            className="font-semibold text-[var(--color-danger-text,#ff8a8a)] hover:underline"
-          >
-            Revocar consentimiento
-          </button>
+
+        {consentStatus !== null && !consentStatus.accepted && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] pt-3">
+            <label className="flex cursor-pointer items-start gap-2 text-xs text-[var(--color-text-muted)]">
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={(e) => setConsentChecked(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+              />
+              <span>
+                Autorizo expresamente el uso en el probador virtual y almacenamiento temporal de mi fotografía biométrica (Ley 1581 de 2012 · <code>v1.0-LEY1581-2026</code>).
+              </span>
+            </label>
+            <button
+              type="button"
+              disabled={!consentChecked || consintiendo}
+              onClick={aceptarConsentimiento}
+              className="rounded-xl bg-[var(--color-accent)] px-4 py-1.5 text-xs font-semibold text-[var(--color-accent-contrast,#ffffff)] disabled:opacity-50"
+            >
+              {consintiendo ? 'Guardando…' : 'Aceptar y continuar'}
+            </button>
+          </div>
         )}
       </div>
 
@@ -322,10 +377,11 @@ export default function TryOnPage() {
                   photo={photo}
                   onUploaded={(p) => {
                     setDelMsg(null)
+                    setPhotoPurged(false)
                     job.reset()
                     setPhoto(p)
                   }}
-                  onConsentRequired={() => setConsent('foto')}
+                  onConsentRequired={() => { setConsentChecked(false); setConsent('foto') }}
                 />
               </PlanGate>
             </div>
@@ -365,10 +421,17 @@ export default function TryOnPage() {
                 selectedSize={selectedSize}
                 validation={garmentValidation}
                 validatingSize={validatingSize}
+                zoneNotice={zoneNotice}
                 onSelect={(id) => {
                   if (!job.active) {
-                    setGarmentId(id)
+                    const prev = garments.find((x) => x.id === garmentId)
                     const g = garments.find((x) => x.id === id)
+                    if (prev && g && prev.id !== g.id && (prev.zona === g.zona || prev.zona === 'CUERPO_COMPLETO' || g.zona === 'CUERPO_COMPLETO')) {
+                      setZoneNotice(`Reemplazaste «${prev.nombre}» por «${g.nombre}» en la misma zona corporal.`)
+                    } else {
+                      setZoneNotice(null)
+                    }
+                    setGarmentId(id)
                     setSelectedSize(g?.tallas[0] || 'M')
                     if (job.phase !== 'idle') job.reset()
                   }
@@ -407,13 +470,17 @@ export default function TryOnPage() {
                 {loadingHistory ? (
                   <p className="text-xs text-[var(--color-text-muted)] animate-pulse">Cargando tu historial de pruebas…</p>
                 ) : historyJobs.length === 0 ? (
-                  <p className="text-xs text-[var(--color-text-muted)]">Aún no has generado pruebas en este periodo.</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">Todavía no tienes pruebas virtuales registradas.</p>
                 ) : (
                   <ul className="divide-y divide-[var(--color-border)]" aria-label="Lista de pruebas anteriores">
                     {historyJobs.map((hj) => (
                       <li key={hj.jobId} className="flex items-center justify-between py-3">
                         <div className="flex items-center gap-3">
-                          {hj.resultUrl || hj.resultImageUrl ? (
+                          {photoPurged ? (
+                            <div className="flex h-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2 text-[10px] text-[var(--color-text-muted)]">
+                              Imagen eliminada por privacidad
+                            </div>
+                          ) : hj.resultUrl || hj.resultImageUrl ? (
                             <img src={hj.resultUrl || hj.resultImageUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
                           ) : (
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-surface-subtle)] text-xs">
@@ -423,17 +490,17 @@ export default function TryOnPage() {
                           <div>
                             <p className="text-xs font-semibold text-[var(--color-text)]">{hj.garmentName || 'Prueba virtual'}</p>
                             <p className="text-[10px] text-[var(--color-text-muted)]">
-                              Estado: <span className="font-bold">{hj.status}</span> · {hj.createdAt ? new Date(hj.createdAt).toLocaleDateString('es-CO') : ''}
+                              Estado: <span className="font-bold">{HISTORY_STATUS_LABEL[hj.status] || hj.status}</span> · {hj.createdAt ? new Date(hj.createdAt).toLocaleDateString('es-CO') : ''}
                             </p>
                           </div>
                         </div>
-                        {hj.status === 'COMPLETED' && (
+                        {hj.status === 'COMPLETED' && !photoPurged && (
                           <button
                             type="button"
                             onClick={() => openPastResult(hj)}
                             className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--color-accent)] hover:bg-[var(--color-surface-hover)]"
                           >
-                            Abrir resultado
+                            Ver resultado
                           </button>
                         )}
                       </li>
@@ -460,9 +527,12 @@ export default function TryOnPage() {
               >
                 Probarme {garment.nombre}
               </button>
+              <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
+                La imagen generada es una simulación aproximada y orientativa del estilo, no garantiza talla ni caída física exacta.
+              </p>
               {limitReached && (
                 <p className="mt-2 text-center text-xs text-[var(--color-danger-text,#ff8a8a)]">
-                  Cuotas mensuales agotadas. Pasa a Radar+ para continuar.
+                  Agotaste las pruebas disponibles en tu plan. Pasa a Radar+ para continuar.
                 </p>
               )}
             </div>
@@ -470,8 +540,12 @@ export default function TryOnPage() {
 
           {job.active && (
             <div className="mt-4" role="status" aria-live="polite">
-              <p className="font-semibold text-[var(--color-text)]">{job.phase === 'creating' ? 'Enviando tu prueba…' : 'Estamos vistiendo tu foto con IA…'}</p>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">Puede tardar unos segundos. Puedes seguir mirando prendas mientras tanto.</p>
+              <p className="font-semibold text-[var(--color-text)]">
+                {job.phase === 'creating'
+                  ? 'En cola — enviando tu prueba…'
+                  : 'Estamos vistiendo tu foto con IA… tiempo estimado ~25 segundos'}
+              </p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">Puedes seguir mirando prendas o consultar el historial mientras termina.</p>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-surface-subtle)]">
                 {job.progress ? (
                   <div className="h-full bg-[var(--color-accent)] transition-all" style={{ width: `${job.progress}%` }} />
@@ -490,8 +564,14 @@ export default function TryOnPage() {
               <ResultViewer
                 result={job.result}
                 garmentName={garment.nombre}
+                garmentId={garment.id}
+                garmentStore={garment.tienda}
+                garmentPrice={garment.precio}
+                garmentSizes={garment.tallas}
+                originalPhotoUrl={photo?.previewUrl}
                 onRegenerate={startTry}
                 onOtherGarment={otherGarment}
+                onDeletePhoto={() => setConfirmDel(true)}
               />
             </div>
           )}
@@ -548,19 +628,32 @@ export default function TryOnPage() {
 
       <ConfirmDialog
         open={!!consent}
-        title="Antes de probar, acepta el uso de tu foto"
-        confirmLabel="Acepto"
+        title="Consentimiento biométrico (Ley 1581 de 2012)"
+        confirmLabel="Aceptar y continuar"
         cancelLabel="Ahora no"
         busy={consintiendo}
+        confirmDisabled={!consentChecked}
         onConfirm={aceptarConsentimiento}
         onCancel={() => {
           setConsent(null)
+          setConsentChecked(false)
           setConsentMsg('')
           if (job.phase === 'error') job.reset()
         }}
       >
-        <p>Lo pide la Ley 1581 de protección de datos. Tu foto solo se usa para generar la prueba en el probador, se guarda de forma temporal y la puedes borrar cuando quieras.</p>
-        {consent === 'foto' && <p className="mt-2">Después de aceptar, vuelve a elegir tu foto.</p>}
+        <p>
+          Finalidades autorizadas: uso exclusivo en el probador virtual y almacenamiento temporal de tu fotografía biométrica conforme a la Ley 1581 de 2012 (términos <code className="text-xs">v1.0-LEY1581-2026</code>). Puedes revocar y eliminar tus datos cuando quieras.
+        </p>
+        <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-white/15 bg-white/5 p-3 text-xs text-white/90">
+          <input
+            type="checkbox"
+            checked={consentChecked}
+            onChange={(e) => setConsentChecked(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+          />
+          <span>Autorizo expresamente el tratamiento biométrico de mi fotografía para el probador virtual (v1.0-LEY1581-2026).</span>
+        </label>
+        {consent === 'foto' && <p className="mt-2 text-xs">Después de aceptar, podrás subir o reemplazar tu fotografía frontal.</p>}
         {consentMsg && <p role="alert" className="mt-2 text-[#ffb4b4]">{consentMsg}</p>}
       </ConfirmDialog>
 
