@@ -287,7 +287,6 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
           `En todas las compras de prendas y accesorios realizadas a distancia o por medios electrónicos a través de Style Radar, el consumidor tiene derecho a ejercer el Derecho de Retracto dentro de los cinco (5) días hábiles siguientes a la fecha de entrega física del producto.`,
           `Condiciones para el ejercicio del retracto: La prenda debe ser devuelta en el mismo estado en que fue recibida, sin uso, sin lavar, con todas sus etiquetas y empaques originales intactos. Los costos de transporte y demás que conlleve la devolución del producto correrán por cuenta del consumidor, salvo acuerdo en contrario con la tienda.`,
           `Excepciones legales al derecho de retracto: Conforme al numeral 7 del artículo 47 de la Ley 1480 de 2011, se exceptúan del derecho de retracto las prendas de uso personal e íntimo (tales como ropa interior, vestidos de baño, tapabocas o aretes), por razones evidentes de higiene y bioseguridad.`,
-          `Trámite directo con la tienda aliada: La tienda aliada gestionará directamente con el consumidor la solicitud dentro del plazo máximo de treinta (30) días calendario contados desde el momento en que se ejerció el derecho y se recibió el bien devuelto. Las suscripciones de planes en Style Radar no contemplan devoluciones por el tiempo restante`,
         ],
       },
       {
@@ -348,28 +347,11 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
       {
         id: 'pasarelas',
         numeral: '1.',
-        title: 'Pasarela de Pago Habilitada: Mercado Pago',
-        paragraphs: [
-          `Las transacciones de suscripciones en Style Radar se procesan de manera segura exclusivamente a través de la pasarela certificada Mercado Pago Colombia (${PROVIDER_INFO.pasarelaPagos}):`,
-        ],
+        title: 'Pago con Mercado Pago',
+        paragraphs: [],
         bullets: [
-          `Pagos de suscripciones procesados exclusivamente a través de la pasarela certificada Mercado Pago Colombia en pesos colombianos (COP)`,
-        ],
-      },
-      {
-        id: 'seguridad-cifrado',
-        numeral: '2.',
-        title: 'Seguridad Tecnológica y Protocolo Cero Almacenamiento de Tarjetas',
-        paragraphs: [
-          `Style Radar cuenta con certificados de seguridad SSL/TLS de 256 bits. Style Radar NUNCA tiene acceso ni almacena números de tarjeta, fechas de vencimiento ni códigos de seguridad bancarios. Todo el flujo financiero es encriptado y manejado directamente por la entidad vigilada por la Superintendencia Financiera de Colombia.`,
-        ],
-      },
-      {
-        id: 'reversion-pagos',
-        numeral: '3.',
-        title: 'Reversión del Pago (Decreto 587 de 2016)',
-        paragraphs: [
-          `De conformidad con el Decreto 587 de 2016, los participantes del proceso de pago deberán reversar los pagos solicitados por el consumidor cuando este sea objeto de fraude, la operación no haya sido solicitada, el producto adquirido no sea recibido o el producto entregado resulte defectuoso. La queja deberá presentarse dentro de los cinco (5) días hábiles siguientes a la fecha en que tuvo conocimiento del hecho.`,
+          `Los pagos de planes y suscripciones se hacen con Mercado Pago en pesos colombianos (COP)`,
+          `StyleRadar no almacena datos de tarjetas ni de otros medios de pago`,
         ],
       },
     ],
@@ -675,9 +657,9 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
         numeral: '1.',
         title: 'Preguntas Frecuentes de Compradores',
         paragraphs: [
-          `¿Cómo realizo un pago en Style Radar? Elige tu plan o suscripción y pulsa en pagar para ser dirigido al pago seguro con Mercado Pago`,
+          `¿Cómo se pagan los planes y suscripciones? El pago se hace con Mercado Pago`,
           `¿Cómo funciona el probador virtual? Puedes probar prendas sobre un maniquí base predefinido, o subir de forma 100% voluntaria tu propia foto para una experiencia personalizada protegida por nuestra Política de Privacidad.`,
-          `¿Puedo devolver una prenda si no me queda? Sí. Cuentas con 5 días hábiles desde la entrega para ejercer el Derecho de Retracto ante la tienda, siempre que la prenda esté nueva y no sea ropa interior o de uso íntimo.`,
+          `¿Puedo devolver una prenda si no me queda? Sí. Cuentas con 5 días hábiles desde la entrega para ejercer el Derecho de Retracto, siempre que la prenda esté nueva y no sea ropa interior o de uso íntimo.`,
         ],
       },
       {

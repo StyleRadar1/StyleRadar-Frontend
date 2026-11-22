@@ -18,9 +18,9 @@ const FAQS: FaqItem[] = [
   },
   {
     category: 'compras',
-    question: '¿Cómo se procesan los pagos de suscripción?',
+    question: '¿Cómo se pagan los planes y suscripciones?',
     answer:
-      'Todos los pagos de planes y suscripciones se procesan exclusivamente mediante la pasarela certificada Mercado Pago en pesos colombianos (COP). Style Radar nunca almacena datos financieros',
+      'Con Mercado Pago, y StyleRadar no almacena datos de tarjetas ni de otros medios de pago',
   },
   {
     category: 'retracto',
