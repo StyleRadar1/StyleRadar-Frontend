@@ -225,6 +225,7 @@ describe('mensajes', () => {
 describe('búsquedas y alertas', () => {
   it('404 y 403: la alerta se quita de la lista sin mostrar su ID', async () => {
     const user = userEvent.setup()
+    setMockPlan('u-1', 'RADAR_PLUS')
     escenario('alerta-borrada')
     renderAt('/alertas', [{ path: '/alertas', element: <AlertsPage /> }])
     await user.click(await screen.findByRole('switch', { name: 'Alerta para Botella térmica 1 L' }, { timeout: 3000 }))
@@ -235,6 +236,7 @@ describe('búsquedas y alertas', () => {
 
   it('403: alerta de otra persona se trata como «Ya no está disponible»', async () => {
     const user = userEvent.setup()
+    setMockPlan('u-1', 'RADAR_PLUS')
     escenario('alerta-ajena')
     renderAt('/alertas', [{ path: '/alertas', element: <AlertsPage /> }])
     await user.click(await screen.findByRole('switch', { name: 'Alerta para Botella térmica 1 L' }, { timeout: 3000 }))
