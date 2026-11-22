@@ -95,44 +95,52 @@ describe('Admin › Tiendas', () => {
 })
 
 describe('Admin › Fundaciones', () => {
-  it('registra una fundación nueva validando duplicados (409) y certificado (400)', async () => {
-    const user = userEvent.setup()
+  it('registra una fundación nueva con ubicación, categorías, representante y certificado (SR-RF-63)', async () => {
+    const user = userEvent.setup({ applyAccept: false })
     renderAt('/admin/fundaciones', [['/admin/fundaciones', <AdminFoundationsPage key="p" />]])
     await user.click(await screen.findByRole('button', { name: '+ Nueva fundación' }, T))
     const dlg = screen.getByRole('dialog', { name: 'Registrar fundación aliada' })
     await user.click(within(dlg).getByRole('button', { name: 'Registrar fundación' }))
-    expect(within(dlg).getByText('Escribe el nombre de la fundación.')).toBeInTheDocument()
-    expect(within(dlg).getByText('Adjunta el certificado de existencia.')).toBeInTheDocument()
+    expect(within(dlg).getByText('El nombre es obligatorio')).toBeInTheDocument()
+    expect(within(dlg).getByText('Debe aceptar al menos una categoría de prenda')).toBeInTheDocument()
+    expect(within(dlg).getByText('El ID del usuario representante es obligatorio')).toBeInTheDocument()
+    expect(within(dlg).getByText('El certificado de personería jurídica en PDF es obligatorio para registrar la fundación aliada')).toBeInTheDocument()
 
-    const campos: [string, string][] = [['Nombre', 'Fundación Abrigo Bogotá'], ['NIT', '900.215.884-1'], ['Correo', 'hola@ropaconamor.org'], ['Teléfono', '+57 601 555 0400'], ['Barrio', 'Usme'], ['Dirección', 'Cl. 90 Sur #1-20'], ['Representante legal', 'Lucía Herrera']]
+    const campos: [string, string][] = [['Nombre', 'Fundación Abrigo Bogotá'], ['NIT', '900215884-1'], ['Correo', 'hola@ropaconamor.org'], ['Barrio', 'Usme'], ['Dirección', 'Cl. 90 Sur #1-20'], ['Latitud', '4.48'], ['Longitud', '-74.12']]
     for (const [label, v] of campos) await user.type(within(dlg).getByLabelText(label), v)
+    await user.click(within(dlg).getByLabelText('Calzado'))
+    await user.type(within(dlg).getByLabelText('Representante legal'), 'Mateo')
+    await user.click(await within(dlg).findByRole('button', { name: /Elegir Mateo Pérez/ }, T))
+    await user.upload(within(dlg).getByLabelText(/Certificado de existencia/), new File([new Uint8Array(64)], 'foto.jpg', { type: 'image/jpeg' }))
+    expect(within(dlg).getByText('Sube el certificado en PDF de máximo 6 MB.')).toBeInTheDocument()
     await user.click(within(dlg).getByRole('button', { name: 'Registrar fundación' }))
-    expect(within(dlg).getByText('Ya hay una fundación registrada con ese nombre.')).toBeInTheDocument()
-    expect(within(dlg).getByText('Ya hay una fundación registrada con ese NIT.')).toBeInTheDocument()
-    expect(within(dlg).getByText('Esta persona ya figura como representante legal.')).toBeInTheDocument()
+    expect(within(dlg).getByText('Ya existe una fundación aliada registrada con el nombre: Fundación Abrigo Bogotá')).toBeInTheDocument()
+    expect(within(dlg).getByText('Ya existe una fundación aliada registrada con el NIT: 900215884-1')).toBeInTheDocument()
+    expect(within(dlg).getByText('El usuario con ID u-2 ya se encuentra asignado como representante de otra fundación aliada')).toBeInTheDocument()
 
     await user.clear(within(dlg).getByLabelText('Nombre'))
     await user.type(within(dlg).getByLabelText('Nombre'), 'Ropa con Amor')
     await user.clear(within(dlg).getByLabelText('NIT'))
-    await user.type(within(dlg).getByLabelText('NIT'), '901.555.000-3')
-    await user.clear(within(dlg).getByLabelText('Representante legal'))
-    await user.type(within(dlg).getByLabelText('Representante legal'), 'Elena Mora')
-    await user.upload(
-      within(dlg).getByLabelText(/Certificado de existencia/),
-      new File([new Uint8Array(64)], 'certificado.pdf', { type: 'application/pdf' }),
-    )
+    await user.type(within(dlg).getByLabelText('NIT'), '901555000-3')
+    await user.click(within(dlg).getByRole('button', { name: 'Cambiar representante' }))
+    await user.type(within(dlg).getByLabelText('Representante legal'), 'Daniela')
+    await user.click(await within(dlg).findByRole('button', { name: /Elegir Daniela Ortiz/ }, T))
+    await user.upload(within(dlg).getByLabelText(/Certificado de existencia/), new File([new Uint8Array(64)], 'certificado.pdf', { type: 'application/pdf' }))
+    expect(await within(dlg).findByText('Archivo: certificado.pdf', {}, T)).toBeInTheDocument()
     await user.click(within(dlg).getByRole('button', { name: 'Registrar fundación' }))
     expect(await screen.findByText(/Ropa con Amor quedó registrada/, {}, T)).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getByText('Ropa con Amor')).toBeInTheDocument()
-  }, 10000)
+  }, 15000)
 
-  it('edita, desactiva una fundación y controla conflicto 409 si ya está inactiva', async () => {
+  it('edita, desactiva con motivo, controla el 409 y reactiva (SR-RF-64 y 65)', async () => {
     const user = userEvent.setup()
     renderAt('/admin/fundaciones/suba', [['/admin/fundaciones/:id', <AdminFoundationDetailPage key="p" />]])
-    const tel = await screen.findByLabelText('Teléfono', {}, T)
+    expect(await screen.findByText('Camila Suárez', {}, T)).toBeInTheDocument()
+    const tel = screen.getByLabelText('Teléfono (opcional)')
     await user.clear(tel); await user.type(tel, '+57 601 555 9999')
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
     expect(await screen.findByText('Fundación actualizada.', {}, T)).toBeInTheDocument()
+    expect(screen.getByLabelText('Teléfono (opcional)')).toHaveValue('+57 601 555 9999')
 
     sessionStorage.setItem('sr_mock', 'conflicto')
     await user.click(screen.getByRole('button', { name: 'Desactivar fundación' }))
@@ -141,13 +149,35 @@ describe('Admin › Fundaciones', () => {
 
     sessionStorage.clear()
     await user.click(screen.getByRole('button', { name: 'Desactivar fundación' }))
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Desactivar' }))
-    expect(await screen.findByRole('button', { name: 'Reactivar fundación' }, T)).toBeInTheDocument()
-  })
+    const dlg = screen.getByRole('dialog', { name: '¿Desactivar esta fundación?' })
+    await user.type(within(dlg).getByLabelText('Motivo (opcional)'), 'Cerró su sede.')
+    await user.click(within(dlg).getByRole('button', { name: 'Desactivar' }))
+    expect(await screen.findByText('Fundación desactivada.', {}, T)).toBeInTheDocument()
 
-  it('valida el NIT, el correo y el teléfono', () => {
-    const base = { nombre: 'Fundación Uno', nit: '900.1-1', correo: 'malo', telefono: '12', barrio: 'X', direccion: 'Y', representante: 'Z' }
-    expect(erroresFundacion(base)).toMatchObject({ nit: expect.stringContaining('dígito de verificación'), correo: expect.any(String), telefono: expect.any(String) })
+    await user.click(screen.getByRole('button', { name: 'Reactivar fundación' }))
+    await user.click(within(screen.getByRole('dialog', { name: '¿Reactivar esta fundación?' })).getByRole('button', { name: 'Reactivar' }))
+    expect(await screen.findByText('Fundación reactivada.', {}, T)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Desactivar fundación' })).toBeInTheDocument()
+  }, 15000)
+
+  it('valida NIT sin puntos, ubicación, categorías, representante y largos (SR-RF-63)', () => {
+    const base = {
+      name: 'Fundación Uno', nit: '900.215.884-1', email: 'malo', phone: '1'.repeat(31), neighborhood: 'X', address: 'Y', description: '',
+      latitude: '95', longitude: 'abc', acceptedCategories: [], representativeId: '', representativeName: '', legalEntityCertificateUrl: '', certificateName: '',
+      supportedCauses: '', openingHours: '', donationPolicies: '',
+    }
+    expect(erroresFundacion(base)).toEqual({
+      nit: 'El NIT debe tener un formato válido (ej. 900215884-1)',
+      email: 'El email no tiene un formato válido',
+      phone: 'El teléfono no puede superar 30 caracteres',
+      latitude: 'La latitud debe estar entre -90 y 90',
+      longitude: 'La longitud debe estar entre -180 y 180',
+      acceptedCategories: 'Debe aceptar al menos una categoría de prenda',
+      representativeId: 'El ID del usuario representante es obligatorio',
+    })
+    const ok = { ...base, nit: '900215884', email: 'a@b.co', phone: '', latitude: '4.6', longitude: '-74,1', acceptedCategories: ['TOP' as const], representativeId: '7' }
+    expect(erroresFundacion(ok)).toEqual({})
+    expect(erroresFundacion({ ...ok, nit: '1234567' })).toHaveProperty('nit')
   })
 })
 

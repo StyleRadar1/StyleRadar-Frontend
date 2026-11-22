@@ -83,25 +83,80 @@ export interface StoreAdministratorDto {
 
 export type EstadoFundacion = 'Activa' | 'Inactiva'
 
-export interface AdminFoundationDto {
-  id: string
-  nombre: string
+/** SR-RF-63: tipos de prenda que recibe una fundación (acceptedCategories). */
+export type GarmentCategory = 'TOP' | 'BOTTOM' | 'FOOTWEAR' | 'DRESS' | 'ACCESSORY'
+export const GARMENT_CATEGORIES: GarmentCategory[] = ['TOP', 'BOTTOM', 'FOOTWEAR', 'DRESS', 'ACCESSORY']
+export const GARMENT_CATEGORY_LABEL: Record<GarmentCategory, string> = {
+  TOP: 'Prendas superiores', BOTTOM: 'Prendas inferiores', FOOTWEAR: 'Calzado', DRESS: 'Vestidos', ACCESSORY: 'Accesorios',
+}
+
+/** Respuesta de GET, POST y PUT /api/v1/admin/foundations y de PATCH …/{id}/deactivate|activate (SR-RF-63 a 65). */
+export interface FoundationResponseDto {
+  id: number | string
+  name: string
   nit: string
-  correo: string
-  telefono: string
-  barrio: string
-  direccion: string
-  representante: string
+  neighborhood: string
+  description?: string | null
+  address: string
+  phone?: string | null
+  email: string
+  latitude: number
+  longitude: number
+  acceptedCategories: GarmentCategory[]
+  representativeId: number | string
+  legalEntityCertificateUrl: string
+  supportedCauses?: string | null
+  openingHours?: string | null
+  donationPolicies?: string | null
+  active: boolean
+  registeredAt: string
+}
+
+/** Cuerpo de POST y PUT /api/v1/admin/foundations. */
+export type FoundationRequestDto = Omit<FoundationResponseDto, 'id' | 'active' | 'registeredAt'>
+
+/** Límites de SR-RF-63 y 64. */
+export const FOUNDATION_LIMITS = {
+  nameMin: 4, nameMax: 120, neighborhood: 80, description: 500, address: 200, phone: 30,
+  certificateUrl: 300, supportedCauses: 250, openingHours: 150, donationPolicies: 500, reason: 500,
+} as const
+
+/** Fundación como la muestra el admin: los datos del back más lo que la pantalla calcula. */
+export interface AdminFoundationDto extends Omit<FoundationResponseDto, 'id'> {
+  id: string
   estado: EstadoFundacion
   aliadaDesde: string
+  /** ms-tiendas no las envía (vienen del servicio de donaciones): en cero hasta conectarlo. */
   donaciones: { pendientes: number; enProceso: number; recibidas: number; rechazadas: number }
 }
 
-/** Datos editables al registrar o actualizar una fundación. */
-export type FoundationFormDto = Pick<AdminFoundationDto, 'nombre' | 'nit' | 'correo' | 'telefono' | 'barrio' | 'direccion' | 'representante'> & {
-  certificado?: string
+/** Datos del formulario de registro y edición. Los números van como texto mientras se escriben. */
+export interface FoundationFormDto {
+  name: string
+  nit: string
+  email: string
+  phone: string
+  neighborhood: string
+  address: string
+  description: string
+  latitude: string
+  longitude: string
+  acceptedCategories: GarmentCategory[]
+  representativeId: string
+  /** Solo para mostrar en el formulario; no se envía. */
+  representativeName: string
+  legalEntityCertificateUrl: string
+  /** Nombre del PDF que se acaba de subir; no se envía. */
+  certificateName: string
+  supportedCauses: string
+  openingHours: string
+  donationPolicies: string
 }
-export const FUNDACION_VACIA: FoundationFormDto = { nombre: '', nit: '', correo: '', telefono: '', barrio: '', direccion: '', representante: '', certificado: '' }
+export const FUNDACION_VACIA: FoundationFormDto = {
+  name: '', nit: '', email: '', phone: '', neighborhood: '', address: '', description: '', latitude: '', longitude: '',
+  acceptedCategories: [], representativeId: '', representativeName: '', legalEntityCertificateUrl: '', certificateName: '',
+  supportedCauses: '', openingHours: '', donationPolicies: '',
+}
 
 export interface AdminPlaylistDto {
   id: string
