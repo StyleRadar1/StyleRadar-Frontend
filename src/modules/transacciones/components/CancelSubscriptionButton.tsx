@@ -34,26 +34,8 @@ export function CancelSubscriptionButton({
   const [error, setError] = useState<string | null>(null)
   const effectivePlanName = planName ?? (tipo === 'comprador' ? 'Radar+' : 'Tienda aliada')
 
-  if (isFreePlan) {
-    return (
-      <div className={`text-xs text-[var(--sr-text-muted,var(--color-text-muted))] ${className}`}>
-        <Button variant="secundario" disabled className="opacity-60 cursor-not-allowed">
-          Cancelar suscripción
-        </Button>
-        <p className="mt-1">Tu plan es gratuito, no tiene cobros que cancelar</p>
-      </div>
-    )
-  }
-
-  if (status !== 'ACTIVA' && status !== 'RADAR_PLUS') {
-    return (
-      <div className={`text-xs text-[var(--sr-text-muted,var(--color-text-muted))] ${className}`}>
-        <Button variant="secundario" disabled className="opacity-60 cursor-not-allowed">
-          Cancelar suscripción
-        </Button>
-        <p className="mt-1">No hay una suscripción activa para cancelar</p>
-      </div>
-    )
+  if (isFreePlan || status !== 'ACTIVA') {
+    return null
   }
 
   if (!renewalEnabled) {

@@ -2,12 +2,14 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
-import { isValidPayerEmail } from '../utils/validation'
+import { isValidNit, isValidPayerEmail } from '../utils/validation'
+import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { MOCK_CHECKOUT_RESPONSE, STORE_PLAN } from '../mocks/plans'
 import type { PaymentDto } from '../types/payment.dto'
 import type { CheckoutResponseDto } from '../types/plan.dto'
 import type {
   StorePayResult,
+  StoreSubscriptionActivationDto,
   StoreSubscriptionDto,
   StoreSubscriptionStateDto,
   StoreSubscriptionStatus,
@@ -24,11 +26,15 @@ export const STORE_SUB_CHANGED = 'sr:store-sub-changed'
 
 const SEED = (): StoreSubscriptionStateDto => ({
   subscription: {
-    status: 'PRUEBA',
+    suscripcionId: 'SUB-ALM-1',
+    status: 'PENDIENTE',
+    estado: 'PENDIENTE',
     planName: STORE_PLAN.name,
-    amount: STORE_PLAN.price,
-    trialEndsAt: '2026-11-30',
-    renewalEnabled: true,
+    amount: STORE_SUBSCRIPTION_PRICE,
+    fechaInicio: null,
+    fechaFin: null,
+    renewalEnabled: false,
+    autoRenovacion: false,
   },
   payments: [],
 })
@@ -239,36 +245,38 @@ export const storeSubscriptionService = {
 
   /**
    * RF-67: activación obligatoria desde el onboarding tras el registro del almacén.
-   * Valida correo (400), verifica que no tenga suscripción ACTIVA ni pago PENDIENTE (409),
+   * DTO: { correoPagador, nit, almacenId }, donde almacenId sale de la sesión y nunca del formulario.
+   * Valida correo (400) y NIT de 9 caracteres (400), verifica que no tenga suscripción ACTIVA ni pago PENDIENTE (409),
    * y actualiza el estado a PENDIENTE o ACTIVA según el resultado de Mercado Pago.
    */
   async activateFromOnboarding(
-    payerEmail: string,
+    correoPagador: string,
     orderId = 'MOCK_STORE_OK',
     nit?: string,
-    almacenId?: string,
   ): Promise<StorePayResult> {
-    if (!isValidPayerEmail(payerEmail)) {
+    if (!isValidPayerEmail(correoPagador)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
     }
-    if (nit !== undefined && !/^\d{9}$/.test(nit.trim())) {
+    if (nit !== undefined && !isValidNit(nit)) {
       throw new ApiError(400, 'Ingresa un NIT válido de 9 dígitos')
+    }
+    const sessionUser = mockSessionUser()
+    const resolvedAlmacenId = sessionUser?.id ?? 'almacen-1'
+    const dto: StoreSubscriptionActivationDto = {
+      correoPagador: correoPagador.trim(),
+      nit: (nit ?? '').trim(),
+      almacenId: resolvedAlmacenId,
     }
     const before = readMockStoreSubscription()
     if (
       before.subscription.status === 'ACTIVA' ||
-      before.subscription.status === 'PENDIENTE' ||
       before.payments.some((p) => p.status === 'pendiente')
     ) {
       throw new ApiError(409, 'Tu almacén ya tiene una suscripción activa o un pago pendiente')
     }
     if (!env.useMocks) {
       const r = await apiClient
-        .post<CheckoutResponseDto>(`${BASE}/checkout`, {
-          payerEmail: payerEmail.trim(),
-          nit: nit?.trim(),
-          almacenId,
-        })
+        .post<CheckoutResponseDto>(`${BASE}/checkout`, dto)
         .then((res) => res.data)
       return { redirectTo: r.initPoint }
     }
@@ -281,16 +289,16 @@ export const storeSubscriptionService = {
     const result = await planService.getCheckoutResult(orderId)
 
     const state = readMockStoreSubscription()
-    const u = mockSessionUser()
-    const resolvedEmail = payerEmail.trim()
+    const u = sessionUser
+    const resolvedEmail = dto.correoPagador
     const pagoId = `SR-${2000 + state.payments.length}`
-    const suscripcionId = state.subscription.suscripcionId ?? `SUB-ALM-${almacenId ?? u?.id ?? '1'}`
+    const suscripcionId = state.subscription.suscripcionId ?? `SUB-ALM-${dto.almacenId}`
     const today = new Date().toISOString().slice(0, 10)
     const payment: PaymentDto = {
       id: pagoId,
       pagoId,
       suscripcionId,
-      suscriptorId: almacenId ?? u?.id ?? 'anon',
+      suscriptorId: dto.almacenId,
       userId: u?.id ?? 'anon',
       userName: u?.name ?? 'Tienda',
       userEmail: resolvedEmail,
@@ -311,23 +319,19 @@ export const storeSubscriptionService = {
       estado: result.status === 'aprobado' ? 'APROBADO' : result.status === 'pendiente' ? 'PENDIENTE' : 'RECHAZADO',
     }
     const nextStatus: StoreSubscriptionStatus =
-      result.status === 'aprobado'
-        ? 'ACTIVA'
-        : result.status === 'pendiente'
-          ? 'PENDIENTE'
-          : state.subscription.status
+      result.status === 'aprobado' ? 'ACTIVA' : 'PENDIENTE'
     const endPeriod = addOneMonth()
     const next: StoreSubscriptionStateDto = {
       subscription: {
         ...state.subscription,
         suscripcionId,
         status: nextStatus,
-        estado: nextStatus === 'ACTIVA' ? 'ACTIVA' : 'PENDIENTE',
+        estado: nextStatus,
         planName: STORE_PLAN.name,
-        amount: STORE_PLAN.price,
+        amount: STORE_SUBSCRIPTION_PRICE,
         payerEmail: resolvedEmail,
-        nit: nit?.trim() ?? state.subscription.nit,
-        almacenId: almacenId ?? state.subscription.almacenId ?? u?.id,
+        nit: dto.nit || state.subscription.nit,
+        almacenId: dto.almacenId,
         ...(result.status === 'aprobado'
           ? {
               fechaInicio: today,
@@ -339,6 +343,8 @@ export const storeSubscriptionService = {
           : {
               fechaInicio: null,
               fechaFin: null,
+              renewalEnabled: false,
+              autoRenovacion: false,
             }),
       },
       payments: [payment, ...state.payments],

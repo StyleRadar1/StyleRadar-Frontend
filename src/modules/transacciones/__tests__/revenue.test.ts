@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { calcRevenue } from '../services/paymentService'
 import type { PaymentDto } from '../types/payment.dto'
 
@@ -13,12 +14,16 @@ function pay(id: string, amount: number, status: PaymentDto['status']): PaymentD
 
 describe('calcRevenue', () => {
   it('suma solo los aprobados', () => {
-    const payments = [pay('1', 14_900, 'aprobado'), pay('2', 14_900, 'aprobado'), pay('3', 14_900, 'rechazado')]
-    expect(calcRevenue(payments)).toBe(29_800)
+    const payments = [
+      pay('1', RADAR_PLUS_PRICE, 'aprobado'),
+      pay('2', RADAR_PLUS_PRICE, 'aprobado'),
+      pay('3', RADAR_PLUS_PRICE, 'rechazado'),
+    ]
+    expect(calcRevenue(payments)).toBe(RADAR_PLUS_PRICE * 2)
   })
 
   it('ignora pendientes y rechazados', () => {
-    const payments = [pay('1', 89_000, 'pendiente'), pay('2', 14_900, 'rechazado')]
+    const payments = [pay('1', STORE_SUBSCRIPTION_PRICE, 'pendiente'), pay('2', RADAR_PLUS_PRICE, 'rechazado')]
     expect(calcRevenue(payments)).toBe(0)
   })
 
@@ -28,11 +33,11 @@ describe('calcRevenue', () => {
 
   it('ingresos aprobados en caso mixto (usuarios y tiendas)', () => {
     const payments = [
-      pay('1', 14_900, 'aprobado'),
-      pay('2', 89_000, 'aprobado'),
-      pay('3', 14_900, 'pendiente'),
-      pay('4', 14_900, 'rechazado'),
+      pay('1', RADAR_PLUS_PRICE, 'aprobado'),
+      pay('2', STORE_SUBSCRIPTION_PRICE, 'aprobado'),
+      pay('3', RADAR_PLUS_PRICE, 'pendiente'),
+      pay('4', RADAR_PLUS_PRICE, 'rechazado'),
     ]
-    expect(calcRevenue(payments)).toBe(14_900 + 89_000)
+    expect(calcRevenue(payments)).toBe(RADAR_PLUS_PRICE + STORE_SUBSCRIPTION_PRICE)
   })
 })

@@ -122,7 +122,7 @@ export function PayerEmailForm({
           }`}
         />
         <span id={hintId} className="text-xs text-[var(--sr-text-muted,var(--color-text-muted))]">
-          Enviaremos el comprobante y continuaremos a Mercado Pago con este correo.
+          Enviaremos el comprobante y continuaremos a Mercado Pago con este correo
         </span>
         {validationError && (
           <p

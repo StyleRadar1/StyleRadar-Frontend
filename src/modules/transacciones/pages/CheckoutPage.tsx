@@ -116,9 +116,9 @@ function CheckoutResult() {
         <dl className="grid grid-cols-2 gap-2 text-sm">
           <dt className="text-white/50">Orden</dt><dd className="font-mono">{result.orderId}</dd>
           <dt className="text-white/50">Plan</dt><dd>{result.planName}</dd>
-          <dt className="text-white/50">Monto</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
+          <dt className="text-white/50">Total a pagar</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
           {result.payerEmail && <><dt className="text-white/50">Pagador</dt><dd className="truncate">{result.payerEmail}</dd></>}
-          {result.method && <><dt className="text-white/50">Método</dt><dd>{result.method}</dd></>}
+          <dt className="text-white/50">Método</dt><dd>{result.method ?? 'Mercado Pago'}</dd>
           <dt className="text-white/50">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
           <dt className="text-white/50">Suscripción</dt><dd><Badge tone={estadoSuscripcion === 'ACTIVA' ? 'violeta' : 'lavanda'}>{estadoSuscripcion}</Badge></dd>
           <dt className="text-white/50">Vigencia</dt>
@@ -167,6 +167,18 @@ function PlanCard({
           </li>
         ))}
       </ul>
+      {plan.price > 0 && (
+        <div className="mt-4 rounded-xl border border-white/15 bg-white/[.04] p-3 text-xs text-white/80">
+          <div className="flex items-center justify-between">
+            <span>Total a pagar</span>
+            <strong className="font-mono text-sm text-arena">{formatCOP(plan.price)}</strong>
+          </div>
+          <div className="mt-1 flex items-center justify-between text-white/60">
+            <span>Método de pago</span>
+            <span>Mercado Pago</span>
+          </div>
+        </div>
+      )}
       <div className="mt-6">
         {isCurrent ? (
           <>
@@ -284,7 +296,7 @@ function PlansSelector() {
         <Badge tone="violeta">Planes</Badge>
         <h1 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Elige tu plan</h1>
         <p className="mx-auto mt-3 max-w-lg text-white/70">
-          Descubre moda local en Bogotá. Empieza gratis o desbloquea todo con Radar+.
+          Descubre moda local en Bogotá. Empieza gratis o desbloquea todo con Radar+
         </p>
       </div>
 

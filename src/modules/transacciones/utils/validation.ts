@@ -32,3 +32,11 @@ export function isValidPayerEmail(email: string): boolean {
 
   return true
 }
+
+/**
+ * RF-67: Validación del NIT del almacén (exactamente 9 caracteres numéricos).
+ */
+export function isValidNit(nit: string): boolean {
+  if (!nit || typeof nit !== 'string') return false
+  return /^\d{9}$/.test(nit.trim())
+}

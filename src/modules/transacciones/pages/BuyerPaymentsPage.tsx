@@ -88,7 +88,7 @@ export function BuyerPaymentsSection() {
   if (payments.length === 0) {
     return (
       <EmptyState title="Aún no tienes pagos de suscripción registrados">
-        Cuando actives Radar+, tus transacciones y comprobantes aparecerán aquí ordenados del más reciente al más antiguo.
+        Cuando actives Radar+, tus transacciones y comprobantes aparecerán aquí ordenados del más reciente al más antiguo
       </EmptyState>
     )
   }

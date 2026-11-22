@@ -2,13 +2,12 @@ import { Badge } from '@/modules/core/design-system'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CancelSubscriptionButton } from './CancelSubscriptionButton'
+import { RADAR_PLUS_PRICE } from '../constants/plansByRole'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { getTryOnPhotoUses } from '../services/userPlanService'
 import { PLAN_LIMITS } from '../types/plan.dto'
 
-const RADAR_PLUS_PRICE = 14_900
-
-const formatFechaCobro = (iso?: string) =>
+const formatFechaCobro = (iso?: string | null) =>
   iso
     ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
         day: 'numeric',
@@ -19,8 +18,8 @@ const formatFechaCobro = (iso?: string) =>
     : '9 de diciembre de 2026'
 
 /**
- * RF-95, RF-102, E.2: Muestra en /planes y /perfil para el comprador:
- * el estado de la renovación automática, próximo cobro, límite aplicado del probador con foto propia y el botón "Cancelar suscripción".
+ * RF-95, RF-100, RF-102: Muestra en /planes y /perfil para el comprador:
+ * suscripcionId, estado, fechaInicio, fechaFin, autoRenovacion, límite aplicado del probador con foto propia y el botón "Cancelar suscripción" (solo en estado ACTIVA).
  */
 export function BuyerRenewalStatusCard() {
   const { user } = useAuth()
@@ -49,11 +48,6 @@ export function BuyerRenewalStatusCard() {
               Límite aplicado: Probador con maniquí (sin probador con foto propia ni alertas de disponibilidad)
             </p>
           </div>
-          <CancelSubscriptionButton
-            tipo="comprador"
-            renewalEnabled={false}
-            isFreePlan
-          />
         </div>
       </div>
     )
@@ -62,7 +56,11 @@ export function BuyerRenewalStatusCard() {
   if (plan !== 'RADAR_PLUS') return null
 
   const renewalActive = details?.renewalEnabled !== false
-  const fechaTexto = formatFechaCobro(details?.proximoCobro ?? details?.periodEndsAt)
+  const estado = details?.estado ?? 'ACTIVA'
+  const suscripcionId = details?.suscripcionId ?? `SUB-USR-${user?.id ?? 'u-1'}`
+  const fechaInicio = details?.fechaInicio ?? '2026-11-09'
+  const fechaFinRaw = details?.fechaFin ?? details?.proximoCobro ?? details?.periodEndsAt ?? '2026-12-09'
+  const fechaTexto = formatFechaCobro(fechaFinRaw)
   const valorTexto = formatCOP(RADAR_PLUS_PRICE)
 
   return (
@@ -78,7 +76,19 @@ export function BuyerRenewalStatusCard() {
             <Badge tone={renewalActive ? 'violeta' : 'arena'}>
               {renewalActive ? 'Activa' : 'Desactivada'}
             </Badge>
+            <Badge tone={estado === 'ACTIVA' ? 'violeta' : 'lavanda'}>{estado}</Badge>
           </div>
+          <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+            <span>suscripcionId: <b className="font-mono">{suscripcionId}</b></span>
+            {' · '}
+            <span>estado: <b>{estado}</b></span>
+            {' · '}
+            <span>fechaInicio: <b className="font-mono">{fechaInicio}</b></span>
+            {' · '}
+            <span>fechaFin: <b className="font-mono">{fechaFinRaw}</b></span>
+            {' · '}
+            <span>autoRenovacion: <b>{renewalActive ? 'true' : 'false'}</b></span>
+          </p>
           <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
             {renewalActive
               ? `Próximo cobro: ${fechaTexto} · ${valorTexto}`
@@ -91,7 +101,7 @@ export function BuyerRenewalStatusCard() {
 
         <CancelSubscriptionButton
           tipo="comprador"
-          status="RADAR_PLUS"
+          status={estado}
           renewalEnabled={renewalActive}
           fechaFin={fechaTexto}
         />

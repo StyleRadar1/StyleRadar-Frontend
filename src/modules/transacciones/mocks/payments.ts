@@ -1,3 +1,4 @@
+import { RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import type { PaymentDto, PaymentMethod, PaymentStatus, PaymentStatusV4 } from '../types/payment.dto'
 
 const methods: PaymentMethod[] = ['Mercado Pago']
@@ -14,10 +15,13 @@ function mockPayment(i: number): PaymentDto {
   const day = 1 + (i * 3) % 28
   const plan = i % 3 === 0 ? 'store' as const : 'plus' as const
   const planNames = { free: 'Radar', plus: 'Radar+', store: 'Tienda aliada' }
-  const prices = { free: 0, plus: 14_900, store: 89_000 }
+  const prices = { free: 0, plus: RADAR_PLUS_PRICE, store: STORE_SUBSCRIPTION_PRICE }
   const pagoId = `SR-${String(1000 + i).padStart(4, '0')}`
   const suscripcionId = plan === 'store' ? `SUB-ALM-${100 + i}` : `SUB-USR-${100 + i}`
-  const suscriptorId = plan === 'store' ? `alm-${(i % 6) + 1}` : `usr-${(i % 10) + 1}`
+  const suscriptorId =
+    plan === 'store'
+      ? `alm-${String((i % 6) + 1).padStart(2, '0')}`
+      : `usr-${String((i % 10) + 1).padStart(2, '0')}`
   const ref = `MP-${74000000 + i * 1357}`
   const fecha = `2026-09-${String(day).padStart(2, '0')}`
   return {
@@ -58,8 +62,8 @@ export const MOCK_BUYER_PAYMENTS: Record<string, PaymentDto[]> = {
       userRole: 'COMPRADOR',
       planId: 'plus',
       planName: 'Radar+',
-      amount: 14_900,
-      valor: 14_900,
+      amount: RADAR_PLUS_PRICE,
+      valor: RADAR_PLUS_PRICE,
       currency: 'COP',
       moneda: 'COP',
       mpReference: 'MP-88941205',
@@ -80,8 +84,8 @@ export const MOCK_BUYER_PAYMENTS: Record<string, PaymentDto[]> = {
       userRole: 'COMPRADOR',
       planId: 'plus',
       planName: 'Radar+',
-      amount: 14_900,
-      valor: 14_900,
+      amount: RADAR_PLUS_PRICE,
+      valor: RADAR_PLUS_PRICE,
       currency: 'COP',
       moneda: 'COP',
       mpReference: 'MP-88410092',
@@ -102,8 +106,8 @@ export const MOCK_BUYER_PAYMENTS: Record<string, PaymentDto[]> = {
       userRole: 'COMPRADOR',
       planId: 'plus',
       planName: 'Radar+',
-      amount: 14_900,
-      valor: 14_900,
+      amount: RADAR_PLUS_PRICE,
+      valor: RADAR_PLUS_PRICE,
       currency: 'COP',
       moneda: 'COP',
       mpReference: 'MP-87990314',

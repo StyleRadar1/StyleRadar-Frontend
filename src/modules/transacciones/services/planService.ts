@@ -4,7 +4,7 @@ import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { isValidPayerEmail } from '../utils/validation'
-import { isPlanCompatibleWithRole } from '../constants/plansByRole'
+import { isPlanCompatibleWithRole, RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import { PLANS, MOCK_CHECKOUT_RESPONSE, MOCK_CHECKOUT_RESULTS } from '../mocks/plans'
 import type { Role } from '@/modules/core/types/roles'
@@ -113,7 +113,7 @@ export const planService = {
         const meta: LastCheckoutMeta = {
           planId: planId === 'store' ? 'store' : 'plus',
           payerEmail: payerEmail?.trim(),
-          amount: planId === 'store' ? 89_000 : 14_900,
+          amount: planId === 'store' ? STORE_SUBSCRIPTION_PRICE : RADAR_PLUS_PRICE,
           planName: planId === 'store' ? 'Tienda aliada' : 'Radar+',
         }
         sessionStorage.setItem(LAST_CHECKOUT_KEY, JSON.stringify(meta))

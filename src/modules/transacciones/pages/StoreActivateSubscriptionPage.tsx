@@ -7,10 +7,12 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { cerrarSesionYVolverAlInicio } from '@/modules/identidad/states/salida'
 import { PayerEmailForm, PAYMENT_INIT_ERROR_MSG } from '../components/PayerEmailForm'
+import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
 import { STORE_PLAN } from '../mocks/plans'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { CheckoutResultDto } from '../types/plan.dto'
+import { isValidNit } from '../utils/validation'
 
 export const STORE_ALREADY_SUBSCRIBED_MSG =
   'Tu almacén ya tiene una suscripción activa o un pago pendiente'
@@ -18,6 +20,8 @@ export const STORE_PENDING_PAYMENT_MSG =
   'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado'
 export const STORE_REJECTED_PAYMENT_MSG =
   'El pago no fue aprobado. Puedes intentarlo nuevamente'
+export const STORE_NIT_INVALID_MSG =
+  'Ingresa un NIT válido de 9 dígitos'
 
 /**
  * RF-67: Paso obligatorio inmediatamente después del registro del almacén.
@@ -45,8 +49,8 @@ export default function StoreActivateSubscriptionPage() {
   const handleContinueToPayment = useCallback(
     async (payerEmail: string) => {
       const cleanNit = nit.trim()
-      if (!cleanNit || !/^\d{9}$/.test(cleanNit)) {
-        setNitError('Ingresa un NIT válido de 9 dígitos')
+      if (!isValidNit(cleanNit)) {
+        setNitError(STORE_NIT_INVALID_MSG)
         return
       }
       setNitError(null)
@@ -65,7 +69,6 @@ export default function StoreActivateSubscriptionPage() {
           payerEmail,
           mockOrder,
           cleanNit,
-          user?.id ?? 'almacen-1',
         )
         if (res.redirectTo) {
           window.location.assign(res.redirectTo)
@@ -77,7 +80,7 @@ export default function StoreActivateSubscriptionPage() {
         if (err instanceof ApiError && (err.status === 403 || err.status === 409)) {
           setConflictError(true)
         } else if (err instanceof ApiError && err.status === 400) {
-          setGatewayError(err.message)
+          setGatewayError(err.message.replace(/\.$/, ''))
         } else {
           setGatewayError(PAYMENT_INIT_ERROR_MSG)
         }
@@ -85,7 +88,7 @@ export default function StoreActivateSubscriptionPage() {
         setPaying(false)
       }
     },
-    [nit, orderParam, estadoParam, user?.id, reload],
+    [nit, orderParam, estadoParam, reload],
   )
 
   if (loading && !data) {
@@ -107,14 +110,13 @@ export default function StoreActivateSubscriptionPage() {
   const sub = data?.subscription
   const payments = data?.payments ?? []
   const hasPendingPayment =
-    sub?.status === 'PENDIENTE' ||
     payments.some((p) => p.status === 'pendiente') ||
     lastResult?.status === 'pendiente' ||
     estadoParam === 'pendiente'
 
   const alreadyActiveOrPending =
     conflictError ||
-    ((sub?.status === 'ACTIVA' || sub?.status === 'PENDIENTE' || payments.some((p) => p.status === 'pendiente')) &&
+    ((sub?.status === 'ACTIVA' || payments.some((p) => p.status === 'pendiente')) &&
       !lastResult)
 
   return (
@@ -253,7 +255,7 @@ export default function StoreActivateSubscriptionPage() {
               <h2 className="mt-1 text-2xl font-extrabold">{STORE_PLAN.name}</h2>
             </div>
             <p className="text-3xl font-extrabold">
-              {formatCOP(STORE_PLAN.price)}{' '}
+              {formatCOP(STORE_SUBSCRIPTION_PRICE)}{' '}
               <span className="text-sm font-normal text-[var(--sr-text-secondary,var(--color-text-muted))]">
                 / mes
               </span>
@@ -270,6 +272,17 @@ export default function StoreActivateSubscriptionPage() {
               </li>
             ))}
           </ul>
+
+          <div className="mb-4 rounded-xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))]/40 p-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span>Total a pagar</span>
+              <strong className="font-mono text-sm">{formatCOP(STORE_SUBSCRIPTION_PRICE)}</strong>
+            </div>
+            <div className="mt-1 flex items-center justify-between text-[var(--sr-text-secondary,var(--color-text-muted))]">
+              <span>Método de pago</span>
+              <span>Mercado Pago</span>
+            </div>
+          </div>
 
           <div className="border-t border-[var(--sr-border,var(--color-border))] pt-5 space-y-4">
             <div className="flex flex-col gap-1.5 text-left">
@@ -289,7 +302,7 @@ export default function StoreActivateSubscriptionPage() {
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '').slice(0, 9)
                   setNit(val)
-                  if (nitError && /^\d{9}$/.test(val)) setNitError(null)
+                  if (nitError && isValidNit(val)) setNitError(null)
                 }}
                 placeholder="Ej. 900123456 (9 dígitos)"
                 aria-required="true"
@@ -302,7 +315,7 @@ export default function StoreActivateSubscriptionPage() {
                 }`}
               />
               <span id="store-nit-hint" className="text-xs text-[var(--sr-text-muted,var(--color-text-muted))]">
-                NIT del almacén obligatorio de 9 dígitos.
+                NIT del almacén obligatorio de 9 dígitos
               </span>
               {nitError && (
                 <p id="store-nit-error" role="alert" className="text-xs font-semibold text-[var(--color-danger-text,#ff8a8a)]">

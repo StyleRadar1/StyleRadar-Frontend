@@ -1,5 +1,9 @@
 import type { Role } from '@/modules/core/types/roles'
 
+/** Constantes únicas de precio mensual en COP (RF-67, RF-100, RF-102). */
+export const RADAR_PLUS_PRICE = 14_900
+export const STORE_SUBSCRIPTION_PRICE = 89_000
+
 /**
  * Mapeo estricto de planes disponibles por rol (E.5, RF-100, RF-67).
  * - COMPRADOR: únicamente Radar (gratis) y Radar+ (pago mensual).
