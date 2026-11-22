@@ -376,6 +376,7 @@ html[data-tema="claro"] .pd-img img {
 /* =====================================================================
    Zonas oscuras editoriales (hero de fotos, portadas con fondo propio)
    ===================================================================== */
+html[data-theme="light"] :is(.zona-oscura, #inicio, #peHeader, section:has(> img.absolute)),
 html[data-theme="claro"] :is(.zona-oscura, #inicio, #peHeader, section:has(> img.absolute)),
 html[data-tema="claro"] :is(.zona-oscura, #inicio, #peHeader, section:has(> img.absolute)) {
   --sr-tx: #ffffff;
@@ -394,11 +395,12 @@ html[data-tema="claro"] :is(.zona-oscura, #inicio, #peHeader, section:has(> img.
   color: var(--hero-fg, #ffffff);
 }
 
+html[data-theme="light"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/9"]),
 html[data-theme="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/9"]),
 html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/9"]) {
-  --color-blanco: #fbf7ef;
-  --color-white: #fbf7ef;
-  color: #fbf7ef;
+  --color-blanco: #ffffff;
+  --color-white: #ffffff;
+  color: #ffffff;
 }
 
 html {
@@ -478,8 +480,10 @@ html[data-tema="claro"] body::after {
 }
 
 /* El logo en el menú del tema claro se adapta al tono de texto principal (excepto el header del hero landing) */
+html[data-theme="light"] header:not(#peHeader) svg path[fill="#fff"],
 html[data-theme="claro"] header:not(#peHeader) svg path[fill="#fff"],
 html[data-tema="claro"] header:not(#peHeader) svg path[fill="#fff"],
+html[data-theme="light"] header:not(#peHeader) svg path.srl-w,
 html[data-theme="claro"] header:not(#peHeader) svg path.srl-w,
 html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
   fill: var(--sr-text-primary);
@@ -595,8 +599,9 @@ html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
 html[data-theme="light"] .sr-probador-page,
 html[data-theme="claro"] .sr-probador-page,
 html[data-tema="claro"] .sr-probador-page {
+  color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: url('/img/backgrounds/probador-dia.jpg');
+  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/probador-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -616,8 +621,9 @@ html[data-tema="claro"] .sr-probador-page {
 html[data-theme="light"] .sr-donaciones-page,
 html[data-theme="claro"] .sr-donaciones-page,
 html[data-tema="claro"] .sr-donaciones-page {
+  color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: url('/img/backgrounds/donaciones-dia.jpg');
+  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/donaciones-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -637,8 +643,9 @@ html[data-tema="claro"] .sr-donaciones-page {
 html[data-theme="light"] .sr-playlist-page,
 html[data-theme="claro"] .sr-playlist-page,
 html[data-tema="claro"] .sr-playlist-page {
+  color: var(--sr-text-primary);
   background-color: #f6f4fa;
-  background-image: url('/img/backgrounds/playlist-dia.jpg');
+  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/playlist-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -658,8 +665,9 @@ html[data-tema="claro"] .sr-playlist-page {
 html[data-theme="light"] .sr-planes-page,
 html[data-theme="claro"] .sr-planes-page,
 html[data-tema="claro"] .sr-planes-page {
+  color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: url('/img/backgrounds/planes-dia.jpg');
+  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/planes-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -687,8 +695,9 @@ html[data-theme="claro"] .store-subscription,
 html[data-tema="claro"] .sr-tienda-page,
 html[data-tema="claro"] .inv-page,
 html[data-tema="claro"] .store-subscription {
+  color: var(--sr-text-primary);
   background-color: #f8f9fa !important;
-  background-image: url('/img/backgrounds/tienda-dia.jpg') !important;
+  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/tienda-dia.jpg') !important;
   background-size: cover !important;
   background-position: center top !important;
   background-attachment: fixed !important;
@@ -708,8 +717,9 @@ html[data-tema="claro"] .store-subscription {
 html[data-theme="light"] .sr-mensajes-page,
 html[data-theme="claro"] .sr-mensajes-page,
 html[data-tema="claro"] .sr-mensajes-page {
+  color: var(--sr-text-primary);
   background-color: #faf8fc;
-  background-image: url('/img/backgrounds/mensajes-dia.jpg');
+  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/mensajes-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -729,8 +739,9 @@ html[data-tema="claro"] .sr-mensajes-page {
 html[data-theme="light"] .sr-perfil-page,
 html[data-theme="claro"] .sr-perfil-page,
 html[data-tema="claro"] .sr-perfil-page {
+  color: var(--sr-text-primary);
   background-color: #f7f5fa;
-  background-image: url('/img/backgrounds/perfil-dia.jpg');
+  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/perfil-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;

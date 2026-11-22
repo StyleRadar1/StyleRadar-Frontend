@@ -39,13 +39,13 @@ export default function ProfilePage() {
     <div className="sr-perfil-page min-h-screen">
       <section className="mx-auto max-w-6xl px-4 py-12">
         <PlanDegradedBanner />
-      <header className="flex flex-wrap items-center justify-between gap-5 border-b border-white/10 pb-8">
+      <header className="flex flex-wrap items-center justify-between gap-5 border-b border-[var(--color-border)] pb-8">
         <div className="flex flex-wrap items-center gap-5">
-          <span aria-hidden="true" className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-violeta text-3xl font-extrabold text-blanco md:h-24 md:w-24 md:text-4xl">{iniciales(profile.nombre)}</span>
+          <span aria-hidden="true" className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-violeta text-3xl font-extrabold text-white md:h-24 md:w-24 md:text-4xl">{iniciales(profile.nombre)}</span>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Mi perfil</p>
-            <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl">Hola, {profile.nombre.split(' ')[0]}</h1>
-            <p className="mt-2 break-words text-xs font-semibold uppercase tracking-[.14em] text-white/65">
+            <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Mi perfil</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-text)] md:text-6xl">Hola, {profile.nombre.split(' ')[0]}</h1>
+            <p className="mt-2 break-words text-xs font-semibold uppercase tracking-[.14em] text-[var(--color-text-muted)]">
               {[profile.correo, profile.barrio && `Bogotá, ${profile.barrio}`, `Miembro desde ${mesAnio(profile.miembroDesde)}`, `Plan ${PLAN_LABEL[profile.plan]}`].filter(Boolean).join(' · ')}
             </p>
           </div>
@@ -58,8 +58,8 @@ export default function ProfilePage() {
             onClick={() => setTab('info')}
             className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
               tab === 'info'
-                ? 'bg-violeta text-blanco'
-                : 'border border-white/20 text-white/80 hover:bg-white/10'
+                ? 'bg-violeta text-white'
+                : 'border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-subtle)]'
             }`}
           >
             Mi información
@@ -71,15 +71,15 @@ export default function ProfilePage() {
             onClick={() => setTab('pagos')}
             className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
               tab === 'pagos'
-                ? 'bg-violeta text-blanco'
-                : 'border border-white/20 text-white/80 hover:bg-white/10'
+                ? 'bg-violeta text-white'
+                : 'border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-subtle)]'
             }`}
           >
             Ver pagos aquí
           </button>
           <Link
             to="/perfil/pagos"
-            className="rounded-xl border border-white/25 px-4 py-2 text-xs font-semibold hover:bg-white/10"
+            className="rounded-xl border border-[var(--color-border)] px-4 py-2 text-xs font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-subtle)]"
           >
             Historial de pagos
           </Link>
@@ -185,8 +185,8 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
 
   return (
     <form onSubmit={onSubmit} noValidate className="mt-10" aria-labelledby="pf-titulo">
-      <h2 id="pf-titulo" className="text-3xl font-extrabold tracking-tight md:text-4xl">Mi información</h2>
-      <p className="mt-2 max-w-xl text-sm text-white/70">Tus tallas se usan para mostrarte primero lo que hay disponible para ti en cada tienda.</p>
+      <h2 id="pf-titulo" className="text-3xl font-extrabold tracking-tight text-[var(--color-text)] md:text-4xl">Mi información</h2>
+      <p className="mt-2 max-w-xl text-sm text-[var(--color-text-muted)]">Tus tallas se usan para mostrarte primero lo que hay disponible para ti en cada tienda.</p>
 
       {mensaje && (
         <p role={mensaje.ok ? 'status' : 'alert'}
@@ -209,7 +209,7 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
 
         <div>
           <Opciones label="Maniquí del probador" options={['MUJER', 'HOMBRE'] as const} value={maniqui} onChange={setManiqui} labels={MANIQUI_LABEL} />
-          <p className="mt-1.5 text-xs text-white/60">El probador usa un maniquí de mujer o de hombre según lo que elijas.</p>
+          <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">El probador usa un maniquí de mujer o de hombre según lo que elijas.</p>
         </div>
         <Campo id="pf-superior" label="Talla superior" error={errores.superior}>
           <select {...a11y('pf-superior', errores.superior)} value={tallas.superior} onChange={(e) => setTalla('superior', e.target.value as TallasDto['superior'])} className={inputCls}>
@@ -230,13 +230,13 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
         {/* ═══════════════════════════════════════════════════════════
             SECCIÓN: MEDIDAS CORPORALES PARA EL PROBADOR VIRTUAL
             ═══════════════════════════════════════════════════════════ */}
-        <div className="md:col-span-3 rounded-2xl border border-purple-500/30 bg-purple-950/20 p-6 backdrop-blur-md">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="md:col-span-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-6 backdrop-blur-md">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--color-border)] pb-4">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-[.2em] text-[#c4b5fd]">
+              <span className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">
                 Probador Virtual StyleRadar
               </span>
-              <h3 className="text-xl font-extrabold tracking-tight text-white mt-0.5">
+              <h3 className="text-xl font-extrabold tracking-tight text-[var(--color-text)] mt-0.5">
                 Mis medidas corporales
               </h3>
             </div>
@@ -244,7 +244,7 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
               <button
                 type="button"
                 onClick={() => setShowWizard(true)}
-                className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-purple-900/40 hover:bg-purple-500 transition cursor-pointer"
+                className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-purple-900/20 hover:bg-purple-500 transition cursor-pointer"
               >
                 {bodyMeasurements ? 'Modificar medidas del probador' : 'Configurar medidas del probador'}
               </button>
@@ -252,7 +252,7 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
                 <button
                   type="button"
                   onClick={handleExportMeasurements}
-                  className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10 transition cursor-pointer"
+                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-2 text-xs font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)] transition cursor-pointer"
                   title="Descargar mis datos corporales en JSON (Ley 1581)"
                 >
                   📥 Descargar datos
@@ -264,41 +264,41 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
           {bodyMeasurements ? (
             <div className="mt-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                  <span className="text-white/50 block text-[11px]">Estatura:</span>
-                  <strong className="text-base text-white font-extrabold">
+                <div className="p-3 rounded-xl bg-[var(--color-surface-subtle)] border border-[var(--color-border)]">
+                  <span className="text-[var(--color-text-muted)] block text-[11px]">Estatura:</span>
+                  <strong className="text-base text-[var(--color-text)] font-extrabold">
                     {(bodyMeasurements.estatura / 100).toFixed(2).replace('.', ',')} m
                   </strong>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                  <span className="text-white/50 block text-[11px]">Pecho / Busto:</span>
-                  <strong className="text-base text-purple-300 font-extrabold">
+                <div className="p-3 rounded-xl bg-[var(--color-surface-subtle)] border border-[var(--color-border)]">
+                  <span className="text-[var(--color-text-muted)] block text-[11px]">Pecho / Busto:</span>
+                  <strong className="text-base text-[var(--color-accent)] font-extrabold">
                     {bodyMeasurements.pecho} cm
                   </strong>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                  <span className="text-white/50 block text-[11px]">Cintura:</span>
-                  <strong className="text-base text-purple-300 font-extrabold">
+                <div className="p-3 rounded-xl bg-[var(--color-surface-subtle)] border border-[var(--color-border)]">
+                  <span className="text-[var(--color-text-muted)] block text-[11px]">Cintura:</span>
+                  <strong className="text-base text-[var(--color-accent)] font-extrabold">
                     {bodyMeasurements.cintura} cm
                   </strong>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                  <span className="text-white/50 block text-[11px]">Cadera:</span>
-                  <strong className="text-base text-purple-300 font-extrabold">
+                <div className="p-3 rounded-xl bg-[var(--color-surface-subtle)] border border-[var(--color-border)]">
+                  <span className="text-[var(--color-text-muted)] block text-[11px]">Cadera:</span>
+                  <strong className="text-base text-[var(--color-accent)] font-extrabold">
                     {bodyMeasurements.cadera} cm
                   </strong>
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center justify-between text-xs text-white/60 pt-3 border-t border-white/5">
+              <div className="mt-3 flex flex-wrap items-center justify-between text-xs text-[var(--color-text-muted)] pt-3 border-t border-[var(--color-border)]">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span>Silueta: <strong className="text-white capitalize">{bodyMeasurements.cuerpoBase}</strong></span>
+                  <span>Silueta: <strong className="text-[var(--color-text)] capitalize">{bodyMeasurements.cuerpoBase}</strong></span>
                   <span>·</span>
-                  <span>Talla habitual: <strong className="text-white">{bodyMeasurements.tallaHabitual}</strong></span>
+                  <span>Talla habitual: <strong className="text-[var(--color-text)]">{bodyMeasurements.tallaHabitual}</strong></span>
                   {bodyMeasurements.esAproximado && (
                     <>
                       <span>·</span>
-                      <span className="text-amber-300 bg-amber-950/40 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                      <span className="text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-semibold">
                         Estimación aproximada
                       </span>
                     </>
@@ -307,14 +307,14 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
                 <button
                   type="button"
                   onClick={handleClearMeasurements}
-                  className="text-[11px] text-white/40 hover:text-rose-400 underline transition cursor-pointer"
+                  className="text-[11px] text-[var(--color-text-muted)] hover:text-rose-500 underline transition cursor-pointer"
                 >
                   Restablecer medidas
                 </button>
               </div>
             </div>
           ) : (
-            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-white/5 text-xs text-white/70">
+            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[var(--color-surface-subtle)] text-xs text-[var(--color-text-muted)]">
               <p>
                 Aún no has configurado tus medidas anatómicas. Configúralas para que el maniquí del probador se adapte a tu cuerpo real.
               </p>
@@ -324,11 +324,11 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
 
         <fieldset className="md:col-span-3">
           <legend className={labelCls}>Estilos que más te gustan</legend>
-          <p id="pf-estilos-hint" className="mt-1 text-xs text-white/60">Elige de 1 a {MAX_ESTILOS}. Los usamos para ordenar el catálogo y recomendarte playlists.</p>
+          <p id="pf-estilos-hint" className="mt-1 text-xs text-[var(--color-text-muted)]">Elige de 1 a {MAX_ESTILOS}. Los usamos para ordenar el catálogo y recomendarte playlists.</p>
           <div id="pf-estilos" tabIndex={-1} role="group" aria-label="Estilos" aria-describedby={errores.estilos ? 'pf-estilos-err' : 'pf-estilos-hint'} className="mt-2 flex flex-wrap gap-2 outline-none">
             {ESTILOS.map((s) => (
               <button key={s} type="button" aria-pressed={estilos.includes(s)} onClick={() => toggleEstilo(s)}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold ${estilos.includes(s) ? 'border-arena bg-arena text-grafito' : 'border-white/20 hover:bg-white/10'}`}>
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${estilos.includes(s) ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white' : 'border-[var(--color-border)] bg-[var(--color-surface)]/70 text-[var(--color-text)] hover:border-[var(--color-accent)]'}`}>
                 {estilos.includes(s) && <span aria-hidden="true">✓ </span>}{s}
               </button>
             ))}
