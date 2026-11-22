@@ -13,7 +13,7 @@ export const PROVIDER_INFO = {
   ciudad: 'Bogotá D.C., Colombia',
   sicUrl: 'https://www.sic.gov.co',
   sicLineaGratuita: 'Línea gratuita nacional SIC: 01 8000 910165 | Contact Center Bogotá: +57 (601) 592 0400',
-  pasarelaPagos: '[PASARELA DE PAGOS CERTIFICADA - MERCADO PAGO COLOMBIA / WOMPI BANCOLOMBIA]',
+  pasarelaPagos: '[PASARELA DE PAGOS CERTIFICADA - MERCADO PAGO COLOMBIA]',
   comisionTiendas: '[COMISIÓN POR TRANSACCIÓN, EJ. 8% + IVA]',
 } as const
 
@@ -136,13 +136,13 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
   'pagos-seguridad': {
     id: 'pagos-seguridad',
     slug: 'pagos-seguridad',
-    title: 'Medios de Pago Aceptados y Seguridad de las Transacciones',
+    title: 'Pago con Mercado Pago y Seguridad de las Transacciones',
     shortTitle: 'Pagos y Seguridad',
     category: 'consumidor',
     version: '1.0',
     lastUpdated: '16 de noviembre de 2026',
     summary:
-      'Describe los métodos de pago autorizados (tarjetas de crédito/débito, PSE, Efecty, billeteras digitales), protocolos de cifrado TLS/SSL, aclaración de que Style Radar NUNCA almacena datos de tarjetas y pasos de reversión de pago ante fraudes (Decreto 587 de 2016).',
+      'Describe el pago autorizado exclusivamente a través de Mercado Pago, protocolos de cifrado TLS/SSL, aclaración de que Style Radar NUNCA almacena datos financieros y pasos de reversión de pago ante fraudes (Decreto 587 de 2016)',
     readTimeMinutes: 5,
     bracketedPlaceholders: [
       '[PASARELA DE PAGOS CERTIFICADA]',

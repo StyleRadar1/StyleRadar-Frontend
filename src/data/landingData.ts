@@ -1,3 +1,7 @@
+import { formatCOP } from '@/modules/core/utils/format'
+import { RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE } from '@/modules/transacciones/constants/plansByRole'
+import { PLAN_COMPARISON_ROWS } from '@/modules/transacciones/types/plan.dto'
+
 export interface SlideItem {
   id: number
   src: string
@@ -282,28 +286,16 @@ export const pricingPlans: PlanItem[] = [
     name: 'Radar',
     price: '$0',
     cadence: 'gratis',
-    items: [
-      'Tiendas, mapa y playlists sin límite',
-      'Wishlist de hasta 20 prendas',
-      'Hasta 3 alertas de disponibilidad',
-      'Probador con el maniquí',
-      'Vender y donar en Segunda vida',
-    ],
+    items: PLAN_COMPARISON_ROWS.map(([que, radar]) => `${que}: ${radar}`),
     action: 'Crear cuenta gratis',
     to: '/registro',
   },
   {
     audience: 'Personas',
     name: 'Radar+',
-    price: '$14.900',
+    price: formatCOP(RADAR_PLUS_PRICE),
     cadence: 'al mes',
-    items: [
-      'Todo lo del plan Radar',
-      'Probador con tu propia foto',
-      'Alertas de disponibilidad sin límite',
-      'Wishlist sin límite',
-      'Cancela cuando quieras',
-    ],
+    items: PLAN_COMPARISON_ROWS.map(([que, , plus]) => `${que}: ${plus}`),
     action: 'Ver planes',
     to: '/planes',
     featured: true,
@@ -311,13 +303,13 @@ export const pricingPlans: PlanItem[] = [
   {
     audience: 'Tiendas',
     name: 'Tienda aliada',
-    price: '$89.000',
+    price: formatCOP(STORE_SUBSCRIPTION_PRICE),
     cadence: 'al mes',
     items: [
       'Primeros 30 días gratis',
       'Catálogo visible en radar y mapa',
       'Inventario por talla',
-      'Estadísticas de visitas y guardados',
+      'Estadísticas de visitas y mensajes',
       'Colecciones propias',
     ],
     action: 'Registrar mi tienda',

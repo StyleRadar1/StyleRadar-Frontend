@@ -18,9 +18,9 @@ const FAQS: FaqItem[] = [
   },
   {
     category: 'compras',
-    question: '¿Qué medios de pago puedo utilizar?',
+    question: '¿Cómo se procesan los pagos de suscripción?',
     answer:
-      'Aceptamos tarjetas de crédito y débito, PSE, Nequi, Daviplata y pagos en efectivo en Efecty mediante pasarelas de pago colombianas certificadas. Style Radar nunca almacena tus datos de tarjeta de crédito.',
+      'Todos los pagos de planes y suscripciones se procesan exclusivamente mediante la pasarela certificada Mercado Pago en pesos colombianos (COP). Style Radar nunca almacena datos financieros',
   },
   {
     category: 'retracto',
