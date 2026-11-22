@@ -1,14 +1,13 @@
-import { useState } from 'react'
-import { errorMessage } from '@/modules/core/api/errors'
-import { Badge, Button } from '@/modules/core/design-system'
+import { Badge } from '@/modules/core/design-system'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { CancelSubscriptionButton } from './CancelSubscriptionButton'
+import { RADAR_PLUS_PRICE } from '../constants/plansByRole'
 import { useUserPlan } from '../hooks/useUserPlan'
-import { userPlanService } from '../services/userPlanService'
+import { getTryOnPhotoUses } from '../services/userPlanService'
+import { PLAN_LIMITS } from '../types/plan.dto'
 
-const RADAR_PLUS_PRICE = 14_900
-
-const formatFechaCobro = (iso?: string) =>
+const formatFechaCobro = (iso?: string | null) =>
   iso
     ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
         day: 'numeric',
@@ -19,45 +18,50 @@ const formatFechaCobro = (iso?: string) =>
     : '9 de diciembre de 2026'
 
 /**
- * RF-95: Muestra en /planes y /perfil para el comprador con Radar+:
- * "Próximo cobro: {fecha} · {valor}" y el estado de la renovación automática (Activa/Desactivada),
- * con la acción para desactivarla o reactivarla.
+ * RF-95, RF-100, RF-102: Muestra en /planes y /perfil para el comprador:
+ * suscripcionId, estado, fechaInicio, fechaFin, autoRenovacion, límite aplicado del probador con foto propia y el botón "Cancelar suscripción" (solo en estado ACTIVA).
  */
 export function BuyerRenewalStatusCard() {
   const { user } = useAuth()
   const isBuyer = user?.role === 'BUYER'
   const { plan, details } = useUserPlan(isBuyer)
-  const [busy, setBusy] = useState(false)
-  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null)
 
-  if (!isBuyer || plan !== 'RADAR_PLUS') return null
+  if (!isBuyer) return null
+
+  const uses = getTryOnPhotoUses(user?.id ?? 'u-1')
+  const disponibles = Math.max(0, PLAN_LIMITS.probadorFoto - uses)
+
+  if (plan === 'RADAR') {
+    return (
+      <div
+        role="region"
+        aria-label="Estado del plan Radar"
+        className="mt-4 rounded-2xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-4 text-sm text-[var(--sr-text-primary,var(--color-text))]"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="font-bold">Plan actual:</span>
+              <Badge tone="arena">Radar (Gratuito)</Badge>
+            </div>
+            <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+              Límite aplicado: Probador con maniquí (sin probador con foto propia ni alertas de disponibilidad)
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (plan !== 'RADAR_PLUS') return null
 
   const renewalActive = details?.renewalEnabled !== false
-  const fechaTexto = formatFechaCobro(details?.proximoCobro ?? details?.periodEndsAt)
+  const estado = details?.estado ?? 'ACTIVA'
+  const suscripcionId = details?.suscripcionId ?? `SUB-USR-${user?.id ?? 'u-1'}`
+  const fechaInicio = details?.fechaInicio ?? '2026-11-09'
+  const fechaFinRaw = details?.fechaFin ?? details?.proximoCobro ?? details?.periodEndsAt ?? '2026-12-09'
+  const fechaTexto = formatFechaCobro(fechaFinRaw)
   const valorTexto = formatCOP(RADAR_PLUS_PRICE)
-
-  const handleToggleRenewal = async () => {
-    if (busy) return
-    setBusy(true)
-    setFeedback(null)
-    try {
-      const next = !renewalActive
-      await userPlanService.setRenewal(next)
-      setFeedback({
-        ok: true,
-        text: next
-          ? `Renovación automática activada. Próximo cobro: ${fechaTexto} · ${valorTexto}.`
-          : `La renovación automática está desactivada. Radar+ sigue activo hasta ${fechaTexto}.`,
-      })
-    } catch (err) {
-      setFeedback({
-        ok: false,
-        text: errorMessage(err, 'No fue posible actualizar la renovación automática.'),
-      })
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <div
@@ -72,42 +76,36 @@ export function BuyerRenewalStatusCard() {
             <Badge tone={renewalActive ? 'violeta' : 'arena'}>
               {renewalActive ? 'Activa' : 'Desactivada'}
             </Badge>
+            <Badge tone={estado === 'ACTIVA' ? 'violeta' : 'lavanda'}>{estado}</Badge>
           </div>
+          <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+            <span>suscripcionId: <b className="font-mono">{suscripcionId}</b></span>
+            {' · '}
+            <span>estado: <b>{estado}</b></span>
+            {' · '}
+            <span>fechaInicio: <b className="font-mono">{fechaInicio}</b></span>
+            {' · '}
+            <span>fechaFin: <b className="font-mono">{fechaFinRaw}</b></span>
+            {' · '}
+            <span>autoRenovacion: <b>{renewalActive ? 'true' : 'false'}</b></span>
+          </p>
           <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
             {renewalActive
               ? `Próximo cobro: ${fechaTexto} · ${valorTexto}`
-              : `Radar+ activo hasta ${fechaTexto}. No se renovará · Próximo cobro: ${fechaTexto} · ${valorTexto} (pausado)`}
+              : `Radar+ activo hasta ${fechaTexto} · Próximo cobro pausado`}
+          </p>
+          <p className="text-xs font-semibold text-arena">
+            Usos disponibles del probador con foto propia: {disponibles} de {PLAN_LIMITS.probadorFoto} ({uses} usados)
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant={renewalActive ? 'secundario' : 'primario'}
-          disabled={busy}
-          onClick={() => {
-            void handleToggleRenewal()
-          }}
-        >
-          {busy
-            ? 'Actualizando…'
-            : renewalActive
-              ? 'Desactivar renovación'
-              : 'Reactivar renovación'}
-        </Button>
+        <CancelSubscriptionButton
+          tipo="comprador"
+          status={estado}
+          renewalEnabled={renewalActive}
+          fechaFin={fechaTexto}
+        />
       </div>
-
-      {feedback && (
-        <p
-          role={feedback.ok ? 'status' : 'alert'}
-          className={`mt-3 rounded-xl p-2.5 text-xs font-semibold ${
-            feedback.ok
-              ? 'bg-[#9be3b4]/10 text-[#9be3b4]'
-              : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'
-          }`}
-        >
-          {feedback.text}
-        </p>
-      )}
     </div>
   )
 }

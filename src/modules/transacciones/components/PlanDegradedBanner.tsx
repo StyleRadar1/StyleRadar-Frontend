@@ -9,11 +9,14 @@ import {
 } from '../services/userPlanService'
 
 export const PLAN_DEGRADED_MSG =
-  'Tu plan Radar+ se suspendió porque no se pudo procesar el pago. Volviste al plan Radar, con sus límites gratuitos.'
+  'Tu plan Radar+ se suspendió porque no se pudo procesar el pago. Volviste al plan Radar, con sus límites gratuitos y conservando tus fotos y alertas'
+
+export const PLAN_PENDING_RENEWAL_MSG =
+  'Tu pago está pendiente de confirmación. Por ahora usas Radar; Radar+ se reactivará cuando el pago sea aprobado'
 
 /**
  * RF-103: Banner informativo dismissible con persistencia por sesión en /perfil y /planes
- * cuando el comprador pasó de Radar+ a Radar por falta de pago.
+ * cuando el comprador pasó de Radar+ a Radar por falta de pago o tiene el pago de renovación pendiente.
  */
 export function PlanDegradedBanner() {
   const { user } = useAuth()
@@ -26,9 +29,12 @@ export function PlanDegradedBanner() {
 
   useEffect(() => {
     setDismissed(isPlanDegradedDismissed(userId))
-  }, [userId, details?.degradedByPayment])
+  }, [userId, details?.degradedByPayment, details?.pendingRenewal])
 
-  if (!isBuyer || !details?.degradedByPayment || dismissed) return null
+  const isSuspended = !!details?.degradedByPayment
+  const isPendingRenewal = !!details?.pendingRenewal
+
+  if (!isBuyer || (!isSuspended && !isPendingRenewal) || dismissed) return null
 
   const handleDismiss = () => {
     dismissPlanDegradedNotice(userId)
@@ -43,16 +49,20 @@ export function PlanDegradedBanner() {
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex-1">
-          <p className="text-sm font-semibold">{PLAN_DEGRADED_MSG}</p>
+          <p className="text-sm font-semibold">
+            {isPendingRenewal ? PLAN_PENDING_RENEWAL_MSG : PLAN_DEGRADED_MSG}
+          </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <Button type="button" variant="primario" onClick={() => navigate('/suscripcion')}>
-            Reactivar Radar+
-          </Button>
+          {!isPendingRenewal && (
+            <Button type="button" variant="primario" onClick={() => navigate('/suscripcion')}>
+              Reactivar Radar+
+            </Button>
+          )}
           <button
             type="button"
             onClick={handleDismiss}
-            aria-label="Cerrar aviso de suspensión de plan"
+            aria-label="Cerrar aviso de estado de plan"
             className="rounded-lg border border-[var(--sr-border,var(--color-border))] px-2.5 py-1.5 text-xs font-semibold hover:bg-[var(--sr-surface-raised,var(--color-surface-raised))]"
           >
             Cerrar

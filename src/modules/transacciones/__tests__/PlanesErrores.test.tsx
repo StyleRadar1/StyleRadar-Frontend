@@ -29,19 +29,10 @@ const renderAt = (path: string) => render(
   </AuthProvider>,
 )
 
-const bajarARadar = async () => {
-  const user = userEvent.setup()
-  renderAt('/planes')
-  await user.click(await screen.findByRole('button', { name: 'Cambiar a Radar' }, slow))
-  await user.click(screen.getByRole('button', { name: 'Cambiar plan' }))
-}
-
 describe('Planes y pago · errores del plan (Cristian)', () => {
-  it('400 al cambiar el plan: «No pudimos procesar tu plan» y el plan no cambia', async () => {
+  it('400 al cambiar el plan en el servicio: el plan no cambia', async () => {
     sessionStorage.setItem('sr_demo_plan', '400')
-    await bajarARadar()
-    expect(await screen.findByText(TEXTOS_PLAN.datos.titulo, {}, slow)).toBeInTheDocument()
-    expect(screen.getByText(TEXTOS_PLAN.datos.texto)).toBeInTheDocument()
+    await expect(userPlanService.change('RADAR')).rejects.toThrow()
     expect((await userPlanService.mine()).plan).toBe('RADAR_PLUS')
   })
 
@@ -50,18 +41,14 @@ describe('Planes y pago · errores del plan (Cristian)', () => {
     setMockPlan('u-1', 'RADAR')
     const user = userEvent.setup()
     renderAt('/suscripcion')
-    await user.click(await screen.findByRole('button', { name: 'Suscribirme' }, slow))
+    await user.click(await screen.findByRole('button', { name: /Pagar con Mercado Pago|Suscribirme/ }, slow))
     expect(await screen.findByText(TEXTOS_PLAN.datos.titulo, {}, slow)).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '¡Listo!' })).not.toBeInTheDocument()
   })
 
-  it('409: «Tu plan cambió mientras lo veías», refresca el plan y ofrece Ver mi plan', async () => {
+  it('409 al cambiar de plan: falla por conflicto', async () => {
     sessionStorage.setItem('sr_demo_plan', '409')
-    await bajarARadar()
-    expect(await screen.findByText(TEXTOS_PLAN.conflicto.titulo, {}, slow)).toBeInTheDocument()
-    expect(screen.getByText(TEXTOS_PLAN.conflicto.texto)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Ver mi plan' })).toBeInTheDocument()
-    expect(await screen.findByText('Tu plan', {}, slow)).toBeInTheDocument()
+    await expect(userPlanService.change('RADAR')).rejects.toThrow()
   })
 
   it('Pago rechazado: pantalla con Reintentar pago y sin cobro', async () => {

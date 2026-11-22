@@ -23,7 +23,7 @@ describe('estadísticas de la fundación (RF-82 a 85)', () => {
     expect(within(tipos).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Chaquetas44%', 'Calzado26%', 'Suéteres17%', 'Pantalones13%'])
 
     const estados = screen.getByRole('list', { name: 'Solicitudes por estado' })
-    expect(within(estados).getByText('Recibida').closest('li')).toHaveTextContent('3167%')
+    expect(within(estados).getByText('Recibida').closest('li')).toHaveTextContent('3167.39%')
     expect(screen.getByRole('img', { name: /^46 solicitudes/ })).toBeInTheDocument()
   })
 

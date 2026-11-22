@@ -6,7 +6,7 @@ import { mockPlanOf } from '@/modules/transacciones/services/userPlanService'
 import { LIMITES_RADAR } from '@/modules/transacciones/types/plan.dto'
 import { seedAlerts } from '../mocks/notifications'
 import { itemService } from '@/modules/catalogo/services/itemService'
-import { alertasActivas, type AlertaPrendaDto, type AlertasResumenDto, type BusquedaGuardadaDto } from '../types/notification.dto'
+import { type AlertaPrendaDto, type AlertasResumenDto, type BusquedaGuardadaDto } from '../types/notification.dto'
 
 /** Rutas de ms-notificaciones según su Swagger, vía API Gateway. «me» es el usuario del token. */
 const ALERTAS = '/api/v1/users/me/alerts'
@@ -43,7 +43,9 @@ async function aResumen(data: unknown): Promise<AlertasResumenDto> {
       a.tienda = p.tienda
     } catch { /* se queda con el texto genérico */ }
   }))
-  return { plan: 'RADAR', limiteAlertas: LIMITES_RADAR.alertas, alertas, busquedas }
+  const u = mockSessionUser()
+  const plan = u ? mockPlanOf(u.id) : 'RADAR'
+  return { plan, limiteAlertas: plan === 'RADAR' ? LIMITES_RADAR.alertas : null, alertas, busquedas }
 }
 
 /** Última lista leída: sirve para devolver la alerta actualizada sin pedir todo otra vez. */
@@ -54,7 +56,7 @@ const db = () => (store ??= seedAlerts())
 /** Solo para pruebas: vuelve a los datos iniciales. */
 export const resetAlertsMock = () => { store = null }
 
-/** El límite sale del plan de la persona (ms-pagos), para que cambie apenas se cambia de plan. */
+/** El plan de la persona (ms-pagos) define si las alertas están disponibles (solo en Radar+). */
 const mine = (): AlertasResumenDto => {
   const u = mockSessionUser()
   if (!u) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
@@ -64,10 +66,10 @@ const mine = (): AlertasResumenDto => {
   return r
 }
 
-/** P8: en el plan Radar no se puede activar una alerta más allá del límite. */
+/** RF-102: en el plan Radar no hay alertas de disponibilidad; solo en Radar+. */
 const checkLimit = (r: AlertasResumenDto) => {
-  if (r.limiteAlertas !== null && alertasActivas(r) >= r.limiteAlertas) {
-    throw new ApiError(422, `Con el plan Radar puedes tener hasta ${r.limiteAlertas} alertas activas. Apaga alguna o pásate a Radar+.`, LIMITE_PLAN)
+  if (r.plan === 'RADAR') {
+    throw new ApiError(422, 'Esta función está disponible en el plan Radar+', LIMITE_PLAN)
   }
 }
 

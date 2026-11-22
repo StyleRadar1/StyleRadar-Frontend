@@ -7,17 +7,21 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { cerrarSesionYVolverAlInicio } from '@/modules/identidad/states/salida'
 import { PayerEmailForm, PAYMENT_INIT_ERROR_MSG } from '../components/PayerEmailForm'
+import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
 import { STORE_PLAN } from '../mocks/plans'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { CheckoutResultDto } from '../types/plan.dto'
+import { isValidNit } from '../utils/validation'
 
 export const STORE_ALREADY_SUBSCRIBED_MSG =
-  'Tu almacén ya tiene una suscripción activa o un pago pendiente.'
+  'Tu almacén ya tiene una suscripción activa o un pago pendiente'
 export const STORE_PENDING_PAYMENT_MSG =
-  'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado.'
+  'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado'
 export const STORE_REJECTED_PAYMENT_MSG =
-  'El pago no fue aprobado. Puedes intentarlo nuevamente.'
+  'El pago no fue aprobado. Puedes intentarlo nuevamente'
+export const STORE_NIT_INVALID_MSG =
+  'Ingresa un NIT válido de 9 dígitos'
 
 /**
  * RF-67: Paso obligatorio inmediatamente después del registro del almacén.
@@ -35,6 +39,8 @@ export default function StoreActivateSubscriptionPage() {
   const [conflictError, setConflictError] = useState(false)
   const [lastResult, setLastResult] = useState<CheckoutResultDto | null>(null)
   const [lastEmail, setLastEmail] = useState<string>(user?.email ?? '')
+  const [nit, setNit] = useState('')
+  const [nitError, setNitError] = useState<string | null>(null)
 
   const orderParam = params.get('orden')
   const estadoParam = params.get('estado')
@@ -42,6 +48,12 @@ export default function StoreActivateSubscriptionPage() {
 
   const handleContinueToPayment = useCallback(
     async (payerEmail: string) => {
+      const cleanNit = nit.trim()
+      if (!isValidNit(cleanNit)) {
+        setNitError(STORE_NIT_INVALID_MSG)
+        return
+      }
+      setNitError(null)
       setPaying(true)
       setGatewayError(null)
       setConflictError(false)
@@ -53,7 +65,11 @@ export default function StoreActivateSubscriptionPage() {
             : orderParam === 'MOCK_STORE_FAIL' || estadoParam === 'rechazado'
               ? 'MOCK_STORE_FAIL'
               : 'MOCK_STORE_OK'
-        const res = await storeSubscriptionService.activateFromOnboarding(payerEmail, mockOrder)
+        const res = await storeSubscriptionService.activateFromOnboarding(
+          payerEmail,
+          mockOrder,
+          cleanNit,
+        )
         if (res.redirectTo) {
           window.location.assign(res.redirectTo)
           return
@@ -64,7 +80,7 @@ export default function StoreActivateSubscriptionPage() {
         if (err instanceof ApiError && (err.status === 403 || err.status === 409)) {
           setConflictError(true)
         } else if (err instanceof ApiError && err.status === 400) {
-          setGatewayError(err.message)
+          setGatewayError(err.message.replace(/\.$/, ''))
         } else {
           setGatewayError(PAYMENT_INIT_ERROR_MSG)
         }
@@ -72,7 +88,7 @@ export default function StoreActivateSubscriptionPage() {
         setPaying(false)
       }
     },
-    [orderParam, estadoParam, reload],
+    [nit, orderParam, estadoParam, reload],
   )
 
   if (loading && !data) {
@@ -94,14 +110,13 @@ export default function StoreActivateSubscriptionPage() {
   const sub = data?.subscription
   const payments = data?.payments ?? []
   const hasPendingPayment =
-    sub?.status === 'PENDIENTE' ||
     payments.some((p) => p.status === 'pendiente') ||
     lastResult?.status === 'pendiente' ||
     estadoParam === 'pendiente'
 
   const alreadyActiveOrPending =
     conflictError ||
-    ((sub?.status === 'ACTIVA' || sub?.status === 'PENDIENTE' || payments.some((p) => p.status === 'pendiente')) &&
+    ((sub?.status === 'ACTIVA' || payments.some((p) => p.status === 'pendiente')) &&
       !lastResult)
 
   return (
@@ -240,7 +255,7 @@ export default function StoreActivateSubscriptionPage() {
               <h2 className="mt-1 text-2xl font-extrabold">{STORE_PLAN.name}</h2>
             </div>
             <p className="text-3xl font-extrabold">
-              {formatCOP(STORE_PLAN.price)}{' '}
+              {formatCOP(STORE_SUBSCRIPTION_PRICE)}{' '}
               <span className="text-sm font-normal text-[var(--sr-text-secondary,var(--color-text-muted))]">
                 / mes
               </span>
@@ -258,10 +273,60 @@ export default function StoreActivateSubscriptionPage() {
             ))}
           </ul>
 
-          <div className="border-t border-[var(--sr-border,var(--color-border))] pt-5">
+          <div className="mb-4 rounded-xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))]/40 p-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span>Total a pagar</span>
+              <strong className="font-mono text-sm">{formatCOP(STORE_SUBSCRIPTION_PRICE)}</strong>
+            </div>
+            <div className="mt-1 flex items-center justify-between text-[var(--sr-text-secondary,var(--color-text-muted))]">
+              <span>Método de pago</span>
+              <span>Mercado Pago</span>
+            </div>
+          </div>
+
+          <div className="border-t border-[var(--sr-border,var(--color-border))] pt-5 space-y-4">
+            <div className="flex flex-col gap-1.5 text-left">
+              <label
+                htmlFor="store-nit-input"
+                className="text-xs font-semibold uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]"
+              >
+                NIT del almacén <span aria-hidden="true" className="text-[var(--color-accent)]">*</span>
+              </label>
+              <input
+                id="store-nit-input"
+                name="nit"
+                type="text"
+                maxLength={9}
+                value={nit}
+                disabled={paying}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 9)
+                  setNit(val)
+                  if (nitError && isValidNit(val)) setNitError(null)
+                }}
+                placeholder="Ej. 900123456 (9 dígitos)"
+                aria-required="true"
+                aria-invalid={!!nitError}
+                aria-describedby={nitError ? 'store-nit-error' : 'store-nit-hint'}
+                className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-[var(--sr-text-primary,var(--color-text))] bg-[var(--sr-surface,var(--color-surface))] placeholder:text-[var(--sr-text-muted,var(--color-text-muted))] outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                  nitError
+                    ? 'border-[var(--color-danger-border,#ef4444)]'
+                    : 'border-[var(--sr-border,var(--color-border))] focus:border-[var(--sr-accent,var(--color-accent))]'
+                }`}
+              />
+              <span id="store-nit-hint" className="text-xs text-[var(--sr-text-muted,var(--color-text-muted))]">
+                NIT del almacén obligatorio de 9 dígitos
+              </span>
+              {nitError && (
+                <p id="store-nit-error" role="alert" className="text-xs font-semibold text-[var(--color-danger-text,#ff8a8a)]">
+                  {nitError}
+                </p>
+              )}
+            </div>
+
             <PayerEmailForm
               defaultEmail={lastEmail || user?.email || ''}
-              submitLabel={lastResult?.status === 'rechazado' ? 'Reintentar pago en Mercado Pago' : 'Continuar a Mercado Pago'}
+              submitLabel="Pagar con Mercado Pago"
               busyLabel="Redirigiendo a Mercado Pago…"
               busy={paying}
               errorMessage={gatewayError}

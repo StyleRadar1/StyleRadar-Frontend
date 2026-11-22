@@ -11,10 +11,6 @@ import { useResource } from '@/modules/core/hooks/useResource'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
-import { PlanGate } from '@/modules/transacciones/components/PlanGate'
-import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
-import { getWishlistIds, setWishlistIds } from '@/modules/transacciones/services/userPlanService'
-import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { ItemCard } from '../components/ItemCard'
 import { SizeGuideModal } from '../components/SizeGuideModal'
 import { extractAvailableTallasFromInventory, itemService } from '../services/itemService'
@@ -55,15 +51,11 @@ export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const auth = useContext(AuthContext)
-  const user = auth?.user ?? null
-  const isBuyer = user?.role === 'BUYER'
-  const { plan: userPlan } = useUserPlan(isBuyer)
-  const userId = user?.id ?? 'u-1'
+  const isBuyer = auth?.user?.role === 'BUYER'
 
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string>('')
   const [guiaTallasAbierta, setGuiaTallasAbierta] = useState(false)
-  const [wishlistIds, setWishlistIdsState] = useState<string[]>(() => getWishlistIds(userId))
-  const [showWishlistGate, setShowWishlistGate] = useState(false)
+  const [guardado, setGuardado] = useState(false)
   const [guardadoPlaylist, setGuardadoPlaylist] = useState(false)
   const [mensajeFeedback, setMensajeFeedback] = useState<string | null>(null)
   const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null)
@@ -77,14 +69,11 @@ export default function ItemDetailPage() {
   /** Tallas que el inventario dijo que se agotaron (409 al reservar). */
   const [agotadas, setAgotadas] = useState<string[]>([])
 
-  const guardado = id ? wishlistIds.includes(id) : false
-
   if (id !== prevId) {
     setPrevId(id)
     setImagenSeleccionada(null)
     setIndiceImagen(0)
     setZoomActivo(false)
-    setShowWishlistGate(false)
   }
 
   // Carga de la prenda principal, tallas desde inventario y similares (SR-RF-16)
@@ -194,26 +183,8 @@ export default function ItemDetailPage() {
   }
 
   const handleGuardar = () => {
-    if (!id) return
-    const current = getWishlistIds(userId)
-    if (current.includes(id)) {
-      const next = current.filter((x) => x !== id)
-      setWishlistIds(next, userId)
-      setWishlistIdsState(next)
-      setShowWishlistGate(false)
-      setMensajeFeedback('Prenda retirada de tus favoritos.')
-      setTimeout(() => setMensajeFeedback(null), 3000)
-      return
-    }
-    if (isBuyer && userPlan === 'RADAR' && current.length >= PLAN_LIMITS.wishlist) {
-      setShowWishlistGate(true)
-      return
-    }
-    const next = [...current, id]
-    setWishlistIds(next, userId)
-    setWishlistIdsState(next)
-    setShowWishlistGate(false)
-    setMensajeFeedback('¡Prenda guardada en tus favoritos!')
+    setGuardado((prev) => !prev)
+    setMensajeFeedback(guardado ? 'Prenda retirada de tus favoritos' : '¡Prenda guardada en tus favoritos!')
     setTimeout(() => setMensajeFeedback(null), 3000)
   }
 
@@ -723,11 +694,6 @@ export default function ItemDetailPage() {
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                         </svg>
                         <span>Favorito</span>
-                        {isBuyer && userPlan === 'RADAR' && (
-                          <span className="font-mono text-[0.6875rem] opacity-80">
-                            ({wishlistIds.length}/{PLAN_LIMITS.wishlist})
-                          </span>
-                        )}
                       </button>
 
                       {/* Botón primario Ver tienda (morado suave con glow) */}
@@ -738,14 +704,6 @@ export default function ItemDetailPage() {
                         Ver tienda
                       </Link>
                     </div>
-
-                    {showWishlistGate && (
-                      <PlanGate
-                        forceLock={true}
-                        title="Wishlist sin límite con Radar+"
-                        text={`Alcanzaste el límite de ${PLAN_LIMITS.wishlist}/${PLAN_LIMITS.wishlist} prendas en tu wishlist con el plan Radar. Pásate a Radar+ para guardar todas las prendas que quieras.`}
-                      />
-                    )}
 
                     {/* Botón secundario Guardar en playlist */}
                     <button

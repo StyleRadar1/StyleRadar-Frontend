@@ -490,7 +490,7 @@ export default function MiTiendaPage() {
       <div className="msd-content">
         <div className="msd-alert" role="alert">
           <span className="msd-alert__mark" aria-hidden="true">!</span>
-          <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para pagar con otro medio y mantener tu tienda visible.</p></div>
+          <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para reintentar el pago con Mercado Pago y mantener tu tienda visible</p></div>
           <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
         </div>
         {storeError && <ErrorBanner tone="warn" icon="info" title={storeError} />}

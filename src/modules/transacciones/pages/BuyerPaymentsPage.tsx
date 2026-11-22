@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Badge, Button, Card } from '@/modules/core/design-system'
-import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
+import { EmptyState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { PayerEmailForm } from '../components/PayerEmailForm'
+import { planService } from '../services/planService'
 import { userPlanService } from '../services/userPlanService'
 import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
 
@@ -10,14 +12,12 @@ const STATUS_BADGE_LABEL: Record<PaymentStatus, string> = {
   aprobado: 'APROBADO',
   rechazado: 'RECHAZADO',
   pendiente: 'PENDIENTE',
-  reembolsado: 'REEMBOLSADO',
 }
 
 const STATUS_TONE: Record<PaymentStatus, 'violeta' | 'arena' | 'lavanda'> = {
   aprobado: 'violeta',
   rechazado: 'arena',
   pendiente: 'lavanda',
-  reembolsado: 'arena',
 }
 
 const formatFecha = (iso: string) =>
@@ -37,6 +37,9 @@ export function BuyerPaymentsSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentDto | null>(null)
+  const [retryTarget, setRetryTarget] = useState<PaymentDto | null>(null)
+  const [retrying, setRetrying] = useState(false)
+  const [retryError, setRetryError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -61,20 +64,31 @@ export function BuyerPaymentsSection() {
 
   if (error) {
     return (
-      <ErrorState
-        error={error}
-        onRetry={() => {
-          void load()
-        }}
-        title="No pudimos cargar tu historial de pagos"
-      />
+      <div
+        role="alert"
+        aria-live="assertive"
+        className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-danger-border,rgba(239,68,68,0.4))] bg-[var(--color-danger-bg,rgba(239,68,68,0.12))] p-5 text-[var(--sr-text-primary,var(--color-text))]"
+      >
+        <p className="text-sm font-semibold">
+          No pudimos cargar tu historial. Inténtalo en unos minutos
+        </p>
+        <Button
+          type="button"
+          variant="primario"
+          onClick={() => {
+            void load()
+          }}
+        >
+          Reintentar
+        </Button>
+      </div>
     )
   }
 
   if (payments.length === 0) {
     return (
       <EmptyState title="Aún no tienes pagos de suscripción registrados">
-        Cuando actives Radar+, tus transacciones y comprobantes aparecerán aquí ordenados del más reciente al más antiguo.
+        Cuando actives Radar+, tus transacciones y comprobantes aparecerán aquí ordenados del más reciente al más antiguo
       </EmptyState>
     )
   }
@@ -113,12 +127,6 @@ export function BuyerPaymentsSection() {
                   </td>
                   <td className="p-4">
                     <Badge tone={STATUS_TONE[p.status]}>{STATUS_BADGE_LABEL[p.status]}</Badge>
-                    {p.status === 'reembolsado' && (
-                      <p className="mt-1 text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                        Reembolsado: {formatCOP(p.refundedAmount ?? p.amount)} {currency}
-                        {p.refundReason ? ` · ${p.refundReason}` : ''}
-                      </p>
-                    )}
                   </td>
                   <td className="p-4 font-mono text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
                     {ref}
@@ -135,10 +143,14 @@ export function BuyerPaymentsSection() {
                       {p.status === 'rechazado' && (
                         <button
                           type="button"
-                          onClick={() => navigate('/pago/resultado?orden=MOCK_ORDER_FAIL')}
-                          className="rounded-lg bg-[var(--sr-accent,var(--color-accent))] px-3 py-1.5 text-xs font-bold text-[var(--color-text-on-accent,#ffffff)]"
+                          disabled={retrying}
+                          onClick={() => {
+                            setRetryTarget(p)
+                            setRetryError(null)
+                          }}
+                          className="rounded-lg bg-[var(--sr-accent,var(--color-accent))] px-3 py-1.5 text-xs font-bold text-[var(--color-text-on-accent,#ffffff)] disabled:opacity-50"
                         >
-                          Reintentar
+                          Reintentar pago
                         </button>
                       )}
                     </div>
@@ -149,6 +161,54 @@ export function BuyerPaymentsSection() {
           </tbody>
         </table>
       </div>
+
+      {retryTarget && (
+        <Card className="border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--sr-border,var(--color-border))] pb-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                Reintentar pago rechazado
+              </p>
+              <h3 className="mt-0.5 text-lg font-extrabold">
+                {retryTarget.planName} · {formatCOP(retryTarget.amount)}
+              </h3>
+              <p className="mt-1 text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                El pago no fue aprobado. Puedes intentarlo nuevamente
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRetryTarget(null)}
+              className="text-xs font-semibold text-[var(--sr-text-secondary,var(--color-text-muted))] hover:underline"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div className="mt-4">
+            <PayerEmailForm
+              defaultEmail={retryTarget.userEmail}
+              submitLabel="Pagar con Mercado Pago"
+              busyLabel="Preparando reintento…"
+              busy={retrying}
+              errorMessage={retryError}
+              onCancel={() => setRetryTarget(null)}
+              onSubmit={async (payerEmail) => {
+                setRetrying(true)
+                setRetryError(null)
+                try {
+                  await planService.createCheckout(retryTarget.planId, payerEmail)
+                  setRetryTarget(null)
+                  navigate('/pago/resultado?orden=MOCK_ORDER_OK')
+                } catch (e) {
+                  setRetryError(e instanceof Error ? e.message.replace(/\.$/, '') : 'No fue posible generar un nuevo intento de pago')
+                } finally {
+                  setRetrying(false)
+                }
+              }}
+            />
+          </div>
+        </Card>
+      )}
 
       {selectedReceipt && (
         <Card className="border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-5">
@@ -190,23 +250,13 @@ export function BuyerPaymentsSection() {
               <dd className="font-mono">{selectedReceipt.mpReference ?? selectedReceipt.id}</dd>
             </div>
             <div>
-              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Medio de pago</dt>
-              <dd>{selectedReceipt.method}</dd>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Método</dt>
+              <dd>{selectedReceipt.method || 'Mercado Pago'}</dd>
             </div>
             <div>
-              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Correo asociado</dt>
-              <dd className="truncate">{selectedReceipt.userEmail}</dd>
+              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">suscripcionId</dt>
+              <dd className="font-mono">{selectedReceipt.suscripcionId ?? 'SUB-USR-001'}</dd>
             </div>
-            {selectedReceipt.refundReason && (
-              <div className="sm:col-span-3">
-                <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Información del reembolso</dt>
-                <dd className="font-semibold">
-                  {formatCOP(selectedReceipt.refundedAmount ?? selectedReceipt.amount)}{' '}
-                  {selectedReceipt.currency ?? 'COP'} · Motivo: {selectedReceipt.refundReason}
-                  {selectedReceipt.refundDate ? ` (${formatFecha(selectedReceipt.refundDate)})` : ''}
-                </dd>
-              </div>
-            )}
           </dl>
         </Card>
       )}

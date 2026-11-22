@@ -1,16 +1,11 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Aviso } from '@/modules/core/components/errores'
-import { errorMessage } from '@/modules/core/api/errors'
-import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { BuyerRenewalStatusCard } from '../components/BuyerRenewalStatusCard'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
-import { PLAN_CHANGED, userPlanService } from '../services/userPlanService'
-import { avisoDePlan, type AvisoPlan } from '../utils/erroresPlan'
-import { COMPARATIVA, PLAN_LABEL, PLANES, REGLAS, type PlanInfo, type PlanUsuario } from '../types/plan.dto'
+import { isPlanCompatibleWithRole } from '../constants/plansByRole'
+import { PLAN_COMPARISON_ROWS, PLAN_LABEL, PLANES, REGLAS, type PlanInfo } from '../types/plan.dto'
 
 const REGISTRO: Record<string, [string, string]> = {
   RADAR: ['/registro', 'Crear cuenta gratis'],
@@ -18,105 +13,85 @@ const REGISTRO: Record<string, [string, string]> = {
   TIENDA: ['/registro?tipo=tienda', 'Registrar mi tienda'],
   FUNDACION: ['/registro?tipo=fundacion', 'Registrar mi fundación'],
 }
-const esPlanUsuario = (id: string): id is PlanUsuario => id === 'RADAR' || id === 'RADAR_PLUS'
-
-const formatFechaVigencia = (iso?: string) =>
-  iso
-    ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-      })
-    : '9 de diciembre de 2026'
 
 /** P7 · Planes: lo que ofrece StyleRadar y lo que incluye cada plan (RF-100 y RF-101 para el comprador). */
 export default function PlansPage() {
   const { user } = useAuth()
   const comprador = user?.role === 'BUYER'
-  const { plan, details } = useUserPlan(comprador)
+  const { plan } = useUserPlan(comprador)
   const navigate = useNavigate()
-  const [cambio, setCambio] = useState<PlanUsuario | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
-  const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
-  const cambiar = async () => {
-    if (!cambio || busy) return
-    setBusy(true); setMsg(null); setAviso(null)
-    try {
-      const r = await userPlanService.change(cambio)
-      const fechaCorte = formatFechaVigencia(r.periodEndsAt ?? r.proximoCobro)
-      setMsg({
-        ok: true,
-        text:
-          cambio === 'RADAR' && r.plan === 'RADAR_PLUS' && r.renewalEnabled === false
-            ? `Radar+ activo hasta ${fechaCorte}. No se renovará.`
-            : r.plan === 'RADAR_PLUS'
-              ? 'Listo: ya tienes Radar+. Los candados desaparecen.'
-              : 'Volviste al plan Radar. Los beneficios de Radar+ quedan con candado.',
-      })
-    } catch (e) {
-      const a = avisoDePlan(e, 'No pudimos cambiar tu plan. Intenta de nuevo.')
-      setAviso(a)
-      // 409: se vuelve a leer el plan para mostrar el estado real.
-      if (a.refrescar) window.dispatchEvent(new Event(PLAN_CHANGED))
-    } finally { setBusy(false); setCambio(null) }
-  }
-
-  const reactivarRenovacion = async () => {
-    if (busy) return
-    setBusy(true); setMsg(null)
-    try {
-      const r = await userPlanService.setRenewal(true)
-      const fechaCorte = formatFechaVigencia(r.proximoCobro ?? r.periodEndsAt)
-      setMsg({ ok: true, text: `Renovación automática activada. Próximo cobro: ${fechaCorte}.` })
-    } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e, 'No pudimos reactivar la renovación.') })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  /** Lleva a la tarjeta del plan que la persona tiene ahora. */
-  const verMiPlan = () => {
-    const el = document.querySelector<HTMLElement>('[data-plan-actual="true"]')
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.focus()
-  }
+  const visiblePlans = user
+    ? PLANES.filter((p) => isPlanCompatibleWithRole(p.id, user.role))
+    : PLANES
 
   const accion = (p: PlanInfo) => {
     if (!user) {
       const [to, label] = REGISTRO[p.id]
-      return <Link to={to} className={`mt-auto block rounded-xl px-5 py-3 text-center text-sm font-semibold ${p.destacado ? 'bg-violeta' : 'border border-white/25'}`}>{label}</Link>
+      return (
+        <Link
+          to={to}
+          className={`mt-auto block rounded-xl px-5 py-3 text-center text-sm font-semibold ${
+            p.destacado ? 'bg-violeta text-blanco' : 'border border-white/25'
+          }`}
+        >
+          {label}
+        </Link>
+      )
     }
-    if (comprador && esPlanUsuario(p.id)) {
-      const id = p.id
-      if (!plan) return null
-      if (plan === id) {
-        if (id === 'RADAR_PLUS' && details?.renewalEnabled === false) {
+    if (comprador) {
+      if (p.id === 'RADAR') {
+        if (plan === 'RADAR') {
           return (
-            <button
-              type="button"
-              onClick={() => { void reactivarRenovacion() }}
-              disabled={busy}
-              className="mt-auto rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco"
-            >
-              Reactivar renovación
-            </button>
+            <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
+              Tu plan actual
+            </p>
           )
         }
-        return <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">Plan actual</p>
+        return (
+          <p className="mt-auto rounded-xl border border-white/20 px-5 py-3 text-center text-xs text-white/50">
+            Incluido en tu cuenta
+          </p>
+        )
       }
-      // Subir a Radar+ pasa por el pago (/suscripcion); bajar a Radar pide confirmación y conserva beneficios hasta fin de periodo.
-      return <button type="button" onClick={() => (id === 'RADAR_PLUS' ? navigate('/suscripcion') : setCambio(id))} className={`mt-auto rounded-xl px-5 py-3 text-sm font-semibold ${p.destacado ? 'bg-violeta' : 'border border-white/25'}`}>Cambiar a {p.nombre}</button>
+      if (p.id === 'RADAR_PLUS') {
+        if (plan === 'RADAR_PLUS') {
+          return (
+            <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
+              Tu plan actual
+            </p>
+          )
+        }
+        return (
+          <button
+            type="button"
+            onClick={() => navigate('/suscripcion')}
+            className="mt-auto rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco"
+          >
+            Activar Radar+
+          </button>
+        )
+      }
     }
     if (user.role === 'STORE_ADMIN' && p.id === 'TIENDA') {
-      return <Link to="/tienda/suscripcion" className="mt-auto block rounded-xl border border-white/25 px-5 py-3 text-center text-sm font-semibold">Ver mi suscripción</Link>
+      return (
+        <Link
+          to="/tienda/suscripcion"
+          className="mt-auto block rounded-xl border border-white/25 px-5 py-3 text-center text-sm font-semibold"
+        >
+          Ver mi suscripción
+        </Link>
+      )
+    }
+    if (user.role === 'FOUNDATION_REPRESENTATIVE' && p.id === 'FUNDACION') {
+      return (
+        <p className="mt-auto rounded-xl border border-arena/50 px-5 py-2 text-center text-xs font-semibold text-arena">
+          Tu plan
+        </p>
+      )
     }
     return null
   }
-
-  const fechaFinRadarPlus = formatFechaVigencia(details?.periodEndsAt ?? details?.proximoCobro)
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 bg-transparent text-[var(--sr-hero-text)]">
@@ -126,39 +101,25 @@ export default function PlansPage() {
         Un plan para cada quien
       </h1>
       <p className="mt-3 max-w-2xl text-[var(--sr-hero-text-muted)]">
-        Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras.
+        Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras
       </p>
-      {comprador && plan && <p className="mt-4 text-sm text-[var(--sr-hero-text)]">Tu plan actual: <b>{PLAN_LABEL[plan]}</b></p>}
+
+      {user?.role === 'STYLERADAR_ADMIN' && (
+        <div className="mt-6 rounded-2xl border border-white/20 bg-white/[.04] p-6 text-center text-sm text-white/80">
+          Como administrador de StyleRadar no requieres una suscripción comercial. Gestiona la plataforma desde el panel de control
+        </div>
+      )}
+
+      {comprador && plan && (
+        <p className="mt-4 text-sm text-[var(--sr-hero-text)]">
+          {`Tu plan actual: ${PLAN_LABEL[plan]}`}
+        </p>
+      )}
+
       <BuyerRenewalStatusCard />
-      {aviso && (
-        <div className="mt-4 max-w-xl">
-          <Aviso tono={aviso.tono} titulo={aviso.titulo}
-            accion={aviso.refrescar ? <button type="button" onClick={verMiPlan} className="rounded-lg border border-current px-3 py-1 text-sm font-semibold text-[var(--sr-hero-text)]">Ver mi plan</button> : undefined}>
-            {aviso.texto}
-          </Aviso>
-        </div>
-      )}
-
-      {comprador && plan === 'RADAR_PLUS' && details?.renewalEnabled === false && (
-        <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-arena/40 bg-white/[.04] p-4 text-sm">
-          <span>
-            Radar+ activo hasta {fechaFinRadarPlus}. No se renovará.
-          </span>
-          <button
-            type="button"
-            onClick={() => { void reactivarRenovacion() }}
-            disabled={busy}
-            className="rounded-xl bg-violeta px-4 py-2 text-xs font-bold text-blanco"
-          >
-            Reactivar renovación
-          </button>
-        </div>
-      )}
-
-      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-4 rounded-xl p-3 text-sm ${msg.ok ? 'bg-[#9be3b4]/10 text-[#9be3b4]' : 'bg-[#ff8a8a]/10 text-[#ffb4b4]'}`}>{msg.text}</p>}
 
       <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Planes">
-        {PLANES.map((p) => (
+        {visiblePlans.map((p) => (
           <li
             key={p.id}
             aria-label={p.nombre}
@@ -170,8 +131,16 @@ export default function PlansPage() {
                 : 'border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/60'
             }`}
           >
-            {p.destacado && !(comprador && plan === p.id) && <span className="absolute right-4 top-4 rounded-full bg-violeta px-3 py-1 text-[11px] font-semibold text-white">Más elegido</span>}
-            {comprador && plan === p.id && <span className="absolute right-4 top-4 rounded-full bg-arena px-3 py-1 text-[11px] font-semibold text-grafito">Tu plan</span>}
+            {p.destacado && !(comprador && plan === p.id) && (
+              <span className="absolute right-4 top-4 rounded-full bg-violeta px-3 py-1 text-[11px] font-semibold text-white">
+                Más elegido
+              </span>
+            )}
+            {comprador && plan === p.id && (
+              <span className="absolute right-4 top-4 rounded-full bg-arena px-3 py-1 text-[11px] font-semibold text-grafito">
+                Tu plan
+              </span>
+            )}
             <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[var(--sr-hero-text-muted)]">{p.para}</p>
             <h2 className="mt-2 text-2xl font-bold text-[var(--sr-hero-text)]">{p.nombre}</h2>
             <p className="mt-3 text-3xl font-extrabold text-[var(--sr-hero-text)]">
@@ -180,35 +149,52 @@ export default function PlansPage() {
             </p>
             <p className="mt-1 min-h-10 text-sm text-[var(--sr-hero-text-muted)]">{p.nota}</p>
             <ul className="mb-6 mt-5 space-y-2 text-sm text-[var(--sr-hero-text)]">
-              {p.incluye.map((i) => <li key={i} className="flex gap-2"><span aria-hidden="true" className="text-violeta-claro">✓</span>{i}</li>)}
+              {p.incluye.map((i) => (
+                <li key={i} className="flex gap-2">
+                  <span aria-hidden="true" className="text-violeta-claro">✓</span>
+                  {i}
+                </li>
+              ))}
             </ul>
             {accion(p)}
           </li>
         ))}
       </ul>
-      <p className="mt-6 text-sm text-[var(--sr-hero-text-muted)]">Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar.</p>
+      <p className="mt-6 text-sm text-[var(--sr-hero-text-muted)]">
+        Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar
+      </p>
 
-      <h2 className="mt-14 text-2xl font-bold">Radar y Radar+, lado a lado</h2>
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
-        <table className="w-full min-w-[520px] text-left text-sm">
-          <caption className="sr-only">Comparación de los planes Radar y Radar+</caption>
-          <thead className="bg-white/[.04] text-[11px] uppercase tracking-[.14em] text-lavanda">
-            <tr><th scope="col" className="p-4 font-bold">Qué incluye</th><th scope="col" className="p-4 font-bold">Radar</th><th scope="col" className="p-4 font-bold text-arena">Radar+</th></tr>
-          </thead>
-          <tbody>
-            {COMPARATIVA.map(([que, radar, plus]) => (
-              <tr key={que} className="border-t border-white/10">
-                <th scope="row" className="p-4 font-semibold">{que}</th>
-                <td className="p-4 text-white/75">{radar}</td>
-                <td className="p-4">{plus}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {(!user || comprador) && (
+        <>
+          <h2 className="mt-14 text-2xl font-bold">Radar y Radar+, lado a lado</h2>
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
+            <table className="w-full min-w-[520px] text-left text-sm">
+              <caption className="sr-only">Comparación de los planes Radar y Radar+</caption>
+              <thead className="bg-white/[.04] text-[11px] uppercase tracking-[.14em] text-lavanda">
+                <tr>
+                  <th scope="col" className="p-4 font-bold">Qué incluye</th>
+                  <th scope="col" className="p-4 font-bold">Radar</th>
+                  <th scope="col" className="p-4 font-bold text-arena">Radar+</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PLAN_COMPARISON_ROWS.map(([que, radar, plus]) => (
+                  <tr key={que} className="border-t border-white/10">
+                    <th scope="row" className="p-4 font-semibold">{que}</th>
+                    <td className="p-4 text-white/75">{radar}</td>
+                    <td className="p-4">{plus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <h2 className="mt-14 text-2xl font-bold">Reglas de los planes</h2>
-      <p className="mt-2 text-sm text-white/60">Provisionales: falta validarlas con el squad de Transacciones (ms-pagos-suscripciones).</p>
+      <p className="mt-2 text-sm text-white/60">
+        Condiciones generales del servicio de suscripciones y transacciones de StyleRadar
+      </p>
       <ol className="mt-5 grid gap-3 md:grid-cols-2" aria-label="Reglas de los planes">
         {REGLAS.map(([titulo, texto], i) => (
           <li key={titulo} className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
@@ -217,11 +203,6 @@ export default function PlansPage() {
           </li>
         ))}
       </ol>
-
-      <ConfirmDialog open={!!cambio} busy={busy} onCancel={() => setCambio(null)} onConfirm={cambiar}
-        title={`¿Cambiar a ${cambio ? PLAN_LABEL[cambio] : ''}?`} confirmLabel="Cambiar plan">
-        Se desactivará la renovación automática, pero conservarás todos los beneficios de Radar+ hasta el {fechaFinRadarPlus}.
-      </ConfirmDialog>
     </section>
   )
 }

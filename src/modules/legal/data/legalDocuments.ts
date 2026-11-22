@@ -130,7 +130,7 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
         ],
         bullets: [
           `Datos de identificación y contacto: Nombre y apellidos completos, tipo y número de documento de identidad (en caso de facturación o trámites específicos), correo electrónico, número de teléfono o celular, y dirección física de entrega en Bogotá.`,
-          `Datos transaccionales: Historial de compras, reservas de prendas, solicitudes de donación y radicados de PQRS. Aclaramos expresamente que Style Radar NO recopila ni almacena números completos de tarjetas de crédito o débito ni códigos de seguridad CVV/CVC, los cuales son procesados directamente por ${PROVIDER_INFO.pasarelaPagos} bajo certificación PCI-DSS.`,
+          `Datos transaccionales: Historial de suscripciones, reservas de prendas, solicitudes de donación y radicados de PQRS. Aclaramos expresamente que Style Radar NO recopila ni almacena datos financieros ni códigos de seguridad CVV/CVC, los cuales son procesados directamente por ${PROVIDER_INFO.pasarelaPagos} bajo certificación PCI-DSS.`,
           `Datos técnicos y de navegación: Dirección IP, identificador de dispositivo, sistema operativo, preferencias de visualización y cookies según el consentimiento otorgado.`,
           `Datos biométricos o de imagen (Opcionales): Fotografías corporales o siluetas para el uso voluntario del Probador Virtual, las cuales cuentan con un régimen reforzado de autorización previa y expresa.`,
         ],
@@ -287,7 +287,6 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
           `En todas las compras de prendas y accesorios realizadas a distancia o por medios electrónicos a través de Style Radar, el consumidor tiene derecho a ejercer el Derecho de Retracto dentro de los cinco (5) días hábiles siguientes a la fecha de entrega física del producto.`,
           `Condiciones para el ejercicio del retracto: La prenda debe ser devuelta en el mismo estado en que fue recibida, sin uso, sin lavar, con todas sus etiquetas y empaques originales intactos. Los costos de transporte y demás que conlleve la devolución del producto correrán por cuenta del consumidor, salvo acuerdo en contrario con la tienda.`,
           `Excepciones legales al derecho de retracto: Conforme al numeral 7 del artículo 47 de la Ley 1480 de 2011, se exceptúan del derecho de retracto las prendas de uso personal e íntimo (tales como ropa interior, vestidos de baño, tapabocas o aretes), por razones evidentes de higiene y bioseguridad.`,
-          `Plazo de reembolso: La tienda o Style Radar reembolsará al consumidor la totalidad del dinero pagado dentro de un plazo máximo de treinta (30) días calendario contados desde el momento en que se ejerció el derecho y se recibió el bien devuelto.`,
         ],
       },
       {
@@ -341,38 +340,18 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
     ],
   },
 
-  // 7. MEDIOS DE PAGO Y SEGURIDAD
+  // 7. PAGOS Y SEGURIDAD
   'pagos-seguridad': {
     ...LEGAL_DOCS_REGISTRY['pagos-seguridad'],
     sections: [
       {
         id: 'pasarelas',
         numeral: '1.',
-        title: 'Medios de Pago Habilitados',
-        paragraphs: [
-          `Las transacciones en Style Radar se procesan de manera segura a través de pasarelas de pago colombianas certificadas (${PROVIDER_INFO.pasarelaPagos}), admitiendo:`,
-        ],
+        title: 'Pago con Mercado Pago',
+        paragraphs: [],
         bullets: [
-          `Tarjetas de crédito y débito nacionales e internacionales (Visa, Mastercard, American Express).`,
-          `Transferencias bancarias en línea mediante el botón PSE.`,
-          `Billeteras digitales colombianas (Nequi, Daviplata).`,
-          `Pagos en efectivo en puntos autorizados de recaudo (Efecty, SuRed), con tiempos límite de pago para reserva de inventario.`,
-        ],
-      },
-      {
-        id: 'seguridad-cifrado',
-        numeral: '2.',
-        title: 'Seguridad Tecnológica y Protocolo Cero Almacenamiento de Tarjetas',
-        paragraphs: [
-          `Style Radar cuenta con certificados de seguridad SSL/TLS de 256 bits. Style Radar NUNCA tiene acceso ni almacena números de tarjeta, fechas de vencimiento ni códigos de seguridad bancarios. Todo el flujo financiero es encriptado y manejado directamente por la entidad vigilada por la Superintendencia Financiera de Colombia.`,
-        ],
-      },
-      {
-        id: 'reversion-pagos',
-        numeral: '3.',
-        title: 'Reversión del Pago (Decreto 587 de 2016)',
-        paragraphs: [
-          `De conformidad con el Decreto 587 de 2016, los participantes del proceso de pago deberán reversar los pagos solicitados por el consumidor cuando este sea objeto de fraude, la operación no haya sido solicitada, el producto adquirido no sea recibido o el producto entregado resulte defectuoso. La queja deberá presentarse dentro de los cinco (5) días hábiles siguientes a la fecha en que tuvo conocimiento del hecho.`,
+          `Los pagos de planes y suscripciones se hacen con Mercado Pago en pesos colombianos (COP)`,
+          `StyleRadar no almacena datos de tarjetas ni de otros medios de pago`,
         ],
       },
     ],
@@ -678,7 +657,7 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocFull> = {
         numeral: '1.',
         title: 'Preguntas Frecuentes de Compradores',
         paragraphs: [
-          `¿Cómo realizo una compra en Style Radar? Explora el catálogo, selecciona tu prenda y talla, y pulsa en comprar para ser dirigido al pago seguro con PSE, tarjeta o Efecty. La tienda despachará directamente tu pedido a tu dirección en Bogotá.`,
+          `¿Cómo se pagan los planes y suscripciones? El pago se hace con Mercado Pago`,
           `¿Cómo funciona el probador virtual? Puedes probar prendas sobre un maniquí base predefinido, o subir de forma 100% voluntaria tu propia foto para una experiencia personalizada protegida por nuestra Política de Privacidad.`,
           `¿Puedo devolver una prenda si no me queda? Sí. Cuentas con 5 días hábiles desde la entrega para ejercer el Derecho de Retracto, siempre que la prenda esté nueva y no sea ropa interior o de uso íntimo.`,
         ],

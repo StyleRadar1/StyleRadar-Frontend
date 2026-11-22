@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NotificationBell } from '../components/NotificationBell'
 import AlertsPage from '../pages/AlertsPage'
-import { resetAlertsMock } from '../services/alertService'
+import { alertService, resetAlertsMock } from '../services/alertService'
 import { resetNotificationsMock } from '../services/notificationService'
 import { setMockPlan } from '@/modules/transacciones/services/userPlanService'
 import { loginAs, renderAt } from './helpers'
@@ -18,38 +18,43 @@ const routes = [
 beforeEach(() => { resetAlertsMock(); resetNotificationsMock(); loginAs('u-1', 'Valentina Rojas'); setMockPlan('u-1', 'RADAR') })
 
 describe('búsquedas y alertas (RF-28 a RF-32)', () => {
-  it('muestra el uso del plan Radar y deja activar hasta 3 alertas', async () => {
+  it('en el plan Radar muestra el bloqueo de Radar+ sin contador de cupo y enlaza a los planes', async () => {
     const user = userEvent.setup()
     renderAt('/alertas', routes)
-    expect(await screen.findByRole('status', { name: 'Uso del plan' }, { timeout: 3000 })).toHaveTextContent('2 de 3 alertas activas en el plan Radar')
+    const gate = await screen.findByRole('region', { name: /Alertas de disponibilidad con Radar\+ · requiere Radar\+/ }, { timeout: 3000 })
+    expect(gate).toHaveTextContent('Esta función está disponible en el plan Radar+')
+    expect(screen.queryByRole('status', { name: 'Uso del plan' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('switch', { name: 'Alerta para Botella térmica 1 L' }))
-    expect(await screen.findByText('Te avisaremos sobre «Botella térmica 1 L».')).toBeInTheDocument()
-    expect(screen.getByRole('status', { name: 'Uso del plan' })).toHaveTextContent('3 de 3')
-    expect(screen.getByRole('status', { name: 'Uso del plan' })).toHaveTextContent('Llegaste al límite')
-  })
-
-  it('al llegar al límite, lo que falta se ve con candado y lleva a los planes sin llamar al servicio (P8)', async () => {
-    const user = userEvent.setup()
-    renderAt('/alertas', routes)
-    await user.click(await screen.findByRole('switch', { name: 'Alerta para Botella térmica 1 L' }, { timeout: 3000 }))
-    await screen.findByText('Te avisaremos sobre «Botella térmica 1 L».')
-
-    const bloqueada = screen.getByRole('switch', { name: 'Alerta para Chaqueta de cuero M (requiere Radar+)' })
-    expect(bloqueada).toHaveAttribute('aria-checked', 'false')
-    await user.click(bloqueada)
-    const aviso = screen.getByRole('alert')
-    expect(aviso).toHaveTextContent('Con el plan Radar puedes tener hasta 3 alertas activas')
-    await user.click(within(aviso).getByRole('link', { name: 'Ver planes' }))
+    await user.click(within(gate).getByRole('link', { name: 'Ver planes' }))
     expect(screen.getByText('Página de planes')).toBeInTheDocument()
   })
 
-  it('apagar una alerta libera el cupo', async () => {
+  it('en el plan Radar los interruptores tienen candado, muestran el aviso de Radar+ y llevan a los planes sin llamar al servicio (RF-102)', async () => {
     const user = userEvent.setup()
+    const spyAlert = vi.spyOn(alertService, 'setAlert')
+    const spySearch = vi.spyOn(alertService, 'setSearchAlert')
+    renderAt('/alertas', routes)
+
+    const bloqueada = await screen.findByRole('switch', { name: 'Alerta para Chaqueta de cuero M (requiere Radar+)' }, { timeout: 3000 })
+    expect(bloqueada).toHaveAttribute('aria-checked', 'false')
+    await user.click(bloqueada)
+    expect(spyAlert).not.toHaveBeenCalled()
+    expect(spySearch).not.toHaveBeenCalled()
+    const aviso = screen.getByRole('alert')
+    expect(aviso).toHaveTextContent('Esta función está disponible en el plan Radar+')
+    await user.click(within(aviso).getByRole('link', { name: 'Ver planes' }))
+    expect(screen.getByText('Página de planes')).toBeInTheDocument()
+    spyAlert.mockRestore()
+    spySearch.mockRestore()
+  })
+
+  it('con Radar+ permite apagar una alerta activa', async () => {
+    const user = userEvent.setup()
+    setMockPlan('u-1', 'RADAR_PLUS')
     renderAt('/alertas', routes)
     await user.click(await screen.findByRole('switch', { name: 'Alerta para Tenis retro gris' }, { timeout: 3000 }))
     expect(await screen.findByText('Apagaste la alerta de «Tenis retro gris».')).toBeInTheDocument()
-    expect(screen.getByRole('status', { name: 'Uso del plan' })).toHaveTextContent('1 de 3')
+    expect(screen.getByRole('switch', { name: 'Alerta para Tenis retro gris' })).toHaveAttribute('aria-checked', 'false')
   })
 
   it('eliminar pide confirmación', async () => {
@@ -61,8 +66,9 @@ describe('búsquedas y alertas (RF-28 a RF-32)', () => {
     expect(screen.queryByRole('switch', { name: /Chaqueta de cuero M/ })).not.toBeInTheDocument()
   })
 
-  it('cancelar el seguimiento de una prenda la deja apagada, no la borra', async () => {
+  it('con Radar+ cancelar el seguimiento de una prenda la deja apagada sin borrarla', async () => {
     const user = userEvent.setup()
+    setMockPlan('u-1', 'RADAR_PLUS')
     renderAt('/alertas', routes)
     await user.click(await screen.findByRole('button', { name: 'Cancelar seguimiento de Tenis retro gris' }, { timeout: 3000 }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar seguimiento' }))
