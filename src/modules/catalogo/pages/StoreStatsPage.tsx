@@ -358,7 +358,7 @@ export default function StoreStatsPage() {
           </section>
         </div>
 
-        {/* RF-81: Inventario por estado (sin ranking de prendas guardadas RF-80) */}
+        {/* RF-81: Inventario por estado */}
         <div className="store-stats__lower">
           <section className="store-stats__panel">
             <div className="store-stats__panel-head">

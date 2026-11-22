@@ -42,7 +42,7 @@ export const RECOMMENDED_ITEMS = [
     nombre: 'Chaqueta de nylon',
     tienda: 'Kicks Local',
     precio: 210000,
-    etiqueta: 'DEPORTIVO · SE PARECE A TU WISHLIST',
+    etiqueta: 'DEPORTIVO · SE PARECE A TU ESTILO',
     imagen: '/img/productos/chaqueta-de-nylon.jpg',
   },
   {
