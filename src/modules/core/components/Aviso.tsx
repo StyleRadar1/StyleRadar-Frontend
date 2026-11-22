@@ -39,6 +39,6 @@ export function Aviso({ tono = 'info', titulo, children, acciones, onCerrar, cla
   )
 }
 
-/** Clases de los botones del aviso, según el manual: el principal es violeta. */
-export const BTN_PRINCIPAL = 'rounded-xl bg-violeta px-4 py-2 text-xs font-semibold uppercase tracking-[.12em] text-white hover:bg-violeta-claro disabled:opacity-50'
-export const BTN_SECUNDARIO = 'rounded-xl border border-white/25 px-4 py-2 text-xs font-semibold uppercase tracking-[.12em] text-white hover:bg-white/10 disabled:opacity-50'
+/** Clases de los botones del aviso: morado suave con glow y secundario glass. */
+export const BTN_PRINCIPAL = 'rounded-xl bg-gradient-to-r from-[#9D5CFF] via-[#8B5CF6] to-[#7C3AED] hover:from-[#A855F7] hover:to-[#8B5CF6] px-4 py-2.5 text-xs font-bold uppercase tracking-[.12em] text-white shadow-[0_4px_18px_-2px_rgba(139,92,246,0.45)] border border-white/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none'
+export const BTN_SECUNDARIO = 'rounded-xl border border-purple-300/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/50 px-4 py-2.5 text-xs font-semibold uppercase tracking-[.12em] text-[var(--color-text)] hover:text-white backdrop-blur-md transition-all disabled:opacity-50 disabled:pointer-events-none'

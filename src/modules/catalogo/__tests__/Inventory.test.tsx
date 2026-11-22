@@ -16,7 +16,7 @@ describe('InventoryPage (RF-50 a RF-60)', () => {
     renderAt('/tienda/inventario', routes)
 
     expect(screen.getByRole('heading', { name: /Inventario de la tienda/i })).toBeInTheDocument()
-    expect(screen.getByText(/RF-50 a RF-60/i)).toBeInTheDocument()
+    expect(screen.queryByText(/RF-50 a RF-60/i)).not.toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.getByText(/Chaqueta Denim Oversize/i)).toBeInTheDocument()

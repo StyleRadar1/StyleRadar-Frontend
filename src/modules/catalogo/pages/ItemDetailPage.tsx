@@ -1,17 +1,19 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useContext } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Loading } from '@/modules/core/components/Status'
-import { ApiError } from '@/modules/core/api/apiClient'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
+import { env } from '@/configs/env'
 import { errorKind } from '@/modules/core/api/errors'
 import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
 import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useResource } from '@/modules/core/hooks/useResource'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { ItemCard } from '../components/ItemCard'
 import { SizeGuideModal } from '../components/SizeGuideModal'
-import { itemService } from '../services/itemService'
+import { extractAvailableTallasFromInventory, itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
 import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
@@ -48,6 +50,8 @@ function general(e: unknown, titulo: string, accion?: Accion): AvisoPrenda {
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const auth = useContext(AuthContext)
+  const isBuyer = auth?.user?.role === 'COMPRADOR'
 
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string>('')
   const [guiaTallasAbierta, setGuiaTallasAbierta] = useState(false)
@@ -72,14 +76,26 @@ export default function ItemDetailPage() {
     setZoomActivo(false)
   }
 
-  // Carga de la prenda principal y similares
+  // Carga de la prenda principal, tallas desde inventario y similares (SR-RF-16)
   const loader = useCallback(async () => {
     if (!id) throw new ApiError(404, 'Prenda no especificada.')
-    const prendaData = await itemService.getById(id)
-    const similaresData = await itemService.search({ estilo: prendaData.estilo })
+    const [prendaData, similaresData] = await Promise.all([
+      itemService.getById(id),
+      itemService.getSimilar(id).catch(() => [] as ItemResponseDto[]),
+    ])
+    let tallas = prendaData.tallas
+    if (!env.useMocks && tallas.length === 0) {
+      try {
+        const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(id)}`).then((r) => r.data)
+        const extraidas = extractAvailableTallasFromInventory(inv)
+        if (extraidas.length > 0) tallas = extraidas
+      } catch {
+        // Mantiene tallas vacías si inventario no responde
+      }
+    }
     return {
-      prenda: prendaData,
-      similares: similaresData.filter((x) => x.id !== prendaData.id).slice(0, 4),
+      prenda: { ...prendaData, tallas },
+      similares: similaresData.filter((x) => x.id !== prendaData.id).slice(0, 10),
     }
   }, [id])
 
@@ -105,12 +121,37 @@ export default function ItemDetailPage() {
   // 403 y 404 se ven igual: la prenda no existe o no está disponible para esta persona
   const noExiste = !!error && (errorKind(error) === 'no-existe' || errorKind(error) === 'permiso')
 
+  // ¿Ya sigo esta prenda (y talla)? Así el botón dice «Cancelar seguimiento» en lugar de pedir otra alerta
+  const [seguimiento, setSeguimiento] = useState<string | null>(null)
+  const prendaId = prenda?.id
+  useEffect(() => {
+    if (!prendaId || !isBuyer) return
+    let activo = true
+    alertService.check(prendaId, tallaSeleccionada || undefined).then((r) => { if (activo) setSeguimiento(r.suscrita && r.alertaId ? r.alertaId : null) })
+    return () => { activo = false }
+  }, [prendaId, tallaSeleccionada, isBuyer])
+
   const crearAlerta = async () => {
     if (!prenda || ocupado) return
     setOcupado('alerta'); setAviso(null)
     try {
-      await alertService.createAlert(prenda.id, prenda.nombre, prenda.tienda, tallaSeleccionada || undefined)
+      const a = await alertService.createAlert(prenda.id, prenda.nombre, prenda.tienda, tallaSeleccionada || undefined)
+      setSeguimiento(a.id)
       setAviso({ tono: 'exito', titulo: 'Te avisaremos cuando llegue', texto: 'La encuentras en «Mis búsquedas y alertas».', accion: 'ver-alertas' })
+    } catch (e) {
+      // 409: ya la sigues; el botón pasa a «Cancelar seguimiento»
+      if (e instanceof ApiError && e.status === 409) alertService.check(prenda.id, tallaSeleccionada || undefined).then((r) => { if (r.suscrita && r.alertaId) setSeguimiento(r.alertaId) })
+      setAviso(avisoAlerta(e))
+    } finally { setOcupado(null) }
+  }
+
+  const cancelarSeguimiento = async () => {
+    if (!prenda || ocupado || seguimiento === null) return
+    setOcupado('alerta'); setAviso(null)
+    try {
+      await alertService.cancelAlert(seguimiento)
+      setSeguimiento(null)
+      setAviso({ tono: 'info', titulo: 'Cancelaste el seguimiento', texto: 'Ya no te avisaremos cuando llegue esta prenda.' })
     } catch (e) {
       setAviso(avisoAlerta(e))
     } finally { setOcupado(null) }
@@ -168,11 +209,12 @@ export default function ItemDetailPage() {
     }
   }, [prenda])
 
-  // Galería multi-ángulo: hasta 4 fotos en distintos ángulos (Frontal, Detalle, Espalda, Look)
+  // Galería multi-ángulo: hasta 5 fotos (SR-RF-51)
   const imagenesDisponibles = useMemo(() => {
     if (!prenda) return []
-    if (prenda.imagenes && prenda.imagenes.length > 0) {
-      return prenda.imagenes.slice(0, 4)
+    const fuente = prenda.imagenes?.length ? prenda.imagenes : prenda.fotografias
+    if (fuente && fuente.length > 0) {
+      return fuente.slice(0, 5)
     }
     const list: string[] = [prenda.imagen]
     if (prenda.imagenSecundaria && !list.includes(prenda.imagenSecundaria)) {
@@ -181,10 +223,10 @@ export default function ItemDetailPage() {
     if (prenda.recorte && !list.includes(prenda.recorte)) {
       list.push(prenda.recorte)
     }
-    return list.slice(0, 4)
+    return list.filter(Boolean).slice(0, 5)
   }, [prenda])
 
-  const ANGLE_LABELS = ['Frontal', 'Detalle', 'Espalda', 'Look completo']
+  const ANGLE_LABELS = ['Frontal', 'Detalle', 'Espalda', 'Look completo', 'Vista adicional']
 
   const imagenActiva = imagenSeleccionada ?? (imagenesDisponibles[indiceImagen] || prenda?.imagen || '')
 
@@ -309,8 +351,12 @@ export default function ItemDetailPage() {
                   <span className="inline-flex items-center gap-2 rounded-full border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] px-3.5 py-1 text-[11px] font-bold tracking-wider text-[var(--sr-acento-primario,var(--color-accent))] shadow-sm backdrop-blur-md">
                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)] animate-ping" />
                     <span>{prenda.tienda === 'Segunda mano' ? 'MODA CIRCULAR BOGOTÁ' : 'DISEÑO INDEPENDIENTE BOGOTÁ'}</span>
-                    <span className="text-[var(--color-text-muted)]">·</span>
-                    <span className="text-[var(--color-text)] uppercase">{prenda.barrio}</span>
+                    {prenda.barrio && (
+                      <>
+                        <span className="text-[var(--color-text-muted)]">·</span>
+                        <span className="text-[var(--color-text)] uppercase">{prenda.barrio}</span>
+                      </>
+                    )}
                   </span>
                 </div>
 
@@ -496,30 +542,13 @@ export default function ItemDetailPage() {
                     {prenda.nombre}
                   </h1>
 
-                  {/* Precio destacado con descuento (si aplica) */}
-                  {prenda.descuento && prenda.precioAnterior && prenda.precioAnterior > prenda.precio ? (
-                    <div className="mt-3">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm line-through text-[var(--color-text-muted)] font-medium">
-                          {formatCOP(prenda.precioAnterior)}
-                        </span>
-                        <span className="text-2xl font-black text-rose-500">
-                          {formatCOP(prenda.precio)}
-                        </span>
-                        <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-                          -{prenda.descuento}%
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
-                    </div>
-                  ) : (
-                    <div className="mt-3">
-                      <p className="text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
-                        {formatCOP(prenda.precio)}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
-                    </div>
-                  )}
+                  {/* Precio final */}
+                  <div className="mt-3">
+                    <p className="text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
+                      {formatCOP(prenda.precio)}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
+                  </div>
 
                   {/* c) Descripción corta (3-5 líneas) con "Leer más" (si existe en los datos) */}
                   {prenda.descripcion && (
@@ -538,7 +567,7 @@ export default function ItemDetailPage() {
                   )}
 
                   {/* Tarjeta de disponibilidad en tienda real (RF-22) */}
-                  <div className="mt-6 rounded-2xl border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] p-4 text-xs text-[var(--color-text)]">
+                  <div className="mt-6 rounded-2xl border border-white/15 dark:border-white/10 bg-white/50 dark:bg-white/[0.04] p-4 text-xs text-[var(--color-text)] backdrop-blur-xl shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-success-bg,rgba(16,185,129,0.15))] border border-[var(--color-success-border,rgba(16,185,129,0.3))] px-2.5 py-0.5 text-[0.625rem] font-bold text-[var(--color-success-text,#10b981)]">
                         <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -549,7 +578,7 @@ export default function ItemDetailPage() {
                       <span className="font-semibold text-[var(--color-text)]">Disponibilidad en tienda real</span>
                     </div>
                     <p className="mt-1 text-[var(--color-text-muted)] text-[0.6875rem] leading-relaxed">
-                      Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong> ({prenda.barrio}).
+                      Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong>{prenda.barrio ? ` (${prenda.barrio})` : ''}.
                     </p>
                     {/* RF-73: Contactar a la tienda */}
                     <ContactButton
@@ -604,8 +633,8 @@ export default function ItemDetailPage() {
                               onClick={() => setTallaSeleccionada(isSelected ? '' : talla)}
                               className={`h-10 w-10 rounded-full border text-xs font-bold transition flex items-center justify-center disabled:cursor-not-allowed disabled:line-through disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                                 isSelected
-                                  ? 'border-[var(--sr-acento-primario,var(--color-accent))] bg-[var(--sr-acento-primario,var(--color-accent))] text-[var(--sr-texto-sobre-oscuro,var(--color-text-on-accent))] shadow-md scale-105'
-                                  : 'border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] text-[var(--color-text)] hover:border-[var(--sr-acento-primario,var(--color-accent))] hover:bg-[var(--sr-superficie,var(--color-surface))]'
+                                  ? 'border-purple-400 bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6] text-white shadow-[0_4px_14px_rgba(139,92,246,0.45)] scale-105'
+                                  : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:border-purple-400/50 hover:bg-white/10'
                               }`}
                             >
                               {talla}
@@ -647,10 +676,10 @@ export default function ItemDetailPage() {
                         type="button"
                         onClick={handleGuardar}
                         aria-pressed={guardado}
-                        className={`flex-1 inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                        className={`flex-1 inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-xs font-bold backdrop-blur-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                           guardado
-                            ? 'border-[var(--sr-acento-primario,var(--color-accent))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] text-[var(--sr-acento-primario,var(--color-accent))] shadow-sm'
-                            : 'border-[var(--sr-border-subtle,var(--color-border))] bg-transparent text-[var(--color-text)] hover:border-[var(--sr-acento-primario,var(--color-accent))] hover:bg-[var(--sr-surface-raised,var(--color-surface-raised))]'
+                            ? 'border-purple-400 bg-purple-500/20 text-purple-300 shadow-[0_2px_12px_rgba(168,85,247,0.25)]'
+                            : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:bg-white/10 hover:border-purple-400/40'
                         }`}
                       >
                         <svg
@@ -667,10 +696,10 @@ export default function ItemDetailPage() {
                         <span>Favorito</span>
                       </button>
 
-                      {/* Botón primario Ver tienda (relleno, píldora, color de acento) */}
+                      {/* Botón primario Ver tienda (morado suave con glow) */}
                       <Link
                         to={`/tiendas/${getStoreIdByName(prenda.tienda)}`}
-                        className="flex-1 inline-flex items-center justify-center rounded-full bg-[var(--sr-acento-primario,var(--color-accent))] px-6 py-3 text-xs font-black text-[var(--sr-texto-sobre-oscuro,var(--color-text-on-accent))] shadow-lg transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                        className="flex-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] px-6 py-3 text-xs font-bold text-white shadow-[0_4px_20px_-2px_rgba(139,92,246,0.5)] border border-white/20 transition-all hover:from-[#B49BFB] hover:to-[#8B5CF6] hover:shadow-[0_6px_25px_-2px_rgba(139,92,246,0.65)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                       >
                         Ver tienda
                       </Link>
@@ -681,22 +710,23 @@ export default function ItemDetailPage() {
                       type="button"
                       onClick={handleGuardarPlaylist}
                       aria-pressed={guardadoPlaylist}
-                      className={`w-full inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                      className={`w-full inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold backdrop-blur-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                         guardadoPlaylist
-                          ? 'border-[var(--sr-acento-primario,var(--color-accent))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] text-[var(--sr-acento-primario,var(--color-accent))] shadow-sm'
-                          : 'border-[var(--sr-border-subtle,var(--color-border))] bg-transparent text-[var(--color-text)] hover:border-[var(--sr-acento-primario,var(--color-accent))] hover:bg-[var(--sr-surface-raised,var(--color-surface-raised))]'
+                          ? 'border-purple-400 bg-purple-500/20 text-purple-300 shadow-[0_2px_12px_rgba(168,85,247,0.25)]'
+                          : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:bg-white/10 hover:border-purple-400/40'
                       }`}
                     >
                       <span>📑</span>
                       <span>{guardadoPlaylist ? 'En tu playlist de estilo' : 'Guardar en playlist'}</span>
                     </button>
 
-                    {/* Enlace directo para probarse la prenda en el probador virtual (RF-57) */}
+                    {/* Enlace directo para probarse la prenda en el probador virtual / maniquí (RF-7.2 / RF-57) */}
                     <Link
-                      to={`/probador?prenda=${prenda.id}${tallaSeleccionada ? `&talla=${tallaSeleccionada}` : ''}`}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--sr-superficie,var(--color-surface))] hover:text-[var(--sr-acento-primario,var(--color-accent))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                      to={`/probador?prenda=${prenda.id}&talla=${tallaSeleccionada || prenda.tallas[0] || 'M'}&color=${encodeURIComponent(prenda.color || 'default')}`}
+                      aria-label="Probarme esta prenda en el probador - Probar en el maniquí"
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/60 px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition backdrop-blur-md shadow-[0_2px_12px_rgba(168,85,247,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                     >
-                      <span>✨ Probarme esta prenda en el probador</span>
+                      <span>✨ Probar en el maniquí</span>
                     </Link>
 
                     {/* Reserva en tienda (ms-inventario) y alerta de disponibilidad (ms-notificaciones) */}
@@ -704,8 +734,8 @@ export default function ItemDetailPage() {
                       <button type="button" onClick={reservar} disabled={!!ocupado} className={`${BTN_PRINCIPAL} flex-1`}>
                         {ocupado === 'reserva' ? 'Reservando…' : 'Reservar en tienda'}
                       </button>
-                      <button type="button" onClick={crearAlerta} disabled={!!ocupado} className={`${BTN_SECUNDARIO} flex-1`}>
-                        {ocupado === 'alerta' ? 'Creando alerta…' : 'Avisarme cuando llegue'}
+                      <button type="button" onClick={seguimiento === null ? crearAlerta : cancelarSeguimiento} disabled={!!ocupado} className={`${BTN_SECUNDARIO} flex-1`}>
+                        {ocupado === 'alerta' ? (seguimiento === null ? 'Creando alerta…' : 'Cancelando…') : seguimiento === null ? 'Avisarme cuando llegue' : 'Cancelar seguimiento'}
                       </button>
                     </div>
                     {aviso && (
@@ -753,7 +783,7 @@ export default function ItemDetailPage() {
                   </div>
                   <div>
                     <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">SECTOR</p>
-                    <p className="text-xs font-bold text-[var(--color-text)]">{prenda.barrio}</p>
+                    <p className="text-xs font-bold text-[var(--color-text)]">{prenda.barrio || 'Bogotá'}</p>
                   </div>
                 </div>
 
@@ -767,7 +797,9 @@ export default function ItemDetailPage() {
                   </div>
                   <div>
                     <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">CERCANÍA</p>
-                    <p className="text-xs font-bold text-[var(--color-text)]">a {prenda.distanciaKm} km</p>
+                    <p className="text-xs font-bold text-[var(--color-text)]">
+                      {prenda.distanciaKm > 0 ? `a ${prenda.distanciaKm.toLocaleString('es-CO', { maximumFractionDigits: 2 })} km` : 'Bogotá'}
+                    </p>
                   </div>
                 </div>
 
@@ -794,10 +826,10 @@ export default function ItemDetailPage() {
             <div className="border-t border-[var(--sr-border-subtle,var(--color-border))] pt-10">
               <div className="flex items-end justify-between">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--sr-acento-primario,var(--color-accent))]">RF-16</span>
-                  <h2 className="mt-1 text-2xl font-bold text-[var(--color-text)]">Prendas similares de estilo {prenda.estilo}</h2>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--sr-acento-primario,var(--color-accent))]">Recomendaciones</span>
+                  <h2 className="mt-1 text-2xl font-bold text-[var(--color-text)]">Prendas similares</h2>
                   <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                    Otras opciones disponibles en almacenes de Bogotá con estética compatible.
+                    Otras opciones disponibles con tipo o estilo compatible.
                   </p>
                 </div>
                 <Link to={`/catalogo?estilo=${encodeURIComponent(prenda.estilo)}`} className="text-xs font-semibold text-[var(--sr-acento-primario,var(--color-accent))] hover:underline">

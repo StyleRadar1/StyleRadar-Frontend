@@ -7,7 +7,7 @@
 
 .theme-btn {
   --btn: var(--sr-text-primary, #ffffff);
-  --btn-ink: var(--sr-bg, #1d1d1d);
+  --btn-ink: var(--sr-bg, #09070f);
   position: relative;
   display: inline-flex;
   align-items: center;

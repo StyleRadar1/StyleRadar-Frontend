@@ -1,37 +1,4 @@
-import type { ContactoDto, ConversacionDto, TipoContacto } from '../types/chat.dto'
-
-export interface TrackOrbitConfig {
-  f: number // Factor de radio respecto al ancho del escenario
-  k: number // Factor elíptico (1 para circular en vinilo)
-  tilt: number // Inclinación en grados (0 para vinilo plano)
-  w: number // Velocidad angular en grados/segundo
-  label: string
-}
-
-export const ORB_CONFIGS: Record<1 | 2 | 3, TrackOrbitConfig> = {
-  1: { f: 0.26, k: 1, tilt: 0, w: 9, label: 'Sin leer' },
-  2: { f: 0.36, k: 1, tilt: 0, w: 9, label: 'Vistos' },
-  3: { f: 0.46, k: 1, tilt: 0, w: 9, label: 'Antiguos' },
-}
-
-export interface VinylSignal {
-  id: string
-  conv: ConversacionDto
-  orbit: 1 | 2 | 3
-  ang: number // Ángulo en grados
-  r: number
-  k: number
-  tl: number
-  px: number // Posición x en px relativa al centro de la escena
-  py: number // Posición y en px relativa al centro de la escena
-  s: number
-  unread: number
-  name: string
-  tag: string
-  type: TipoContacto
-  photoUrl: string | null
-  initials: string
-}
+import type { ContactoDto } from '../types/chat.dto'
 
 /**
  * Mapeo de fotos reales existentes en el proyecto según el tipo e identidad del contacto
@@ -81,3 +48,35 @@ export function getInitials(nombre: string): string {
   }
   return nombre.slice(0, 2).toUpperCase()
 }
+
+const hora = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit' })
+const diaCorto = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' })
+const diaSemana = new Intl.DateTimeFormat('es-CO', { weekday: 'short' })
+const diaLargo = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
+const inicioDia = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+const DIA = 86_400_000
+
+/** Hora de un mensaje: «3:05 p. m.». */
+export const horaMensaje = (iso: string) => hora.format(new Date(iso))
+
+/** Etiqueta corta para la lista: hora si es de hoy, «Ayer», el día de la semana o la fecha. */
+export function etiquetaLista(iso: string, ahora = new Date()): string {
+  const d = new Date(iso)
+  const dif = Math.round((inicioDia(ahora) - inicioDia(d)) / DIA)
+  if (dif <= 0) return hora.format(d)
+  if (dif === 1) return 'Ayer'
+  if (dif < 7) return diaSemana.format(d).replace('.', '')
+  return diaCorto.format(d).replace('.', '')
+}
+
+/** Separador entre días dentro de la conversación: «Hoy», «Ayer» o «viernes 7 de noviembre». */
+export function etiquetaDia(iso: string, ahora = new Date()): string {
+  const d = new Date(iso)
+  const dif = Math.round((inicioDia(ahora) - inicioDia(d)) / DIA)
+  if (dif <= 0) return 'Hoy'
+  if (dif === 1) return 'Ayer'
+  return diaLargo.format(d)
+}
+
+/** Clave para agrupar mensajes por día. */
+export const claveDia = (iso: string) => String(inicioDia(new Date(iso)))

@@ -69,13 +69,13 @@ export function useTryOnJob() {
   }, [])
 
   /** Inicia una prueba. Ignora la llamada si ya hay una en curso. */
-  const start = useCallback(async (photoId: string, garmentId: string) => {
+  const start = useCallback(async (photoId: string, garmentId: string, selectedSize?: string) => {
     if (busy.current) return
     busy.current = true
     stop()
     setState({ phase: 'creating' })
     try {
-      const created = await tryOnService.createJob({ photoId, garmentId }, newKey())
+      const created = await tryOnService.createJob({ photoId, garmentId, selectedSize }, newKey())
       setState({ phase: 'waiting', jobId: created.jobId, progress: 0 })
       poll(created.jobId, Date.now())
     } catch (e) {
@@ -83,6 +83,13 @@ export function useTryOnJob() {
       setState({ phase: errorKind(e) === 'sin-conexion' ? 'offline' : 'error', error: e })
     }
   }, [poll, stop])
+
+  /** Reabrir resultado histórico previo (RF-26 / SR-P5-N03) sin consumir cuota */
+  const openCompleted = useCallback((result: TryOnJobStatusDto) => {
+    stop()
+    busy.current = false
+    setState({ phase: 'completed', jobId: result.jobId, result, progress: 100 })
+  }, [stop])
 
   /** Después de un corte de red, sigue consultando el mismo job sin crear otro. */
   const resume = useCallback(() => {
@@ -96,6 +103,5 @@ export function useTryOnJob() {
   const reset = useCallback(() => { stop(); busy.current = false; setState({ phase: 'idle' }) }, [stop])
 
   const active = state.phase === 'creating' || state.phase === 'waiting'
-  return { ...state, active, start, resume, cancel, reset }
+  return { ...state, active, start, openCompleted, resume, cancel, reset }
 }
-

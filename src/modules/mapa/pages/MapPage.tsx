@@ -2,14 +2,16 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { ApiError } from '@/modules/core/api/apiClient'
+import { errorMessage } from '@/modules/core/api/errors'
 import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
+import { env } from '@/configs/env'
 import { mapService } from '../services/mapService'
 import { useMapData } from '../hooks/useMapData'
 import MapaBogota from '../components/MapaBogota'
 import MapCard from '../components/MapCard'
 import BubbleColumn from '../components/BubbleColumn'
-import type { MapPinDto, MapFilter } from '../types/map.dto'
-import { centroBarrio, filterPins, RADIO_KM, type Ubicacion } from '../utils/mapUtils'
+import { CATEGORIAS_ALMACEN, type MapPinDto, type MapFilter } from '../types/map.dto'
+import { centroBarrio, filterPins, formatDistanciaKm, RADIO_KM, type Ubicacion } from '../utils/mapUtils'
 
 const TEXTO_RADIO = `El radio va de ${RADIO_KM.min} a ${RADIO_KM.max} km.`
 
@@ -20,6 +22,8 @@ export default function MapPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [filter, setFilter] = useState<MapFilter>('todos')
+  const [categoriaId, setCategoriaId] = useState<string>('')
+  const [pinsFiltrados, setPinsFiltrados] = useState<MapPinDto[] | null>(null)
 
   // Cerca de mí (ms-geolocalización): 400 sin ubicación, 422 radio fuera de rango, 404 tienda retirada
   const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null)
@@ -32,33 +36,101 @@ export default function MapPage() {
   const [retirados, setRetirados] = useState<string[]>([])
   const [distancias, setDistancias] = useState<Record<string, number>>({})
 
+  const activePins = pinsFiltrados ?? pins
+
   useEffect(() => {
-    if (tiendaParam && pins.length) {
-      const match = pins.find((p) => p.id.toLowerCase() === tiendaParam.toLowerCase())
+    if (tiendaParam && activePins.length) {
+      const match = activePins.find((p) => p.id.toLowerCase() === tiendaParam.toLowerCase())
       if (match) setSelectedId(match.id)
     }
-  }, [tiendaParam, pins])
+  }, [tiendaParam, activePins])
 
-  const barrios = useMemo(() => [...new Set(pins.map((p) => p.barrio))].sort(), [pins])
-  const vigentes = pins.filter((p) => !retirados.includes(p.id))
-  const enRadio = cercanos ? vigentes.filter((p) => cercanos.includes(p.id)) : vigentes
+  const categorias = useMemo(() => {
+    return CATEGORIAS_ALMACEN.map((c) => {
+      const match = pins.find(
+        (p) => p.tipo === 'tienda' && p.categoriaId && p.cat.toLowerCase() === c.nombre.toLowerCase(),
+      )
+      return { id: match?.categoriaId || c.id, nombre: c.nombre }
+    })
+  }, [pins])
+
+  const barrios = useMemo(
+    () => [...new Set(pins.map((p) => p.barrio).filter((b): b is string => Boolean(b)))].sort(),
+    [pins],
+  )
+  const vigentes = activePins.filter((p) => !retirados.includes(p.id))
+  const porCategoria = categoriaId
+    ? vigentes.filter((p) => p.tipo === 'tienda' && (!p.categoriaId || p.categoriaId === categoriaId))
+    : vigentes
+  const enRadio = cercanos ? porCategoria.filter((p) => cercanos.includes(p.id)) : porCategoria
   const selectedRaw = enRadio.find((p) => p.id === selectedId) ?? null
   const selectedPin = selectedRaw && distancias[selectedRaw.id] !== undefined
-    ? { ...selectedRaw, d: `${distancias[selectedRaw.id].toLocaleString('es-CO')} km de ti` } : selectedRaw
-  const visiblePins = filterPins(enRadio, filter)
+    ? { ...selectedRaw, d: `${formatDistanciaKm(distancias[selectedRaw.id])} de ti` } : selectedRaw
+  const visiblePins = filterPins(enRadio, filter, categoriaId || undefined)
+
+  const cambiarCategoria = useCallback(async (nextCategoriaId: string) => {
+    setCategoriaId(nextCategoriaId)
+    setAviso(null)
+    if (!env.useMocks) {
+      try {
+        const res = await mapService.getAll({
+          categoriaId: nextCategoriaId || undefined,
+          ...(ubicacion ? { lat: ubicacion.lat, lng: ubicacion.lng, radioKm: radio } : {}),
+        })
+        setPinsFiltrados(res)
+      } catch (e) {
+        const status = e instanceof ApiError ? e.status : 0
+        setAviso({
+          tono: 'error',
+          titulo: 'No pudimos filtrar por categoría',
+          texto: e instanceof ApiError && e.code
+            ? errorMessage(e)
+            : status === 0
+              ? 'Revisa tu internet e intenta de nuevo.'
+              : 'Intenta en unos minutos.',
+        })
+      }
+    }
+  }, [ubicacion, radio])
 
   const buscar = useCallback(async (u: Ubicacion | null, km: number) => {
     setAviso(null); setRadioError('')
     try {
-      setCercanos(await mapService.nearby(u, km))
+      const ids = await mapService.nearby(u, km, categoriaId || undefined)
+      setCercanos(ids)
+      if (u && !env.useMocks) {
+        const updated = await mapService.getAll({
+          lat: u.lat,
+          lng: u.lng,
+          radioKm: km,
+          categoriaId: categoriaId || undefined,
+        }).catch(() => null)
+        if (updated) setPinsFiltrados(updated)
+      }
       setPideUbicacion(false)
     } catch (e) {
       const status = e instanceof ApiError ? e.status : 0
+      if (e instanceof ApiError && e.code === 'COORDENADA_FUERA_DE_RANGO') {
+        setAviso({ tono: 'error', titulo: 'Ubicación inválida', texto: errorMessage(e) })
+        return
+      }
       if (status === 400) { setPideUbicacion(true); return }
-      if (status === 422) { setRadioError(TEXTO_RADIO); setRadio(RADIO_KM.inicial); return }
-      setAviso({ tono: 'error', titulo: 'No pudimos buscar tiendas cercanas', texto: status === 0 ? 'Revisa tu internet e intenta de nuevo.' : 'Intenta en unos minutos.' })
+      if (status === 422) {
+        setRadioError(e instanceof ApiError && e.code === 'RADIO_INVALIDO' ? errorMessage(e) : TEXTO_RADIO)
+        setRadio(RADIO_KM.inicial)
+        return
+      }
+      setAviso({
+        tono: 'error',
+        titulo: 'No pudimos buscar tiendas cercanas',
+        texto: e instanceof ApiError && e.code
+          ? errorMessage(e)
+          : status === 0
+            ? 'Revisa tu internet e intenta de nuevo.'
+            : 'Intenta en unos minutos.',
+      })
     }
-  }, [])
+  }, [categoriaId])
 
   const usarMiUbicacion = () => {
     setUbicacionError('')
@@ -83,7 +155,9 @@ export default function MapPage() {
     if (ubicacion) buscar(ubicacion, km)
   }
 
-  const quitarCercania = () => { setCercanos(null); setUbicacion(null); setPideUbicacion(false); setRadioError('') }
+  const quitarCercania = () => {
+    setCercanos(null); setUbicacion(null); setPideUbicacion(false); setRadioError(''); setPinsFiltrados(null)
+  }
 
   const handleSelect = useCallback((pin: MapPinDto | null) => {
     setSelectedId(pin?.id ?? null)
@@ -129,17 +203,33 @@ export default function MapPage() {
             <span aria-hidden="true">←</span>
             <span>Volver</span>
           </Link>
-          {ubicacion ? (
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <label htmlFor="radio-km" className="text-[var(--color-text)]">Radio de búsqueda: <b>{radio} km</b></label>
-              <input id="radio-km" type="range" min={RADIO_KM.min} max={RADIO_KM.max} step={1} value={radio}
-                onChange={(e) => cambiarRadio(Number(e.target.value))} aria-describedby="radio-ayuda" className="w-40 accent-violeta" />
-              <span id="radio-ayuda" className={radioError ? 'text-[var(--color-danger-text,#ff8a8a)]' : 'text-[var(--color-text-muted)]'} role={radioError ? 'alert' : undefined}>{radioError || TEXTO_RADIO}</span>
-              <button type="button" onClick={quitarCercania} className={BTN_SECUNDARIO}>Ver todas</button>
-            </div>
-          ) : (
-            <button type="button" onClick={() => (ubicacion ? buscar(ubicacion, radio) : setPideUbicacion(true))} className={BTN_PRINCIPAL}>Cerca de mí</button>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <label htmlFor="categoria-mapa" className="sr-only">Categoría de tienda</label>
+            <select
+              id="categoria-mapa"
+              aria-label="Filtrar por categoría"
+              value={categoriaId}
+              onChange={(e) => cambiarCategoria(e.target.value)}
+              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-[.12em] text-[var(--color-text)]"
+            >
+              <option value="">Todas las categorías</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+
+            {ubicacion ? (
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <label htmlFor="radio-km" className="text-[var(--color-text)]">Radio de búsqueda: <b>{radio} km</b></label>
+                <input id="radio-km" type="range" min={RADIO_KM.min} max={RADIO_KM.max} step={1} value={radio}
+                  onChange={(e) => cambiarRadio(Number(e.target.value))} aria-describedby="radio-ayuda" className="w-40 accent-violeta" />
+                <span id="radio-ayuda" className={radioError ? 'text-[var(--color-danger-text,#ff8a8a)]' : 'text-[var(--color-text-muted)]'} role={radioError ? 'alert' : undefined}>{radioError || TEXTO_RADIO}</span>
+                <button type="button" onClick={quitarCercania} className={BTN_SECUNDARIO}>Ver todas</button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => (ubicacion ? buscar(ubicacion, radio) : setPideUbicacion(true))} className={BTN_PRINCIPAL}>Cerca de mí</button>
+            )}
+          </div>
         </div>
 
         {/* 400 · sin ubicación: se pide, sin error técnico */}

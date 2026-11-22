@@ -54,6 +54,7 @@ const FOCUS_ID: Partial<Record<keyof ListingForm, string>> = {
   titulo: 'ltit',
   categoria: 'lcat',
   talla: 'ltal',
+  color: 'lcol',
   marca: 'lmar',
   descripcion: 'ldes',
   precio: 'lpre',
@@ -335,6 +336,8 @@ export default function PublishListingPage() {
             <Field id="ltal" label="Talla" error={errors.talla}>
               <select {...a11y('ltal', errors.talla)} className={inputCls} value={form.talla} onChange={(e) => set('talla', e.target.value)}>
                 <option value="">Elige una</option>{TALLAS.map((t) => <option key={t}>{t}</option>)}</select></Field>
+            <Field id="lcol" label="Color principal" error={errors.color}>
+              <input {...a11y('lcol', errors.color)} className={inputCls} value={form.color} onChange={(e) => set('color', e.target.value)} placeholder="Ej. Azul oscuro, Negro, Blanco" /></Field>
             <Field id="lstyle" label="Estilo">
               <select id="lstyle" className={inputCls} value={form.style || 'CASUAL'} onChange={(e) => set('style', e.target.value as StyleEnum)}>
                 {STYLES_ENUM.map((st) => <option key={st} value={st}>{STYLE_LABEL[st]}</option>)}</select></Field>

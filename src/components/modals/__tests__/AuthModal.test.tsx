@@ -38,9 +38,14 @@ describe('AuthModal - Cuentas de prueba y cambio de pestaña', () => {
     const userDemoBtn = screen.getByRole('button', { name: /^usuario$/i })
     fireEvent.click(userDemoBtn)
 
-    // Oprimir Entrar
+    // Oprimir Entrar (lleva al paso de verificación OTP)
     const submitBtn = screen.getByRole('button', { name: /^entrar$/i })
     fireEvent.click(submitBtn)
+
+    // Confirmar código OTP
+    const autoFill = await screen.findByRole('button', { name: /Rellenar código válido/i })
+    fireEvent.click(autoFill)
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar y entrar/i }))
 
     // Debe mostrar la bienvenida
     const welcome = await screen.findByRole('status')

@@ -565,7 +565,8 @@
 .sr-auth[data-pic="login"] .sr-auth-submit,
 .sr-auth[data-pic="sign"] .sr-auth-submit,
 .sr-auth[data-pic="user"] .sr-auth-submit {
-  background: linear-gradient(180deg, #5a16c0 0%, #48119A 100%);
+  background: linear-gradient(135deg, #9D5CFF 0%, #8B5CF6 50%, #7C3AED 100%);
+  box-shadow: 0 4px 18px -2px rgba(139, 92, 246, 0.45);
   color: #FFFFFF;
 }
 

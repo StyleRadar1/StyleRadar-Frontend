@@ -20,6 +20,7 @@ export type RejectionReason = (typeof REJECTION_REASONS)[number]
 
 export interface ModerationItemDto {
   id: string
+  almacenId?: string
   titulo: string
   publicador: string
   tipoPublicador: 'Tienda' | 'Persona'
@@ -37,6 +38,30 @@ export interface ModerationDecisionDto {
   aprobado: boolean
   motivo?: string
   comentario?: string
+  moderadorId?: string
+}
+
+export type BackendModerationDecision = 'APROBADA' | 'RECHAZADA'
+
+export interface BackendModerationRequestDto {
+  decision: BackendModerationDecision
+  motivo?: string
+  moderadorId: string
+}
+
+export interface ModerationPendingGroupDto {
+  almacenId?: string
+  nombreAlmacen?: string
+  publicador?: string
+  tipoPublicador?: string
+  prendas?: Record<string, any>[]
+  publicaciones?: Record<string, any>[]
+}
+
+export interface ModerationPendingResponseDto {
+  tipoPublicador?: string
+  total?: number
+  grupos?: ModerationPendingGroupDto[]
 }
 
 export interface ModerationHistoryItemDto {

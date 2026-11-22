@@ -40,8 +40,8 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
             </p>
           </div>
 
-          {/* Filtro rápido por público */}
-          <div className="flex items-center gap-2 bg-[var(--sr-surface)] p-1.5 rounded-full border border-[var(--sr-border-subtle)] self-start md:self-auto">
+          {/* Filtro rápido por público con efecto glass */}
+          <div className="flex items-center gap-2 bg-white/5 dark:bg-purple-950/30 backdrop-blur-xl p-1.5 rounded-full border border-white/15 dark:border-purple-400/25 self-start md:self-auto shadow-lg">
             {(['TODOS', 'PERSONAS', 'NEGOCIOS'] as const).map((tab) => (
               <button
                 key={tab}
@@ -49,7 +49,7 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                 onClick={() => setFilterAudience(tab)}
                 className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   filterAudience === tab
-                    ? 'bg-[var(--sr-accent)] text-[var(--sr-text-on-accent)] shadow-md'
+                    ? 'bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6] text-white shadow-[0_4px_14px_rgba(139,92,246,0.45)]'
                     : 'text-[var(--sr-hero-text-muted)] hover:text-[var(--sr-hero-text)]'
                 }`}
               >
@@ -69,8 +69,8 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                 key={plan.name}
                 className={`relative rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 ${
                   isFeatured
-                    ? 'bg-[var(--sr-surface-raised)] border-2 border-[var(--sr-accent)] shadow-[0_12px_40px_rgba(72,17,154,0.25)] scale-[1.02] z-10'
-                    : 'bg-[var(--sr-surface)]/80 border border-[var(--sr-border-subtle)] hover:border-[var(--sr-accent)] hover:bg-[var(--sr-surface)]'
+                    ? 'bg-gradient-to-b from-purple-900/40 via-[#141021]/85 to-[#141021]/95 backdrop-blur-2xl border-2 border-purple-400/70 shadow-[0_20px_50px_rgba(139,92,246,0.35),0_0_30px_rgba(139,92,246,0.2)] scale-[1.02] z-10'
+                    : 'bg-white/[0.04] dark:bg-purple-950/20 backdrop-blur-2xl border border-white/10 dark:border-purple-400/20 hover:border-purple-400/50 hover:bg-purple-500/10 shadow-[0_12px_36px_rgba(0,0,0,0.35)]'
                 }`}
               >
                 {isFeatured && (
@@ -126,8 +126,8 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                       onClick={onOpenRegister}
                       className={`w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                         isFeatured
-                          ? 'bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] shadow-lg shadow-[var(--sr-accent)]/30'
-                          : 'bg-[var(--sr-surface)] hover:bg-[var(--sr-surface-raised)] text-[var(--sr-hero-text)] border border-[var(--sr-border-subtle)]'
+                          ? 'bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-white shadow-[0_4px_20px_rgba(139,92,246,0.5)] border border-white/20'
+                          : 'bg-purple-500/10 hover:bg-purple-500/25 text-white border border-purple-400/30 hover:border-purple-400/60 backdrop-blur-md shadow-sm'
                       }`}
                     >
                       {plan.action}
@@ -137,8 +137,8 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                       to={plan.to}
                       className={`block w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                         isFeatured
-                          ? 'bg-[var(--sr-accent)] hover:opacity-90 text-[var(--sr-text-on-accent)] shadow-lg shadow-[var(--sr-accent)]/30'
-                          : 'bg-[var(--sr-surface)] hover:bg-[var(--sr-surface-raised)] text-[var(--sr-hero-text)] border border-[var(--sr-border-subtle)]'
+                          ? 'bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-white shadow-[0_4px_20px_rgba(139,92,246,0.5)] border border-white/20'
+                          : 'bg-purple-500/10 hover:bg-purple-500/25 text-white border border-purple-400/30 hover:border-purple-400/60 backdrop-blur-md shadow-sm'
                       }`}
                     >
                       {plan.action}

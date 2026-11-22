@@ -5,7 +5,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 export const png = (name = 'foto.png', size = 2048, type = 'image/png') => new File([new Uint8Array(size)], name, { type })
 
 export function loginAs(id: string, name: string) {
-  localStorage.setItem('sr_user', JSON.stringify({ id, name }))
+  localStorage.setItem('sr_token', 'test-token')
+  localStorage.setItem('sr_user', JSON.stringify({ id, name, email: `${id}@styleradar.co`, role: 'COMPRADOR' }))
 }
 
 export function renderAt(path: string, routes: { path: string; element: ReactNode }[]) {

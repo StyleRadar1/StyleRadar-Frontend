@@ -10,7 +10,7 @@ import { AuthContext } from '@/modules/identidad/states/authContext'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { usePlaylists } from '../hooks/usePlaylists'
 import { ITEMS } from '../mocks/items'
-import { MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistVisibility } from '../types/playlist.dto'
+import { ESTILOS_PLAYLIST, MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistEstilo, type PlaylistVisibility } from '../types/playlist.dto'
 import './PlaylistsPage.css'
 
 export default function PlaylistsPage() {
@@ -28,6 +28,7 @@ export default function PlaylistsPage() {
     addItem,
     removeItem,
     like,
+    save,
   } = usePlaylists()
 
   // Estado de selección local o por URL
@@ -48,7 +49,12 @@ export default function PlaylistsPage() {
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [visibilidad, setVisibilidad] = useState<PlaylistVisibility>('PRIVADA')
+  const [estilo, setEstilo] = useState<PlaylistEstilo>('CASUAL')
+  const [prendasIniciales, setPrendasIniciales] = useState<string[]>(() =>
+    ITEMS[0]?.id ? [ITEMS[0].id] : []
+  )
   const [errorCrear, setErrorCrear] = useState<string | null>(null)
+  const [errorPrendasIniciales, setErrorPrendasIniciales] = useState<string | null>(null)
   /** 422 al agregar: la playlist llegó al límite de 15 prendas. */
   const [limiteAlcanzado, setLimiteAlcanzado] = useState(false)
   const [prendaParaAgregar, setPrendaParaAgregar] = useState<string>('')
@@ -92,7 +98,8 @@ export default function PlaylistsPage() {
     return playlists.filter(
       (p) =>
         !p.esGuardada &&
-        (p.creador?.email === usuarioEmail ||
+        (p.usuarioId === usuarioActual.id ||
+          p.creador?.email === usuarioEmail ||
           p.creador?.id === usuarioActual.id ||
           p.creador?.nombre.toLowerCase().includes('valentina'))
     )
@@ -104,10 +111,12 @@ export default function PlaylistsPage() {
       (p) =>
         p.esGuardada ||
         userSaved[p.id] ||
-        (p.creador?.email !== usuarioEmail &&
+        (p.usuarioId !== usuarioActual.id &&
+          p.creador?.id !== usuarioActual.id &&
+          p.creador?.email !== usuarioEmail &&
           !p.creador?.nombre.toLowerCase().includes('valentina'))
     )
-  }, [playlists, userSaved, usuarioEmail])
+  }, [playlists, userSaved, usuarioEmail, usuarioActual.id])
 
   // Lista activa para el carrusel 3D según la pestaña seleccionada
   const carouselPlaylists = useMemo(() => {
@@ -222,6 +231,7 @@ export default function PlaylistsPage() {
   const esMia = useMemo(() => {
     if (!selectedPlaylist) return false
     return (
+      selectedPlaylist.usuarioId === usuarioActual.id ||
       selectedPlaylist.creador?.email === usuarioEmail ||
       selectedPlaylist.creador?.id === usuarioActual.id ||
       selectedPlaylist.creador?.nombre.toLowerCase().includes('valentina')
@@ -246,20 +256,27 @@ export default function PlaylistsPage() {
       document.getElementById('pl-nombre')?.focus()
       return
     }
+    if (prendasIniciales.length < 1) {
+      setErrorPrendasIniciales('Selecciona al menos una prenda inicial.')
+      return
+    }
     setErrorCrear(null)
+    setErrorPrendasIniciales(null)
     try {
       const nueva = await createPlaylist({
         nombre: nombre.trim(),
         descripcion: descripcion.trim(),
         visibilidad,
-        portadaUrl: '/img/productos/sueter-de-canale-crudo.jpg',
-        prendaIds: [],
+        estilo,
+        prendaIds: prendasIniciales,
       })
       setMostrarCrear(false)
       setNombre('')
       setDescripcion('')
       setVisibilidad('PRIVADA')
-      showToast('Playlist creada con éxito. Ahora puedes agregar hasta 15 prendas.')
+      setEstilo('CASUAL')
+      setPrendasIniciales(ITEMS[0]?.id ? [ITEMS[0].id] : [])
+      showToast('Playlist creada con éxito. Ahora puedes administrar hasta 15 prendas.')
       handleSeleccionarPlaylist(nueva)
     } catch (er: unknown) {
       const r = errorDeCrear(er)
@@ -342,13 +359,18 @@ export default function PlaylistsPage() {
     }
   }
 
-  const handleGuardar = () => {
+  const handleGuardar = async () => {
     if (!selectedPlaylist) return
-    const isSaved = userSaved[selectedPlaylist.id]
-    setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: !isSaved }))
-    selectedPlaylist.esGuardada = !isSaved
-    selectedPlaylist.guardados += !isSaved ? 1 : -1
-    showToast(!isSaved ? 'Guardada en Mis playlists.' : 'Quitada de tu perfil.')
+    const nextSaved = !(selectedPlaylist.esGuardada ?? userSaved[selectedPlaylist.id])
+    setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: nextSaved }))
+    try {
+      const res = await save(selectedPlaylist.id)
+      setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: res.esGuardada }))
+      showToast(res.esGuardada ? 'Guardada en Mis playlists.' : 'Quitada de tu perfil.')
+    } catch (er: unknown) {
+      setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: !nextSaved }))
+      setErrorAccion(errorDeCrear(er).general ?? 'No pudimos actualizar tu playlist guardada.')
+    }
   }
 
   const handleMezclar = () => {
@@ -471,11 +493,7 @@ export default function PlaylistsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-xs font-bold tracking-widest uppercase text-white/50">
-                    PLAYLIST DE ESTILO · {selectedPlaylist.visibilidad === 'PRIVADA' ? '🔒 PRIVADA' : '👁️ PÚBLICA'}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violeta/20 border border-violeta/40 px-2.5 py-0.5 text-[10px] font-bold text-violeta-claro">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    En tornamesa
+                    PLAYLIST DE ESTILO · {selectedPlaylist.visibilidad === 'PRIVADA' ? 'PRIVADA' : 'PÚBLICA'}
                   </span>
                 </div>
 
@@ -498,12 +516,11 @@ export default function PlaylistsPage() {
                   </span>
                 </div>
 
-                {/* Métricas e información RNF-12 */}
+                {/* Métricas e información de la playlist */}
                 <div className="text-xs sm:text-sm text-white/50 space-x-1.5 mb-3">
                   <span className="font-semibold text-white/80">
                     {prendas.length}/15 prendas
                   </span>
-                  <span className="text-white/30 font-mono">(RNF-12)</span>
                   <span>·</span>
                   <span>{formatCOP(totalDisponible)} disponibles</span>
                   <span>·</span>
@@ -525,12 +542,21 @@ export default function PlaylistsPage() {
 
                 {/* FILA DE ACCIONES DIFERENCIADA SI ES MÍA O NO */}
                 <div className="flex flex-wrap items-center gap-3 pt-2">
+                  {/* Botón principal Probar outfit completo en el probador virtual (RF-7.3) */}
+                  <Link
+                    to={`/probador?playlist=${selectedPlaylist.id}`}
+                    aria-label="Probar outfit completo en el probador"
+                    className="flex items-center gap-2 rounded-full bg-[#5013b8] hover:bg-[#6318e3] text-white text-xs font-bold px-6 py-2.5 shadow-lg shadow-purple-900/40 transition active:scale-95"
+                  >
+                    ▶ Probar outfit completo
+                  </Link>
+
                   {esMia ? (
                     <>
                       <button
                         type="button"
                         onClick={() => { setMostrarAgregarPrenda(true); setErrorAccion(null); setLimiteAlcanzado(false) }}
-                        className="flex items-center gap-2 rounded-full bg-[#5013b8] hover:bg-[#6318e3] text-white text-xs font-bold px-6 py-2.5 shadow-lg shadow-purple-900/40 transition active:scale-95"
+                        className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold px-5 py-2.5 transition active:scale-95"
                       >
                         + Agregar prendas
                       </button>
@@ -563,17 +589,18 @@ export default function PlaylistsPage() {
                   ) : (
                     <>
                       <Link
-                        to="/probador"
+                        to={`/probador?playlist=${selectedPlaylist.id}`}
+                        aria-label="Probar outfit completo en el probador"
                         className="flex items-center gap-2 rounded-full bg-[#5013b8] hover:bg-[#6318e3] text-white text-xs font-bold px-6 py-2.5 shadow-lg shadow-purple-900/40 transition active:scale-95"
                       >
-                        ▶ Probar el look
+                        ▶ Probar outfit completo
                       </Link>
                       <button
                         type="button"
                         onClick={handleMezclar}
                         className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold px-5 py-2.5 transition active:scale-95"
                       >
-                        🔀 Mezclar
+                        Mezclar
                       </button>
                       <button
                         type="button"
@@ -837,7 +864,7 @@ export default function PlaylistsPage() {
                     </select>
                   </div>
                   <p className="text-[11px] text-white/40">
-                    Límite del sistema: hasta 15 prendas por playlist (RNF-12).
+                    Límite del sistema: hasta 15 prendas por playlist.
                   </p>
                 </div>
               )}
@@ -921,7 +948,7 @@ export default function PlaylistsPage() {
                         visibilidad === 'PUBLICA' ? 'bg-violeta text-white' : 'text-white/60 hover:text-white'
                       }`}
                     >
-                      👁️ Pública
+                      Pública
                     </button>
                     <button
                       type="button"
@@ -930,7 +957,7 @@ export default function PlaylistsPage() {
                         visibilidad === 'PRIVADA' ? 'bg-violeta text-white' : 'text-white/60 hover:text-white'
                       }`}
                     >
-                      🔒 Privada
+                      Privada
                     </button>
                   </div>
                 </div>
@@ -1024,7 +1051,7 @@ export default function PlaylistsPage() {
               Mis playlists
             </h2>
             <p className="mt-2 text-xs text-[var(--sr-hero-text-muted)]">
-              Las que creaste y las que guardaste de otras personas. Hasta 15 prendas (RNF-12).
+              Las que creaste y las que guardaste de otras personas. Hasta 15 prendas.
             </p>
           </div>
           <Button
@@ -1046,282 +1073,340 @@ export default function PlaylistsPage() {
         {/* ========================================================== */}
         {/* SECCIÓN FULL-SCREEN: CARRUSEL 3D COVERFLOW DE VINILOS */}
         {/* ========================================================== */}
-        {carouselPlaylists.length > 0 && (
-          <section
-            aria-label="Selección en vinilo"
-            className="sr-vinyl-showcase"
-          >
-            <div className="sr-vinyl-showcase__stage">
-              {/* Barra superior centrada: Pestañas de filtrado */}
-              <div className="sr-vinyl-showcase__top">
-                <div
-                  className="sr-vinyl-tabs"
-                  role="tablist"
-                  aria-label="Filtrar colecciones en el vinilo"
+        <section
+          aria-label="Selección en vinilo"
+          className="sr-vinyl-showcase"
+        >
+          <div className="sr-vinyl-showcase__stage">
+            {/* Barra superior centrada: Pestañas de filtrado */}
+            <div className="sr-vinyl-showcase__top">
+              <div
+                className="sr-vinyl-tabs"
+                role="tablist"
+                aria-label="Filtrar colecciones en el vinilo"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={carouselTab === 'todas'}
+                  onClick={() => {
+                    setCarouselTab('todas')
+                    setVinylStepIndex(0)
+                  }}
+                  className={`sr-vinyl-tabs__btn ${
+                    carouselTab === 'todas' ? 'is-active' : ''
+                  }`}
                 >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={carouselTab === 'todas'}
-                    onClick={() => {
-                      setCarouselTab('todas')
-                      setVinylStepIndex(0)
-                    }}
-                    className={`sr-vinyl-tabs__btn ${
-                      carouselTab === 'todas' ? 'is-active' : ''
-                    }`}
-                  >
-                    Todas ({playlists.length})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={carouselTab === 'creadas'}
-                    onClick={() => {
-                      setCarouselTab('creadas')
-                      setVinylStepIndex(0)
-                    }}
-                    className={`sr-vinyl-tabs__btn ${
-                      carouselTab === 'creadas' ? 'is-active' : ''
-                    }`}
-                  >
-                    Creadas por ti ({creadasPorTi.length})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={carouselTab === 'guardadas'}
-                    onClick={() => {
-                      setCarouselTab('guardadas')
-                      setVinylStepIndex(0)
-                    }}
-                    className={`sr-vinyl-tabs__btn ${
-                      carouselTab === 'guardadas' ? 'is-active' : ''
-                    }`}
-                  >
-                    Guardadas ({guardadas.length})
-                  </button>
-                </div>
+                  Todas ({playlists.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={carouselTab === 'creadas'}
+                  onClick={() => {
+                    setCarouselTab('creadas')
+                    setVinylStepIndex(0)
+                  }}
+                  className={`sr-vinyl-tabs__btn ${
+                    carouselTab === 'creadas' ? 'is-active' : ''
+                  }`}
+                >
+                  Creadas por ti ({creadasPorTi.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={carouselTab === 'guardadas'}
+                  onClick={() => {
+                    setCarouselTab('guardadas')
+                    setVinylStepIndex(0)
+                  }}
+                  className={`sr-vinyl-tabs__btn ${
+                    carouselTab === 'guardadas' ? 'is-active' : ''
+                  }`}
+                >
+                  Guardadas ({guardadas.length})
+                </button>
               </div>
+            </div>
 
-              {/* Título de póster gigante y centrado */}
-              {currentVinylPlaylist && (
-                <div className="sr-vinyl-center-hero">
-                  <div className="sr-vinyl-active-badge">
-                    <span>● Colección activa</span>
+            {carouselPlaylists.length > 0 ? (
+              <>
+                {/* Título de póster gigante y centrado */}
+                {currentVinylPlaylist && (
+                  <div className="sr-vinyl-center-hero">
+                    <div className="sr-vinyl-active-badge">
+                      <span>● Colección activa</span>
+                    </div>
+
+                    <Link
+                      to={`/playlists/${currentVinylPlaylist.id}`}
+                      onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
+                      className="sr-vinyl-center-title-link"
+                      title={`Ver colección ${currentVinylPlaylist.nombre}`}
+                    >
+                      <AnimatePresence mode="wait">
+                        <motion.h2
+                          key={currentVinylPlaylist.id}
+                          initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={prefersReducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.97 }}
+                          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                          className="sr-vinyl-active-title"
+                        >
+                          {currentVinylPlaylist.nombre}
+                        </motion.h2>
+                      </AnimatePresence>
+                    </Link>
+
+                    <div className="sr-vinyl-active-meta">
+                      <span>
+                        {currentVinylPlaylist.prendas.length}{' '}
+                        {currentVinylPlaylist.prendas.length === 1 ? 'prenda' : 'prendas'}
+                      </span>
+                      <span>·</span>
+                      <span>Por {currentVinylPlaylist.creador?.nombre || 'Valentina'}</span>
+                      <span className="sr-vinyl-active-meta__chip">
+                        {currentVinylPlaylist.visibilidad || 'Pública'}
+                      </span>
+                    </div>
                   </div>
+                )}
 
-                  <Link
-                    to={`/playlists/${currentVinylPlaylist.id}`}
-                    onClick={() => setSelectedLocalId(currentVinylPlaylist.id)}
-                    className="sr-vinyl-center-title-link"
-                    title={`Ver colección ${currentVinylPlaylist.nombre}`}
-                  >
-                    <AnimatePresence mode="wait">
-                      <motion.h2
-                        key={currentVinylPlaylist.id}
-                        initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={prefersReducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.97 }}
-                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                        className="sr-vinyl-active-title"
-                      >
-                        {currentVinylPlaylist.nombre}
-                      </motion.h2>
-                    </AnimatePresence>
-                  </Link>
-
-                  <div className="sr-vinyl-active-meta">
-                    <span>
-                      {currentVinylPlaylist.prendas.length}{' '}
-                      {currentVinylPlaylist.prendas.length === 1 ? 'prenda' : 'prendas'}
-                    </span>
-                    <span>·</span>
-                    <span>Por {currentVinylPlaylist.creador?.nombre || 'Valentina'}</span>
-                    <span className="sr-vinyl-active-meta__chip">
-                      {currentVinylPlaylist.visibilidad || 'Pública'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Pista 3D con disco central y discos laterales en perspectiva */}
-              <div className="sr-vinyl-coverflow-track">
-                {vinylCoverflowSlots.map(({ playlist: pl, offset, isCenter }) => {
-                  if (isCenter) {
-                    return (
-                      <div
-                        key={pl.id}
-                        className="sr-vinyl-slot sr-vinyl-slot--center cursor-pointer"
-                        onClick={() => {
-                          setSelectedLocalId(pl.id)
-                          navigate(`/playlists/${pl.id}`)
-                        }}
-                        title={`Ver prendas de ${pl.nombre}`}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
+                {/* Pista 3D con disco central y discos laterales en perspectiva */}
+                <div className="sr-vinyl-coverflow-track">
+                  {vinylCoverflowSlots.map(({ playlist: pl, offset, isCenter }) => {
+                    if (isCenter) {
+                      return (
+                        <div
+                          key={pl.id}
+                          className="sr-vinyl-slot sr-vinyl-slot--center cursor-pointer"
+                          onClick={() => {
                             setSelectedLocalId(pl.id)
                             navigate(`/playlists/${pl.id}`)
-                          }
-                        }}
-                      >
-                        <div className="sr-vinyl-disc-idle">
-                          <div
-                            ref={discRef}
-                            role="slider"
-                            tabIndex={0}
-                            aria-label={`Disco de vinilo central: ${pl.nombre}. Pulsa para abrir la colección`}
-                            aria-valuemin={1}
-                            aria-valuemax={carouselPlaylists.length}
-                            aria-valuenow={
-                              (((vinylStepIndex % carouselPlaylists.length) +
-                                carouselPlaylists.length) %
-                                carouselPlaylists.length) +
-                              1
+                          }}
+                          title={`Ver prendas de ${pl.nombre}`}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setSelectedLocalId(pl.id)
+                              navigate(`/playlists/${pl.id}`)
                             }
-                            onKeyDown={(e) => {
-                              if (e.key === 'ArrowLeft') {
-                                e.stopPropagation()
-                                stepVinylPlaylist(-1)
+                          }}
+                        >
+                          <div className="sr-vinyl-disc-idle">
+                            <div
+                              ref={discRef}
+                              role="slider"
+                              tabIndex={0}
+                              aria-label={`Disco de vinilo central: ${pl.nombre}. Pulsa para abrir la colección`}
+                              aria-valuemin={1}
+                              aria-valuemax={carouselPlaylists.length}
+                              aria-valuenow={
+                                (((vinylStepIndex % carouselPlaylists.length) +
+                                  carouselPlaylists.length) %
+                                  carouselPlaylists.length) +
+                                1
                               }
-                              if (e.key === 'ArrowRight') {
-                                e.stopPropagation()
-                                stepVinylPlaylist(1)
-                              }
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                setSelectedLocalId(pl.id)
-                                navigate(`/playlists/${pl.id}`)
-                              }
-                            }}
-                            className="sr-vinyl-disc-interactive"
-                          >
-                            <div className="sr-vinyl-label">
-                              <img
-                                src={
-                                  pl.portadaUrl ||
-                                  '/img/productos/sueter-de-canale-crudo.jpg'
+                              onKeyDown={(e) => {
+                                if (e.key === 'ArrowLeft') {
+                                  e.stopPropagation()
+                                  stepVinylPlaylist(-1)
                                 }
-                                alt={pl.nombre}
-                                className="sr-vinyl-label__art"
-                                draggable={false}
-                              />
-                              <div className="sr-vinyl-label__art-overlay" />
-                              <div className="sr-vinyl-label__ring" />
-                              <div className="sr-vinyl-spindle" />
+                                if (e.key === 'ArrowRight') {
+                                  e.stopPropagation()
+                                  stepVinylPlaylist(1)
+                                }
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  setSelectedLocalId(pl.id)
+                                  navigate(`/playlists/${pl.id}`)
+                                }
+                              }}
+                              className="sr-vinyl-disc-interactive"
+                            >
+                              <div className="sr-vinyl-label">
+                                <img
+                                  src={
+                                    pl.portadaUrl ||
+                                    '/img/productos/sueter-de-canale-crudo.jpg'
+                                  }
+                                  alt={pl.nombre}
+                                  className="sr-vinyl-label__art"
+                                  draggable={false}
+                                />
+                                <div className="sr-vinyl-label__art-overlay" />
+                                <div className="sr-vinyl-label__ring" />
+                                <div className="sr-vinyl-spindle" />
+                              </div>
                             </div>
                           </div>
                         </div>
+                      )
+                    }
+
+                    // Discos laterales
+                    return (
+                      <div
+                        key={`${pl.id}-${offset}`}
+                        className={`sr-vinyl-slot sr-vinyl-slot--lateral sr-vinyl-slot--offset-${offset}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => stepVinylPlaylist(offset)}
+                          className="sr-vinyl-disc-interactive sr-vinyl-disc--lateral"
+                          aria-label={`Girar a playlist ${pl.nombre}`}
+                          title={`Girar a ${pl.nombre}`}
+                        >
+                          <div className="sr-vinyl-label">
+                            <img
+                              src={
+                                pl.portadaUrl ||
+                                '/img/productos/sueter-de-canale-crudo.jpg'
+                              }
+                              alt={pl.nombre}
+                              className="sr-vinyl-label__art"
+                              draggable={false}
+                            />
+                            <div className="sr-vinyl-label__art-overlay" />
+                            <div className="sr-vinyl-label__ring" />
+                            <div className="sr-vinyl-spindle" />
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedLocalId(pl.id)
+                            navigate(`/playlists/${pl.id}`)
+                          }}
+                          className="sr-vinyl-slot__lateral-caption"
+                          title={`Ver colección ${pl.nombre}`}
+                        >
+                          {pl.nombre}
+                        </button>
                       </div>
                     )
-                  }
-
-                  // Discos laterales
-                  return (
-                    <div
-                      key={`${pl.id}-${offset}`}
-                      className={`sr-vinyl-slot sr-vinyl-slot--lateral sr-vinyl-slot--offset-${offset}`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => stepVinylPlaylist(offset)}
-                        className="sr-vinyl-disc-interactive sr-vinyl-disc--lateral"
-                        aria-label={`Girar a playlist ${pl.nombre}`}
-                        title={`Girar a ${pl.nombre}`}
-                      >
-                        <div className="sr-vinyl-label">
-                          <img
-                            src={
-                              pl.portadaUrl ||
-                              '/img/productos/sueter-de-canale-crudo.jpg'
-                            }
-                            alt={pl.nombre}
-                            className="sr-vinyl-label__art"
-                            draggable={false}
-                          />
-                          <div className="sr-vinyl-label__art-overlay" />
-                          <div className="sr-vinyl-label__ring" />
-                          <div className="sr-vinyl-spindle" />
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedLocalId(pl.id)
-                          navigate(`/playlists/${pl.id}`)
-                        }}
-                        className="sr-vinyl-slot__lateral-caption"
-                        title={`Ver colección ${pl.nombre}`}
-                      >
-                        {pl.nombre}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Controles discretos e indicador de posición centrados */}
-              <div className="sr-vinyl-controls-center">
-                <div className="sr-vinyl-controls__bar">
-                  <button
-                    type="button"
-                    onClick={() => stepVinylPlaylist(-1)}
-                    aria-label="Colección anterior en el vinilo"
-                    className="sr-vinyl-controls__btn"
-                  >
-                    ‹
-                  </button>
-                  <span
-                    className="sr-vinyl-controls__counter"
-                    aria-live="polite"
-                  >
-                    {(((vinylStepIndex % carouselPlaylists.length) +
-                      carouselPlaylists.length) %
-                      carouselPlaylists.length) +
-                      1}{' '}
-                    / {carouselPlaylists.length}
-                  </span>
-                  <div className="sr-vinyl-controls__dots" role="tablist" aria-label="Posición de la colección">
-                    {carouselPlaylists.map((pl, idx) => {
-                      const activePos =
-                        ((vinylStepIndex % carouselPlaylists.length) +
-                          carouselPlaylists.length) %
-                        carouselPlaylists.length
-                      return (
-                        <button
-                          key={pl.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={activePos === idx}
-                          aria-label={`Mostrar desde ${pl.nombre}`}
-                          onClick={() => jumpToVinylPlaylist(idx)}
-                          className={`sr-vinyl-controls__dot ${
-                            activePos === idx ? 'is-active' : ''
-                          }`}
-                        />
-                      )
-                    })}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => stepVinylPlaylist(1)}
-                    aria-label="Siguiente colección en el vinilo"
-                    className="sr-vinyl-controls__btn"
-                  >
-                    ›
-                  </button>
+                  })}
                 </div>
-                <span className="sr-vinyl-controls__hint">
-                  Toca el vinilo para ver la colección · Usa las flechas o los discos laterales para navegar
-                </span>
+
+                {/* Controles discretos e indicador de posición centrados */}
+                <div className="sr-vinyl-controls-center">
+                  <div className="sr-vinyl-controls__bar">
+                    <button
+                      type="button"
+                      onClick={() => stepVinylPlaylist(-1)}
+                      aria-label="Colección anterior en el vinilo"
+                      className="sr-vinyl-controls__btn"
+                    >
+                      ‹
+                    </button>
+                    <span
+                      className="sr-vinyl-controls__counter"
+                      aria-live="polite"
+                    >
+                      {(((vinylStepIndex % carouselPlaylists.length) +
+                        carouselPlaylists.length) %
+                        carouselPlaylists.length) +
+                        1}{' '}
+                      / {carouselPlaylists.length}
+                    </span>
+                    <div className="sr-vinyl-controls__dots" role="tablist" aria-label="Posición de la colección">
+                      {carouselPlaylists.map((pl, idx) => {
+                        const activePos =
+                          ((vinylStepIndex % carouselPlaylists.length) +
+                            carouselPlaylists.length) %
+                          carouselPlaylists.length
+                        return (
+                          <button
+                            key={pl.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={activePos === idx}
+                            aria-label={`Mostrar desde ${pl.nombre}`}
+                            onClick={() => jumpToVinylPlaylist(idx)}
+                            className={`sr-vinyl-controls__dot ${
+                              activePos === idx ? 'is-active' : ''
+                            }`}
+                          />
+                        )
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => stepVinylPlaylist(1)}
+                      aria-label="Siguiente colección en el vinilo"
+                      className="sr-vinyl-controls__btn"
+                    >
+                      ›
+                    </button>
+                  </div>
+                  <span className="sr-vinyl-controls__hint">
+                    Toca el vinilo para ver la colección · Usa las flechas o los discos laterales para navegar
+                  </span>
+                </div>
+              </>
+            ) : !loading && (
+              <div className="rounded-3xl border border-[var(--color-border,rgba(255,255,255,0.1))] bg-[var(--color-surface,rgba(255,255,255,0.03))] p-10 text-center backdrop-blur-xl max-w-lg mx-auto my-8 text-[var(--sr-hero-text)] shadow-sm">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[var(--color-border,rgba(255,255,255,0.15))] bg-[var(--color-surface-raised,rgba(255,255,255,0.06))] text-[var(--sr-hero-text-muted)]">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <circle cx="12" cy="12" r="2.5" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-[var(--sr-hero-text)]">
+                  {playlists.length === 0 || carouselTab === 'todas'
+                    ? 'Aún no hay playlists disponibles'
+                    : carouselTab === 'creadas'
+                      ? 'Aún no has creado ninguna playlist'
+                      : 'No tienes playlists guardadas'}
+                </h3>
+                <p className="mt-2 text-xs text-[var(--sr-hero-text-muted)] max-w-md mx-auto leading-relaxed">
+                  {playlists.length === 0 || carouselTab === 'todas'
+                    ? 'Todavía no se han publicado colecciones de estilo. Crea la primera playlist con tus prendas favoritas.'
+                    : carouselTab === 'creadas'
+                      ? 'Arma tu primera colección de hasta 15 prendas de distintas tiendas locales.'
+                      : 'Explora las colecciones de la comunidad y guárdalas en tu perfil para tenerlas a mano.'}
+                </p>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  {playlists.length === 0 || carouselTab !== 'guardadas' ? (
+                    <>
+                      <Button
+                        variant="primario"
+                        onClick={() => setMostrarCrear(true)}
+                      >
+                        + Nueva playlist
+                      </Button>
+                      {carouselTab !== 'todas' && playlists.length > 0 && (
+                        <Button
+                          variant="secundario"
+                          onClick={() => {
+                            setCarouselTab('todas')
+                            setVinylStepIndex(0)
+                          }}
+                        >
+                          Ver todas las playlists
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <Button
+                      variant="primario"
+                      onClick={() => {
+                        setCarouselTab('todas')
+                        setVinylStepIndex(0)
+                      }}
+                    >
+                      Explorar playlists
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          </section>
-        )}
+            )}
+          </div>
+        </section>
       </section>
 
       {/* MODAL CREAR PLAYLIST */}
@@ -1394,6 +1479,27 @@ export default function PlaylistsPage() {
               </div>
 
               <div>
+                <label
+                  htmlFor="pl-estilo"
+                  className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1"
+                >
+                  Estilo
+                </label>
+                <select
+                  id="pl-estilo"
+                  value={estilo}
+                  onChange={(e) => setEstilo(e.target.value as PlaylistEstilo)}
+                  className="w-full rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-xs text-white outline-none focus:border-violeta"
+                >
+                  {ESTILOS_PLAYLIST.map((est) => (
+                    <option key={est} value={est}>
+                      {est.charAt(0) + est.slice(1).toLowerCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-2">
                   Visibilidad
                 </label>
@@ -1405,7 +1511,7 @@ export default function PlaylistsPage() {
                       visibilidad === 'PUBLICA' ? 'bg-violeta text-white' : 'text-white/60 hover:text-white'
                     }`}
                   >
-                    👁️ Pública
+                    Pública
                   </button>
                   <button
                     type="button"
@@ -1414,14 +1520,46 @@ export default function PlaylistsPage() {
                       visibilidad === 'PRIVADA' ? 'bg-violeta text-white' : 'text-white/60 hover:text-white'
                     }`}
                   >
-                    🔒 Privada
+                    Privada
                   </button>
                 </div>
               </div>
 
-              <p className="text-[11px] text-white/50">
-                Puedes agregar hasta {MAX_PLAYLIST_ITEMS} prendas (RNF-12).
-              </p>
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
+                  Prendas iniciales ({prendasIniciales.length}/{MAX_PLAYLIST_ITEMS})
+                </span>
+                <div className="max-h-32 space-y-1.5 overflow-y-auto rounded-xl border border-white/15 bg-black/40 p-2.5">
+                  {ITEMS.slice(0, 8).map((item) => {
+                    const checked = prendasIniciales.includes(item.id)
+                    return (
+                      <label key={item.id} className="flex cursor-pointer items-center gap-2 text-xs text-white/85">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setPrendasIniciales((prev) => {
+                              if (prev.includes(item.id)) return prev.filter((id) => id !== item.id)
+                              if (prev.length >= MAX_PLAYLIST_ITEMS) return prev
+                              return [...prev, item.id]
+                            })
+                            setErrorPrendasIniciales(null)
+                          }}
+                          className="rounded border-white/30 bg-black/60 text-violeta"
+                        />
+                        <span className="truncate">{item.nombre}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+                {errorPrendasIniciales ? (
+                  <p className="mt-1 text-[11px] text-[var(--sr-bad)]">{errorPrendasIniciales}</p>
+                ) : (
+                  <p className="mt-1 text-[11px] text-white/50">
+                    Debes seleccionar entre 1 y {MAX_PLAYLIST_ITEMS} prendas.
+                  </p>
+                )}
+              </div>
 
               <div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
                 <button

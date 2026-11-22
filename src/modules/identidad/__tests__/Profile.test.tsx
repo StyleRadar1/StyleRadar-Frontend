@@ -1,8 +1,9 @@
-import { screen } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import ProfilePage from '../pages/ProfilePage'
 import { reiniciarDatos, renderConSesion, sesionComo } from './helpers'
+import { saveBodyMeasurements } from '@/modules/experiencia/utils/bodyMeasurementsEngine'
 
 const routes = [{ path: '/perfil', element: <ProfilePage /> }]
 const abrir = () => renderConSesion('/perfil', routes)
@@ -81,5 +82,87 @@ describe('ProfilePage (RF-03 a RF-06)', () => {
     sessionStorage.setItem('sr_mock', 'sin-red')
     abrir()
     expect(await screen.findByText('No pudimos cargar tu perfil')).toBeInTheDocument()
+  })
+
+  it('permite ver y modificar las medidas corporales para el probador virtual desde el perfil', async () => {
+    saveBodyMeasurements(
+      {
+        cuerpoBase: 'femenino',
+        unidades: 'metric',
+        estatura: 168,
+        peso: 58,
+        tallaHabitual: 'S',
+        pecho: 90,
+        cintura: 72,
+        cadera: 94,
+        hombros: 40,
+        largoBrazo: 58,
+        largoTorso: 46,
+        largoPierna: 98,
+        esAproximado: false,
+        consentimientoGuardado: true,
+        esTemporal: false,
+        fechaActualizacion: new Date().toISOString(),
+      },
+      true,
+      'u-1',
+    )
+
+    abrir()
+    await screen.findByRole('heading', { name: 'Hola, Valentina' })
+
+    // Comprobar que la sección de medidas corporales está visible en el perfil
+    expect(screen.getByText('Mis medidas corporales')).toBeInTheDocument()
+    expect(screen.getByText('1,68 m')).toBeInTheDocument()
+    expect(screen.getByText('90 cm')).toBeInTheDocument()
+    expect(screen.getByText('72 cm')).toBeInTheDocument()
+    expect(screen.getByText('94 cm')).toBeInTheDocument()
+
+    // Abrir asistente para modificar medidas
+    const btnModificar = screen.getByRole('button', { name: /Modificar medidas del probador/i })
+    fireEvent.click(btnModificar)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Elige tu silueta base y unidades/i })).toBeInTheDocument()
+    })
+
+    // Cerrar modal
+    fireEvent.click(screen.getByRole('button', { name: /Cerrar asistente/i }))
+  })
+
+  it('permite restablecer las medidas del probador desde el perfil', async () => {
+    saveBodyMeasurements(
+      {
+        cuerpoBase: 'femenino',
+        unidades: 'metric',
+        estatura: 170,
+        peso: 60,
+        tallaHabitual: 'M',
+        pecho: 92,
+        cintura: 75,
+        cadera: 96,
+        hombros: 42,
+        largoBrazo: 60,
+        largoTorso: 48,
+        largoPierna: 100,
+        esAproximado: false,
+        consentimientoGuardado: true,
+        esTemporal: false,
+        fechaActualizacion: new Date().toISOString(),
+      },
+      true,
+      'u-1',
+    )
+
+    abrir()
+    await screen.findByRole('heading', { name: 'Hola, Valentina' })
+
+    const btnRestablecer = screen.getByRole('button', { name: /Restablecer medidas/i })
+    fireEvent.click(btnRestablecer)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Medidas anatómicas del probador restablecidas/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Configurar medidas del probador/i })).toBeInTheDocument()
+    })
   })
 })

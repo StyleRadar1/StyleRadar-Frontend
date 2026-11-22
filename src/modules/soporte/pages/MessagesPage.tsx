@@ -5,7 +5,8 @@ import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Statu
 import { useResource } from '@/modules/core/hooks/useResource'
 import type { Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { MessagesVinyl } from '../vinyl/MessagesVinyl'
+import { ChatPanel } from '../lista/ChatPanel'
+import { ConversationList } from '../lista/ConversationList'
 import { chatService } from '../services/chatService'
 import {
   type ConversacionDto,
@@ -88,28 +89,45 @@ export default function MessagesPage() {
         </div>
       ) : (
         <div className="relative w-full bg-transparent border-0 shadow-none overflow-visible">
-          {/* Cabecera idéntica a la referencia aprobada */}
+          {/* Cabecera */}
           <header className="mb-4">
-            <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--s-ink2,#CFC6E0)] mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--sr-text-secondary)] mb-1">
               Comunicación
             </p>
-            <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl text-[var(--s-ink,#F4EEE3)]">
+            <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl text-[var(--sr-text-primary)]">
               Mensajes
             </h1>
-            <p className="mt-1 max-w-2xl text-xs md:text-sm text-[var(--s-ink2,#CFC6E0)]">
+            <p className="mt-1 max-w-2xl text-xs md:text-sm text-[var(--sr-text-secondary)]">
               Coordina entregas y responde preguntas sin compartir tu número.
             </p>
           </header>
 
-          {/* EL VINILO ES LA ÚNICA VISTA (sin filtros ni selector de vista) */}
-          <MessagesVinyl
-            conversations={convs}
-            selectedId={actual}
-            currentUserId={user?.id ?? ''}
-            onSelect={abrir}
-            onRead={leida}
-            onSent={enviado}
-          />
+          <div className="grid h-[calc(100dvh-15rem)] min-h-[34rem] gap-4 md:grid-cols-[minmax(20rem,26rem)_1fr]">
+            <ConversationList
+              conversations={convs}
+              selectedId={actual}
+              onSelect={abrir}
+              className={actual ? 'hidden md:flex' : 'flex'}
+            />
+            {conv ? (
+              <ChatPanel
+                key={conv.id}
+                conv={conv}
+                me={user?.id ?? ''}
+                onClose={() => abrir(null)}
+                onRead={leida}
+                onSent={enviado}
+                className={actual ? 'flex' : 'hidden md:flex'}
+              />
+            ) : (
+              <div className="hidden place-items-center rounded-3xl border border-dashed border-[var(--sr-border-subtle)] p-8 text-center md:grid">
+                <p className="max-w-xs text-sm text-[var(--sr-text-secondary)]">
+                  <b className="mb-1 block text-base text-[var(--sr-text-primary)]">Elige una conversación</b>
+                  Toca un chat de la lista para leerlo y responder.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </section>

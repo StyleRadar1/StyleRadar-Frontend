@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { playlistService } from '../services/playlistService'
-import type { CreatePlaylistDto, PlaylistDto } from '../types/playlist.dto'
+import type { CreatePlaylistDto, PlaylistDto, UpdatePlaylistDto } from '../types/playlist.dto'
 
 export function usePlaylists() {
   const loader = useCallback(() => playlistService.getAll(), [])
@@ -42,8 +42,21 @@ export function usePlaylists() {
     [setData]
   )
 
+  const save = useCallback(
+    async (playlistId: string) => {
+      const res = await playlistService.toggleSave(playlistId)
+      setData((prev) =>
+        prev.map((p) =>
+          p.id === playlistId ? { ...p, guardados: res.guardados, esGuardada: res.esGuardada } : p
+        )
+      )
+      return res
+    },
+    [setData]
+  )
+
   const updatePlaylist = useCallback(
-    async (id: string, dto: Partial<CreatePlaylistDto>) => {
+    async (id: string, dto: UpdatePlaylistDto) => {
       const updated = await playlistService.update(id, dto)
       setData((prev) => prev.map((p) => (p.id === id ? updated : p)))
       return updated
@@ -61,6 +74,7 @@ export function usePlaylists() {
     addItem,
     removeItem,
     like,
+    save,
   }
 }
 

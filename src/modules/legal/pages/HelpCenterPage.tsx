@@ -20,7 +20,7 @@ const FAQS: FaqItem[] = [
     category: 'compras',
     question: '¿Qué medios de pago puedo utilizar?',
     answer:
-      'Aceptamos pagos de forma segura a través de la pasarela certificada Mercado Pago. Style Radar nunca almacena tus datos de tarjeta de crédito.',
+      'Aceptamos tarjetas de crédito y débito, PSE, Nequi, Daviplata y pagos en efectivo en Efecty mediante pasarelas de pago colombianas certificadas. Style Radar nunca almacena tus datos de tarjeta de crédito.',
   },
   {
     category: 'retracto',

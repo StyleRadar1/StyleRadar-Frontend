@@ -10,11 +10,26 @@ const routes = [{ path: '/mensajes', element: <MessagesPage /> }]
 beforeEach(() => { resetChatMock(); loginAs('u-1', 'Valentina Rojas') })
 
 describe('mensajes (RF-40, RF-41 y RF-73)', () => {
-  it('lista las conversaciones en el vinilo', async () => {
+  it('lista las conversaciones, la más reciente primero', async () => {
     renderAt('/mensajes', routes)
     const lista = await screen.findByRole('complementary', { name: 'Conversaciones' }, { timeout: 3000 })
     expect(within(lista).getAllByRole('listitem')).toHaveLength(3)
     expect(within(lista).getByText('Luna Store')).toBeInTheDocument()
+    const nombres = within(lista).getAllByRole('listitem').map((li) => li.textContent ?? '')
+    expect(nombres[0]).toContain('Sofía L.')
+  })
+
+  it('busca por nombre y filtra las que tienen mensajes sin leer', async () => {
+    const user = userEvent.setup()
+    renderAt('/mensajes', routes)
+    const lista = await screen.findByRole('complementary', { name: 'Conversaciones' }, { timeout: 3000 })
+    await user.type(within(lista).getByRole('searchbox'), 'abrigo')
+    expect(within(lista).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(lista).getByText('Fundación Abrigo Bogotá')).toBeInTheDocument()
+    await user.clear(within(lista).getByRole('searchbox'))
+    await user.click(within(lista).getByRole('button', { name: 'Sin leer' }))
+    expect(within(lista).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(lista).getByText('Sofía L.')).toBeInTheDocument()
   })
 
   it('abre una conversación, quita el contador y envía un mensaje', async () => {
@@ -54,7 +69,7 @@ describe('mensajes (RF-40, RF-41 y RF-73)', () => {
     loginAs('t-1', 'Luna Store', 'ADMIN_ALMACEN')
     renderAt('/mensajes', routes)
     expect(await screen.findByText('Mateo P.', {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(screen.queryByRole('group', { name: 'Filtrar conversaciones' })).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Filtrar conversaciones' })).toBeInTheDocument()
   })
 
   it('el administrador ve el estado vacío', async () => {
