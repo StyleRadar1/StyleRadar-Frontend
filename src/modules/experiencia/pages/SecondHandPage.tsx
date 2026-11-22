@@ -34,55 +34,57 @@ export default function SecondHandPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Segunda vida</p>
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-text)] md:text-5xl">Ropa usada de gente de Bogotá</h1>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to="/segunda-mano/publicar"
-            className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm"
-          >
-            Publicar para vender ($ COP)
-          </Link>
-          <Link
-            to="/donar"
-            className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all"
-          >
-            Donar a fundación ($0)
-          </Link>
+    <div className="sr-donaciones-page min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-12">
+        <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Segunda vida</p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+          <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-text)] md:text-5xl">Ropa usada de gente de Bogotá</h1>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/segunda-mano/publicar"
+              className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm"
+            >
+              Publicar para vender ($ COP)
+            </Link>
+            <Link
+              to="/donar"
+              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all"
+            >
+              Donar a fundación ($0)
+            </Link>
+          </div>
         </div>
-      </div>
-      <div role="tablist" aria-label="Vistas" className="mt-8 flex gap-2 border-b border-[var(--color-border)]">
-        {[
-          ['explorar', 'Segunda Mano (Compra)'],
-          ['donaciones', 'Vitrina de Donaciones ($0)'],
-          ['mias', 'Mis publicaciones'],
-        ].map(([v, label]) => (
-          <button
-            key={v}
-            role="tab"
-            type="button"
-            aria-selected={vista === v}
-            onClick={() => setVista(v)}
-            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] ${
-              vista === v
-                ? 'border-[var(--color-accent)] text-[var(--color-text)]'
-                : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <div className="mt-6" role="tabpanel">
-        {vista === 'mias' ? (
-          <MyListings />
-        ) : (
-          <Explore esDonacionTab={vista === 'donaciones'} />
-        )}
-      </div>
-    </section>
+        <div role="tablist" aria-label="Vistas" className="mt-8 flex gap-2 border-b border-[var(--color-border)]">
+          {[
+            ['explorar', 'Segunda Mano (Compra)'],
+            ['donaciones', 'Vitrina de Donaciones ($0)'],
+            ['mias', 'Mis publicaciones'],
+          ].map(([v, label]) => (
+            <button
+              key={v}
+              role="tab"
+              type="button"
+              aria-selected={vista === v}
+              onClick={() => setVista(v)}
+              className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] ${
+                vista === v
+                  ? 'border-[var(--color-accent)] text-[var(--color-text)]'
+                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-6" role="tabpanel">
+          {vista === 'mias' ? (
+            <MyListings />
+          ) : (
+            <Explore esDonacionTab={vista === 'donaciones'} />
+          )}
+        </div>
+      </section>
+    </div>
   )
 }
 
@@ -422,6 +424,12 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
                         alt={l.garmentName || l.titulo}
                         loading="lazy"
                         className="h-full w-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          if (!target.src.includes('gabardina-gris.jpg')) {
+                            target.src = '/img/catalogo/gabardina-gris.jpg'
+                          }
+                        }}
                       />
                       {l.esDonacion && (
                         <span className="absolute top-2 left-2 rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-[11px] font-bold shadow-md">

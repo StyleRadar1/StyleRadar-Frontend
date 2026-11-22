@@ -17,12 +17,33 @@
   --bg-inv: #E8DCCB;
 }
 
+/* ---- Fondo adaptable Día / Noche para Playlists (/playlists) ---- */
+.sr-playlist-page {
+  min-height: 100vh;
+  background-color: #15121b;
+  background-image: url('/img/backgrounds/playlist-noche.png');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-playlist-page,
+html[data-theme="claro"] .sr-playlist-page,
+html[data-tema="claro"] .sr-playlist-page {
+  background-color: #f6f4fa;
+  background-image: url('/img/backgrounds/playlist-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
 /* ---- Sección principal ---- */
 .plx-sec {
   padding: clamp(70px, 9vw, 130px) clamp(18px, 4vw, 56px) clamp(40px, 6vw, 80px);
   position: relative;
   min-height: 100vh;
-  background: rgb(var(--bg-rgb));
+  background: transparent;
 }
 
 .plx-sec .sec-head {

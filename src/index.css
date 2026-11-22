@@ -122,7 +122,7 @@ html[data-tema="oscuro"] {
   --probador-pill-text: #e8dccb;
   --probador-accent: #e8dccb;
 
-  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  /* Tokens fijos del Hero Landing (modo oscuro por defecto) */
   --hero-fg: #ffffff;
   --hero-fg-muted: rgba(255, 255, 255, 0.75);
   --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));
@@ -230,10 +230,10 @@ html[data-tema="claro"] {
   --probador-pill-text: #ffffff;
   --probador-accent: #48119a;
 
-  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  /* Tokens del Hero Landing adaptados a modo claro */
   --hero-fg: #ffffff;
-  --hero-fg-muted: rgba(255, 255, 255, 0.75);
-  --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));
+  --hero-fg-muted: rgba(255, 255, 255, 0.85);
+  --hero-overlay: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.12) 36%, rgba(15, 23, 42, 0.38) 64%, #f8f9fa 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(15, 23, 42, 0.5));
   --hero-sub-bg: rgba(35, 30, 37, 0.75);
   --hero-sub-border: rgba(255, 255, 255, 0.2);
   --hero-btn-primary-bg: #48119a;
@@ -332,7 +332,7 @@ html[data-tema="daltonico"] {
   --probador-pill-text: #e8dccb;
   --probador-accent: #e8dccb;
 
-  /* Tokens fijos del Hero Landing (invariantes al tema) */
+  /* Tokens fijos del Hero Landing (modo oscuro por defecto) */
   --hero-fg: #ffffff;
   --hero-fg-muted: rgba(255, 255, 255, 0.75);
   --hero-overlay: linear-gradient(180deg, rgba(17,12,27,0.45) 0%, rgba(17,12,27,0.1) 36%, rgba(17,12,27,0.4) 64%, #15121b 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(0,0,0,0.65));
@@ -454,26 +454,11 @@ html[data-tema="oscuro"] body::after {
 
 html[data-theme="light"] body::before,
 html[data-theme="claro"] body::before,
-html[data-tema="claro"] body::before {
-  top: -15vh;
-  left: 15vw;
-  width: 55vw;
-  height: 55vw;
-  max-width: 750px;
-  max-height: 750px;
-  background: radial-gradient(circle, rgba(216, 180, 254, 0.75) 0%, rgba(233, 213, 255, 0.45) 50%, transparent 70%);
-}
-
+html[data-tema="claro"] body::before,
 html[data-theme="light"] body::after,
 html[data-theme="claro"] body::after,
 html[data-tema="claro"] body::after {
-  bottom: 0vh;
-  right: 10vw;
-  width: 50vw;
-  height: 50vw;
-  max-width: 650px;
-  max-height: 650px;
-  background: radial-gradient(circle, rgba(196, 181, 253, 0.65) 0%, rgba(224, 231, 255, 0.45) 50%, transparent 70%);
+  display: none;
 }
 
 #root {
@@ -594,4 +579,159 @@ html[data-tema="claro"] header:not(#peHeader) svg path.srl-w {
 
 ::view-transition-new(root) {
   z-index: 2;
+}
+
+/* Fondo adaptable para la página del Probador Virtual (/probador) */
+.sr-probador-page {
+  min-height: 100vh;
+  background-color: #0e0b16;
+  background-image: url('/img/backgrounds/probador-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-probador-page,
+html[data-theme="claro"] .sr-probador-page,
+html[data-tema="claro"] .sr-probador-page {
+  background-color: #f8f6fc;
+  background-image: url('/img/backgrounds/probador-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* Fondo adaptable para Donaciones y Segunda Mano (/segunda-mano, /donar, /segunda-mano/publicar) */
+.sr-donaciones-page {
+  min-height: 100vh;
+  background-color: #0d0a14;
+  background-image: url('/img/backgrounds/donaciones-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-donaciones-page,
+html[data-theme="claro"] .sr-donaciones-page,
+html[data-tema="claro"] .sr-donaciones-page {
+  background-color: #f8f6fc;
+  background-image: url('/img/backgrounds/donaciones-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* Fondo adaptable para Playlists (/playlists) */
+.sr-playlist-page {
+  min-height: 100vh;
+  background-color: #15121b;
+  background-image: url('/img/backgrounds/playlist-noche.png');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-playlist-page,
+html[data-theme="claro"] .sr-playlist-page,
+html[data-tema="claro"] .sr-playlist-page {
+  background-color: #f6f4fa;
+  background-image: url('/img/backgrounds/playlist-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* Fondo adaptable para Planes y Membresías (/planes) */
+.sr-planes-page {
+  min-height: 100vh;
+  background-color: #0b0813;
+  background-image: url('/img/backgrounds/planes-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-planes-page,
+html[data-theme="claro"] .sr-planes-page,
+html[data-tema="claro"] .sr-planes-page {
+  background-color: #f8f6fc;
+  background-image: url('/img/backgrounds/planes-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* Fondo adaptable para Tiendas e Inventario (/tiendas/:id, /mi-tienda, /tienda/inventario, /tienda/suscripcion) */
+.sr-tienda-page,
+.inv-page,
+.store-subscription {
+  min-height: 100vh;
+  background-color: #0d0a14 !important;
+  background-image: url('/img/backgrounds/tienda-noche.jpg') !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-attachment: fixed !important;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-tienda-page,
+html[data-theme="light"] .inv-page,
+html[data-theme="light"] .store-subscription,
+html[data-theme="claro"] .sr-tienda-page,
+html[data-theme="claro"] .inv-page,
+html[data-theme="claro"] .store-subscription,
+html[data-tema="claro"] .sr-tienda-page,
+html[data-tema="claro"] .inv-page,
+html[data-tema="claro"] .store-subscription {
+  background-color: #f8f9fa !important;
+  background-image: url('/img/backgrounds/tienda-dia.jpg') !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-attachment: fixed !important;
+}
+
+/* Fondo adaptable para Mensajes y Soporte (/mensajes) */
+.sr-mensajes-page {
+  min-height: 100vh;
+  background-color: #0f0d18;
+  background-image: url('/img/backgrounds/mensajes-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-mensajes-page,
+html[data-theme="claro"] .sr-mensajes-page,
+html[data-tema="claro"] .sr-mensajes-page {
+  background-color: #faf8fc;
+  background-image: url('/img/backgrounds/mensajes-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* Fondo adaptable para Perfil de Usuario (/perfil, /perfil/pagos) */
+.sr-perfil-page {
+  min-height: 100vh;
+  background-color: #120e1e;
+  background-image: url('/img/backgrounds/perfil-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-perfil-page,
+html[data-theme="claro"] .sr-perfil-page,
+html[data-tema="claro"] .sr-perfil-page {
+  background-color: #f7f5fa;
+  background-image: url('/img/backgrounds/perfil-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
 }

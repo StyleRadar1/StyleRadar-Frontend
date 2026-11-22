@@ -475,4 +475,38 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
       expect(screen.getByText(/Obesa Grande/i)).toBeInTheDocument()
     })
   })
+
+  it('permite cambiar entre vistas Frente, Lado y Espalda cargando sus siluetas anatómicas respectivas', async () => {
+    // Maniquí femenino
+    setupMeasurements({ cuerpoBase: 'femenino', estatura: 165 })
+    loginAs('u-1', 'Valentina Rojas')
+    renderProbador('/probador')
+
+    const baseImg = await screen.findByTestId('mannequin-base-img')
+    // 1. Frente inicial
+    expect(baseImg).toHaveAttribute('src', expect.stringContaining('maniqui-f.png'))
+
+    // 2. Cambiar a Lado
+    const btnLado = screen.getByRole('button', { name: /Vista lateral|Lado/i })
+    fireEvent.click(btnLado)
+    await waitFor(() => {
+      expect(baseImg).toHaveAttribute('src', expect.stringContaining('maniqui-f-lado.png'))
+    })
+
+    // 3. Cambiar a Espalda
+    const btnEspalda = screen.getByRole('button', { name: /Vista posterior|Espalda/i })
+    fireEvent.click(btnEspalda)
+    await waitFor(() => {
+      expect(baseImg).toHaveAttribute('src', expect.stringContaining('maniqui-f-espalda.png'))
+    })
+
+    // 4. Volver a Frente
+    const btnFrente = screen.getByRole('button', { name: /Vista de frente|Frente/i })
+    fireEvent.click(btnFrente)
+    await waitFor(() => {
+      expect(baseImg).toHaveAttribute('src', expect.stringContaining('maniqui-f.png'))
+      expect(baseImg).not.toHaveAttribute('src', expect.stringContaining('lado'))
+      expect(baseImg).not.toHaveAttribute('src', expect.stringContaining('espalda'))
+    })
+  })
 })

@@ -94,8 +94,9 @@ export default function PlansPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 bg-transparent text-[var(--sr-hero-text)]">
-      <PlanDegradedBanner />
+    <div className="sr-planes-page min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-12 bg-transparent text-[var(--sr-hero-text)]">
+        <PlanDegradedBanner />
       <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Planes</p>
       <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
         Un plan para cada quien
@@ -204,5 +205,6 @@ export default function PlansPage() {
         ))}
       </ol>
     </section>
+  </div>
   )
 }

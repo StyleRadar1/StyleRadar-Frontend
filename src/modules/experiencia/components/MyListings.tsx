@@ -214,7 +214,17 @@ export function MyListings() {
       <ul className="space-y-3" aria-label="Mis publicaciones">
         {list.map((l) => (
           <li key={l.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-            <img src={l.fotos[0]} alt="" className="h-20 w-16 rounded-lg bg-[var(--color-surface-subtle)] object-cover" />
+            <img
+              src={l.fotos[0]}
+              alt=""
+              className="h-20 w-16 rounded-lg bg-[var(--color-surface-subtle)] object-cover"
+              onError={(e) => {
+                const target = e.currentTarget
+                if (!target.src.includes('gabardina-gris.jpg')) {
+                  target.src = '/img/catalogo/gabardina-gris.jpg'
+                }
+              }}
+            />
             <div className="min-w-40 flex-1">
               <p className="font-semibold text-[var(--color-text)]">{l.titulo}</p>
               <p className="text-sm text-[var(--color-text-muted)]">{formatCOP(l.precio)} · Talla {l.talla}</p>

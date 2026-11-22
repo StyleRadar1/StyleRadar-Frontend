@@ -242,19 +242,22 @@ export default function PublishListingPage() {
   }
 
   if (done) return (
-    <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-      <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">{editing ? 'Cambios guardados' : 'Publicación creada'}</p>
-      <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">{editing ? 'Listo, actualizamos tu prenda' : '¡Tu prenda ya está en Segunda vida!'}</h1>
-      <p className="mt-3 text-[var(--color-text-muted)]">«{done.garmentName || done.titulo}» {done.esDonacion ? 'en Vitrina de Donaciones ($0 COP)' : `por ${formatCOP(done.price ?? done.precio)}`}. Te avisaremos cuando haya novedades.</p>
-      <div className="mt-8 flex flex-wrap justify-center gap-2">
-        <Link to="/segunda-mano?vista=mias" className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Ver mis publicaciones</Link>
-        {!editing && <button type="button" onClick={() => { setForm(emptyListing()); setDone(null); setStep(0) }} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Publicar otra</button>}
-      </div>
-    </section>
+    <div className="sr-donaciones-page min-h-screen">
+      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">{editing ? 'Cambios guardados' : 'Publicación creada'}</p>
+        <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">{editing ? 'Listo, actualizamos tu prenda' : '¡Tu prenda ya está en Segunda vida!'}</h1>
+        <p className="mt-3 text-[var(--color-text-muted)]">«{done.garmentName || done.titulo}» {done.esDonacion ? 'en Vitrina de Donaciones ($0 COP)' : `por ${formatCOP(done.price ?? done.precio)}`}. Te avisaremos cuando haya novedades.</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
+          <Link to="/segunda-mano?vista=mias" className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Ver mis publicaciones</Link>
+          {!editing && <button type="button" onClick={() => { setForm(emptyListing()); setDone(null); setStep(0) }} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Publicar otra</button>}
+        </div>
+      </section>
+    </div>
   )
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12">
+    <div className="sr-donaciones-page min-h-screen">
+      <section className="mx-auto max-w-3xl px-4 py-12">
       <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">
         Segunda vida · {editing ? 'Editar publicación' : form.esDonacion ? 'Donar una prenda' : 'Vender una prenda'}
       </p>
@@ -423,5 +426,6 @@ export default function PublishListingPage() {
         </div>
       </form>
     </section>
+  </div>
   )
 }

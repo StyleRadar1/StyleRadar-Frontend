@@ -41,12 +41,26 @@ export interface PrendaDonadaDto {
   descripcion: string
 }
 
-/** Payload directo oficial: POST /api/v1/donaciones */
+/** Propuesta de entrega para creación directa de donación (SR-RF-45) */
+export interface DeliveryProposalDto {
+  mode: Modalidad | string
+  point?: string
+  startTime?: string
+  endTime?: string
+  address?: string
+}
+
+/** Payload directo oficial: POST /api/v1/donaciones / /api/v1/donations (SR-RF-45) */
 export interface DirectDonationRequestDto {
   publicationId: string | number
   donorId: string | number
   foundationId: string | number
   message?: string
+  deliveryProposal?: DeliveryProposalDto
+  deliveryMode?: Modalidad | string
+  deliveryPoint?: string
+  pickupWindowStart?: string
+  pickupWindowEnd?: string
 }
 
 /** Payload oficial: POST /api/v1/donaciones/claim */

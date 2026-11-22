@@ -37,7 +37,26 @@ export const tryOnService = {
       failIfScenario()
       return mockDelay(hasScenario('catalogo-vacio') ? [] : TRYON_GARMENTS)
     }
-    return apiClient.get<TryOnGarmentDto[]>('/api/v1/try-on/garments').then((r) => r.data)
+    return apiClient
+      .get<TryOnGarmentDto[]>('/api/v1/try-on/garments')
+      .catch(() =>
+        apiClient.get<any[]>('/api/v1/items').then((r) =>
+          r.data.map((item: any) => ({
+            id: String(item.id),
+            nombre: item.name || item.nombre || 'Prenda',
+            tienda: item.storeName || item.tienda || 'StyleRadar Store',
+            imagen: item.imageUrl || item.imagen || '',
+            zona: (item.category === 'TOP' || item.categoria === 'Camisas' || item.categoria === 'Chaquetas'
+              ? 'SUPERIOR'
+              : item.category === 'BOTTOM' || item.categoria === 'Pantalones' || item.categoria === 'Faldas'
+              ? 'INFERIOR'
+              : 'NO_COMPATIBLE') as any,
+            tallas: item.sizes || item.tallas || ['S', 'M', 'L', 'XL'],
+            disponible: item.available ?? true,
+          }))
+        )
+      )
+      .then((r) => (Array.isArray(r) ? r : (r as any).data || []))
   },
 
   /** RF-24: validación de compatibilidad de prenda y talla con medidas */
@@ -98,8 +117,23 @@ export const tryOnService = {
       .then((r) => r.data)
   },
 
+  /** RF-23: consultar foto/silueta activa del usuario (GET /api/v1/try-on/photos/{userId}) */
+  async getActivePhoto(userId?: string): Promise<PhotoUploadResponseDto | null> {
+    if (env.useMocks) {
+      failIfScenario()
+      if (mock.photos.size === 0) return mockDelay(null)
+      const photoId = Array.from(mock.photos).pop()!
+      return mockDelay({ photoId, photoUrl: '' })
+    }
+    const uid = userId || mockSessionUser()?.id || ''
+    return apiClient
+      .get<PhotoUploadResponseDto>(`/api/v1/try-on/photos/${encodeURIComponent(uid)}`)
+      .then((r) => r.data)
+      .catch(() => null)
+  },
+
   /** RF-23: sube la foto frontal con progreso real de subida. */
-  async uploadPhoto(file: File, onProgress?: (pct: number) => void, signal?: AbortSignal): Promise<PhotoUploadResponseDto> {
+  async uploadPhoto(file: File, onProgress?: (pct: number) => void, signal?: AbortSignal, userId?: string): Promise<PhotoUploadResponseDto> {
     if (env.useMocks) {
       for (const pct of [15, 40, 70, 100]) {
         if (signal?.aborted) throw new ApiError(0, 'Subida cancelada.')
@@ -116,6 +150,8 @@ export const tryOnService = {
     }
     const form = new FormData()
     form.append('photo', file)
+    form.append('biometricConsent', 'true')
+    if (userId) form.append('userId', String(userId))
     return apiClient.post<PhotoUploadResponseDto>('/api/v1/try-on/photos', form, {
       timeout: 60000,
       signal,
@@ -128,6 +164,10 @@ export const tryOnService = {
    * duplicados si la petición se reenvía (doble clic o red inestable).
    */
   async createJob(req: TryOnJobRequestDto, idempotencyKey: string): Promise<TryOnJobCreatedDto> {
+    const payload: TryOnJobRequestDto = {
+      ...req,
+      biometricConsent: req.biometricConsent ?? true,
+    }
     if (env.useMocks) {
       failIfScenario()
       if (hasScenario('consentimiento') && !mock.consent) throw new ApiError(400, 'Falta el consentimiento (Ley 1581).', 'CONSENT_REQUIRED')
@@ -146,7 +186,7 @@ export const tryOnService = {
       mock.quotas.remainingCount = Math.max(0, mock.quotas.monthlyLimit - mock.quotas.usedCount)
       return mockDelay({ jobId, status: 'PENDING' as const }, 250)
     }
-    return apiClient.post<TryOnJobCreatedDto>('/api/v1/try-on/jobs', req, { headers: { 'Idempotency-Key': idempotencyKey } }).then((r) => r.data)
+    return apiClient.post<TryOnJobCreatedDto>('/api/v1/try-on/jobs', payload, { headers: { 'Idempotency-Key': idempotencyKey } }).then((r) => r.data)
   },
 
   /** RF-25/26: estado del job. Solo el dueño lo puede consultar (403 si no). */
@@ -178,7 +218,13 @@ export const tryOnService = {
         completedAt: new Date(job.created + MOCK_JOB_TIMES.done).toISOString(),
       }, 120)
     }
-    return apiClient.get<TryOnJobStatusDto>(`/api/v1/try-on/jobs/${encodeURIComponent(jobId)}`).then((r) => r.data)
+    return apiClient
+      .get<TryOnJobStatusDto>(`/api/v1/try-on/jobs/${encodeURIComponent(jobId)}`)
+      .then((r) => ({
+        ...r.data,
+        resultUrl: r.data.resultImageUrl || r.data.resultUrl,
+        resultImageUrl: r.data.resultImageUrl || r.data.resultUrl,
+      }))
   },
 
   /** SR-P5-N03: consultar historial de pruebas virtuales del usuario */
@@ -202,7 +248,11 @@ export const tryOnService = {
     }
     return apiClient
       .get<TryOnJobStatusDto[]>('/api/v1/try-on/jobs', { params: { userId } })
-      .then((r) => r.data)
+      .then((r) => r.data.map((j) => ({
+        ...j,
+        resultUrl: j.resultImageUrl || j.resultUrl,
+        resultImageUrl: j.resultImageUrl || j.resultUrl,
+      })))
   },
 
   /** SR-P5-N01: consultar estado de consentimiento biométrico */
@@ -238,7 +288,12 @@ export const tryOnService = {
       userId: uid,
       termsVersion: 'v1.0-LEY1581-2026',
       accepted: true,
-      purposes: ['VIRTUAL_TRY_ON_INFERENCE', 'TEMPORARY_SILHOUETTE_STORAGE'],
+      purposes: [
+        'PROBADOR_VIRTUAL',
+        'ALMACENAMIENTO_TEMPORAL_FOTOGRAFIA',
+        'VIRTUAL_TRY_ON_INFERENCE',
+        'TEMPORARY_SILHOUETTE_STORAGE',
+      ],
     })
   },
 

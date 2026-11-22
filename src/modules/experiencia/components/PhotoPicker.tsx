@@ -4,7 +4,11 @@ import { readDimensions } from '../utils/photoRules'
 import { problemaFoto, TEXTO_FOTO, TRYON_ACCEPT, TRYON_MAX_MB, TRYON_MIN, validarArchivoPrueba, validarDimensionesPrueba } from '../utils/tryOnRules'
 import { tryOnService } from '../services/tryOnService'
 
-export interface UploadedPhoto { photoId: string; previewUrl: string }
+export interface UploadedPhoto {
+  photoId: string
+  previewUrl: string
+  photoUrl?: string
+}
 
 /**
  * RF-23: elegir o tomar la foto frontal, validarla, verla y subirla al endpoint autenticado.
@@ -51,7 +55,7 @@ export function PhotoPicker({ photo, onUploaded, onConsentRequired }: {
       const res = await tryOnService.uploadPhoto(file, setProgress, ctrl.current.signal)
       setProgress(null)
       setPreview(null)
-      onUploaded({ photoId: res.photoId, previewUrl: url })
+      onUploaded({ photoId: res.photoId, previewUrl: url, photoUrl: res.photoUrl || url })
     } catch (e) {
       discard(url)
       const p = problemaFoto(e)
