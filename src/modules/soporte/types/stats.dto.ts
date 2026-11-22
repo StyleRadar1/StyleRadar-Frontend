@@ -17,15 +17,24 @@ export interface MensajesPorDiaDto {
   mensajes: number
 }
 
+/** Periodos válidos para estadísticas de tienda (RF-76, RF-77). */
+export type StatsPeriod = '7_DIAS' | '30_DIAS' | '90_DIAS'
+
 /** Resumen de tienda (RF-76 a 81). */
 export interface StoreStatsDto {
-  periodo: string
+  periodo: StatsPeriod
   kpis: {
     visitas: KpiDto
     mensajes: KpiDto
   }
   visitasPorDia?: VisitasPorDiaDto[]
   mensajesPorDia?: MensajesPorDiaDto[]
+  visitantesAhora?: number
+  metaSemanal?: {
+    visitasAcumuladas: number
+    meta: number | null
+    porcentajeAvance: number | null
+  }
 }
 
 /** RF-81: estado individual de inventario con cantidad y porcentaje a 2 decimales. */
@@ -168,5 +177,3 @@ export interface AdminLiveDto {
   sesionesAbiertas: number
   ultimaActualizacion: string
 }
-
-export type StatsPeriod = '7d' | '30d' | '90d' | '7_DIAS' | '30_DIAS' | '90_DIAS'

@@ -59,6 +59,11 @@ function StoreStatsView() {
   if (error) return <ErrorState error={error} onRetry={reload} />
   if (!stats) return <EmptyState title="Sin datos">Cuando tu tienda tenga actividad, verás los indicadores aquí</EmptyState>
 
+  const visitasPorDia = stats.visitasPorDia ?? []
+  const mensajesPorDia = stats.mensajesPorDia ?? []
+  const metaSemanal = stats.metaSemanal
+  const hasMeta = !!metaSemanal && metaSemanal.meta !== null && metaSemanal.meta > 0
+
   return (
     <div className="text-[var(--color-text)]">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -75,10 +80,76 @@ function StoreStatsView() {
           ))}
         </div>
       </div>
+
+      {/* RF-76.1 y RF-76.2: Visitas y Mensajes */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <KpiCard label="Visitas a la página de la tienda" kpi={stats.kpis.visitas} unidad="visitas" />
         <KpiCard label="Mensajes recibidos" kpi={stats.kpis.mensajes} unidad="mensajes" />
       </div>
+
+      {/* RF-77.1 y RF-77.3: Series por día */}
+      {visitasPorDia.length > 0 && (
+        <Card className="mt-6">
+          <h3 className="text-sm font-bold uppercase tracking-[.16em] text-[var(--color-sand)]">
+            Actividad diaria ({periodo === '7_DIAS' ? '7 días' : periodo === '30_DIAS' ? '30 días' : '90 días'})
+          </h3>
+          <div className="mt-3 max-h-60 overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-[var(--color-border)] text-[var(--color-text-muted)]">
+                  <th className="py-2">Fecha</th>
+                  <th className="py-2 text-right">Visitas</th>
+                  <th className="py-2 text-right">Mensajes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visitasPorDia.map((v, i) => (
+                  <tr key={v.fecha} className="border-b border-[var(--color-border)]/40">
+                    <td className="py-1.5 font-mono">{v.fecha}</td>
+                    <td className="py-1.5 text-right tabular-nums">{v.visitas}</td>
+                    <td className="py-1.5 text-right tabular-nums">{mensajesPorDia[i]?.mensajes ?? 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* RF-78 y RF-79: Visitantes ahora y Meta semanal */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <Card>
+          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-sand)]">Viendo tu tienda ahora</p>
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--color-text)]" aria-live="polite">
+            {stats.visitantesAhora ?? 0}
+          </p>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Visitantes activos en tiempo real</p>
+        </Card>
+        <Card>
+          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-sand)]">Meta semanal de visitas</p>
+          {hasMeta && metaSemanal ? (
+            <>
+              <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--color-text)]">
+                {metaSemanal.porcentajeAvance}%
+              </p>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                {metaSemanal.visitasAcumuladas.toLocaleString('es-CO')} de {metaSemanal.meta?.toLocaleString('es-CO')} visitas alcanzadas
+              </p>
+            </>
+          ) : (
+            <>
+              <p role="status" className="mt-1 text-xs font-semibold text-[var(--color-text-muted)]">
+                Tu tienda aún no tiene una meta semanal de visitas
+              </p>
+              <p className="mt-1 text-lg font-extrabold tabular-nums text-[var(--color-text)]">
+                {(metaSemanal?.visitasAcumuladas ?? 0).toLocaleString('es-CO')} visitas acumuladas
+              </p>
+            </>
+          )}
+        </Card>
+      </div>
+
+      {/* RF-81: Inventario por estado */}
       {inventory && (
         <Card className="mt-6">
           <h3 className="text-sm font-bold uppercase tracking-[.16em] text-[var(--color-sand)]">Inventario por estado</h3>
@@ -100,7 +171,7 @@ export default function StatsPage() {
     return (
       <section className="mx-auto max-w-4xl px-4 py-16">
         <EmptyState title="Estadísticas no disponibles">
-          Tu rol no tiene estadísticas asignadas.
+          Tu rol no tiene estadísticas asignadas
         </EmptyState>
       </section>
     )

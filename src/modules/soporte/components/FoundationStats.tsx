@@ -73,7 +73,7 @@ export function FoundationStatsView() {
 function MonthlyRequests({ months }: { months: FoundationMonthDto[] }) {
   const [tabla, setTabla] = useState(false)
   return (
-    <Panel title="Solicitudes por mes" text={`Origen de las solicitudes de donación en los últimos ${months.length} meses.`} action={<TableToggle on={tabla} onChange={setTabla} />}>
+    <Panel title="Solicitudes por mes" text={`Origen de las solicitudes de donación en los últimos ${months.length} meses`} action={<TableToggle on={tabla} onChange={setTabla} />}>
       {tabla
         ? <DataTable caption="Detalle de solicitudes mensuales" head={['Mes', 'De personas', 'De tiendas', 'Total']} rows={months.map((m) => [m.etiqueta, m.personas, m.tiendas, m.total])} />
         : <GroupedBars label="Solicitudes por mes" series={['De personas', 'De tiendas']} grupos={months.map((m) => ({ key: m.mes, eje: m.mes, titulo: m.etiqueta, valores: [m.personas, m.tiendas] }))} />}
@@ -81,11 +81,18 @@ function MonthlyRequests({ months }: { months: FoundationMonthDto[] }) {
   )
 }
 
-/** Solicitudes por estado: anillos concéntricos con el total y lista con barras. */
+/** Solicitudes por estado: anillos concéntricos con el total y lista con barras (RF-85.2). */
 function ByStatus({ data }: { data: FoundationStatsDto['porEstado'] }) {
   const total = data.reduce((n, d) => n + d.cantidad, 0)
+  if (data.length === 0 || total === 0) {
+    return (
+      <Panel title="Solicitudes por estado" text="Avance operativo de las donaciones en curso">
+        <EmptyState title="Sin solicitudes registradas">Aún no hay solicitudes de donación por estado</EmptyState>
+      </Panel>
+    )
+  }
   return (
-    <Panel title="Solicitudes por estado" text="Avance operativo de las donaciones en curso.">
+    <Panel title="Solicitudes por estado" text="Avance operativo de las donaciones en curso">
       <div className="flex flex-wrap items-center justify-center gap-6">
         <div className="relative w-44">
           <svg viewBox="0 0 200 200" className="w-full -rotate-90" role="img" aria-label={`${total} solicitudes: ${data.map((d) => `${d.estado} ${d.cantidad}`).join(', ')}`}>
@@ -106,17 +113,20 @@ function ByStatus({ data }: { data: FoundationStatsDto['porEstado'] }) {
           </div>
         </div>
         <ul className="min-w-44 flex-1 space-y-3 text-sm" aria-label="Solicitudes por estado">
-          {data.map((d, i) => (
-            <li key={d.estado}>
-              <div className="flex items-center gap-2">
-                <Swatch i={i} />
-                <span className="flex-1">{d.estado}</span>
-                <b className="tabular-nums">{d.cantidad}</b>
-                <span className="w-10 text-right text-xs tabular-nums text-white/55">{pct(d.cantidad, total)}%</span>
-              </div>
-              <div aria-hidden="true" className="mt-1 h-1 rounded-full bg-white/10"><div className="h-full rounded-full" style={{ width: `${pct(d.cantidad, total)}%`, background: SERIE[i] }} /></div>
-            </li>
-          ))}
+          {data.map((d, i) => {
+            const pctExact = d.porcentaje !== undefined ? d.porcentaje.toFixed(2) : ((d.cantidad / total) * 100).toFixed(2)
+            return (
+              <li key={d.estado}>
+                <div className="flex items-center gap-2">
+                  <Swatch i={i} />
+                  <span className="flex-1">{d.estado}</span>
+                  <b className="tabular-nums">{d.cantidad}</b>
+                  <span className="w-14 text-right text-xs tabular-nums text-white/55">{pctExact}%</span>
+                </div>
+                <div aria-hidden="true" className="mt-1 h-1 rounded-full bg-white/10"><div className="h-full rounded-full" style={{ width: `${pct(d.cantidad, total)}%`, background: SERIE[i] }} /></div>
+              </li>
+            )
+          })}
         </ul>
       </div>
     </Panel>

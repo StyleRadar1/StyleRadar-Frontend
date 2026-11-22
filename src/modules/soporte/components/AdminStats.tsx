@@ -4,7 +4,15 @@ import { useResource } from '@/modules/core/hooks/useResource'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAdminAccounts, useAdminIncome, useAdminIndicators } from '../hooks/useStats'
 import { statsService } from '../services/statsService'
-import type { AdminAccountsByPlanDto, AdminDailyDto, AdminIncomeDto, AdminIndicatorsDto } from '../types/stats.dto'
+import type {
+  AdminAccountsByPlanDto,
+  AdminDailyDto,
+  AdminIncomeDto,
+  AdminIndicatorsDto,
+  DecisionModeracion,
+  PendientePorGrupoDto,
+  ResultadoModeracion,
+} from '../types/stats.dto'
 import { DataTable, Donut, Gauge, GroupedBars, Kpi, Panel, Swatch, TableToggle } from './charts'
 import { card, descargarCsv, SERIE, tope } from '../utils/charts'
 
@@ -15,8 +23,9 @@ const milesCOP = (n: number) => (n >= 1000 ? `$${num(Math.round(n / 100) / 10)} 
 const MES_LARGO: Record<string, string> = { jun: 'junio', jul: 'julio', ago: 'agosto', sep: 'septiembre', oct: 'octubre', nov: 'noviembre' }
 
 /**
- * Estadísticas del administrador (RF-86 a 91), iguales al «Módulo de administración» del prototipo:
- * indicadores, actividad diaria, ingresos, usuarios conectados en vivo, meta de ingresos y cuentas por plan.
+ * Estadísticas del administrador (RF-86 a 91):
+ * indicadores globales (RF-86), publicaciones pendientes por grupo (RF-87), actividad diaria (RF-88),
+ * ingresos y meta de ingresos (RF-89), usuarios conectados en vivo (RF-90) y cuentas por plan (RF-91).
  */
 export function AdminStatsView() {
   const { data: ind, loading, error, reload } = useAdminIndicators()
@@ -27,7 +36,7 @@ export function AdminStatsView() {
 
   if (loading) return <Loading label="Cargando estadísticas de la plataforma…" />
   if (error) return <ErrorState error={error} onRetry={reload} />
-  if (!ind) return <EmptyState title="Sin datos">No hay indicadores disponibles.</EmptyState>
+  if (!ind) return <EmptyState title="Sin datos">No hay indicadores disponibles</EmptyState>
   const mes = daily.data?.mes ?? 'este mes'
   const mesCorto = income ? MES_LARGO[income.mesActual.mes] ?? income.mesActual.mes : 'este mes'
 
@@ -61,6 +70,11 @@ export function AdminStatsView() {
         <Kpi label="Donaciones este mes" value={num(ind.donacionesMes)} hint="Solicitudes registradas" />
       </div>
 
+      {/* RF-87: Publicaciones pendientes de moderación por grupo */}
+      <div className="mt-4">
+        <PendingModerationGroups initialGroups={ind.pendientesPorGrupo ?? []} />
+      </div>
+
       <div className="mt-4">
         {daily.loading ? <div className={card}><Loading label="Cargando la actividad diaria…" /></div>
           : daily.error || !daily.data ? <div className={card}><ErrorState error={daily.error} onRetry={daily.reload} title="No pudimos cargar la actividad diaria" /></div>
@@ -87,30 +101,73 @@ export function AdminStatsView() {
           </Panel>
         )}
         {accounts && (
-          <Panel title="Cuentas por plan" text="Compradores (Radar y Radar+) y almacenes aliados.">
+          <Panel title="Cuentas por plan" text="Compradores (Radar y Radar+) y almacenes aliados">
             <Donut label="Cuentas por plan" data={accounts.resumen.map((r) => ({ nombre: r.plan, valor: r.cuentas }))} detalle={(v) => `${num(v)} cuentas`} />
           </Panel>
         )}
       </div>
-
-      {/* ─── Secciones estilo Verdelo: Cápsulas de metas (Goals) + Mapa de calor por día (Insights Heatmap) ─── */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-12">
-        <Panel
-          title="Cápsulas de objetivos del mes"
-          text="Avance acumulado por frente operativo respecto a la meta mensual."
-          className="lg:col-span-5"
-        >
-          <GoalCapsules ind={ind} income={income} />
-        </Panel>
-        <Panel
-          title="Intensidad de actividad por día"
-          text="Mapa de calor semanal de búsquedas, publicaciones y pruebas virtuales."
-          className="lg:col-span-7"
-        >
-          <ActivityHeatmap dias={daily.data?.dias ?? []} />
-        </Panel>
-      </div>
     </div>
+  )
+}
+
+/* ─── RF-87: Publicaciones pendientes por grupo ─── */
+
+function PendingModerationGroups({ initialGroups }: { initialGroups: PendientePorGrupoDto[] }) {
+  const [groups, setGroups] = useState<PendientePorGrupoDto[]>(initialGroups)
+  const [lastDecision, setLastDecision] = useState<{ publicadorId: string; resultado: ResultadoModeracion } | null>(null)
+
+  const handleDecision = (publicadorId: string, decision: DecisionModeracion) => {
+    const resultado: ResultadoModeracion = decision === 'APROBAR' ? 'APROBADA' : 'RECHAZADA'
+    setGroups((prev) => prev.filter((g) => g.publicadorId !== publicadorId))
+    setLastDecision({ publicadorId, resultado })
+  }
+
+  return (
+    <Panel
+      title="Publicaciones pendientes de moderación"
+      text="Agrupadas por tipo de publicador (TIENDA o USUARIO)"
+    >
+      {lastDecision && (
+        <p role="status" className="mb-3 text-xs font-semibold text-arena">
+          Grupo {lastDecision.publicadorId}: decisión aplicada ({lastDecision.resultado})
+        </p>
+      )}
+      {groups.length === 0 ? (
+        <p role="status" className="text-sm text-[var(--color-text-muted)]">
+          No hay publicaciones pendientes de moderación
+        </p>
+      ) : (
+        <ul className="divide-y divide-[var(--color-border)] text-sm">
+          {groups.map((g) => (
+            <li key={`${g.tipoPublicador}-${g.publicadorId}`} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
+              <div>
+                <span className="font-semibold">{g.tipoPublicador}</span>
+                {' · '}
+                <span className="font-mono text-xs">{g.publicadorId}</span>
+                {' · '}
+                <span className="text-[var(--color-text-muted)]">{g.cantidad} pendientes</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDecision(g.publicadorId, 'APROBAR')}
+                  className="rounded-lg bg-violeta px-3 py-1 text-xs font-semibold text-blanco"
+                >
+                  Aprobar grupo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDecision(g.publicadorId, 'RECHAZAR')}
+                  className="rounded-lg border border-[var(--color-border)] px-3 py-1 text-xs font-semibold"
+                >
+                  Rechazar grupo
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   )
 }
 
@@ -129,7 +186,7 @@ function DailyActivity({ data }: { data: AdminDailyDto }) {
   const area = `${linea}L${pts[n - 1][0].toFixed(1)} 120L${pts[0][0].toFixed(1)} 120Z`
 
   return (
-    <Panel title={`Actividad diaria · ${data.mes}`} text="Búsquedas realizadas, nuevos registros y prendas publicadas por día." action={<TableToggle on={tabla} onChange={setTabla} />}>
+    <Panel title={`Actividad diaria · ${data.mes}`} text="Búsquedas realizadas, nuevos registros y prendas publicadas por día" action={<TableToggle on={tabla} onChange={setTabla} />}>
       {tabla ? (
         <DataTable caption="Detalle de actividad diaria" head={['Día', 'Búsquedas', 'Registros', 'Publicaciones']} rows={dias.map((d) => [d.etiqueta, num(d.busquedas), d.registros, d.publicaciones])} />
       ) : (
@@ -225,12 +282,12 @@ function LiveUsers() {
   }, [])
 
   return (
-    <Panel title="Usuarios conectados ahora" text="Sesiones activas en la plataforma en tiempo real."
+    <Panel title="Usuarios conectados ahora" text="Sesiones activas en la plataforma en tiempo real"
       action={<span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#9be3b4]/40 px-2.5 py-1 text-[11px] font-semibold text-[#9be3b4]"><i aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full bg-[#9be3b4] motion-reduce:animate-none" />En vivo</span>}>
-      {error && sesiones === null ? <p role="alert" className="text-sm text-[#ffb4b4]">No pudimos consultar las sesiones abiertas.</p> : (
+      {error && sesiones === null ? <p role="alert" className="text-sm text-[#ffb4b4]">No pudimos consultar las sesiones abiertas</p> : (
         <>
           <p className="text-4xl font-extrabold tabular-nums" aria-live="polite">{sesiones === null ? '—' : num(sesiones)}</p>
-          <p className="mt-2 text-[11px] font-bold uppercase tracking-[.14em] text-white/60">Actualizado cada 15 s · Se pausa automáticamente en segundo plano.</p>
+          <p className="mt-2 text-[11px] font-bold uppercase tracking-[.14em] text-white/60">Actualizado cada 15 s · Se pausa automáticamente en segundo plano</p>
         </>
       )}
     </Panel>
@@ -254,127 +311,4 @@ function exportar(ind: AdminIndicatorsDto, daily: AdminDailyDto | null, income: 
     ...(income ? [[], ['Mes', 'Usuarios (Radar+)', 'Tiendas aliadas', 'Total'], ...income.historico.map((h) => [h.mes, h.usuarios, h.tiendas, h.total])] : []),
     ...(accounts ? [[], ['Plan', 'Cuentas'], ...accounts.resumen.map((r) => [r.plan, r.cuentas])] : []),
   ])
-}
-
-/* ─── Cápsulas verticales de objetivos (inspiradas en "Goals" de Verdelo) ─── */
-
-function GoalCapsules({ ind, income }: { ind: AdminIndicatorsDto; income: AdminIncomeDto | null }) {
-  const capsules = [
-    {
-      title: 'Suscripciones',
-      current: formatCOP(income?.mesActual.ingresosNetos ?? ind.ingresosMes),
-      target: formatCOP(income?.mesActual.meta ?? 10000000),
-      pct: Math.min(100, Math.max(18, income?.mesActual.porcentajeAvance ?? 22)),
-      fill: 'linear-gradient(180deg, rgba(123, 77, 216, 0.85) 0%, rgba(72, 17, 154, 0.95) 100%)',
-    },
-    {
-      title: 'Tiendas aliadas',
-      current: `${ind.tiendas.verificadas} activas`,
-      target: '80 tiendas',
-      pct: Math.min(100, Math.round((ind.tiendas.verificadas / 80) * 100)),
-      fill: 'linear-gradient(180deg, rgba(232, 220, 203, 0.88) 0%, rgba(168, 145, 118, 0.92) 100%)',
-    },
-    {
-      title: 'Donaciones',
-      current: `${ind.donacionesMes} lotes`,
-      target: '65 lotes',
-      pct: Math.min(100, Math.round((ind.donacionesMes / 65) * 100)),
-      fill: 'linear-gradient(180deg, rgba(185, 185, 202, 0.88) 0%, rgba(123, 77, 216, 0.88) 100%)',
-    },
-  ]
-
-  return (
-    <div className="grid grid-cols-3 gap-3 pt-1">
-      {capsules.map((cap) => (
-        <div key={cap.title} className="flex flex-col items-center text-center">
-          <div className="sr-goal-capsule w-full max-w-[112px]">
-            <div
-              className="sr-goal-fill"
-              style={{ height: `${cap.pct}%`, background: cap.fill }}
-            />
-            <div className="relative z-10 flex h-full flex-col justify-between p-3 text-left">
-              <span className="inline-flex w-fit rounded-full border border-white/20 bg-black/35 px-2 py-0.5 text-[10px] font-extrabold text-blanco">
-                {cap.pct}%
-              </span>
-              <div>
-                <p className="text-xs font-extrabold leading-tight text-blanco drop-shadow">{cap.current}</p>
-                <p className="text-[10px] text-white/70">Meta: {cap.target}</p>
-              </div>
-            </div>
-          </div>
-          <p className="mt-2 text-xs font-semibold text-lavanda">{cap.title}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/* ─── Mapa de calor de actividad por día (inspirado en "Insights / Spending by day" de Verdelo) ─── */
-
-const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-
-function ActivityHeatmap({ dias }: { dias: AdminDailyDto['dias'] }) {
-  const maxVal = Math.max(...dias.map((d) => d.busquedas), 1400)
-  // Construimos 28 celdas (4 semanas x 7 días) a partir de los días disponibles
-  const cells = Array.from({ length: 28 }, (_, idx) => {
-    const source = dias[idx % Math.max(1, dias.length)]
-    const val = source ? source.busquedas : 450 + ((idx * 137) % 900)
-    const ratio = val / maxVal
-    const level = ratio > 0.82 ? 4 : ratio > 0.62 ? 3 : ratio > 0.42 ? 2 : ratio > 0.22 ? 1 : 0
-    return {
-      id: idx,
-      label: source?.etiqueta ?? `Día ${idx + 1}`,
-      val,
-      level,
-    }
-  })
-
-  const levelBg = [
-    'rgba(255, 255, 255, 0.05)',
-    'rgba(185, 185, 202, 0.22)',
-    'rgba(123, 77, 216, 0.48)',
-    'rgba(72, 17, 154, 0.82)',
-    'linear-gradient(135deg, #7B4DD8 0%, #E8DCCB 100%)',
-  ]
-
-  return (
-    <div>
-      <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[11px] font-bold uppercase tracking-wider text-lavanda/75">
-        {DIAS_SEMANA.map((d) => (
-          <span key={d}>{d}</span>
-        ))}
-      </div>
-      <div className="sr-heatmap-grid">
-        {cells.map((c) => (
-          <div
-            key={c.id}
-            className="sr-heatmap-cell flex flex-col items-center justify-center"
-            style={{
-              background: levelBg[c.level],
-              boxShadow: c.level >= 3 ? '0 0 14px rgba(123, 77, 216, 0.35)' : undefined,
-            }}
-            title={`${c.label}: ${num(c.val)} interacciones`}
-          >
-            <span className="text-[10px] font-bold tabular-nums text-white/85">
-              {Math.round(c.val / 100) / 10}k
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center justify-between text-[11px] text-lavanda/75">
-        <span>Menor actividad</span>
-        <div className="flex items-center gap-1.5">
-          {levelBg.map((bg, i) => (
-            <span
-              key={i}
-              aria-hidden="true"
-              className="h-3 w-5 rounded"
-              style={{ background: bg }}
-            />
-          ))}
-        </div>
-        <span>Hora pico · Mayor actividad</span>
-      </div>
-    </div>
-  )
 }
