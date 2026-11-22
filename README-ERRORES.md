@@ -113,8 +113,8 @@ Errores en **Inventario de la tienda**, **Mi tienda** e **Información de tienda
 
 | Pantalla / acción | Ruta en frontend | Endpoint backend |
 |---|---|---|
-| Consultar inventario y resumen | `/tienda/inventario` (`?mock=sin-permiso`) | `GET /tienda/inventario`, `GET /tienda/inventario/resumen` |
-| Agregar prenda / editar stock / precio / tallas / estado | `/tienda/inventario` (`?mock=regla`, `?mock=sin-permiso`) | `POST /tienda/inventario`, `PATCH /tienda/inventario/{prendaId}/stock`, `PATCH /tienda/inventario/{prendaId}/precio`, `DELETE /tienda/inventario/{prendaId}/tallas/{talla}`, `POST /tienda/inventario/{prendaId}/toggle-estado` |
+| Consultar inventario y resumen | `/tienda/inventario` (`?mock=sin-permiso`) | `GET /api/v1/almacenes/{tiendaId}/catalogo`, `GET /api/v1/inventario/sedes/{sedeId}/disponibles`, `GET /api/v1/inventario/prenda/{prendaId}` |
+| Agregar prenda / editar stock / precio / tallas / estado | `/tienda/inventario` (`?mock=regla`, `?mock=sin-permiso`) | `POST /api/v1/prendas` + `POST /api/v1/inventario/lote`, `PATCH /api/v1/inventario/prenda/{prendaId}/sede/{sedeId}/tallas/{talla}`, `PUT /api/v1/prendas/{id}`, `DELETE /api/v1/prendas/{id}` |
 | Perfil e info pública de tienda | `/mi-tienda`, `/tienda/informacion` (`?mock=sin-permiso`, `?mock=subida-falla`) | Simulación local de perfil/portada (sin endpoint dedicado aún en `inventoryService`) |
 
 ---
@@ -127,13 +127,38 @@ Errores del panel de **Administración**:
 - **Fundaciones (`/admin/fundaciones`, `/admin/fundaciones/:id`)**:
   - Validación de formulario con foco al primer error (`400`), fundación duplicada o ya inactiva (`409`), y recurso inexistente (`404`).
 - **Playlists destacadas (`/admin/playlists`)**:
-  - Límite máximo de 3 playlists destacadas (`422` en mock real / `409` en simulación `?mock=conflicto`) con toast de advertencia.
+  - Límite máximo de 3 playlists destacadas (`422` en mock real o `code: LIMITE_DESTACADAS` del back / `409` en simulación `?mock=conflicto`) con toast de advertencia.
 - **Moderación de publicaciones (`/admin/moderacion`)**:
-  - Motivo de rechazo obligatorio individual o en lote (`400`, `RF-61`) y detección de prenda ya moderada (`422` / `?mock=regla`) con recarga de pendientes.
+  - Motivo de rechazo obligatorio individual o en lote (`400`, `code: MOTIVO_REQUERIDO`) y detección de prenda ya moderada (`422`, `code: PRENDA_NO_PENDIENTE` / `?mock=regla`) con recarga de pendientes.
 
 | Pantalla / acción | Ruta en frontend | Endpoint backend |
 |---|---|---|
 | Tiendas y verificación / extensión | `/admin/tiendas`, `/admin/tiendas/:id` (`?mock=conflicto`, `?mock=regla`) | `GET /api/admin/tiendas`, `GET /api/admin/tiendas/{id}`, `PUT /api/admin/tiendas/{id}/verificacion`, `POST /api/admin/tiendas/{id}/extender-prueba` |
 | Fundaciones (crear/editar/estado) | `/admin/fundaciones`, `/admin/fundaciones/:id` (`?mock=conflicto`, `?mock=regla`) | `GET/POST /api/admin/fundaciones`, `GET/PUT /api/admin/fundaciones/{id}`, `PUT /api/admin/fundaciones/{id}/estado` |
-| Playlists destacadas (máx. 3) | `/admin/playlists` (`?mock=conflicto`) | `GET /api/admin/playlists`, `PUT /api/admin/playlists/{id}/destacada` |
-| Moderación de prendas | `/admin/moderacion` (`?mock=regla`) | `GET /api/moderacion/pendientes`, `GET /api/moderacion/historial`, `POST /api/moderacion/decidir`, `POST /api/moderacion/decidir-lote` |
+| Playlists destacadas (máx. 3) | `/admin/playlists` (`?mock=conflicto`) | `GET /api/v1/playlists/populares`, `PUT/DELETE /api/v1/playlists/{id}/destacar` |
+| Moderación de prendas | `/admin/moderacion` (`?mock=regla`) | `GET /api/v1/prendas/pendientes`, `PUT /api/v1/prendas/{id}/moderacion`, `PUT /api/v1/prendas/pendientes/almacenes/{almacenId}/moderacion` (historial en sesión; sin `/historial`) |
+
+---
+
+## Endpoints y errores por pantalla (Catálogo, Mapa, Inventario, Moderación y Playlists — RES-128)
+
+Para validar contra QA con mocks desactivados se usa el modo `qa` (`npm run build:qa` o `.env.qa`) con:
+
+```env
+VITE_APP_ENV=qa
+VITE_API_URL=<URL_API_GATEWAY_QA>
+VITE_USE_MOCKS=false
+```
+
+Todas las peticiones salen desde `apiClient` (`src/modules/core/api/apiClient.ts`) hacia el **API Gateway**. Cuando el backend responde con un cuerpo `ProblemDetail` (`{ type, title, status, detail, instance, code, timestamp }`, más errores por campo), `aApiError()` prioriza **`MENSAJES_POR_CODIGO[code]`** en `src/modules/core/api/mensajes.ts` y usa el mensaje seguro por estado HTTP (`MENSAJES[kindFromStatus(status)]`) si `code` no llega o no está catalogado. HTTP `401` limpia el token y dispara `sr:sesion-expirada`; las fallas sin respuesta HTTP disparan `avisarSinConexion`.
+
+| Módulo / Pantalla | Ruta frontend | Endpoints reales (API Gateway) | Códigos HTTP y `ProblemDetail.code` | Qué muestra el front |
+|---|---|---|---|---|
+| **Catálogo** | `/catalogo` | `GET /api/v1/prendas` (`orden=RECIENTES\|REPUTACION\|DISTANCIA`, filtros y `lat`/`lng`) | `400` (`PARAMETRO_INVALIDO`, `DATOS_INVALIDOS`, `RANGO_PRECIO_INVALIDO`, `UBICACION_REQUERIDA`), `500` (`ERROR_INTERNO`), `0` | Si falta ubicación al ordenar por cercanía (`UBICACION_REQUERIDA`), muestra aviso para activar GPS o elegir barrio sin error técnico; estados vacíos diferenciados si no hay prendas en catálogo vs. sin coincidencias con filtros. |
+| **Detalle de prenda** | `/catalogo/:id` | `GET /api/v1/prendas/{id}`, `GET /api/v1/prendas/{id}/similares`, `GET /api/v1/inventario/prenda/{prendaId}`, `POST /api/v1/inventario/reserva` | `404` (`PRENDA_NO_ENCONTRADA`, `INVENTARIO_NO_ENCONTRADO`), `409`, `500` (`ERROR_INTERNO`) | `404` de prenda redirige/muestra escena no encontrada; `INVENTARIO_NO_ENCONTRADO` deja el listado de tallas sin marcas erróneas; `409` en reserva deshabilita la talla agotada y explica el motivo. |
+| **Tienda pública** | `/tiendas/:id` | `GET /api/v1/almacenes/{id}`, `GET /api/v1/almacenes/{id}/catalogo`, `GET /api/v1/almacenes/{id}/novedades`, `GET /api/v1/inventario/prenda/{prendaId}` | `404` (`ALMACEN_NO_ENCONTRADO`, `PRENDA_NO_ENCONTRADA`, `INVENTARIO_NO_ENCONTRADO`), `500` (`ERROR_INTERNO`) | Muestra el catálogo disponible del almacén, tallas desde inventario y máximo 3 novedades recientes; si falla inventario puntual cae de forma segura sin romper la página. |
+| **Mapa** | `/mapa` | `GET /api/v1/almacenes` (`lat`, `lng`, `radioKm`, `categoriaId`), `GET /api/v1/fundaciones/cercanas` (`lat`, `lng`, `radioKm`), `GET /api/v1/almacenes/{id}/catalogo/resumen`, `GET /api/v1/almacenes/{id}/distancia` (`lat`, `lng`) | `400` (`PARAMETRO_INVALIDO`, `UBICACION_REQUERIDA`, `COORDENADA_FUERA_DE_RANGO`), `404` (`ALMACEN_NO_ENCONTRADO`), `422` (`COORDENADA_FUERA_DE_RANGO`, `RADIO_INVALIDO`), `500` (`ERROR_INTERNO`) | Validación de coordenadas y radio mediante `ErrorState` o `Aviso` seguro; resumen de hasta 4 prendas sin datos ficticios; estado vacío si no hay puntos o si no hay tiendas dentro del radio. |
+| **Inventario de tienda** | `/tienda/inventario` | `GET /api/v1/almacenes/{tiendaId}/catalogo`, `GET /api/v1/inventario/sedes/{sedeId}/disponibles`, `GET /api/v1/inventario/prenda/{prendaId}`, `POST /api/v1/prendas` + `POST /api/v1/inventario/lote`, `PUT /api/v1/prendas/{id}`, `PATCH /api/v1/inventario/prenda/{prendaId}/sede/{sedeId}/tallas/{talla}`, `DELETE /api/v1/prendas/{id}` | `400` (`DATOS_INVALIDOS`, `PARAMETRO_INVALIDO`, `TALLA_INVALIDA`, `CANTIDAD_INVALIDA`), `403` (`ALMACEN_SUSPENDIDO`, `INVENTARIO_SUSPENDIDO`, `ACCESO_DENEGADO`), `404` (`PRENDA_NO_ENCONTRADA`, `INVENTARIO_NO_ENCONTRADO`, `TALLA_NO_REGISTRADA`), `422` (`FOTOGRAFIAS_EXCEDIDAS`, `PRENDA_RETIRADA`, `PRENDA_YA_RETIRADA`), `500` (`ERROR_INTERNO`) | `403` por suspensión muestra banner con enlace directo a `/tienda/suscripcion` sin ocultar la vista ya cargada; `400` marca el campo afectado; `422` avisa mediante toast/banner sin exponer mensajes crudos. |
+| **Moderación** | `/admin/moderacion` | `GET /api/v1/prendas/pendientes`, `PUT /api/v1/prendas/{id}/moderacion`, `PUT /api/v1/prendas/pendientes/almacenes/{almacenId}/moderacion` | `400` (`MOTIVO_REQUERIDO`, `DATOS_INVALIDOS`), `403` (`ACCESO_DENEGADO`), `404` (`PRENDA_NO_ENCONTRADA`, `ALMACEN_NO_ENCONTRADO`), `422` (`PRENDA_NO_PENDIENTE`), `500` (`ERROR_INTERNO`) | Exige motivo en rechazos individuales o por almacén (`MOTIVO_REQUERIDO`) debajo del campo; `PRENDA_NO_PENDIENTE` muestra toast y recarga las publicaciones pendientes (el historial vive solo en sesión). |
+| **Playlists (usuario)** | `/playlists`, `/playlists/:id` | `GET /api/v1/playlists`, `GET /api/v1/playlists/destacadas`, `GET /api/v1/playlists/me`, `GET /api/v1/playlists/me/guardadas`, `GET /api/v1/playlists/{id}`, `POST /api/v1/playlists`, `PUT /api/v1/playlists/{id}`, `DELETE /api/v1/playlists/{id}`, `POST /api/v1/playlists/{id}/prendas`, `DELETE /api/v1/playlists/{id}/prendas/{prendaId}`, `POST /api/v1/playlists/{id}/like`, `POST /api/v1/playlists/{id}/guardar` | `400` (`DATOS_INVALIDOS`, `PARAMETRO_INVALIDO`), `401` (`USUARIO_NO_AUTENTICADO`), `403` (`PLAYLIST_PRIVADA`, `ACCESO_DENEGADO`), `404` (`PLAYLIST_NO_ENCONTRADA`, `PRENDA_NO_ESTA_EN_PLAYLIST`), `422` (`PLAYLIST_SIN_PRENDAS`, `DESCRIPCION_MUY_LARGA`, `LIMITE_PRENDAS_PLAYLIST`, `PRENDA_YA_EN_PLAYLIST`), `500` (`ERROR_INTERNO`) | Las consultas `/me` y `/me/guardadas` solo se ejecutan cuando existe sesión activa para no disparar `401` a visitantes públicos. `403` y `404` de detalle muestran la escena `Esta playlist no existe o no está disponible.`; `422` de límite muestra contador `15/15` junto al botón. Cada pestaña (`Todas`, `Destacadas`, `Creadas por ti`, `Guardadas`) tiene estado vacío propio. |
+| **Playlists (admin)** | `/admin/playlists` | `GET /api/v1/playlists/populares`, `PUT /api/v1/playlists/{id}/destacar`, `DELETE /api/v1/playlists/{id}/destacar` | `403` (`ACCESO_DENEGADO`), `404` (`PLAYLIST_NO_ENCONTRADA`), `409` / `422` (`LIMITE_DESTACADAS`), `500` (`ERROR_INTERNO`) | `LIMITE_DESTACADAS` (409 o 422) muestra aviso de límite máximo de 3 playlists destacadas sin revertir el resto de la tabla. |

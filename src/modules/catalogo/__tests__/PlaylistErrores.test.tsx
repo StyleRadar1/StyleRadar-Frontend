@@ -1,7 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError } from '@/modules/core/api/apiClient'
+import { env } from '@/configs/env'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
+import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import PlaylistsPage from '../pages/PlaylistsPage'
 import { playlistService } from '../services/playlistService'
 import { errorDeAgregar, TEXTOS_PLAYLIST } from '../utils/erroresPlaylist'
@@ -140,5 +142,122 @@ describe('Playlists · errores del plan (Cristian)', () => {
     expect(await screen.findByRole('heading', { level: 3, name: /No tienes playlists guardadas/i })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Explorar playlists/i }))
     expect(screen.getByRole('heading', { level: 2, name: /Mi colección privada/i })).toBeInTheDocument()
+  })
+
+  it('muestra la pestaña Destacadas y su estado vacío cuando no hay playlists destacadas', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(playlistService, 'getAll').mockResolvedValue([
+      {
+        id: 'pl-normal',
+        nombre: 'Playlist sin destacar',
+        descripcion: 'Colección de prueba',
+        visibilidad: 'PUBLICA',
+        estilo: 'CASUAL',
+        usuarioId: 'u-1',
+        creador: { id: 'u-1', nombre: 'Valentina R.', email: 'usuario@styleradar.co' },
+        prendas: [],
+        likes: 2,
+        guardados: 0,
+        destacada: false,
+        esGuardada: false,
+        fechaCreacion: '2026-11-21T00:00:00Z',
+      },
+    ])
+    renderAt('/playlists', routes)
+
+    const tabDestacadas = await screen.findByRole('tab', { name: /Destacadas \(0\)/i })
+    await user.click(tabDestacadas)
+
+    expect(await screen.findByRole('heading', { level: 3, name: /Aún no hay playlists destacadas/i })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Explorar playlists/i }))
+    expect(screen.getByRole('heading', { level: 2, name: /Playlist sin destacar/i })).toBeInTheDocument()
+  })
+
+  it('en modo API consulta /api/v1/playlists/me, /me/guardadas y /destacadas cuando hay sesión', async () => {
+    const prevUseMocks = env.useMocks
+    env.useMocks = false
+    tokenStorage.set('jwt-qa-test')
+
+    const spyGet = vi.spyOn(apiClient, 'get').mockImplementation((url) => {
+      if (url === '/api/v1/playlists') {
+        return Promise.resolve({ data: [] } as never)
+      }
+      if (url === '/api/v1/playlists/me') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'pl-priv-me',
+              nombre: 'Privada de /me',
+              descripcion: 'Desde endpoint me',
+              visibilidad: 'PRIVADA',
+              estilo: 'CASUAL',
+              usuarioId: 'u-qa',
+              prendas: [],
+              likes: 0,
+              guardados: 0,
+              fechaCreacion: '2026-11-21',
+            },
+          ],
+        } as never)
+      }
+      if (url === '/api/v1/playlists/me/guardadas') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'pl-saved-me',
+              nombre: 'Guardada de /me/guardadas',
+              descripcion: 'Desde guardadas',
+              visibilidad: 'PUBLICA',
+              estilo: 'URBANO',
+              usuarioId: 'u-otro',
+              prendas: [],
+              likes: 5,
+              guardados: 3,
+              fechaCreacion: '2026-11-21',
+            },
+          ],
+        } as never)
+      }
+      if (url === '/api/v1/playlists/destacadas') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'pl-feat-api',
+              nombre: 'Destacada de /destacadas',
+              descripcion: 'Desde destacadas',
+              visibilidad: 'PUBLICA',
+              estilo: 'FORMAL',
+              usuarioId: 'u-admin',
+              prendas: [],
+              likes: 40,
+              guardados: 12,
+              destacada: true,
+              fechaCreacion: '2026-11-21',
+            },
+          ],
+        } as never)
+      }
+      return Promise.reject(new Error(`Unexpected URL ${url}`))
+    })
+
+    const user = userEvent.setup()
+    try {
+      renderAt('/playlists', routes)
+
+      expect(await screen.findByRole('tab', { name: /Destacadas \(1\)/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /Creadas por ti \(1\)/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /Guardadas \(1\)/i })).toBeInTheDocument()
+
+      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists')
+      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/me')
+      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/me/guardadas')
+      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/destacadas')
+
+      await user.click(screen.getByRole('tab', { name: /Destacadas \(1\)/i }))
+      expect(screen.getByRole('heading', { level: 2, name: /Destacada de \/destacadas/i })).toBeInTheDocument()
+    } finally {
+      env.useMocks = prevUseMocks
+      tokenStorage.clear()
+    }
   })
 })

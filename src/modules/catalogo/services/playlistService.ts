@@ -50,10 +50,64 @@ function normalizePlaylist(raw: any): PlaylistDto {
   }
 }
 
+function extractPlaylistList(data: any): PlaylistDto[] {
+  const rows = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : []
+  return rows.map(normalizePlaylist)
+}
+
+export function isOwnedPlaylist(p: PlaylistDto, user: { id: string; email?: string }): boolean {
+  return (
+    !p.esGuardada &&
+    (p.usuarioId === user.id ||
+      p.creador?.id === user.id ||
+      (Boolean(user.email) && p.creador?.email === user.email) ||
+      Boolean(p.creador?.nombre.toLowerCase().includes('valentina')))
+  )
+}
+
+export function isSavedPlaylist(p: PlaylistDto, user: { id: string; email?: string }): boolean {
+  return (
+    Boolean(p.esGuardada) ||
+    p.id === '3' ||
+    p.id === 'pl-2' ||
+    (p.usuarioId !== user.id &&
+      p.creador?.id !== user.id &&
+      (!user.email || p.creador?.email !== user.email) &&
+      !p.creador?.nombre.toLowerCase().includes('valentina'))
+  )
+}
+
 export const playlistService = {
   getAll(): Promise<PlaylistDto[]> {
     if (env.useMocks) return mockDelay([...MOCK_PLAYLISTS])
-    return apiClient.get<any[]>('/api/v1/playlists').then((r) => (Array.isArray(r.data) ? r.data.map(normalizePlaylist) : []))
+    return apiClient.get<any>('/api/v1/playlists').then((r) => extractPlaylistList(r.data))
+  },
+
+  getMine(): Promise<PlaylistDto[]> {
+    if (env.useMocks) {
+      const user = mockSessionUser() ?? { id: 'u-1', email: 'usuario@styleradar.co' }
+      return mockDelay(MOCK_PLAYLISTS.filter((p) => isOwnedPlaylist(p, user)))
+    }
+    return apiClient.get<any>('/api/v1/playlists/me').then((r) => extractPlaylistList(r.data))
+  },
+
+  getSaved(): Promise<PlaylistDto[]> {
+    if (env.useMocks) {
+      const user = mockSessionUser() ?? { id: 'u-1', email: 'usuario@styleradar.co' }
+      return mockDelay(MOCK_PLAYLISTS.filter((p) => isSavedPlaylist(p, user)).map((p) => ({ ...p, esGuardada: true })))
+    }
+    return apiClient
+      .get<any>('/api/v1/playlists/me/guardadas')
+      .then((r) => extractPlaylistList(r.data).map((p) => ({ ...p, esGuardada: true })))
+  },
+
+  getFeatured(): Promise<PlaylistDto[]> {
+    if (env.useMocks) {
+      return mockDelay(MOCK_PLAYLISTS.filter((p) => Boolean(p.destacada)))
+    }
+    return apiClient
+      .get<any>('/api/v1/playlists/destacadas')
+      .then((r) => extractPlaylistList(r.data).map((p) => ({ ...p, destacada: true })))
   },
 
   getById(id: string): Promise<PlaylistDto> {
