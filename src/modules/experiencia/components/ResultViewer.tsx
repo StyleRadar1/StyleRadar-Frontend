@@ -4,11 +4,13 @@ import { env } from '@/configs/env'
 import { formatCOP } from '@/modules/core/utils/format'
 import type { TryOnJobStatusDto } from '../types/tryon.dto'
 
-const isExpired = (r: TryOnJobStatusDto) => !r.expiresAt || new Date(r.expiresAt).getTime() <= Date.now()
+const isExpired = (r: TryOnJobStatusDto) =>
+  Boolean(r.expiresAt && new Date(r.expiresAt).getTime() <= Date.now())
 
 /**
- * RF-26: muestra el resultado desde la URL temporal (SAS) mientras no venza,
- * junto con comparativa Antes/Después, tarjeta comercial de la prenda y opción de borrado.
+ * RF-26: muestra el resultado desde la URL temporal (SAS) mientras no venza.
+ * El backend real no envía `expiresAt`; en ese caso calculamos ~15 min orientativos
+ * desde `completedAt` y usamos `onError` del `<img>` para detectar enlaces SAS caducados.
  */
 export function ResultViewer({
   result,
@@ -19,6 +21,7 @@ export function ResultViewer({
   garmentSizes,
   originalPhotoUrl,
   onRegenerate,
+  onRefreshLink,
   onOtherGarment,
   onDeletePhoto,
 }: {
@@ -30,12 +33,19 @@ export function ResultViewer({
   garmentSizes?: string[]
   originalPhotoUrl?: string
   onRegenerate: () => void
+  onRefreshLink?: () => void | Promise<void>
   onOtherGarment: () => void
   onDeletePhoto?: () => void
 }) {
   const [expired, setExpired] = useState(() => isExpired(result))
   const [broken, setBroken] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [compareBefore, setCompareBefore] = useState(false)
+
+  useEffect(() => {
+    setExpired(isExpired(result))
+    setBroken(false)
+  }, [result.jobId, result.resultImageUrl, result.resultUrl, result.expiresAt])
 
   useEffect(() => {
     if (expired || !result.expiresAt) return
@@ -44,15 +54,37 @@ export function ResultViewer({
     return () => clearTimeout(t)
   }, [expired, result.expiresAt])
 
-  const until = result.expiresAt ? new Date(result.expiresAt).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }) : ''
+  const untilDate = result.expiresAt
+    ? new Date(result.expiresAt)
+    : result.completedAt
+      ? new Date(new Date(result.completedAt).getTime() + 15 * 60 * 1000)
+      : null
+  const until = untilDate ? untilDate.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }) : ''
+
+  const handleRefresh = async () => {
+    if (!onRefreshLink) return
+    setRefreshing(true)
+    try {
+      await onRefreshLink()
+      setBroken(false)
+      setExpired(false)
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   if (expired || broken) {
     return (
       <div role="alert" className="rounded-2xl border border-[var(--color-warning-border,#d97706)] bg-[var(--color-warning-bg,rgba(217,119,6,0.1))] text-[var(--color-warning-text,#92400e)] p-5">
         <p className="font-semibold">El resultado ya no está disponible</p>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">Por privacidad, el enlace del resultado vence a los pocos minutos. Puedes actualizar o generarlo otra vez con la misma foto.</p>
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">Por privacidad, el enlace del resultado vence a los 15 minutos. Puedes renovar el enlace sin gastar cuota o generar una prueba nueva.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" onClick={onRegenerate} className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-4 py-2 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm">Actualizar / Generar de nuevo</button>
+          {onRefreshLink && (
+            <button type="button" disabled={refreshing} onClick={handleRefresh} className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-4 py-2 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm disabled:opacity-60">
+              {refreshing ? 'Actualizando…' : 'Actualizar enlace'}
+            </button>
+          )}
+          <button type="button" onClick={onRegenerate} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Generar de nuevo</button>
           <button type="button" onClick={onOtherGarment} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Probar otra prenda</button>
         </div>
       </div>
@@ -102,7 +134,9 @@ export function ResultViewer({
               {garmentStore || 'Tienda StyleRadar'}
               {garmentSizes?.length ? ` · Tallas: ${garmentSizes.join(', ')}` : ''}
             </p>
-            <p className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">Disponible hasta las {until}</p>
+            <p className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
+              {until ? `Disponible hasta las ${until}` : 'Enlace temporal disponible por 15 min'}
+            </p>
           </div>
           {typeof garmentPrice === 'number' && (
             <p className="text-sm font-extrabold text-[var(--color-accent)]">{formatCOP(garmentPrice)}</p>

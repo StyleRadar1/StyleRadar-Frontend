@@ -726,13 +726,21 @@ export default function ItemDetailPage() {
                         La prenda no está disponible o no admite prueba virtual.
                       </div>
                     ) : (
-                      <Link
-                        to={`/probador?prenda=${prenda.id}&talla=${tallaSeleccionada || prenda.tallas[0] || 'M'}&color=${encodeURIComponent(prenda.color || 'default')}`}
-                        aria-label="Probarme esta prenda en el probador - Probar en el maniquí"
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/60 px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition backdrop-blur-md shadow-[0_2px_12px_rgba(168,85,247,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
-                      >
-                        <span>✨ Probar en el maniquí</span>
-                      </Link>
+                      <div className="flex flex-col gap-2">
+                        <Link
+                          to={`/probador?prenda=${prenda.id}&talla=${tallaSeleccionada || prenda.tallas[0] || 'M'}&color=${encodeURIComponent(prenda.color || 'default')}`}
+                          aria-label="Probarme esta prenda en el probador - Probar en el maniquí"
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/60 px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition backdrop-blur-md shadow-[0_2px_12px_rgba(168,85,247,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                        >
+                          <span>✨ Probar en el maniquí</span>
+                        </Link>
+                        <Link
+                          to={`/probador/avanzado?prenda=${prenda.id}&talla=${encodeURIComponent(tallaSeleccionada || prenda.tallas[0] || 'M')}`}
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-violeta/40 bg-violeta/15 hover:bg-violeta/25 px-4 py-2 text-xs font-semibold text-[var(--color-text)] transition"
+                        >
+                          <span>📷 Probar con tu foto (IA)</span>
+                        </Link>
+                      </div>
                     )}
 
                     {/* Reserva en tienda (ms-inventario) y alerta de disponibilidad (ms-notificaciones) */}

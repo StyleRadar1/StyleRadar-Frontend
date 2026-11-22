@@ -66,6 +66,20 @@ export const MENSAJES_POR_CODIGO: Record<string, string> = {
   PLAYLIST_PRIVADA: 'No tienes permisos para consultar esta playlist privada.',
   LIMITE_DESTACADAS: 'Límite máximo de 3 playlists destacadas alcanzado.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intenta de nuevo en unos minutos.',
+  // Códigos RFC 7807 de PT8080-VirtualTryOn-Service
+  INVALID_PHOTO: 'La fotografía no cumple los requisitos (JPG o PNG, máx. 5 MB, vertical de cuerpo completo).',
+  PAYLOAD_TOO_LARGE: 'La foto pesa más de 5 MB. Máximo 5 MB.',
+  AI_PROVIDER_TIMEOUT: 'El probador tardó demasiado en responder. Inténtalo de nuevo.',
+  AI_INFERENCE_PERMANENT_ERROR: 'No pudimos procesar esa combinación de foto y prenda. Prueba con otra.',
+  GARMENT_NOT_ELIGIBLE: 'Esta prenda no está disponible o no admite prueba virtual.',
+  TRYON_SELECTION_INCOMPLETE: 'Selecciona una talla disponible antes de continuar.',
+  TRYON_SIZE_UNAVAILABLE: 'La talla seleccionada no está disponible para esta prenda.',
+  BIOMETRIC_PHOTO_NOT_FOUND: 'No encontramos una fotografía frontal activa. Sube tu foto para continuar.',
+  CONSENT_REQUIRED: 'Antes de probar, acepta el uso de tu foto conforme a la Ley 1581.',
+  QUOTA_EXCEEDED: 'Agotaste las pruebas disponibles en tu plan este mes.',
+  ACCESS_DENIED: 'No tienes permiso para acceder a esta prueba.',
+  MISSING_REQUEST_PART: 'Falta adjuntar el archivo de la fotografía.',
+  JOB_NOT_FOUND: 'No encontramos esa prueba.',
 }
 
 /** Devuelve el mensaje amigable asociado a un `code` del backend, si existe en el catálogo. */

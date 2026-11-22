@@ -49,6 +49,7 @@ export function useTryOnJob() {
         failures = 0
         if (s.status === 'COMPLETED') { busy.current = false; setState({ phase: 'completed', jobId, result: s, progress: 100 }); return }
         if (s.status === 'FAILED') { busy.current = false; setState({ phase: 'failed', jobId, result: s }); return }
+        if (s.status === 'CANCELLED') { busy.current = false; setState({ phase: 'cancelled', jobId }); return }
         if (s.status === 'EXPIRED') { busy.current = false; setState({ phase: 'expired', jobId }); return }
         setState({ phase: 'waiting', jobId, progress: s.progress })
       } catch (e) {
