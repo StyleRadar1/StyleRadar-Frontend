@@ -1,6 +1,11 @@
+import { RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
+import type { PaymentMethod, SubscriptionStatus } from './payment.dto'
+
+export { RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE }
+
 /**
  * Planes de StyleRadar (P7) y plan de la persona (P8). El plan real lo entrega ms-pagos-suscripciones
- * (puerto 8400, vía API Gateway). Precios y beneficios provisionales: falta validarlos con Transacciones.
+ * (puerto 8400, vía API Gateway).
  */
 export type PlanUsuario = 'RADAR' | 'RADAR_PLUS'
 export type PlanMockScenario = 'NORMAL' | 'DEGRADADO_POR_PAGO' | 'RENOVACION_PENDIENTE'
@@ -62,16 +67,14 @@ export interface PlanInfo {
   destacado?: boolean
 }
 
-/** Comparación de los planes de personas: [qué, Radar, Radar+] (RF-102, B.14, A.3). */
-export const COMPARATIVA: [string, string, string][] = [
-  ['Precio', '$0', '$14.900 al mes'],
-  ['Tiendas, mapa y playlists', 'Sin límite', 'Sin límite'],
-  ['Probador con maniquí', 'Sí', 'Sí'],
-  ['Probador virtual con foto propia', 'No incluido', `Hasta ${PLAN_LIMITS.probadorFoto} usos`],
-  ['Alertas de disponibilidad activas', 'No incluido', 'Incluidas'],
-  ['Vender y donar en Segunda vida', 'Sí', 'Sí'],
-  ['Chat con tiendas y vendedores', 'Sí', 'Sí'],
+/** Comparación de los planes de personas: [qué, Radar, Radar+] (RF-102: solo 3 filas). */
+export const PLAN_COMPARISON_ROWS: [string, string, string][] = [
+  ['Probador con maniquí', 'Incluido', 'Incluido'],
+  ['Probador con foto propia', 'Sin foto propia', `Máximo ${PLAN_LIMITS.probadorFoto} usos`],
+  ['Alertas de disponibilidad', 'Sin alertas', 'Incluidas'],
 ]
+
+export const COMPARATIVA: [string, string, string][] = PLAN_COMPARISON_ROWS
 
 /** Reglas de negocio de los planes (RF-102, RF-101, RF-103). */
 export const REGLAS: [string, string][] = [
@@ -90,17 +93,14 @@ export const REGLAS: [string, string][] = [
 /** Tabla de precios de los planes (RF-102, A.3, B.14). */
 export const PLANES: PlanInfo[] = [
   { id: 'RADAR', para: 'Personas', nombre: 'Radar', precio: 0, periodo: 'gratis', nota: 'Para descubrir tu estilo en la ciudad',
-    incluye: ['Tiendas, mapa y playlists sin límite', 'Probador con el maniquí', 'Vender y donar en Segunda vida', 'Chat con tiendas y vendedores'] },
-  { id: 'RADAR_PLUS', para: 'Personas', nombre: 'Radar+', precio: 14900, periodo: 'al mes', nota: 'Para probarte la ropa sobre ti y no perderte nada', destacado: true,
-    incluye: ['Todo lo del plan Radar', `Probador con foto propia hasta ${PLAN_LIMITS.probadorFoto} usos`, 'Alertas de disponibilidad de prendas', 'Cancela la renovación cuando quieras'] },
-  { id: 'TIENDA', para: 'Tiendas', nombre: 'Tienda aliada', precio: 89000, periodo: 'al mes', nota: 'Los primeros 30 días son gratis',
+    incluye: ['Probador con maniquí', 'Sin foto propia ni alertas'] },
+  { id: 'RADAR_PLUS', para: 'Personas', nombre: 'Radar+', precio: RADAR_PLUS_PRICE, periodo: 'al mes', nota: 'Para probarte la ropa sobre ti y no perderte nada', destacado: true,
+    incluye: ['Probador con maniquí', `Probador con foto propia (máximo ${PLAN_LIMITS.probadorFoto} usos)`, 'Alertas de disponibilidad'] },
+  { id: 'TIENDA', para: 'Tiendas', nombre: 'Tienda aliada', precio: STORE_SUBSCRIPTION_PRICE, periodo: 'al mes', nota: 'Los primeros 30 días son gratis',
     incluye: ['Tu catálogo visible en el radar y en el mapa', 'Publica en 3 pasos, con inventario por talla', 'Distintivos automáticos: Nueva llegada y Últimas unidades', 'Estadísticas de visitas y mensajes', 'Cancela la renovación cuando quieras'] },
   { id: 'FUNDACION', para: 'Fundaciones', nombre: 'Fundación aliada', precio: 0, periodo: 'siempre', nota: 'Sin costo para las fundaciones verificadas',
     incluye: ['Recibe solicitudes de donación de personas y tiendas', 'Acepta, rechaza y coordina la entrega por mensajes', 'Tu página con misión, horario y lo que más necesitas', 'Estadísticas de lo que llega cada mes'] },
 ]
-
-/** Plan de suscripción de StyleRadar. Tabla provisional del equipo. */
-import type { PaymentMethod, SubscriptionStatus } from './payment.dto'
 
 /** RF-100 y RF-103: suscripcionRadarPlus */
 export interface SuscripcionRadarPlusDto {

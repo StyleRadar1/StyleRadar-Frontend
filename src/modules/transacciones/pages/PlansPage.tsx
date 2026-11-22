@@ -2,11 +2,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { BuyerRenewalStatusCard } from '../components/BuyerRenewalStatusCard'
-import { CancelSubscriptionButton } from '../components/CancelSubscriptionButton'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { isPlanCompatibleWithRole } from '../constants/plansByRole'
-import { COMPARATIVA, PLAN_LABEL, PLANES, REGLAS, type PlanInfo } from '../types/plan.dto'
+import { PLAN_COMPARISON_ROWS, PLAN_LABEL, PLANES, REGLAS, type PlanInfo } from '../types/plan.dto'
 
 const REGISTRO: Record<string, [string, string]> = {
   RADAR: ['/registro', 'Crear cuenta gratis'],
@@ -86,16 +85,9 @@ export default function PlansPage() {
     }
     if (user.role === 'REPRESENTANTE_FUNDACION' && p.id === 'FUNDACION') {
       return (
-        <div className="mt-auto space-y-2">
-          <p className="rounded-xl border border-arena/50 px-5 py-2 text-center text-xs font-semibold text-arena">
-            Tu plan
-          </p>
-          <CancelSubscriptionButton
-            tipo="comprador"
-            renewalEnabled={false}
-            isFreePlan
-          />
-        </div>
+        <p className="mt-auto rounded-xl border border-arena/50 px-5 py-2 text-center text-xs font-semibold text-arena">
+          Tu plan
+        </p>
       )
     }
     return null
@@ -109,12 +101,12 @@ export default function PlansPage() {
         Un plan para cada quien
       </h1>
       <p className="mt-3 max-w-2xl text-[var(--sr-hero-text-muted)]">
-        Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras.
+        Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras
       </p>
 
       {user?.role === 'ADMIN_STYLERADAR' && (
         <div className="mt-6 rounded-2xl border border-white/20 bg-white/[.04] p-6 text-center text-sm text-white/80">
-          Como administrador de StyleRadar no requieres una suscripción comercial. Gestiona la plataforma desde el panel de control.
+          Como administrador de StyleRadar no requieres una suscripción comercial. Gestiona la plataforma desde el panel de control
         </div>
       )}
 
@@ -169,7 +161,7 @@ export default function PlansPage() {
         ))}
       </ul>
       <p className="mt-6 text-sm text-[var(--sr-hero-text-muted)]">
-        Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar.
+        Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar
       </p>
 
       {(!user || comprador) && (
@@ -186,7 +178,7 @@ export default function PlansPage() {
                 </tr>
               </thead>
               <tbody>
-                {COMPARATIVA.map(([que, radar, plus]) => (
+                {PLAN_COMPARISON_ROWS.map(([que, radar, plus]) => (
                   <tr key={que} className="border-t border-white/10">
                     <th scope="row" className="p-4 font-semibold">{que}</th>
                     <td className="p-4 text-white/75">{radar}</td>
@@ -201,7 +193,7 @@ export default function PlansPage() {
 
       <h2 className="mt-14 text-2xl font-bold">Reglas de los planes</h2>
       <p className="mt-2 text-sm text-white/60">
-        Condiciones generales del servicio de suscripciones y transacciones de StyleRadar.
+        Condiciones generales del servicio de suscripciones y transacciones de StyleRadar
       </p>
       <ol className="mt-5 grid gap-3 md:grid-cols-2" aria-label="Reglas de los planes">
         {REGLAS.map(([titulo, texto], i) => (
