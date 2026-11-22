@@ -21,9 +21,64 @@ export interface AdminStoreDto {
   verificacion: Verificacion
   motivoRechazo?: string
   suscripcion: { estado: EstadoSuscripcion; proximo: string; inicio: string }
-  /** Documentos de verificación recibidos. */
-  documentos: { nombre: string; recibido: boolean }[]
+  /** Documentos de verificación recibidos. Con el back real, el RUT trae su enlace (rutPdfUrl). */
+  documentos: { nombre: string; recibido: boolean; url?: string }[]
   catalogo: { publicadas: number; revision: number; agotadas: number; retiradas: number }
+}
+
+/* ── ms-tiendas · SR-RF-62 y anexo de administradores (nombres en inglés, D1) ── */
+
+export type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+/** En el PATCH solo se decide APPROVED o REJECTED; volver a PENDING es con review-request (D14). */
+export type VerificationDecision = Exclude<VerificationStatus, 'PENDING'>
+export const VERIFICACION_DE: Record<VerificationStatus, Verificacion> = { PENDING: 'Pendiente', APPROVED: 'Verificada', REJECTED: 'Rechazada' }
+
+/** Categorías comerciales del almacén y su texto en pantalla. */
+export type StoreCategory = 'CASUAL' | 'FORMAL' | 'SPORTY' | 'VINTAGE' | 'ACCESSORIES'
+export const STORE_CATEGORY_LABEL: Record<StoreCategory, string> = {
+  CASUAL: 'Casual', FORMAL: 'Formal', SPORTY: 'Deportivo', VINTAGE: 'Vintage', ACCESSORIES: 'Accesorios',
+}
+
+/** GET /api/v1/admin/stores/verifications (content[]) y GET /api/v1/admin/stores/{nit}/verification. */
+export interface StoreVerificationDto {
+  nit: string
+  tradeName: string
+  description?: string | null
+  phone?: string | null
+  contactEmail: string
+  latitude?: number | null
+  longitude?: number | null
+  rating?: number | null
+  categories: StoreCategory[]
+  verificationStatus: VerificationStatus
+  verificationDecidedAt?: string | null
+  decisionAdminId?: number | string | null
+  verificationReason?: string | null
+  rutPdfUrl?: string | null
+  legacyUnverified?: boolean
+}
+export interface StoreVerificationPageDto {
+  content: StoreVerificationDto[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  first: boolean
+  last: boolean
+}
+/** PATCH /api/v1/admin/stores/{nit}/verification: solo estos dos campos (FA-07). */
+export interface VerificationDecisionRequestDto { decision: VerificationDecision; reason?: string }
+/** El rechazo exige un motivo de 10 a 1000 caracteres (RN-05). */
+export const MOTIVO_RECHAZO_MIN = 10
+export const MOTIVO_RECHAZO_MAX = 1000
+
+/** Anexo: administrador autorizado de un almacén (GET y PUT /api/v1/admin/stores/{nit}/administrators). */
+export interface StoreAdministratorDto {
+  id: number | string
+  userId: number | string
+  storeNit: string
+  assignedById?: number | string | null
+  assignedAt?: string | null
 }
 
 export type EstadoFundacion = 'Activa' | 'Inactiva'

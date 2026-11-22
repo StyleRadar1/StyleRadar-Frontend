@@ -64,6 +64,20 @@ describe('Admin › Tiendas', () => {
     expect(await screen.findByText('30 sep 2026 + 15 días')).toBeInTheDocument()
   })
 
+  it('asigna administradores del almacén y rechaza cuentas sin rol Tienda (422)', async () => {
+    const user = userEvent.setup()
+    renderAt('/admin/tiendas/luna', [['/admin/tiendas/:id', <AdminStoreDetailPage key="p" />]])
+    const card = await screen.findByRole('region', { name: 'Administradores del almacén' }, T)
+    expect(await within(card).findByText('Cuenta t-1', {}, T)).toBeInTheDocument()
+    await user.type(within(card).getByLabelText('ID de la cuenta de Tienda'), 'u-2')
+    await user.click(within(card).getByRole('button', { name: 'Asignar' }))
+    expect(await within(card).findByText(/Esa cuenta no tiene rol Tienda/)).toBeInTheDocument()
+    await user.clear(within(card).getByLabelText('ID de la cuenta de Tienda'))
+    await user.type(within(card).getByLabelText('ID de la cuenta de Tienda'), 't-9')
+    await user.click(within(card).getByRole('button', { name: 'Asignar' }))
+    expect(await within(card).findByText('Cuenta t-9')).toBeInTheDocument()
+  })
+
   it('impide aprobar sin RUT (422) y explica tienda ya revisada (409)', async () => {
     const user = userEvent.setup()
     const first = renderAt('/admin/tiendas/tweed', [['/admin/tiendas/:id', <AdminStoreDetailPage key="p" />]])

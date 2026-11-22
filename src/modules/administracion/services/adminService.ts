@@ -3,11 +3,15 @@ import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { seedFoundations, seedPlaylists, seedStores } from '../mocks/admin'
-import { MAX_DESTACADAS, interaccion, type AdminFoundationDto, type AdminPlaylistDto, type AdminStoreDto, type FoundationFormDto, type Verificacion } from '../types/admin.dto'
+import {
+  MAX_DESTACADAS, MOTIVO_RECHAZO_MAX, MOTIVO_RECHAZO_MIN, STORE_CATEGORY_LABEL, VERIFICACION_DE, interaccion,
+  type AdminFoundationDto, type AdminPlaylistDto, type AdminStoreDto, type FoundationFormDto, type StoreAdministratorDto,
+  type StoreVerificationDto, type StoreVerificationPageDto, type Verificacion, type VerificationDecisionRequestDto,
+} from '../types/admin.dto'
 import { erroresFundacion } from '../utils/validation'
 
 /** Rutas del API Gateway para el administrador (/api/v1) */
-const API = { tiendas: '/api/v1/admin/almacenes', fundaciones: '/api/v1/admin/fundaciones', playlists: '/api/v1/admin/playlists' }
+const API = { tiendas: '/api/v1/admin/stores', fundaciones: '/api/v1/admin/fundaciones', playlists: '/api/v1/admin/playlists' }
 
 /** Se dispara cuando cambia algo que mueve las insignias de la barra lateral del admin. */
 export const ADMIN_CHANGED = 'sr:admin'
@@ -18,7 +22,7 @@ let fundaciones: AdminFoundationDto[] | null = null
 let playlists: AdminPlaylistDto[] | null = null
 const db = () => ({ tiendas: (tiendas ??= seedStores()), fundaciones: (fundaciones ??= seedFoundations()), playlists: (playlists ??= seedPlaylists()) })
 /** Solo para pruebas: vuelve a los datos iniciales. */
-export const resetAdminMock = () => { tiendas = null; fundaciones = null; playlists = null }
+export const resetAdminMock = () => { tiendas = null; fundaciones = null; playlists = null; administradores = null }
 
 const tienda = (id: string) => {
   const t = db().tiendas.find((x) => x.id === id)
@@ -54,27 +58,74 @@ const validar = (data: FoundationFormDto, selfId?: string, requireCertificado = 
   if (primero) throw new ApiError(duplicated ? 409 : 400, primero, fields)
 }
 
+/** Texto del motivo de rechazo cuando no cumple 10 a 1000 caracteres (RN-05). */
+export const MOTIVO_RECHAZO_TEXTO = 'Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.'
+export const MOTIVO_RECHAZO_LARGO = `El motivo admite hasta ${MOTIVO_RECHAZO_MAX} caracteres.`
+export function errorDeMotivoRechazo(motivo?: string): string {
+  const m = (motivo ?? '').trim()
+  if (m.length < MOTIVO_RECHAZO_MIN) return MOTIVO_RECHAZO_TEXTO
+  if (m.length > MOTIVO_RECHAZO_MAX) return MOTIVO_RECHAZO_LARGO
+  return ''
+}
+
+/**
+ * F-16: la verificación que manda ms-tiendas sobre la ficha de la pantalla.
+ * Suscripción y catálogo son de otros servicios (pagos y catálogo): con el back real llegan vacíos hasta conectarlos.
+ */
+export function aTiendaAdmin(v: StoreVerificationDto): AdminStoreDto {
+  const nit = String(v.nit)
+  return {
+    id: nit,
+    nombre: v.tradeName ?? '',
+    categoria: (v.categories ?? []).map((c) => STORE_CATEGORY_LABEL[c] ?? c).join(', ') || '—',
+    barrio: '—',
+    direccion: '—',
+    telefono: v.phone ?? '',
+    correo: v.contactEmail ?? '',
+    nit,
+    representante: '—',
+    aliadaDesde: '—',
+    verificacion: VERIFICACION_DE[v.verificationStatus] ?? 'Pendiente',
+    motivoRechazo: v.verificationReason ?? undefined,
+    suscripcion: { estado: 'Sin suscripción', proximo: '—', inicio: '—' },
+    documentos: [{ nombre: 'RUT', recibido: !!v.rutPdfUrl, ...(v.rutPdfUrl ? { url: v.rutPdfUrl } : {}) }],
+    catalogo: { publicadas: 0, revision: 0, agotadas: 0, retiradas: 0 },
+  }
+}
+
+/* Datos de prueba de los administradores del almacén: Luna Store la administra la cuenta t-1. */
+let administradores: Record<string, StoreAdministratorDto[]> | null = null
+const admins = () => (administradores ??= { luna: [{ id: 1, userId: 't-1', storeNit: '901.482.337-1', assignedById: 'a-1', assignedAt: '2026-02-15T10:00:00Z' }] })
+
 export const adminStoreService = {
+  /** SR-RF-62: todas las páginas de GET /api/v1/admin/stores/verifications (la tabla filtra y ordena en pantalla). */
   async list(): Promise<AdminStoreDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay(db().tiendas) }
-    return apiClient.get<AdminStoreDto[]>(API.tiendas).then((r) => r.data)
+    const todas: StoreVerificationDto[] = []
+    for (let page = 0; page < 50; page++) {
+      const r = await apiClient.get<StoreVerificationPageDto>(`${API.tiendas}/verifications`, { params: { page, size: 100 } })
+      todas.push(...(r.data?.content ?? []))
+      if (r.data?.last !== false) break
+    }
+    return todas.map(aTiendaAdmin)
   },
+  /** SR-RF-62: detalle con el RUT (GET /api/v1/admin/stores/{nit}/verification). */
   async get(id: string): Promise<AdminStoreDto> {
     if (env.useMocks) { failIfScenario(); return mockDelay(tienda(id)) }
-    return apiClient.get<AdminStoreDto>(`${API.tiendas}/${encodeURIComponent(id)}`).then((r) => r.data)
+    return apiClient.get<StoreVerificationDto>(`${API.tiendas}/${encodeURIComponent(id)}/verification`).then((r) => aTiendaAdmin(r.data))
   },
   /** Aprobar, rechazar (con motivo) o retirar la verificación. Solo una tienda verificada aparece en el radar. */
   async setVerification(id: string, verificacion: Verificacion, motivo?: string): Promise<AdminStoreDto> {
-    if (verificacion === 'Rechazada' && (motivo ?? '').trim().length < 10) {
-      throw new ApiError(400, 'Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.', {
-        motivo: 'Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.',
-      })
-    }
+    const errMotivo = verificacion === 'Rechazada' ? errorDeMotivoRechazo(motivo) : ''
+    if (errMotivo) throw new ApiError(400, errMotivo, { reason: errMotivo })
     if (env.useMocks) {
       failIfScenario('conflicto')
       const t = tienda(id)
       if (t.verificacion === verificacion && verificacion !== 'Pendiente') {
         throw new ApiError(409, 'Esta tienda ya fue revisada.')
+      }
+      if (verificacion === 'Pendiente' && t.verificacion === 'Pendiente') {
+        throw new ApiError(422, 'La tienda ya está pendiente de revisión.', 'UNPROCESSABLE_OPERATION')
       }
       if (verificacion === 'Verificada' && !t.documentos.some((d) => d.nombre.toUpperCase() === 'RUT' && d.recibido)) {
         throw new ApiError(422, 'Falta el RUT para aprobar.')
@@ -83,10 +134,38 @@ export const adminStoreService = {
       t.motivoRechazo = verificacion === 'Rechazada' ? motivo!.trim() : undefined
       return mockDelay(t).then(avisar)
     }
-    const decision = verificacion === 'Verificada' ? 'APROBADO' : verificacion === 'Rechazada' ? 'RECHAZADO' : 'PENDIENTE'
-    return apiClient
-      .patch<AdminStoreDto>(`${API.tiendas}/${encodeURIComponent(id)}/verificacion`, { verificacion, decision, motivo })
-      .then((r) => avisar(r.data))
+    const base = `${API.tiendas}/${encodeURIComponent(id)}/verification`
+    // D14: «Retirar verificación» vuelve a PENDING con review-request; el PATCH solo decide APPROVED o REJECTED.
+    if (verificacion === 'Pendiente') {
+      return apiClient.post<StoreVerificationDto>(`${base}/review-request`).then((r) => avisar(aTiendaAdmin(r.data)))
+    }
+    const body: VerificationDecisionRequestDto = verificacion === 'Verificada'
+      ? { decision: 'APPROVED' }
+      : { decision: 'REJECTED', reason: (motivo ?? '').trim() }
+    return apiClient.patch<StoreVerificationDto>(base, body).then((r) => avisar(aTiendaAdmin(r.data)))
+  },
+
+  /** Anexo · F-24: administradores autorizados del almacén. */
+  async listAdministrators(nit: string): Promise<StoreAdministratorDto[]> {
+    if (env.useMocks) { failIfScenario(); return mockDelay([...(admins()[nit] ?? [])]) }
+    return apiClient.get<StoreAdministratorDto[]>(`${API.tiendas}/${encodeURIComponent(nit)}/administrators`).then((r) => (Array.isArray(r.data) ? r.data : []))
+  },
+  /** Asocia una cuenta con rol Tienda como administradora (idempotente: si ya estaba, no cambia nada). */
+  async assignAdministrator(nit: string, userId: string): Promise<StoreAdministratorDto> {
+    const uid = userId.trim()
+    if (env.useMocks) {
+      failIfScenario('conflicto')
+      tienda(nit)
+      const lista = (admins()[nit] ??= [])
+      const ya = lista.find((a) => String(a.userId) === uid)
+      if (ya) return mockDelay(ya)
+      // Solo con datos de prueba: «u-…» son compradores (422) y «t-…» cuentas de Tienda.
+      if (!uid.startsWith('t-')) throw new ApiError(422, 'Esa cuenta no tiene rol Tienda.', 'UNPROCESSABLE_OPERATION')
+      const nuevo: StoreAdministratorDto = { id: lista.length + 1, userId: uid, storeNit: tienda(nit).nit, assignedById: 'a-1', assignedAt: new Date().toISOString() }
+      lista.push(nuevo)
+      return mockDelay(nuevo, 250)
+    }
+    return apiClient.put<StoreAdministratorDto>(`${API.tiendas}/${encodeURIComponent(nit)}/administrators/${encodeURIComponent(uid)}`).then((r) => r.data)
   },
   /** Extiende 15 días el periodo gratuito. */
   async extendTrial(id: string): Promise<AdminStoreDto> {
@@ -97,7 +176,8 @@ export const adminStoreService = {
       t.suscripcion = { ...t.suscripcion, proximo: `${t.suscripcion.proximo} + 15 días` }
       return mockDelay(t)
     }
-    return apiClient.post<AdminStoreDto>(`${API.tiendas}/${encodeURIComponent(id)}/extender-prueba`, { dias: 15 }).then((r) => r.data)
+    // La suscripción es de pagos, no de ms-tiendas: esta ruta sigue igual hasta que ese equipo la defina.
+    return apiClient.post<AdminStoreDto>(`/api/v1/admin/almacenes/${encodeURIComponent(id)}/extender-prueba`, { dias: 15 }).then((r) => r.data)
   },
 }
 
