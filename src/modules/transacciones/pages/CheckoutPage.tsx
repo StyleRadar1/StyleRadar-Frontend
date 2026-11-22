@@ -14,9 +14,10 @@ import { userPlanService } from '../services/userPlanService'
 import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
 import { PagoRechazado } from '../components/PagoRechazado'
 import { PLAN_CHANGED } from '../services/userPlanService'
+import { isPlanCompatibleWithRole } from '../constants/plansByRole'
 import { avisoDePlan, TEXTOS_PLAN, type AvisoPlan } from '../utils/erroresPlan'
 
-/* ─── Subcomponente: resultado del pago ─── */
+/* ─── Subcomponente: resultado del pago (RF-94: dos momentos) ─── */
 function CheckoutResult() {
   const [params] = useSearchParams()
   const orderId = params.get('orden') ?? 'MOCK_ORDER_OK'
@@ -27,15 +28,49 @@ function CheckoutResult() {
     setLoading(true)
     planService.getCheckoutResult(orderId)
       .then((r) => {
-        // RF-100: solo un pago aprobado activa el plan; si no, la persona conserva el que tenía.
-        if (r.status === 'aprobado' && r.planName === 'Radar+') userPlanService.activatePaid('RADAR_PLUS')
+        // RF-94, RF-100 y RNF-14: solo un pago aprobado activa el plan y no se procesa dos veces la misma orden
+        if (r.status === 'aprobado' && r.planName === 'Radar+') {
+          const processedKey = `sr_processed_order_${orderId}`
+          let alreadyProcessed = false
+          try {
+            alreadyProcessed = sessionStorage.getItem(processedKey) === '1'
+            sessionStorage.setItem(processedKey, '1')
+          } catch { /* sin almacenamiento */ }
+          if (!alreadyProcessed) {
+            userPlanService.activatePaid('RADAR_PLUS')
+          }
+        }
         setResult(r)
       })
       .catch(setError)
       .finally(() => setLoading(false))
   }, [orderId])
 
-  if (loading) return <Loading label="Consultando el estado del pago…" />
+  // Momento 1 (RF-94): pago PENDIENTE mientras Mercado Pago confirma el resultado
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-lg px-4 py-16 text-center" role="status" aria-live="polite">
+        <Badge tone="lavanda">PENDIENTE</Badge>
+        <h2 className="mt-4 text-2xl font-extrabold">Estamos esperando la confirmación de tu pago</h2>
+        <div className="mt-4">
+          <Loading label="Consultando el estado del pago…" />
+        </div>
+      </section>
+    )
+  }
+
+  // 401 (D: RF-94 aviso no validable): se muestra «Tu pago continúa pendiente de confirmación»
+  if (error && errorKind(error) === 'sesion') {
+    return (
+      <section className="mx-auto max-w-lg px-4 py-16 text-center" role="status" aria-live="polite">
+        <Badge tone="lavanda">PENDIENTE</Badge>
+        <h1 className="mt-4 text-3xl font-extrabold">Pago pendiente</h1>
+        <p className="mt-2 text-white/70">Tu pago continúa pendiente de confirmación</p>
+        <Link to="/planes" className="mt-6 inline-block text-sm font-semibold text-arena underline">Ver mis planes</Link>
+      </section>
+    )
+  }
+
   // 404: no hay suscripción ni orden con ese número.
   if (error && errorKind(error) === 'no-existe') {
     return (
@@ -55,7 +90,7 @@ function CheckoutResult() {
     const reintentar = result.planName === 'Tienda aliada' ? '/tienda/suscripcion' : '/suscripcion'
     return (
       <PagoRechazado
-        detalle={<p className="text-xs text-[var(--sr-tx-2)]">{result.planName} · {formatCOP(result.amount)} · cobro $0</p>}
+        detalle={<p className="text-xs text-[var(--sr-tx-2)]">El pago no fue aprobado · {result.planName} · {formatCOP(result.amount)} · cobro $0</p>}
         acciones={<>
           <Link to={reintentar} className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco">Reintentar pago</Link>
           <Link to="/planes" className="rounded-xl border border-[color-mix(in_srgb,var(--sr-tx)_25%,transparent)] px-5 py-3 text-sm font-semibold text-[var(--sr-tx)]">Ver planes</Link>
@@ -66,13 +101,14 @@ function CheckoutResult() {
 
   const icons: Record<string, string> = { aprobado: '✅', pendiente: '⏳', rechazado: '❌' }
   const messages: Record<string, string> = {
-    aprobado: '¡Tu pago fue aprobado! Ya tienes acceso a todos los beneficios de tu plan.',
-    pendiente: 'Tu pago está pendiente. Si elegiste Efecty, acércate a un punto autorizado para completar el pago.',
-    rechazado: 'El pago no fue aprobado. Puedes intentarlo nuevamente.',
+    aprobado: '¡Tu pago fue aprobado! Ya tienes acceso a todos los beneficios de tu plan',
+    pendiente: 'Tu pago continúa pendiente de confirmación',
+    rechazado: 'El pago no fue aprobado',
   }
+  const estadoSuscripcion = result.estadoSuscripcion ?? (result.status === 'aprobado' ? 'ACTIVA' : 'PENDIENTE')
 
   return (
-    <section className="mx-auto max-w-lg px-4 py-16 text-center">
+    <section className="mx-auto max-w-lg px-4 py-16 text-center" aria-live="polite">
       <span className="text-5xl">{icons[result.status]}</span>
       <h1 className="mt-4 text-3xl font-extrabold">{result.status === 'aprobado' ? '¡Listo!' : 'Pago pendiente'}</h1>
       <p role="status" className="mt-2 text-white/70">{messages[result.status]}</p>
@@ -80,13 +116,18 @@ function CheckoutResult() {
         <dl className="grid grid-cols-2 gap-2 text-sm">
           <dt className="text-white/50">Orden</dt><dd className="font-mono">{result.orderId}</dd>
           <dt className="text-white/50">Plan</dt><dd>{result.planName}</dd>
-          <dt className="text-white/50">Monto</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
+          <dt className="text-white/50">Total a pagar</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
           {result.payerEmail && <><dt className="text-white/50">Pagador</dt><dd className="truncate">{result.payerEmail}</dd></>}
-          {result.method && <><dt className="text-white/50">Método</dt><dd>{result.method}</dd></>}
+          <dt className="text-white/50">Método</dt><dd>{result.method ?? 'Mercado Pago'}</dd>
           <dt className="text-white/50">Estado</dt><dd><Badge tone={result.status === 'aprobado' ? 'violeta' : 'arena'}>{result.status}</Badge></dd>
+          <dt className="text-white/50">Suscripción</dt><dd><Badge tone={estadoSuscripcion === 'ACTIVA' ? 'violeta' : 'lavanda'}>{estadoSuscripcion}</Badge></dd>
+          <dt className="text-white/50">Vigencia</dt>
+          <dd className="font-mono text-xs">
+            {result.fechaInicio && result.fechaFin
+              ? `${result.fechaInicio} a ${result.fechaFin}`
+              : 'Pendiente de confirmación'}
+          </dd>
         </dl>
-
-
       </Card>
       <Link to="/planes" className="mt-6 inline-block text-sm font-semibold text-arena underline">Ver mis planes</Link>
     </section>
@@ -126,12 +167,24 @@ function PlanCard({
           </li>
         ))}
       </ul>
+      {plan.price > 0 && (
+        <div className="mt-4 rounded-xl border border-white/15 bg-white/[.04] p-3 text-xs text-white/80">
+          <div className="flex items-center justify-between">
+            <span>Total a pagar</span>
+            <strong className="font-mono text-sm text-arena">{formatCOP(plan.price)}</strong>
+          </div>
+          <div className="mt-1 flex items-center justify-between text-white/60">
+            <span>Método de pago</span>
+            <span>Mercado Pago</span>
+          </div>
+        </div>
+      )}
       <div className="mt-6">
         {isCurrent ? (
           <>
             {plan.id === 'plus' && (
               <p role="status" className="mb-2 text-xs font-semibold text-arena">
-                Ya tienes Radar+ activo.
+                Ya tienes Radar+ activo
               </p>
             )}
             <Button variant="secundario" className="w-full" disabled>Plan actual</Button>
@@ -143,8 +196,9 @@ function PlanCard({
         ) : (
           <PayerEmailForm
             defaultEmail={defaultEmail}
-            submitLabel="Suscribirme"
-            busyLabel="Preparando el pago…"
+            invalidMessage={plan.id === 'plus' ? 'Ingresa un correo electrónico válido para activar Radar+' : undefined}
+            submitLabel="Pagar con Mercado Pago"
+            busyLabel="Redirigiendo a Mercado Pago…"
             busy={busy}
             errorMessage={errorMessage}
             onSubmit={(payerEmail) => onSelect(plan, payerEmail)}
@@ -177,8 +231,20 @@ function PlansSelector() {
   const { plan: userPlan } = useUserPlan(user?.role === 'COMPRADOR')
   const currentPlan = userPlan === 'RADAR_PLUS' ? 'plus' : userPlan === 'RADAR' ? 'free' : null
 
-  // Solo opciones de comprador (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
-  const buyerPlans = plans.filter((p) => p.id === 'free' || p.id === 'plus')
+  // Solo opciones de comprador según PLANS_BY_ROLE (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
+  const buyerPlans = plans.filter((p) => isPlanCompatibleWithRole(p.id, user?.role || 'COMPRADOR'))
+
+  useEffect(() => {
+    if (user && user.role !== 'COMPRADOR') {
+      if (user.role === 'ADMIN_ALMACEN') {
+        navigate('/tienda/suscripcion', { replace: true })
+      } else if (user.role === 'ADMIN_STYLERADAR') {
+        navigate('/admin/pagos', { replace: true })
+      } else {
+        navigate('/planes', { replace: true })
+      }
+    }
+  }, [user, navigate])
 
   const handleSelect = useCallback(async (plan: PlanDto, payerEmail?: string) => {
     if (plan.price === 0) return // Radar es gratis, no requiere checkout
@@ -230,7 +296,7 @@ function PlansSelector() {
         <Badge tone="violeta">Planes</Badge>
         <h1 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Elige tu plan</h1>
         <p className="mx-auto mt-3 max-w-lg text-white/70">
-          Descubre moda local en Bogotá. Empieza gratis o desbloquea todo con Radar+.
+          Descubre moda local en Bogotá. Empieza gratis o desbloquea todo con Radar+
         </p>
       </div>
 

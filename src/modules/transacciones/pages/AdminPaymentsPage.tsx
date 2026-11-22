@@ -1,13 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { Card, Badge, Button } from '@/modules/core/design-system'
+import { useCallback, useMemo, useState } from 'react'
+import { Card, Badge } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
-import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { Aviso, ErrorCampo } from '@/modules/core/components/errores'
+import { Aviso } from '@/modules/core/components/errores'
 import { errorKind } from '@/modules/core/api/errors'
-import { errorDeReembolso, TEXTOS_PAGOS } from '../utils/erroresPagos'
+import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
-import { paymentService, calcRevenue, getRefundableBalance } from '../services/paymentService'
+import { calcRevenue } from '../services/paymentService'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
 import '@/styles/verdelo-dashboard.css'
 
@@ -15,14 +14,12 @@ const STATUS_TONES: Record<PaymentStatus, 'violeta' | 'arena' | 'lavanda'> = {
   aprobado: 'violeta',
   rechazado: 'arena',
   pendiente: 'lavanda',
-  reembolsado: 'arena',
 }
 
 const STATUS_LABELS: Record<PaymentStatus, string> = {
-  aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
-  pendiente: 'Pendiente',
-  reembolsado: 'Reembolsado',
+  aprobado: 'APROBADO',
+  rechazado: 'RECHAZADO',
+  pendiente: 'PENDIENTE',
 }
 
 interface RadarCardItem {
@@ -31,10 +28,9 @@ interface RadarCardItem {
   title: string
   subtitle: string
   holder: string
-  last4: string
-  fullNumber: string
-  expiry: string
-  cvv: string
+  channelCode: string
+  gateway: string
+  currency: string
   gradient: string
   accent: string
   fallbackAmount: number
@@ -48,10 +44,9 @@ const RADAR_CARDS: RadarCardItem[] = [
     title: 'Radar+ Membresía',
     subtitle: 'SUSCRIPCIONES DE USUARIOS',
     holder: 'STYLERADAR BOGOTÁ · B2C',
-    last4: '4819',
-    fullNumber: '5412  7519  3840  4819',
-    expiry: '09/28',
-    cvv: '842',
+    channelCode: 'MP-B2C-01',
+    gateway: 'Mercado Pago',
+    currency: 'COP',
     gradient: 'linear-gradient(135deg, rgba(72, 17, 154, 0.96) 0%, rgba(123, 77, 216, 0.88) 55%, rgba(44, 24, 78, 0.96) 100%)',
     accent: '#E8DCCB',
     fallbackAmount: 447000,
@@ -63,10 +58,9 @@ const RADAR_CARDS: RadarCardItem[] = [
     title: 'Tienda Aliada Pro',
     subtitle: 'PLANES COMERCIALES B2B',
     holder: 'BOUTIQUES VERIFICADAS',
-    last4: '9024',
-    fullNumber: '4539  8812  0041  9024',
-    expiry: '12/28',
-    cvv: '319',
+    channelCode: 'MP-B2B-02',
+    gateway: 'Mercado Pago',
+    currency: 'COP',
     gradient: 'linear-gradient(135deg, rgba(58, 48, 42, 0.96) 0%, rgba(142, 118, 92, 0.88) 52%, rgba(38, 34, 44, 0.98) 100%)',
     accent: '#B9B9CA',
     fallbackAmount: 1780000,
@@ -76,12 +70,11 @@ const RADAR_CARDS: RadarCardItem[] = [
     id: 'card-gateway',
     planKey: 'all',
     title: 'Pasarela Consolidada',
-    subtitle: 'MERCADO PAGO · PSE · TARJETAS',
+    subtitle: 'MERCADO PAGO · PASARELA OFICIAL',
     holder: 'TESORERÍA STYLERADAR',
-    last4: '1107',
-    fullNumber: '4024  0071  9928  1107',
-    expiry: '06/29',
-    cvv: '605',
+    channelCode: 'MP-TOTAL-03',
+    gateway: 'Mercado Pago',
+    currency: 'COP',
     gradient: 'linear-gradient(135deg, rgba(45, 39, 66, 0.97) 0%, rgba(92, 74, 138, 0.9) 55%, rgba(28, 25, 38, 0.98) 100%)',
     accent: '#E8DCCB',
     fallbackAmount: 2227000,
@@ -101,30 +94,21 @@ const BALANCE_SERIES = [
 ]
 
 const FLOW_BARS = [
-  { mes: 'Abr', entradas: 1240000, reembolsos: 120000 },
-  { mes: 'May', entradas: 1490000, reembolsos: 150000 },
-  { mes: 'Jun', entradas: 1420000, reembolsos: 130000 },
-  { mes: 'Jul', entradas: 1850000, reembolsos: 170000 },
-  { mes: 'Ago', entradas: 2120000, reembolsos: 180000 },
-  { mes: 'Sep', entradas: 2380000, reembolsos: 153000 },
+  { mes: 'Abr', entradas: 1240000, pendientes: 120000 },
+  { mes: 'May', entradas: 1490000, pendientes: 150000 },
+  { mes: 'Jun', entradas: 1420000, pendientes: 130000 },
+  { mes: 'Jul', entradas: 1850000, pendientes: 170000 },
+  { mes: 'Ago', entradas: 2120000, pendientes: 180000 },
+  { mes: 'Sep', entradas: 2380000, pendientes: 153000 },
 ]
 
 export default function AdminPaymentsPage() {
   const [filters, setFilters] = useState<PaymentFiltersDto>({})
   const stableFilters = useMemo(() => filters, [filters])
-  const { data: payments, loading, error, reload, setData } = usePayments(stableFilters)
+  const { data: payments, loading, error, reload } = usePayments(stableFilters)
   const [selected, setSelected] = useState<PaymentDto | null>(null)
-  const [refundTarget, setRefundTarget] = useState<PaymentDto | null>(null)
-  const [refundAmount, setRefundAmount] = useState<string>('')
-  const [refundReason, setRefundReason] = useState('')
-  const [refundError, setRefundError] = useState<string | null>(null)
-  const [refunding, setRefunding] = useState(false)
-  const amountInputRef = useRef<HTMLInputElement>(null)
-  const reasonInputRef = useRef<HTMLTextAreaElement>(null)
-  /** Error debajo del campo motivo (400). */
-  const [motivoErr, setMotivoErr] = useState<string | null>(null)
-  /** Aviso de la página: 403 u otro error al reembolsar. */
-  const [avisoPagos, setAvisoPagos] = useState<{ permiso: boolean; texto?: string } | null>(null)
+  /** Aviso de la página: 403 u otro error de permisos. */
+  const [avisoPagos] = useState<{ permiso: boolean; texto?: string } | null>(null)
 
   // Estado de las tarjetas 3D apiladas estilo Verdelo
   const [activeCardIdx, setActiveCardIdx] = useState(0)
@@ -135,21 +119,18 @@ export default function AdminPaymentsPage() {
 
   const statsSummary = useMemo(() => {
     const approved = payments.filter((p) => p.status === 'aprobado')
-    const refunded = payments.filter((p) => p.status === 'reembolsado' || (p.refundedAmount ?? 0) > 0)
+    const rejected = payments.filter((p) => p.status === 'rechazado')
     const pending = payments.filter((p) => p.status === 'pendiente')
     const approvedSum = approved.reduce((acc, p) => acc + p.amount, 0)
-    const refundedSum = payments.reduce(
-      (acc, p) => acc + (p.refundedAmount ?? (p.status === 'reembolsado' ? p.amount : 0)),
-      0,
-    )
+    const pendingSum = pending.reduce((acc, p) => acc + p.amount, 0)
     const plusSum = approved.filter((p) => p.planId === 'plus').reduce((acc, p) => acc + p.amount, 0)
     const storeSum = approved.filter((p) => p.planId === 'store').reduce((acc, p) => acc + p.amount, 0)
     return {
       approvedCount: approved.length,
-      refundedCount: refunded.length,
+      rejectedCount: rejected.length,
       pendingCount: pending.length,
       approvedSum,
-      refundedSum,
+      pendingSum,
       plusSum,
       storeSum,
     }
@@ -159,81 +140,6 @@ export default function AdminPaymentsPage() {
     setFilters((prev) => ({ ...prev, [key]: value || undefined }))
   }, [])
 
-  const openRefundModal = useCallback((payment: PaymentDto) => {
-    const balance = getRefundableBalance(payment)
-    setRefundTarget(payment)
-    setRefundAmount(String(balance))
-    setRefundReason('')
-    setRefundError(null)
-  }, [])
-
-  const handleCancelRefund = useCallback(() => {
-    setRefundTarget(null)
-    setRefundError(null)
-    setMotivoErr(null)
-  }, [])
-
-  const handleRefund = useCallback(async () => {
-    if (!refundTarget) return
-
-    // 400 · reembolso sin motivo: se valida antes de enviar y el mensaje va debajo del campo.
-    if (!refundReason.trim()) {
-      setMotivoErr(TEXTOS_PAGOS.motivo)
-      document.getElementById('refund-motivo')?.focus()
-      reasonInputRef.current?.focus()
-      return
-    }
-
-    const maxRefundable = getRefundableBalance(refundTarget)
-    const numAmount = Number(refundAmount)
-
-    if (!refundAmount.trim() || Number.isNaN(numAmount) || numAmount <= 0) {
-      setRefundError('El monto a reembolsar debe ser mayor que 0.')
-      amountInputRef.current?.focus()
-      return
-    }
-    if (numAmount > maxRefundable) {
-      setRefundError('El monto solicitado supera el saldo disponible para reembolsar.')
-      amountInputRef.current?.focus()
-      return
-    }
-
-    setRefunding(true)
-    setRefundError(null)
-    setMotivoErr(null)
-    setAvisoPagos(null)
-    try {
-      const updated = await paymentService.refund({
-        paymentId: refundTarget.id,
-        amount: numAmount,
-        reason: refundReason.trim(),
-      })
-      setData((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-      setSelected(updated)
-      setRefundTarget(null)
-      setRefundReason('')
-      setRefundAmount('')
-    } catch (e) {
-      const err = errorDeReembolso(e)
-      if (err.tipo === 'motivo') {
-        // El diálogo sigue abierto y el motivo queda como estaba escrito.
-        setMotivoErr(err.texto)
-        document.getElementById('refund-motivo')?.focus()
-        reasonInputRef.current?.focus()
-      } else {
-        setRefundTarget(null)
-        setSelected(null)
-        setAvisoPagos(err.tipo === 'permiso' ? { permiso: true } : { permiso: false, texto: err.texto })
-        setRefundError(
-          e instanceof Error && e.message
-            ? e.message
-            : 'No fue posible procesar el reembolso. Inténtalo nuevamente.',
-        )
-      }
-    } finally {
-      setRefunding(false)
-    }
-  }, [refundTarget, refundAmount, refundReason, setData])
 
   const cycleCard = (dir: 1 | -1) => {
     setFlippedCardId(null)
@@ -274,12 +180,12 @@ export default function AdminPaymentsPage() {
             Resumen financiero · StyleRadar Bogotá
           </p>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight md:text-5xl">Pagos</h1>
-          <p className="mt-1 text-sm text-white/70">Estado de los pagos, pasarelas activas, reintentos y reembolsos.</p>
+          <p className="mt-1 text-sm text-white/70">Estado de los pagos de suscripciones de almacenes y compradores</p>
         </div>
         <Card className="sr-verdelo-panel text-right">
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Ingresos netos</p>
+          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Ingresos aprobados</p>
           <p className="mt-1 text-2xl font-extrabold tabular-nums">{formatCOP(revenue)}</p>
-          <p className="text-xs text-white/55">Aprobados − reembolsos</p>
+          <p className="text-xs text-white/55">Solo pagos aprobados</p>
         </Card>
       </div>
 
@@ -373,7 +279,7 @@ export default function AdminPaymentsPage() {
                       <div className="flex items-end justify-between border-t border-white/15 pt-2.5 text-xs">
                         <div>
                           <p className="font-mono text-xs tracking-[.18em] text-white/90">
-                            •••• •••• •••• {card.last4}
+                            {card.channelCode} · {card.currency}
                           </p>
                           <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-white/65">
                             {card.holder}
@@ -390,11 +296,11 @@ export default function AdminPaymentsPage() {
                       <div className=" -mx-5 mt-1 h-9 bg-black/80" aria-hidden="true" />
                       <div className="space-y-2">
                         <div className="flex items-center justify-between rounded-lg bg-white/10 px-3 py-1.5 font-mono text-xs">
-                          <span className="tracking-widest text-arena">{card.fullNumber}</span>
-                          <span className="rounded bg-violeta px-2 py-0.5 text-[10px] font-bold">CVV {card.cvv}</span>
+                          <span className="tracking-widest text-arena">{card.gateway}</span>
+                          <span className="rounded bg-violeta px-2 py-0.5 text-[10px] font-bold">{card.currency}</span>
                         </div>
                         <div className="flex justify-between text-[11px] text-lavanda">
-                          <span>Vence: <b className="text-blanco">{card.expiry}</b></span>
+                          <span>Canal: <b className="text-blanco">{card.channelCode}</b></span>
                           <span> Meta mensual: <b className="text-arena">{formatCOP(card.targetAmount)}</b></span>
                         </div>
                       </div>
@@ -447,7 +353,7 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
 
-        {/* Columna derecha: Balance Conjunto (arriba) + Entradas y Reembolsos (abajo) */}
+        {/* Columna derecha: Balance Conjunto (arriba) + Cobros aprobados y pendientes (abajo) */}
         <div className="flex flex-col gap-5 lg:col-span-7">
           {/* Panel superior: Balance conjunto con curva brillante y proyección */}
           <div className="sr-verdelo-panel rounded-3xl p-6">
@@ -475,13 +381,13 @@ export default function AdminPaymentsPage() {
               </div>
             </div>
 
-            {/* Píldoras de resumen por periodo (Hoy / Semana / Mes / Año) */}
+            {/* Píldoras de resumen por periodo (Hoy / Semana / Mes / Pendientes) */}
             <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {[
                 { label: 'Hoy', val: formatCOP(Math.round((revenue || 2227000) * 0.08)), delta: '+4.2%', up: true },
                 { label: 'Esta semana', val: formatCOP(Math.round((revenue || 2227000) * 0.32)), delta: '+9.1%', up: true },
                 { label: 'Este mes', val: formatCOP(revenue || 2227000), delta: '+14.8%', up: true },
-                { label: 'Reembolsos', val: formatCOP(statsSummary.refundedSum), delta: `${statsSummary.refundedCount} casos`, up: false },
+                { label: 'Pendientes', val: formatCOP(statsSummary.pendingSum), delta: `${statsSummary.pendingCount} pagos`, up: false },
               ].map((pill) => (
                 <div
                   key={pill.label}
@@ -581,15 +487,22 @@ export default function AdminPaymentsPage() {
                   <span key={b.mes}>{b.mes}</span>
                 ))}
               </div>
+              <ul className="sr-only" aria-label="Resumen textual de evolución de ingresos">
+                {BALANCE_SERIES.map((b) => (
+                  <li key={b.mes}>
+                    {b.mes}: {formatCOP(b.real ?? b.proyeccion ?? 0)} ({b.real !== null ? 'Real' : 'Proyección'})
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Panel inferior: Entradas y reembolsos (barras tipo cápsula como "Money in & out" en Verdelo) */}
+          {/* Panel inferior: Cobros aprobados y pendientes */}
           <div className="sr-verdelo-panel rounded-3xl p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h2 className="text-base font-bold text-blanco">Entradas y reembolsos</h2>
-                <p className="text-xs text-lavanda/75">Comparativa mensual de cobros aprobados frente a devoluciones.</p>
+                <h2 className="text-base font-bold text-blanco">Cobros aprobados y pendientes</h2>
+                <p className="text-xs text-lavanda/75">Comparativa mensual de suscripciones aprobadas y en espera</p>
               </div>
               <div className="flex items-center gap-4 text-xs text-lavanda">
                 <span className="flex items-center gap-1.5">
@@ -598,7 +511,7 @@ export default function AdminPaymentsPage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <i aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-arena" />
-                  Reembolsos ({statsSummary.refundedCount})
+                  Pendientes ({statsSummary.pendingCount})
                 </span>
               </div>
             </div>
@@ -606,7 +519,7 @@ export default function AdminPaymentsPage() {
             <div className="mt-4 grid grid-cols-6 gap-3">
               {FLOW_BARS.map((bar) => {
                 const inPct = Math.round((bar.entradas / 2500000) * 100)
-                const outPct = Math.max(12, Math.round((bar.reembolsos / 600000) * 100))
+                const pendingPct = Math.max(12, Math.round((bar.pendientes / 600000) * 100))
                 return (
                   <div key={bar.mes} className="flex flex-col items-center">
                     <div className="flex h-24 w-full items-end justify-center gap-1.5 rounded-2xl bg-white/[0.03] px-2 py-2">
@@ -620,8 +533,8 @@ export default function AdminPaymentsPage() {
                       <div className="flex h-full w-3 items-end rounded-full bg-white/[0.06] sm:w-3.5">
                         <span
                           className="w-full rounded-full bg-gradient-to-t from-arena/60 to-arena"
-                          style={{ height: `${outPct}%` }}
-                          title={`Reembolsos ${bar.mes}: ${formatCOP(bar.reembolsos)}`}
+                          style={{ height: `${pendingPct}%` }}
+                          title={`Pendientes ${bar.mes}: ${formatCOP(bar.pendientes)}`}
                         />
                       </div>
                     </div>
@@ -634,32 +547,32 @@ export default function AdminPaymentsPage() {
         </div>
       </div>
 
-      {/* Filtros */}
+      {/* Filtros (RF-75: filtro opcional por estado PENDIENTE, APROBADO, RECHAZADO) */}
       <Card className="sr-verdelo-panel mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <input
           type="search"
-          placeholder="Buscar por usuario o ID…"
+          placeholder="Buscar por pagoId, suscripcionId o suscriptorId…"
           className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/40 focus:border-violeta-claro"
           onChange={(e) => handleFilter('search', e.target.value)}
         />
         <select
+          aria-label="Filtrar por estado"
           className="rounded-xl border border-white/15 bg-[#1b1824] px-3 py-2 text-sm text-blanco"
           onChange={(e) => handleFilter('status', e.target.value)}
           defaultValue=""
         >
           <option value="">Todos los estados</option>
-          <option value="aprobado">Aprobado</option>
-          <option value="rechazado">Rechazado</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="reembolsado">Reembolsado</option>
+          <option value="pendiente">PENDIENTE</option>
+          <option value="aprobado">APROBADO</option>
+          <option value="rechazado">RECHAZADO</option>
         </select>
         <select
+          aria-label="Filtrar por plan"
           className="rounded-xl border border-white/15 bg-[#1b1824] px-3 py-2 text-sm text-blanco"
           onChange={(e) => handleFilter('planId', e.target.value)}
           defaultValue=""
         >
           <option value="">Todos los planes</option>
-          <option value="free">Radar</option>
           <option value="plus">Radar+</option>
           <option value="store">Tienda aliada</option>
         </select>
@@ -685,7 +598,7 @@ export default function AdminPaymentsPage() {
         </div>
       )}
 
-      {/* Tabla */}
+      {/* Tabla (RF-75: pagoId, suscripcionId, suscriptorId sin correos ni nombres, valor (COP), estado, fecha, referencia) */}
       {loading ? (
         <Loading label="Cargando pagos…" />
       ) : error && errorKind(error) === 'permiso' ? (
@@ -693,203 +606,82 @@ export default function AdminPaymentsPage() {
       ) : error ? (
         <div className="mt-6"><ErrorState error={error} onRetry={reload} /></div>
       ) : payments.length === 0 ? (
-        <div className="mt-6"><EmptyState title="No hay pagos">Ajusta los filtros o revisa más tarde.</EmptyState></div>
+        <div className="mt-6"><EmptyState title="No hay pagos de suscripciones registrados">Ajusta los filtros o revisa más tarde</EmptyState></div>
       ) : (
         <div className="sr-verdelo-panel mt-6 overflow-x-auto rounded-3xl p-5">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-[.16em] text-arena">
-                <th className="pb-3 pr-4">ID</th>
-                <th className="pb-3 pr-4">Usuario</th>
-                <th className="pb-3 pr-4">Plan</th>
-                <th className="pb-3 pr-4 text-right">Monto</th>
-                <th className="pb-3 pr-4">Método</th>
+                <th className="pb-3 pr-4">pagoId</th>
+                <th className="pb-3 pr-4">suscripcionId</th>
+                <th className="pb-3 pr-4">suscriptorId</th>
+                <th className="pb-3 pr-4 text-right">Valor (COP)</th>
+                <th className="pb-3 pr-4">Estado</th>
                 <th className="pb-3 pr-4">Fecha</th>
-                <th className="pb-3">Estado</th>
+                <th className="pb-3 pr-4">Referencia</th>
+                <th className="pb-3">Método</th>
               </tr>
             </thead>
             <tbody>
-              {payments.map((p) => (
-                <tr
-                  key={p.id}
-                  className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.06]"
-                  onClick={() => setSelected(p)}
-                >
-                  <td className="py-3.5 pr-4 font-mono text-xs text-lavanda">{p.id}</td>
-                  <td className="py-3.5 pr-4 font-semibold text-blanco">{p.userName}</td>
-                  <td className="py-3.5 pr-4 text-white/80">{p.planName}</td>
-                  <td className="py-3.5 pr-4 text-right font-mono font-bold text-arena">
-                    <div>{formatCOP(p.amount)}</div>
-                    {(p.refundedAmount ?? 0) > 0 && (
-                      <div className="text-[0.6875rem] font-normal text-[#ff8a8a]">
-                        Reembolsado: {formatCOP(p.refundedAmount ?? 0)} / {formatCOP(p.amount)}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-3.5 pr-4 text-white/75">{p.method}</td>
-                  <td className="py-3.5 pr-4 text-white/70">{p.date}</td>
-                  <td className="py-3.5">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Badge tone={STATUS_TONES[p.status]}>{STATUS_LABELS[p.status]}</Badge>
-                      {p.status === 'aprobado' && (p.refundedAmount ?? 0) > 0 && (p.refundedAmount ?? 0) < p.amount && (
-                        <Badge tone="arena">Reembolso parcial</Badge>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {payments.map((p) => {
+                const pagoId = p.pagoId ?? p.id
+                const suscripcionId = p.suscripcionId ?? `SUB-${p.id}`
+                const suscriptorId = p.suscriptorId ?? p.userId
+                const valor = p.valor ?? p.amount
+                const fecha = p.fecha ?? p.date
+                const referencia = p.referencia ?? p.mpReference ?? pagoId
+                return (
+                  <tr
+                    key={pagoId}
+                    className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.06]"
+                    onClick={() => setSelected(p)}
+                  >
+                    <td className="py-3.5 pr-4 font-mono text-xs text-lavanda">{pagoId}</td>
+                    <td className="py-3.5 pr-4 font-mono text-xs text-white/80">{suscripcionId}</td>
+                    <td className="py-3.5 pr-4 font-mono text-xs font-semibold text-blanco">{suscriptorId}</td>
+                    <td className="py-3.5 pr-4 text-right font-mono font-bold text-arena">
+                      {formatCOP(valor)} COP
+                    </td>
+                    <td className="py-3.5 pr-4">
+                      <Badge tone={STATUS_TONES[p.status]}>{p.estado ?? STATUS_LABELS[p.status]}</Badge>
+                    </td>
+                    <td className="py-3.5 pr-4 text-white/70">{fecha}</td>
+                    <td className="py-3.5 pr-4 font-mono text-xs text-white/75">{referencia}</td>
+                    <td className="py-3.5 text-white/75">Mercado Pago</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Detalle del pago (panel lateral) */}
+      {/* Detalle del pago (panel lateral, sin correos ni nombres del suscriptor según RF-75) */}
       {selected && (
         <div className="fixed inset-0 z-40 flex justify-end bg-black/60 backdrop-blur-sm" onClick={() => setSelected(null)}>
           <div className="sr-verdelo-panel h-full w-full max-w-md overflow-y-auto p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
-              <h2 className="text-xl font-bold">Pago {selected.id}</h2>
+              <h2 className="text-xl font-bold">Pago {selected.pagoId ?? selected.id}</h2>
               <button type="button" className="text-2xl text-white/50 hover:text-white" onClick={() => setSelected(null)}>×</button>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <Badge tone={STATUS_TONES[selected.status]}>{STATUS_LABELS[selected.status]}</Badge>
-              {selected.status === 'aprobado' && (selected.refundedAmount ?? 0) > 0 && (selected.refundedAmount ?? 0) < selected.amount && (
-                <Badge tone="arena">Reembolso parcial</Badge>
-              )}
+              <Badge tone={STATUS_TONES[selected.status]}>{selected.estado ?? STATUS_LABELS[selected.status]}</Badge>
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div><dt className="text-white/50">Usuario</dt><dd className="font-semibold">{selected.userName}</dd></div>
-              <div><dt className="text-white/50">Correo</dt><dd>{selected.userEmail}</dd></div>
+              <div><dt className="text-white/50">pagoId</dt><dd className="font-mono font-semibold">{selected.pagoId ?? selected.id}</dd></div>
+              <div><dt className="text-white/50">suscripcionId</dt><dd className="font-mono">{selected.suscripcionId ?? `SUB-${selected.id}`}</dd></div>
+              <div><dt className="text-white/50">suscriptorId</dt><dd className="font-mono font-semibold">{selected.suscriptorId ?? selected.userId}</dd></div>
               <div><dt className="text-white/50">Plan</dt><dd>{selected.planName}</dd></div>
-              <div><dt className="text-white/50">Monto total</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.amount)}</dd></div>
-              <div><dt className="text-white/50">Método</dt><dd>{selected.method}</dd></div>
-              <div><dt className="text-white/50">Fecha</dt><dd>{selected.date}</dd></div>
-              {((selected.refundedAmount ?? 0) > 0 || selected.status === 'reembolsado') && (
-                <>
-                  <div>
-                    <dt className="text-white/50">Monto reembolsado</dt>
-                    <dd className="font-mono font-semibold text-[#ff8a8a]">
-                      {formatCOP(selected.refundedAmount ?? selected.amount)} / {formatCOP(selected.amount)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-white/50">Saldo reembolsable</dt>
-                    <dd className="font-mono font-semibold">{formatCOP(getRefundableBalance(selected))}</dd>
-                  </div>
-                </>
-              )}
-              {selected.refundReason && (
-                <>
-                  <div className="col-span-2"><dt className="text-white/50">Motivo del reembolso</dt><dd className="text-[#ff8a8a]">{selected.refundReason}</dd></div>
-                  <div><dt className="text-white/50">Fecha de reembolso</dt><dd>{selected.refundDate}</dd></div>
-                </>
-              )}
+              <div><dt className="text-white/50">Valor (COP)</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.valor ?? selected.amount)} COP</dd></div>
+              <div><dt className="text-white/50">Estado</dt><dd>{selected.estado ?? STATUS_LABELS[selected.status]}</dd></div>
+              <div><dt className="text-white/50">Fecha</dt><dd>{selected.fecha ?? selected.date}</dd></div>
+              <div><dt className="text-white/50">Referencia</dt><dd className="font-mono">{selected.referencia ?? selected.mpReference ?? selected.id}</dd></div>
+              <div><dt className="text-white/50">Método</dt><dd>Mercado Pago</dd></div>
             </dl>
-            {selected.status === 'aprobado' && getRefundableBalance(selected) > 0 && (
-              <Button
-                variant="secundario"
-                className="mt-6 w-full border-[#c0392b] text-[#ff8a8a]"
-                onClick={() => { openRefundModal(selected); setMotivoErr(null) }}
-              >
-                {(selected.refundedAmount ?? 0) > 0 ? 'Reembolsar saldo restante' : 'Reembolsar'}
-              </Button>
-            )}
           </div>
         </div>
       )}
 
-      {/* Diálogo de reembolso (RF-98: total o parcial) */}
-      <ConfirmDialog
-        open={!!refundTarget}
-        title="¿Reembolsar este pago?"
-        confirmLabel="Confirmar reembolso"
-        danger
-        busy={refunding}
-        onConfirm={handleRefund}
-        onCancel={handleCancelRefund}
-      >
-        {refundTarget && (
-          <div className="space-y-3 text-left">
-            <p className="text-sm">
-              Pago <strong>{refundTarget.id}</strong> por <strong>{formatCOP(refundTarget.amount)}</strong> a {refundTarget.userName}.
-              {(refundTarget.refundedAmount ?? 0) > 0 && (
-                <span>
-                  {' '}Ya reembolsado: <strong>{formatCOP(refundTarget.refundedAmount ?? 0)}</strong>.
-                </span>
-              )}
-              {' '}Saldo reembolsable disponible: <strong>{formatCOP(getRefundableBalance(refundTarget))}</strong>.
-            </p>
-
-            <div>
-              <label htmlFor="refund-motivo" className="block text-sm font-semibold">
-                Motivo <span aria-hidden="true" className="text-[#ff8a8a]">*</span>
-              </label>
-              <textarea
-                ref={reasonInputRef}
-                id="refund-motivo"
-                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none focus:border-violeta aria-[invalid=true]:border-[var(--sr-bad)]"
-                rows={3}
-                value={refundReason}
-                onChange={(e) => {
-                  setRefundReason(e.target.value)
-                  if (motivoErr && e.target.value.trim()) setMotivoErr(null)
-                  if (refundError) setRefundError(null)
-                }}
-                placeholder="Describe por qué se reembolsa este pago…"
-                required
-                aria-invalid={!!motivoErr}
-                aria-describedby={motivoErr ? 'refund-motivo-err' : undefined}
-              />
-              {motivoErr && (
-                <div className="mt-1.5">
-                  <ErrorCampo id="refund-motivo">{motivoErr}</ErrorCampo>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="refund-amount-input" className="block text-sm font-semibold">
-                Monto a reembolsar <span className="text-[#ff8a8a]">*</span>
-              </label>
-              <input
-                ref={amountInputRef}
-                id="refund-amount-input"
-                type="number"
-                min={1}
-                max={getRefundableBalance(refundTarget)}
-                step={100}
-                value={refundAmount}
-                onChange={(e) => {
-                  setRefundAmount(e.target.value)
-                  if (refundError) setRefundError(null)
-                }}
-                aria-invalid={
-                  !refundAmount.trim() ||
-                  Number(refundAmount) <= 0 ||
-                  Number(refundAmount) > getRefundableBalance(refundTarget)
-                }
-                className="mt-1 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 font-mono text-sm outline-none focus:border-violeta"
-              />
-              {refundAmount.trim() !== '' && Number(refundAmount) <= 0 && (
-                <p role="alert" className="mt-1 text-xs font-semibold text-[#ff8a8a]">
-                  El monto a reembolsar debe ser mayor que 0.
-                </p>
-              )}
-              {Number(refundAmount) > getRefundableBalance(refundTarget) && (
-                <p role="alert" className="mt-1 text-xs font-semibold text-[#ff8a8a]">
-                  El monto solicitado supera el saldo disponible para reembolsar.
-                </p>
-              )}
-            </div>
-
-            {refundError && !motivoErr && (
-              <p role="alert" aria-live="assertive" className="rounded-xl bg-[#ff8a8a]/15 p-2.5 text-xs font-semibold text-[#ffb4b4]">
-                {refundError}
-              </p>
-            )}
-          </div>
-        )}
-      </ConfirmDialog>
     </section>
   )
 }

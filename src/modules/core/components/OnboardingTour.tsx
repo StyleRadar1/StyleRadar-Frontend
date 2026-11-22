@@ -37,7 +37,7 @@ export const DEFAULT_TOUR_STEPS: TourStep[] = [
     targetSelector: '[data-tour="pendiente"]',
     badge: '05 / 06 · Continuar',
     title: 'Sigue donde quedaste',
-    desc: 'Retoma fácilmente tu último look armado en el probador, tus playlists en edición o tus prendas favoritas de la wishlist.',
+    desc: 'Retoma fácilmente tu último look armado en el probador o tus playlists en edición',
   },
   {
     targetSelector: '[data-tour="novedades"]',

@@ -100,9 +100,9 @@ export default function TryOnPage() {
     loadHistory()
   }, [loadQuotas, loadConsent, loadHistory])
 
-  // Límite de cuotas mensual
+  // Límite de cuotas mensual (RF-102: 30 usos en Radar+)
   const limitReached =
-    (isBuyer && userPlan === 'RADAR' && tryOnUses >= PLAN_LIMITS.probadorFoto) ||
+    (isBuyer && userPlan === 'RADAR_PLUS' && tryOnUses >= PLAN_LIMITS.probadorFoto) ||
     (quotas !== null && quotas.remainingCount <= 0)
 
   // La URL temporal de la foto se libera al salir de la pantalla.
@@ -305,18 +305,18 @@ export default function TryOnPage() {
               {isBuyer && (
                 <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
                   {userPlan === 'RADAR_PLUS'
-                    ? 'Probador con foto propia · Sin límite (Radar+)'
-                    : `Saldo: ${quotas?.remainingCount ?? PLAN_LIMITS.probadorFoto - tryOnUses} pruebas`}
+                    ? `Usos disponibles del probador con foto propia: ${Math.max(0, PLAN_LIMITS.probadorFoto - tryOnUses)}/${PLAN_LIMITS.probadorFoto}`
+                    : 'Probador con maniquí (Radar)'}
                 </span>
               )}
             </div>
             {limitReached && (
               <p role="alert" className="mt-3 rounded-xl border border-[var(--color-danger-border,#ff8a8a)] bg-[var(--color-danger-bg,rgba(220,38,38,0.12))] p-3 text-xs font-semibold text-[var(--color-danger-text,#ff8a8a)]">
-                Alcanzaste el límite de pruebas del probador virtual de tu periodo mensual. Pásate a Radar+ para continuar probando prendas sin límite.
+                Alcanzaste el límite de {PLAN_LIMITS.probadorFoto} usos del probador con foto propia
               </p>
             )}
             <div className="mt-4">
-              <PlanGate title="Pruébate la ropa sobre tu foto con Radar+" text="Con el plan Radar usas el maniquí. Radar+ te deja subir tu foto de cuerpo entero y ver las prendas sobre ti.">
+              <PlanGate title="Pruébate la ropa sobre tu foto con Radar+" text="Con el plan Radar usas el maniquí. Radar+ te deja subir tu foto de cuerpo entero y ver las prendas sobre ti">
                 <PhotoPicker
                   photo={photo}
                   onUploaded={(p) => {

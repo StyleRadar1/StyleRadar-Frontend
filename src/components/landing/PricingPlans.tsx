@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { pricingPlans } from '@/data/landingData'
+import { formatCOP } from '@/modules/core/utils/format'
+import { RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE } from '@/modules/transacciones/constants/plansByRole'
+import { PLAN_COMPARISON_ROWS } from '@/modules/transacciones/types/plan.dto'
 
 interface PricingPlansProps {
   onOpenRegister?: () => void
@@ -9,7 +12,30 @@ interface PricingPlansProps {
 export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
   const [filterAudience, setFilterAudience] = useState<'TODOS' | 'PERSONAS' | 'NEGOCIOS'>('TODOS')
 
-  const filteredPlans = pricingPlans.filter((plan) => {
+  const normalizedPlans = pricingPlans.map((plan) => {
+    if (plan.name === 'Radar') {
+      return {
+        ...plan,
+        items: PLAN_COMPARISON_ROWS.map(([que, radar]) => `${que}: ${radar}`),
+      }
+    }
+    if (plan.name === 'Radar+') {
+      return {
+        ...plan,
+        price: formatCOP(RADAR_PLUS_PRICE),
+        items: PLAN_COMPARISON_ROWS.map(([que, , plus]) => `${que}: ${plus}`),
+      }
+    }
+    if (plan.name === 'Tienda aliada') {
+      return {
+        ...plan,
+        price: formatCOP(STORE_SUBSCRIPTION_PRICE),
+      }
+    }
+    return plan
+  })
+
+  const filteredPlans = normalizedPlans.filter((plan) => {
     if (filterAudience === 'PERSONAS') return plan.audience === 'Personas'
     if (filterAudience === 'NEGOCIOS') return plan.audience === 'Tiendas' || plan.audience === 'Fundaciones'
     return true

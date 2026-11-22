@@ -14,11 +14,12 @@ beforeEach(() => {
 const slow = { timeout: 4000 }
 
 describe('suscripción de la tienda (RF-67, RF-68)', () => {
-  it('en el periodo gratuito muestra el precio y ofrece pagar, sin pagos todavía', async () => {
+  it('en estado PENDIENTE muestra el precio y ofrece pagar, sin pagos todavía y sin botón de cancelar', async () => {
     render(<StoreSubscriptionPage />)
-    expect(await screen.findByText('Periodo gratuito')).toBeInTheDocument()
+    expect(await screen.findByText('Pendiente')).toBeInTheDocument()
     expect(screen.getByText(/\/ mes/).closest('p')).toHaveTextContent(/89\.000/)
     expect(screen.getByRole('button', { name: 'Pagar y activar suscripción' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: 'Cancelar suscripción' })).not.toBeInTheDocument()
     expect(screen.getByText('Aún no tienes pagos')).toBeInTheDocument()
   })
 
@@ -26,45 +27,46 @@ describe('suscripción de la tienda (RF-67, RF-68)', () => {
     const user = userEvent.setup()
     render(<StoreSubscriptionPage />)
     await user.click(await screen.findByRole('button', { name: 'Pagar y activar suscripción' }))
-    expect(await screen.findByText('¡Pago aprobado!', undefined, slow)).toBeInTheDocument()
+    expect(await screen.findByText('Tu suscripción fue reactivada', undefined, slow)).toBeInTheDocument()
     expect(await screen.findByText('Activa', undefined, slow)).toBeInTheDocument()
     const tabla = screen.getByRole('table', { name: 'Historial de pagos' })
     expect(within(tabla).getByText(/Aprobado/)).toBeInTheDocument()
     expect(within(tabla).getByText(/89\.000/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Pagar y activar suscripción' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar suscripción' })).toBeInTheDocument()
   })
 
   it('un pago rechazado avisa y no activa la suscripción', async () => {
     const user = userEvent.setup()
     vi.spyOn(storeSubscriptionService, 'pay').mockResolvedValue({
-      result: { orderId: 'MOCK_STORE_FAIL', status: 'rechazado', planName: 'Tienda aliada', amount: 89_000, method: 'PSE' },
+      result: { orderId: 'MOCK_STORE_FAIL', status: 'rechazado', planName: 'Tienda aliada', amount: 89_000, method: 'Mercado Pago' },
     })
     render(<StoreSubscriptionPage />)
     await user.click(await screen.findByRole('button', { name: 'Pagar y activar suscripción' }))
     expect(await screen.findByRole('alert', undefined, slow)).toHaveTextContent('La suscripción no se activó')
-    expect(screen.getByText('Periodo gratuito')).toBeInTheDocument()
+    expect(screen.getByText('Pendiente')).toBeInTheDocument()
   })
 
-  it('cancelar la renovación pide confirmación y deja la suscripción activa hasta el fin del periodo', async () => {
+  it('cancelar la suscripción pide confirmación y deja la suscripción activa hasta el fin del periodo', async () => {
     const user = userEvent.setup()
     await storeSubscriptionService.pay()
     render(<StoreSubscriptionPage />)
-    await user.click(await screen.findByRole('button', { name: 'Cancelar renovación' }))
-    const dialogo = screen.getByRole('dialog', { name: '¿Cancelar la renovación?' })
-    expect(dialogo).toHaveTextContent('no se devuelve el tiempo restante')
-    await user.click(within(dialogo).getByRole('button', { name: 'Sí, cancelar renovación' }))
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancelar renovación' })).not.toBeInTheDocument(), slow)
+    await user.click(await screen.findByRole('button', { name: 'Cancelar suscripción' }))
+    const dialogo = screen.getByRole('dialog', { name: '¿Cancelar suscripción?' })
+    expect(dialogo).toHaveTextContent('No hay devolución por el tiempo restante')
+    await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancelar suscripción' })).not.toBeInTheDocument(), slow)
     expect(screen.getByText('Activa')).toBeInTheDocument()
   })
 
-  it('"Mantener suscripción" cierra el diálogo sin cambiar nada', async () => {
+  it('"Conservar suscripción" cierra el diálogo sin cambiar nada', async () => {
     const user = userEvent.setup()
     await storeSubscriptionService.pay()
     render(<StoreSubscriptionPage />)
-    await user.click(await screen.findByRole('button', { name: 'Cancelar renovación' }))
-    await user.click(screen.getByRole('button', { name: 'Mantener suscripción' }))
+    await user.click(await screen.findByRole('button', { name: 'Cancelar suscripción' }))
+    await user.click(screen.getByRole('button', { name: 'Conservar suscripción' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Cancelar renovación' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar suscripción' })).toBeInTheDocument()
   })
 })
 
@@ -75,7 +77,7 @@ describe('reglas del servicio simulado', () => {
     const pend = await storeSubscriptionService.pay('MOCK_STORE_PENDING')
     expect(pend.result?.status).toBe('pendiente')
     const { subscription, payments } = await storeSubscriptionService.get()
-    expect(subscription.status).toBe('PRUEBA')
+    expect(subscription.status).toBe('PENDIENTE')
     expect(payments.map((p) => p.status)).toEqual(['pendiente', 'rechazado'])
   })
 

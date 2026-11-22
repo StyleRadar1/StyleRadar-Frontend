@@ -7,7 +7,7 @@ import {
 } from '../services/storeSubscriptionService'
 import type { StoreSubscriptionStatus } from '../types/storeSubscription.dto'
 
-export const STORE_CATALOG_SUSPENDED_MSG = 'Tu catálogo se encuentra suspendido por falta de pago.'
+export const STORE_CATALOG_SUSPENDED_MSG = 'Tu catálogo se encuentra suspendido por falta de pago'
 
 interface StoreSuspendedBannerProps {
   /** Estado explícito de la suscripción si el padre ya lo cargó. */

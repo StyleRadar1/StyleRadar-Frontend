@@ -1,11 +1,12 @@
 import { useCallback, useContext, useState } from 'react'
 import { Button } from '@/modules/core/design-system'
-import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
+import { CancelSubscriptionButton } from '../components/CancelSubscriptionButton'
 import { PayerEmailForm } from '../components/PayerEmailForm'
 import { StoreSuspendedBanner } from '../components/StoreSuspendedBanner'
+import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
@@ -14,10 +15,9 @@ import type { StoreSubscriptionStatus } from '../types/storeSubscription.dto'
 import './StoreSubscriptionPage.css'
 
 const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = {
-  SIN_SUSCRIPCION: 'Sin suscripción',
   PENDIENTE: 'Pendiente',
-  PRUEBA: 'Periodo gratuito',
   ACTIVA: 'Activa',
+  VENCIDA: 'Vencida',
   SUSPENDIDA: 'Suspendida',
   CANCELADA: 'Cancelada',
 }
@@ -25,17 +25,16 @@ const PAYMENT_LABEL: Record<PaymentStatus, string> = {
   aprobado: 'Aprobado',
   rechazado: 'Rechazado',
   pendiente: 'Pendiente',
-  reembolsado: 'Reembolsado',
 }
 
-const fecha = (iso?: string) => iso
+const fecha = (iso?: string | null) => iso
   ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
   : '—'
 
 const OUTCOME: Record<CheckoutResultDto['status'], { title: string; text: string; alert: boolean }> = {
-  aprobado: { title: '¡Pago aprobado!', text: 'Tu suscripción quedó activa y tu catálogo sigue visible en el radar.', alert: false },
-  pendiente: { title: 'Pago pendiente', text: 'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado.', alert: false },
-  rechazado: { title: 'Pago rechazado', text: 'El pago no fue aprobado. Puedes intentarlo nuevamente. La suscripción no se activó.', alert: true },
+  aprobado: { title: 'Tu suscripción fue reactivada', text: 'Tu suscripción quedó activa y tu catálogo sigue visible en el radar', alert: false },
+  pendiente: { title: 'Pago pendiente', text: 'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado', alert: false },
+  rechazado: { title: 'Pago rechazado', text: 'El pago no fue aprobado. Puedes intentarlo nuevamente. La suscripción no se activó', alert: true },
 }
 
 export default function StoreSubscriptionPage() {
@@ -45,10 +44,6 @@ export default function StoreSubscriptionPage() {
   const [paying, setPaying] = useState(false)
   const [outcome, setOutcome] = useState<CheckoutResultDto | null>(null)
   const [payError, setPayError] = useState<unknown>(null)
-  const [askCancel, setAskCancel] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
-  const [cancelError, setCancelError] = useState<unknown>(null)
-  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
 
   // RF-96: Estado para reintento de pago rechazado con PayerEmailForm
   const [retryPaymentTarget, setRetryPaymentTarget] = useState<PaymentDto | null>(null)
@@ -87,27 +82,13 @@ export default function StoreSubscriptionPage() {
     } catch (err) {
       setRetryErrorMsg(
         err instanceof Error && err.message
-          ? err.message
-          : 'No fue posible generar un nuevo intento de pago.',
+          ? err.message.replace(/\.$/, '')
+          : 'No fue posible generar un nuevo intento de pago',
       )
     } finally {
       setPaying(false)
     }
   }, [retryPaymentTarget, reload])
-
-  const cancel = useCallback(async () => {
-    setCancelling(true)
-    setCancelError(null)
-    try {
-      await storeSubscriptionService.cancelRenewal()
-      reload()
-    } catch (e) {
-      setCancelError(e)
-    } finally {
-      setCancelling(false)
-      setAskCancel(false)
-    }
-  }, [reload])
 
   if (!data) {
     return (
@@ -121,8 +102,12 @@ export default function StoreSubscriptionPage() {
   const msg = outcome ? OUTCOME[outcome.status] : null
   const lastPayment = payments[0]
   const failedPayment = lastPayment?.status === 'rechazado' ? lastPayment : null
-  const nextCharge = sub.periodEndsAt ? fecha(sub.periodEndsAt) : '23 oct 2026'
-  const startedAt = sub.status === 'ACTIVA' ? 'feb 2026' : 'nov 2026'
+  const nextCharge = (sub.fechaFin ?? sub.periodEndsAt) ? fecha(sub.fechaFin ?? sub.periodEndsAt) : '23 oct 2026'
+  const suscripcionId = sub.suscripcionId ?? 'SUB-ALM-1'
+  const estado = sub.estado ?? sub.status
+  const fechaInicio = sub.fechaInicio ?? null
+  const fechaFin = sub.fechaFin ?? sub.periodEndsAt ?? null
+  const autoRenovacion = sub.autoRenovacion ?? sub.renewalEnabled
   const defaultRetryEmail =
     retryPaymentTarget?.userEmail ??
     failedPayment?.userEmail ??
@@ -142,7 +127,7 @@ export default function StoreSubscriptionPage() {
               <span>{STATUS_LABEL[sub.status]}</span>
             </span>
           </div>
-          <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días.</p>
+          <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días</p>
         </div>
 
 
@@ -150,10 +135,10 @@ export default function StoreSubscriptionPage() {
           <div className="store-subscription__alert" role="alert">
             <span className="store-subscription__alert-icon">⚠</span>
             <div>
-              <strong>El pago no fue aprobado. Puedes intentarlo nuevamente.</strong>
+              <strong>El pago no fue aprobado. Puedes intentarlo nuevamente</strong>
               <p>
                 El pago del {fecha(failedPayment.date)} con {failedPayment.method} fue rechazado ({formatCOP(failedPayment.amount)}).
-                Genera un nuevo intento indicando el correo del pagador para activar tu suscripción.
+                Genera un nuevo intento indicando el correo del pagador para activar tu suscripción
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -204,7 +189,7 @@ export default function StoreSubscriptionPage() {
             </p>
             <PayerEmailForm
               defaultEmail={defaultRetryEmail}
-              submitLabel="Continuar a Mercado Pago"
+              submitLabel="Pagar con Mercado Pago"
               busyLabel="Generando nuevo intento…"
               busy={paying}
               errorMessage={retryErrorMsg}
@@ -218,37 +203,39 @@ export default function StoreSubscriptionPage() {
           </div>
         )}
 
-        {paymentNotice && <div role="status" className="store-subscription__notice"><strong>Actualización de medio de pago</strong><p>{paymentNotice}</p></div>}
         {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
-        {!!cancelError && <div className="store-subscription__error"><ErrorState error={cancelError} title="No se canceló la renovación" /></div>}
 
         <article className="store-subscription__plan">
           <span className="store-subscription__badge">● {STATUS_LABEL[sub.status].toUpperCase()}</span>
           <h3>{sub.planName}</h3>
-          <p className="store-subscription__price">{formatCOP(sub.amount)} <small>/ mes</small></p>
+          <p className="store-subscription__price">{formatCOP(sub.amount || STORE_SUBSCRIPTION_PRICE)} <small>/ mes</small></p>
           <ul>
             <li>Catálogo ilimitado visible en el radar y en el mapa</li>
             <li>Colecciones y playlists de tienda</li>
-            <li>Estadísticas de visitas, guardados y mensajes</li>
+            <li>Estadísticas de visitas y mensajes</li>
             <li>Avisos automáticos a quienes esperan una prenda</li>
           </ul>
           <div className="store-subscription__metadata">
-            <span>Próximo cobro: <b>{sub.status === 'ACTIVA' ? nextCharge : 'al finalizar el periodo gratis'}</b></span>
-            <span>Desde: <b>{startedAt}</b></span>
-            <span>Método: <b>{lastPayment?.method ?? 'Sin método registrado'}</b></span>
+            <span>suscripcionId: <b>{suscripcionId}</b></span>
+            <span>estado: <b>{estado}</b></span>
+            <span>fechaInicio: <b>{fechaInicio ?? '—'}</b></span>
+            <span>fechaFin: <b>{fechaFin ?? '—'}</b></span>
+            <span>autoRenovacion: <b>{autoRenovacion ? 'true' : 'false'}</b></span>
+            <span>Método: <b>{lastPayment?.method ?? 'Mercado Pago'}</b></span>
           </div>
-          <div className="store-subscription__actions">
+          <div className="store-subscription__actions flex flex-wrap items-center gap-3">
             {sub.status !== 'ACTIVA' && (
               <Button onClick={() => { void pay() }} disabled={paying}>
                 {paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}
               </Button>
             )}
-            {sub.status === 'ACTIVA' && sub.renewalEnabled && (
-              <Button variant="secundario" onClick={() => setAskCancel(true)}>Cancelar renovación</Button>
-            )}
-            <Button variant="secundario" onClick={() => setPaymentNotice('La gestión directa de métodos (tarjeta / PSE) quedará habilitada con la pasarela del API Gateway.')}>
-              Cambiar método de pago
-            </Button>
+            <CancelSubscriptionButton
+              tipo="tienda"
+              status={sub.status}
+              renewalEnabled={sub.renewalEnabled}
+              fechaFin={nextCharge}
+              onUpdated={reload}
+            />
           </div>
           <p className="mt-3 text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]/50 pt-2">
             El plan y la actividad comercial de tu tienda se rigen por las{' '}
@@ -265,10 +252,10 @@ export default function StoreSubscriptionPage() {
 
         <section className="store-subscription__history">
           <h2>Historial de pagos</h2>
-          <p>Cobros de tu suscripción. Abre un comprobante para verlo o descargarlo.</p>
+          <p>Cobros de tu suscripción. Abre un comprobante para verlo o descargarlo</p>
           {payments.length === 0 ? (
             <div className="store-subscription__empty">
-              <EmptyState title="Aún no tienes pagos">Cuando pagues la suscripción, cada intento aparecerá aquí.</EmptyState>
+              <EmptyState title="Aún no tienes pagos">Cuando pagues la suscripción, cada intento aparecerá aquí</EmptyState>
             </div>
           ) : (
             <div className="store-subscription__table-wrap">
@@ -300,7 +287,8 @@ export default function StoreSubscriptionPage() {
                         {p.status === 'rechazado' && sub.status !== 'ACTIVA' && (
                           <button
                             type="button"
-                            className="store-subscription__receipt"
+                            disabled={paying}
+                            className="rounded-lg bg-violeta px-3 py-1.5 text-xs font-bold text-blanco hover:bg-violeta-claro shadow-sm disabled:opacity-50"
                             onClick={() => {
                               setRetryPaymentTarget(p)
                               setShowRetryForm(true)
@@ -319,19 +307,6 @@ export default function StoreSubscriptionPage() {
           )}
         </section>
       </div>
-
-      <ConfirmDialog
-        open={askCancel}
-        title="¿Cancelar la renovación?"
-        confirmLabel="Sí, cancelar renovación"
-        cancelLabel="Mantener suscripción"
-        danger
-        busy={cancelling}
-        onConfirm={() => { void cancel() }}
-        onCancel={() => setAskCancel(false)}
-      >
-        Dejaremos de cobrarte automáticamente en Mercado Pago. Tu suscripción sigue activa hasta el {fecha(sub.periodEndsAt)} y no se devuelve el tiempo restante.
-      </ConfirmDialog>
     </section>
   )
 }

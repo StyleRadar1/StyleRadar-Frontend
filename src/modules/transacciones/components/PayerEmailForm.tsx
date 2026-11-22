@@ -1,13 +1,16 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/modules/core/design-system'
-import { correoValido } from '@/modules/identidad/utils/formato'
+import { isValidPayerEmail } from '../utils/validation'
 
-export const PAYER_EMAIL_INVALID_MSG = 'Ingresa un correo electrónico válido para realizar el pago.'
-export const PAYMENT_INIT_ERROR_MSG = 'No fue posible iniciar el pago en este momento. Inténtalo nuevamente.'
+export const PAYER_EMAIL_INVALID_MSG = 'Ingresa un correo electrónico válido para realizar el pago'
+export const PAYER_EMAIL_RADAR_PLUS_INVALID_MSG = 'Ingresa un correo electrónico válido para activar Radar+'
+export const PAYMENT_INIT_ERROR_MSG = 'No fue posible iniciar el pago en este momento. Inténtalo nuevamente'
 
 export interface PayerEmailFormProps {
   /** Correo precargado de la cuenta autenticada (editable). */
   defaultEmail?: string
+  /** Mensaje de validación de formato incorrecto (E.1). */
+  invalidMessage?: string
   /** Texto del botón principal de envío. */
   submitLabel?: string
   /** Texto del botón mientras se procesa el cobro. */
@@ -28,12 +31,13 @@ export interface PayerEmailFormProps {
 }
 
 /**
- * Formulario compartido de Correo del pagador (RF-67, RF-93, RF-96, RF-100).
- * Valida formato al salir del campo y al enviar; mueve el foco al campo si hay error.
+ * Formulario compartido de Correo del pagador (RF-67, RF-93, RF-96, RF-100, E.1).
+ * Valida formato estricto al salir del campo y al enviar; mueve el foco al campo si hay error.
  */
 export function PayerEmailForm({
   defaultEmail = '',
-  submitLabel = 'Continuar a Mercado Pago',
+  invalidMessage,
+  submitLabel = 'Pagar con Mercado Pago',
   busyLabel = 'Procesando…',
   busy = false,
   disabled = false,
@@ -43,6 +47,7 @@ export function PayerEmailForm({
   cancelLabel = 'Cancelar',
   className = '',
 }: PayerEmailFormProps) {
+  const actualInvalidMsg = invalidMessage || PAYER_EMAIL_INVALID_MSG
   const uid = useId()
   const inputId = `payer-email-${uid}`
   const errorId = `payer-email-err-${uid}`
@@ -61,8 +66,8 @@ export function PayerEmailForm({
 
   const handleBlur = () => {
     setTouched(true)
-    if (!correoValido(email)) {
-      setValidationError(PAYER_EMAIL_INVALID_MSG)
+    if (!isValidPayerEmail(email)) {
+      setValidationError(actualInvalidMsg)
     } else {
       setValidationError(null)
     }
@@ -70,7 +75,7 @@ export function PayerEmailForm({
 
   const handleChange = (val: string) => {
     setEmail(val)
-    if (validationError && correoValido(val)) {
+    if (validationError && isValidPayerEmail(val)) {
       setValidationError(null)
     }
   }
@@ -78,8 +83,8 @@ export function PayerEmailForm({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     setTouched(true)
-    if (!correoValido(email)) {
-      setValidationError(PAYER_EMAIL_INVALID_MSG)
+    if (!isValidPayerEmail(email)) {
+      setValidationError(actualInvalidMsg)
       inputRef.current?.focus()
       return
     }
@@ -117,7 +122,7 @@ export function PayerEmailForm({
           }`}
         />
         <span id={hintId} className="text-xs text-[var(--sr-text-muted,var(--color-text-muted))]">
-          Enviaremos el comprobante y continuaremos a Mercado Pago con este correo.
+          Enviaremos el comprobante y continuaremos a Mercado Pago con este correo
         </span>
         {validationError && (
           <p
@@ -135,9 +140,19 @@ export function PayerEmailForm({
         <div
           role="alert"
           aria-live="assertive"
-          className="rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.35))] bg-[var(--color-danger-bg,rgba(239,68,68,0.12))] p-3 text-xs font-semibold text-[var(--color-danger-text,#ffb4b4)]"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.35))] bg-[var(--color-danger-bg,rgba(239,68,68,0.12))] p-3 text-xs font-semibold text-[var(--color-danger-text,#ffb4b4)]"
         >
-          {errorMessage}
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            disabled={busy || disabled}
+            onClick={() => {
+              if (isValidPayerEmail(email)) void onSubmit(email.trim())
+            }}
+            className="rounded-lg border border-current px-2.5 py-1 text-[11px] font-bold hover:bg-white/10 disabled:opacity-50"
+          >
+            Reintentar
+          </button>
         </div>
       )}
 
