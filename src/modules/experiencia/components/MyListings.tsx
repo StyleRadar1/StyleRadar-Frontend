@@ -215,12 +215,14 @@ export function MyListings() {
         {list.map((l) => (
           <li key={l.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
             <img
-              src={l.fotos[0]}
+              src={(l.photos && l.photos[0]) || (l.fotos && l.fotos[0]) || '/img/productos/gabardina-clasica.jpg'}
               alt=""
               className="h-20 w-16 rounded-lg bg-[var(--color-surface-subtle)] object-cover"
               onError={(e) => {
                 const target = e.currentTarget
-                if (!target.src.includes('gabardina-gris.jpg')) {
+                if (!target.src.includes('gabardina-clasica.jpg') && !target.src.includes('gabardina-gris.jpg')) {
+                  target.src = '/img/productos/gabardina-clasica.jpg'
+                } else if (!target.src.includes('gabardina-gris.jpg')) {
                   target.src = '/img/catalogo/gabardina-gris.jpg'
                 }
               }}
