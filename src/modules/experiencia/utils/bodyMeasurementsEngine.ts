@@ -429,11 +429,21 @@ export function computeBodyDeformation(m: BodyMeasurements | null): BodyDeformat
   const hipScale = Math.max(0.75, Math.min(1.50, Number((ca / baseCadera).toFixed(2))))
   const shoulderScale = Math.max(0.80, Math.min(1.35, Number((ho / baseHombros).toFixed(2))))
 
-  // Silueta base según cuerpo
+  // Siluetas base según cuerpo (frente, lado y espalda)
   const silhouetteSrc =
     m.cuerpoBase === 'femenino'
       ? '/prototipo/assets/img/general/maniqui-f.png'
       : '/prototipo/assets/img/general/maniqui.png'
+
+  const silhouetteSideSrc =
+    m.cuerpoBase === 'femenino'
+      ? '/prototipo/assets/img/general/maniqui-f-lado.png'
+      : '/prototipo/assets/img/general/maniqui-lado.png'
+
+  const silhouetteBackSrc =
+    m.cuerpoBase === 'femenino'
+      ? '/prototipo/assets/img/general/maniqui-f-espalda.png'
+      : '/prototipo/assets/img/general/maniqui-espalda.png'
 
   return {
     heightScale,
@@ -442,6 +452,8 @@ export function computeBodyDeformation(m: BodyMeasurements | null): BodyDeformat
     hipScale,
     shoulderScale,
     silhouetteSrc,
+    silhouetteSideSrc,
+    silhouetteBackSrc,
     complexion,
     bmi,
   }

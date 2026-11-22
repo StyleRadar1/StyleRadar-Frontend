@@ -4,7 +4,7 @@
  */
 
 /** Zona del cuerpo que el proveedor de IA sabe vestir. Calzado y accesorios no se prueban. */
-export type ZonaPrenda = 'SUPERIOR' | 'INFERIOR' | 'NO_COMPATIBLE'
+export type ZonaPrenda = 'SUPERIOR' | 'INFERIOR' | 'CUERPO_COMPLETO' | 'NO_COMPATIBLE'
 
 /** GET /api/v1/try-on/garments: prendas del catálogo elegibles para el probador (RF-24). */
 export interface TryOnGarmentDto {
@@ -15,6 +15,7 @@ export interface TryOnGarmentDto {
   zona: ZonaPrenda
   tallas: string[]
   disponible: boolean
+  precio?: number
 }
 
 /** POST /api/v1/try-on/photos (multipart, campo "photo"): foto frontal (RF-23). */
@@ -36,6 +37,8 @@ export interface GarmentValidationResponseDto {
   sizeEligible?: boolean | null
   fitMessage?: string
   quotaAvailable?: boolean
+  eligibleForTryOn?: boolean
+  replacedGarmentIds?: string[]
 }
 
 /** SR-P5-N01: Gestión de consentimiento biométrico (Ley 1581) */

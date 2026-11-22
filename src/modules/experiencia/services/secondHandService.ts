@@ -46,6 +46,46 @@ const toLong = (value: string | number): number | null => {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null
 }
 
+export const normalizePublication = (raw: any): ListingDto => {
+  if (!raw) return raw
+  const isDonation = Boolean(raw.esDonacion)
+  const price = isDonation ? 0 : Number(raw.price ?? raw.precio ?? 0)
+  const photos = raw.photos || raw.fotos || []
+  const userIdStr = String(raw.userId || raw.vendedor?.id || '')
+  return {
+    ...raw,
+    id: String(raw.id),
+    userId: raw.userId ?? raw.vendedor?.id,
+    garmentName: raw.garmentName || raw.titulo || 'Prenda',
+    titulo: raw.garmentName || raw.titulo || 'Prenda',
+    description: raw.description || raw.descripcion || '',
+    descripcion: raw.description || raw.descripcion || '',
+    brand: raw.brand || raw.marca || 'Genérica',
+    marca: raw.brand || raw.marca || 'Genérica',
+    color: raw.color || 'Varios',
+    garmentType: raw.garmentType || raw.categoria,
+    categoria: raw.garmentType || raw.categoria || 'Prenda',
+    size: raw.size || raw.talla || 'M',
+    talla: raw.size || raw.talla || 'M',
+    style: raw.style || 'CASUAL',
+    conservationStatus: raw.conservationStatus || raw.conservacion || 'GOOD_CONDITION',
+    conservacion: raw.conservationStatus || raw.conservacion || 'BUENO',
+    localidad: raw.localidad || 'CHAPINERO',
+    barrio: raw.localidad || raw.barrio || 'Chapinero',
+    price,
+    precio: price,
+    esDonacion: isDonation,
+    photos,
+    fotos: photos,
+    status: raw.status || raw.estado || 'AVAILABLE',
+    estado: raw.status === 'AVAILABLE' ? 'DISPONIBLE' : (raw.status === 'SOLD' ? 'VENDIDA' : (raw.status === 'RETIRED' ? 'RETIRADA' : raw.estado || 'DISPONIBLE')),
+    vendedor: raw.vendedor || { id: userIdStr, nombre: `Vendedor #${userIdStr}` },
+    creadaEn: raw.publicationDate ? raw.publicationDate.split('T')[0] : (raw.creadaEn || isoDay()),
+    publicationDate: raw.publicationDate,
+    updateDate: raw.updateDate,
+  }
+}
+
 export const secondHandService = {
   /** Subida de fotografías a Azure Blob: POST /api/v1/second-hand/photos */
   async uploadPhoto(file: File): Promise<UploadPhotoResponse> {
@@ -103,7 +143,7 @@ export const secondHandService = {
       searchTerm: f.searchTerm || f.texto || undefined,
       type: f.type,
       size: f.size || f.talla,
-      conservationStatus: f.conservationStatus?.join(',') || f.conservacion?.join(',') || undefined,
+      conservationStatus: f.conservationStatus?.[0] || f.conservationStatus || undefined,
       style: f.style,
       color: f.color,
       brand: f.brand,
@@ -114,9 +154,9 @@ export const secondHandService = {
     }
 
     return apiClient
-      .get<ListingDto[]>('/api/v1/second-hand/publications', { params })
-      .catch(() => apiClient.get<ListingDto[]>('/api/v1/segunda-mano', { params }))
-      .then((r) => r.data)
+      .get<any[]>('/api/v1/second-hand/publications', { params })
+      .catch(() => apiClient.get<any[]>('/api/v1/segunda-mano', { params }))
+      .then((r) => r.data.map(normalizePublication))
   },
 
   /** SR-P5-N04: publicaciones propias en cualquier estado (GET /api/v1/second-hand/publications/users/{userId}) */
@@ -128,9 +168,9 @@ export const secondHandService = {
     }
     const uid = userId || me().id
     return apiClient
-      .get<ListingDto[]>(`/api/v1/second-hand/publications/users/${encodeURIComponent(uid)}`)
-      .catch(() => apiClient.get<ListingDto[]>('/api/v1/segunda-mano/mine'))
-      .then((r) => r.data)
+      .get<any[]>(`/api/v1/second-hand/publications/users/${encodeURIComponent(uid)}`)
+      .catch(() => apiClient.get<any[]>('/api/v1/segunda-mano/mine'))
+      .then((r) => r.data.map(normalizePublication))
   },
 
   async get(id: string): Promise<ListingDto> {
@@ -141,9 +181,9 @@ export const secondHandService = {
       return mockDelay(l)
     }
     return apiClient
-      .get<ListingDto>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`)
-      .catch(() => apiClient.get<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`))
-      .then((r) => r.data)
+      .get<any>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`)
+      .catch(() => apiClient.get<any>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`))
+      .then((r) => normalizePublication(r.data))
   },
 
   /** Obtiene una publicación solo si pertenece al usuario actual (para edición). */
@@ -199,7 +239,11 @@ export const secondHandService = {
       return mockDelay(l, 700)
     }
 
+    const u = me()
+    const resolvedUserId = toLong(data.userId || u.id) || 101
+
     const payload = {
+      userId: resolvedUserId,
       garmentName: data.garmentName || data.titulo,
       description: data.description || data.descripcion,
       brand: data.brand || data.marca,
@@ -215,9 +259,9 @@ export const secondHandService = {
     }
 
     return apiClient
-      .post<ListingDto>('/api/v1/second-hand/publications', payload)
-      .catch(() => apiClient.post<ListingDto>('/api/v1/segunda-mano', payload))
-      .then((r) => r.data)
+      .post<any>('/api/v1/second-hand/publications', payload)
+      .catch(() => apiClient.post<any>('/api/v1/segunda-mano', payload))
+      .then((r) => normalizePublication(r.data))
   },
 
   /** PUT /api/v1/second-hand/publications/{id} — RF-37 */
@@ -237,10 +281,30 @@ export const secondHandService = {
       })
       return mockDelay(l, 600)
     }
+
+    const u = me()
+    const resolvedUserId = toLong(data.userId || u.id) || 101
+    const combinedPhotos = [...(data.photos || data.fotosConservadas || [])]
+
+    const payload = {
+      userId: resolvedUserId,
+      garmentName: data.garmentName || data.titulo,
+      description: data.description || data.descripcion,
+      brand: data.brand || data.marca,
+      color: data.color || 'Varios',
+      garmentType: data.garmentType || mapCategoriaToGarmentType(data.categoria || ''),
+      size: data.size || data.talla,
+      style: data.style || 'CASUAL',
+      conservationStatus: data.conservationStatus || 'GOOD_CONDITION',
+      localidad: data.localidad || 'CHAPINERO',
+      price: data.esDonacion ? 0 : data.price ?? data.precio ?? 0,
+      photos: combinedPhotos,
+    }
+
     return apiClient
-      .put<ListingDto>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`, data)
-      .catch(() => apiClient.put<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`, data))
-      .then((r) => r.data)
+      .put<any>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`, payload)
+      .catch(() => apiClient.put<any>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`, payload))
+      .then((r) => normalizePublication(r.data))
   },
 
   /** PATCH /api/v1/second-hand/publications/{id}/sale */
@@ -272,15 +336,15 @@ export const secondHandService = {
     const uid = toLong(userStr) || userStr
     const cid = toLong(compStr) || compStr
     return apiClient
-      .patch<ListingDto>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}/sale`, null, {
+      .patch<any>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}/sale`, null, {
         params: { userId: uid, compradorId: cid },
       })
       .catch(() =>
-        apiClient.patch<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/sell`, null, {
+        apiClient.patch<any>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/sell`, null, {
           params: { userId: uid, compradorId: cid },
         })
       )
-      .then((r) => r.data)
+      .then((r) => normalizePublication(r.data))
   },
 
   /** RF-42: convertir publicación existente de venta en donación (PATCH /api/v1/second-hand/publications/{id}/donation?userId={id}) */
@@ -297,15 +361,15 @@ export const secondHandService = {
     }
     const u = me()
     return apiClient
-      .patch<ListingDto>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}/donation`, null, {
+      .patch<any>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}/donation`, null, {
         params: { userId: u.id },
       })
       .catch(() =>
-        apiClient.patch<ListingDto>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/donate`, null, {
+        apiClient.patch<any>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/donate`, null, {
           params: { userId: u.id },
         })
       )
-      .then((r) => r.data)
+      .then((r) => normalizePublication(r.data))
   },
 
   /** RF-39: retirar publicación (DELETE /api/v1/second-hand/publications/{id}?userId={id}) */

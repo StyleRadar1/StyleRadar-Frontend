@@ -721,6 +721,19 @@ html[data-tema="claro"] .cz-fullscreen {
   justify-content: center;
   overflow: hidden;
   padding: 24px;
+  background-image: url('/img/backgrounds/probador-noche.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  transition: background-image 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .cz-stage-area,
+html[data-tema="claro"] .cz-stage-area {
+  background-image: url('/img/backgrounds/probador-dia.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
 }
 
 .cz-ambient-glow {
@@ -737,6 +750,8 @@ html[data-tema="claro"] .cz-fullscreen {
 
 .cz-mannequin-container {
   position: relative;
+  width: 100%;
+  max-width: 620px;
   height: 74vh;
   max-height: 700px;
   display: flex;
@@ -752,7 +767,7 @@ html[data-tema="claro"] .cz-fullscreen {
 /* Regla métrica de altura vertical */
 .cz-metric-ruler {
   position: absolute;
-  left: 36px;
+  left: 16px;
   top: 10%;
   bottom: 24px;
   width: 95px;

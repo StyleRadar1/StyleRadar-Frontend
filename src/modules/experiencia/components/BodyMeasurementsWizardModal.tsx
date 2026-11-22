@@ -33,6 +33,7 @@ export function BodyMeasurementsWizardModal({
   const [hasEstimated, setHasEstimated] = useState(false)
   const [consentChecked, setConsentChecked] = useState(false)
   const [activeGuideKey, setActiveGuideKey] = useState<string>('pecho')
+  const [previewAngle, setPreviewAngle] = useState<'frente' | 'lado' | 'espalda'>('frente')
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [validationWarnings, setValidationWarnings] = useState<string[]>([])
 
@@ -507,11 +508,18 @@ export function BodyMeasurementsWizardModal({
                   }}
                 >
                   <img
-                    src={deformation.silhouetteSrc}
+                    src={
+                      previewAngle === 'lado'
+                        ? deformation.silhouetteSideSrc || deformation.silhouetteSrc
+                        : previewAngle === 'espalda'
+                          ? deformation.silhouetteBackSrc || deformation.silhouetteSrc
+                          : deformation.silhouetteSrc
+                    }
                     alt="Vista previa del maniquí"
                     className="h-full object-contain filter drop-shadow(0 10px 25px rgba(0,0,0,0.5))"
                   />
                 </div>
+
                 {/* Etiqueta de morfología y medidas sobre el stage */}
                 <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-purple-200 border border-purple-500/30 flex items-center gap-1.5 shadow-lg">
                   <span className="text-purple-400">Talla {form.tallaHabitual}</span>
@@ -521,6 +529,22 @@ export function BodyMeasurementsWizardModal({
                   <span>{form.peso || 68} kg</span>
                   <span className="text-white/40">·</span>
                   <span className="bg-purple-600/30 text-purple-300 px-1.5 py-0.5 rounded-full">{deformation.complexion || 'Normal'}</span>
+                </div>
+
+                {/* Selector de ángulo Frente / Lado / Espalda */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/70 backdrop-blur-md px-2 py-1 rounded-full border border-white/10 z-10">
+                  {(['frente', 'lado', 'espalda'] as const).map((ang) => (
+                    <button
+                      key={ang}
+                      type="button"
+                      onClick={() => setPreviewAngle(ang)}
+                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold transition uppercase cursor-pointer ${
+                        previewAngle === ang ? 'bg-purple-600 text-white' : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      {ang}
+                    </button>
+                  ))}
                 </div>
               </div>
 

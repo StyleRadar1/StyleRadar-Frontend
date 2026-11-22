@@ -9,10 +9,25 @@
   min-height: 100vh;
   overflow: clip;
   color: var(--sr-white);
-  background: radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.18) 0%, transparent 45%),
-              radial-gradient(circle at 85% 45%, rgba(168, 85, 247, 0.14) 0%, transparent 50%),
-              radial-gradient(circle at 35% 80%, rgba(124, 58, 237, 0.16) 0%, transparent 55%);
+  background-color: #0b0813;
+  background-image: url('/img/backgrounds/landing-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
   font-family: Poppins, system-ui, sans-serif;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-landing,
+html[data-theme="claro"] .sr-landing,
+html[data-tema="claro"] .sr-landing {
+  --sr-white: #0f172a;
+  --sr-muted: #334155;
+  background-color: #f1f3f5;
+  background-image: url('/img/backgrounds/landing-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
 }
 .sr-landing *, .sr-landing *::before, .sr-landing *::after { box-sizing: border-box; }
 .sr-site-header { position: absolute; z-index: 30; inset: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px clamp(20px, 4vw, 64px); }

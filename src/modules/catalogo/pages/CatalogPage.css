@@ -4,6 +4,26 @@
    Tipografía: Poppins
    ========================================================================== */
 
+.sr-catalog-page {
+  min-height: 100vh;
+  background-color: #0d0a14;
+  background-image: url('/img/backgrounds/catalogo-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-catalog-page,
+html[data-theme="claro"] .sr-catalog-page,
+html[data-tema="claro"] .sr-catalog-page {
+  background-color: #f8f9fa;
+  background-image: url('/img/backgrounds/catalogo-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
 .sr-rack-section {
   --sr-hanger-wire: #262626;
   --sr-hanger-shoulder: #262626;
@@ -12,16 +32,31 @@
   position: relative;
   z-index: 10;
   width: 100%;
-  background: linear-gradient(180deg, #fcfbf9 0%, #f4eee4 55%, #faf8f5 100%);
-  color: #262626;
+  background-image: url('/img/backgrounds/catalogo-noche.jpg');
+  background-size: cover;
+  background-position: center center;
+  color: #f8fafc;
   font-family: 'Poppins', sans-serif;
   padding: clamp(2.25rem, 4.5vw, 3.75rem) 0 clamp(2.5rem, 5vw, 4rem);
   overflow: hidden;
   border-radius: 1.25rem;
   box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 0 35px -8px rgba(110, 50, 180, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
   user-select: none;
+  transition: background-image 0.5s ease-in-out;
+}
+
+html[data-theme="light"] .sr-rack-section,
+html[data-tema="claro"] .sr-rack-section {
+  background-image: url('/img/backgrounds/catalogo-dia.jpg');
+  background-size: cover;
+  background-position: center center;
+  color: #262626;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 /* Encabezado centrado en mayúsculas con separador vertical fino */

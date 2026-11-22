@@ -25,7 +25,7 @@ export function Navbar() {
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     `whitespace-nowrap px-3.5 py-1.5 text-sm font-medium transition ${
       isActive
-        ? 'rounded-full bg-violeta text-blanco shadow-sm'
+        ? 'rounded-full bg-violeta text-white shadow-sm'
         : 'rounded-lg text-[var(--sr-hero-text-muted)] hover:text-[var(--sr-hero-text)] hover:bg-[var(--sr-surface)]/50'
     }`
 

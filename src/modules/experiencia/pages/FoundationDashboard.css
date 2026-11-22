@@ -15,17 +15,30 @@
 
   min-height: 100vh;
   padding-bottom: 72px;
-  background: linear-gradient(180deg, #efe6d9 0%, #f6f1ea 32%, #ffffff 100%);
-  color: var(--fnd-grafito);
+  background-color: #0d0a14;
+  background-image: url('/img/backgrounds/donaciones-noche.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  color: #f3eff9;
   font-family: 'Poppins', system-ui, sans-serif;
   overflow-x: clip;
+  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
 }
 
-/* Modo oscuro */
-html[data-theme='dark'] .fnd-dashboard,
-html[data-theme='dark'] .fnd-donations {
-  background: linear-gradient(180deg, #1b1622 0%, #16121c 45%, #100d14 100%);
-  color: #f3eff9;
+/* Modo claro */
+html[data-theme='light'] .fnd-dashboard,
+html[data-theme='light'] .fnd-donations,
+html[data-theme='claro'] .fnd-dashboard,
+html[data-theme='claro'] .fnd-donations,
+html[data-tema='claro'] .fnd-dashboard,
+html[data-tema='claro'] .fnd-donations {
+  background-color: #f8f6fc;
+  background-image: url('/img/backgrounds/donaciones-dia.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  color: var(--fnd-grafito);
 }
 
 .fnd-dashboard :focus-visible,

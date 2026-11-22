@@ -32,7 +32,7 @@ export default function PlansPage() {
         <Link
           to={to}
           className={`mt-auto block rounded-xl px-5 py-3 text-center text-sm font-semibold ${
-            p.destacado ? 'bg-violeta text-blanco' : 'border border-white/25'
+            p.destacado ? 'bg-violeta text-white' : 'border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-subtle)]'
           }`}
         >
           {label}
@@ -49,7 +49,7 @@ export default function PlansPage() {
           )
         }
         return (
-          <p className="mt-auto rounded-xl border border-white/20 px-5 py-3 text-center text-xs text-white/50">
+          <p className="mt-auto rounded-xl border border-[var(--color-border)] px-5 py-3 text-center text-xs text-[var(--color-text-muted)]">
             Incluido en tu cuenta
           </p>
         )
@@ -94,8 +94,9 @@ export default function PlansPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 bg-transparent text-[var(--sr-hero-text)]">
-      <PlanDegradedBanner />
+    <div className="sr-planes-page min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-12 bg-transparent text-[var(--sr-hero-text)]">
+        <PlanDegradedBanner />
       <p className="text-[11px] font-bold uppercase tracking-[.2em] text-violeta-claro">Planes</p>
       <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--sr-hero-text)] md:text-5xl">
         Un plan para cada quien
@@ -105,7 +106,7 @@ export default function PlansPage() {
       </p>
 
       {user?.role === 'STYLERADAR_ADMIN' && (
-        <div className="mt-6 rounded-2xl border border-white/20 bg-white/[.04] p-6 text-center text-sm text-white/80">
+        <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-6 text-center text-sm text-[var(--color-text)] backdrop-blur-md">
           Como administrador de StyleRadar no requieres una suscripción comercial. Gestiona la plataforma desde el panel de control
         </div>
       )}
@@ -166,22 +167,22 @@ export default function PlansPage() {
 
       {(!user || comprador) && (
         <>
-          <h2 className="mt-14 text-2xl font-bold">Radar y Radar+, lado a lado</h2>
-          <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
-            <table className="w-full min-w-[520px] text-left text-sm">
+          <h2 className="mt-14 text-2xl font-bold text-[var(--sr-hero-text)]">Radar y Radar+, lado a lado</h2>
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-md">
+            <table className="w-full min-w-[520px] text-left text-sm text-[var(--color-text)]">
               <caption className="sr-only">Comparación de los planes Radar y Radar+</caption>
-              <thead className="bg-white/[.04] text-[11px] uppercase tracking-[.14em] text-lavanda">
+              <thead className="bg-[var(--color-surface-subtle)] text-[11px] uppercase tracking-[.14em] text-[var(--color-text-muted)]">
                 <tr>
                   <th scope="col" className="p-4 font-bold">Qué incluye</th>
                   <th scope="col" className="p-4 font-bold">Radar</th>
-                  <th scope="col" className="p-4 font-bold text-arena">Radar+</th>
+                  <th scope="col" className="p-4 font-bold text-[var(--color-accent)]">Radar+</th>
                 </tr>
               </thead>
               <tbody>
                 {PLAN_COMPARISON_ROWS.map(([que, radar, plus]) => (
-                  <tr key={que} className="border-t border-white/10">
+                  <tr key={que} className="border-t border-[var(--color-border)]">
                     <th scope="row" className="p-4 font-semibold">{que}</th>
-                    <td className="p-4 text-white/75">{radar}</td>
+                    <td className="p-4 text-[var(--color-text-muted)]">{radar}</td>
                     <td className="p-4">{plus}</td>
                   </tr>
                 ))}
@@ -191,18 +192,19 @@ export default function PlansPage() {
         </>
       )}
 
-      <h2 className="mt-14 text-2xl font-bold">Reglas de los planes</h2>
-      <p className="mt-2 text-sm text-white/60">
+      <h2 className="mt-14 text-2xl font-bold text-[var(--sr-hero-text)]">Reglas de los planes</h2>
+      <p className="mt-2 text-sm text-[var(--color-text-muted)]">
         Condiciones generales del servicio de suscripciones y transacciones de StyleRadar
       </p>
       <ol className="mt-5 grid gap-3 md:grid-cols-2" aria-label="Reglas de los planes">
         {REGLAS.map(([titulo, texto], i) => (
-          <li key={titulo} className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
-            <p className="font-semibold"><span className="mr-2 text-arena">{i + 1}.</span>{titulo}</p>
-            <p className="mt-1 text-sm text-white/70">{texto}</p>
+          <li key={titulo} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/75 p-5 backdrop-blur-md">
+            <p className="font-semibold text-[var(--color-text)]"><span className="mr-2 text-[var(--color-accent)]">{i + 1}.</span>{titulo}</p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">{texto}</p>
           </li>
         ))}
       </ol>
     </section>
+  </div>
   )
 }

@@ -184,6 +184,7 @@ export interface ListingFiltersDto {
 
 /** DTO enviado en POST /api/v1/segunda-mano y PUT /api/v1/segunda-mano/{id} */
 export interface ListingRequestDto {
+  userId?: string | number
   garmentName?: string
   titulo: string
   description?: string

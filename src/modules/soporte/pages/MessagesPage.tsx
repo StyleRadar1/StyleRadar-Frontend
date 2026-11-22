@@ -60,7 +60,8 @@ export default function MessagesPage() {
   )
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-4 md:py-6 bg-transparent border-0 shadow-none overflow-visible">
+    <div className="sr-mensajes-page min-h-screen">
+      <section className="mx-auto max-w-7xl px-4 py-4 md:py-6 bg-transparent border-0 shadow-none overflow-visible">
       {loading ? (
         <Loading label="Cargando tus conversaciones…" />
       ) : error ? (
@@ -131,5 +132,6 @@ export default function MessagesPage() {
         </div>
       )}
     </section>
+  </div>
   )
 }
