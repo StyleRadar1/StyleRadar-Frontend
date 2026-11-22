@@ -122,7 +122,7 @@ export function NotificationBell() {
                 {cargandoMas && <li role="status" className="px-3 py-2 text-center text-xs text-white/60">Cargando más…</li>}
               </ul>
             )}
-          {rol === 'COMPRADOR' && <Link to="/alertas" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Ver búsquedas y alertas</Link>}
+          {rol === 'BUYER' && <Link to="/alertas" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Ver búsquedas y alertas</Link>}
           <Link to="/avisos/preferencias" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Preferencias de avisos</Link>
         </div>
       )}

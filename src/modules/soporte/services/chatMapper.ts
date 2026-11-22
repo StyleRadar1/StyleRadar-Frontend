@@ -37,7 +37,7 @@ export function idDelOtro(raw: Record<string, unknown>, me: string): string {
 /** Si hay que pedir el nombre de la otra persona a ms-usuarios (las tiendas ya traen su nombre). */
 export function necesitaNombre(raw: Record<string, unknown>, ctx: Pick<ContextoChat, 'me' | 'rol'>): boolean {
   const tipo = String(raw.type ?? '').toUpperCase()
-  return !esTienda(tipo) || ctx.rol === 'ADMIN_ALMACEN'
+  return !esTienda(tipo) || ctx.rol === 'STORE_ADMIN'
 }
 
 export function aConversacion(raw: Record<string, unknown>, ctx: ContextoChat, noLeidos = 0): ConversacionDto {
@@ -50,12 +50,12 @@ export function aConversacion(raw: Record<string, unknown>, ctx: ContextoChat, n
   let asunto: string
   if (esTienda(tipo)) {
     asunto = 'Consulta a la tienda'
-    contacto = ctx.rol === 'ADMIN_ALMACEN'
+    contacto = ctx.rol === 'STORE_ADMIN'
       ? { id: otro, nombre: nombreOtro('Cliente'), tipo: 'COMPRADOR' }
       : { id: id(raw.storeNit), nombre: texto(raw.storeName) ?? 'Tienda', tipo: 'TIENDA' }
   } else if (esDonacion(tipo)) {
     asunto = `Donación #${id(raw.donationId)}`
-    contacto = ctx.rol === 'REPRESENTANTE_FUNDACION'
+    contacto = ctx.rol === 'FOUNDATION_REPRESENTATIVE'
       ? { id: otro, nombre: nombreOtro('Donante'), tipo: 'DONANTE' }
       : { id: otro, nombre: nombreOtro('Fundación'), tipo: 'FUNDACION' }
   } else {

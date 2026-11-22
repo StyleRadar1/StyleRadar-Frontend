@@ -21,7 +21,7 @@ export const PLAN_PENDING_RENEWAL_MSG =
 export function PlanDegradedBanner() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const isBuyer = user?.role === 'COMPRADOR'
+  const isBuyer = user?.role === 'BUYER'
   const { details } = useUserPlan(isBuyer)
   const userId = user?.id ?? 'u-1'
 

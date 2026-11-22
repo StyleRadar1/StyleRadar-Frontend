@@ -14,7 +14,7 @@ const renderProtegida = () => render(
   <AuthProvider>
     <MemoryRouter initialEntries={['/admin/usuarios']}>
       <Routes>
-        <Route path="/admin/usuarios" element={<RequireRole roles={['ADMIN_STYLERADAR']}><p>Zona admin</p></RequireRole>} />
+        <Route path="/admin/usuarios" element={<RequireRole roles={['STYLERADAR_ADMIN']}><p>Zona admin</p></RequireRole>} />
         <Route path="*" element={<Donde />} />
       </Routes>
     </MemoryRouter>

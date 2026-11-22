@@ -4,7 +4,7 @@ import { calcRevenue } from '../services/paymentService'
 import type { PaymentDto } from '../types/payment.dto'
 
 const base: Omit<PaymentDto, 'id' | 'amount' | 'status'> = {
-  userId: 'u1', suscriptorId: 'u1', userRole: 'COMPRADOR',
+  userId: 'u1', suscriptorId: 'u1', userRole: 'BUYER',
   planId: 'plus', planName: 'Radar+', method: 'Mercado Pago', date: '2026-09-01',
 }
 

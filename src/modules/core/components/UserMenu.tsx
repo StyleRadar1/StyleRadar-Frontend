@@ -10,10 +10,10 @@ import { ROLE_DOT, avatarCls } from './roleTone'
 
 /** Accesos del menú de cuenta según el rol (los mismos del prototipo, con las rutas de la app). */
 const ITEMS: Record<Role, [string, string][]> = {
-  COMPRADOR: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/segunda-mano', 'Mis publicaciones (Segunda mano)'], ['/donar', 'Donar a fundación'], ['/alertas', 'Mis búsquedas y alertas'], ['/avisos/preferencias', 'Preferencias de avisos'], ['/planes', 'Mi plan']],
-  ADMIN_ALMACEN: [['/tienda/inventario', 'Mi tienda'], ['/donar', 'Donar a fundación'], ['/tienda/suscripcion', 'Mi suscripción'], ['/avisos/preferencias', 'Preferencias de avisos']],
-  REPRESENTANTE_FUNDACION: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas'], ['/avisos/preferencias', 'Preferencias de avisos']],
-  ADMIN_STYLERADAR: [['/admin/estadisticas', 'Estadísticas'], ['/admin/usuarios', 'Usuarios'], ['/admin/pagos', 'Pagos']],
+  BUYER: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/segunda-mano', 'Mis publicaciones (Segunda mano)'], ['/donar', 'Donar a fundación'], ['/alertas', 'Mis búsquedas y alertas'], ['/avisos/preferencias', 'Preferencias de avisos'], ['/planes', 'Mi plan']],
+  STORE_ADMIN: [['/tienda/inventario', 'Mi tienda'], ['/donar', 'Donar a fundación'], ['/tienda/suscripcion', 'Mi suscripción'], ['/avisos/preferencias', 'Preferencias de avisos']],
+  FOUNDATION_REPRESENTATIVE: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas'], ['/avisos/preferencias', 'Preferencias de avisos']],
+  STYLERADAR_ADMIN: [['/admin/estadisticas', 'Estadísticas'], ['/admin/usuarios', 'Usuarios'], ['/admin/pagos', 'Pagos']],
 }
 
 export const iniciales = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('')
@@ -52,7 +52,7 @@ export function UserMenu() {
         aria-controls={open ? menuId : undefined}
         aria-label={`Mi cuenta: ${user.name}, ${ROLE_LABEL[user.role]}`}
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-2.5 rounded-full border py-1 pl-1 pr-3 text-sm hover:bg-white/10 ${user.role === 'ADMIN_STYLERADAR' ? 'border-arena/60' : 'border-white/20'}`}
+        className={`flex items-center gap-2.5 rounded-full border py-1 pl-1 pr-3 text-sm hover:bg-white/10 ${user.role === 'STYLERADAR_ADMIN' ? 'border-arena/60' : 'border-white/20'}`}
       >
         <span aria-hidden="true" className={`grid h-8 w-8 flex-none place-items-center rounded-full text-[11px] font-bold ${avatarCls(user.role)}`}>{iniciales(user.name)}</span>
         <span aria-hidden="true" className="hidden min-w-0 text-left leading-tight sm:block">
@@ -64,12 +64,12 @@ export function UserMenu() {
         <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" className={`text-white/60 transition ${open ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
       </button>
 
-      {(user.role === 'ADMIN_ALMACEN' || user.role === 'REPRESENTANTE_FUNDACION') && (
+      {(user.role === 'STORE_ADMIN' || user.role === 'FOUNDATION_REPRESENTATIVE') && (
         <button
           type="button"
           onClick={() => setAskLogout(true)}
           className="hidden md:flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:border-rose-400 hover:bg-rose-500/15 hover:text-rose-200 transition"
-          aria-label={user.role === 'ADMIN_ALMACEN' ? 'Cerrar sesión de tienda' : 'Cerrar sesión de fundación'}
+          aria-label={user.role === 'STORE_ADMIN' ? 'Cerrar sesión de tienda' : 'Cerrar sesión de fundación'}
           title="Cerrar sesión"
         >
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 stroke-current fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round" aria-hidden="true">

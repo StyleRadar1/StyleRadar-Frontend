@@ -998,7 +998,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             </div>
           )}
 
-          {/* Bloque para cargar foto personal */}
+          {/* Bloque para cargar foto personal o ir al Probador IA conectado */}
           <div className="cz-photo-toggle-bar">
             <input
               ref={fileRef}
@@ -1008,6 +1008,12 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               onChange={handlePhotoUpload}
               aria-label="Cargar foto personal"
             />
+            <Link
+              to="/probador/avanzado"
+              className="cz-photo-sub-btn inline-flex items-center justify-center no-underline"
+            >
+              ✨ Probar con tu foto (IA)
+            </Link>
             <button
               className="cz-photo-sub-btn"
               onClick={() => fileRef.current?.click()}

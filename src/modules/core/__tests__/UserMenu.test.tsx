@@ -26,7 +26,7 @@ const renderApp = (children: React.ReactNode) => render(
 describe('menú de cuenta', () => {
   it('muestra nombre, rol y correo, y lleva al perfil', async () => {
     const user = userEvent.setup()
-    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     renderApp(<UserMenu />)
     await user.click(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas, Usuario' }))
     const menu = screen.getByRole('menu', { name: 'Mi cuenta' })
@@ -38,7 +38,7 @@ describe('menú de cuenta', () => {
 
   it('el administrador ve sus accesos y su rol', async () => {
     const user = userEvent.setup()
-    loginAs('a-1', 'Mariana Bernal', 'admin@styleradar.co', 'ADMIN_STYLERADAR')
+    loginAs('a-1', 'Mariana Bernal', 'admin@styleradar.co', 'STYLERADAR_ADMIN')
     renderApp(<UserMenu />)
     await user.click(screen.getByRole('button', { name: 'Mi cuenta: Mariana Bernal, Admin' }))
     const menu = screen.getByRole('menu', { name: 'Mi cuenta' })
@@ -49,7 +49,7 @@ describe('menú de cuenta', () => {
 
   it('Escape cierra el menú', async () => {
     const user = userEvent.setup()
-    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'ADMIN_ALMACEN')
+    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'STORE_ADMIN')
     renderApp(<UserMenu />)
     await user.click(screen.getByRole('button', { name: 'Mi cuenta: Luna Store, Tienda' }))
     expect(screen.getByRole('menu')).toBeInTheDocument()
@@ -59,7 +59,7 @@ describe('menú de cuenta', () => {
 
   it('cerrar sesión pide confirmación y sale', async () => {
     const user = userEvent.setup()
-    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     renderApp(<UserMenu />)
     await user.click(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas, Usuario' }))
     await user.click(screen.getByRole('menuitem', { name: 'Cerrar sesión' }))
@@ -73,7 +73,7 @@ describe('menú de cuenta', () => {
 describe('cerrar sesión', () => {
   it('lleva al inicio (landing), donde se vuelve a entrar con el mismo inicio de sesión', async () => {
     const user = userEvent.setup()
-    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     render(
       <AuthProvider>
         <MemoryRouter initialEntries={['/catalogo']}>
@@ -125,7 +125,7 @@ describe('bienvenida al iniciar sesión', () => {
   })
 
   it('no aparece al recargar una sesión que ya existía', () => {
-    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     renderApp(<WelcomeOverlay />)
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })

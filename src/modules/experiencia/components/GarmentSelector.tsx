@@ -7,6 +7,7 @@ const ZONAS: [ZonaPrenda | 'TODAS', string][] = [
   ['TODAS', 'Todas'],
   ['SUPERIOR', 'Parte de arriba'],
   ['INFERIOR', 'Parte de abajo'],
+  ['CUERPO_COMPLETO', 'Cuerpo completo'],
 ]
 
 /** RF-24: galería de prendas, selección de talla y validación de ajuste antropométrico. */
@@ -21,6 +22,7 @@ export function GarmentSelector({
   onSelectSize,
   validation,
   validatingSize = false,
+  zoneNotice,
 }: {
   garments: TryOnGarmentDto[]
   loading: boolean
@@ -32,6 +34,7 @@ export function GarmentSelector({
   onSelectSize?: (size: string) => void
   validation?: GarmentValidationResponseDto | null
   validatingSize?: boolean
+  zoneNotice?: string | null
 }) {
   const [zona, setZona] = useState<ZonaPrenda | 'TODAS'>('TODAS')
 
@@ -138,32 +141,45 @@ export function GarmentSelector({
             )}
           </div>
 
-          {/* Validación de compatibilidad RF-24 */}
+          {/* Aviso de reemplazo por conflicto de zona corporal (RF-24) */}
+          {zoneNotice && (
+            <p role="status" className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-2 text-xs text-[var(--color-text)]">
+              {zoneNotice}
+            </p>
+          )}
+
+          {/* Semáforo orientativo de compatibilidad RF-24 (no bloqueante) */}
           {validatingSize ? (
             <p className="mt-3 text-xs text-[var(--color-text-muted)] animate-pulse">Comprobando compatibilidad de medidas con la prenda…</p>
           ) : validation ? (
-            <div
-              role="status"
-              className={`mt-3 rounded-xl border p-3 text-xs ${
-                validation.sizeEligible === false
+            (() => {
+              const noData = validation.sizeEligible === null || validation.sizeEligible === undefined
+              const warn = validation.sizeEligible === false
+              const tone = noData
+                ? 'border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)]'
+                : warn
                   ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200'
                   : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
-              }`}
-            >
-              <div className="flex items-start gap-2">
-                <span className="text-base" aria-hidden="true">
-                  {validation.sizeEligible === false ? '⚠️' : '✓'}
-                </span>
-                <div>
-                  <p className="font-semibold">
-                    {validation.fitMessage || validation.validationMessage}
-                  </p>
-                  <p className="mt-0.5 text-[11px] opacity-80">
-                    Ajuste orientativo según tus medidas corporales registradas. No garantiza ajuste físico exacto.
-                  </p>
+              const icon = noData ? '⚪' : warn ? '🟢' === '🟢' && '🟡' : '🟢'
+              const msg = noData
+                ? validation.fitMessage || 'No hay medidas suficientes para evaluar el ajuste de esta talla.'
+                : warn
+                  ? validation.fitMessage || 'La talla seleccionada podría no ajustarse a tus medidas.'
+                  : validation.fitMessage || validation.validationMessage || 'Ajuste aproximado adecuado para tus medidas corporales.'
+              return (
+                <div role="status" className={`mt-3 rounded-xl border p-3 text-xs ${tone}`}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-base" aria-hidden="true">{icon}</span>
+                    <div>
+                      <p className="font-semibold">{msg}</p>
+                      <p className="mt-0.5 text-[11px] opacity-80">
+                        Ajuste orientativo según tus medidas corporales registradas. No garantiza ajuste físico exacto.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )
+            })()
           ) : null}
         </div>
       )}

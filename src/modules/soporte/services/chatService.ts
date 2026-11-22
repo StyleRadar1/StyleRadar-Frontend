@@ -2,6 +2,7 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario, failWithScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { aRol } from '@/modules/core/types/roles'
 import { seedConversations, seedMessages } from '../mocks/chat'
 import { aNotificacion } from '../utils/notificaciones'
 import { aConversacion, aMensaje, filasDe, idDelOtro, necesitaNombre } from './chatMapper'
@@ -20,7 +21,7 @@ const inicio = (req: IniciarConversacionDto) =>
 
 /** Rol de la sesión: el almacén lee su bandeja; las demás cuentas, «mis conversaciones». */
 const rolDeSesion = (): string | null => {
-  try { return JSON.parse(localStorage.getItem('sr_user') ?? 'null')?.role ?? null } catch { return null }
+  try { return aRol(JSON.parse(localStorage.getItem('sr_user') ?? 'null')?.role) } catch { return null }
 }
 
 /** Pide todas las páginas de una lista de ms-chat (hasta 100 por página, tope de 10 páginas). */
@@ -99,9 +100,9 @@ export const chatService = {
     }
     const rol = rolDeSesion()
     // El administrador de StyleRadar no tiene conversaciones: no hay nada que pedir
-    if (rol === 'ADMIN_STYLERADAR') return []
+    if (rol === 'STYLERADAR_ADMIN') return []
     const miId = String(mockSessionUser()?.id ?? '')
-    const [filas, avisos] = await Promise.all([todas(rol === 'ADMIN_ALMACEN' ? BANDEJA_ALMACEN : MIS_CONVERSACIONES, 100), avisosDeChat()])
+    const [filas, avisos] = await Promise.all([todas(rol === 'STORE_ADMIN' ? BANDEJA_ALMACEN : MIS_CONVERSACIONES, 100), avisosDeChat()])
     const ctx = { me: miId, rol, nombres: nombresConocidos }
     await Promise.all([...new Set(filas.filter((f) => necesitaNombre(f, ctx)).map((f) => idDelOtro(f, miId)))].map(nombreDe))
     return filas

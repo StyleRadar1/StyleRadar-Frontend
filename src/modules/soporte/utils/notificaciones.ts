@@ -1,8 +1,9 @@
+import { aRol } from '@/modules/core/types/roles'
 import { TIPOS_AVISO, type NotificacionDto, type TipoNotificacion } from '../types/notification.dto'
 
 /** Rol de la sesión (el JWT lo trae; aquí se lee del usuario guardado). Sin sesión, `null`. */
 export function rolActual(): string | null {
-  try { return JSON.parse(localStorage.getItem('sr_user') ?? 'null')?.role ?? null } catch { return null }
+  try { return aRol(JSON.parse(localStorage.getItem('sr_user') ?? 'null')?.role) } catch { return null }
 }
 
 /**
@@ -14,8 +15,8 @@ export function enlaceFront(enlace?: string | null, rol: string | null = rolActu
   if (!enlace) return undefined
   const e = enlace.trim()
   if (!e.startsWith('/') || e.startsWith('//')) return undefined // nunca se navega a una dirección externa
-  const tienda = rol === 'ADMIN_ALMACEN'
-  const fundacion = rol === 'REPRESENTANTE_FUNDACION'
+  const tienda = rol === 'STORE_ADMIN'
+  const fundacion = rol === 'FOUNDATION_REPRESENTATIVE'
   let m: RegExpMatchArray | null
   if ((m = e.match(/^\/chat\/conversaciones\/([^/?#]+)/))) return `/mensajes?c=${m[1]}`
   if ((m = e.match(/^\/catalogo\/prendas\/([^/?#]+)/))) return `/catalogo/${m[1]}`

@@ -420,13 +420,15 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
                   <div>
                     <div className="aspect-[4/5] bg-[var(--color-surface-subtle)] relative">
                       <img
-                        src={(l.photos && l.photos[0]) || l.fotos[0]}
+                        src={(l.photos && l.photos[0]) || (l.fotos && l.fotos[0]) || '/img/productos/gabardina-clasica.jpg'}
                         alt={l.garmentName || l.titulo}
                         loading="lazy"
                         className="h-full w-full object-cover"
                         onError={(e) => {
                           const target = e.currentTarget
-                          if (!target.src.includes('gabardina-gris.jpg')) {
+                          if (!target.src.includes('gabardina-clasica.jpg') && !target.src.includes('gabardina-gris.jpg')) {
+                            target.src = '/img/productos/gabardina-clasica.jpg'
+                          } else if (!target.src.includes('gabardina-gris.jpg')) {
                             target.src = '/img/catalogo/gabardina-gris.jpg'
                           }
                         }}

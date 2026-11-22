@@ -34,9 +34,29 @@
 html[data-theme="light"] .sr-landing .pe-header.is-scrolled,
 html[data-theme="claro"] .sr-landing .pe-header.is-scrolled,
 html[data-tema="claro"] .sr-landing .pe-header.is-scrolled {
-  background: rgba(255, 255, 255, .85);
+  --hero-fg: #0f172a;
+  --hero-nav-fg: #0f172a;
+  --hero-btn-fg: #0f172a;
+  color: #0f172a;
+  background: rgba(255, 255, 255, .90);
   border-bottom: 1px solid rgba(226, 232, 240, .85);
   box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .08);
+}
+
+html[data-theme="light"] .sr-landing .pe-header.is-scrolled .pe-capsule-btn,
+html[data-theme="claro"] .sr-landing .pe-header.is-scrolled .pe-capsule-btn,
+html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-capsule-btn {
+  border-color: rgba(15, 23, 42, .16);
+  background: rgba(15, 23, 42, .04);
+  box-shadow: none;
+}
+
+html[data-theme="light"] .sr-landing .pe-header.is-scrolled .pe-login-btn,
+html[data-theme="claro"] .sr-landing .pe-header.is-scrolled .pe-login-btn,
+html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-login-btn {
+  border-color: rgba(72, 17, 154, .35);
+  background: rgba(72, 17, 154, .08);
+  color: #48119a;
 }
 
 .sr-landing .pe-header-left {

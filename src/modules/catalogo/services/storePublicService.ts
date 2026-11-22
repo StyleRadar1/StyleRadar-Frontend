@@ -6,6 +6,7 @@ import { ITEMS } from '../mocks/items'
 import { getStoreInventoryItemsSync } from './inventoryService'
 import { extractAvailableTallasFromInventory, normalizeBackendItem } from './itemService'
 import type { ItemResponseDto } from '../types/item.dto'
+import { VERIFICATION_LABEL, type StorePageDto, type StoreResponseDto } from '../types/store.dto'
 import type { MapPinDto } from '@/modules/mapa/types/map.dto'
 
 export interface StoreCategoryItem {
@@ -89,6 +90,30 @@ export function getStoreIdByName(storeName: string): string {
   if (norm.includes('85')) return 'calle-85'
   if (norm.includes('nora')) return 'nora'
   return norm.replace(/\s+/g, '-')
+}
+
+/** «4.8» → «4,8» como se muestra en la pantalla. Sin calificación → undefined. */
+const calificacion = (r?: number | null) => (typeof r === 'number' ? r.toFixed(1).replace('.', ',') : undefined)
+
+/**
+ * F-22: datos del almacén que manda ms-tiendas (nombres en inglés) sobre la ficha de la pantalla.
+ * Lo que el contrato no trae (barrio, dirección, horario, fotos, colecciones) sigue saliendo de `base`.
+ */
+export function aTiendaPublica(d: StoreResponseDto, base: StorePublicDto | null): Partial<StorePublicDto> {
+  const lng = typeof d.longitude === 'number' ? d.longitude : base?.lngLat[0] ?? -74.0628
+  const lat = typeof d.latitude === 'number' ? d.latitude : base?.lngLat[1] ?? 4.6433
+  return {
+    id: String(d.nit),
+    nit: String(d.nit),
+    nombre: d.tradeName || base?.nombre || 'Tienda aliada',
+    categoria: d.categories?.[0] || base?.categoria || 'Moda local',
+    descripcion: d.description || base?.descripcion || 'Tienda local de Bogotá aliada a StyleRadar.',
+    telefono: d.phone || base?.telefono || '',
+    correo: d.contactEmail || base?.correo || '',
+    rating: calificacion(d.rating) ?? base?.rating ?? '',
+    verificacion: d.verificationStatus ? VERIFICATION_LABEL[d.verificationStatus] : (base?.verificacion || 'Verificada'),
+    lngLat: [lng, lat],
+  }
 }
 
 export const storePublicService = {
@@ -321,15 +346,17 @@ export const storePublicService = {
     return withSizes
   },
 
+  /** F-22: perfil público del almacén por su NIT (GET /api/v1/stores/{nit}). */
   async getByIdAsync(id: string): Promise<StorePublicDto | null> {
     const syncData = this.getById(id)
     if (env.useMocks) {
       return syncData
     }
-    const cleanId = (id || '').trim().toLowerCase()
+    const nit = (id || '').trim()
+    const cleanId = nit.toLowerCase()
     try {
       const [r, catalogoItems, novedadesItems] = await Promise.all([
-        apiClient.get<any>(`/api/v1/almacenes/${encodeURIComponent(cleanId)}`),
+        apiClient.get<StoreResponseDto>(`/api/v1/stores/${encodeURIComponent(nit)}`),
         this.getCatalogo(cleanId).catch(() => syncData?.prendas ?? []),
         this.getNovedades(cleanId).catch(() => []),
       ])
@@ -338,32 +365,31 @@ export const storePublicService = {
 
       const prendas = catalogoItems.length > 0 ? catalogoItems : (syncData?.prendas || [])
       const novedades = novedadesItems.length > 0 ? novedadesItems.slice(0, 3) : prendas.slice(0, 3)
+      const api = d ? aTiendaPublica(d, syncData) : {}
 
       return {
         id: cleanId,
-        nombre: d?.nombre || syncData?.nombre || 'Tienda aliada',
-        categoria: d?.categoria || syncData?.categoria || 'Moda local',
-        barrio: d?.barrio || syncData?.barrio || 'Bogotá',
-        direccion: d?.direccion || syncData?.direccion || 'Bogotá, Colombia',
-        distanciaKm: typeof d?.distanciaKm === 'number'
-          ? `${d.distanciaKm.toFixed(2).replace('.', ',')} km`
-          : (d?.distanciaKm || syncData?.distanciaKm || '1,50 km'),
-        horario: d?.horario || syncData?.horario || 'Lun a sáb · 10:00 a 20:00',
-        lngLat: [d?.lng || d?.longitud || syncData?.lngLat[0] || -74.0628, d?.lat || d?.latitud || syncData?.lngLat[1] || 4.6433],
-        telefono: d?.telefono || syncData?.telefono || '+57 601 555 0123',
-        correo: d?.correo || d?.email || syncData?.correo || `${cleanId}@styleradar.co`,
-        nit: d?.nit || syncData?.nit || '901.482.337-1',
-        representante: d?.representante || syncData?.representante || 'Administrador de tienda',
-        aliadaDesde: d?.aliadaDesde || syncData?.aliadaDesde || 'feb 2026',
-        verificacion: d?.verificacion || d?.estadoVerificacion || syncData?.verificacion || 'Verificada',
-        rating: d?.rating ? String(d.rating) : (syncData?.rating || '4,8'),
-        reviews: d?.reviews || syncData?.reviews || 150,
-        descripcion: d?.descripcion || syncData?.descripcion || 'Tienda local de Bogotá aliada a StyleRadar.',
-        foto: d?.foto || d?.imagen || syncData?.foto || '/img/mapa/luna.jpg',
-        fotoEditorial: d?.fotoEditorial || syncData?.fotoEditorial || (syncData?.foto || '/img/mapa/luna.jpg'),
-        fotosGaleria: (d?.galeria && Array.isArray(d.galeria) && d.galeria.length > 0) ? d.galeria : (syncData?.fotosGaleria || []),
+        nombre: syncData?.nombre || 'Tienda aliada',
+        categoria: syncData?.categoria || 'Moda local',
+        barrio: syncData?.barrio || 'Bogotá',
+        direccion: syncData?.direccion || 'Bogotá, Colombia',
+        distanciaKm: syncData?.distanciaKm || '1,50 km',
+        horario: syncData?.horario || 'Lun a sáb · 10:00 a 20:00',
+        lngLat: syncData?.lngLat || [-74.0628, 4.6433],
+        telefono: syncData?.telefono || '',
+        correo: syncData?.correo || '',
+        nit: syncData?.nit || nit,
+        representante: syncData?.representante || 'Administrador de tienda',
+        aliadaDesde: syncData?.aliadaDesde || 'feb 2026',
+        verificacion: syncData?.verificacion || 'Verificada',
+        rating: syncData?.rating || '',
+        reviews: syncData?.reviews || 0,
+        descripcion: syncData?.descripcion || 'Tienda local de Bogotá aliada a StyleRadar.',
+        foto: syncData?.foto || '/img/mapa/luna.jpg',
+        fotoEditorial: syncData?.fotoEditorial || (syncData?.foto || '/img/mapa/luna.jpg'),
+        fotosGaleria: syncData?.fotosGaleria || [],
         colecciones: syncData?.colecciones || [],
-        bannerNotice: d?.bannerNotice || syncData?.bannerNotice || '',
+        bannerNotice: syncData?.bannerNotice || '',
         prendas,
         novedades,
         categorias: syncData?.categorias || [],
@@ -377,63 +403,57 @@ export const storePublicService = {
           prendasActivas: prendas.length,
           categoriasCount: syncData?.cifras?.categoriasCount ?? (syncData?.categorias.length || 0),
           playlists: syncData?.cifras?.playlists ?? 0,
-          aliadaDesde: d?.aliadaDesde || syncData?.aliadaDesde || 'feb 2026',
+          aliadaDesde: syncData?.aliadaDesde || 'feb 2026',
         },
+        ...api,
       }
     } catch {
       return syncData
     }
   },
 
+  /** F-22: almacenes aprobados (GET /api/v1/stores, paginado: se lee content[]). */
   async getAllAsync(): Promise<StorePublicDto[]> {
+    const deMocks = () => TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
     if (env.useMocks) {
-      return TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
+      return deMocks()
     }
     try {
-      const r = await apiClient.get<any[]>('/api/v1/almacenes')
-      if (Array.isArray(r.data) && r.data.length > 0) {
-        return r.data.map((d) => ({
-          id: d.id || d.nit || 'tienda',
-          nombre: d.nombre || 'Tienda aliada',
-          categoria: d.categoria || 'Moda local',
-          barrio: d.barrio || 'Bogotá',
-          direccion: d.direccion || 'Bogotá, Colombia',
-          distanciaKm: d.distanciaKm ? `${d.distanciaKm} km` : '1,5 km',
-          horario: d.horario || 'Lun a sáb · 10:00 a 20:00',
-          lngLat: [d.lng || d.longitud || -74.0628, d.lat || d.latitud || 4.6433],
-          telefono: d.telefono || '+57 601 555 0123',
-          correo: d.correo || d.email || '',
-          nit: d.nit || '',
-          representante: d.representante || '',
-          aliadaDesde: d.aliadaDesde || 'feb 2026',
-          verificacion: d.verificacion || 'Verificada',
-          rating: d.rating ? String(d.rating) : '4,8',
-          reviews: d.reviews || 0,
-          descripcion: d.descripcion || '',
-          foto: d.foto || d.imagen || '/img/mapa/luna.jpg',
-          fotoEditorial: d.foto || '/img/mapa/luna.jpg',
-          fotosGaleria: [],
-          colecciones: [],
-          bannerNotice: '',
-          prendas: [],
-          categorias: [],
-          coleccionDestacada: {
-            titulo: 'Colección destacada',
-            subtitulo: 'Selección de la temporada',
-            descripcion: '',
-          },
-          distintivos: [],
-          cifras: {
-            prendasActivas: 0,
-            categoriasCount: 0,
-            playlists: 0,
-            aliadaDesde: 'feb 2026',
-          },
-        }))
-      }
-      return TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
+      const r = await apiClient.get<StorePageDto>('/api/v1/stores', { params: { page: 0, size: 100 } })
+      const lista = Array.isArray(r.data?.content) ? r.data.content : []
+      if (!lista.length) return deMocks()
+      return lista.map((d) => ({
+        id: String(d.nit),
+        nombre: 'Tienda aliada',
+        categoria: 'Moda local',
+        barrio: 'Bogotá',
+        direccion: 'Bogotá, Colombia',
+        distanciaKm: '',
+        horario: '',
+        lngLat: [-74.0628, 4.6433] as [number, number],
+        telefono: '',
+        correo: '',
+        nit: String(d.nit),
+        representante: '',
+        aliadaDesde: '',
+        verificacion: 'Verificada',
+        rating: '',
+        reviews: 0,
+        descripcion: '',
+        foto: '/img/mapa/luna.jpg',
+        fotoEditorial: '/img/mapa/luna.jpg',
+        fotosGaleria: [],
+        colecciones: [],
+        bannerNotice: '',
+        prendas: [],
+        categorias: [],
+        coleccionDestacada: { titulo: 'Colección destacada', subtitulo: 'Selección de la temporada', descripcion: '' },
+        distintivos: [],
+        cifras: { prendasActivas: 0, categoriasCount: 0, playlists: 0, aliadaDesde: '' },
+        ...aTiendaPublica(d, null),
+      }))
     } catch {
-      return TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
+      return deMocks()
     }
   },
 }
