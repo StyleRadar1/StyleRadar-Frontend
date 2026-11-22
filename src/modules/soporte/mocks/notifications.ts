@@ -7,7 +7,7 @@ import type { AlertasResumenDto, NotificacionDto } from '../types/notification.d
 export const seedAlerts = (): Record<string, AlertasResumenDto> => ({
   'u-1': {
     plan: 'RADAR',
-    limiteAlertas: 3,
+    limiteAlertas: 0,
     alertas: [
       { id: 'a1', prendaId: 'r1c2-tenis-retro', prenda: 'Tenis retro gris', tienda: 'Segunda mano', activa: true, creadaEn: '2026-09-15' },
       { id: 'a2', prendaId: 'r1c3-botella', prenda: 'Botella térmica 1 L', tienda: 'Luna Store', activa: false, creadaEn: '2026-09-02' },

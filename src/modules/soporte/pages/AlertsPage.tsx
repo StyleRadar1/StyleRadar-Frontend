@@ -5,11 +5,11 @@ import { errorKind } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
-import { PlanGate } from '@/modules/transacciones/components/PlanGate'
+import { FEATURE_REQUIRES_RADAR_PLUS_MSG, PlanGate } from '@/modules/transacciones/components/PlanGate'
 import { PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
 import { LockIcon } from '../components/LockIcon'
 import { alertService, LIMITE_PLAN } from '../services/alertService'
-import { alertasActivas, PLAN_LABEL, type AlertasResumenDto } from '../types/notification.dto'
+import { type AlertasResumenDto } from '../types/notification.dto'
 
 const EMPTY: AlertasResumenDto = { plan: 'RADAR', limiteAlertas: PLAN_LIMITS.alertas, alertas: [], busquedas: [] }
 const fecha = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -27,7 +27,7 @@ function errorAlerta(e: unknown): Msg & { quitar?: boolean; recargar?: boolean }
   // 403: alerta de otra persona. Se trata igual que el 404 para no revelar que existe
   if (status === 403) return { ok: false, titulo: 'Ya no está disponible', text: 'Actualizamos la lista.', quitar: true, recargar: true, neutro: true }
   if (status === 409) return { ok: false, titulo: 'Ya tienes una alerta para esto', text: 'La encuentras en Mis búsquedas.', recargar: true, neutro: true }
-  if (status === 422 && e instanceof ApiError && e.code === LIMITE_PLAN) return { ok: false, text: 'Con el plan Radar puedes tener hasta 3 alertas activas. Apaga alguna o pásate a Radar+.', planes: true }
+  if (status === 422 && e instanceof ApiError && e.code === LIMITE_PLAN) return { ok: false, text: FEATURE_REQUIRES_RADAR_PLUS_MSG, planes: true }
   if (status === 422) return { ok: false, titulo: 'Tu búsqueda todavía se está guardando', text: 'Intenta activar la alerta en unos segundos.' }
   const kind = errorKind(e)
   if (kind === 'sin-conexion') return { ok: false, text: 'Se perdió la conexión. Revisa tu internet e intenta de nuevo.' }
@@ -36,7 +36,7 @@ function errorAlerta(e: unknown): Msg & { quitar?: boolean; recargar?: boolean }
 }
 type Remove = { kind: 'alerta' | 'busqueda'; id: string; nombre: string }
 
-/** RF-28 a RF-32 con el bloqueo por plan (P8): en Radar hay máximo 3 alertas activas; en Radar+ no hay límite. */
+/** RF-28 a RF-32 con el bloqueo por plan (RF-102): las alertas de disponibilidad están disponibles solo en Radar+. */
 export default function AlertsPage() {
   const { data, loading, error, reload, setData } = useResource(alertService.summary, EMPTY)
   const [busy, setBusy] = useState<string | null>(null)
@@ -44,14 +44,12 @@ export default function AlertsPage() {
   const [remove, setRemove] = useState<Remove | null>(null)
   const inFlight = useRef(false)
 
-  const activas = alertasActivas(data)
-  const limite = data.limiteAlertas
-  const lleno = limite !== null && activas >= limite
+  const esRadar = data.plan === 'RADAR'
 
   const toggle = async (kind: Remove['kind'], id: string, on: boolean, nombre: string) => {
     if (inFlight.current) return
-    if (on && lleno) {
-      setMsg({ ok: false, planes: true, text: `Con el plan ${PLAN_LABEL[data.plan]} puedes tener hasta ${limite} alertas activas. Apaga alguna o pásate a Radar+.` })
+    if (esRadar) {
+      setMsg({ ok: false, planes: true, text: FEATURE_REQUIRES_RADAR_PLUS_MSG })
       return
     }
     inFlight.current = true; setBusy(id); setMsg(null)
@@ -106,14 +104,13 @@ export default function AlertsPage() {
         : error ? <div className="mt-8"><ErrorState error={error} onRetry={reload} title="No pudimos cargar tus alertas" /></div>
         : (
           <>
-            {limite !== null && (
-              <div role="status" aria-label="Uso del plan" className={`mt-8 flex flex-wrap items-center gap-3 rounded-2xl border p-4 text-sm ${lleno ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15' : 'border-[var(--color-border)] bg-[var(--color-surface)]'}`}>
-                <LockIcon className="h-5 w-5 shrink-0 text-[var(--color-accent)]" />
-                <p className="min-w-48 flex-1">
-                  <b>{Math.min(activas, limite)} de {limite}</b> alertas activas en el plan {PLAN_LABEL[data.plan]}.
-                  {lleno && ' Llegaste al límite: con Radar+ no hay límite.'}
-                </p>
-                <Link to="/planes" className="rounded-xl border border-[var(--color-border)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface-muted)] text-[var(--color-text)]">Ver planes</Link>
+            {esRadar && (
+              <div className="mt-8">
+                <PlanGate
+                  forceLock={true}
+                  title="Alertas de disponibilidad con Radar+"
+                  text="Activa Radar+ para recibir avisos cuando haya disponibilidad en tus búsquedas y prendas agotadas"
+                />
               </div>
             )}
 
@@ -132,13 +129,6 @@ export default function AlertsPage() {
                   {msg.titulo && <b className="block">{msg.titulo}</b>}
                   {msg.text} {msg.planes && <Link to="/planes" className="font-semibold underline">Ver planes</Link>}
                 </p>
-                {msg.planes && (
-                  <PlanGate
-                    forceLock={true}
-                    title="Alertas de disponibilidad sin límite con Radar+"
-                    text="Con el plan Radar tienes hasta 3 alertas activas. Activa Radar+ para recibir avisos sin límite."
-                  />
-                )}
               </div>
             )}
 
@@ -153,7 +143,7 @@ export default function AlertsPage() {
                       {s.coincidenciasNuevas > 0 && <span className="mt-1 inline-block rounded-full bg-[var(--color-sand)]/20 px-2.5 py-0.5 text-xs font-semibold text-[var(--color-sand)]">{s.coincidenciasNuevas} prendas nuevas</span>}
                     </div>
                     <Link to={`/catalogo?q=${encodeURIComponent(s.nombre)}`} className="rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm font-semibold hover:bg-[var(--color-surface-muted)] text-[var(--color-text)]">Ver resultados</Link>
-                    <Toggle label={`Alerta para ${s.nombre}`} on={s.alerta} locked={!s.alerta && lleno} busy={busy === s.id} onChange={(v) => toggle('busqueda', s.id, v, s.nombre)} />
+                    <Toggle label={`Alerta para ${s.nombre}`} on={!esRadar && s.alerta} locked={esRadar} busy={busy === s.id} onChange={(v) => toggle('busqueda', s.id, v, s.nombre)} />
                     <button type="button" disabled={busy === s.id} onClick={() => setRemove({ kind: 'busqueda', id: s.id, nombre: s.nombre })} className="rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-danger)]" aria-label={`Eliminar ${s.nombre}`}>Eliminar</button>
                   </li>
                 ))}
@@ -175,8 +165,8 @@ export default function AlertsPage() {
                       <p className="font-semibold text-[var(--color-text)]">{a.prenda}</p>
                       <p className="text-sm text-[var(--color-text-muted)]">{a.tienda} · desde el {dia(a.creadaEn)}</p>
                     </div>
-                    <Toggle label={`Alerta para ${a.prenda}`} on={a.activa} locked={!a.activa && lleno} busy={busy === a.id} onChange={(v) => toggle('alerta', a.id, v, a.prenda)} />
-                    {a.activa && (
+                    <Toggle label={`Alerta para ${a.prenda}`} on={!esRadar && a.activa} locked={esRadar} busy={busy === a.id} onChange={(v) => toggle('alerta', a.id, v, a.prenda)} />
+                    {!esRadar && a.activa && (
                       <button type="button" disabled={busy === a.id} onClick={() => setRemove({ kind: 'alerta', id: a.id, nombre: a.prenda })} className="rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-danger)]" aria-label={`Cancelar seguimiento de ${a.prenda}`}>Cancelar seguimiento</button>
                     )}
                   </li>
