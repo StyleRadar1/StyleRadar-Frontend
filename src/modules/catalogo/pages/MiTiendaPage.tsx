@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useCallback, useContext, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { hasScenario } from '@/modules/core/api/mockScenario'
@@ -6,25 +6,17 @@ import { ErrorCard } from '@/modules/core/components/ErrorScene'
 import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { env } from '@/configs/env'
+import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
 import { erroresDeConfiguracion, storeSettingsService } from '../services/storeSettingsService'
+import { errorDeFoto, ordenadas, storePhotoService, TEXTOS_FOTOS } from '../services/storePhotoService'
 import {
-  LOW_STOCK_DEFAULT, LOW_STOCK_MAX, LOW_STOCK_MIN, NEW_ARRIVAL_DEFAULT, NEW_ARRIVAL_OPTIONS,
-  type StoreResponseDto,
+  ALLOWED_STORE_PHOTO_TYPES, LOW_STOCK_DEFAULT, LOW_STOCK_MAX, LOW_STOCK_MIN, MAX_STORE_PHOTOS, NEW_ARRIVAL_DEFAULT,
+  NEW_ARRIVAL_OPTIONS, type StorePhotoDto, type StoreResponseDto,
 } from '../types/store.dto'
+import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import './MiTiendaPage.css'
 import './MiTiendaDashboard.css'
-
-const MAX_STORE_PHOTOS = 6
-const MAX_STORE_PHOTO_BYTES = 6 * 1024 * 1024
-const ALLOWED_STORE_PHOTO_TYPES = ['image/jpeg', 'image/png']
-
-function validateStoreImage(file: File): string {
-  if (!ALLOWED_STORE_PHOTO_TYPES.includes(file.type) || file.size === 0 || file.size > MAX_STORE_PHOTO_BYTES) {
-    return 'Sube una imagen JPG o PNG de máximo 6 MB.'
-  }
-  return ''
-}
 
 type StoreItem = {
   id: string
@@ -76,7 +68,6 @@ const INITIAL_LEGAL_INFO: LegalStoreInfo = {
 }
 
 const STORAGE_LEGAL_KEY = 'styleradar-store-legal-info'
-const GALLERY_STORAGE_KEY = 'styleradar-store-gallery'
 const COLLECTIONS_STORAGE_KEY = 'styleradar-store-collections'
 
 const DEFAULT_COLLECTIONS: StoreCollection[] = [
@@ -111,27 +102,6 @@ function readLegalInfo(): LegalStoreInfo {
     return saved ? { ...INITIAL_LEGAL_INFO, ...JSON.parse(saved) as Partial<LegalStoreInfo> } : INITIAL_LEGAL_INFO
   } catch {
     return INITIAL_LEGAL_INFO
-  }
-}
-
-type StoreGalleryPhoto = {
-  id: string
-  url: string
-  tag: string
-}
-
-const DEFAULT_GALLERY: StoreGalleryPhoto[] = [
-  { id: 'foto-1', url: '/img/mapa/luna.jpg', tag: 'Fachada' },
-  { id: 'foto-2', url: '/img/sesion/rol-tienda.jpg', tag: 'Mostrador' },
-  { id: 'foto-3', url: '/prototipo/assets/img/productos/r1c3-tenis-running.jpg', tag: 'Vitrina' },
-]
-
-function readGallery(): StoreGalleryPhoto[] {
-  try {
-    const saved = localStorage.getItem(GALLERY_STORAGE_KEY)
-    return saved ? JSON.parse(saved) as StoreGalleryPhoto[] : DEFAULT_GALLERY
-  } catch {
-    return DEFAULT_GALLERY
   }
 }
 
@@ -194,8 +164,14 @@ export default function MiTiendaPage() {
   }, [userId])
 
   /* Fotos de la tienda */
-  const [storeGallery, setStoreGallery] = useState<StoreGalleryPhoto[]>(readGallery)
+  /* SR-RF-74 · F-20: la galería vive en ms-tiendas (máximo 6; la primera es la portada). */
+  const [storeGallery, setStoreGallery] = useState<StorePhotoDto[]>([])
   const [photoError, setPhotoError] = useState('')
+  const [photosBusy, setPhotosBusy] = useState(false)
+  /* Hasta tener la galería real no se sube nada: así el conteo de 6 y el orden salen del servidor. */
+  const [photosReady, setPhotosReady] = useState(false)
+  const [photoToRemove, setPhotoToRemove] = useState<StorePhotoDto | null>(null)
+  const cerrarQuitarFoto = useCallback(() => setPhotoToRemove(null), [])
 
   /* Colecciones */
   const [collections, setCollections] = useState<StoreCollection[]>(readCollections)
@@ -228,6 +204,15 @@ export default function MiTiendaPage() {
         setNewArrivalDays(c.newArrivalDays)
       })
       .catch(() => { /* se quedan los valores por defecto; al guardar se muestra el error */ })
+    return () => { active = false }
+  }, [storeNit])
+
+  useEffect(() => {
+    if (!storeNit) return
+    let active = true
+    storePhotoService.list(storeNit)
+      .then((fotos) => { if (active) { setStoreGallery(fotos); setPhotosReady(true) } })
+      .catch((e) => { if (active) setPhotoError(errorKind(e) === 'no-existe' ? SIN_ALMACEN : errorMessage(e, 'No pudimos cargar las fotos de tu tienda.')) })
     return () => { active = false }
   }, [storeNit])
 
@@ -265,52 +250,80 @@ export default function MiTiendaPage() {
   }
 
   /* Subir y quitar fotos de la tienda */
+  const cargarFotos = useCallback((nit: string) => storePhotoService.list(nit).then(setStoreGallery), [])
+  const errorDeGaleria = (e: unknown) => {
+    if (e instanceof ApiError && e.status === 422) return TEXTOS_FOTOS.maximo
+    if (errorKind(e) === 'no-existe') return 'No encontramos tu almacén. Recarga la página o escríbele a soporte.'
+    return errorMessage(e, 'No se pudo actualizar la galería.')
+  }
+
   const handleUploadPhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.currentTarget.files ?? [])
     event.currentTarget.value = ''
     setPhotoError('')
-    if (!selected.length) return
+    if (!selected.length || photosBusy || !photosReady) return
+    if (!storeNit) { setPhotoError(storeError || SIN_ALMACEN); return }
     const remaining = Math.max(0, MAX_STORE_PHOTOS - storeGallery.length)
     if (!remaining) {
-      setPhotoError('Ya llegaste al máximo de 6 fotos.')
+      setPhotoError(TEXTOS_FOTOS.maximo)
       return
     }
-    const invalidMsg = selected.map(validateStoreImage).find(Boolean)
+    const invalidMsg = selected.map(errorDeFoto).find(Boolean)
     if (invalidMsg) {
       setPhotoError(invalidMsg)
       return
     }
-    if (selected.length > remaining) {
-      setPhotoError('Ya llegaste al máximo de 6 fotos.')
-    }
-    const allowed = selected.slice(0, remaining)
-    const dataUrls = await Promise.all(allowed.map((file) => new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('No se pudo leer la imagen.'))
-      reader.onerror = () => reject(new Error('No se pudo leer una de las imágenes.'))
-      reader.readAsDataURL(file)
-    })))
-    const newEntries: StoreGalleryPhoto[] = dataUrls.map((url, i) => ({
-      id: `photo-${Date.now()}-${i}`,
-      url,
-      tag: `Foto ${storeGallery.length + i + 1}`,
-    }))
-
-    const next = [...storeGallery, ...newEntries].slice(0, MAX_STORE_PHOTOS)
-    setStoreGallery(next)
+    // El back recibe una foto por petición: se suben en orden y cada una aparece al terminar.
+    setPhotosBusy(true)
+    let subidas = 0
     try {
-      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(next))
-    } catch {}
-    setNotice('Fotos de la tienda actualizadas con éxito.')
+      for (const file of selected.slice(0, remaining)) {
+        const foto = await storePhotoService.upload(storeNit, file)
+        setStoreGallery((g) => ordenadas([...g.filter((x) => String(x.id) !== String(foto.id)), foto]))
+        subidas++
+      }
+      if (selected.length > remaining) setPhotoError(TEXTOS_FOTOS.maximo)
+    } catch (e) {
+      setPhotoError(errorDeGaleria(e))
+    } finally {
+      setPhotosBusy(false)
+    }
+    if (subidas) setNotice('Fotos de la tienda actualizadas con éxito.')
   }
 
-  const handleRemovePhoto = (id: string) => {
-    const next = storeGallery.filter((p) => p.id !== id)
-    setStoreGallery(next)
+  const moverFoto = async (index: number, paso: -1 | 1) => {
+    const destino = index + paso
+    if (!storeNit || photosBusy || destino < 0 || destino >= storeGallery.length) return
+    const orden = storeGallery.map((f) => f.id)
+    ;[orden[index], orden[destino]] = [orden[destino], orden[index]]
+    setPhotosBusy(true); setPhotoError('')
     try {
-      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(next))
-    } catch {}
-    setNotice('Foto eliminada.')
+      setStoreGallery(await storePhotoService.reorder(storeNit, orden))
+      setNotice(destino === 0 || index === 0 ? 'Orden guardado. La primera foto es la portada.' : 'Orden de las fotos guardado.')
+    } catch (e) {
+      // FA-09: otra sesión cambió la galería; se vuelve a pedir para tener la lista real.
+      if (errorKind(e) === 'datos') { setPhotoError(TEXTOS_FOTOS.ordenDesactualizado); cargarFotos(storeNit).catch(() => {}) }
+      else setPhotoError(errorDeGaleria(e))
+    } finally {
+      setPhotosBusy(false)
+    }
+  }
+
+  const handleRemovePhoto = async () => {
+    const foto = photoToRemove
+    if (!foto || !storeNit || photosBusy) return
+    setPhotosBusy(true); setPhotoError('')
+    try {
+      await storePhotoService.remove(storeNit, foto.id)
+      // La siguiente pasa a ser la portada (RN-03): se vuelve a pedir la galería con las posiciones nuevas.
+      await cargarFotos(storeNit)
+      setNotice('Foto eliminada.')
+    } catch (e) {
+      setPhotoError(errorDeGaleria(e))
+    } finally {
+      setPhotosBusy(false)
+      setPhotoToRemove(null)
+    }
   }
 
   /* Colecciones */
@@ -656,7 +669,7 @@ export default function MiTiendaPage() {
             <header className="msd-card__head">
               <div>
                 <h2 id="store-photos-title">Fotos de la tienda</h2>
-                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Fachada, vitrina e interior (hasta 6 fotos). {storeGallery.length}/6 fotos.</p>
+                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Fachada, vitrina e interior (hasta 6 fotos; la primera es la portada). {storeGallery.length}/6 fotos.</p>
               </div>
             </header>
             <FieldError id="store-photos-err" message={photoError} />
@@ -665,11 +678,16 @@ export default function MiTiendaPage() {
                 <div key={photo.id} className="msd-collection">
                   <img src={photo.url} alt={`Foto ${index + 1} de ${legalInfo.legalName}`} loading="lazy" />
                   <span className="msd-collection__shade" aria-hidden="true" />
-                  <span className="msd-collection__name">{photo.tag || `Foto ${index + 1}`}</span>
-                  <span className="msd-collection__meta">Luna Store</span>
+                  <span className="msd-collection__name">{photo.cover ? 'Portada' : `Foto ${index + 1}`}</span>
+                  <span className="msd-collection__meta">
+                    <button type="button" disabled={photosBusy || index === 0} onClick={() => moverFoto(index, -1)} aria-label={`Mover foto ${index + 1} antes`} title="Mover antes">←</button>
+                    {' '}
+                    <button type="button" disabled={photosBusy || index === storeGallery.length - 1} onClick={() => moverFoto(index, 1)} aria-label={`Mover foto ${index + 1} después`} title="Mover después">→</button>
+                  </span>
                   <button
                     type="button"
-                    onClick={() => handleRemovePhoto(photo.id)}
+                    disabled={photosBusy}
+                    onClick={() => setPhotoToRemove(photo)}
                     className="msd-photo-del"
                     aria-label={`Quitar foto ${index + 1}`}
                     title="Quitar foto"
@@ -678,19 +696,26 @@ export default function MiTiendaPage() {
                   </button>
                 </div>
               ))}
-              {storeGallery.length < MAX_STORE_PHOTOS && (
-                <label className="msd-collection msd-collection--new cursor-pointer">
-                  <span>＋ Subir foto</span>
+              {photosReady && storeGallery.length < MAX_STORE_PHOTOS && (
+                <label className="msd-collection msd-collection--new cursor-pointer" aria-busy={photosBusy}>
+                  <span>{photosBusy ? 'Subiendo…' : '＋ Subir foto'}</span>
                   <input
                     type="file"
-                    accept="image/jpeg,image/png"
+                    accept={ALLOWED_STORE_PHOTO_TYPES.join(',')}
                     multiple
+                    disabled={photosBusy}
                     className="sr-only"
                     onChange={handleUploadPhotos}
                   />
                 </label>
               )}
             </div>
+            <ConfirmDialog open={!!photoToRemove} busy={photosBusy} danger
+              title="¿Quitar esta foto?"
+              confirmLabel="Quitar foto"
+              onCancel={cerrarQuitarFoto} onConfirm={handleRemovePhoto}>
+              {photoToRemove?.cover ? 'Es la portada: la siguiente foto pasará a ser la portada.' : 'La foto dejará de verse en la página de tu tienda.'}
+            </ConfirmDialog>
           </section>
         </div>
 

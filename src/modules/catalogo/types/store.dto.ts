@@ -74,3 +74,20 @@ export interface ItemBadgeDto {
   activeBadge: ActiveBadge
   updatedAt?: string
 }
+
+/** SR-RF-74: fotografía de la tienda física (GET y POST /api/v1/stores/{nit}/photos). */
+export interface StorePhotoDto {
+  id: number | string
+  storeNit: string
+  url: string
+  /** De 1 a 6. La posición 1 es la portada. */
+  position: number
+  cover: boolean
+  registeredAt?: string
+}
+/** PUT /api/v1/stores/{nit}/photos/order: exactamente las fotos actuales, en el orden nuevo. */
+export interface ReorderPhotosRequestDto { photoIds: (number | string)[] }
+
+export const MAX_STORE_PHOTOS = 6
+export const MAX_STORE_PHOTO_BYTES = 6 * 1024 * 1024
+export const ALLOWED_STORE_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const

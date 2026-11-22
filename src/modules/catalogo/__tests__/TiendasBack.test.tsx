@@ -8,7 +8,9 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { renderConSesion, sesionComo } from '@/modules/identidad/__tests__/helpers'
 import MiTiendaPage from '../pages/MiTiendaPage'
 import { storePublicService } from '../services/storePublicService'
+import { storePhotoService } from '../services/storePhotoService'
 import { storeSettingsService } from '../services/storeSettingsService'
+import { png } from '../../experiencia/__tests__/helpers'
 import type { StoreResponseDto } from '../types/store.dto'
 
 const LUNA: StoreResponseDto = {
@@ -96,6 +98,29 @@ describe('ms-tiendas: perfil público y almacén de la Tienda (F-19 · F-22)', (
     expect(within(dialog).getByLabelText('Duración de nueva llegada')).toHaveValue('14')
     await user.click(within(dialog).getByRole('button', { name: 'Guardar' }))
     expect(await within(dialog).findByText('El periodo de nueva llegada no puede superar 60 días')).toBeInTheDocument()
+  })
+
+  it('las fotos usan /api/v1/stores/{nit}/photos: lista ordenada, una foto por petición en «file», orden y borrado', async () => {
+    const get = porRuta({ '/api/v1/stores/9014823371/photos': [
+      { id: 8, storeNit: '9014823371', url: 'https://blob/b.webp', position: 2, cover: false },
+      { id: 5, storeNit: '9014823371', url: 'https://blob/a.jpg', position: 1, cover: true },
+    ] })
+    expect((await storePhotoService.list('9014823371')).map((f) => f.id)).toEqual([5, 8])
+    expect(get).toHaveBeenCalledWith('/api/v1/stores/9014823371/photos')
+
+    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { id: 9, storeNit: '9014823371', url: 'u', position: 3, cover: false } })
+    await storePhotoService.upload('9014823371', png('c.webp', 100, 'image/webp'))
+    const [url, form] = post.mock.calls[0]
+    expect(url).toBe('/api/v1/stores/9014823371/photos')
+    expect((form as FormData).get('file')).toBeInstanceOf(File)
+
+    const put = vi.spyOn(apiClient, 'put').mockResolvedValue({ data: [] })
+    await storePhotoService.reorder('9014823371', [8, 5])
+    expect(put).toHaveBeenCalledWith('/api/v1/stores/9014823371/photos/order', { photoIds: [8, 5] })
+
+    const del = vi.spyOn(apiClient, 'delete').mockResolvedValue({ data: undefined })
+    await storePhotoService.remove('9014823371', 8)
+    expect(del).toHaveBeenCalledWith('/api/v1/stores/9014823371/photos/8')
   })
 
   it('Mi tienda avisa si la cuenta no tiene almacén asociado (404)', async () => {
