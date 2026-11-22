@@ -17,7 +17,7 @@ describe('menú según el rol', () => {
   afterEach(() => { localStorage.clear(); delete document.documentElement.dataset.tema })
 
   it('la persona usuaria ve su rol en el botón de cuenta y Mensajes como ícono', () => {
-    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     renderNav()
     expect(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas, Usuario' })).toBeInTheDocument()
     expect(within(nav()).getByRole('link', { name: /^Mensajes/ })).toHaveAttribute('href', '/mensajes')
@@ -26,7 +26,7 @@ describe('menú según el rol', () => {
   })
 
   it('el administrador ve la franja de modo administrador y la etiqueta Admin', () => {
-    loginAs('a-1', 'Mariana Bernal', 'admin@styleradar.co', 'ADMIN_STYLERADAR')
+    loginAs('a-1', 'Mariana Bernal', 'admin@styleradar.co', 'STYLERADAR_ADMIN')
     renderNav()
     expect(screen.getByText('Modo administrador')).toBeInTheDocument()
     expect(within(nav()).getByRole('link', { name: /StyleRadar\s*Admin/ })).toBeInTheDocument()
@@ -35,7 +35,7 @@ describe('menú según el rol', () => {
 
   it('Mensajes está solo como ícono arriba, no repetido en el menú de cuenta', async () => {
     const user = userEvent.setup()
-    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'ADMIN_ALMACEN')
+    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'STORE_ADMIN')
     renderNav()
     expect(within(nav()).getByRole('link', { name: /^Mensajes/ })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Mi cuenta/ }))
@@ -44,7 +44,7 @@ describe('menú según el rol', () => {
 
   it('el tema se cambia desde el menú de cuenta', async () => {
     const user = userEvent.setup()
-    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     renderNav()
     await user.click(screen.getByRole('button', { name: /Mi cuenta/ }))
     const tema = screen.getByRole('group', { name: 'Tema' })
@@ -69,17 +69,17 @@ describe('menú según el rol', () => {
     expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/')
     unmount()
 
-    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'COMPRADOR')
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     const { unmount: u2 } = renderNav()
     expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/catalogo')
     u2()
 
-    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'ADMIN_ALMACEN')
+    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'STORE_ADMIN')
     const { unmount: u3 } = renderNav()
     expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/mi-tienda')
     u3()
 
-    loginAs('f-1', 'Ropero Comunitario', 'fundacion@styleradar.co', 'REPRESENTANTE_FUNDACION')
+    loginAs('f-1', 'Ropero Comunitario', 'fundacion@styleradar.co', 'FOUNDATION_REPRESENTATIVE')
     const { unmount: u4 } = renderNav()
     expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/fundacion')
     u4()

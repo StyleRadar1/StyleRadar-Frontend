@@ -37,14 +37,16 @@ describe('Mi tienda e Información de tienda (errores)', () => {
     const user = userEvent.setup({ applyAccept: false })
     renderAt('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
 
+    // La galería se pide al servicio de fotos (F-20); con datos de prueba empieza con 3.
+    expect(await screen.findByText(/3\/6 fotos\./i)).toBeInTheDocument()
     const input = document.querySelector('#fotos-tienda input[type="file"]') as HTMLInputElement
     expect(input).not.toBeNull()
 
     await user.upload(input, png('doc.pdf', 100, 'application/pdf'))
-    expect(await screen.findByText('Sube una imagen JPG o PNG de máximo 6 MB.')).toBeInTheDocument()
+    expect(await screen.findByText('Sube una imagen JPG, PNG o WebP de máximo 6 MB.')).toBeInTheDocument()
 
     await user.upload(input, png('pesada.png', 7 * 1024 * 1024, 'image/png'))
-    expect(await screen.findByText('Sube una imagen JPG o PNG de máximo 6 MB.')).toBeInTheDocument()
+    expect(await screen.findByText('Sube una imagen JPG, PNG o WebP de máximo 6 MB.')).toBeInTheDocument()
 
     const validSix = Array.from({ length: 6 }, (_, i) => png(`foto-${i + 1}.png`, 256, 'image/png'))
     await user.upload(input, validSix)

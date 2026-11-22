@@ -44,9 +44,9 @@ export function useStatsRole() {
   const { user } = useAuth()
   return useMemo(() => {
     if (!user) return null
-    if (user.role === 'ADMIN_ALMACEN') return 'store' as const
-    if (user.role === 'REPRESENTANTE_FUNDACION') return 'foundation' as const
-    if (user.role === 'ADMIN_STYLERADAR') return 'admin' as const
+    if (user.role === 'STORE_ADMIN') return 'store' as const
+    if (user.role === 'FOUNDATION_REPRESENTATIVE') return 'foundation' as const
+    if (user.role === 'STYLERADAR_ADMIN') return 'admin' as const
     return null
   }, [user])
 }

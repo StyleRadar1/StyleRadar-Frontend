@@ -1,40 +1,72 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { tokenStorage } from '@/modules/core/api/tokenStorage'
-import { authService } from '../services/authService'
-import type { LoginRequestDto, LoginResponseDto, RegisterRequestDto, UserSessionDto, VerifyOtpRequestDto } from '../types/auth.dto'
+import { aRol } from '@/modules/core/types/roles'
+import { env } from '@/configs/env'
+import { aResultado, aSesion, authService } from '../services/authService'
+import { usuarioService } from '../services/usuarioService'
+import type { LoginRequestDto, LoginResponseDto, LoginResult, RegisterRequestDto, UserSessionDto, VerifyOtpRequestDto } from '../types/auth.dto'
 import { AuthContext } from './authContext'
 
 const USER_KEY = 'sr_user'
 
-const readUser = (): UserSessionDto | null => {
-  try { return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null') } catch { return null }
-}
 const saveUser = (user: UserSessionDto) => {
   try { localStorage.setItem(USER_KEY, JSON.stringify(user)) } catch { /* sin almacenamiento */ }
+}
+/** Lee la sesión guardada. Si quedó con un rol anterior en español, lo pasa al rol en inglés y la vuelve a guardar. */
+const readUser = (): UserSessionDto | null => {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(USER_KEY) ?? 'null') as UserSessionDto | null
+    if (!guardado) return null
+    const role = aRol(guardado.role)
+    if (!role) return null
+    if (role !== guardado.role) saveUser({ ...guardado, role })
+    return { ...guardado, role }
+  } catch { return null }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserSessionDto | null>(() => (tokenStorage.get() ? readUser() : null))
 
   const logout = useCallback(() => {
-    authService.logout().catch(() => {})
+    // Se toma el token antes de limpiarlo: ms-auth necesita el Bearer para revocar la sesión.
+    authService.logout(tokenStorage.get()).catch(() => {})
     tokenStorage.clear()
     try { localStorage.removeItem(USER_KEY) } catch { /* sin almacenamiento */ }
     setUser(null)
   }, [])
 
+  /** Inicia la sesión con la respuesta de ms-auth (accessToken, userId, roles y email en la raíz). */
   const start = useCallback((res: LoginResponseDto) => {
-    tokenStorage.set(res.token)
-    saveUser(res.user)
-    setUser(res.user)
+    const sesion = aSesion(res)
+    tokenStorage.set(res.accessToken as string)
+    saveUser(sesion)
+    setUser(sesion)
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('sr:login-success', { detail: res.user }))
+      window.dispatchEvent(new CustomEvent('sr:login-success', { detail: sesion }))
     }
-    return res.user
+    // El login de ms-auth no trae el nombre: se lee del perfil (GET /api/v1/users/{id}) y se actualiza la sesión.
+    if (!env.useMocks) {
+      usuarioService.get(sesion.id).then((p) => {
+        if (!p.name) return
+        setUser((u) => {
+          if (!u || u.id !== sesion.id) return u
+          const next = { ...u, name: p.name }
+          saveUser(next)
+          return next
+        })
+      }).catch(() => { /* se queda con el nombre provisional */ })
+    }
+    return sesion
   }, [])
 
-  const login = useCallback(async (payload: LoginRequestDto) => start(await authService.login(payload)), [start])
-  const register = useCallback(async (payload: RegisterRequestDto) => start(await authService.register(payload)), [start])
+  /** Si el correo no está verificado no hay token todavía: se devuelve 'otp' para pedir el código. */
+  const resolver = useCallback((res: LoginResponseDto, email: string): LoginResult => {
+    const r = aResultado(res, email)
+    return r.kind === 'session' ? { kind: 'session', user: start(res) } : r
+  }, [start])
+
+  const login = useCallback(async (payload: LoginRequestDto) => resolver(await authService.login(payload), payload.email), [resolver])
+  const register = useCallback(async (payload: RegisterRequestDto) => resolver(await authService.register(payload), payload.email), [resolver])
   const verifyOtp = useCallback(async (payload: VerifyOtpRequestDto) => start(await authService.verifyOtp(payload)), [start])
 
   const updateUser = useCallback((changes: Partial<Pick<UserSessionDto, 'name'>>) => {

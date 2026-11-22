@@ -1,79 +1,55 @@
-import { useId, useMemo, useRef, useState } from 'react'
-import { errorKind, errorMessage } from '@/modules/core/api/errors'
-import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { Toasts, useToasts } from '@/modules/core/components/errores'
+import { useEffect, useId, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Toasts } from '@/modules/core/components/errores'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
+import { CambioEstadoDialog } from '../components/CambioEstadoDialog'
 import { EstadoCuentaPill } from '../components/EstadoCuentaPill'
 import { inputCls } from '../utils/campo'
 import { useAdminUsers } from '../hooks/useAdminUsers'
-import {
-  ESTADOS_CUENTA, ESTADO_CUENTA_AYUDA, ESTADO_CUENTA_LABEL, PLAN_LABEL,
-  type EstadoCuenta, type UsuarioAdminDto,
-} from '../types/usuario.dto'
-import { mesAnio, normalizar } from '../utils/formato'
-import { TEXTOS_ADMIN_USUARIOS } from '../utils/erroresAdmin'
+import { useCambioEstado } from '../hooks/useCambioEstado'
+import { ACCOUNT_STATUSES, ACCOUNT_STATUS_LABEL, ADMIN_Q_MAX, type AccountStatus } from '../types/usuario.dto'
+import { mesAnio } from '../utils/formato'
 
-type FiltroEstado = EstadoCuenta | 'TODOS'
+type FiltroEstado = AccountStatus | 'TODOS'
 type FiltroRol = Role | 'TODOS'
-type Cambio = { user: UsuarioAdminDto; to: EstadoCuenta }
-type Aviso = { ok: boolean; text: string; undo?: Cambio }
 
 const ROLES_FILTRO: [FiltroRol, string][] = [
-  ['TODOS', 'Todos los roles'], ['COMPRADOR', 'Usuarios'], ['ADMIN_ALMACEN', 'Tiendas'], ['REPRESENTANTE_FUNDACION', 'Fundaciones'],
+  ['TODOS', 'Todos los roles'], ['BUYER', 'Usuarios'], ['STORE_ADMIN', 'Tiendas'], ['FOUNDATION_REPRESENTATIVE', 'Fundaciones'],
+  ['STYLERADAR_ADMIN', 'Administradores'],
 ]
+/** Cuentas por página (el back acepta de 1 a 100). */
+export const ADMIN_USERS_PAGE_SIZE = 20
+/** Espera antes de buscar mientras se escribe, para no pedir una búsqueda por cada letra. */
+const ESPERA_BUSQUEDA_MS = 300
 
 /* RNF-07: en celular cada fila de la tabla se ve como una tarjeta con sus etiquetas. */
 const tdCls = 'px-4 py-3 align-middle max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-0 max-md:py-1.5 max-md:before:text-[11px] max-md:before:font-bold max-md:before:uppercase max-md:before:tracking-[.14em] max-md:before:text-white/55 max-md:before:content-[attr(data-label)]'
 
-/** RF-66: el administrador busca cuentas, las filtra por estado y las pasa a Activa, Inactiva o Bloqueada. */
+/** SR-RF-66: el administrador busca cuentas por estado, rol, nombre o correo y las pasa a Activa, Inactiva o Bloqueada. */
 export default function AdminUsersPage() {
-  const { users, loading, error, reload, setStatus } = useAdminUsers()
   const [texto, setTexto] = useState('')
+  const [q, setQ] = useState('')
   const [estado, setEstado] = useState<FiltroEstado>('TODOS')
   const [rol, setRol] = useState<FiltroRol>('TODOS')
-  const [cambio, setCambio] = useState<Cambio | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [aviso, setAviso] = useState<Aviso | null>(null)
-  const inFlight = useRef(false)
+  const [pagina, setPagina] = useState(0)
   const searchId = useId()
-  const toasts = useToasts()
 
-  const porRol = useMemo(() => users.filter((u) => rol === 'TODOS' || u.rol === rol), [users, rol])
-  const conteo = useMemo(() => {
-    const c: Record<FiltroEstado, number> = { TODOS: porRol.length, ACTIVA: 0, INACTIVA: 0, BLOQUEADA: 0 }
-    porRol.forEach((u) => { c[u.estado]++ })
-    return c
-  }, [porRol])
-  const visibles = useMemo(() => {
-    const q = normalizar(texto.trim())
-    return porRol.filter((u) => (estado === 'TODOS' || u.estado === estado) && (!q || normalizar(`${u.nombre} ${u.correo}`).includes(q)))
-  }, [porRol, estado, texto])
+  const { page, users, loading, error, reload, setStatus } = useAdminUsers({
+    q, page: pagina, size: ADMIN_USERS_PAGE_SIZE,
+    ...(estado !== 'TODOS' ? { status: estado } : {}),
+    ...(rol !== 'TODOS' ? { role: rol } : {}),
+  })
+  const ce = useCambioEstado({ setStatus, onNoExiste: reload, onConflicto: reload })
 
-  const filtrando = texto.trim() !== '' || estado !== 'TODOS' || rol !== 'TODOS'
-  const limpiar = () => { setTexto(''); setEstado('TODOS'); setRol('TODOS') }
+  useEffect(() => {
+    const t = setTimeout(() => { setQ(texto.trim()); setPagina(0) }, ESPERA_BUSQUEDA_MS)
+    return () => clearTimeout(t)
+  }, [texto])
 
-  const aplicar = async (c: Cambio, esDeshacer = false) => {
-    if (inFlight.current) return
-    inFlight.current = true; setBusy(true); setAviso(null)
-    const antes = c.user.estado
-    try {
-      const upd = await setStatus(c.user.id, c.to)
-      setAviso(esDeshacer
-        ? { ok: true, text: `Se deshizo el cambio: ${upd.nombre} vuelve a estar ${ESTADO_CUENTA_LABEL[upd.estado]}.` }
-        : { ok: true, text: `${upd.nombre} ahora está ${ESTADO_CUENTA_LABEL[upd.estado]}.`, undo: { user: upd, to: antes } })
-    } catch (e) {
-      const kind = errorKind(e)
-      // 403: no se toca la lista, así la cuenta se ve con el estado que tenía.
-      if (kind === 'permiso') { toasts.mostrar({ tono: 'error', ...TEXTOS_ADMIN_USUARIOS.sinPermiso }); return }
-      // 404: la cuenta ya no está; se vuelve a pedir la lista para que desaparezca.
-      if (kind === 'no-existe') { toasts.mostrar({ tono: 'info', ...TEXTOS_ADMIN_USUARIOS.noExiste }); reload(); return }
-      setAviso({ ok: false, text: errorMessage(e, 'No se pudo cambiar el estado de la cuenta.') })
-      if (kind === 'conflicto') reload()
-    } finally {
-      inFlight.current = false; setBusy(false); setCambio(null)
-    }
-  }
+  const filtrando = q !== '' || estado !== 'TODOS' || rol !== 'TODOS'
+  const limpiar = () => { setTexto(''); setQ(''); setEstado('TODOS'); setRol('TODOS'); setPagina(0) }
+  const total = page.totalElements
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
@@ -84,51 +60,50 @@ export default function AdminUsersPage() {
       <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-end">
         <div className="flex-1">
           <label htmlFor={searchId} className="block text-xs font-bold uppercase tracking-[.14em] text-white/70">Buscar</label>
-          <input id={searchId} type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Nombre o correo" className={`${inputCls} mt-1.5`} />
+          <input id={searchId} type="search" value={texto} maxLength={ADMIN_Q_MAX} onChange={(e) => setTexto(e.target.value)} placeholder="Nombre o correo" className={`${inputCls} mt-1.5`} />
         </div>
         <div>
           <label htmlFor={`${searchId}-rol`} className="block text-xs font-bold uppercase tracking-[.14em] text-white/70">Rol</label>
-          <select id={`${searchId}-rol`} value={rol} onChange={(e) => setRol(e.target.value as FiltroRol)} className={`${inputCls} mt-1.5 md:w-52`}>
+          <select id={`${searchId}-rol`} value={rol} onChange={(e) => { setRol(e.target.value as FiltroRol); setPagina(0) }} className={`${inputCls} mt-1.5 md:w-52`}>
             {ROLES_FILTRO.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
       </div>
 
       <div role="group" aria-label="Filtrar por estado" className="mt-4 flex flex-wrap gap-2">
-        {(['TODOS', ...ESTADOS_CUENTA] as FiltroEstado[]).map((f) => (
-          <button key={f} type="button" aria-pressed={estado === f} onClick={() => setEstado(f)}
+        {(['TODOS', ...ACCOUNT_STATUSES] as FiltroEstado[]).map((f) => (
+          <button key={f} type="button" aria-pressed={estado === f} onClick={() => { setEstado(f); setPagina(0) }}
             className={`rounded-full border px-4 py-2 text-sm font-semibold ${estado === f ? 'border-arena bg-arena text-grafito' : 'border-white/20 hover:bg-white/10'}`}>
-            {f === 'TODOS' ? 'Todas' : ESTADO_CUENTA_LABEL[f]} <span className={estado === f ? "" : "opacity-70"}>({loading ? '…' : conteo[f]})</span>
+            {f === 'TODOS' ? 'Todas' : ACCOUNT_STATUS_LABEL[f]}
           </button>
         ))}
       </div>
 
-      {aviso && (
-        <div role={aviso.ok ? 'status' : 'alert'}
-          className={`mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl p-3 text-sm ${aviso.ok ? 'bg-[var(--sr-ok,#9be3b4)]/10 text-[var(--sr-ok,#9be3b4)]' : 'bg-[var(--sr-bad,#ff8a8a)]/10 text-[var(--sr-bad,#ffb4b4)]'}`}>
-          <span>{aviso.text}</span>
-          {aviso.undo && <button type="button" disabled={busy} onClick={() => aviso.undo && aplicar(aviso.undo, true)} className="rounded-lg border border-current px-3 py-1 font-semibold">Deshacer</button>}
+      {ce.aviso && (
+        <div role={ce.aviso.ok ? 'status' : 'alert'}
+          className={`mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl p-3 text-sm ${ce.aviso.ok ? 'bg-[var(--sr-ok,#9be3b4)]/10 text-[var(--sr-ok,#9be3b4)]' : 'bg-[var(--sr-bad,#ff8a8a)]/10 text-[var(--sr-bad,#ffb4b4)]'}`}>
+          <span>{ce.aviso.text}</span>
+          {ce.aviso.undo && <button type="button" disabled={ce.busy} onClick={ce.deshacer} className="rounded-lg border border-current px-3 py-1 font-semibold">Deshacer</button>}
         </div>
       )}
 
       <div className="mt-6">
         {loading ? <Loading label="Cargando cuentas…" />
           : error ? <ErrorState error={error} onRetry={reload} title="No pudimos cargar las cuentas" />
-          : !visibles.length ? (
+          : !users.length ? (
             <EmptyState title={filtrando ? 'Ninguna cuenta coincide' : 'Aún no hay cuentas'}
               action={filtrando ? <button type="button" onClick={limpiar} className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco">Quitar filtros</button> : undefined}>
-              {filtrando ? 'Prueba con otro nombre, correo o estado.' : 'Cuando las personas se registren aparecerán aquí.'}
+              {filtrando ? 'Prueba con otro nombre, correo, rol o estado.' : 'Cuando las personas se registren aparecerán aquí.'}
             </EmptyState>
           ) : (
             <>
-              <p className="mb-3 text-sm text-white/60" aria-live="polite">{visibles.length} {visibles.length === 1 ? 'cuenta' : 'cuentas'}</p>
+              <p className="mb-3 text-sm text-white/60" aria-live="polite">{total} {total === 1 ? 'cuenta' : 'cuentas'}</p>
               <table className="w-full text-left text-sm max-md:block">
                 <caption className="sr-only">Cuentas de StyleRadar</caption>
                 <thead className="border-b border-white/15 text-[11px] uppercase tracking-[.14em] text-white/60 max-md:sr-only">
                   <tr>
                     <th scope="col" className="px-4 py-3 font-bold">Nombre</th>
                     <th scope="col" className="px-4 py-3 font-bold">Rol</th>
-                    <th scope="col" className="px-4 py-3 font-bold">Plan</th>
                     <th scope="col" className="px-4 py-3 font-bold">Estado</th>
                     <th scope="col" className="px-4 py-3 font-bold">Barrio</th>
                     <th scope="col" className="px-4 py-3 font-bold">Miembro desde</th>
@@ -136,20 +111,19 @@ export default function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody className="max-md:flex max-md:flex-col max-md:gap-3">
-                  {visibles.map((u) => (
+                  {users.map((u) => (
                     <tr key={u.id} className="border-b border-white/10 max-md:block max-md:rounded-2xl max-md:border max-md:bg-white/[.04] max-md:p-4">
                       <td className="px-4 py-3 max-md:block max-md:px-0 max-md:pt-0">
-                        <p className="font-semibold">{u.nombre}</p>
-                        <p className="break-all text-xs text-white/60">{u.correo}</p>
+                        <Link to={`/admin/usuarios/${encodeURIComponent(u.id)}`} className="font-semibold underline-offset-4 hover:underline">{u.name}</Link>
+                        <p className="break-all text-xs text-white/60">{u.email}</p>
                       </td>
-                      <td data-label="Rol" className={tdCls}>{ROLE_LABEL[u.rol]}</td>
-                      <td data-label="Plan" className={tdCls}>{PLAN_LABEL[u.plan]}</td>
-                      <td data-label="Estado" className={tdCls}><EstadoCuentaPill estado={u.estado} /></td>
-                      <td data-label="Barrio" className={tdCls}>{u.barrio || '—'}</td>
-                      <td data-label="Miembro desde" className={tdCls}>{mesAnio(u.miembroDesde)}</td>
+                      <td data-label="Rol" className={tdCls}>{u.roles[0] ? ROLE_LABEL[u.roles[0]] : '—'}</td>
+                      <td data-label="Estado" className={tdCls}><EstadoCuentaPill estado={u.accountStatus} /></td>
+                      <td data-label="Barrio" className={tdCls}>{u.neighborhood || '—'}</td>
+                      <td data-label="Miembro desde" className={tdCls}>{mesAnio(u.registeredAt)}</td>
                       <td className="px-4 py-3 text-right max-md:block max-md:px-0 max-md:pb-0 max-md:pt-3">
-                        <button type="button" disabled={busy} onClick={() => setCambio({ user: u, to: u.estado === 'BLOQUEADA' ? 'ACTIVA' : 'BLOQUEADA' })}
-                          aria-label={`Cambiar estado de ${u.nombre}`}
+                        <button type="button" disabled={ce.busy} onClick={() => ce.abrir(u)}
+                          aria-label={`Cambiar estado de ${u.name}`}
                           className="whitespace-nowrap rounded-xl border border-white/20 px-3 py-2 text-sm font-semibold hover:bg-white/10 max-md:w-full">
                           Cambiar estado
                         </button>
@@ -158,30 +132,22 @@ export default function AdminUsersPage() {
                   ))}
                 </tbody>
               </table>
+              {page.totalPages > 1 && (
+                <nav aria-label="Páginas de cuentas" className="mt-4 flex items-center justify-between gap-3 text-sm">
+                  <button type="button" disabled={page.first} onClick={() => setPagina((p) => Math.max(0, p - 1))}
+                    className="rounded-xl border border-white/20 px-4 py-2 font-semibold disabled:opacity-40">Anterior</button>
+                  <span className="text-white/70">Página {page.page + 1} de {page.totalPages}</span>
+                  <button type="button" disabled={page.last} onClick={() => setPagina((p) => p + 1)}
+                    className="rounded-xl border border-white/20 px-4 py-2 font-semibold disabled:opacity-40">Siguiente</button>
+                </nav>
+              )}
             </>
           )}
       </div>
 
-      <ConfirmDialog open={!!cambio} busy={busy} danger={cambio?.to === 'BLOQUEADA'}
-        title={cambio ? `Estado de ${cambio.user.nombre}` : ''}
-        confirmLabel={cambio ? `Cambiar a ${ESTADO_CUENTA_LABEL[cambio.to]}` : ''}
-        onCancel={() => setCambio(null)} onConfirm={() => cambio && aplicar(cambio)}>
-        {cambio && (
-          <fieldset>
-            <legend className="text-white/75">Hoy está {ESTADO_CUENTA_LABEL[cambio.user.estado]}. Elige el nuevo estado:</legend>
-            <div role="radiogroup" aria-label="Nuevo estado" className="mt-3 flex flex-col gap-2">
-              {ESTADOS_CUENTA.filter((s) => s !== cambio.user.estado).map((s) => (
-                <button key={s} type="button" role="radio" aria-checked={cambio.to === s} onClick={() => setCambio({ ...cambio, to: s })}
-                  className={`rounded-xl border px-4 py-3 text-left ${cambio.to === s ? 'border-arena bg-arena/10' : 'border-white/20 hover:bg-white/5'}`}>
-                  <span className="block font-semibold text-blanco">{cambio.to === s && <span aria-hidden="true">✓ </span>}{ESTADO_CUENTA_LABEL[s]}</span>
-                  <span className="block text-xs text-white/65">{ESTADO_CUENTA_AYUDA[s]}</span>
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        )}
-      </ConfirmDialog>
-      <Toasts items={toasts.items} quitar={toasts.quitar} duracion={toasts.duracion} />
+      <CambioEstadoDialog cambio={ce.cambio} motivo={ce.motivo} errorMotivo={ce.errorMotivo} busy={ce.busy}
+        onElegir={ce.elegir} onMotivo={ce.escribir} onCancel={ce.cancelar} onConfirm={ce.confirmar} />
+      <Toasts items={ce.toasts.items} quitar={ce.toasts.quitar} duracion={ce.toasts.duracion} />
     </section>
   )
 }

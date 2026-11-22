@@ -51,7 +51,7 @@ export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const auth = useContext(AuthContext)
-  const isBuyer = auth?.user?.role === 'COMPRADOR'
+  const isBuyer = auth?.user?.role === 'BUYER'
 
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string>('')
   const [guiaTallasAbierta, setGuiaTallasAbierta] = useState(false)

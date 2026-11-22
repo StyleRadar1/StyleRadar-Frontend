@@ -55,8 +55,8 @@ export const chatService = {
     }
     const rol = rolDeSesion()
     // El administrador de StyleRadar no tiene conversaciones: no hay nada que pedir
-    if (rol === 'ADMIN_STYLERADAR') return []
-    return apiClient.get<ConversacionDto[]>(rol === 'ADMIN_ALMACEN' ? BANDEJA_ALMACEN : MIS_CONVERSACIONES).then((r) => r.data)
+    if (rol === 'STYLERADAR_ADMIN') return []
+    return apiClient.get<ConversacionDto[]>(rol === 'STORE_ADMIN' ? BANDEJA_ALMACEN : MIS_CONVERSACIONES).then((r) => r.data)
   },
 
   /** Total de mensajes sin leer, para el ícono de mensajes del menú. */

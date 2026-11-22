@@ -5,14 +5,14 @@ import { ROLE_HOME } from '@/modules/core/types/roles'
 import FoundationHomePage from '../pages/FoundationHomePage'
 import { resetDonationMock } from '../services/donationService'
 
-const loginAs = (id: string) => localStorage.setItem('sr_user', JSON.stringify({ id, name: 'Fundación Abrigo Bogotá', email: 'abrigo@styleradar.co', role: 'REPRESENTANTE_FUNDACION' }))
+const loginAs = (id: string) => localStorage.setItem('sr_user', JSON.stringify({ id, name: 'Fundación Abrigo Bogotá', email: 'abrigo@styleradar.co', role: 'FOUNDATION_REPRESENTATIVE' }))
 const renderPage = () => render(<MemoryRouter><FoundationHomePage /></MemoryRouter>)
 
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); resetDonationMock() })
 
 describe('Mi fundación (inicio de la fundación)', () => {
   it('es la primera pantalla de la fundación al iniciar sesión', () => {
-    expect(ROLE_HOME.REPRESENTANTE_FUNDACION).toBe('/fundacion')
+    expect(ROLE_HOME.FOUNDATION_REPRESENTATIVE).toBe('/fundacion')
   })
 
   it('muestra su página como la ven quienes donan y avisa de las pendientes', async () => {

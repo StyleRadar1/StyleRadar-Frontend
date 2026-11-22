@@ -5,7 +5,7 @@ import { AuthProvider } from '@/modules/identidad/states/AuthProvider'
 import type { Role } from '@/modules/core/types/roles'
 
 /** Deja una sesión iniciada como lo hace el login simulado (token + usuario). */
-export function loginAs(id: string, name: string, role: Role = 'COMPRADOR') {
+export function loginAs(id: string, name: string, role: Role = 'BUYER') {
   localStorage.setItem('sr_token', `demo-${id}`)
   localStorage.setItem('sr_user', JSON.stringify({ id, name, email: `${id}@styleradar.co`, role }))
 }

@@ -1,20 +1,20 @@
 import type { CamposConError } from '@/modules/core/api/errors'
 
-export type CampoPerfil = 'nombre' | 'celular' | 'barrio' | 'superior' | 'inferior' | 'calzado' | 'estilos'
+export type CampoPerfil = 'nombre' | 'celular' | 'barrio' | 'tallas' | 'estilos'
 export type Errores = Partial<Record<CampoPerfil, string>>
 
 /** Orden de los campos en pantalla: el cursor va al primero que tenga error. */
-export const ORDEN: CampoPerfil[] = ['nombre', 'celular', 'barrio', 'superior', 'inferior', 'calzado', 'estilos']
+export const ORDEN: CampoPerfil[] = ['nombre', 'celular', 'barrio', 'tallas', 'estilos']
 
 /** Nombres que puede usar el servidor para cada campo → los del formulario. */
 const CAMPOS_SERVIDOR: Record<string, CampoPerfil> = {
   nombre: 'nombre', name: 'nombre', fullName: 'nombre',
   celular: 'celular', telefono: 'celular', phone: 'celular',
   barrio: 'barrio', neighborhood: 'barrio',
-  superior: 'superior', tallaSuperior: 'superior',
-  inferior: 'inferior', tallaInferior: 'inferior',
-  calzado: 'calzado', tallaCalzado: 'calzado',
-  estilos: 'estilos', styles: 'estilos',
+  // SR-RF-04: errors.sizesByGarmentType y errors.validSizes van al grupo de tallas.
+  sizesByGarmentType: 'tallas', validSizes: 'tallas', sizes: 'tallas', TOP: 'tallas', BOTTOM: 'tallas', FOOTWEAR: 'tallas',
+  superior: 'tallas', inferior: 'tallas', calzado: 'tallas', tallas: 'tallas',
+  estilos: 'estilos', styles: 'estilos', stylePreferences: 'estilos',
 }
 
 /** Mensajes del 400 al guardar (plan de errores · Cristian). */

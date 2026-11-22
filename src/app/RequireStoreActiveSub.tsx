@@ -5,7 +5,7 @@ import { useStoreSubscription } from '@/modules/transacciones/hooks/useStoreSubs
 
 /**
  * RF-67, RF-99, RN-05: Guard de suscripción activa del almacén.
- * Se usa junto a RequireRole(['ADMIN_ALMACEN']) en rutas de gestión y publicación del catálogo.
+ * Se usa junto a RequireRole(['STORE_ADMIN']) en rutas de gestión y publicación del catálogo.
  * Si subscription.status no es ACTIVA:
  * - Redirige a /tienda/suscripcion/activar (sin suscripción o PENDIENTE)
  * - Redirige a /tienda/suscripcion (SUSPENDIDA o CANCELADA)

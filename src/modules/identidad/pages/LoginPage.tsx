@@ -23,8 +23,10 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const user = await login({ email: mail, password: pass })
-      navigate(tomarRetorno() ?? ROLE_HOME[user.role], { replace: true })
+      const r = await login({ email: mail, password: pass })
+      // Correo sin verificar: el código se ingresa en el modal de inicio de sesión.
+      if (r.kind === 'otp') { navigate('/?login', { replace: true }); return }
+      navigate(tomarRetorno() ?? ROLE_HOME[r.user.role], { replace: true })
     } catch (e) {
       // Mismo criterio que el modal del inicio: nunca dice si el correo tiene cuenta.
       setError(errorDeLogin(e).mensaje || 'Revisa el correo y la contraseña.')

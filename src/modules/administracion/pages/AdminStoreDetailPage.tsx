@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
@@ -10,8 +10,8 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { paymentService } from '@/modules/transacciones/services/paymentService'
 import type { PaymentDto } from '@/modules/transacciones/types/payment.dto'
 import { AdminCard, AdminHeader, Dl, HBars, StatusBadge, Who } from '../components/AdminUi'
-import { adminStoreService } from '../services/adminService'
-import { PRECIO_TIENDA, type AdminStoreDto, type Verificacion } from '../types/admin.dto'
+import { adminStoreService, errorDeMotivoRechazo, MOTIVO_RECHAZO_TEXTO } from '../services/adminService'
+import { MOTIVO_RECHAZO_MAX, PRECIO_TIENDA, type AdminStoreDto, type StoreAdministratorDto, type Verificacion } from '../types/admin.dto'
 
 type Accion = { verificacion: Verificacion; titulo: string; texto: string; boton: string; danger?: boolean }
 
@@ -41,12 +41,17 @@ export default function AdminStoreDetailPage() {
     catch (e) {
       const kind = errorKind(e)
       const fields = fieldErrors(e)
-      if (accion?.verificacion === 'Rechazada' && (fields.motivo || kind === 'datos')) {
-        setErrMotivo(fields.motivo ?? 'Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.')
+      if (accion?.verificacion === 'Rechazada' && (fields.reason || fields.motivo || kind === 'datos')) {
+        setErrMotivo(fields.reason ?? fields.motivo ?? MOTIVO_RECHAZO_TEXTO)
         window.setTimeout(() => document.getElementById('motivo-rechazo')?.focus(), 0)
       } else if (e instanceof ApiError && e.status === 422 && accion?.verificacion === 'Verificada') {
         setRutError(true)
         setAccion(null)
+      } else if (e instanceof ApiError && e.status === 422 && accion?.verificacion === 'Pendiente') {
+        // FA-08: ya estaba pendiente; se actualiza para ver el estado real.
+        setMsg({ tone: 'warn', text: 'La tienda ya está pendiente de revisión', sub: 'Actualizamos la información.' })
+        setAccion(null)
+        reload()
       } else if (kind === 'conflicto') {
         setMsg({ tone: 'warn', text: 'Esta tienda ya fue revisada', sub: 'Actualizamos la información.' })
         setAccion(null)
@@ -66,8 +71,9 @@ export default function AdminStoreDetailPage() {
       return
     }
     // El motivo se valida aquí para mostrar el error dentro del diálogo
-    if (accion.verificacion === 'Rechazada' && motivo.trim().length < 10) {
-      setErrMotivo('Escribe el motivo (mínimo 10 caracteres) para que la tienda sepa qué corregir.')
+    const errorMotivo = accion.verificacion === 'Rechazada' ? errorDeMotivoRechazo(motivo) : ''
+    if (errorMotivo) {
+      setErrMotivo(errorMotivo)
       window.setTimeout(() => document.getElementById('motivo-rechazo')?.focus(), 0)
       return
     }
@@ -107,6 +113,7 @@ export default function AdminStoreDetailPage() {
               <li key={d.nombre} className="flex items-center gap-2 px-3 py-2.5 text-sm">
                 <span aria-hidden="true" className={d.recibido ? 'text-[#9be3b4]' : 'text-arena'}>{d.recibido ? '✓' : '⚠'}</span>
                 <span className="flex-1">{d.nombre}</span>
+                {d.url && <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline underline-offset-4">Abrir {d.nombre}<span className="sr-only"> (se abre en otra pestaña)</span></a>}
                 <span className="text-[10px] font-bold uppercase tracking-[.14em] text-white/60">{d.recibido ? 'Recibido' : 'Falta'}</span>
               </li>
             ))}
@@ -122,6 +129,8 @@ export default function AdminStoreDetailPage() {
             )}
           </div>
         </AdminCard>
+
+        <AdministradoresCard nit={t.id} />
 
         <AdminCard title="Suscripción">
           <Dl items={[['Plan', `Tienda aliada · ${formatCOP(PRECIO_TIENDA)} / mes`], ['Estado', <StatusBadge key="e" value={t.suscripcion.estado} />],
@@ -155,7 +164,7 @@ export default function AdminStoreDetailPage() {
         onConfirm={confirmar} onCancel={() => { setAccion(null); setMotivo(''); setErrMotivo('') }}>
         {accion?.verificacion === 'Rechazada' ? (
           <label className="block text-sm" htmlFor="motivo-rechazo">Motivo (se lo enviaremos a la tienda)
-            <textarea id="motivo-rechazo" value={motivo} onChange={(e) => { setMotivo(e.target.value); setErrMotivo('') }} maxLength={200} rows={3} placeholder="Ej. La cámara de comercio está vencida."
+            <textarea id="motivo-rechazo" value={motivo} onChange={(e) => { setMotivo(e.target.value); setErrMotivo('') }} maxLength={MOTIVO_RECHAZO_MAX} rows={3} placeholder="Ej. La cámara de comercio está vencida."
               aria-invalid={!!errMotivo} aria-describedby={errMotivo ? 'motivo-err' : undefined}
               className="mt-1 w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm outline-none focus:border-violeta-claro" />
             <FieldError id="motivo-err" message={errMotivo} />
@@ -163,5 +172,64 @@ export default function AdminStoreDetailPage() {
         ) : accion?.texto}
       </ConfirmDialog>
     </>
+  )
+}
+
+/** Anexo de ms-tiendas · F-24: cuentas con rol Tienda que pueden administrar este almacén. */
+function AdministradoresCard({ nit }: { nit: string }) {
+  const loader = useCallback(() => adminStoreService.listAdministrators(nit), [nit])
+  const { data, loading, error, reload, setData } = useResource<StoreAdministratorDto[]>(loader, [])
+  const [userId, setUserId] = useState('')
+  const [err, setErr] = useState('')
+  const [ok, setOk] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const asignar = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setErr(''); setOk('')
+    const uid = userId.trim()
+    if (!uid) { setErr('Escribe el ID de la cuenta.'); return }
+    setBusy(true)
+    try {
+      const a = await adminStoreService.assignAdministrator(nit, uid)
+      setData((l) => (l.some((x) => String(x.userId) === String(a.userId)) ? l : [...l, a]))
+      setOk(`La cuenta ${a.userId} ya puede administrar este almacén.`)
+      setUserId('')
+    } catch (e2) {
+      const kind = errorKind(e2)
+      if (e2 instanceof ApiError && e2.status === 422) setErr('Esa cuenta no tiene rol Tienda. Solo una cuenta de Tienda puede administrar un almacén.')
+      else if (kind === 'no-existe') setErr('No encontramos esa cuenta o este almacén.')
+      else if (kind === 'conflicto') { setErr('Alguien cambió los administradores al mismo tiempo. Actualizamos la lista.'); reload() }
+      else setErr(errorMessage(e2, 'No pudimos asignar la cuenta. Intenta de nuevo.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <AdminCard title="Administradores del almacén">
+      {loading ? <Loading label="Cargando administradores…" /> : error ? <ErrorState error={error} onRetry={reload} title="No pudimos cargar los administradores" /> : (
+        data.length ? (
+          <ul className="divide-y divide-white/10 rounded-xl border border-white/10" aria-label="Administradores">
+            {data.map((a) => (
+              <li key={String(a.id)} className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm">
+                <span>Cuenta {a.userId}</span>
+                <span className="text-xs text-white/60">{a.assignedAt ? `Desde ${new Date(a.assignedAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}` : ''}</span>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="text-sm text-white/70">Este almacén aún no tiene administradores.</p>
+      )}
+      <form onSubmit={asignar} noValidate className="mt-4 flex flex-wrap items-end gap-2">
+        <label className="flex-1 text-sm" htmlFor={`admin-${nit}`}>ID de la cuenta de Tienda
+          <input id={`admin-${nit}`} value={userId} onChange={(e) => { setUserId(e.target.value); setErr('') }}
+            aria-invalid={!!err} aria-describedby={err ? 'admin-err' : undefined}
+            className="mt-1 w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm outline-none focus:border-violeta-claro" />
+        </label>
+        <button type="submit" disabled={busy} className="rounded-xl bg-violeta px-4 py-2.5 text-sm font-semibold disabled:opacity-60">{busy ? 'Asignando…' : 'Asignar'}</button>
+      </form>
+      <FieldError id="admin-err" message={err} />
+      {ok && <p role="status" className="mt-2 text-sm text-[#9be3b4]">{ok}</p>}
+    </AdminCard>
   )
 }

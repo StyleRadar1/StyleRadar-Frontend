@@ -1,19 +1,36 @@
-import { useCallback } from 'react'
-import { useResource } from '@/modules/core/hooks/useResource'
+import { useCallback, useEffect, useState } from 'react'
 import { usuarioService } from '../services/usuarioService'
-import type { EstadoCuenta, UsuarioAdminDto } from '../types/usuario.dto'
+import type { AdminUserDto, AdminUsersQuery, ChangeStatusRequestDto, PageDto } from '../types/usuario.dto'
 
-const load = () => usuarioService.list()
+const VACIA: PageDto<AdminUserDto> = { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0, first: true, last: true }
 
-/** RF-66: lista de cuentas con carga, error y cambio de estado. */
-export function useAdminUsers() {
-  const { data, loading, error, reload, setData } = useResource(load, [] as UsuarioAdminDto[])
+interface Result { tag: string; page: PageDto<AdminUserDto>; error: unknown }
 
-  const setStatus = useCallback(async (id: string, estado: EstadoCuenta) => {
-    const upd = await usuarioService.setStatus(id, { estado })
-    setData((list) => list.map((u) => (u.id === upd.id ? upd : u)))
+/**
+ * SR-RF-66: búsqueda de cuentas en el servidor (filtros y página) con carga, error y cambio de estado.
+ * `loading` se deriva de la consulta pedida, sin setState dentro del efecto.
+ */
+export function useAdminUsers(filtros: AdminUsersQuery) {
+  const [version, setVersion] = useState(0)
+  const clave = JSON.stringify(filtros)
+  const tag = `${clave}#${version}`
+  const [res, setRes] = useState<Result>({ tag: '', page: VACIA, error: null })
+
+  useEffect(() => {
+    let active = true
+    usuarioService.listAdmin(JSON.parse(clave) as AdminUsersQuery)
+      .then((page) => { if (active) setRes({ tag, page, error: null }) })
+      .catch((error) => { if (active) setRes((r) => ({ tag, page: r.page, error })) })
+    return () => { active = false }
+  }, [clave, tag])
+
+  const reload = useCallback(() => setVersion((v) => v + 1), [])
+
+  const setStatus = useCallback(async (id: string, body: ChangeStatusRequestDto) => {
+    const upd = await usuarioService.setStatus(id, body)
+    setRes((r) => ({ ...r, page: { ...r.page, content: r.page.content.map((u) => (u.id === upd.id ? upd : u)) } }))
     return upd
-  }, [setData])
+  }, [])
 
-  return { users: data, loading, error, reload, setStatus }
+  return { page: res.page, users: res.page.content, loading: res.tag !== tag, error: res.error, reload, setStatus }
 }

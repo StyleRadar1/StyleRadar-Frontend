@@ -23,7 +23,7 @@ const formatFechaCobro = (iso?: string | null) =>
  */
 export function BuyerRenewalStatusCard() {
   const { user } = useAuth()
-  const isBuyer = user?.role === 'COMPRADOR'
+  const isBuyer = user?.role === 'BUYER'
   const { plan, details } = useUserPlan(isBuyer)
 
   if (!isBuyer) return null

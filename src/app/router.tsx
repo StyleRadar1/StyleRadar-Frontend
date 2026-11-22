@@ -17,6 +17,7 @@ import LandingPage from '@/modules/landing/pages/LandingPage'
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
 const AdminUsers = lazy(() => import('@/modules/identidad/pages/AdminUsersPage'))
+const AdminUserDetail = lazy(() => import('@/modules/identidad/pages/AdminUserDetailPage'))
 const Catalog = lazy(() => import('@/modules/catalogo/pages/CatalogPage'))
 const ItemDetail = lazy(() => import('@/modules/catalogo/pages/ItemDetailPage'))
 const MapPage = lazy(() => import('@/modules/mapa/pages/MapPage'))
@@ -60,16 +61,16 @@ const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-whit
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
 const onlyStoreActive = (el: ReactNode) =>
   page(
-    <RequireRole roles={['ADMIN_ALMACEN']}>
+    <RequireRole roles={['STORE_ADMIN']}>
       <RequireStoreActiveSub>{el}</RequireStoreActiveSub>
     </RequireRole>,
   )
 
-const USER: Role[] = ['COMPRADOR']
-const USER_OR_STORE: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN']
-const STORE: Role[] = ['ADMIN_ALMACEN']
-const FOUND: Role[] = ['REPRESENTANTE_FUNDACION']
-const ANY: Role[] = ['COMPRADOR', 'ADMIN_ALMACEN', 'REPRESENTANTE_FUNDACION', 'ADMIN_STYLERADAR']
+const USER: Role[] = ['BUYER']
+const USER_OR_STORE: Role[] = ['BUYER', 'STORE_ADMIN']
+const STORE: Role[] = ['STORE_ADMIN']
+const FOUND: Role[] = ['FOUNDATION_REPRESENTATIVE']
+const ANY: Role[] = ['BUYER', 'STORE_ADMIN', 'FOUNDATION_REPRESENTATIVE', 'STYLERADAR_ADMIN']
 
 /** Raíz: la bienvenida al iniciar sesión y el fondo aurora a nivel de layout (excepto en rutas excluidas). */
 function RootLayout() {
@@ -154,6 +155,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/admin', element: <Navigate to="/admin/estadisticas" replace /> },
       { path: '/admin/estadisticas', element: page(<Stats />) },
       { path: '/admin/usuarios', element: page(<AdminUsers />) },
+      { path: '/admin/usuarios/:id', element: page(<AdminUserDetail />) },
       { path: '/admin/tiendas', element: page(<AdminStores />) },
       { path: '/admin/tiendas/:id', element: page(<AdminStoreDetail />) },
       { path: '/admin/fundaciones', element: page(<AdminFoundations />) },

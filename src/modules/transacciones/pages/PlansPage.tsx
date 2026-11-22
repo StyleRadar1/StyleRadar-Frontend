@@ -17,7 +17,7 @@ const REGISTRO: Record<string, [string, string]> = {
 /** P7 · Planes: lo que ofrece StyleRadar y lo que incluye cada plan (RF-100 y RF-101 para el comprador). */
 export default function PlansPage() {
   const { user } = useAuth()
-  const comprador = user?.role === 'COMPRADOR'
+  const comprador = user?.role === 'BUYER'
   const { plan } = useUserPlan(comprador)
   const navigate = useNavigate()
 
@@ -73,7 +73,7 @@ export default function PlansPage() {
         )
       }
     }
-    if (user.role === 'ADMIN_ALMACEN' && p.id === 'TIENDA') {
+    if (user.role === 'STORE_ADMIN' && p.id === 'TIENDA') {
       return (
         <Link
           to="/tienda/suscripcion"
@@ -83,7 +83,7 @@ export default function PlansPage() {
         </Link>
       )
     }
-    if (user.role === 'REPRESENTANTE_FUNDACION' && p.id === 'FUNDACION') {
+    if (user.role === 'FOUNDATION_REPRESENTATIVE' && p.id === 'FUNDACION') {
       return (
         <p className="mt-auto rounded-xl border border-arena/50 px-5 py-2 text-center text-xs font-semibold text-arena">
           Tu plan
@@ -105,7 +105,7 @@ export default function PlansPage() {
         Mirar el catálogo, el mapa y las playlists es gratis. Paga solo si quieres más, y cancela cuando quieras
       </p>
 
-      {user?.role === 'ADMIN_STYLERADAR' && (
+      {user?.role === 'STYLERADAR_ADMIN' && (
         <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-6 text-center text-sm text-[var(--color-text)] backdrop-blur-md">
           Como administrador de StyleRadar no requieres una suscripción comercial. Gestiona la plataforma desde el panel de control
         </div>

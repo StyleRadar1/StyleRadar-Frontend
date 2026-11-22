@@ -7,6 +7,7 @@ import { errorKind } from '@/modules/core/api/errors'
 import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
 import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
 import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
+import { ParaTiSections } from '@/modules/identidad/components/ParaTiSections'
 import { ItemCard } from '../components/ItemCard'
 import { ItemGridSkeleton } from '../components/ItemCardSkeleton'
 import { useItems } from '../hooks/useItems'
@@ -1286,6 +1287,9 @@ export default function CatalogPage() {
             />
           </div>
         </div>
+
+        {/* SR-RF-05 y 06: «Para ti» y «Recomendado para ti», solo para compradores y sin filtros activos */}
+        {!hayAlgunFiltro && <ParaTiSections />}
 
         {/* LISTADO PRINCIPAL DEL CATÁLOGO */}
         <div>

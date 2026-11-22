@@ -36,7 +36,7 @@ const HISTORY_STATUS_LABEL: Record<string, string> = {
 export default function TryOnPage() {
   const auth = useContext(AuthContext)
   const user = auth?.user ?? null
-  const isBuyer = user?.role === 'COMPRADOR'
+  const isBuyer = user?.role === 'BUYER'
   const { plan: userPlan } = useUserPlan(isBuyer)
   const userId = user?.id ?? (env.useMocks ? 'u-1' : undefined)
   const [searchParams] = useSearchParams()

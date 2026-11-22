@@ -8,15 +8,18 @@ import { ROLE_HOME } from '@/modules/core/types/roles'
 import { Campo, Opciones } from '../components/Campo'
 import { a11y, inputCls } from '../utils/campo'
 import { useAuth } from '../hooks/useAuth'
-import { PASSWORD_MIN } from '../types/auth.dto'
+import { NAME_MAX, NAME_MIN, NEIGHBORHOOD_MAX, PASSWORD_MAX, PASSWORD_MIN } from '../types/auth.dto'
 import { MANIQUI_LABEL, type Maniqui } from '../types/usuario.dto'
 import { correoValido } from '../utils/formato'
 import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
 import { consentService } from '@/modules/legal/services/consentService'
 
-type Errores = Partial<Record<'nombre' | 'email' | 'password' | 'terminos', string>>
+type Errores = Partial<Record<'nombre' | 'email' | 'barrio' | 'password' | 'terminos', string>>
 
-/** RF-01: registro de una persona (rol comprador) contra ms-auth. Al terminar queda con la sesión iniciada. */
+/**
+ * SR-RF-01: registro de una persona (rol comprador) en ms-usuarios (POST /api/v1/users).
+ * El correo queda sin verificar: al terminar se pasa al inicio de sesión para ingresar el código OTP.
+ */
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -24,6 +27,7 @@ export default function RegisterPage() {
   const esTienda = params.get('tipo') === 'tienda'
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
+  const [barrio, setBarrio] = useState('')
   const [password, setPassword] = useState('')
   const [ver, setVer] = useState(false)
   const [maniqui, setManiqui] = useState<Maniqui>('MUJER')
@@ -44,11 +48,13 @@ export default function RegisterPage() {
     const e: Errores = {}
     const cErr: LegalConsentErrors = {}
 
-    if (nombre.trim().length < 3) e.nombre = 'Escribe tu nombre completo (mínimo 3 letras).'
+    const n = nombre.trim().length
+    if (n < NAME_MIN || n > NAME_MAX) e.nombre = `Escribe tu nombre completo (de ${NAME_MIN} a ${NAME_MAX} caracteres).`
     if (!correoValido(email))
       e.email = 'Escribe un correo válido, por ejemplo tucorreo@ejemplo.com.'
-    if (password.length < PASSWORD_MIN)
-      e.password = `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`
+    if (barrio.trim().length > NEIGHBORHOOD_MAX) e.barrio = `El barrio no puede superar ${NEIGHBORHOOD_MAX} caracteres.`
+    if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX)
+      e.password = `La contraseña debe tener entre ${PASSWORD_MIN} y ${PASSWORD_MAX} caracteres.`
 
     if (!consentState.aceptaTerminos || !consentState.aceptaDatos) {
       cErr.terminos = 'Para crear la cuenta debes aceptar los términos y la política de datos.'
@@ -72,7 +78,7 @@ export default function RegisterPage() {
     setGeneral('')
     setNoSePudo(false)
 
-    const primero = (['nombre', 'email', 'password'] as const).find((k) => formErrors[k])
+    const primero = (['nombre', 'email', 'barrio', 'password'] as const).find((k) => formErrors[k])
     if (primero) {
       document.getElementById(`su-${primero}`)?.focus()
       return
@@ -96,21 +102,24 @@ export default function RegisterPage() {
     })
 
     try {
-      const user = await register({
-        nombre: nombre.trim(),
+      const r = await register({
+        name: nombre.trim(),
         email: email.trim(),
         password,
+        neighborhood: barrio,
         maniqui,
         aceptaTerminos: consentState.aceptaTerminos,
-        aceptaHabeasData: consentState.aceptaDatos,
-        ...(esTienda ? { role: 'ADMIN_ALMACEN' as const } : {}),
+        dataPolicyAccepted: consentState.aceptaDatos,
+        ...(esTienda ? { role: 'STORE_ADMIN' as const } : {}),
       })
-      const target = user.role === 'ADMIN_ALMACEN' ? '/tienda/suscripcion/activar' : ROLE_HOME[user.role]
+      // Correo sin verificar (SR-RF-01): el código OTP se ingresa en el modal de inicio de sesión.
+      if (r.kind === 'otp') { navigate('/?login', { replace: true }); return }
+      const target = r.user.role === 'STORE_ADMIN' ? '/tienda/suscripcion/activar' : ROLE_HOME[r.user.role]
       navigate(target, { replace: true })
     } catch (err) {
       const kind = errorKind(err)
       const campos = camposDeRegistro(fieldErrors(err))
-      const primero = (['nombre', 'email', 'password'] as const).find((k) => campos[k])
+      const primero = (['nombre', 'email', 'barrio', 'password'] as const).find((k) => campos[k])
       if (primero) {
         // 400 · 422 con campos: el mensaje del servidor va debajo de cada campo y el cursor al primero.
         setErrores(campos)
@@ -188,11 +197,23 @@ export default function RegisterPage() {
                 className={inputCls}
               />
             </Campo>
+            <Campo id="su-barrio" label="Barrio (opcional)" error={errores.barrio}>
+              <input
+                {...a11y('su-barrio', errores.barrio)}
+                type="text"
+                value={barrio}
+                maxLength={NEIGHBORHOOD_MAX}
+                onChange={(e) => setBarrio(e.target.value)}
+                autoComplete="address-level3"
+                placeholder="Ej. Chapinero"
+                className={inputCls}
+              />
+            </Campo>
             <Campo
               id="su-password"
               label="Contraseña"
               error={errores.password}
-              hint={`Mínimo ${PASSWORD_MIN} caracteres.`}
+              hint={`De ${PASSWORD_MIN} a ${PASSWORD_MAX} caracteres.`}
             >
               <div className="relative">
                 <input
@@ -239,7 +260,7 @@ export default function RegisterPage() {
                 })
               }}
               errors={consentErrors}
-              role="COMPRADOR"
+              role="BUYER"
               showPromociones={true}
             />
 
@@ -255,16 +276,10 @@ export default function RegisterPage() {
                     >
                       Iniciar sesión
                     </Link>
-                    <Link
-                      to="/login"
-                      className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)]"
-                    >
-                      Recuperar contraseña
-                    </Link>
                   </>
                 }
               >
-                Si ya tienes una cuenta, inicia sesión o recupera tu contraseña.
+                Si ya tienes una cuenta, inicia sesión.
               </Aviso>
             )}
             {general && (

@@ -10,10 +10,11 @@ export function useProfile() {
   const { data, loading, error, reload, setData } = useResource(load, null as PerfilDto | null)
 
   const save = useCallback(async (body: ActualizarPerfilDto) => {
-    const upd = await usuarioService.updateMe(body)
+    // Con el perfil actual se envían solo los endpoints que cambiaron.
+    const upd = await usuarioService.updateMe(body, data ?? undefined)
     setData(() => upd)
     return upd
-  }, [setData])
+  }, [data, setData])
 
   return { profile: data, loading, error, reload, save }
 }
