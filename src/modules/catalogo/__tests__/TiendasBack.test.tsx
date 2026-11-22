@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/configs/env', () => ({ env: { appEnvironment: 'qa', apiUrl: 'http://gateway.test', useMocks: false } }))
@@ -61,6 +62,40 @@ describe('ms-tiendas: perfil público y almacén de la Tienda (F-19 · F-22)', (
     renderConSesion('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
     expect((await screen.findAllByText('9014823371')).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Luna Store Chapinero').length).toBeGreaterThan(0)
+  })
+
+  it('las reglas de distintivos usan /api/v1/stores/{nit}/catalog-settings con los nombres del documento', async () => {
+    const get = porRuta({ '/api/v1/stores/9014823371/catalog-settings': { nit: '9014823371', lowStockThreshold: 5, newArrivalDays: 14 } })
+    const put = vi.spyOn(apiClient, 'put').mockResolvedValue({ data: { nit: '9014823371', lowStockThreshold: 8, newArrivalDays: 30 } })
+    expect(await storeSettingsService.getCatalogSettings('9014823371')).toMatchObject({ lowStockThreshold: 5, newArrivalDays: 14 })
+    expect(get).toHaveBeenCalledWith('/api/v1/stores/9014823371/catalog-settings')
+    await storeSettingsService.saveCatalogSettings('9014823371', { lowStockThreshold: 8, newArrivalDays: 30 })
+    expect(put).toHaveBeenCalledWith('/api/v1/stores/9014823371/catalog-settings', { lowStockThreshold: 8, newArrivalDays: 30 })
+  })
+
+  it('el distintivo de una prenda se pide con PATCH /items/{itemId}/low-stock y /new-arrival', async () => {
+    const patch = vi.spyOn(apiClient, 'patch').mockResolvedValue({ data: { activeBadge: 'NONE' } })
+    await storeSettingsService.markLowStock('9014823371', 42, { currentStock: 2, available: true })
+    expect(patch).toHaveBeenCalledWith('/api/v1/stores/9014823371/items/42/low-stock', { currentStock: 2, available: true })
+    await storeSettingsService.markNewArrival('9014823371', 42, { publishedAt: '2026-11-20T10:00:00Z', withdrawn: false })
+    expect(patch).toHaveBeenLastCalledWith('/api/v1/stores/9014823371/items/42/new-arrival', { publishedAt: '2026-11-20T10:00:00Z', withdrawn: false })
+  })
+
+  it('Mi tienda carga las reglas con el NIT del back y muestra los errores por campo del servidor (400)', async () => {
+    porRuta({
+      '/api/v1/users/t-1/store': LUNA,
+      '/api/v1/stores/9014823371/catalog-settings': { nit: '9014823371', lowStockThreshold: 5, newArrivalDays: 14 },
+    })
+    vi.spyOn(apiClient, 'put').mockRejectedValue(new ApiError(400, 'Revisa los datos', { newArrivalDays: 'El periodo de nueva llegada no puede superar 60 días' }))
+    const user = userEvent.setup()
+    sesionComo('luna@styleradar.co')
+    renderConSesion('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
+    expect(await screen.findByText('≤ 5 uds')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Configurar' }))
+    const dialog = screen.getByRole('dialog', { name: 'Distintivos automáticos' })
+    expect(within(dialog).getByLabelText('Duración de nueva llegada')).toHaveValue('14')
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar' }))
+    expect(await within(dialog).findByText('El periodo de nueva llegada no puede superar 60 días')).toBeInTheDocument()
   })
 
   it('Mi tienda avisa si la cuenta no tiene almacén asociado (404)', async () => {

@@ -6,9 +6,12 @@ import { ErrorCard } from '@/modules/core/components/ErrorScene'
 import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { env } from '@/configs/env'
-import { errorKind, errorMessage } from '@/modules/core/api/errors'
-import { storeSettingsService } from '../services/storeSettingsService'
-import type { StoreResponseDto } from '../types/store.dto'
+import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
+import { erroresDeConfiguracion, storeSettingsService } from '../services/storeSettingsService'
+import {
+  LOW_STOCK_DEFAULT, LOW_STOCK_MAX, LOW_STOCK_MIN, NEW_ARRIVAL_DEFAULT, NEW_ARRIVAL_OPTIONS,
+  type StoreResponseDto,
+} from '../types/store.dto'
 import './MiTiendaPage.css'
 import './MiTiendaDashboard.css'
 
@@ -171,6 +174,7 @@ export default function MiTiendaPage() {
 
   /* F-19: el NIT del almacén sale de ms-tiendas (GET /api/v1/users/{userId}/store). Con datos de prueba se usa el guardado. */
   const [storeError, setStoreError] = useState('')
+  const [storeNit, setStoreNit] = useState(() => (env.useMocks ? readLegalInfo().nit : ''))
   const userId = user?.id ? String(user.id) : ''
   useEffect(() => {
     if (env.useMocks || !userId) return
@@ -181,6 +185,7 @@ export default function MiTiendaPage() {
         const desdeServidor = legalDesdeServidor(store)
         setLegalInfo((li) => ({ ...li, ...desdeServidor }))
         setLegalDraft((li) => ({ ...li, ...desdeServidor }))
+        setStoreNit(store.nit)
       })
       .catch((e) => {
         if (active) setStoreError(errorKind(e) === 'no-existe' ? SIN_ALMACEN : errorMessage(e, 'No pudimos cargar los datos de tu almacén.'))
@@ -204,10 +209,27 @@ export default function MiTiendaPage() {
   const [verificationStatus, setVerificationStatus] = useState<'SIN_VERIFICAR' | 'EN_REVISION' | 'VERIFICADA'>('SIN_VERIFICAR')
   const [verificationError, setVerificationError] = useState('')
   const [badgesDialogOpen, setBadgesDialogOpen] = useState(false)
-  const [lastUnitsLimit, setLastUnitsLimit] = useState(3)
-  const [newArrivalDays, setNewArrivalDays] = useState(14)
-  const [lastUnitsDraft, setLastUnitsDraft] = useState('3')
-  const [newArrivalDaysDraft, setNewArrivalDaysDraft] = useState('14')
+  const [lastUnitsLimit, setLastUnitsLimit] = useState(LOW_STOCK_DEFAULT)
+  const [newArrivalDays, setNewArrivalDays] = useState(NEW_ARRIVAL_DEFAULT)
+  const [lastUnitsDraft, setLastUnitsDraft] = useState(String(LOW_STOCK_DEFAULT))
+  const [newArrivalDaysDraft, setNewArrivalDaysDraft] = useState(String(NEW_ARRIVAL_DEFAULT))
+  const [badgesErrors, setBadgesErrors] = useState<Record<string, string>>({})
+  const [badgesError, setBadgesError] = useState('')
+  const [badgesBusy, setBadgesBusy] = useState(false)
+
+  /* SR-RF-59 · SR-RF-60: las reglas de distintivos se leen de ms-tiendas con el NIT del almacén. */
+  useEffect(() => {
+    if (!storeNit) return
+    let active = true
+    storeSettingsService.getCatalogSettings(storeNit)
+      .then((c) => {
+        if (!active) return
+        setLastUnitsLimit(c.lowStockThreshold)
+        setNewArrivalDays(c.newArrivalDays)
+      })
+      .catch(() => { /* se quedan los valores por defecto; al guardar se muestra el error */ })
+    return () => { active = false }
+  }, [storeNit])
 
   /* Resumen del panel */
   const activeCount = items.filter((item) => item.status === 'Publicadas' && item.stock > 0).length
@@ -334,12 +356,32 @@ export default function MiTiendaPage() {
   const openBadgesSettings = () => {
     setLastUnitsDraft(String(lastUnitsLimit))
     setNewArrivalDaysDraft(String(newArrivalDays))
+    setBadgesErrors({}); setBadgesError('')
     setBadgesDialogOpen(true)
   }
-  const saveBadgesSettings = (event: FormEvent<HTMLFormElement>) => {
+  const saveBadgesSettings = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const threshold = Math.max(0, Number(lastUnitsDraft) || 0)
-    const days = Math.max(1, Number(newArrivalDaysDraft) || 14)
+    if (badgesBusy) return
+    const aNumero = (v: string) => (v.trim() === '' ? null : Number(v))
+    const body = { lowStockThreshold: aNumero(lastUnitsDraft), newArrivalDays: aNumero(newArrivalDaysDraft) }
+    const errores = erroresDeConfiguracion(body)
+    setBadgesErrors(errores); setBadgesError('')
+    if (Object.keys(errores).length) return
+    if (!storeNit) { setBadgesError(storeError || SIN_ALMACEN); return }
+    setBadgesBusy(true)
+    let guardado
+    try {
+      guardado = await storeSettingsService.saveCatalogSettings(storeNit, body as { lowStockThreshold: number; newArrivalDays: number })
+    } catch (e) {
+      const campos = fieldErrors(e)
+      if (campos.lowStockThreshold || campos.newArrivalDays) setBadgesErrors(campos)
+      else setBadgesError(errorKind(e) === 'no-existe' ? 'No encontramos tu almacén. Recarga la página o escríbele a soporte.' : errorMessage(e, 'No se pudieron guardar los distintivos.'))
+      return
+    } finally {
+      setBadgesBusy(false)
+    }
+    const threshold = guardado.lowStockThreshold
+    const days = guardado.newArrivalDays
     setLastUnitsLimit(threshold)
     setNewArrivalDays(days)
     setItems((current) => current.map((item) => {
@@ -672,22 +714,26 @@ export default function MiTiendaPage() {
       </div>
 
       {badgesDialogOpen ? <div className="my-store__dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setBadgesDialogOpen(false) }}>
-        <form className="my-store__dialog my-store__dialog--badges" role="dialog" aria-modal="true" aria-labelledby="badges-title" onSubmit={saveBadgesSettings}>
+        <form className="my-store__dialog my-store__dialog--badges" role="dialog" aria-modal="true" aria-labelledby="badges-title" onSubmit={saveBadgesSettings} noValidate>
           <button className="my-store__dialog-close" type="button" onClick={() => setBadgesDialogOpen(false)} aria-label="Cerrar">×</button>
           <span className="my-store__eyebrow">MI TIENDA</span>
           <h2 id="badges-title">Distintivos automáticos</h2>
           <p>StyleRadar pone estas etiquetas solas sobre tus prendas, según tu inventario y la fecha de publicación.</p>
           <label className="my-store__badge-rule">«ÚLTIMAS UNIDADES» CUANDO QUEDEN
-            <span className="my-store__badge-threshold"><input type="number" min="0" max="99" value={lastUnitsDraft} onChange={(event) => setLastUnitsDraft(event.target.value)} aria-label="Umbral de últimas unidades" /><b>UNIDADES O MENOS</b></span>
+            <span className="my-store__badge-threshold"><input type="number" min={LOW_STOCK_MIN} max={LOW_STOCK_MAX} step="1" value={lastUnitsDraft} onChange={(event) => setLastUnitsDraft(event.target.value)} aria-label="Umbral de últimas unidades" aria-invalid={!!badgesErrors.lowStockThreshold} aria-describedby={badgesErrors.lowStockThreshold ? 'badges-umbral-error' : undefined} /><b>UNIDADES O MENOS</b></span>
           </label>
+          <FieldError id="badges-umbral-error" message={badgesErrors.lowStockThreshold} />
           <label className="my-store__badge-rule">«NUEVA LLEGADA» DURANTE
-            <select value={newArrivalDaysDraft} onChange={(event) => setNewArrivalDaysDraft(event.target.value)} aria-label="Duración de nueva llegada">
-              <option value="7">7 días desde que se publica</option>
-              <option value="14">14 días desde que se publica</option>
-              <option value="30">30 días desde que se publica</option>
+            <select value={newArrivalDaysDraft} onChange={(event) => setNewArrivalDaysDraft(event.target.value)} aria-label="Duración de nueva llegada" aria-invalid={!!badgesErrors.newArrivalDays} aria-describedby={badgesErrors.newArrivalDays ? 'badges-dias-error' : undefined}>
+              {/* Si el back guardó otro periodo válido (1 a 60), también se ofrece para no perderlo. */}
+              {[...new Set<number>([...NEW_ARRIVAL_OPTIONS, newArrivalDays])].sort((a, b) => a - b).map((d) => (
+                <option key={d} value={String(d)}>{d} días desde que se publica</option>
+              ))}
             </select>
           </label>
-          <div className="my-store__dialog-actions"><button type="button" onClick={() => setBadgesDialogOpen(false)}>Cancelar</button><button className="my-store__button--primary" type="submit">Guardar</button></div>
+          <FieldError id="badges-dias-error" message={badgesErrors.newArrivalDays} />
+          {badgesError && <p role="alert" className="my-store__photo-error">{badgesError}</p>}
+          <div className="my-store__dialog-actions"><button type="button" onClick={() => setBadgesDialogOpen(false)}>Cancelar</button><button className="my-store__button--primary" type="submit" disabled={badgesBusy}>{badgesBusy ? 'Guardando…' : 'Guardar'}</button></div>
         </form>
       </div> : null}
 
