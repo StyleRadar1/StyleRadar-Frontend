@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { navCapsules } from '@/data/landingData'
+import { AppearancePicker } from '@/modules/core/theme'
 
 interface LandingMobileMenuProps {
   isOpen: boolean
@@ -40,6 +41,10 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
       </nav>
 
       <div className="flex flex-col gap-3 pt-6 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-between pb-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Apariencia</span>
+          <AppearancePicker align="right" />
+        </div>
         {onOpenLogin ? (
           <button
             type="button"

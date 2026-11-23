@@ -118,7 +118,7 @@ export function ClothingCycle() {
           </div>
 
           {/* Imagen de preview editorial */}
-          <div className="lg:col-span-5 relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl bg-[var(--sr-surface)] border border-[var(--sr-border-subtle)]">
+          <div className="lg:col-span-5 relative w-full max-w-[440px] mx-auto aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl bg-[var(--sr-surface)] border border-[var(--sr-border-subtle)]">
             <img
               src={currentPillar.image}
               alt={currentPillar.title}

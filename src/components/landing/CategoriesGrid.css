@@ -44,13 +44,15 @@
 .sr-landing .pe-categorias .pe-in { z-index: 1; }
 .sr-landing .cat-showcase {
   display: grid;
-  grid-template-columns: minmax(320px, 460px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
   align-items: center;
   gap: clamp(28px, 5vw, 64px);
   margin-top: 40px;
 }
 .sr-landing .cat-media {
   position: relative;
+  width: 100%;
+  max-width: 460px;
   overflow: hidden;
   aspect-ratio: 4 / 5;
   border: 1px solid rgba(168, 85, 247, .35);

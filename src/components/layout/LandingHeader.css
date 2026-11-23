@@ -59,6 +59,14 @@ html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-login-btn {
   color: #48119a;
 }
 
+html[data-theme="light"] .sr-landing .pe-header.is-scrolled .pe-tema > button,
+html[data-theme="claro"] .sr-landing .pe-header.is-scrolled .pe-tema > button,
+html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-tema > button {
+  border-color: rgba(15, 23, 42, .2);
+  background: rgba(15, 23, 42, .06);
+  color: #0f172a;
+}
+
 .sr-landing .pe-header-left {
   display: flex;
   align-items: center;
@@ -237,8 +245,7 @@ html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-login-btn {
 @media (max-width: 900px) {
   .sr-landing .pe-header,
   .sr-landing .pe-header.is-scrolled { padding: 12px 18px; }
-  .sr-landing .pe-login-btn,
-  .sr-landing .pe-tema { display: none; }
+  .sr-landing .pe-login-btn { display: none; }
 }
 
 @media (max-width: 560px) {
