@@ -749,20 +749,20 @@ html[data-tema="claro"] .sr-perfil-page {
 }
 
 /* Velo sutil en modo claro sobre fondos fotograficos del Landing para lectura WCAG AA */
-html[data-theme="light"] .sr-landing #pe-que-es::before,
-html[data-theme="claro"] .sr-landing #pe-que-es::before,
-html[data-tema="claro"] .sr-landing #pe-que-es::before {
+html[data-theme="light"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes)::before,
+html[data-theme="claro"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes)::before,
+html[data-tema="claro"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes)::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0.35) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.78) 50%, rgba(255, 255, 255, 0.58) 100%);
 }
 
-html[data-theme="light"] .sr-landing #pe-que-es > *,
-html[data-theme="claro"] .sr-landing #pe-que-es > *,
-html[data-tema="claro"] .sr-landing #pe-que-es > * {
+html[data-theme="light"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes) > *,
+html[data-theme="claro"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes) > *,
+html[data-tema="claro"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes) > * {
   position: relative;
   z-index: 1;
 }

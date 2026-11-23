@@ -16,7 +16,7 @@ html[data-theme="light"] .pe-mapa,
 html[data-theme="claro"] .pe-mapa,
 html[data-tema="claro"] .pe-mapa {
   background-color: #f8f9fa;
-  background-image: url('/img/backgrounds/mapa-dia.jpg');
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.80) 55%, rgba(255, 255, 255, 0.90) 100%), url('/img/backgrounds/mapa-dia.jpg');
 }
 
 .pe-mapa .pe-in {
