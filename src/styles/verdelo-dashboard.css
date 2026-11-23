@@ -163,10 +163,11 @@
   border-color: rgba(185, 185, 202, 0.35);
 }
 
-.sr-vcard-back {
+.sr-vcard-face--back {
   transform: rotateY(180deg);
-  padding: 0;
-  justify-content: flex-start;
+  padding: 20px; /* igual a p-5 del TSX, para que la banda negra (-mx-5) llegue al borde */
+  background: linear-gradient(135deg, #2b2338 0%, #18131f 100%);
+  border-color: rgba(232, 220, 203, 0.28);
 }
 
 .sr-vcard-stripe {
