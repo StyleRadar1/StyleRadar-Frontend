@@ -232,3 +232,28 @@
   .sr-landing .cat-thumbs-hint { display: none; }
   .sr-landing .cat-thumbs-header { margin-bottom: 14px; }
 }
+
+/* Superficies claras reales para modo claro */
+html[data-theme="light"] .sr-landing .cat-media,
+html[data-theme="claro"] .sr-landing .cat-media,
+html[data-tema="claro"] .sr-landing .cat-media {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .sr-landing .cat-thumb,
+html[data-theme="claro"] .sr-landing .cat-thumb,
+html[data-tema="claro"] .sr-landing .cat-thumb {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .sr-landing .cat-thumb.is-active,
+html[data-theme="claro"] .sr-landing .cat-thumb.is-active,
+html[data-tema="claro"] .sr-landing .cat-thumb.is-active {
+  background: rgba(243, 232, 255, 0.9);
+  border-color: #48119A;
+  box-shadow: 0 8px 24px rgba(72, 17, 154, 0.16);
+}

@@ -49,8 +49,8 @@ export function ClothingCycle() {
                 onClick={() => setActiveTab(index)}
                 className={`flex items-center gap-4 p-5 rounded-2xl text-left backdrop-blur-xl transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-gradient-to-r from-purple-900/40 to-violet-950/60 border-2 border-purple-400 shadow-[0_8px_30px_rgba(139,92,246,0.35)] scale-[1.02]'
-                    : 'bg-white/[0.04] dark:bg-purple-950/20 border border-white/10 dark:border-purple-400/20 hover:bg-purple-500/10 hover:border-purple-400/40'
+                    ? 'bg-purple-100/90 dark:bg-gradient-to-r dark:from-purple-900/40 dark:to-violet-950/60 border-2 border-[#48119A] dark:border-purple-400 shadow-md dark:shadow-[0_8px_30px_rgba(139,92,246,0.35)] scale-[1.02]'
+                    : 'bg-white/85 dark:bg-purple-950/20 border border-black/10 dark:border-purple-400/20 hover:bg-purple-50/90 dark:hover:bg-purple-500/10 hover:border-purple-400/40 shadow-sm'
                 }`}
               >
                 <span
@@ -72,10 +72,10 @@ export function ClothingCycle() {
         </div>
 
         {/* Panel del pilar activo */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-white/[0.04] dark:bg-[#141021]/70 backdrop-blur-2xl border border-white/10 dark:border-purple-400/25 shadow-[0_16px_45px_rgba(0,0,0,0.4),0_0_30px_rgba(139,92,246,0.15)] rounded-3xl p-6 md:p-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-[#F8F7FC]/90 dark:bg-[#141021]/70 backdrop-blur-2xl border border-black/10 dark:border-purple-400/25 shadow-md dark:shadow-[0_16px_45px_rgba(0,0,0,0.4),0_0_30px_rgba(139,92,246,0.15)] rounded-3xl p-6 md:p-12">
           {/* Detalles del pilar */}
           <div className="lg:col-span-7 space-y-6">
-            <span className="inline-block px-3.5 py-1.5 rounded-full bg-[var(--sr-accent)]/20 border border-[var(--sr-accent)]/40 text-[var(--sr-accent)] font-bold text-xs uppercase tracking-wider">
+            <span className="inline-block px-3.5 py-1.5 rounded-full bg-purple-100/90 dark:bg-[var(--sr-accent)]/20 border border-purple-300 dark:border-[var(--sr-accent)]/40 text-[#48119A] dark:text-[var(--sr-accent)] font-bold text-xs uppercase tracking-wider">
               {currentPillar.eyebrow}
             </span>
 
@@ -109,7 +109,7 @@ export function ClothingCycle() {
             <div className="pt-2">
               <Link
                 to={currentPillar.to}
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-white font-extrabold text-xs uppercase tracking-wider shadow-[0_8px_25px_rgba(139,92,246,0.5)] border border-white/20 hover:translate-x-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-[#ffffff] font-extrabold text-xs uppercase tracking-wider shadow-[0_8px_25px_rgba(139,92,246,0.45)] border border-white/20 hover:translate-x-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
                 <span>{currentPillar.action}</span>
                 <span aria-hidden="true">↗</span>
@@ -118,18 +118,18 @@ export function ClothingCycle() {
           </div>
 
           {/* Imagen de preview editorial */}
-          <div className="lg:col-span-5 relative w-full max-w-[440px] mx-auto aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl bg-[var(--sr-surface)] border border-[var(--sr-border-subtle)]">
+          <div className="lg:col-span-5 relative w-full max-w-[440px] mx-auto aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl bg-[var(--sr-surface)] border border-black/10 dark:border-purple-400/25">
             <img
               src={currentPillar.image}
               alt={currentPillar.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
             <div className="absolute bottom-6 left-6 right-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-[var(--sr-accent)]">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#E9D5FF]">
                 Ecosistema StyleRadar
               </p>
-              <p className="text-base font-extrabold text-white">
+              <p className="text-base font-extrabold text-[#ffffff]">
                 {currentPillar.label}
               </p>
             </div>

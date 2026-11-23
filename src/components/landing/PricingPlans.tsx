@@ -67,7 +67,7 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
           </div>
 
           {/* Filtro rápido por público con efecto glass */}
-          <div className="flex items-center gap-2 bg-white/5 dark:bg-purple-950/30 backdrop-blur-xl p-1.5 rounded-full border border-white/15 dark:border-purple-400/25 self-start md:self-auto shadow-lg">
+          <div className="flex items-center gap-2 bg-white/85 dark:bg-purple-950/30 backdrop-blur-xl p-1.5 rounded-full border border-black/10 dark:border-purple-400/25 self-start md:self-auto shadow-md dark:shadow-lg">
             {(['TODOS', 'PERSONAS', 'NEGOCIOS'] as const).map((tab) => (
               <button
                 key={tab}
@@ -75,7 +75,7 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                 onClick={() => setFilterAudience(tab)}
                 className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   filterAudience === tab
-                    ? 'bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6] text-white shadow-[0_4px_14px_rgba(139,92,246,0.45)]'
+                    ? 'bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6] text-[#ffffff] shadow-[0_4px_14px_rgba(139,92,246,0.45)]'
                     : 'text-[var(--sr-hero-text-muted)] hover:text-[var(--sr-hero-text)]'
                 }`}
               >
@@ -95,12 +95,12 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                 key={plan.name}
                 className={`relative rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 ${
                   isFeatured
-                    ? 'bg-gradient-to-b from-purple-900/40 via-[#141021]/85 to-[#141021]/95 backdrop-blur-2xl border-2 border-purple-400/70 shadow-[0_20px_50px_rgba(139,92,246,0.35),0_0_30px_rgba(139,92,246,0.2)] scale-[1.02] z-10'
-                    : 'bg-white/[0.04] dark:bg-purple-950/20 backdrop-blur-2xl border border-white/10 dark:border-purple-400/20 hover:border-purple-400/50 hover:bg-purple-500/10 shadow-[0_12px_36px_rgba(0,0,0,0.35)]'
+                    ? 'bg-gradient-to-b from-purple-50/95 via-white/95 to-purple-50/90 dark:from-purple-900/40 dark:via-[#141021]/85 dark:to-[#141021]/95 backdrop-blur-2xl border-2 border-[#7B3FE4] dark:border-purple-400/70 shadow-lg dark:shadow-[0_20px_50px_rgba(139,92,246,0.35),0_0_30px_rgba(139,92,246,0.2)] scale-[1.02] z-10'
+                    : 'bg-white/85 dark:bg-purple-950/20 backdrop-blur-2xl border border-black/10 dark:border-purple-400/20 hover:border-purple-400/50 hover:bg-purple-50/80 dark:hover:bg-purple-500/10 shadow-md dark:shadow-[0_12px_36px_rgba(0,0,0,0.35)]'
                 }`}
               >
                 {isFeatured && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[var(--sr-accent)] text-[var(--sr-text-on-accent)] text-[10px] font-black tracking-widest uppercase shadow-md">
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[var(--sr-accent)] text-[#ffffff] text-[10px] font-black tracking-widest uppercase shadow-md">
                     Más elegido
                   </span>
                 )}
@@ -152,8 +152,8 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                       onClick={onOpenRegister}
                       className={`w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                         isFeatured
-                          ? 'bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-white shadow-[0_4px_20px_rgba(139,92,246,0.5)] border border-white/20'
-                          : 'bg-purple-500/10 hover:bg-purple-500/25 text-white border border-purple-400/30 hover:border-purple-400/60 backdrop-blur-md shadow-sm'
+                          ? 'bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-[#ffffff] shadow-[0_4px_20px_rgba(139,92,246,0.5)] border border-white/20'
+                          : 'bg-purple-100/90 hover:bg-purple-200/90 dark:bg-purple-500/10 dark:hover:bg-purple-500/25 text-[#48119A] dark:text-white border border-purple-300 dark:border-purple-400/30 hover:border-purple-400/60 backdrop-blur-md shadow-sm'
                       }`}
                     >
                       {plan.action}
@@ -163,8 +163,8 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                       to={plan.to}
                       className={`block w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                         isFeatured
-                          ? 'bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-white shadow-[0_4px_20px_rgba(139,92,246,0.5)] border border-white/20'
-                          : 'bg-purple-500/10 hover:bg-purple-500/25 text-white border border-purple-400/30 hover:border-purple-400/60 backdrop-blur-md shadow-sm'
+                          ? 'bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-[#ffffff] shadow-[0_4px_20px_rgba(139,92,246,0.5)] border border-white/20'
+                          : 'bg-purple-100/90 hover:bg-purple-200/90 dark:bg-purple-500/10 dark:hover:bg-purple-500/25 text-[#48119A] dark:text-white border border-purple-300 dark:border-purple-400/30 hover:border-purple-400/60 backdrop-blur-md shadow-sm'
                       }`}
                     >
                       {plan.action}

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./modules/core/theme/tokens.css";
+@custom-variant dark (&:where(html[data-theme="dark"] *, html[data-theme="oscuro"] *, html[data-tema="oscuro"] *));
 
 /* =====================================================================
    Paleta y tipografía del manual de identidad de StyleRadar.
@@ -205,8 +206,8 @@ html[data-tema="claro"] {
 
   /* Superficie y tokens del Hero Aurora Día (Amanecer luminoso en el radar) */
   --sr-hero-bg: #f3f0f8;
-  --sr-hero-text: #0f172a;
-  --sr-hero-text-muted: #475569;
+  --sr-hero-text: #14111D;
+  --sr-hero-text-muted: #374151;
   --sr-hero-bar: #ffffff;
   --aurora-blur: 75px;
 
@@ -745,4 +746,23 @@ html[data-tema="claro"] .sr-perfil-page {
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
+}
+
+/* Velo sutil en modo claro sobre fondos fotograficos del Landing para lectura WCAG AA */
+html[data-theme="light"] .sr-landing #pe-que-es::before,
+html[data-theme="claro"] .sr-landing #pe-que-es::before,
+html[data-tema="claro"] .sr-landing #pe-que-es::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0.35) 100%);
+}
+
+html[data-theme="light"] .sr-landing #pe-que-es > *,
+html[data-theme="claro"] .sr-landing #pe-que-es > *,
+html[data-tema="claro"] .sr-landing #pe-que-es > * {
+  position: relative;
+  z-index: 1;
 }
