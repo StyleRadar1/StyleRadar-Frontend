@@ -67,6 +67,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
   transition: opacity .35s ease, transform .6s ease;
 }
 .sr-landing .cat-placeholder {
@@ -199,6 +200,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
 }
 .sr-landing .cat-thumb-placeholder {
   display: grid;
@@ -227,8 +229,29 @@
   .sr-landing .cat-thumbs-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
-  .sr-landing .cat-thumbs-grid { display: flex; overflow-x: auto; gap: 12px; padding-bottom: 8px; scroll-snap-type: x mandatory; }
-  .sr-landing .cat-thumb { min-width: 160px; flex-shrink: 0; scroll-snap-align: start; }
+  .sr-landing .cat-thumbs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .sr-landing .cat-thumb {
+    min-width: 0;
+    padding: 8px;
+    gap: 8px;
+    border-radius: 14px;
+  }
+  .sr-landing .cat-thumb:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .sr-landing .cat-thumb:last-child:nth-child(odd) .cat-thumb-fig {
+    width: 72px;
+    flex-shrink: 0;
+  }
+  .sr-landing .cat-thumb-name { font-size: 13.5px; }
+  .sr-landing .cat-thumb-sub { font-size: 11px; }
   .sr-landing .cat-thumbs-hint { display: none; }
   .sr-landing .cat-thumbs-header { margin-bottom: 14px; }
 }
