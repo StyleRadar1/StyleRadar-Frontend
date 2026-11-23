@@ -602,7 +602,7 @@ html[data-theme="claro"] .sr-probador-page,
 html[data-tema="claro"] .sr-probador-page {
   color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/probador-dia.jpg');
+  background-image: url('/img/backgrounds/probador-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -624,7 +624,7 @@ html[data-theme="claro"] .sr-donaciones-page,
 html[data-tema="claro"] .sr-donaciones-page {
   color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/donaciones-dia.jpg');
+  background-image: url('/img/backgrounds/donaciones-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -646,7 +646,7 @@ html[data-theme="claro"] .sr-playlist-page,
 html[data-tema="claro"] .sr-playlist-page {
   color: var(--sr-text-primary);
   background-color: #f6f4fa;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/playlist-dia.jpg');
+  background-image: url('/img/backgrounds/playlist-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -668,7 +668,7 @@ html[data-theme="claro"] .sr-planes-page,
 html[data-tema="claro"] .sr-planes-page {
   color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/planes-dia.jpg');
+  background-image: url('/img/backgrounds/planes-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -698,7 +698,7 @@ html[data-tema="claro"] .inv-page,
 html[data-tema="claro"] .store-subscription {
   color: var(--sr-text-primary);
   background-color: #f8f9fa !important;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/tienda-dia.jpg') !important;
+  background-image: url('/img/backgrounds/tienda-dia.jpg') !important;
   background-size: cover !important;
   background-position: center top !important;
   background-attachment: fixed !important;
@@ -720,7 +720,7 @@ html[data-theme="claro"] .sr-mensajes-page,
 html[data-tema="claro"] .sr-mensajes-page {
   color: var(--sr-text-primary);
   background-color: #faf8fc;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/mensajes-dia.jpg');
+  background-image: url('/img/backgrounds/mensajes-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -742,27 +742,8 @@ html[data-theme="claro"] .sr-perfil-page,
 html[data-tema="claro"] .sr-perfil-page {
   color: var(--sr-text-primary);
   background-color: #f7f5fa;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/perfil-dia.jpg');
+  background-image: url('/img/backgrounds/perfil-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
-}
-
-/* Velo sutil en modo claro sobre fondos fotograficos del Landing para lectura WCAG AA */
-html[data-theme="light"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes)::before,
-html[data-theme="claro"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes)::before,
-html[data-tema="claro"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes)::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.78) 50%, rgba(255, 255, 255, 0.58) 100%);
-}
-
-html[data-theme="light"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes) > *,
-html[data-theme="claro"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes) > *,
-html[data-tema="claro"] .sr-landing :is(#pe-que-es, #categorias, #pe-videos, #ciclo, #planes) > * {
-  position: relative;
-  z-index: 1;
 }
