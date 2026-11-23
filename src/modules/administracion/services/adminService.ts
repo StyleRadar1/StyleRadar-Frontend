@@ -243,14 +243,14 @@ export const adminFoundationService = {
     if (env.useMocks) { failIfScenario(); return mockDelay(fundacion(id)) }
     return apiClient.get<FoundationResponseDto>(`${API.fundaciones}/${encodeURIComponent(id)}`).then((r) => aFundacionAdmin(r.data))
   },
-  /** SR-RF-63: sube el PDF con POST /api/v1/admin/foundations/certificates y devuelve la URL para legalEntityCertificateUrl. */
+  /** SR-RF-63: sube el PDF con POST /api/v1/admin/foundations/certificates (multipart, campo file) y devuelve la URL para legalEntityCertificateUrl. */
   async uploadCertificate(file: File): Promise<string> {
     if (env.useMocks) {
       failIfScenario()
       return mockDelay(`https://mock.styleradar.co/foundations/certificates/${encodeURIComponent(file.name)}`, 300)
     }
     const body = new FormData()
-    body.append('certificate', file)
+    body.append('file', file)
     const r = await apiClient.post<string | { url?: string; legalEntityCertificateUrl?: string }>(`${API.fundaciones}/certificates`, body)
     const url = typeof r.data === 'string' ? r.data : r.data?.url ?? r.data?.legalEntityCertificateUrl ?? ''
     if (!url) throw new ApiError(500, 'No pudimos subir el certificado. Intenta de nuevo.')
