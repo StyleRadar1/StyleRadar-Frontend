@@ -1,6 +1,9 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { env } from '@/configs/env'
+import { apiClient } from '@/modules/core/api/apiClient'
+import { moderationService } from '../services/moderationService'
 import ModerationPage from '../pages/ModerationPage'
 import { renderAt } from '../../experiencia/__tests__/helpers'
 
@@ -82,6 +85,40 @@ describe('ModerationPage (RF-61)', () => {
     sessionStorage.setItem('sr_mock', 'regla')
     await user.click(screen.getByRole('button', { name: /Aprobar prenda/i }))
     expect(await screen.findByText('Ya fue moderado — actualizamos la lista')).toBeInTheDocument()
+  })
+})
+
+describe('moderationService sin mocks (VITE_USE_MOCKS=false)', () => {
+  let prevMocks: boolean
+
+  beforeEach(() => {
+    prevMocks = env.useMocks
+    env.useMocks = false
+  })
+
+  afterEach(() => {
+    env.useMocks = prevMocks
+    vi.restoreAllMocks()
+  })
+
+  it('envía decisiones individuales y en lote sin moderadorId', async () => {
+    const putSpy = vi.spyOn(apiClient, 'put').mockResolvedValue({ data: undefined } as never)
+
+    await moderationService.decide({ itemId: 'p-1', aprobado: true })
+    expect(putSpy).toHaveBeenCalledWith('/api/v1/prendas/p-1/moderacion', { decision: 'APROBADA' })
+    expect(putSpy.mock.calls[0][1]).not.toHaveProperty('moderadorId')
+
+    await moderationService.decidePublisherBatch({
+      publicador: 'Almacén QA',
+      almacenId: 'alm-qa',
+      aprobado: false,
+      motivo: 'Foto borrosa',
+    })
+    expect(putSpy).toHaveBeenCalledWith('/api/v1/prendas/pendientes/almacenes/alm-qa/moderacion', {
+      decision: 'RECHAZADA',
+      motivo: 'Foto borrosa',
+    })
+    expect(putSpy.mock.calls[1][1]).not.toHaveProperty('moderadorId')
   })
 })
 

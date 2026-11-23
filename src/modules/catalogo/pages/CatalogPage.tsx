@@ -2,11 +2,13 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } fr
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { isStoreSuspended, STORE_SUB_CHANGED } from '@/modules/transacciones/services/storeSubscriptionService'
+import { env } from '@/configs/env'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind } from '@/modules/core/api/errors'
 import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
 import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
 import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
+import { ParaTiSections } from '@/modules/identidad/components/ParaTiSections'
 import { ItemCard } from '../components/ItemCard'
 import { ItemGridSkeleton } from '../components/ItemCardSkeleton'
 import { useItems } from '../hooks/useItems'
@@ -493,7 +495,7 @@ export default function CatalogPage() {
   }
 
   const hayAlgunFiltro = filtrosActivosCount > 0 || texto.trim().length > 0
-  const mostrarPerchero = !hayAlgunFiltro && (loading || uniqueItems.length > 0)
+  const mostrarPerchero = env.useMocks && !hayAlgunFiltro && (loading || uniqueItems.length > 0)
 
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
@@ -1286,6 +1288,9 @@ export default function CatalogPage() {
             />
           </div>
         </div>
+
+        {/* SR-RF-05 y 06: «Para ti» y «Recomendado para ti», solo para compradores y sin filtros activos */}
+        {!hayAlgunFiltro && <ParaTiSections />}
 
         {/* LISTADO PRINCIPAL DEL CATÁLOGO */}
         <div>

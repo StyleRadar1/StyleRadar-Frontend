@@ -228,17 +228,17 @@ function PlansSelector() {
   const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
   // El plan de la persona se lee de un único lugar: useUserPlan (el mismo que usan /planes y los candados).
-  const { plan: userPlan } = useUserPlan(user?.role === 'COMPRADOR')
+  const { plan: userPlan } = useUserPlan(user?.role === 'BUYER')
   const currentPlan = userPlan === 'RADAR_PLUS' ? 'plus' : userPlan === 'RADAR' ? 'free' : null
 
   // Solo opciones de comprador según PLANS_BY_ROLE (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
-  const buyerPlans = plans.filter((p) => isPlanCompatibleWithRole(p.id, user?.role || 'COMPRADOR'))
+  const buyerPlans = plans.filter((p) => isPlanCompatibleWithRole(p.id, user?.role || 'BUYER'))
 
   useEffect(() => {
-    if (user && user.role !== 'COMPRADOR') {
-      if (user.role === 'ADMIN_ALMACEN') {
+    if (user && user.role !== 'BUYER') {
+      if (user.role === 'STORE_ADMIN') {
         navigate('/tienda/suscripcion', { replace: true })
-      } else if (user.role === 'ADMIN_STYLERADAR') {
+      } else if (user.role === 'STYLERADAR_ADMIN') {
         navigate('/admin/pagos', { replace: true })
       } else {
         navigate('/planes', { replace: true })

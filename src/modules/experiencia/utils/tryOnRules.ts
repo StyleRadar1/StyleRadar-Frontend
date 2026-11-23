@@ -33,9 +33,11 @@ export function validarArchivoPrueba(file: File): string {
   return ''
 }
 
-/** Tamaño en píxeles y orientación, una vez se puede leer la imagen. */
+/** Tamaño en píxeles, orientación vertical y proporción [1.20, 2.60] según PoseReferenceValidator. */
 export function validarDimensionesPrueba(width: number, height: number): boolean {
-  return width >= TRYON_MIN.width && height >= TRYON_MIN.height && height > width
+  if (width < TRYON_MIN.width || height < TRYON_MIN.height || height <= width) return false
+  const ratio = height / width
+  return ratio >= 1.2 && ratio <= 2.6
 }
 
 /** Qué se le ofrece a la persona para resolver el problema. */
@@ -53,27 +55,38 @@ export function problemaFoto(e: unknown): ProblemaPrueba {
   const code = e instanceof ApiError ? e.code : undefined
   if (code === 'CONSENT_REQUIRED') return CONSENTIMIENTO
   if (status === 413 || code === 'PAYLOAD_TOO_LARGE') return { titulo: 'Tu foto es muy pesada', texto: TEXTO_FOTO.pesoServidor, accion: 'otra-foto' }
-  if (status === 422 || code === 'INVALID_PHOTO_DIMENSIONS') return { titulo: TEXTO_FOTO.dimensionesTitulo, texto: TEXTO_FOTO.dimensiones, accion: 'otra-foto' }
-  if (status === 400) return { titulo: 'Ese formato no sirve', texto: TEXTO_FOTO.formato, accion: 'otra-foto' }
+  if (status === 422 || code === 'INVALID_PHOTO' || code === 'INVALID_PHOTO_DIMENSIONS') {
+    return { titulo: TEXTO_FOTO.dimensionesTitulo, texto: TEXTO_FOTO.dimensiones, accion: 'otra-foto' }
+  }
+  if (code === 'MISSING_REQUEST_PART' || status === 400) return { titulo: 'Ese formato no sirve', texto: TEXTO_FOTO.formato, accion: 'otra-foto' }
   return general(e)
 }
 
 /** Error al crear o consultar la prueba. */
-export function problemaPrueba(e: unknown): ProblemaPrueba {
+export function problemaPrueba(e: unknown, monthlyLimit = TRYON_CUOTA_MES): ProblemaPrueba {
   const status = e instanceof ApiError ? e.status : 0
   const code = e instanceof ApiError ? e.code : undefined
   if (code === 'CONSENT_REQUIRED') return CONSENTIMIENTO
   if (code === 'QUOTA_EXCEEDED' || status === 429) {
-    return { titulo: `Usaste las ${TRYON_CUOTA_MES} pruebas de este mes`, texto: 'Con Radar+ tienes más.', accion: 'planes' }
+    return { titulo: `Usaste las ${monthlyLimit} pruebas de este mes`, texto: 'Con Radar+ tienes más.', accion: 'planes' }
   }
-  if (code === 'AI_TIMEOUT' || status === 504) {
+  if (code === 'AI_PROVIDER_TIMEOUT' || code === 'AI_TIMEOUT' || status === 504) {
     return { titulo: 'El probador tardó demasiado en responder', texto: 'Inténtalo de nuevo.', accion: 'reintentar' }
   }
+  if (code === 'BIOMETRIC_PHOTO_NOT_FOUND') {
+    return { titulo: 'Falta tu fotografía frontal', texto: 'Sube una fotografía frontal para generar la prueba.', accion: 'otra-foto' }
+  }
+  if (code === 'TRYON_SELECTION_INCOMPLETE' || code === 'TRYON_SIZE_UNAVAILABLE') {
+    return { titulo: 'Revisa la talla seleccionada', texto: 'Elige una talla disponible para esta prenda.', accion: 'otra-prenda' }
+  }
+  if (code === 'AI_INFERENCE_PERMANENT_ERROR') {
+    return { titulo: 'No pudimos generar tu prueba', texto: 'Prueba con otra foto o prenda; tu cuota no se consumió.', accion: 'otra-foto' }
+  }
   // 403 y 404 se ven igual: no se revela si la prueba existe ni de quién es
-  if (code === 'JOB_NOT_FOUND' || status === 404 || status === 403) {
+  if (code === 'JOB_NOT_FOUND' || code === 'ACCESS_DENIED' || status === 404 || status === 403) {
     return { titulo: 'No encontramos esa prueba', texto: 'Puede que ya la hayas borrado.', accion: 'volver' }
   }
-  if (code === 'INVALID_GARMENT' || status === 400 || status === 422) {
+  if (code === 'GARMENT_NOT_ELIGIBLE' || code === 'INVALID_GARMENT' || status === 400 || status === 422) {
     return { titulo: 'Esta prenda no se puede probar', texto: 'Elige otra del catálogo.', accion: 'otra-prenda' }
   }
   return general(e)

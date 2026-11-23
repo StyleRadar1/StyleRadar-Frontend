@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { env } from '@/configs/env'
+import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
@@ -142,20 +144,65 @@ function renderDistintivoIcon(icono: string) {
 
 export default function StorePage() {
   const { id } = useParams<{ id: string }>()
-  const initialStore = useMemo(() => storePublicService.getById(id || ''), [id])
+  const initialStore = useMemo(
+    () => (env.useMocks ? storePublicService.getById(id || '') : null),
+    [id]
+  )
   const [store, setStore] = useState<StorePublicDto | null>(initialStore)
+  const [loading, setLoading] = useState<boolean>(() => !env.useMocks)
+  const [error, setError] = useState<unknown>(null)
+  const [reloadTick, setReloadTick] = useState(0)
+
+  const reload = () => setReloadTick((t) => t + 1)
 
   useEffect(() => {
-    setStore(initialStore)
+    if (env.useMocks) {
+      setStore(initialStore)
+      setLoading(false)
+      setError(null)
+      return
+    }
     let active = true
-    storePublicService.getByIdAsync(id || '').then((res) => {
-      if (active && res) setStore(res)
-    }).catch(() => {})
-    return () => { active = false }
-  }, [id, initialStore])
+    setStore(null)
+    setLoading(true)
+    setError(null)
+    storePublicService
+      .getByIdAsync(id || '')
+      .then((res) => {
+        if (!active) return
+        setStore(res)
+      })
+      .catch((err) => {
+        if (!active) return
+        setError(err)
+      })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [id, initialStore, reloadTick])
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('TODAS')
   const [favoritos, setFavoritos] = useState<Record<string, boolean>>({})
   const [feedback, setFeedback] = useState<string | null>(null)
+
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-12" role="main">
+        <Loading label="Cargando tienda…" />
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="mx-auto max-w-4xl px-4 py-12" role="main">
+        <ErrorState error={error} onRetry={reload} title="No pudimos cargar la tienda" />
+      </main>
+    )
+  }
 
   // Si no existe la tienda, estado vacío claro con botón al catálogo
   if (!store) {
@@ -773,6 +820,7 @@ export default function StorePage() {
             <ContactButton
               label={`Escribir a ${store.nombre}`}
               contacto={tiendaContacto(store.nombre)}
+              nit={store.nit}
               asunto={`Consulta sobre ${store.nombre}`}
               className="sr-store-btn sr-store-btn--outline"
             />

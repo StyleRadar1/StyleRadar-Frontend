@@ -6,7 +6,7 @@ export const png = (name = 'foto.png', size = 2048, type = 'image/png') => new F
 
 export function loginAs(id: string, name: string) {
   localStorage.setItem('sr_token', 'test-token')
-  localStorage.setItem('sr_user', JSON.stringify({ id, name, email: `${id}@styleradar.co`, role: 'COMPRADOR' }))
+  localStorage.setItem('sr_user', JSON.stringify({ id, name, email: `${id}@styleradar.co`, role: 'BUYER' }))
 }
 
 export function renderAt(path: string, routes: { path: string; element: ReactNode }[]) {

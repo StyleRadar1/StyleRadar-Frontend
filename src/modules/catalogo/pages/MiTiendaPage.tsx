@@ -1,23 +1,22 @@
-import { useContext, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useCallback, useContext, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { hasScenario } from '@/modules/core/api/mockScenario'
 import { ErrorCard } from '@/modules/core/components/ErrorScene'
 import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { AuthContext } from '@/modules/identidad/states/authContext'
+import { env } from '@/configs/env'
+import { ApiError } from '@/modules/core/api/apiClient'
+import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
+import { erroresDeConfiguracion, storeSettingsService } from '../services/storeSettingsService'
+import { errorDeFoto, ordenadas, storePhotoService, TEXTOS_FOTOS } from '../services/storePhotoService'
+import {
+  ALLOWED_STORE_PHOTO_TYPES, LOW_STOCK_DEFAULT, LOW_STOCK_MAX, LOW_STOCK_MIN, MAX_STORE_PHOTOS, NEW_ARRIVAL_DEFAULT,
+  NEW_ARRIVAL_OPTIONS, type StorePhotoDto, type StoreResponseDto,
+} from '../types/store.dto'
+import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import './MiTiendaPage.css'
 import './MiTiendaDashboard.css'
-
-const MAX_STORE_PHOTOS = 6
-const MAX_STORE_PHOTO_BYTES = 6 * 1024 * 1024
-const ALLOWED_STORE_PHOTO_TYPES = ['image/jpeg', 'image/png']
-
-function validateStoreImage(file: File): string {
-  if (!ALLOWED_STORE_PHOTO_TYPES.includes(file.type) || file.size === 0 || file.size > MAX_STORE_PHOTO_BYTES) {
-    return 'Sube una imagen JPG o PNG de máximo 6 MB.'
-  }
-  return ''
-}
 
 type StoreItem = {
   id: string
@@ -69,7 +68,6 @@ const INITIAL_LEGAL_INFO: LegalStoreInfo = {
 }
 
 const STORAGE_LEGAL_KEY = 'styleradar-store-legal-info'
-const GALLERY_STORAGE_KEY = 'styleradar-store-gallery'
 const COLLECTIONS_STORAGE_KEY = 'styleradar-store-collections'
 
 const DEFAULT_COLLECTIONS: StoreCollection[] = [
@@ -85,33 +83,25 @@ function readCollections(): StoreCollection[] {
   }
 }
 
+/** F-19: lo que trae ms-tiendas del almacén de la Tienda; lo que no trae se queda como estaba. */
+function legalDesdeServidor(store: StoreResponseDto): Partial<LegalStoreInfo> {
+  return {
+    nit: store.nit,
+    ...(store.tradeName ? { legalName: store.tradeName } : {}),
+    ...(store.phone ? { phone: store.phone } : {}),
+    ...(store.contactEmail ? { email: store.contactEmail } : {}),
+  }
+}
+
+/** Texto cuando no se pudo leer el almacén de la Tienda (GET /users/{userId}/store). */
+const SIN_ALMACEN = 'Tu cuenta todavía no tiene un almacén asociado. Escríbele a soporte de StyleRadar para que lo asignen.'
+
 function readLegalInfo(): LegalStoreInfo {
   try {
     const saved = localStorage.getItem(STORAGE_LEGAL_KEY)
     return saved ? { ...INITIAL_LEGAL_INFO, ...JSON.parse(saved) as Partial<LegalStoreInfo> } : INITIAL_LEGAL_INFO
   } catch {
     return INITIAL_LEGAL_INFO
-  }
-}
-
-type StoreGalleryPhoto = {
-  id: string
-  url: string
-  tag: string
-}
-
-const DEFAULT_GALLERY: StoreGalleryPhoto[] = [
-  { id: 'foto-1', url: '/img/mapa/luna.jpg', tag: 'Fachada' },
-  { id: 'foto-2', url: '/img/sesion/rol-tienda.jpg', tag: 'Mostrador' },
-  { id: 'foto-3', url: '/prototipo/assets/img/productos/r1c3-tenis-running.jpg', tag: 'Vitrina' },
-]
-
-function readGallery(): StoreGalleryPhoto[] {
-  try {
-    const saved = localStorage.getItem(GALLERY_STORAGE_KEY)
-    return saved ? JSON.parse(saved) as StoreGalleryPhoto[] : DEFAULT_GALLERY
-  } catch {
-    return DEFAULT_GALLERY
   }
 }
 
@@ -152,9 +142,36 @@ export default function MiTiendaPage() {
   const [editingInfo, setEditingInfo] = useState(false)
   const [legalDraft, setLegalDraft] = useState<LegalStoreInfo>(readLegalInfo)
 
+  /* F-19: el NIT del almacén sale de ms-tiendas (GET /api/v1/users/{userId}/store). Con datos de prueba se usa el guardado. */
+  const [storeError, setStoreError] = useState('')
+  const [storeNit, setStoreNit] = useState(() => (env.useMocks ? readLegalInfo().nit : ''))
+  const userId = user?.id ? String(user.id) : ''
+  useEffect(() => {
+    if (env.useMocks || !userId) return
+    let active = true
+    storeSettingsService.getMyStore(userId)
+      .then((store) => {
+        if (!active) return
+        const desdeServidor = legalDesdeServidor(store)
+        setLegalInfo((li) => ({ ...li, ...desdeServidor }))
+        setLegalDraft((li) => ({ ...li, ...desdeServidor }))
+        setStoreNit(store.nit)
+      })
+      .catch((e) => {
+        if (active) setStoreError(errorKind(e) === 'no-existe' ? SIN_ALMACEN : errorMessage(e, 'No pudimos cargar los datos de tu almacén.'))
+      })
+    return () => { active = false }
+  }, [userId])
+
   /* Fotos de la tienda */
-  const [storeGallery, setStoreGallery] = useState<StoreGalleryPhoto[]>(readGallery)
+  /* SR-RF-74 · F-20: la galería vive en ms-tiendas (máximo 6; la primera es la portada). */
+  const [storeGallery, setStoreGallery] = useState<StorePhotoDto[]>([])
   const [photoError, setPhotoError] = useState('')
+  const [photosBusy, setPhotosBusy] = useState(false)
+  /* Hasta tener la galería real no se sube nada: así el conteo de 6 y el orden salen del servidor. */
+  const [photosReady, setPhotosReady] = useState(false)
+  const [photoToRemove, setPhotoToRemove] = useState<StorePhotoDto | null>(null)
+  const cerrarQuitarFoto = useCallback(() => setPhotoToRemove(null), [])
 
   /* Colecciones */
   const [collections, setCollections] = useState<StoreCollection[]>(readCollections)
@@ -168,10 +185,36 @@ export default function MiTiendaPage() {
   const [verificationStatus, setVerificationStatus] = useState<'SIN_VERIFICAR' | 'EN_REVISION' | 'VERIFICADA'>('SIN_VERIFICAR')
   const [verificationError, setVerificationError] = useState('')
   const [badgesDialogOpen, setBadgesDialogOpen] = useState(false)
-  const [lastUnitsLimit, setLastUnitsLimit] = useState(3)
-  const [newArrivalDays, setNewArrivalDays] = useState(14)
-  const [lastUnitsDraft, setLastUnitsDraft] = useState('3')
-  const [newArrivalDaysDraft, setNewArrivalDaysDraft] = useState('14')
+  const [lastUnitsLimit, setLastUnitsLimit] = useState(LOW_STOCK_DEFAULT)
+  const [newArrivalDays, setNewArrivalDays] = useState(NEW_ARRIVAL_DEFAULT)
+  const [lastUnitsDraft, setLastUnitsDraft] = useState(String(LOW_STOCK_DEFAULT))
+  const [newArrivalDaysDraft, setNewArrivalDaysDraft] = useState(String(NEW_ARRIVAL_DEFAULT))
+  const [badgesErrors, setBadgesErrors] = useState<Record<string, string>>({})
+  const [badgesError, setBadgesError] = useState('')
+  const [badgesBusy, setBadgesBusy] = useState(false)
+
+  /* SR-RF-59 · SR-RF-60: las reglas de distintivos se leen de ms-tiendas con el NIT del almacén. */
+  useEffect(() => {
+    if (!storeNit) return
+    let active = true
+    storeSettingsService.getCatalogSettings(storeNit)
+      .then((c) => {
+        if (!active) return
+        setLastUnitsLimit(c.lowStockThreshold)
+        setNewArrivalDays(c.newArrivalDays)
+      })
+      .catch(() => { /* se quedan los valores por defecto; al guardar se muestra el error */ })
+    return () => { active = false }
+  }, [storeNit])
+
+  useEffect(() => {
+    if (!storeNit) return
+    let active = true
+    storePhotoService.list(storeNit)
+      .then((fotos) => { if (active) { setStoreGallery(fotos); setPhotosReady(true) } })
+      .catch((e) => { if (active) setPhotoError(errorKind(e) === 'no-existe' ? SIN_ALMACEN : errorMessage(e, 'No pudimos cargar las fotos de tu tienda.')) })
+    return () => { active = false }
+  }, [storeNit])
 
   /* Resumen del panel */
   const activeCount = items.filter((item) => item.status === 'Publicadas' && item.stock > 0).length
@@ -207,52 +250,80 @@ export default function MiTiendaPage() {
   }
 
   /* Subir y quitar fotos de la tienda */
+  const cargarFotos = useCallback((nit: string) => storePhotoService.list(nit).then(setStoreGallery), [])
+  const errorDeGaleria = (e: unknown) => {
+    if (e instanceof ApiError && e.status === 422) return TEXTOS_FOTOS.maximo
+    if (errorKind(e) === 'no-existe') return 'No encontramos tu almacén. Recarga la página o escríbele a soporte.'
+    return errorMessage(e, 'No se pudo actualizar la galería.')
+  }
+
   const handleUploadPhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.currentTarget.files ?? [])
     event.currentTarget.value = ''
     setPhotoError('')
-    if (!selected.length) return
+    if (!selected.length || photosBusy || !photosReady) return
+    if (!storeNit) { setPhotoError(storeError || SIN_ALMACEN); return }
     const remaining = Math.max(0, MAX_STORE_PHOTOS - storeGallery.length)
     if (!remaining) {
-      setPhotoError('Ya llegaste al máximo de 6 fotos.')
+      setPhotoError(TEXTOS_FOTOS.maximo)
       return
     }
-    const invalidMsg = selected.map(validateStoreImage).find(Boolean)
+    const invalidMsg = selected.map(errorDeFoto).find(Boolean)
     if (invalidMsg) {
       setPhotoError(invalidMsg)
       return
     }
-    if (selected.length > remaining) {
-      setPhotoError('Ya llegaste al máximo de 6 fotos.')
-    }
-    const allowed = selected.slice(0, remaining)
-    const dataUrls = await Promise.all(allowed.map((file) => new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('No se pudo leer la imagen.'))
-      reader.onerror = () => reject(new Error('No se pudo leer una de las imágenes.'))
-      reader.readAsDataURL(file)
-    })))
-    const newEntries: StoreGalleryPhoto[] = dataUrls.map((url, i) => ({
-      id: `photo-${Date.now()}-${i}`,
-      url,
-      tag: `Foto ${storeGallery.length + i + 1}`,
-    }))
-
-    const next = [...storeGallery, ...newEntries].slice(0, MAX_STORE_PHOTOS)
-    setStoreGallery(next)
+    // El back recibe una foto por petición: se suben en orden y cada una aparece al terminar.
+    setPhotosBusy(true)
+    let subidas = 0
     try {
-      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(next))
-    } catch {}
-    setNotice('Fotos de la tienda actualizadas con éxito.')
+      for (const file of selected.slice(0, remaining)) {
+        const foto = await storePhotoService.upload(storeNit, file)
+        setStoreGallery((g) => ordenadas([...g.filter((x) => String(x.id) !== String(foto.id)), foto]))
+        subidas++
+      }
+      if (selected.length > remaining) setPhotoError(TEXTOS_FOTOS.maximo)
+    } catch (e) {
+      setPhotoError(errorDeGaleria(e))
+    } finally {
+      setPhotosBusy(false)
+    }
+    if (subidas) setNotice('Fotos de la tienda actualizadas con éxito.')
   }
 
-  const handleRemovePhoto = (id: string) => {
-    const next = storeGallery.filter((p) => p.id !== id)
-    setStoreGallery(next)
+  const moverFoto = async (index: number, paso: -1 | 1) => {
+    const destino = index + paso
+    if (!storeNit || photosBusy || destino < 0 || destino >= storeGallery.length) return
+    const orden = storeGallery.map((f) => f.id)
+    ;[orden[index], orden[destino]] = [orden[destino], orden[index]]
+    setPhotosBusy(true); setPhotoError('')
     try {
-      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(next))
-    } catch {}
-    setNotice('Foto eliminada.')
+      setStoreGallery(await storePhotoService.reorder(storeNit, orden))
+      setNotice(destino === 0 || index === 0 ? 'Orden guardado. La primera foto es la portada.' : 'Orden de las fotos guardado.')
+    } catch (e) {
+      // FA-09: otra sesión cambió la galería; se vuelve a pedir para tener la lista real.
+      if (errorKind(e) === 'datos') { setPhotoError(TEXTOS_FOTOS.ordenDesactualizado); cargarFotos(storeNit).catch(() => {}) }
+      else setPhotoError(errorDeGaleria(e))
+    } finally {
+      setPhotosBusy(false)
+    }
+  }
+
+  const handleRemovePhoto = async () => {
+    const foto = photoToRemove
+    if (!foto || !storeNit || photosBusy) return
+    setPhotosBusy(true); setPhotoError('')
+    try {
+      await storePhotoService.remove(storeNit, foto.id)
+      // La siguiente pasa a ser la portada (RN-03): se vuelve a pedir la galería con las posiciones nuevas.
+      await cargarFotos(storeNit)
+      setNotice('Foto eliminada.')
+    } catch (e) {
+      setPhotoError(errorDeGaleria(e))
+    } finally {
+      setPhotosBusy(false)
+      setPhotoToRemove(null)
+    }
   }
 
   /* Colecciones */
@@ -298,12 +369,32 @@ export default function MiTiendaPage() {
   const openBadgesSettings = () => {
     setLastUnitsDraft(String(lastUnitsLimit))
     setNewArrivalDaysDraft(String(newArrivalDays))
+    setBadgesErrors({}); setBadgesError('')
     setBadgesDialogOpen(true)
   }
-  const saveBadgesSettings = (event: FormEvent<HTMLFormElement>) => {
+  const saveBadgesSettings = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const threshold = Math.max(0, Number(lastUnitsDraft) || 0)
-    const days = Math.max(1, Number(newArrivalDaysDraft) || 14)
+    if (badgesBusy) return
+    const aNumero = (v: string) => (v.trim() === '' ? null : Number(v))
+    const body = { lowStockThreshold: aNumero(lastUnitsDraft), newArrivalDays: aNumero(newArrivalDaysDraft) }
+    const errores = erroresDeConfiguracion(body)
+    setBadgesErrors(errores); setBadgesError('')
+    if (Object.keys(errores).length) return
+    if (!storeNit) { setBadgesError(storeError || SIN_ALMACEN); return }
+    setBadgesBusy(true)
+    let guardado
+    try {
+      guardado = await storeSettingsService.saveCatalogSettings(storeNit, body as { lowStockThreshold: number; newArrivalDays: number })
+    } catch (e) {
+      const campos = fieldErrors(e)
+      if (campos.lowStockThreshold || campos.newArrivalDays) setBadgesErrors(campos)
+      else setBadgesError(errorKind(e) === 'no-existe' ? 'No encontramos tu almacén. Recarga la página o escríbele a soporte.' : errorMessage(e, 'No se pudieron guardar los distintivos.'))
+      return
+    } finally {
+      setBadgesBusy(false)
+    }
+    const threshold = guardado.lowStockThreshold
+    const days = guardado.newArrivalDays
     setLastUnitsLimit(threshold)
     setNewArrivalDays(days)
     setItems((current) => current.map((item) => {
@@ -318,7 +409,7 @@ export default function MiTiendaPage() {
   const requestedStoreId = searchParams.get('tiendaId')
   const forbidden = (requestedStoreId !== null && requestedStoreId !== 't-1')
     || hasScenario('sin-permiso')
-    || (user !== null && user.role !== 'ADMIN_ALMACEN')
+    || (user !== null && user.role !== 'STORE_ADMIN')
 
   if (forbidden) {
     return (
@@ -402,6 +493,7 @@ export default function MiTiendaPage() {
           <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para reintentar el pago con Mercado Pago y mantener tu tienda visible</p></div>
           <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
         </div>
+        {storeError && <ErrorBanner tone="warn" icon="info" title={storeError} />}
         {verificationError && (
           <ErrorBanner tone="warn" icon="info" title={verificationError}>
             Nuestro equipo ya está revisando los documentos de tu tienda. Te avisaremos cuando finalice la revisión.
@@ -577,7 +669,7 @@ export default function MiTiendaPage() {
             <header className="msd-card__head">
               <div>
                 <h2 id="store-photos-title">Fotos de la tienda</h2>
-                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Fachada, vitrina e interior (hasta 6 fotos). {storeGallery.length}/6 fotos.</p>
+                <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-0.5">Fachada, vitrina e interior (hasta 6 fotos; la primera es la portada). {storeGallery.length}/6 fotos.</p>
               </div>
             </header>
             <FieldError id="store-photos-err" message={photoError} />
@@ -586,11 +678,16 @@ export default function MiTiendaPage() {
                 <div key={photo.id} className="msd-collection">
                   <img src={photo.url} alt={`Foto ${index + 1} de ${legalInfo.legalName}`} loading="lazy" />
                   <span className="msd-collection__shade" aria-hidden="true" />
-                  <span className="msd-collection__name">{photo.tag || `Foto ${index + 1}`}</span>
-                  <span className="msd-collection__meta">Luna Store</span>
+                  <span className="msd-collection__name">{photo.cover ? 'Portada' : `Foto ${index + 1}`}</span>
+                  <span className="msd-collection__meta">
+                    <button type="button" disabled={photosBusy || index === 0} onClick={() => moverFoto(index, -1)} aria-label={`Mover foto ${index + 1} antes`} title="Mover antes">←</button>
+                    {' '}
+                    <button type="button" disabled={photosBusy || index === storeGallery.length - 1} onClick={() => moverFoto(index, 1)} aria-label={`Mover foto ${index + 1} después`} title="Mover después">→</button>
+                  </span>
                   <button
                     type="button"
-                    onClick={() => handleRemovePhoto(photo.id)}
+                    disabled={photosBusy}
+                    onClick={() => setPhotoToRemove(photo)}
                     className="msd-photo-del"
                     aria-label={`Quitar foto ${index + 1}`}
                     title="Quitar foto"
@@ -599,19 +696,26 @@ export default function MiTiendaPage() {
                   </button>
                 </div>
               ))}
-              {storeGallery.length < MAX_STORE_PHOTOS && (
-                <label className="msd-collection msd-collection--new cursor-pointer">
-                  <span>＋ Subir foto</span>
+              {photosReady && storeGallery.length < MAX_STORE_PHOTOS && (
+                <label className="msd-collection msd-collection--new cursor-pointer" aria-busy={photosBusy}>
+                  <span>{photosBusy ? 'Subiendo…' : '＋ Subir foto'}</span>
                   <input
                     type="file"
-                    accept="image/jpeg,image/png"
+                    accept={ALLOWED_STORE_PHOTO_TYPES.join(',')}
                     multiple
+                    disabled={photosBusy}
                     className="sr-only"
                     onChange={handleUploadPhotos}
                   />
                 </label>
               )}
             </div>
+            <ConfirmDialog open={!!photoToRemove} busy={photosBusy} danger
+              title="¿Quitar esta foto?"
+              confirmLabel="Quitar foto"
+              onCancel={cerrarQuitarFoto} onConfirm={handleRemovePhoto}>
+              {photoToRemove?.cover ? 'Es la portada: la siguiente foto pasará a ser la portada.' : 'La foto dejará de verse en la página de tu tienda.'}
+            </ConfirmDialog>
           </section>
         </div>
 
@@ -635,22 +739,26 @@ export default function MiTiendaPage() {
       </div>
 
       {badgesDialogOpen ? <div className="my-store__dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setBadgesDialogOpen(false) }}>
-        <form className="my-store__dialog my-store__dialog--badges" role="dialog" aria-modal="true" aria-labelledby="badges-title" onSubmit={saveBadgesSettings}>
+        <form className="my-store__dialog my-store__dialog--badges" role="dialog" aria-modal="true" aria-labelledby="badges-title" onSubmit={saveBadgesSettings} noValidate>
           <button className="my-store__dialog-close" type="button" onClick={() => setBadgesDialogOpen(false)} aria-label="Cerrar">×</button>
           <span className="my-store__eyebrow">MI TIENDA</span>
           <h2 id="badges-title">Distintivos automáticos</h2>
           <p>StyleRadar pone estas etiquetas solas sobre tus prendas, según tu inventario y la fecha de publicación.</p>
           <label className="my-store__badge-rule">«ÚLTIMAS UNIDADES» CUANDO QUEDEN
-            <span className="my-store__badge-threshold"><input type="number" min="0" max="99" value={lastUnitsDraft} onChange={(event) => setLastUnitsDraft(event.target.value)} aria-label="Umbral de últimas unidades" /><b>UNIDADES O MENOS</b></span>
+            <span className="my-store__badge-threshold"><input type="number" min={LOW_STOCK_MIN} max={LOW_STOCK_MAX} step="1" value={lastUnitsDraft} onChange={(event) => setLastUnitsDraft(event.target.value)} aria-label="Umbral de últimas unidades" aria-invalid={!!badgesErrors.lowStockThreshold} aria-describedby={badgesErrors.lowStockThreshold ? 'badges-umbral-error' : undefined} /><b>UNIDADES O MENOS</b></span>
           </label>
+          <FieldError id="badges-umbral-error" message={badgesErrors.lowStockThreshold} />
           <label className="my-store__badge-rule">«NUEVA LLEGADA» DURANTE
-            <select value={newArrivalDaysDraft} onChange={(event) => setNewArrivalDaysDraft(event.target.value)} aria-label="Duración de nueva llegada">
-              <option value="7">7 días desde que se publica</option>
-              <option value="14">14 días desde que se publica</option>
-              <option value="30">30 días desde que se publica</option>
+            <select value={newArrivalDaysDraft} onChange={(event) => setNewArrivalDaysDraft(event.target.value)} aria-label="Duración de nueva llegada" aria-invalid={!!badgesErrors.newArrivalDays} aria-describedby={badgesErrors.newArrivalDays ? 'badges-dias-error' : undefined}>
+              {/* Si el back guardó otro periodo válido (1 a 60), también se ofrece para no perderlo. */}
+              {[...new Set<number>([...NEW_ARRIVAL_OPTIONS, newArrivalDays])].sort((a, b) => a - b).map((d) => (
+                <option key={d} value={String(d)}>{d} días desde que se publica</option>
+              ))}
             </select>
           </label>
-          <div className="my-store__dialog-actions"><button type="button" onClick={() => setBadgesDialogOpen(false)}>Cancelar</button><button className="my-store__button--primary" type="submit">Guardar</button></div>
+          <FieldError id="badges-dias-error" message={badgesErrors.newArrivalDays} />
+          {badgesError && <p role="alert" className="my-store__photo-error">{badgesError}</p>}
+          <div className="my-store__dialog-actions"><button type="button" onClick={() => setBadgesDialogOpen(false)}>Cancelar</button><button className="my-store__button--primary" type="submit" disabled={badgesBusy}>{badgesBusy ? 'Guardando…' : 'Guardar'}</button></div>
         </form>
       </div> : null}
 

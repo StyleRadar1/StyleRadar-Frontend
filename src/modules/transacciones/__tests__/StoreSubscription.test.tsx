@@ -7,7 +7,7 @@ import { resetMockStoreSubscription, storeSubscriptionService } from '../service
 beforeEach(() => {
   vi.restoreAllMocks()
   localStorage.setItem('sr_token', 'demo-t-1')
-  localStorage.setItem('sr_user', JSON.stringify({ id: 't-1', name: 'Tienda Prueba', email: 't-1@styleradar.co', role: 'ADMIN_ALMACEN' }))
+  localStorage.setItem('sr_user', JSON.stringify({ id: 't-1', name: 'Tienda Prueba', email: 't-1@styleradar.co', role: 'STORE_ADMIN' }))
   resetMockStoreSubscription()
 })
 

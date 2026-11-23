@@ -6,6 +6,7 @@ import { mockPlanOf } from '@/modules/transacciones/services/userPlanService'
 import { LIMITES_RADAR } from '@/modules/transacciones/types/plan.dto'
 import { seedAlerts } from '../mocks/notifications'
 import { itemService } from '@/modules/catalogo/services/itemService'
+import { fechaUtc } from '../utils/notificaciones'
 import { type AlertaPrendaDto, type AlertasResumenDto, type BusquedaGuardadaDto } from '../types/notification.dto'
 
 /** Rutas de ms-notificaciones según su Swagger, vía API Gateway. «me» es el usuario del token. */
@@ -27,9 +28,9 @@ async function aResumen(data: unknown): Promise<AlertasResumenDto> {
   for (const r of filas) {
     const id = String(r.id ?? r.alertaId ?? '')
     const activa = String(r.estado ?? 'ACTIVA').toUpperCase() === 'ACTIVA'
-    const creadaEn = texto(r.fechaCreacion ?? r.creadaEn) ?? new Date().toISOString()
+    const creadaEn = fechaUtc(texto(r.fechaCreacion ?? r.creadaEn)) ?? new Date().toISOString()
     const busqueda = texto(r.busquedaGuardadaId)
-    if (busqueda) busquedas.push({ id, nombre: 'Búsqueda guardada', descripcion: 'Te avisamos cuando llegue algo que coincida', alerta: activa, coincidenciasNuevas: 0, creadaEn })
+    if (busqueda) busquedas.push({ id, nombre: texto(r.nombreBusqueda) ?? 'Búsqueda guardada', descripcion: 'Te avisamos cuando llegue algo que coincida', alerta: activa, coincidenciasNuevas: 0, creadaEn })
     else {
       const talla = texto(r.tallaObjetivo)
       alertas.push({ id, prendaId: String(r.itemId ?? ''), prenda: talla ? `Prenda agotada · talla ${talla}` : 'Prenda agotada', tienda: '', activa, creadaEn })
@@ -206,8 +207,8 @@ export const alertService = {
       r.alertas.unshift(nueva)
       return mockDelay(nueva, 250)
     }
-    // tipoAlerta provisional: confirmar el nombre exacto con el Swagger de ms-notificaciones
-    const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS, { tipoAlerta: 'PRENDA_AGOTADA', itemId: prendaId, tallaObjetivo: talla || undefined, canal: 'IN_APP' })
+    // tipoAlerta del back: ITEM_AGOTADO (prenda agotada) o BUSQUEDA_GUARDADA
+    const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS, { tipoAlerta: 'ITEM_AGOTADO', itemId: prendaId, tallaObjetivo: talla || undefined, canal: 'IN_APP' })
     return { id: String(data.id ?? data.alertaId ?? ''), prendaId, prenda: talla ? `${prenda} · talla ${talla}` : prenda, tienda, activa: true, creadaEn: new Date().toISOString() }
   },
 }

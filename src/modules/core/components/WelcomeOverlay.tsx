@@ -7,10 +7,10 @@ import './WelcomeOverlay.css'
 
 /** Etiqueta, frase, foto y colores de cada rol (alineadas con los representantes oficiales). */
 const COPY: Record<Role, { tag: string; line: string; pic: string; role: string; ink: string; line2: string; pos?: string }> = {
-  COMPRADOR: { tag: 'Usuario', line: 'Tu estilo, cerca de ti', pic: '/img/representantes/R1.png', pos: '50% 18%', role: '#48119a', ink: '#ffffff', line2: '#7b4dd8' },
-  ADMIN_ALMACEN: { tag: 'Tienda', line: 'Que te encuentren en tu talla', pic: '/img/representantes/R2.png', pos: '50% 15%', role: '#e8dccb', ink: '#262626', line2: '#e8dccb' },
-  REPRESENTANTE_FUNDACION: { tag: 'Fundación', line: 'La ropa sigue su camino', pic: '/img/representantes/R3.png', pos: '50% 24%', role: '#b9b9ca', ink: '#262626', line2: '#b9b9ca' },
-  ADMIN_STYLERADAR: { tag: 'Administrador', line: 'Todo StyleRadar en un vistazo', pic: '/img/representantes/R4.png', pos: '50% 20%', role: '#262626', ink: '#ffffff', line2: '#7b4dd8' },
+  BUYER: { tag: 'Usuario', line: 'Tu estilo, cerca de ti', pic: '/img/representantes/R1.png', pos: '50% 18%', role: '#48119a', ink: '#ffffff', line2: '#7b4dd8' },
+  STORE_ADMIN: { tag: 'Tienda', line: 'Que te encuentren en tu talla', pic: '/img/representantes/R2.png', pos: '50% 15%', role: '#e8dccb', ink: '#262626', line2: '#e8dccb' },
+  FOUNDATION_REPRESENTATIVE: { tag: 'Fundación', line: 'La ropa sigue su camino', pic: '/img/representantes/R3.png', pos: '50% 24%', role: '#b9b9ca', ink: '#262626', line2: '#b9b9ca' },
+  STYLERADAR_ADMIN: { tag: 'Administrador', line: 'Todo StyleRadar en un vistazo', pic: '/img/representantes/R4.png', pos: '50% 20%', role: '#262626', ink: '#ffffff', line2: '#7b4dd8' },
 }
 
 interface Shown { name: string; role: Role; nuevo: boolean }
@@ -30,7 +30,7 @@ export function WelcomeOverlay() {
   if (id !== prevId) {
     setPrevId(id)
     if (prevId === null && user && !shown) {
-      const persona = user.role === 'COMPRADOR' || user.role === 'ADMIN_STYLERADAR'
+      const persona = user.role === 'BUYER' || user.role === 'STYLERADAR_ADMIN'
       setShown({ name: persona ? user.name.split(/\s+/)[0] : user.name, role: user.role, nuevo: pathname === '/registro' })
     } else if (!user) {
       setShown(null)
@@ -42,7 +42,7 @@ export function WelcomeOverlay() {
       const customEvent = e as CustomEvent<UserSessionDto>
       const u = customEvent.detail
       if (!u) return
-      const persona = u.role === 'COMPRADOR' || u.role === 'ADMIN_STYLERADAR'
+      const persona = u.role === 'BUYER' || u.role === 'STYLERADAR_ADMIN'
       setShown({
         name: persona ? u.name.split(/\s+/)[0] : u.name,
         role: u.role,

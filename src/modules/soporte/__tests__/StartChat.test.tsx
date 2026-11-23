@@ -31,7 +31,7 @@ describe('iniciar una conversación (RF-41 y RF-73)', () => {
   })
 
   it('la tienda no ve el ícono en sus propias prendas', async () => {
-    loginAs('t-1', 'Luna Store', 'ADMIN_ALMACEN')
+    loginAs('t-1', 'Luna Store', 'STORE_ADMIN')
     renderAt('/catalogo', [{ path: '/catalogo', element: <CatalogPage /> }])
     await screen.findByRole('heading', { name: 'Hoodie azul noche' }, { timeout: 3000 })
     expect(screen.queryByRole('button', { name: /^Escribir a Luna Store/ })).not.toBeInTheDocument()
@@ -53,7 +53,7 @@ describe('iniciar una conversación (RF-41 y RF-73)', () => {
     const c = await chatService.start({ contacto: tiendaContacto('Luna Store'), asunto: 'Hoodie azul noche', referenciaId: 'p3' })
     await chatService.send(c.id, '¿Lo tienen en talla M?')
 
-    loginAs('t-1', 'Luna Store', 'ADMIN_ALMACEN')
+    loginAs('t-1', 'Luna Store', 'STORE_ADMIN')
     const bandeja = await chatService.conversations()
     const nueva = bandeja.find((x) => x.id === c.id)!
     expect(nueva).toMatchObject({ asunto: 'Hoodie azul noche', noLeidos: 1, ultimoMensaje: '¿Lo tienen en talla M?', contacto: { id: 'u-1', tipo: 'COMPRADOR' } })
@@ -61,7 +61,7 @@ describe('iniciar una conversación (RF-41 y RF-73)', () => {
   })
 
   it('el ícono del menú muestra los mensajes sin leer', async () => {
-    loginAs('t-1', 'Luna Store', 'ADMIN_ALMACEN')
+    loginAs('t-1', 'Luna Store', 'STORE_ADMIN')
     renderAt('/', [{ path: '/', element: <MessagesLink /> }])
     expect(await screen.findByRole('link', { name: 'Mensajes, 1 sin leer' }, { timeout: 3000 })).toHaveAttribute('href', '/mensajes')
   })
@@ -72,7 +72,7 @@ describe('iniciar una conversación (RF-41 y RF-73)', () => {
     expect(screen.getByRole('link', { name: 'Inicia sesión para escribir' })).toHaveAttribute('href', '/login')
     expect(screen.getByRole('link', { name: 'Inicia sesión para escribir a Luna Store' })).toHaveAttribute('href', '/login')
     unmount()
-    loginAs('a-1', 'Mariana Bernal', 'ADMIN_STYLERADAR')
+    loginAs('a-1', 'Mariana Bernal', 'STYLERADAR_ADMIN')
     renderAt('/', [{ path: '/', element: <ContactButton {...props} /> }])
     expect(screen.queryByRole('button', { name: 'Enviar mensaje a la tienda' })).not.toBeInTheDocument()
   })

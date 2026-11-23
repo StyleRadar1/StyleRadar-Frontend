@@ -50,6 +50,8 @@ export interface IniciarConversacionDto {
   referenciaId?: string
   /** Primer mensaje; si falta se envía uno de cortesía con el asunto. */
   primerMensaje?: string
+  /** NIT del almacén: ms-chat abre la conversación con la tienda por su NIT, no por su id. */
+  nit?: string
 }
 
 /** Cómo ve la otra persona la conversación: si yo le escribo a quien vende, para esa persona soy quien pregunta. */

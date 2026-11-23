@@ -24,14 +24,28 @@ const mine = (): NotificacionDto[] => {
 }
 const changed = () => window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED))
 
+/** Avisos por página; el back acepta de 1 a 100. */
+export const TAM_PAGINA = 20
+export interface PaginaAvisos { items: NotificacionDto[]; hasNext: boolean }
+
 export const notificationService = {
-  /** RF-31: avisos más recientes primero. */
+  /** RF-31: una página de avisos, los más recientes primero. `hasNext` dice si hay más al seguir bajando. */
+  async page(n = 0): Promise<PaginaAvisos> {
+    if (env.useMocks) {
+      failIfScenario()
+      const todos = [...mine()].sort((a, b) => b.creadaEn.localeCompare(a.creadaEn))
+      const items = todos.slice(n * TAM_PAGINA, (n + 1) * TAM_PAGINA)
+      return mockDelay({ items, hasNext: todos.length > (n + 1) * TAM_PAGINA })
+    }
+    // Con page y size devuelve { content, hasNext, … }; sin parámetros, un arreglo
+    const { data } = await apiClient.get<unknown>(BASE, { params: { page: n, size: TAM_PAGINA } })
+    const p = (Array.isArray(data) ? { content: data } : (data ?? {})) as { content?: unknown[]; hasNext?: boolean }
+    return { items: (p.content ?? []).map((x) => aNotificacion(x)), hasNext: !!p.hasNext }
+  },
+
+  /** Primera página (para quien solo necesita los más recientes). */
   async list(): Promise<NotificacionDto[]> {
-    if (env.useMocks) { failIfScenario(); return mockDelay([...mine()].sort((a, b) => b.creadaEn.localeCompare(a.creadaEn))) }
-    // Sin parámetros devuelve un arreglo; con page y size, una página con `content`
-    const { data } = await apiClient.get<unknown>(BASE, { params: { page: 0, size: 50 } })
-    const filas = Array.isArray(data) ? data : ((data as { content?: unknown[] } | null)?.content ?? [])
-    return filas.map(aNotificacion)
+    return (await this.page(0)).items
   },
 
   async unreadCount(): Promise<number> {

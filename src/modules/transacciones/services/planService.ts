@@ -97,7 +97,7 @@ export const planService = {
   /** Crea una preferencia de pago (mock: devuelve un initPoint simulado). */
   createCheckout(planId: string, payerEmail?: string): Promise<CheckoutResponseDto> {
     const role = getCurrentUserRole()
-    if (role && (!isPlanCompatibleWithRole(planId, role) || role !== 'COMPRADOR')) {
+    if (role && (!isPlanCompatibleWithRole(planId, role) || role !== 'BUYER')) {
       return Promise.reject(new ApiError(403, 'Tu cuenta no puede cambiar a ese plan'))
     }
     if (payerEmail !== undefined && !isValidPayerEmail(payerEmail)) {

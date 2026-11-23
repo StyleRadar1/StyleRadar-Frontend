@@ -1,6 +1,7 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
+import { env } from '@/configs/env'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
 import { extractStockMapFromInventory } from './itemService'
 import type { Estilo, ItemResponseDto } from '../types/item.dto'
@@ -15,8 +16,6 @@ import type {
   InventarioLoteRequestDto,
   PublicationStatus,
 } from '../types/inventory.dto'
-
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== 'false'
 
 const DEFAULT_STORE_ID = 'luna'
 const DEFAULT_STORE_NAME = 'Luna Store'
@@ -145,7 +144,7 @@ function normalizeBackendInventoryItem(
 
 export const inventoryService = {
   async getStoreInventory(tiendaId = DEFAULT_STORE_ID, sedeId = DEFAULT_SEDE_ID): Promise<InventoryItemDto[]> {
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       failIfScenario('sin-permiso')
       const list = tiendaId && tiendaId !== DEFAULT_STORE_ID && tiendaId !== 't-1'
         ? memoryInventory.filter((x) => x.tiendaId === tiendaId)
@@ -153,7 +152,7 @@ export const inventoryService = {
       return mockDelay(list)
     }
     const [catalogoRes, disponiblesRes] = await Promise.all([
-      apiClient.get<Record<string, any>[]>(`/api/v1/almacenes/${encodeURIComponent(tiendaId)}/catalogo`).catch(() => ({ data: [] as Record<string, any>[] })),
+      apiClient.get<Record<string, any>[]>(`/api/v1/almacenes/${encodeURIComponent(tiendaId)}/catalogo`),
       apiClient.get<Record<string, any>[]>(`/api/v1/inventario/sedes/${encodeURIComponent(sedeId)}/disponibles`).catch(() => ({ data: [] as Record<string, any>[] })),
     ])
     const prendas = Array.isArray(catalogoRes.data) ? catalogoRes.data : []
@@ -190,7 +189,7 @@ export const inventoryService = {
   },
 
   async getSummary(tiendaId?: string): Promise<InventorySummaryDto> {
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       failIfScenario('sin-permiso')
       const list = tiendaId && tiendaId !== DEFAULT_STORE_ID && tiendaId !== 't-1'
         ? memoryInventory.filter((x) => x.tiendaId === tiendaId)
@@ -202,7 +201,7 @@ export const inventoryService = {
   },
 
   async updateStock(dto: UpdateStockDto): Promise<InventoryItemDto> {
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === dto.prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
@@ -252,7 +251,7 @@ export const inventoryService = {
   },
 
   async removeSize(prendaId: string, talla: string): Promise<InventoryItemDto> {
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
@@ -296,7 +295,7 @@ export const inventoryService = {
     if (!Number.isFinite(dto.nuevoPrecio) || dto.nuevoPrecio <= 0 || dto.nuevoPrecio > MAX_GARMENT_PRICE) {
       throw new ApiError(400, 'El precio debe ser mayor a 0.', { precio: 'El precio debe ser mayor a 0.' })
     }
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === dto.prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
@@ -339,14 +338,14 @@ export const inventoryService = {
       estilo: dto.estilo,
       precio: dto.precio,
       fotografias: dto.fotografias,
-      requirePhoto: !USE_MOCKS,
+      requirePhoto: !env.useMocks,
     })
     if (Object.keys(fields).length) {
       const firstMsg = Object.values(fields)[0]
       throw new ApiError(400, firstMsg, fields)
     }
 
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === dto.prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
@@ -397,7 +396,7 @@ export const inventoryService = {
 
   /** SR-RF-58: Retirar prenda del catálogo con DELETE /api/v1/prendas/{id}. */
   async toggleActive(prendaId: string): Promise<InventoryItemDto> {
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       failIfScenario('sin-permiso', 'regla')
       const idx = memoryInventory.findIndex((x) => x.id === prendaId)
       if (idx === -1) throw new ApiError(404, 'Prenda no encontrada en el inventario.')
@@ -434,7 +433,7 @@ export const inventoryService = {
       estilo: dto.estilo,
       precio: dto.precio,
       fotografias: fotos,
-      requirePhoto: !USE_MOCKS,
+      requirePhoto: !env.useMocks,
     })
     if (Object.values(dto.stockPorTalla).some((v) => !Number.isInteger(v) || v < 0)) {
       fields.tallas = 'Las cantidades por talla deben ser enteros mayores o iguales a 0.'
@@ -444,7 +443,7 @@ export const inventoryService = {
       throw new ApiError(400, firstMsg, fields)
     }
 
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       failIfScenario('sin-permiso', 'regla')
       const total = Object.values(dto.stockPorTalla).reduce((a, b) => a + b, 0)
       const finalFotos = fotos.length > 0 ? fotos.slice(0, MAX_GARMENT_PHOTOS) : [DEFAULT_PHOTO]
@@ -502,7 +501,7 @@ export const inventoryService = {
   },
 
   async deleteItem(prendaId: string): Promise<void> {
-    if (USE_MOCKS) {
+    if (env.useMocks) {
       memoryInventory = memoryInventory.filter((x) => x.id !== prendaId)
       return mockDelay(undefined)
     }

@@ -1,5 +1,5 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
-import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
+import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { MOCK_MODERATION_ITEMS, MOCK_MODERATION_HISTORY } from '../mocks/moderation'
@@ -21,10 +21,6 @@ export interface ModerationBatchDecisionDto {
 }
 
 const sessionHistory: ModerationHistoryItemDto[] = []
-
-function getModeratorId(explicitId?: string): string {
-  return explicitId || mockSessionUser()?.id || 'admin-1'
-}
 
 function mapPendingGroups(data: ModerationPendingResponseDto | ModerationItemDto[]): ModerationItemDto[] {
   if (Array.isArray(data)) return data
@@ -98,7 +94,6 @@ export const moderationService = {
     const payload: BackendModerationRequestDto = {
       decision: decision.aprobado ? 'APROBADA' : 'RECHAZADA',
       ...(decision.aprobado ? {} : { motivo: decision.motivo || decision.comentario }),
-      moderadorId: getModeratorId(decision.moderadorId),
     }
     return apiClient.put(`/api/v1/prendas/${encodeURIComponent(decision.itemId)}/moderacion`, payload).then(() => undefined)
   },
@@ -132,7 +127,6 @@ export const moderationService = {
     const payload: BackendModerationRequestDto = {
       decision: batch.aprobado ? 'APROBADA' : 'RECHAZADA',
       ...(batch.aprobado ? {} : { motivo: batch.motivo }),
-      moderadorId: getModeratorId(batch.moderadorId),
     }
     return apiClient
       .put(`/api/v1/prendas/pendientes/almacenes/${encodeURIComponent(targetId)}/moderacion`, payload)

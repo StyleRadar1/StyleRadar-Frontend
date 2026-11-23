@@ -22,7 +22,7 @@ interface LegalConsentCheckboxesProps {
   state: LegalConsentState
   onChange: (updates: Partial<LegalConsentState>) => void
   errors?: LegalConsentErrors
-  role?: Role | 'COMPRADOR'
+  role?: Role | 'BUYER'
   showPromociones?: boolean
   compact?: boolean
 }
@@ -31,12 +31,12 @@ export function LegalConsentCheckboxes({
   state,
   onChange,
   errors = {},
-  role = 'COMPRADOR',
+  role = 'BUYER',
   showPromociones = true,
   compact = false,
 }: LegalConsentCheckboxesProps) {
-  const isTienda = role === 'ADMIN_ALMACEN'
-  const isFundacion = role === 'REPRESENTANTE_FUNDACION'
+  const isTienda = role === 'STORE_ADMIN'
+  const isFundacion = role === 'FOUNDATION_REPRESENTATIVE'
 
   return (
     <fieldset className={`space-y-3 pt-2 text-left ${compact ? 'text-xs' : 'text-xs sm:text-sm'}`}>

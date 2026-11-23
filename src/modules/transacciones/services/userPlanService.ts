@@ -310,7 +310,7 @@ export const userPlanService = {
    */
   async change(plan: PlanUsuario): Promise<MiPlanDto> {
     const role = getCurrentUserRole()
-    if (role && role !== 'COMPRADOR') {
+    if (role && role !== 'BUYER') {
       throw new ApiError(403, 'Tu cuenta no puede cambiar a ese plan')
     }
     if (env.useMocks) {

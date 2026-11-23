@@ -2,6 +2,7 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario, failWithScenario, hasScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { itemService } from '@/modules/catalogo/services/itemService'
 import { MOCK_JOB_TIMES, TRYON_GARMENTS } from '../mocks/tryon'
 import type {
   BiometricConsentStatusDto,
@@ -12,7 +13,31 @@ import type {
   TryOnJobRequestDto,
   TryOnJobStatusDto,
   TryOnQuotaDto,
+  ZonaPrenda,
 } from '../types/tryon.dto'
+
+function mapTipoToZona(tipo?: string, noDisponible?: boolean): ZonaPrenda {
+  if (noDisponible) return 'NO_COMPATIBLE'
+  const t = (tipo || '').trim().toUpperCase()
+  if (
+    t === 'OUTERWEAR' ||
+    t === 'FOOTWEAR' ||
+    t === 'ACCESSORIES' ||
+    /^(CHAQUETA|ABRIGO|GABARDINA|SACO|BLAZER|CALZADO|TENIS|ZAPATOS|BOTAS|ACCESORIO|CINTURON|CINTURÓN|BUFANDA|BOLSO|GORRA|GAFAS)$/i.test(t)
+  ) {
+    return 'NO_COMPATIBLE'
+  }
+  if (t === 'ONE_PIECE' || /^(VESTIDO|ENTERIZO|OVEROL|CONJUNTO)$/i.test(t)) {
+    return 'CUERPO_COMPLETO'
+  }
+  if (t === 'BOTTOM' || /^(PANTALON|PANTALÓN|JEAN|FALDA|SHORT|BERMUDA|LEGGING|SUDADERA)$/i.test(t)) {
+    return 'INFERIOR'
+  }
+  if (t === 'TOP' || /^(CAMISA|CAMISETA|BLUSA|POLO|BUZO|HOODIE|SUETER|SUÉTER|TOP|CHALECO)$/i.test(t)) {
+    return 'SUPERIOR'
+  }
+  return 'NO_COMPATIBLE'
+}
 
 /* ---- estado del backend simulado (solo en memoria; nunca guarda la imagen) ---- */
 const mock = {
@@ -31,36 +56,32 @@ const mock = {
 const id = (p: string) => `${p}-${Date.now().toString(36)}-${++mock.seq}`
 
 export const tryOnService = {
-  /** RF-24: prendas que se pueden probar. */
+  /** RF-24: prendas que se pueden probar desde Catálogo real (/api/v1/prendas). */
   async listGarments(): Promise<TryOnGarmentDto[]> {
     if (env.useMocks) {
       failIfScenario()
       return mockDelay(hasScenario('catalogo-vacio') ? [] : TRYON_GARMENTS)
     }
-    return apiClient
-      .get<TryOnGarmentDto[]>('/api/v1/try-on/garments')
-      .catch(() =>
-        apiClient.get<any[]>('/api/v1/items').then((r) =>
-          r.data.map((item: any) => ({
-            id: String(item.id),
-            nombre: item.name || item.nombre || 'Prenda',
-            tienda: item.storeName || item.tienda || 'StyleRadar Store',
-            imagen: item.imageUrl || item.imagen || '',
-            zona: (item.category === 'TOP' || item.categoria === 'Camisas' || item.categoria === 'Chaquetas'
-              ? 'SUPERIOR'
-              : item.category === 'BOTTOM' || item.categoria === 'Pantalones' || item.categoria === 'Faldas'
-              ? 'INFERIOR'
-              : 'NO_COMPATIBLE') as any,
-            tallas: item.sizes || item.tallas || ['S', 'M', 'L', 'XL'],
-            disponible: item.available ?? true,
-          }))
-        )
-      )
-      .then((r) => (Array.isArray(r) ? r : (r as any).data || []))
+    const items = await itemService.search({})
+    return items.map((item) => ({
+      id: String(item.id),
+      nombre: item.nombre || 'Prenda',
+      tienda: item.tienda || 'StyleRadar Store',
+      imagen: item.imagen || '',
+      zona: mapTipoToZona(item.tipo, item.noDisponibleEnProbador),
+      tallas: item.tallas?.length ? item.tallas : ['S', 'M', 'L'],
+      disponible: !item.sinTablaMedidas && !item.noDisponibleEnProbador,
+      precio: item.precio,
+    }))
   },
 
   /** RF-24: validación de compatibilidad de prenda y talla con medidas */
-  async validateGarment(garmentId: string, selectedSize?: string): Promise<GarmentValidationResponseDto> {
+  async validateGarment(
+    garmentId: string,
+    selectedSize?: string,
+    selectedGarmentIds?: string[],
+    userId?: string,
+  ): Promise<GarmentValidationResponseDto> {
     if (env.useMocks) {
       failIfScenario()
       const g = TRYON_GARMENTS.find((x) => x.id === garmentId)
@@ -101,7 +122,11 @@ export const tryOnService = {
     }
     return apiClient
       .get<GarmentValidationResponseDto>(`/api/v1/try-on/garments/${encodeURIComponent(garmentId)}/validate`, {
-        params: { selectedSize },
+        params: {
+          selectedSize,
+          ...(selectedGarmentIds?.length ? { selectedGarmentIds: selectedGarmentIds.join(',') } : {}),
+          ...(userId ? { userId } : {}),
+        },
       })
       .then((r) => r.data)
   },
@@ -113,7 +138,7 @@ export const tryOnService = {
       return mockDelay({ ...mock.quotas })
     }
     return apiClient
-      .get<TryOnQuotaDto>('/api/v1/try-on/quotas', { params: { userId } })
+      .get<TryOnQuotaDto>('/api/v1/try-on/quotas', { params: userId ? { userId } : undefined })
       .then((r) => r.data)
   },
 
@@ -125,7 +150,8 @@ export const tryOnService = {
       const photoId = Array.from(mock.photos).pop()!
       return mockDelay({ photoId, photoUrl: '' })
     }
-    const uid = userId || mockSessionUser()?.id || ''
+    const uid = userId || mockSessionUser()?.id
+    if (!uid) return null
     return apiClient
       .get<PhotoUploadResponseDto>(`/api/v1/try-on/photos/${encodeURIComponent(uid)}`)
       .then((r) => r.data)
@@ -247,7 +273,7 @@ export const tryOnService = {
       return mockDelay(list.reverse(), 200)
     }
     return apiClient
-      .get<TryOnJobStatusDto[]>('/api/v1/try-on/jobs', { params: { userId } })
+      .get<TryOnJobStatusDto[]>('/api/v1/try-on/jobs', { params: userId ? { userId } : undefined })
       .then((r) => r.data.map((j) => ({
         ...j,
         resultUrl: j.resultImageUrl || j.resultUrl,
@@ -268,7 +294,10 @@ export const tryOnService = {
         purposes: ['VIRTUAL_TRY_ON_INFERENCE', 'TEMPORARY_SILHOUETTE_STORAGE'],
       })
     }
-    const uid = userId || mockSessionUser()?.id || ''
+    const uid = userId || mockSessionUser()?.id
+    if (!uid) {
+      return { userId: '', accepted: false, termsVersion: 'v1.0-LEY1581-2026' }
+    }
     return apiClient.get<BiometricConsentStatusDto>(`/api/v1/try-on/consents/${encodeURIComponent(uid)}`).then((r) => r.data)
   },
 
@@ -319,10 +348,8 @@ export const tryOnService = {
       for (const [k, j] of mock.jobs) if (j.req.photoId === photoOrJobId || k === photoOrJobId) mock.jobs.delete(k)
       return
     }
-    // Intenta endpoint oficial de purga personal-photos/{jobId} y fallback a photos/{photoId}
     return apiClient
       .delete(`/api/v1/try-on/personal-photos/${encodeURIComponent(photoOrJobId)}`)
-      .catch(() => apiClient.delete(`/api/v1/try-on/photos/${encodeURIComponent(photoOrJobId)}`))
       .then(() => undefined)
   },
 }

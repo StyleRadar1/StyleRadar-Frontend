@@ -10,7 +10,9 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { usePlaylists } from '../hooks/usePlaylists'
+import { itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
+import type { ItemResponseDto } from '../types/item.dto'
 import { ESTILOS_PLAYLIST, MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistEstilo, type PlaylistVisibility } from '../types/playlist.dto'
 import './PlaylistsPage.css'
 
@@ -49,13 +51,35 @@ export default function PlaylistsPage() {
   const [mostrarAgregarPrenda, setMostrarAgregarPrenda] = useState(false)
   const [mostrarEliminar, setMostrarEliminar] = useState(false)
 
+  // Catálogo real cuando los mocks están desactivados
+  const [catalogItems, setCatalogItems] = useState<ItemResponseDto[]>(() => (env.useMocks ? ITEMS : []))
+
+  useEffect(() => {
+    if (env.useMocks) {
+      setCatalogItems(ITEMS)
+      return
+    }
+    let cancelled = false
+    itemService
+      .search({})
+      .then((list) => {
+        if (!cancelled) setCatalogItems(list)
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogItems([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   // Campos formulario
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [visibilidad, setVisibilidad] = useState<PlaylistVisibility>('PRIVADA')
   const [estilo, setEstilo] = useState<PlaylistEstilo>('CASUAL')
   const [prendasIniciales, setPrendasIniciales] = useState<string[]>(() =>
-    ITEMS[0]?.id ? [ITEMS[0].id] : []
+    env.useMocks && ITEMS[0]?.id ? [ITEMS[0].id] : []
   )
   const [errorCrear, setErrorCrear] = useState<string | null>(null)
   const [errorPrendasIniciales, setErrorPrendasIniciales] = useState<string | null>(null)
@@ -286,7 +310,7 @@ export default function PlaylistsPage() {
       setDescripcion('')
       setVisibilidad('PRIVADA')
       setEstilo('CASUAL')
-      setPrendasIniciales(ITEMS[0]?.id ? [ITEMS[0].id] : [])
+      setPrendasIniciales(env.useMocks && ITEMS[0]?.id ? [ITEMS[0].id] : [])
       showToast('Playlist creada con éxito. Ahora puedes administrar hasta 15 prendas.')
       handleSeleccionarPlaylist(nueva)
     } catch (er: unknown) {
@@ -334,7 +358,8 @@ export default function PlaylistsPage() {
     if (!selectedPlaylist || !prendaParaAgregar) return
     setErrorAccion(null)
     try {
-      await addItem(selectedPlaylist.id, prendaParaAgregar)
+      const nombrePrenda = catalogItems.find((it) => it.id === prendaParaAgregar)?.nombre
+      await addItem(selectedPlaylist.id, prendaParaAgregar, nombrePrenda)
       setPrendaParaAgregar('')
       setMostrarAgregarPrenda(false)
       showToast('Prenda agregada a la playlist.')
@@ -872,7 +897,7 @@ export default function PlaylistsPage() {
                       className="w-full rounded-xl border border-white/20 bg-black/60 px-3 py-2.5 text-xs text-white outline-none focus:border-violeta"
                     >
                       <option value="">Seleccionar del catálogo...</option>
-                      {ITEMS.filter(
+                      {catalogItems.filter(
                         (it) => !selectedPlaylist.prendas.some((p) => p.id === it.id)
                       ).map((it) => (
                         <option key={it.id} value={it.id}>
@@ -1585,27 +1610,31 @@ export default function PlaylistsPage() {
                   Prendas iniciales ({prendasIniciales.length}/{MAX_PLAYLIST_ITEMS})
                 </span>
                 <div className="max-h-32 space-y-1.5 overflow-y-auto rounded-xl border border-white/15 bg-black/40 p-2.5">
-                  {ITEMS.slice(0, 8).map((item) => {
-                    const checked = prendasIniciales.includes(item.id)
-                    return (
-                      <label key={item.id} className="flex cursor-pointer items-center gap-2 text-xs text-white/85">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            setPrendasIniciales((prev) => {
-                              if (prev.includes(item.id)) return prev.filter((id) => id !== item.id)
-                              if (prev.length >= MAX_PLAYLIST_ITEMS) return prev
-                              return [...prev, item.id]
-                            })
-                            setErrorPrendasIniciales(null)
-                          }}
-                          className="rounded border-white/30 bg-black/60 text-violeta"
-                        />
-                        <span className="truncate">{item.nombre}</span>
-                      </label>
-                    )
-                  })}
+                  {catalogItems.length === 0 ? (
+                    <p className="text-xs text-white/50">No hay prendas disponibles en el catálogo.</p>
+                  ) : (
+                    catalogItems.slice(0, 20).map((item) => {
+                      const checked = prendasIniciales.includes(item.id)
+                      return (
+                        <label key={item.id} className="flex cursor-pointer items-center gap-2 text-xs text-white/85">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setPrendasIniciales((prev) => {
+                                if (prev.includes(item.id)) return prev.filter((id) => id !== item.id)
+                                if (prev.length >= MAX_PLAYLIST_ITEMS) return prev
+                                return [...prev, item.id]
+                              })
+                              setErrorPrendasIniciales(null)
+                            }}
+                            className="rounded border-white/30 bg-black/60 text-violeta"
+                          />
+                          <span className="truncate">{item.nombre}</span>
+                        </label>
+                      )
+                    })
+                  )}
                 </div>
                 {errorPrendasIniciales ? (
                   <p className="mt-1 text-[11px] text-[var(--sr-bad)]">{errorPrendasIniciales}</p>

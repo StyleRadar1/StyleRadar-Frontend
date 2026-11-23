@@ -69,8 +69,9 @@ describe('probador: errores de la prueba', () => {
     const user = await probar('consentimiento')
     expect(await screen.findByText('Lo pide la Ley 1581 de protección de datos. Tu foto solo se usa para el probador.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Ver y aceptar' }))
-    const dialogo = screen.getByRole('dialog', { name: 'Antes de probar, acepta el uso de tu foto' })
-    await user.click(within(dialogo).getByRole('button', { name: 'Acepto' }))
+    const dialogo = screen.getByRole('dialog', { name: 'Consentimiento biométrico (Ley 1581 de 2012)' })
+    await user.click(within(dialogo).getByRole('checkbox'))
+    await user.click(within(dialogo).getByRole('button', { name: 'Aceptar y continuar' }))
     expect(await screen.findByAltText('Resultado de la prueba con Blazer oversize', {}, { timeout: 5000 })).toBeInTheDocument()
   })
 

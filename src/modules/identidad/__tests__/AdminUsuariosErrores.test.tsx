@@ -13,6 +13,7 @@ const fila = (nombre: string) => screen.getByText(nombre).closest('tr') as HTMLE
 const cambiarA = async (user: ReturnType<typeof userEvent.setup>, nombre: string) => {
   await screen.findByText(nombre)
   await user.click(screen.getByRole('button', { name: `Cambiar estado de ${nombre}` }))
+  await user.type(screen.getByLabelText(/Motivo del bloqueo/), 'Prueba del plan de errores')
   await user.click(screen.getByRole('button', { name: 'Cambiar a Bloqueada' }))
 }
 
@@ -51,5 +52,20 @@ describe('Admin · Usuarios · errores del plan (Cristian)', () => {
     expect(screen.getByText(TEXTOS_ADMIN_USUARIOS.noExiste.texto)).toBeInTheDocument()
     expect(await screen.findByText('13 cuentas')).toBeInTheDocument()
     expect(screen.queryByText('Felipe Castro')).not.toBeInTheDocument()
+  })
+
+  it('400 del servidor por el motivo (EX-03): el diálogo sigue abierto con el error junto al campo', async () => {
+    vi.spyOn(usuarioService, 'setStatus').mockRejectedValue(new ApiError(400, 'Revisa los datos', { reasonValid: 'El bloqueo exige un motivo no vacío' }))
+    const user = userEvent.setup()
+    abrir()
+    await cambiarA(user, 'Mateo Pérez')
+    const dialog = await screen.findByRole('dialog', { name: 'Estado de Mateo Pérez' })
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('El bloqueo exige un motivo no vacío')
+    expect(within(fila('Mateo Pérez')).getByText('Activa')).toBeInTheDocument()
+  })
+
+  it('403 al cambiar la propia cuenta (EX-07) y al pedir el estado que ya tiene (EX-08)', async () => {
+    await expect(usuarioService.setStatus('a-1', { status: 'INACTIVE' })).rejects.toMatchObject({ status: 403 })
+    await expect(usuarioService.setStatus('u-2', { status: 'ACTIVE' })).rejects.toMatchObject({ status: 403 })
   })
 })

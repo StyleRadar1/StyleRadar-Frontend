@@ -9,7 +9,7 @@ import PlansPage from '../pages/PlansPage'
 import { setMockPlan } from '../services/userPlanService'
 import { PLAN_COMPARISON_ROWS, REGLAS } from '../types/plan.dto'
 
-const loginAs = (id: string, role: Role = 'COMPRADOR') => {
+const loginAs = (id: string, role: Role = 'BUYER') => {
   localStorage.setItem('sr_token', `demo-${id}`)
   localStorage.setItem('sr_user', JSON.stringify({ id, name: 'Prueba', email: `${id}@styleradar.co`, role }))
 }
@@ -82,7 +82,7 @@ describe('bloqueo por plan (P8)', () => {
   })
 
   it('no bloquea a quien no es comprador', () => {
-    loginAs('a-1', 'ADMIN_STYLERADAR')
+    loginAs('a-1', 'STYLERADAR_ADMIN')
     renderAt('/bloqueo')
     expect(screen.getByText('Subir mi foto')).toBeInTheDocument()
   })
