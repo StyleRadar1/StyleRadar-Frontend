@@ -255,8 +255,8 @@ html[data-tema="claro"] {
   --color-fondo: #f8f9fa;
   --color-grafito: #ffffff;
   --color-blanco: #0f172a;
-  --color-white: #0f172a;
-  --color-black: #ffffff;
+  --color-white: #ffffff;
+  --color-black: #000000;
   --color-arena: #475569;
   --color-lavanda: #64748b;
   --color-violeta-claro: #48119a;
