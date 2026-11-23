@@ -18,7 +18,7 @@
   letter-spacing: -.035em;
 }
 .sr-landing .pe-categorias .pe-h2 span {
-  color: var(--sr-hero-text-muted, #B9B9CA);
+  color: var(--sr-accent-text, var(--sr-accent, #7B3FE4));
   font-style: italic;
   font-weight: 500;
 }

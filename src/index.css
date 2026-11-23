@@ -234,7 +234,7 @@ html[data-tema="claro"] {
   /* Tokens del Hero Landing adaptados a modo claro */
   --hero-fg: #ffffff;
   --hero-fg-muted: rgba(255, 255, 255, 0.85);
-  --hero-overlay: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.12) 36%, rgba(15, 23, 42, 0.38) 64%, #f8f9fa 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(15, 23, 42, 0.5));
+  --hero-overlay: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.12) 36%, rgba(15, 23, 42, 0.38) 64%, rgba(15, 23, 42, 0.55) 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(15, 23, 42, 0.5));
   --hero-sub-bg: rgba(35, 30, 37, 0.75);
   --hero-sub-border: rgba(255, 255, 255, 0.2);
   --hero-btn-primary-bg: #48119a;

@@ -248,10 +248,14 @@ html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-tema > button {
   .sr-landing .pe-login-btn { display: none; }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 680px) {
   .sr-landing .pe-header,
-  .sr-landing .pe-header.is-scrolled { padding: 14px 18px; }
-  .sr-landing .pe-explore-btn { padding: 8px 16px; font-size: .75rem; }
+  .sr-landing .pe-header.is-scrolled { padding: 10px 14px; gap: 8px; }
+  .sr-landing .pe-tema { display: none; }
+  .sr-landing .pe-header-left { gap: 10px; }
+  .sr-landing .pe-brand-text { font-size: 1rem; }
+  .sr-landing .pe-header-right { gap: 8px; }
+  .sr-landing .pe-explore-btn { padding: 7px 12px; font-size: .65rem; letter-spacing: .06em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
