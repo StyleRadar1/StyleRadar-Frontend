@@ -1,13 +1,25 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { MENSAJES } from '@/modules/core/api/mensajes'
-import { mockDelay } from '@/modules/core/api/mock'
+import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { isValidPayerEmail } from '../utils/validation'
 import { isPlanCompatibleWithRole, RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
+import {
+  mapPlansResponse,
+  mapRetryPaymentResponse,
+  mapStartSubscriptionResponse,
+  mapSubscriptionStatus,
+  type ApiPlanResponse,
+  type ApiRetryPaymentRequest,
+  type ApiRetryPaymentResponse,
+  type ApiStartSubscriptionRequest,
+  type ApiStartSubscriptionResponse,
+  type ApiSubscriptionResponse,
+} from '../mappers/paymentsMappers'
 import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import { PLANS, MOCK_CHECKOUT_RESPONSE, MOCK_CHECKOUT_RESULTS } from '../mocks/plans'
-import type { Role } from '@/modules/core/types/roles'
+import { aRol, type Role } from '@/modules/core/types/roles'
 import type { PlanDto, PlanIntentDto, CheckoutResponseDto, CheckoutResultDto } from '../types/plan.dto'
 
 const INTENT_KEY = 'sr_plan_intent'
@@ -48,22 +60,34 @@ export function readLastCheckoutMeta(): LastCheckoutMeta | null {
   }
 }
 
+function getCurrentUserEmail(): string {
+  try {
+    const raw = localStorage.getItem('sr_user')
+    if (raw) {
+      const u = JSON.parse(raw) as { email?: string }
+      return u.email?.trim() ?? ''
+    }
+  } catch { /* noop */ }
+  return ''
+}
+
 function getCurrentUserRole(): Role | null {
   try {
     const raw = localStorage.getItem('sr_user')
     if (raw) {
-      const u = JSON.parse(raw) as { role?: Role }
-      return u.role ?? null
+      const u = JSON.parse(raw) as { role?: unknown }
+      return aRol(u.role)
     }
   } catch { /* noop */ }
   return null
 }
 
 export const planService = {
-  /** Devuelve los planes de usuario (Radar y Radar+). */
-  getPlans(): Promise<PlanDto[]> {
-    if (env.useMocks) return mockDelay(PLANS)
-    return apiClient.get<PlanDto[]>('/api/planes').then((r) => r.data)
+  /** Devuelve los planes activos desde `GET /api/v1/plans` (o mocks si `env.useMocksPagos`). */
+  async getPlans(): Promise<PlanDto[]> {
+    if (env.useMocksPagos) return mockDelay(PLANS)
+    const { data } = await apiClient.get<ApiPlanResponse[]>('/api/v1/plans')
+    return mapPlansResponse(Array.isArray(data) ? data : [])
   },
 
   /** Guarda la intención de suscripción en localStorage con TTL. */
@@ -94,8 +118,12 @@ export const planService = {
     try { localStorage.removeItem(INTENT_KEY) } catch { /* sin almacenamiento */ }
   },
 
-  /** Crea una preferencia de pago (mock: devuelve un initPoint simulado). */
-  createCheckout(planId: string, payerEmail?: string): Promise<CheckoutResponseDto> {
+  /** Inicia una suscripción de usuario (`POST /api/v1/subscriptions/start`, responde 202 Accepted con `initPoint`). */
+  async createCheckout(
+    planId: string,
+    payerEmail?: string,
+    backendPlanId?: number,
+  ): Promise<CheckoutResponseDto> {
     const role = getCurrentUserRole()
     if (role && (!isPlanCompatibleWithRole(planId, role) || role !== 'BUYER')) {
       return Promise.reject(new ApiError(403, 'Tu cuenta no puede cambiar a ese plan'))
@@ -106,7 +134,7 @@ export const planService = {
         : 'Ingresa un correo electrónico válido para realizar el pago'
       return Promise.reject(new ApiError(400, msg))
     }
-    if (env.useMocks) {
+    if (env.useMocksPagos) {
       failIfScenario()
       fallarSiDemoPlan()
       try {
@@ -120,12 +148,26 @@ export const planService = {
       } catch { /* sin almacenamiento */ }
       return mockDelay(MOCK_CHECKOUT_RESPONSE)
     }
-    return apiClient.post<CheckoutResponseDto>('/api/pagos/checkout', { planId, payerEmail }).then((r) => r.data)
+    const cleanEmail = (payerEmail ?? getCurrentUserEmail()).trim()
+    if (!isValidPayerEmail(cleanEmail)) {
+      throw new ApiError(400, 'Ingresa un correo electrónico válido para activar Radar+')
+    }
+    const body: ApiStartSubscriptionRequest = {
+      subscriberType: 'USER',
+      payerEmail: cleanEmail,
+      ...(backendPlanId !== undefined ? { planId: backendPlanId } : {}),
+    }
+    const { data } = await apiClient.post<ApiStartSubscriptionResponse>('/api/v1/subscriptions/start', body)
+    return mapStartSubscriptionResponse(data)
   },
 
-  /** Consulta el estado del pago al backend (ignora el status de la query de MP, RF-94). */
-  getCheckoutResult(orderId: string): Promise<CheckoutResultDto> {
-    if (env.useMocks) {
+  /**
+   * Consulta el estado tras volver de Mercado Pago (RF-94).
+   * En modo real la suscripción la activa el backend por webhook: consulta `GET /api/v1/subscriptions/{subscriberId}`
+   * y muestra PENDIENTE hasta que cambie.
+   */
+  async getCheckoutResult(orderId: string): Promise<CheckoutResultDto> {
+    if (env.useMocksPagos) {
       if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('sr_demo_plan') === '401') {
         return Promise.reject(new ApiError(401, 'Tu pago continúa pendiente de confirmación'))
       }
@@ -148,25 +190,46 @@ export const planService = {
       }
       return mockDelay(result)
     }
-    return apiClient.get<CheckoutResultDto>(`/api/pagos/resultado/${orderId}`).then((r) => r.data)
+    const user = mockSessionUser()
+    if (!user?.id) {
+      throw new ApiError(401, 'Tu pago continúa pendiente de confirmación')
+    }
+    const { data } = await apiClient.get<ApiSubscriptionResponse>(
+      `/api/v1/subscriptions/${encodeURIComponent(user.id)}`,
+    )
+    const mappedStatus = mapSubscriptionStatus(data.status)
+    const isActive = mappedStatus.status === 'ACTIVA'
+    const meta = readLastCheckoutMeta()
+    return {
+      orderId,
+      status: isActive ? 'aprobado' : 'pendiente',
+      planName: data.plan?.name?.trim() || meta?.planName || 'Radar+',
+      amount: data.plan?.price?.value ?? meta?.amount ?? RADAR_PLUS_PRICE,
+      method: 'Mercado Pago',
+      payerEmail: meta?.payerEmail,
+      planId: data.subscriberType === 'STORE' ? 'store' : 'plus',
+      estadoSuscripcion: mappedStatus.status,
+      fechaInicio: data.startDate ?? null,
+      fechaFin: data.endDate ?? null,
+    }
   },
 
   /**
-   * RF-96: Genera un nuevo intento de pago a partir de un pago RECHAZADO,
+   * RF-96: Genera un nuevo intento de pago a partir de un pago RECHAZADO (`POST /api/v1/payments/{orderId}/retry`),
    * conservando el valor y el plan originales con una nueva referencia (nace PENDIENTE).
    */
   async retryRejectedPayment(
     originalOrder: CheckoutResultDto,
     payerEmail: string,
     nextStatus: 'aprobado' | 'pendiente' | 'rechazado' = 'pendiente',
-  ): Promise<CheckoutResultDto> {
+  ): Promise<CheckoutResultDto & { initPoint?: string }> {
     if (!isValidPayerEmail(payerEmail)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
     }
     if (originalOrder.status !== 'rechazado') {
       throw new ApiError(400, 'Solo se pueden reintentar pagos rechazados')
     }
-    if (env.useMocks) {
+    if (env.useMocksPagos) {
       try {
         failIfScenario()
       } catch {
@@ -188,10 +251,11 @@ export const planService = {
       saveCustomOrderResult(newOrder)
       return mockDelay(newOrder, 300)
     }
-    return apiClient
-      .post<CheckoutResultDto>(`/api/pagos/${originalOrder.orderId}/reintentar`, {
-        payerEmail: payerEmail.trim(),
-      })
-      .then((r) => r.data)
+    const body: ApiRetryPaymentRequest = { payerEmail: payerEmail.trim() }
+    const { data } = await apiClient.post<ApiRetryPaymentResponse>(
+      `/api/v1/payments/${encodeURIComponent(originalOrder.orderId)}/retry`,
+      body,
+    )
+    return mapRetryPaymentResponse(data, originalOrder, payerEmail)
   },
 }

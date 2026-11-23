@@ -4,9 +4,22 @@ import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { isValidNit, isValidPayerEmail } from '../utils/validation'
 import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
+import {
+  mapCancellationToStoreDto,
+  mapPaymentResponse,
+  mapStartSubscriptionResponse,
+  mapSubscriptionToStoreDto,
+  type ApiCancelSubscriptionRequest,
+  type ApiCancellationResponse,
+  type ApiPaymentResponse,
+  type ApiRetryPaymentRequest,
+  type ApiRetryPaymentResponse,
+  type ApiStartSubscriptionRequest,
+  type ApiStartSubscriptionResponse,
+  type ApiSubscriptionResponse,
+} from '../mappers/paymentsMappers'
 import { MOCK_CHECKOUT_RESPONSE, STORE_PLAN } from '../mocks/plans'
 import type { PaymentDto } from '../types/payment.dto'
-import type { CheckoutResponseDto } from '../types/plan.dto'
 import type {
   StorePayResult,
   StoreSubscriptionActivationDto,
@@ -15,9 +28,6 @@ import type {
   StoreSubscriptionStatus,
 } from '../types/storeSubscription.dto'
 import { planService } from './planService'
-
-/** Rutas del API Gateway hacia ms-pagos-suscripciones. Provisionales hasta tener el Swagger (Julian). */
-const BASE = '/api/payments/subscriptions/store'
 
 /* ─── Estado simulado: vive en la pestaña, por usuario, para sobrevivir a recargas ─── */
 const key = (id: string) => `sr_store_sub_${id}`
@@ -131,34 +141,89 @@ const addOneMonth = (): string => {
   return d.toISOString().slice(0, 10)
 }
 
+function readSessionEmail(): string {
+  try {
+    const raw = localStorage.getItem('sr_user')
+    if (raw) {
+      const u = JSON.parse(raw) as { email?: string }
+      return u.email?.trim() ?? ''
+    }
+  } catch { /* noop */ }
+  return ''
+}
+
+function requireSessionSubscriberId(): string {
+  const u = mockSessionUser()
+  if (!u?.id) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez')
+  return u.id
+}
+
 export const storeSubscriptionService = {
-  /** Suscripción vigente y su historial de pagos. */
+  /** Suscripción vigente (`GET /api/v1/subscriptions/{subscriberId}`) y su historial de pagos (`GET /api/v1/payments/history`). */
   async get(): Promise<StoreSubscriptionStateDto> {
-    if (env.useMocks) {
+    if (env.useMocksPagos) {
       failIfScenario()
       return mockDelay(readMockStoreSubscription(), 250)
     }
-    const [subscription, payments] = await Promise.all([
-      apiClient.get<StoreSubscriptionDto>(BASE).then((r) => r.data),
-      apiClient.get<PaymentDto[]>(`${BASE}/payments`).then((r) => r.data),
+    const subscriberId = requireSessionSubscriberId()
+    const [subscription, rawPayments] = await Promise.all([
+      apiClient
+        .get<ApiSubscriptionResponse>(`/api/v1/subscriptions/${encodeURIComponent(subscriberId)}`)
+        .then((r) => mapSubscriptionToStoreDto(r.data))
+        .catch((err) => {
+          if (err instanceof ApiError && err.status === 404) {
+            return SEED().subscription
+          }
+          throw err
+        }),
+      apiClient
+        .get<ApiPaymentResponse[]>('/api/v1/payments/history')
+        .then((r) => (Array.isArray(r.data) ? r.data : [])),
     ])
+    const payments = rawPayments
+      .map((item) =>
+        mapPaymentResponse(item, {
+          subscriberId,
+          userRole: 'STORE_ADMIN',
+          planId: 'store',
+          planName: subscription.planName || STORE_PLAN.name,
+        }),
+      )
+      .sort((a, b) => b.date.localeCompare(a.date))
     return { subscription, payments }
   },
 
   /**
-   * RF-67 y RF-93: paga la suscripción con Mercado Pago. La suscripción solo se activa con un pago aprobado
-   * (RF-94); un pago rechazado o pendiente queda en el historial y no activa nada. No se duplica una suscripción activa.
-   * En mocks no hay redirección: se resuelve con `orderId` (por defecto uno aprobado).
+   * RF-67 y RF-93: paga la suscripción con Mercado Pago (`POST /api/v1/subscriptions/start`, responde 202 Accepted).
+   * La suscripción solo se activa cuando el backend procesa el webhook de Mercado Pago.
    */
   async pay(orderId = 'MOCK_STORE_OK', payerEmail?: string): Promise<StorePayResult> {
     if (payerEmail !== undefined && !isValidPayerEmail(payerEmail)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
     }
-    if (!env.useMocks) {
-      const r = await apiClient
-        .post<CheckoutResponseDto>(`${BASE}/checkout`, { payerEmail })
-        .then((res) => res.data)
-      return { redirectTo: r.initPoint }
+    if (!env.useMocksPagos) {
+      const user = mockSessionUser()
+      if (!user?.id) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez')
+      const resolvedEmail = (payerEmail ?? readSessionEmail()).trim()
+      if (!isValidPayerEmail(resolvedEmail)) {
+        throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
+      }
+      const body: ApiStartSubscriptionRequest = {
+        subscriberType: 'STORE',
+        payerEmail: resolvedEmail,
+        storeId: user.id,
+      }
+      const { data } = await apiClient.post<ApiStartSubscriptionResponse>('/api/v1/subscriptions/start', body)
+      const mapped = mapStartSubscriptionResponse(data)
+      return {
+        redirectTo: mapped.initPoint || undefined,
+        output: {
+          suscripcionId: mapped.suscripcionId ?? '',
+          ordenId: mapped.ordenId ?? '',
+          estado: mapped.estado ?? 'PENDIENTE',
+          initPoint: mapped.initPoint,
+        },
+      }
     }
     try {
       failIfScenario()
@@ -267,18 +332,31 @@ export const storeSubscriptionService = {
       nit: (nit ?? '').trim(),
       almacenId: resolvedAlmacenId,
     }
+    if (!env.useMocksPagos) {
+      const body: ApiStartSubscriptionRequest = {
+        subscriberType: 'STORE',
+        payerEmail: dto.correoPagador,
+        taxId: dto.nit || undefined,
+        storeId: dto.almacenId,
+      }
+      const { data } = await apiClient.post<ApiStartSubscriptionResponse>('/api/v1/subscriptions/start', body)
+      const mapped = mapStartSubscriptionResponse(data)
+      return {
+        redirectTo: mapped.initPoint || undefined,
+        output: {
+          suscripcionId: mapped.suscripcionId ?? '',
+          ordenId: mapped.ordenId ?? '',
+          estado: mapped.estado ?? 'PENDIENTE',
+          initPoint: mapped.initPoint,
+        },
+      }
+    }
     const before = readMockStoreSubscription()
     if (
       before.subscription.status === 'ACTIVA' ||
       before.payments.some((p) => p.status === 'pendiente')
     ) {
       throw new ApiError(409, 'Tu almacén ya tiene una suscripción activa o un pago pendiente')
-    }
-    if (!env.useMocks) {
-      const r = await apiClient
-        .post<CheckoutResponseDto>(`${BASE}/checkout`, dto)
-        .then((res) => res.data)
-      return { redirectTo: r.initPoint }
     }
     try {
       failIfScenario()
@@ -365,7 +443,10 @@ export const storeSubscriptionService = {
    * RF-68: Reactiva la renovación automática.
    */
   async reactivateRenewal(): Promise<StoreSubscriptionDto> {
-    if (!env.useMocks) return apiClient.post<StoreSubscriptionDto>(`${BASE}/reactivate-renewal`).then((r) => r.data)
+    if (!env.useMocksPagos) {
+      // TODO(contrato): ms-pagos.openapi.json no expone endpoint para reactivar la renovación automática.
+      throw new ApiError(501, 'La reactivación de la renovación automática no está disponible todavía')
+    }
     failIfScenario('conflicto')
     const state = readMockStoreSubscription()
     const subscription: StoreSubscriptionDto = {
@@ -378,24 +459,25 @@ export const storeSubscriptionService = {
   },
 
   /**
-   * RF-96: Reintenta un pago RECHAZADO de la tienda indicando el correo del pagador.
-   * Crea una nueva transacción por el mismo valor (nace PENDIENTE) y conserva el pago rechazado original en el historial.
+   * RF-96: Reintenta un pago RECHAZADO de la tienda (`POST /api/v1/payments/{orderId}/retry`) indicando el correo del pagador.
    */
   async retryPayment(paymentId: string, payerEmail: string, orderId = 'MOCK_STORE_OK'): Promise<StorePayResult> {
     if (!isValidPayerEmail(payerEmail)) {
       throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
+    }
+    if (!env.useMocksPagos) {
+      const body: ApiRetryPaymentRequest = { payerEmail: payerEmail.trim() }
+      const { data } = await apiClient.post<ApiRetryPaymentResponse>(
+        `/api/v1/payments/${encodeURIComponent(paymentId)}/retry`,
+        body,
+      )
+      return { redirectTo: data.initPoint || undefined }
     }
     const before = readMockStoreSubscription()
     const original = before.payments.find((p) => p.id === paymentId && p.status === 'rechazado') ??
       before.payments.find((p) => p.status === 'rechazado')
     if (!original) {
       throw new ApiError(400, 'Solo se pueden reintentar pagos rechazados')
-    }
-    if (!env.useMocks) {
-      const r = await apiClient
-        .post<CheckoutResponseDto>(`${BASE}/payments/${original.id}/retry`, { payerEmail: payerEmail.trim() })
-        .then((res) => res.data)
-      return { redirectTo: r.initPoint }
     }
     try {
       failIfScenario()
@@ -474,7 +556,15 @@ export const storeSubscriptionService = {
    * periodo pagado (fechaFin), con autoRenovacion = false, sin devolución por el tiempo restante.
    */
   async cancelRenewal(): Promise<StoreSubscriptionDto> {
-    if (!env.useMocks) return apiClient.post<StoreSubscriptionDto>(`${BASE}/cancel-renewal`).then((r) => r.data)
+    if (!env.useMocksPagos) {
+      const subscriberId = requireSessionSubscriberId()
+      const body: ApiCancelSubscriptionRequest = { confirmed: true }
+      const { data } = await apiClient.post<ApiCancellationResponse>(
+        `/api/v1/subscriptions/${encodeURIComponent(subscriberId)}/cancel`,
+        body,
+      )
+      return mapCancellationToStoreDto(data)
+    }
     try {
       failIfScenario('conflicto')
     } catch {

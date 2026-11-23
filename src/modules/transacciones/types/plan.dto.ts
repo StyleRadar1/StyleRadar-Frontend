@@ -28,6 +28,8 @@ export interface MiPlanDto {
   degradedByPayment?: boolean
   /** Indica si el pago de renovación sigue PENDIENTE al terminar el periodo (RF-103). */
   pendingRenewal?: boolean
+  /** Estado crudo cuando el backend devuelve un estado no reconocido por el front. */
+  unknownStatus?: string
 }
 
 /** Lo que solo tiene Radar+ y se muestra con candado en el plan Radar (RF-102). */
@@ -136,6 +138,8 @@ export interface VerificacionBeneficioResultDto {
 
 export interface PlanDto {
   id: 'free' | 'plus' | 'store'
+  /** Identificador numérico del plan en ms-pagos (GET /api/v1/plans). */
+  backendPlanId?: number
   name: string
   price: number
   period: 'gratis' | 'mensual'

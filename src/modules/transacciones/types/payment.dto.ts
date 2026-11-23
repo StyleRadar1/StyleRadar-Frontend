@@ -88,6 +88,8 @@ export interface PaymentDto {
   fecha?: string
   status: PaymentStatus
   estado?: PaymentStatusV4
+  /** Estado crudo cuando el backend envía un valor fuera del contrato v4. */
+  unknownStatus?: string
 }
 
 /** Filtros que acepta la búsqueda de pagos (RF-75). */
