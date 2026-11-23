@@ -6,7 +6,7 @@ import { aRol } from '@/modules/core/types/roles'
 import { seedConversations, seedMessages } from '../mocks/chat'
 import { aNotificacion } from '../utils/notificaciones'
 import { aConversacion, aMensaje, filasDe, idDelOtro, necesitaNombre } from './chatMapper'
-import { NOTIFICACIONES } from './notificationService'
+import { NOTIFICACIONES, NOTIFICATIONS_CHANGED } from './notificationService'
 import { MAX_MENSAJE, TIPO_ESPEJO, type ConversacionDto, type IniciarConversacionDto, type MensajeDto } from '../types/chat.dto'
 
 /** Rutas de ms-chat según su Swagger, vía API Gateway. */
@@ -161,6 +161,7 @@ export const chatService = {
     // Abrir la conversación deja leídos sus avisos de mensaje nuevo; eso baja el contador del menú
     const pendientes = (await avisosDeChat()).get(id) ?? []
     await Promise.allSettled(pendientes.map((aviso) => apiClient.patch(`${NOTIFICACIONES}/${encodeURIComponent(aviso)}/read`)))
+    if (pendientes.length) window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED))
     const r = { data: filas.map(aMensaje) }
     changed()
     return r.data

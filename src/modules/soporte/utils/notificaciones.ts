@@ -31,6 +31,15 @@ export function enlaceFront(enlace?: string | null, rol: string | null = rolActu
 
 const texto = (v: unknown) => (typeof v === 'string' ? v : undefined)
 
+/**
+ * ms-notificaciones entrega las fechas como LocalDateTime, sin zona («2026-11-22T03:16:00»), y su servidor
+ * está en UTC. Sin esta corrección el navegador las lee como hora local y se ven 5 horas adelantadas en Colombia.
+ */
+export function fechaUtc(f?: string): string | undefined {
+  if (!f) return undefined
+  return /(Z|[+-]\d{2}:?\d{2})$/.test(f) ? f : `${f}Z`
+}
+
 /** Convierte un aviso del servidor a lo que pintan las pantallas, tolerando nombres de campo distintos. */
 export function aNotificacion(raw: unknown, rol: string | null = rolActual()): NotificacionDto {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
@@ -42,6 +51,6 @@ export function aNotificacion(raw: unknown, rol: string | null = rolActual()): N
     detalle: texto(r.mensaje ?? r.detalle ?? r.message) ?? '',
     enlace: enlaceFront(texto(r.enlace ?? r.link ?? r.url), rol),
     leida: Boolean(r.leida ?? r.read),
-    creadaEn: texto(r.fechaCreacion ?? r.creadaEn ?? r.createdAt) ?? new Date().toISOString(),
+    creadaEn: fechaUtc(texto(r.fechaCreacion ?? r.creadaEn ?? r.createdAt)) ?? new Date().toISOString(),
   }
 }

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { notificationService, resetNotificationsMock, TAM_PAGINA } from '../services/notificationService'
 import { TIPOS_AVISO } from '../types/notification.dto'
-import { aNotificacion, enlaceFront } from '../utils/notificaciones'
+import { aNotificacion, enlaceFront, fechaUtc } from '../utils/notificaciones'
 import { INFO_AVISO } from '../utils/tiposAviso'
 import { loginAs } from './helpers'
 
@@ -75,5 +75,21 @@ describe('bandeja página a página', () => {
     expect((await notificationService.page(0)).items.map((n) => n.tipo)).toEqual(expect.arrayContaining(['MODERACION_PRENDA', 'MENSAJE_NUEVO', 'PAGO_CONFIRMADO']))
     localStorage.clear(); loginAs('f-1', 'Fundación Abrigo', 'FOUNDATION_REPRESENTATIVE')
     expect((await notificationService.page(0)).items.map((n) => n.tipo)).toEqual(expect.arrayContaining(['SOLICITUD_DONACION', 'CAMBIO_DONACION']))
+  })
+})
+
+describe('fechas de ms-notificaciones', () => {
+  it('una fecha sin zona se lee como UTC, igual que la hora del servidor', () => {
+    expect(fechaUtc('2026-11-22T03:16:00')).toBe('2026-11-22T03:16:00Z')
+    // 03:16 UTC son las 10:16 p. m. del día anterior en Colombia
+    expect(new Date(fechaUtc('2026-11-22T03:16:00')!).getUTCHours()).toBe(3)
+  })
+  it('si ya trae zona, se respeta', () => {
+    expect(fechaUtc('2026-11-22T03:16:00Z')).toBe('2026-11-22T03:16:00Z')
+    expect(fechaUtc('2026-11-22T03:16:00-05:00')).toBe('2026-11-22T03:16:00-05:00')
+    expect(fechaUtc(undefined)).toBeUndefined()
+  })
+  it('el aviso entrega la fecha ya corregida', () => {
+    expect(aNotificacion({ id: 1, fechaCreacion: '2026-11-22T03:16:00' }, 'BUYER').creadaEn).toBe('2026-11-22T03:16:00Z')
   })
 })
