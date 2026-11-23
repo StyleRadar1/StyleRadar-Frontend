@@ -64,8 +64,8 @@ export function usePlaylists(userId?: string) {
   )
 
   const addItem = useCallback(
-    async (playlistId: string, itemId: string) => {
-      const updated = await playlistService.addItem(playlistId, itemId)
+    async (playlistId: string, itemId: string, nombrePrenda?: string) => {
+      const updated = await playlistService.addItem(playlistId, itemId, nombrePrenda)
       setData((prev) => mapInBundle(prev, playlistId, () => updated))
     },
     [setData]

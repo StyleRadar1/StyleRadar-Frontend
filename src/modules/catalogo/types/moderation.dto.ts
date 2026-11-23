@@ -46,7 +46,7 @@ export type BackendModerationDecision = 'APROBADA' | 'RECHAZADA'
 export interface BackendModerationRequestDto {
   decision: BackendModerationDecision
   motivo?: string
-  moderadorId: string
+  moderadorId?: string
 }
 
 export interface ModerationPendingGroupDto {

@@ -1,4 +1,4 @@
-import { apiClient } from '@/modules/core/api/apiClient'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { env } from '@/configs/env'
 import { TIENDAS } from '@/modules/mapa/mocks/mapData'
 import { seedStores, seedPlaylists } from '@/modules/administracion/mocks/admin'
@@ -90,6 +90,35 @@ export function getStoreIdByName(storeName: string): string {
   if (norm.includes('85')) return 'calle-85'
   if (norm.includes('nora')) return 'nora'
   return norm.replace(/\s+/g, '-')
+}
+
+function buildCategoriasFromItems(items: ItemResponseDto[]): StoreCategoryItem[] {
+  const catMap = new Map<string, { tipo: string; imagen: string; cantidad: number }>()
+  items.forEach((p) => {
+    const existing = catMap.get(p.tipo)
+    if (existing) {
+      existing.cantidad += 1
+    } else {
+      catMap.set(p.tipo, { tipo: p.tipo, imagen: p.imagen, cantidad: 1 })
+    }
+  })
+  return Array.from(catMap.entries()).map(([tipo, val]) => ({
+    nombre:
+      tipo === 'Buzo'
+        ? 'Buzos & Hoodies'
+        : tipo === 'Saco'
+          ? 'Sacos & Blazers'
+          : tipo === 'Pantalón'
+            ? 'Pantalones'
+            : tipo === 'Chaqueta'
+              ? 'Chaquetas'
+              : tipo === 'Vestido'
+                ? 'Vestidos'
+                : tipo,
+    tipo,
+    imagen: val.imagen,
+    cantidad: val.cantidad,
+  }))
 }
 
 /** «4.8» → «4,8» como se muestra en la pantalla. Sin calificación → undefined. */
@@ -210,21 +239,6 @@ export const storePublicService = {
     const prendas = [...basePrendas, ...newFromInventory]
     const novedades = prendas.slice(0, 3)
 
-    // Generar categorías de prendas reales de la tienda
-    const catMap = new Map<string, { tipo: string; imagen: string; cantidad: number }>()
-    prendas.forEach((p) => {
-      const existing = catMap.get(p.tipo)
-      if (existing) {
-        existing.cantidad += 1
-      } else {
-        catMap.set(p.tipo, {
-          tipo: p.tipo,
-          imagen: p.imagen,
-          cantidad: 1,
-        })
-      }
-    })
-
     // Colecciones de la tienda añadidas a la fila de arcos
     const coleccionesComoCategorias: StoreCategoryItem[] = customCollections
       .filter((c) => c.visibility === 'Pública')
@@ -237,12 +251,7 @@ export const storePublicService = {
 
     const categorias: StoreCategoryItem[] = [
       ...coleccionesComoCategorias,
-      ...Array.from(catMap.entries()).map(([tipo, val]) => ({
-        nombre: tipo === 'Buzo' ? 'Buzos & Hoodies' : tipo === 'Saco' ? 'Sacos & Blazers' : tipo === 'Pantalón' ? 'Pantalones' : tipo === 'Chaqueta' ? 'Chaquetas' : tipo === 'Vestido' ? 'Vestidos' : tipo,
-        tipo,
-        imagen: val.imagen,
-        cantidad: val.cantidad,
-      })),
+      ...buildCategoriasFromItems(prendas),
     ]
 
     // Playlists donde aparece o ha creado la tienda
@@ -348,112 +357,155 @@ export const storePublicService = {
 
   /** F-22: perfil público del almacén por su NIT (GET /api/v1/stores/{nit}). */
   async getByIdAsync(id: string): Promise<StorePublicDto | null> {
-    const syncData = this.getById(id)
     if (env.useMocks) {
-      return syncData
+      return this.getById(id)
     }
     const nit = (id || '').trim()
+    if (!nit) return null
     const cleanId = nit.toLowerCase()
-    try {
-      const [r, catalogoItems, novedadesItems] = await Promise.all([
-        apiClient.get<StoreResponseDto>(`/api/v1/stores/${encodeURIComponent(nit)}`),
-        this.getCatalogo(cleanId).catch(() => syncData?.prendas ?? []),
-        this.getNovedades(cleanId).catch(() => []),
-      ])
-      const d = r.data
-      if (!d && catalogoItems.length === 0) return syncData
 
-      const prendas = catalogoItems.length > 0 ? catalogoItems : (syncData?.prendas || [])
-      const novedades = novedadesItems.length > 0 ? novedadesItems.slice(0, 3) : prendas.slice(0, 3)
-      const api = d ? aTiendaPublica(d, syncData) : {}
+    let storeNotFound = false
+    let storeError: unknown = null
 
-      return {
-        id: cleanId,
-        nombre: syncData?.nombre || 'Tienda aliada',
-        categoria: syncData?.categoria || 'Moda local',
-        barrio: syncData?.barrio || 'Bogotá',
-        direccion: syncData?.direccion || 'Bogotá, Colombia',
-        distanciaKm: syncData?.distanciaKm || '1,50 km',
-        horario: syncData?.horario || 'Lun a sáb · 10:00 a 20:00',
-        lngLat: syncData?.lngLat || [-74.0628, 4.6433],
-        telefono: syncData?.telefono || '',
-        correo: syncData?.correo || '',
-        nit: syncData?.nit || nit,
-        representante: syncData?.representante || 'Administrador de tienda',
-        aliadaDesde: syncData?.aliadaDesde || 'feb 2026',
-        verificacion: syncData?.verificacion || 'Verificada',
-        rating: syncData?.rating || '',
-        reviews: syncData?.reviews || 0,
-        descripcion: syncData?.descripcion || 'Tienda local de Bogotá aliada a StyleRadar.',
-        foto: syncData?.foto || '/img/mapa/luna.jpg',
-        fotoEditorial: syncData?.fotoEditorial || (syncData?.foto || '/img/mapa/luna.jpg'),
-        fotosGaleria: syncData?.fotosGaleria || [],
-        colecciones: syncData?.colecciones || [],
-        bannerNotice: syncData?.bannerNotice || '',
-        prendas,
-        novedades,
-        categorias: syncData?.categorias || [],
-        coleccionDestacada: syncData?.coleccionDestacada || {
-          titulo: 'Colección destacada',
-          subtitulo: 'Selección de la temporada',
-          descripcion: 'Prendas exclusivas disponibles en tienda.',
-        },
-        distintivos: syncData?.distintivos || [],
-        cifras: {
-          prendasActivas: prendas.length,
-          categoriasCount: syncData?.cifras?.categoriasCount ?? (syncData?.categorias.length || 0),
-          playlists: syncData?.cifras?.playlists ?? 0,
-          aliadaDesde: syncData?.aliadaDesde || 'feb 2026',
-        },
-        ...api,
-      }
-    } catch {
-      return syncData
+    const [storeDto, catalogoItems, novedadesItems] = await Promise.all([
+      apiClient
+        .get<StoreResponseDto>(`/api/v1/stores/${encodeURIComponent(nit)}`)
+        .then((r) => r.data ?? null)
+        .catch((err) => {
+          if (err instanceof ApiError && err.status === 404) {
+            storeNotFound = true
+            return null
+          }
+          storeError = err
+          return null
+        }),
+      this.getCatalogo(cleanId).catch(() => [] as ItemResponseDto[]),
+      this.getNovedades(cleanId).catch(() => [] as ItemResponseDto[]),
+    ])
+
+    let almacenMatch: Record<string, any> | null = null
+    if (!storeDto && storeNotFound) {
+      const listaAlmacenes = await apiClient
+        .get<Record<string, any>[]>('/api/v1/almacenes')
+        .then((r) => (Array.isArray(r.data) ? r.data : []))
+        .catch(() => [] as Record<string, any>[])
+      almacenMatch =
+        listaAlmacenes.find(
+          (a) => String(a?.id ?? a?.almacenId ?? '').trim().toLowerCase() === cleanId
+        ) ?? null
+    }
+
+    if (!storeDto && !almacenMatch && catalogoItems.length === 0) {
+      if (!storeNotFound && storeError) throw storeError
+      return null
+    }
+
+    const prendas = catalogoItems
+    const novedades = novedadesItems.length > 0 ? novedadesItems.slice(0, 3) : prendas.slice(0, 3)
+    const categorias = buildCategoriasFromItems(prendas)
+    const api = storeDto ? aTiendaPublica(storeDto, null) : {}
+    const matchLng =
+      typeof almacenMatch?.longitud === 'number'
+        ? almacenMatch.longitud
+        : typeof almacenMatch?.lng === 'number'
+          ? almacenMatch.lng
+          : -74.0628
+    const matchLat =
+      typeof almacenMatch?.latitud === 'number'
+        ? almacenMatch.latitud
+        : typeof almacenMatch?.lat === 'number'
+          ? almacenMatch.lat
+          : 4.6433
+    const matchFoto =
+      (typeof almacenMatch?.foto === 'string' && almacenMatch.foto) ||
+      (typeof almacenMatch?.photo === 'string' && almacenMatch.photo) ||
+      ''
+
+    return {
+      id: cleanId,
+      nombre:
+        (typeof almacenMatch?.nombre === 'string' && almacenMatch.nombre) ||
+        (typeof almacenMatch?.name === 'string' && almacenMatch.name) ||
+        prendas[0]?.tienda ||
+        'Tienda aliada',
+      categoria: (typeof almacenMatch?.categoria === 'string' && almacenMatch.categoria) || 'Moda local',
+      barrio: (typeof almacenMatch?.barrio === 'string' && almacenMatch.barrio) || prendas[0]?.barrio || 'Bogotá',
+      direccion:
+        (typeof almacenMatch?.direccion === 'string' && almacenMatch.direccion) ||
+        (typeof almacenMatch?.dir === 'string' && almacenMatch.dir) ||
+        'Bogotá, Colombia',
+      distanciaKm: '',
+      horario: (typeof almacenMatch?.horario === 'string' && almacenMatch.horario) || '',
+      lngLat: [matchLng, matchLat],
+      telefono: '',
+      correo: '',
+      nit,
+      representante: '',
+      aliadaDesde: '',
+      verificacion: 'Verificada',
+      rating: '',
+      reviews: 0,
+      descripcion: (typeof almacenMatch?.descripcion === 'string' && almacenMatch.descripcion) || '',
+      foto: matchFoto || prendas[0]?.imagen || '',
+      fotoEditorial: matchFoto || prendas[0]?.imagen || '',
+      fotosGaleria: [],
+      colecciones: [],
+      bannerNotice: '',
+      prendas,
+      novedades,
+      categorias,
+      coleccionDestacada: {
+        titulo: 'Colección destacada',
+        subtitulo: 'Selección de la temporada',
+        descripcion: 'Prendas disponibles en tienda.',
+      },
+      distintivos: [],
+      cifras: {
+        prendasActivas: prendas.length,
+        categoriasCount: categorias.length,
+        playlists: 0,
+        aliadaDesde: '',
+      },
+      ...api,
     }
   },
 
   /** F-22: almacenes aprobados (GET /api/v1/stores, paginado: se lee content[]). */
   async getAllAsync(): Promise<StorePublicDto[]> {
-    const deMocks = () => TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
     if (env.useMocks) {
-      return deMocks()
+      return TIENDAS.map((t) => this.getById(t.id)).filter(Boolean) as StorePublicDto[]
     }
-    try {
-      const r = await apiClient.get<StorePageDto>('/api/v1/stores', { params: { page: 0, size: 100 } })
-      const lista = Array.isArray(r.data?.content) ? r.data.content : []
-      if (!lista.length) return deMocks()
-      return lista.map((d) => ({
-        id: String(d.nit),
-        nombre: 'Tienda aliada',
-        categoria: 'Moda local',
-        barrio: 'Bogotá',
-        direccion: 'Bogotá, Colombia',
-        distanciaKm: '',
-        horario: '',
-        lngLat: [-74.0628, 4.6433] as [number, number],
-        telefono: '',
-        correo: '',
-        nit: String(d.nit),
-        representante: '',
-        aliadaDesde: '',
-        verificacion: 'Verificada',
-        rating: '',
-        reviews: 0,
-        descripcion: '',
-        foto: '/img/mapa/luna.jpg',
-        fotoEditorial: '/img/mapa/luna.jpg',
-        fotosGaleria: [],
-        colecciones: [],
-        bannerNotice: '',
-        prendas: [],
-        categorias: [],
-        coleccionDestacada: { titulo: 'Colección destacada', subtitulo: 'Selección de la temporada', descripcion: '' },
-        distintivos: [],
-        cifras: { prendasActivas: 0, categoriasCount: 0, playlists: 0, aliadaDesde: '' },
-        ...aTiendaPublica(d, null),
-      }))
-    } catch {
-      return deMocks()
-    }
+    const r = await apiClient.get<StorePageDto>('/api/v1/stores', { params: { page: 0, size: 100 } })
+    const lista = Array.isArray(r.data?.content) ? r.data.content : []
+    return lista.map((d) => ({
+      id: String(d.nit),
+      nombre: 'Tienda aliada',
+      categoria: 'Moda local',
+      barrio: 'Bogotá',
+      direccion: 'Bogotá, Colombia',
+      distanciaKm: '',
+      horario: '',
+      lngLat: [-74.0628, 4.6433] as [number, number],
+      telefono: '',
+      correo: '',
+      nit: String(d.nit),
+      representante: '',
+      aliadaDesde: '',
+      verificacion: 'Verificada',
+      rating: '',
+      reviews: 0,
+      descripcion: '',
+      foto: '/img/mapa/luna.jpg',
+      fotoEditorial: '/img/mapa/luna.jpg',
+      fotosGaleria: [],
+      colecciones: [],
+      bannerNotice: '',
+      prendas: [],
+      categorias: [],
+      coleccionDestacada: { titulo: 'Colección destacada', subtitulo: 'Selección de la temporada', descripcion: '' },
+      distintivos: [],
+      cifras: { prendasActivas: 0, categoriasCount: 0, playlists: 0, aliadaDesde: '' },
+      ...aTiendaPublica(d, null),
+    }))
   },
 }

@@ -198,7 +198,7 @@ export default function ItemDetailPage() {
 
   // Navegación entre prendas del catálogo
   const { prevItem, nextItem } = useMemo(() => {
-    if (!prenda) return { prevItem: null, nextItem: null }
+    if (!prenda || !env.useMocks) return { prevItem: null, nextItem: null }
     const currentIndex = ITEMS.findIndex((it) => it.id === prenda.id)
     const validIndex = currentIndex >= 0 ? currentIndex : 0
     const prevIdx = validIndex > 0 ? validIndex - 1 : ITEMS.length - 1

@@ -226,7 +226,7 @@ export const playlistService = {
       return mockDelay(pl)
     }
 
-    const fallbackNombre = nombrePrenda ?? ITEMS.find((it) => it.id === itemId)?.nombre
+    const fallbackNombre = nombrePrenda
     return apiClient
       .post<any>(`/api/v1/playlists/${playlistId}/prendas`, {
         prendaId: itemId,
