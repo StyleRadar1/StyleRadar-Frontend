@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -260,15 +261,17 @@ function PlansSelector() {
       return
     }
 
-    // Con sesión: crear checkout mock
+    // Con sesión: iniciar suscripción en Mercado Pago (POST /api/v1/subscriptions/start)
     setBusy(true)
     setCheckoutError(null)
     setAviso(null)
     try {
-      await planService.createCheckout(plan.id, payerEmail)
-      // En producción aquí se redirige al initPoint de Mercado Pago.
-      // En mock mostramos el resultado simulado.
-      navigate(`/pago/resultado?orden=MOCK_ORDER_OK`)
+      const checkout = await planService.createCheckout(plan.id, payerEmail, plan.backendPlanId)
+      if (!env.useMocksPagos && checkout.initPoint) {
+        window.location.assign(checkout.initPoint)
+        return
+      }
+      navigate(`/pago/resultado?orden=${encodeURIComponent(checkout.ordenId ?? 'MOCK_ORDER_OK')}`)
     } catch (e) {
       const a = avisoDePlan(e, PAYMENT_INIT_ERROR_MSG)
       setAviso(a)

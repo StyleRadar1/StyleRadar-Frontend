@@ -6,6 +6,7 @@ import { errorKind } from '@/modules/core/api/errors'
 import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
+import { formatStatusLabel } from '../mappers/paymentsMappers'
 import { calcRevenue } from '../services/paymentService'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
 import '@/styles/verdelo-dashboard.css'
@@ -643,7 +644,7 @@ export default function AdminPaymentsPage() {
                       {formatCOP(valor)} COP
                     </td>
                     <td className="py-3.5 pr-4">
-                      <Badge tone={STATUS_TONES[p.status]}>{p.estado ?? STATUS_LABELS[p.status]}</Badge>
+                      <Badge tone={STATUS_TONES[p.status]}>{formatStatusLabel(p.estado ?? STATUS_LABELS[p.status], p.unknownStatus)}</Badge>
                     </td>
                     <td className="py-3.5 pr-4 text-white/70">{fecha}</td>
                     <td className="py-3.5 pr-4 font-mono text-xs text-white/75">{referencia}</td>

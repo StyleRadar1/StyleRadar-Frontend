@@ -8,6 +8,7 @@ import { PayerEmailForm } from '../components/PayerEmailForm'
 import { StoreSuspendedBanner } from '../components/StoreSuspendedBanner'
 import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
+import { formatStatusLabel } from '../mappers/paymentsMappers'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
 import type { CheckoutResultDto } from '../types/plan.dto'
@@ -124,7 +125,7 @@ export default function StoreSubscriptionPage() {
             <h2>Suscripción</h2>
             <span className="store-subscription__badge">
               <span aria-hidden="true">● </span>
-              <span>{STATUS_LABEL[sub.status]}</span>
+              <span>{formatStatusLabel(STATUS_LABEL[sub.status], sub.unknownStatus)}</span>
             </span>
           </div>
           <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días</p>
@@ -277,7 +278,7 @@ export default function StoreSubscriptionPage() {
                       <td><b>Tienda aliada · mensual</b><small>{p.id}</small></td>
                       <td>{p.method}</td>
                       <td>{formatCOP(p.amount)}</td>
-                      <td><span className={`store-subscription__payment-status is-${p.status}`}>● {PAYMENT_LABEL[p.status]}</span></td>
+                      <td><span className={`store-subscription__payment-status is-${p.status}`}>● {formatStatusLabel(PAYMENT_LABEL[p.status], p.unknownStatus)}</span></td>
                       <td>
                         {p.status === 'aprobado' && (
                           <button type="button" className="store-subscription__receipt" onClick={() => window.print()}>
