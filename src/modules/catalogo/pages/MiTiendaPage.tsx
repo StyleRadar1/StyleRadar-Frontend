@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { hasScenario } from '@/modules/core/api/mockScenario'
@@ -186,6 +186,8 @@ export default function MiTiendaPage() {
   const [verificationError, setVerificationError] = useState('')
   const [badgesDialogOpen, setBadgesDialogOpen] = useState(false)
   const [lastUnitsLimit, setLastUnitsLimit] = useState(LOW_STOCK_DEFAULT)
+  /** Si la tienda ya guardó, una lectura inicial que llegue tarde no debe pisar lo guardado. */
+  const badgesSaved = useRef(false)
   const [newArrivalDays, setNewArrivalDays] = useState(NEW_ARRIVAL_DEFAULT)
   const [lastUnitsDraft, setLastUnitsDraft] = useState(String(LOW_STOCK_DEFAULT))
   const [newArrivalDaysDraft, setNewArrivalDaysDraft] = useState(String(NEW_ARRIVAL_DEFAULT))
@@ -199,7 +201,7 @@ export default function MiTiendaPage() {
     let active = true
     storeSettingsService.getCatalogSettings(storeNit)
       .then((c) => {
-        if (!active) return
+        if (!active || badgesSaved.current) return
         setLastUnitsLimit(c.lowStockThreshold)
         setNewArrivalDays(c.newArrivalDays)
       })
@@ -393,6 +395,7 @@ export default function MiTiendaPage() {
     } finally {
       setBadgesBusy(false)
     }
+    badgesSaved.current = true
     const threshold = guardado.lowStockThreshold
     const days = guardado.newArrivalDays
     setLastUnitsLimit(threshold)
