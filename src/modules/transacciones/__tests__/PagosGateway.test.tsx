@@ -11,6 +11,7 @@ import {
   deriveSubscriptionStatus,
   detectPlanPriceDiscrepancies,
   formatStatusLabel,
+  formatSubscriptionDate,
   mapBackendRole,
   mapCancellationToStoreDto,
   mapPaymentResponse,
@@ -18,8 +19,10 @@ import {
   mapPlansResponse,
   mapRetryPaymentResponse,
   mapStartSubscriptionResponse,
+  mapSubscriberTypeToRole,
   mapSubscriptionToMiPlanDto,
   mapSubscriptionToStoreDto,
+  registerCatalogPlans,
   toApiPaymentStatusFilter,
   toSubscriberType,
 } from '../mappers/paymentsMappers'
@@ -27,6 +30,7 @@ import AdminPaymentsPage from '../pages/AdminPaymentsPage'
 import { BuyerPaymentsSection } from '../pages/BuyerPaymentsPage'
 import CheckoutPage from '../pages/CheckoutPage'
 import PlansPage from '../pages/PlansPage'
+import StoreActivateSubscriptionPage from '../pages/StoreActivateSubscriptionPage'
 import StoreSubscriptionPage from '../pages/StoreSubscriptionPage'
 import { paymentService } from '../services/paymentService'
 import { planService } from '../services/planService'
@@ -136,25 +140,39 @@ describe('adaptadores y mappers del contrato final de ms-pagos', () => {
     })
   })
 
-  it('traduce PaymentResponse usando subscriberId, planId, planName y amount { value, currency } sin inferir por monto', () => {
-    const payment = mapPaymentResponse({
-      id: 300,
-      subscriptionId: 55,
-      subscriberId: 'usr-abc-123',
-      planId: 2,
-      planName: 'Radar+',
-      amount: { value: 14900, currency: 'COP' },
-      status: 'APPROVED',
-      externalPaymentId: 'MP-EXT-300',
-      createdAt: '2026-11-20T12:00:00Z',
-    })
-    expect(payment).toMatchObject({
+  it('traduce PaymentResponse usando subscriberType (USER, STORE, vacío y desconocido) y planId del catálogo sin depender de planName', () => {
+    const catalog = mapPlansResponse([
+      { id: 101, name: 'Nivel Inicial', subscriberType: 'USER', price: { value: 0, currency: 'COP' }, active: true },
+      { id: 202, name: 'Promo Comprador', subscriberType: 'USER', price: { value: 14900, currency: 'COP' }, active: true },
+      { id: 303, name: 'Membresía Comercial', subscriberType: 'STORE', price: { value: 89000, currency: 'COP' }, active: true },
+    ])
+
+    // USER + planId del catálogo, con planName arbitrario (no influye en la lógica)
+    const userPayment = mapPaymentResponse(
+      {
+        id: 300,
+        subscriptionId: 55,
+        subscriberId: 'usr-abc-123',
+        subscriberType: 'USER',
+        planId: 202,
+        planName: 'Nombre Arbitrario Tienda',
+        amount: { value: 14900, currency: 'COP' },
+        status: 'APPROVED',
+        externalPaymentId: 'MP-EXT-300',
+        createdAt: '2026-11-20T12:00:00Z',
+      },
+      catalog,
+    )
+    expect(userPayment).toMatchObject({
       id: '300',
       suscripcionId: '55',
       suscriptorId: 'usr-abc-123',
-      backendPlanId: 2,
+      subscriberType: 'USER',
+      subscriberRoleLabel: 'Comprador',
+      userRole: 'BUYER',
+      backendPlanId: 202,
       planId: 'plus',
-      planName: 'Radar+',
+      planName: 'Nombre Arbitrario Tienda',
       amount: 14900,
       currency: 'COP',
       status: 'aprobado',
@@ -163,20 +181,63 @@ describe('adaptadores y mappers del contrato final de ms-pagos', () => {
       date: '2026-11-20',
     })
 
-    // Sin planName: muestra "—" y no adivina por el monto (aunque sea 89000)
-    const sinPlan = mapPaymentResponse({
+    // STORE + planId del catálogo
+    const storePayment = mapPaymentResponse(
+      {
+        id: 302,
+        subscriptionId: 57,
+        subscriberId: 'store-xyz',
+        subscriberType: 'STORE',
+        planId: 303,
+        planName: 'Cualquier Texto',
+        amount: { value: 89000, currency: 'COP' },
+        status: 'PENDING',
+        externalPaymentId: 'MP-EXT-302',
+        createdAt: '2026-11-21T10:00:00Z',
+      },
+      catalog,
+    )
+    expect(storePayment).toMatchObject({
+      subscriberType: 'STORE',
+      subscriberRoleLabel: 'Tienda',
+      userRole: 'STORE_ADMIN',
+      backendPlanId: 303,
+      planId: 'store',
+      planName: 'Cualquier Texto',
+    })
+
+    // subscriberType vacío y sin planName: muestra "—", no adivina por monto ni rompe
+    const emptyType = mapPaymentResponse({
       id: 301,
       subscriptionId: 56,
       subscriberId: 'store-xyz',
+      subscriberType: '',
       amount: { value: 89000, currency: 'COP' },
       status: 'DISPUTED',
       externalPaymentId: 'MP-EXT-301',
       createdAt: '2026-11-21T10:00:00Z',
     })
-    expect(sinPlan.planName).toBe('—')
-    expect(sinPlan.suscriptorId).toBe('store-xyz')
-    expect(sinPlan.unknownStatus).toBe('DISPUTED')
-    expect(formatStatusLabel('PENDIENTE', sinPlan.unknownStatus)).toBe('No reconocido (DISPUTED)')
+    expect(emptyType.subscriberType).toBeUndefined()
+    expect(emptyType.userRole).toBeUndefined()
+    expect(emptyType.subscriberRoleLabel).toBe('—')
+    expect(emptyType.planName).toBe('—')
+    expect(emptyType.suscriptorId).toBe('store-xyz')
+    expect(emptyType.unknownStatus).toBe('DISPUTED')
+    expect(formatStatusLabel('PENDIENTE', emptyType.unknownStatus)).toBe('No reconocido (DISPUTED)')
+
+    // subscriberType desconocido: muestra "—", no adivina ni rompe
+    expect(mapSubscriberTypeToRole('ENTERPRISE')).toEqual({
+      subscriberType: undefined,
+      userRole: undefined,
+      subscriberRoleLabel: '—',
+    })
+    expect(mapSubscriberTypeToRole(undefined)).toEqual({
+      subscriberType: undefined,
+      userRole: undefined,
+      subscriberRoleLabel: '—',
+    })
+    expect(formatSubscriptionDate('2026-12-09T23:59:59Z')).toBe('9 de diciembre de 2026')
+    registerCatalogPlans([])
 
     expect(mapPaymentStatus('PENDING')).toEqual({ status: 'pendiente', estado: 'PENDIENTE' })
     expect(mapPaymentStatus('APPROVED')).toEqual({ status: 'aprobado', estado: 'APROBADO' })
@@ -377,7 +438,7 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('PlansPage: «Usar gratis» cancela la renovación vía POST /subscriptions/{id}/cancel y luego muestra «Plan actual · no se renovará»', async () => {
+  it('PlansPage: «Dejar de renovar» confirma con endDate, llama POST /cancel, refresca GET /subscriptions/{id} y muestra Activa sin renovación', async () => {
     setSession('usr-42', 'BUYER', 'buyer@correo.co')
     const user = userEvent.setup()
     const getSpy = vi.spyOn(apiClient, 'get')
@@ -424,13 +485,212 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
       ),
     )
 
-    const usarGratisBtn = await screen.findByRole('button', { name: 'Usar gratis' })
-    await user.click(usarGratisBtn)
+    const dejarBtn = await screen.findByRole('button', { name: 'Dejar de renovar' })
+    const getCallsBeforeCancel = getSpy.mock.calls.length
+    await user.click(dejarBtn)
+
+    const dialogo = await screen.findByRole('dialog', { name: '¿Dejar de renovar Radar+?' })
+    expect(dialogo).toHaveTextContent('Tu plan no se renovará. Mantienes los beneficios hasta el 1 de diciembre de 2026')
+    await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
 
     await waitFor(() => {
       expect(postSpy).toHaveBeenCalledWith('/api/v1/subscriptions/usr-42/cancel', { confirmed: true })
     })
+    await waitFor(() => {
+      expect(getSpy.mock.calls.length).toBeGreaterThan(getCallsBeforeCancel)
+    })
     expect(await screen.findByRole('button', { name: 'Plan actual · no se renovará' })).toBeDisabled()
+    expect(screen.getAllByText(/Tu plan sigue activo hasta 1 de diciembre de 2026/).length).toBeGreaterThan(0)
+  })
+
+  it('oculta botones de nueva suscripción en ACTIVE, ACTIVE sin renovación y PENDING; «Volver a suscribirme» solo en SUSPENDIDA/VENCIDA', async () => {
+    setSession('usr-42', 'BUYER', 'buyer@correo.co')
+    const getSpy = vi.spyOn(apiClient, 'get')
+
+    // 1) PlansPage en PENDING: sin botón "Activar Radar+" ni "Volver a suscribirme"
+    getSpy.mockResolvedValue({
+      data: {
+        id: 11,
+        subscriberId: 'usr-42',
+        subscriberType: 'USER',
+        plan: { id: 2, name: 'Radar+', subscriberType: 'USER', price: { value: 14900, currency: 'COP' } },
+        status: 'PENDING',
+        autoRenewal: false,
+        access: false,
+      },
+    })
+    const { unmount: unmountPlansPending } = render(
+      withAuth(
+        <MemoryRouter initialEntries={['/planes']}>
+          <PlansPage />
+        </MemoryRouter>,
+        'BUYER',
+      ),
+    )
+    expect(await screen.findByText('Suscripción pendiente')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Activar Radar\+|Volver a suscribirme/i })).not.toBeInTheDocument()
+    unmountPlansPending()
+
+    // 2) CheckoutPage en ACTIVE sin renovación: muestra estado en vez del formulario de pago
+    getSpy.mockImplementation(async (url: string) => {
+      if (url === '/api/v1/plans') {
+        return {
+          data: [
+            { id: 1, name: 'Radar', subscriberType: 'USER', price: { value: 0, currency: 'COP' }, active: true },
+            { id: 2, name: 'Radar+', subscriberType: 'USER', price: { value: 14900, currency: 'COP' }, active: true },
+          ],
+        }
+      }
+      return {
+        data: {
+          id: 10,
+          subscriberId: 'usr-42',
+          subscriberType: 'USER',
+          plan: { id: 2, name: 'Radar+', subscriberType: 'USER', price: { value: 14900, currency: 'COP' } },
+          status: 'ACTIVE',
+          endDate: '2026-12-09',
+          autoRenewal: false,
+          access: true,
+        },
+      }
+    })
+    const { unmount: unmountCheckoutActive } = render(
+      withAuth(
+        <MemoryRouter initialEntries={['/suscripcion']}>
+          <CheckoutPage />
+        </MemoryRouter>,
+        'BUYER',
+      ),
+    )
+    expect(await screen.findByText('Tu plan sigue activo hasta 9 de diciembre de 2026')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Pagar con Mercado Pago/i })).not.toBeInTheDocument()
+    unmountCheckoutActive()
+
+    // 3) StoreActivateSubscriptionPage en PENDING: muestra estado en vez del formulario
+    setSession('store-uuid-9', 'STORE_ADMIN', 'tienda@correo.co')
+    getSpy.mockImplementation(async (url: string) => {
+      if (url === '/api/v1/payments/history') return { data: [] }
+      return {
+        data: {
+          id: 77,
+          subscriberId: 'store-uuid-9',
+          subscriberType: 'STORE',
+          plan: { id: 3, name: 'Store Basic', subscriberType: 'STORE', price: { value: 89000, currency: 'COP' } },
+          status: 'PENDING',
+          autoRenewal: false,
+          storeId: 'store-uuid-9',
+        },
+      }
+    })
+    const { unmount: unmountStoreActivate } = render(
+      withAuth(
+        <MemoryRouter initialEntries={['/tienda/suscripcion/activar']}>
+          <StoreActivateSubscriptionPage />
+        </MemoryRouter>,
+        'STORE_ADMIN',
+        'store-uuid-9',
+        'tienda@correo.co',
+      ),
+    )
+    expect(await screen.findByText('Ya tienes una suscripción activa o en proceso')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Continuar a Mercado Pago/i })).not.toBeInTheDocument()
+    unmountStoreActivate()
+
+    // 4) StoreSubscriptionPage en PENDING: sin botón de nueva suscripción
+    const { unmount: unmountStorePending } = render(
+      withAuth(
+        <MemoryRouter>
+          <StoreSubscriptionPage />
+        </MemoryRouter>,
+        'STORE_ADMIN',
+        'store-uuid-9',
+        'tienda@correo.co',
+      ),
+    )
+    expect(await screen.findByText('Pendiente')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Pagar y activar|Volver a suscribirme/i })).not.toBeInTheDocument()
+    unmountStorePending()
+  })
+
+  it('409 SUBSCRIPTION_ALREADY_EXISTS en POST /subscriptions/start muestra mensaje claro, refresca GET /subscriptions/{id} y no reintenta solo', async () => {
+    setSession('usr-42', 'BUYER', 'buyer@correo.co')
+    const user = userEvent.setup()
+    const getSpy = vi.spyOn(apiClient, 'get')
+    const postSpy = vi.spyOn(apiClient, 'post')
+
+    let subState: 'SUSPENDED' | 'ACTIVE' = 'SUSPENDED'
+    getSpy.mockImplementation(async (url: string) => {
+      if (url === '/api/v1/plans') {
+        return {
+          data: [
+            { id: 1, name: 'Radar', subscriberType: 'USER', price: { value: 0, currency: 'COP' }, active: true },
+            { id: 2, name: 'Radar+', subscriberType: 'USER', price: { value: 14900, currency: 'COP' }, active: true },
+          ],
+        }
+      }
+      return {
+        data: {
+          id: 10,
+          subscriberId: 'usr-42',
+          subscriberType: 'USER',
+          plan: { id: 2, name: 'Radar+', subscriberType: 'USER', price: { value: 14900, currency: 'COP' } },
+          status: subState,
+          endDate: '2026-12-09',
+          autoRenewal: subState === 'ACTIVE',
+          access: subState === 'ACTIVE',
+        },
+      }
+    })
+    postSpy.mockImplementationOnce(async () => {
+      subState = 'ACTIVE'
+      throw new ApiError(409, 'Conflicto', 'SUBSCRIPTION_ALREADY_EXISTS')
+    })
+
+    render(
+      withAuth(
+        <MemoryRouter initialEntries={['/suscripcion']}>
+          <CheckoutPage />
+        </MemoryRouter>,
+        'BUYER',
+      ),
+    )
+
+    const payBtn = await screen.findByRole('button', { name: 'Pagar con Mercado Pago' })
+    const subGetsBefore = getSpy.mock.calls.filter(([u]) => u === '/api/v1/subscriptions/usr-42').length
+    await user.click(payBtn)
+
+    expect(await screen.findByText('Ya tienes una suscripción activa o en proceso')).toBeInTheDocument()
+    expect(postSpy).toHaveBeenCalledTimes(1)
+    await waitFor(() => {
+      const subGetsAfter = getSpy.mock.calls.filter(([u]) => u === '/api/v1/subscriptions/usr-42').length
+      expect(subGetsAfter).toBeGreaterThan(subGetsBefore)
+    })
+  })
+
+  it('storeSubscriptionService.cancelRenewal consulta GET /subscriptions/{id} tras POST /cancel', async () => {
+    setSession('store-uuid-9', 'STORE_ADMIN', 'tienda@correo.co')
+    const postSpy = vi.spyOn(apiClient, 'post').mockResolvedValueOnce({
+      data: { subscriptionId: 77, autoRenewal: false, status: 'ACTIVE', endDate: '2026-12-09', cancellationConfirmed: true },
+    })
+    const getSpy = vi.spyOn(apiClient, 'get').mockResolvedValueOnce({
+      data: {
+        id: 77,
+        subscriberId: 'store-uuid-9',
+        subscriberType: 'STORE',
+        plan: { id: 3, name: 'Store Basic', subscriberType: 'STORE', price: { value: 89000, currency: 'COP' } },
+        status: 'ACTIVE',
+        startDate: '2026-11-09',
+        endDate: '2026-12-09',
+        autoRenewal: false,
+        storeId: 'store-uuid-9',
+      },
+    })
+
+    const updated = await storeSubscriptionService.cancelRenewal()
+    expect(postSpy).toHaveBeenCalledWith('/api/v1/subscriptions/store-uuid-9/cancel', { confirmed: true })
+    expect(getSpy).toHaveBeenCalledWith('/api/v1/subscriptions/store-uuid-9')
+    expect(updated.renewalEnabled).toBe(false)
+    expect(updated.fechaFin).toBe('2026-12-09')
   })
 
   it('StoreSubscriptionPage: en VENCIDA/SUSPENDIDA muestra «Volver a suscribirme» y llama POST /subscriptions/start con storeId de sesión', async () => {
