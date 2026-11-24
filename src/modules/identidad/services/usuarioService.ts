@@ -182,16 +182,20 @@ export const usuarioService = {
     return apiClient.patch<AdminUserDto>(`/api/v1/admin/users/${encodeURIComponent(id)}/status`, envio).then((r) => aUsuarioAdmin(r.data))
   },
 
-  /** Anexo D15: perfil de una cuenta (GET /api/v1/users/{id}). El comprador solo puede ver el suyo. */
+  /**
+   * Perfil de la persona con sesión. El documento (anexo D15) pide GET /api/v1/users/{id}, pero en
+   * ms-usuarios esa ruta todavía es solo del administrador (B-51 pendiente) y el comprador recibe 403.
+   * Mientras tanto se usa GET /api/v1/users/me, que toma el id del token. El id solo se usa con mocks.
+   */
   async get(id: string): Promise<PerfilDto> {
     if (env.useMocks) {
       failIfScenario()
       return mockDelay(perfilMock(id))
     }
-    return apiClient.get<UserProfileDto>(`/api/v1/users/${encodeURIComponent(id)}`).then((r) => aPerfil(r.data))
+    return apiClient.get<UserProfileDto>('/api/v1/users/me').then((r) => aPerfil(r.data))
   },
 
-  /** Perfil de la persona con sesión, por su id (sin /me). */
+  /** Perfil de la persona con sesión. */
   async me(): Promise<PerfilDto> {
     return this.get(idDeSesion())
   },
