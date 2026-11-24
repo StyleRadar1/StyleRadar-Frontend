@@ -739,11 +739,20 @@ html[data-theme='light'] .sr-vinyl-slot__lateral-caption {
 
 
 /* ---- Disco de Vinilo Realista ---- */
+@keyframes srVinylIdleSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .sr-vinyl-disc-idle {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  animation: srVinylIdleSpin 26s linear infinite;
+  animation: srVinylIdleSpin 22s linear infinite;
 }
 
 .sr-vinyl-disc-idle.is-paused {
