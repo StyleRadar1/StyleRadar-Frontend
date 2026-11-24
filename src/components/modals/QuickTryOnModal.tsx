@@ -564,14 +564,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                 aria-pressed={showFitMap}
                 title="Ver mapa de ajuste anatómico"
               >
-                🗺️ Mapa de ajuste
+                Mapa de ajuste
               </button>
               <button
                 className="cz-nav-pill"
                 onClick={handleShareLook}
                 title="Compartir look sin datos personales"
               >
-                🔗 Compartir look
+                Compartir look
               </button>
             </>
           )}
@@ -592,7 +592,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       {playlistNotice && (
         <div className="cz-playlist-alert-banner" role="status" aria-live="polite">
           <div className="cz-playlist-alert-content">
-            <span className="cz-alert-icon">ℹ️</span>
+            <span className="cz-alert-icon">ℹ</span>
             <span className="cz-alert-text">{playlistNotice.resumen}</span>
             {playlistNotice.fallidas.length > 0 && playlistNotice.fallidas[0].tallaSugerida && (
               <button
@@ -665,7 +665,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               className="cz-btn-primary-purple"
               onClick={handlePickGarment}
             >
-              <span>✨</span>
+              <span></span>
               <span>Escoger prenda para probar</span>
             </button>
 
@@ -673,7 +673,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               className="cz-btn-secondary-glass"
               onClick={handlePickPlaylist}
             >
-              <span>📑</span>
+              <span></span>
               <span>Escoger una playlist</span>
             </button>
           </div>
@@ -1012,13 +1012,13 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               to="/probador/avanzado"
               className="cz-photo-sub-btn inline-flex items-center justify-center no-underline"
             >
-              ✨ Probar con tu foto (IA)
+              Probar con tu foto (IA)
             </Link>
             <button
               className="cz-photo-sub-btn"
               onClick={() => fileRef.current?.click()}
             >
-              📷 Probar con mi foto
+              Probar con mi foto
             </button>
             {photoError && <p className="cz-photo-error">{photoError}</p>}
           </div>
@@ -1125,7 +1125,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                 {/* Grid de prendas del catálogo */}
                 {simulateOffline ? (
                   <div className="cz-empty-state-box" role="alert">
-                    <span className="cz-empty-icon">⚠️</span>
+                    <span className="cz-empty-icon"></span>
                     <h3>Sin conexión</h3>
                     <p>No pudimos cargar el catálogo. Revisa tu conexión a internet.</p>
                     <button className="cz-retry-btn" onClick={() => setSimulateOffline(false)}>
@@ -1134,7 +1134,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   </div>
                 ) : filteredCatalog.length === 0 ? (
                   <div className="cz-empty-state-box">
-                    <span className="cz-empty-icon">🔍</span>
+                    <span className="cz-empty-icon"></span>
                     <h3>No encontramos prendas</h3>
                     <p>Intenta ajustar tus filtros de búsqueda o categoría.</p>
                     <button
@@ -1320,7 +1320,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                     }}
                   >
                     <p style={{ fontWeight: 700, margin: 0 }}>
-                      {fit.apta ? '✓' : '⚠️'} Ajuste estimado: {fit.veredicto} {fit.motivo ? `· ${fit.motivo}` : ''}
+                      {fit.apta ? '✓' : ''} Ajuste estimado: {fit.veredicto} {fit.motivo ? `· ${fit.motivo}` : ''}
                     </p>
                     <p style={{ fontSize: '0.6875rem', opacity: 0.85, margin: '2px 0 0 0' }}>
                       Validación anatómica orientativa (RF-24). No garantiza ajuste físico exacto.

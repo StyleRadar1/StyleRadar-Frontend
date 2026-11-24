@@ -165,9 +165,9 @@ export function BodyMeasurementsWizardModal({
               <div className="grid grid-cols-3 gap-3">
                 {(
                   [
-                    { id: 'femenino', label: 'Femenino', icon: '👗', desc: 'Curvas acentuadas y cintura definida' },
-                    { id: 'masculino', label: 'Masculino', icon: '👔', desc: 'Hombros anchos y corte recto' },
-                    { id: 'neutro', label: 'Neutro', icon: '✨', desc: 'Silueta recta balanceada' },
+                    { id: 'femenino', label: 'Femenino', icon: '', desc: 'Curvas acentuadas y cintura definida' },
+                    { id: 'masculino', label: 'Masculino', icon: '', desc: 'Hombros anchos y corte recto' },
+                    { id: 'neutro', label: 'Neutro', icon: '', desc: 'Silueta recta balanceada' },
                   ] as const
                 ).map((c) => (
                   <button
@@ -400,7 +400,7 @@ export function BodyMeasurementsWizardModal({
                 onClick={handleEstimate}
                 className="px-4 py-2 rounded-xl bg-purple-600/30 border border-purple-400/40 text-purple-200 text-xs font-bold hover:bg-purple-600/50 transition active:scale-95 shadow-sm"
               >
-                ✨ No sé mis medidas (Estimar)
+                No sé mis medidas (Estimar)
               </button>
             </div>
 
@@ -417,13 +417,13 @@ export function BodyMeasurementsWizardModal({
                 Guía rápida de medición:
               </span>
               <p className="text-white/80 leading-relaxed">
-                {activeGuideKey === 'pecho' && '📏 Pecho/Busto: Pasa la cinta métrica horizontalmente por la parte más prominente del busto o tórax.'}
-                {activeGuideKey === 'cintura' && '📏 Cintura: Mide alrededor de tu cintura natural, justo por encima del ombligo, sin apretar.'}
-                {activeGuideKey === 'cadera' && '📏 Cadera: Mide la circunferencia en el punto más ancho de los glúteos con los pies juntos.'}
-                {activeGuideKey === 'hombros' && '📏 Hombros: Distancia en línea recta desde la punta del hombro izquierdo al derecho.'}
-                {activeGuideKey === 'largoBrazo' && '📏 Brazo: Desde el borde del hombro hasta la muñeca con el brazo ligeramente doblado.'}
-                {activeGuideKey === 'largoTorso' && '📏 Torso: Desde la base del cuello hasta la línea de la cintura.'}
-                {activeGuideKey === 'largoPierna' && '📏 Pierna: Desde la cintura hasta el tobillo por el costado exterior.'}
+                {activeGuideKey === 'pecho' && 'Pecho/Busto: Pasa la cinta métrica horizontalmente por la parte más prominente del busto o tórax.'}
+                {activeGuideKey === 'cintura' && 'Cintura: Mide alrededor de tu cintura natural, justo por encima del ombligo, sin apretar.'}
+                {activeGuideKey === 'cadera' && 'Cadera: Mide la circunferencia en el punto más ancho de los glúteos con los pies juntos.'}
+                {activeGuideKey === 'hombros' && 'Hombros: Distancia en línea recta desde la punta del hombro izquierdo al derecho.'}
+                {activeGuideKey === 'largoBrazo' && 'Brazo: Desde el borde del hombro hasta la muñeca con el brazo ligeramente doblado.'}
+                {activeGuideKey === 'largoTorso' && 'Torso: Desde la base del cuello hasta la línea de la cintura.'}
+                {activeGuideKey === 'largoPierna' && 'Pierna: Desde la cintura hasta el tobillo por el costado exterior.'}
               </p>
             </div>
 

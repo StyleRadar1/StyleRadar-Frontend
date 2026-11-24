@@ -154,7 +154,7 @@ export function SizeGuideModal({ isOpen, onClose, tipoPrenda = 'general' }: Size
         {/* Consejo local */}
         <div className="mt-5 rounded-2xl bg-[var(--color-surface-raised)]/70 border border-[var(--color-border)] p-4 text-xs text-[var(--color-text-muted)] leading-relaxed">
           <p className="font-semibold text-[var(--color-text)] mb-1">
-            💡 ¿Tienes dudas con el corte o la silueta?
+            ¿Tienes dudas con el corte o la silueta?
           </p>
           Las prendas de autor y segunda mano en Bogotá pueden tener variaciones según el patronaje de cada taller o marca. Si dudas entre dos tallas, pulsa en «Escribir a la tienda» para confirmar medidas exactas antes de reservar o visitarlos.
         </div>

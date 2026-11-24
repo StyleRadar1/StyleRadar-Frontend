@@ -1327,7 +1327,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   onClick={() => fillTestOtp('123456')}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#E8DCCB] text-[#16111e] hover:bg-white shadow-md active:scale-95 transition-all cursor-pointer"
                 >
-                  <span>⚡ Rellenar código válido:</span>
+                  <span>Rellenar código válido:</span>
                   <span className="font-mono tracking-widest font-black text-sm">123456</span>
                 </button>
                 <button

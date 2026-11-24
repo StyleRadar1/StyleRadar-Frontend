@@ -528,7 +528,7 @@ export default function TryOnPage() {
                             <img src={hj.resultUrl || hj.resultImageUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
                           ) : (
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-surface-subtle)] text-xs">
-                              📸
+                              
                             </div>
                           )}
                           <div>

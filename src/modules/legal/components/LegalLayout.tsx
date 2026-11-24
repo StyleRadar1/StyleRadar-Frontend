@@ -174,9 +174,9 @@ export function LegalLayout({ docMeta, sections = [], children }: LegalLayoutPro
 
               {/* Badges de lectura y jurisdicción */}
               <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]/50">
-                <span>⏱️ Lectura estimada: ~{docMeta.readTimeMinutes} min</span>
+                <span>⏱Lectura estimada: ~{docMeta.readTimeMinutes} min</span>
                 <span>🇨🇴 Jurisdicción: Bogotá D.C., Colombia</span>
-                <span>⚖️ Regulador: Superintendencia de Industria y Comercio (SIC)</span>
+                <span>Regulador: Superintendencia de Industria y Comercio (SIC)</span>
               </div>
             </header>
 

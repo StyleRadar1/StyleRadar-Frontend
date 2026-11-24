@@ -74,14 +74,6 @@ export default function DonatePage() {
   return (
     <div className="sr-donaciones-page min-h-screen">
       <section className="mx-auto max-w-3xl px-4 py-12">
-      <div className="mb-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-4 text-xs text-[var(--color-text-muted)] flex flex-wrap items-center justify-between gap-3 shadow-sm">
-        <span>
-          🎁 <strong>Estás donando prendas a fundaciones aliadas ($0 COP)</strong>. Si deseas vender tu ropa usada a otros usuarios:
-        </span>
-        <Link to="/segunda-mano/publicar" className="font-bold text-[var(--color-accent)] hover:underline">
-          Vender en Segunda Mano →
-        </Link>
-      </div>
       <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Donar una prenda</p>
       <h1 ref={heading} tabIndex={-1} className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-text)] outline-none md:text-4xl">{STEPS[step]}</h1>
       <div className="mt-5"><Steps steps={STEPS} current={step} /></div>

@@ -289,7 +289,7 @@ export default function ModerationPage() {
 
                 {item.nota && (
                   <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200">
-                    ⚠️ {item.nota}
+                    {item.nota}
                   </p>
                 )}
 

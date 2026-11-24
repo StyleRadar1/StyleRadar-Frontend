@@ -98,7 +98,7 @@ export default function PqrsPage() {
             aria-live="polite"
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-2xl" aria-hidden="true">✅</span>
+              <span className="text-2xl" aria-hidden="true"></span>
               <div>
                 <h3 className="font-bold text-base text-white">¡Solicitud radicada con éxito!</h3>
                 <p className="text-xs text-emerald-300">
@@ -108,8 +108,8 @@ export default function PqrsPage() {
             </div>
             <p className="leading-relaxed text-emerald-200">{response.mensaje}</p>
             <div className="flex flex-wrap items-center gap-4 pt-2 text-xs border-t border-emerald-800/40 text-emerald-300">
-              <span>📅 Fecha: {response.fechaRadicacion}</span>
-              <span>⏱️ Plazo de respuesta: {response.tiempoRespuestaDiasHabiles} días hábiles</span>
+              <span>Fecha: {response.fechaRadicacion}</span>
+              <span>⏱Plazo de respuesta: {response.tiempoRespuestaDiasHabiles} días hábiles</span>
               <button
                 type="button"
                 onClick={() => setResponse(null)}

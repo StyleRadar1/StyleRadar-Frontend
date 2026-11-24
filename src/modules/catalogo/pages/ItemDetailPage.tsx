@@ -403,7 +403,7 @@ export default function ItemDetailPage() {
                     title={zoomActivo ? 'Desactivar zoom' : 'Inspeccionar textura / Zoom'}
                     aria-label={zoomActivo ? 'Desactivar zoom' : 'Inspeccionar textura / Zoom'}
                   >
-                    <span>{zoomActivo ? '✕' : '🔍'}</span>
+                    <span>{zoomActivo ? '✕' : ''}</span>
                     <span className="hidden sm:inline">{zoomActivo ? 'Cerrar zoom' : 'Zoom textura'}</span>
                   </button>
 
@@ -609,7 +609,7 @@ export default function ItemDetailPage() {
                             onClick={() => setGuiaTallasAbierta(true)}
                             className="text-[var(--color-accent)] hover:underline capitalize font-semibold tracking-normal text-[11px]"
                           >
-                            📏 Guía de tallas
+                            Guía de tallas
                           </button>
                         </div>
                         {tallaSeleccionada && (
@@ -716,7 +716,7 @@ export default function ItemDetailPage() {
                           : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:bg-white/10 hover:border-purple-400/40'
                       }`}
                     >
-                      <span>📑</span>
+                      <span></span>
                       <span>{guardadoPlaylist ? 'En tu playlist de estilo' : 'Guardar en playlist'}</span>
                     </button>
 
@@ -732,13 +732,13 @@ export default function ItemDetailPage() {
                           aria-label="Probarme esta prenda en el probador - Probar en el maniquí"
                           className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/60 px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition backdrop-blur-md shadow-[0_2px_12px_rgba(168,85,247,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                         >
-                          <span>✨ Probar en el maniquí</span>
+                          <span>Probar en el maniquí</span>
                         </Link>
                         <Link
                           to={`/probador/avanzado?prenda=${prenda.id}&talla=${encodeURIComponent(tallaSeleccionada || prenda.tallas[0] || 'M')}`}
                           className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-violeta/40 bg-violeta/15 hover:bg-violeta/25 px-4 py-2 text-xs font-semibold text-[var(--color-text)] transition"
                         >
-                          <span>📷 Probar con tu foto (IA)</span>
+                          <span>Probar con tu foto (IA)</span>
                         </Link>
                       </div>
                     )}

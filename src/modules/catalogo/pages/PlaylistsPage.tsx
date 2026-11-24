@@ -617,7 +617,7 @@ export default function PlaylistsPage() {
                         title="Eliminar playlist"
                         className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:bg-rose-500/20 hover:border-rose-400/50 hover:text-rose-400 text-white/70 flex items-center justify-center text-sm transition active:scale-95"
                       >
-                        🗑
+                        
                       </button>
                       <button
                         type="button"
@@ -656,7 +656,7 @@ export default function PlaylistsPage() {
                             : 'border-white/20 bg-white/5 hover:bg-white/10 text-white/70'
                         }`}
                       >
-                        {isLiked ? '❤️' : '🤍'}
+                        {isLiked ? '' : ''}
                       </button>
                       <button
                         type="button"
@@ -685,7 +685,7 @@ export default function PlaylistsPage() {
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-xl overflow-hidden shadow-xl">
             {prendas.length === 0 ? (
               <div className="p-12 text-center">
-                <span className="text-4xl block mb-2">📑</span>
+                <span className="text-4xl block mb-2"></span>
                 <p className="text-base font-bold text-white">Tu playlist está vacía</p>
                 <p className="text-xs text-white/50 mt-1 max-w-sm mx-auto">
                   Agrega prendas desde el catálogo. Puedes incluir hasta 15 prendas en esta colección.
@@ -798,7 +798,7 @@ export default function PlaylistsPage() {
                               aria-label={`Me gusta ${p.nombre}`}
                               className="text-white/30 hover:text-rose-400 p-1 text-sm transition"
                             >
-                              🤍
+                              
                             </button>
                           )}
                         </td>

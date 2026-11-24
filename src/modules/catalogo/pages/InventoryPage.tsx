@@ -1465,7 +1465,7 @@ export default function InventoryPage() {
                       </>
                     ) : (
                       <div className="flex flex-col items-center text-center p-1.5 text-white/40">
-                        <span className="text-base opacity-40">📷</span>
+                        <span className="text-base opacity-40"></span>
                         <span className="mt-1 text-[9px] font-medium">{slotLabel}</span>
                       </div>
                     )}
@@ -1481,7 +1481,7 @@ export default function InventoryPage() {
                   className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/30 bg-black/30 px-3 text-center transition hover:border-violeta-claro hover:bg-black/50"
                 >
                   <span className="text-xs font-medium text-white/90">
-                    📷 {nuevasImagenes.length === 0 ? 'Subir fotos de la prenda' : `+ Agregar otra foto (${nuevasImagenes.length}/${MAX_GARMENT_PHOTOS})`}
+                    {nuevasImagenes.length === 0 ? 'Subir fotos de la prenda' : `+ Agregar otra foto (${nuevasImagenes.length}/${MAX_GARMENT_PHOTOS})`}
                   </span>
                 </label>
                 <input

@@ -129,7 +129,7 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
             title="Probar en el maniquí"
             aria-label={`Probar ${item.nombre} en el maniquí`}
           >
-            <span>✨</span>
+            <span></span>
             <span>Probar en el maniquí</span>
           </Link>
 

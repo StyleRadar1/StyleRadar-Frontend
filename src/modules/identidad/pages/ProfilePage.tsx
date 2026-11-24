@@ -281,7 +281,7 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
                   className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-2 text-xs font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)] transition cursor-pointer"
                   title="Descargar mis datos corporales en JSON (Ley 1581)"
                 >
-                  📥 Descargar datos
+                  Descargar datos
                 </button>
               )}
             </div>

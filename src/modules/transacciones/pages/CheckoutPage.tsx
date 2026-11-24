@@ -116,7 +116,7 @@ function CheckoutResult() {
     )
   }
 
-  const icons: Record<string, string> = { aprobado: '✅', pendiente: '⏳', rechazado: '❌' }
+  const icons: Record<string, string> = { aprobado: '', pendiente: '', rechazado: '' }
   const messages: Record<string, string> = {
     aprobado: '¡Tu pago fue aprobado! Ya tienes acceso a todos los beneficios de tu plan',
     pendiente: 'Tu pago continúa pendiente de confirmación',
@@ -401,7 +401,7 @@ function PlansSelector() {
       {/* Aviso de cumplimiento normativo y derecho de retracto en compras electrónicas */}
       <div className="mt-12 rounded-2xl border border-[var(--color-border)]/60 bg-[var(--color-surface-raised)]/30 p-5 text-center text-xs text-[var(--color-text-muted)] space-y-2">
         <p>
-          🔒 Transacciones seguras procesadas en pesos colombianos (COP) con IVA incluido a través de pasarelas de pago certificadas.
+          Transacciones seguras procesadas en pesos colombianos (COP) con IVA incluido a través de pasarelas de pago certificadas.
         </p>
         <p>
           Al contratar un plan o adquirir prendas a través de Style Radar, aplicas a las garantías legales de la Ley 1480 de 2011 y al{' '}

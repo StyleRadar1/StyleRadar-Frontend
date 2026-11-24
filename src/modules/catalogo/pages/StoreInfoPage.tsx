@@ -183,7 +183,7 @@ export default function StoreInfoPage() {
             <p>Se muestra en el radar de Bogotá, en el hero de tu panel y en tu perfil de tienda.</p>
             <div className="store-info__photo-actions">
               <label className="store-info__button store-info__button--primary cursor-pointer inline-flex items-center justify-center gap-2">
-                <span>📷 Cambiar foto</span>
+                <span>Cambiar foto</span>
                 <input type="file" accept="image/*" className="sr-only" onChange={handleCambiarFoto} />
               </label>
               {storePhoto !== DEFAULT_PHOTO && (

@@ -273,7 +273,7 @@ export default function PublishListingPage() {
             className={`flex flex-col text-left p-4 rounded-2xl border transition-all cursor-pointer ${
               !form.esDonacion
                 ? 'border-[var(--color-accent)] bg-[var(--color-surface)] ring-2 ring-[var(--color-focus-ring)] shadow-sm'
-                : 'border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
+                : 'border-[var(--color-border)] bg-[var(--color-surface)]/95 text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -293,7 +293,7 @@ export default function PublishListingPage() {
             className={`flex flex-col text-left p-4 rounded-2xl border transition-all cursor-pointer ${
               form.esDonacion
                 ? 'border-[var(--color-accent)] bg-[var(--color-surface)] ring-2 ring-[var(--color-focus-ring)] shadow-sm'
-                : 'border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
+                : 'border-[var(--color-border)] bg-[var(--color-surface)]/95 text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
             }`}
           >
             <div className="flex items-center justify-between">
