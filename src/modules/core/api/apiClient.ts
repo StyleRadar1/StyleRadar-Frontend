@@ -4,6 +4,7 @@ import { tokenStorage } from './tokenStorage'
 import { camposDelError, kindFromStatus, MENSAJES, mensajePorCodigo, type CamposConError } from './mensajes'
 import { guardarRetorno } from './retorno'
 import { avisarSinConexion } from './conexion'
+import { renovarSiHaceFalta } from './renovarSesion'
 
 /**
  * Cliente HTTP único. Todas las peticiones van al API Gateway;
@@ -15,7 +16,8 @@ export const apiClient = axios.create({
   timeout: 15000,
 })
 
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(async (config) => {
+  await renovarSiHaceFalta(config.url)
   const token = tokenStorage.get()
   if (token) config.headers.Authorization = `Bearer ${token}`
   if (config.data instanceof FormData) {

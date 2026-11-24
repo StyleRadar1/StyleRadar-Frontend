@@ -61,6 +61,12 @@ describe('admin de tiendas contra ms-tiendas (SR-RF-62 · F-15 · F-16 · F-24)'
     expect(put).toHaveBeenCalledWith('/api/v1/admin/stores/9018801142/administrators/9')
   })
 
+  it('extender el periodo gratuito no llama a ninguna ruta del back (no existe todavía)', async () => {
+    const post = vi.spyOn(apiClient, 'post')
+    await expect(adminStoreService.extendTrial('9018801142')).rejects.toMatchObject({ status: 501 })
+    expect(post).not.toHaveBeenCalled()
+  })
+
   it('el detalle abre el RUT que manda el back', async () => {
     vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
       if (url === '/api/v1/admin/stores/9018801142/verification') return { data: ROPERO }

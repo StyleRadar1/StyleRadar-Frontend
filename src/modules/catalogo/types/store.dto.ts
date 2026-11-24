@@ -91,3 +91,43 @@ export interface ReorderPhotosRequestDto { photoIds: (number | string)[] }
 export const MAX_STORE_PHOTOS = 6
 export const MAX_STORE_PHOTO_BYTES = 6 * 1024 * 1024
 export const ALLOWED_STORE_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
+
+/*
+ * F-21 · registro del almacén (anexo de ms-tiendas y precondición de SR-RF-62).
+ * POST /api/v1/stores/documents/rut (multipart, campo file, PDF de máximo 5 MB) devuelve la URL del RUT;
+ * POST /api/v1/stores registra el almacén con esa URL y queda PENDING hasta que el administrador lo verifique.
+ */
+export type StoreCategory = 'CASUAL' | 'FORMAL' | 'SPORTY' | 'VINTAGE' | 'ACCESSORIES'
+export const STORE_CATEGORIES: StoreCategory[] = ['CASUAL', 'FORMAL', 'SPORTY', 'VINTAGE', 'ACCESSORIES']
+export const STORE_CATEGORY_TEXT: Record<StoreCategory, string> = {
+  CASUAL: 'Casual', FORMAL: 'Formal', SPORTY: 'Deportivo', VINTAGE: 'Vintage', ACCESSORIES: 'Accesorios',
+}
+
+export interface RegisterStoreRequestDto {
+  nit: string
+  tradeName: string
+  description?: string
+  phone?: string
+  contactEmail: string
+  latitude?: number
+  longitude?: number
+  categories: StoreCategory[]
+  rutPdfUrl: string
+}
+
+/** Respuesta del registro (201): el almacén con su estado de verificación. */
+export interface RegisteredStoreDto extends StoreResponseDto {
+  rutPdfUrl?: string | null
+}
+
+/** Respuesta de POST /api/v1/stores/documents/rut. */
+export interface UploadedDocumentDto {
+  url: string
+  fileName?: string
+  contentType?: string
+  registeredAt?: string
+}
+
+export const MAX_RUT_BYTES = 5 * 1024 * 1024
+/** Límites de RegistrarAlmacenRequestDTO. */
+export const STORE_REGISTER_LIMITS = { tradeNameMin: 2, tradeNameMax: 120, description: 500, phone: 30 } as const

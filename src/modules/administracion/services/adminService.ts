@@ -158,7 +158,10 @@ export const adminStoreService = {
     }
     return apiClient.put<StoreAdministratorDto>(`${API.tiendas}/${encodeURIComponent(nit)}/administrators/${encodeURIComponent(uid)}`).then((r) => r.data)
   },
-  /** Extiende 15 días el periodo gratuito. */
+  /**
+   * Extiende 15 días el periodo gratuito. Solo existe con datos de prueba: ni ms-tiendas
+   * ni pagos tienen todavía una ruta para esto, así que con el back no se llama a nada.
+   */
   async extendTrial(id: string): Promise<AdminStoreDto> {
     if (env.useMocks) {
       failIfScenario('conflicto')
@@ -167,8 +170,7 @@ export const adminStoreService = {
       t.suscripcion = { ...t.suscripcion, proximo: `${t.suscripcion.proximo} + 15 días` }
       return mockDelay(t)
     }
-    // La suscripción es de pagos, no de ms-tiendas: esta ruta sigue igual hasta que ese equipo la defina.
-    return apiClient.post<AdminStoreDto>(`/api/v1/admin/almacenes/${encodeURIComponent(id)}/extender-prueba`, { dias: 15 }).then((r) => r.data)
+    throw new ApiError(501, 'Esta acción todavía no está disponible.')
   },
 }
 
@@ -243,14 +245,14 @@ export const adminFoundationService = {
     if (env.useMocks) { failIfScenario(); return mockDelay(fundacion(id)) }
     return apiClient.get<FoundationResponseDto>(`${API.fundaciones}/${encodeURIComponent(id)}`).then((r) => aFundacionAdmin(r.data))
   },
-  /** SR-RF-63: sube el PDF con POST /api/v1/admin/foundations/certificates y devuelve la URL para legalEntityCertificateUrl. */
+  /** SR-RF-63: sube el PDF con POST /api/v1/admin/foundations/certificates (multipart, campo file) y devuelve la URL para legalEntityCertificateUrl. */
   async uploadCertificate(file: File): Promise<string> {
     if (env.useMocks) {
       failIfScenario()
       return mockDelay(`https://mock.styleradar.co/foundations/certificates/${encodeURIComponent(file.name)}`, 300)
     }
     const body = new FormData()
-    body.append('certificate', file)
+    body.append('file', file)
     const r = await apiClient.post<string | { url?: string; legalEntityCertificateUrl?: string }>(`${API.fundaciones}/certificates`, body)
     const url = typeof r.data === 'string' ? r.data : r.data?.url ?? r.data?.legalEntityCertificateUrl ?? ''
     if (!url) throw new ApiError(500, 'No pudimos subir el certificado. Intenta de nuevo.')

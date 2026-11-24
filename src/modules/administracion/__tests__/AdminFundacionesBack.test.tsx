@@ -46,7 +46,7 @@ describe('fundaciones contra ms-tiendas (SR-RF-63 a 65 · F-17 · F-18)', () => 
     expect(await adminFoundationService.uploadCertificate(file)).toBe('https://blob.test/b.pdf')
     const [url, body] = post.mock.calls[0]
     expect(url).toBe('/api/v1/admin/foundations/certificates')
-    expect((body as FormData).get('certificate')).toBe(file)
+    expect((body as FormData).get('file')).toBe(file)
   })
 
   it('edita con PUT /{id} y cambia el estado con PATCH /deactivate y /activate y ?reason= opcional', async () => {
