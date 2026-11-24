@@ -7,17 +7,20 @@ import { useAuth } from '../hooks/useAuth'
 import { DEMO_ACCOUNTS } from '../mocks/demoAccounts'
 import { DEMO_GOOGLE_PREFIX } from '../services/authService'
 import type { UserSessionDto } from '../types/auth.dto'
-import { googleIdToken } from '../utils/googleIdentity'
+import { googleIdToken, isGoogleConfigured, renderGoogleSignInButton } from '../utils/googleIdentity'
 
 /**
- * P14 · «Continuar con Google» en lugar del código OTP. Con servicios reales usa Google Identity Services;
- * en modo demostración muestra un selector con las cuentas de prueba (no se conecta con Google).
+ * P14 · «Continuar con Google» en lugar del código OTP. Con servicios reales usa el botón oficial
+ * de Google Identity Services (evita bloqueos de One Tap / FedCM); en modo demostración muestra
+ * un selector con las cuentas de prueba.
  */
 export function GoogleSignIn({ onSignedIn }: { onSignedIn: (user: UserSessionDto) => void }) {
   const { loginWithGoogle } = useAuth()
   const [picking, setPicking] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const btnRef = useRef<HTMLDivElement>(null)
+  const useOfficialBtn = !env.useMocks && isGoogleConfigured()
 
   const enter = async (idToken: string) => {
     setBusy(true); setError('')
@@ -25,24 +28,42 @@ export function GoogleSignIn({ onSignedIn }: { onSignedIn: (user: UserSessionDto
     catch (e) { setError(errorDeGoogle(e)) }
     finally { setBusy(false) }
   }
+
+  useEffect(() => {
+    if (!useOfficialBtn || !btnRef.current) return
+    let active = true
+    renderGoogleSignInButton(
+      btnRef.current,
+      (token) => { if (active) void enter(token) },
+      (err) => { if (active) setError(errorDeGoogle(err)) },
+    )
+    return () => { active = false }
+  }, [useOfficialBtn])
+
   const start = async () => {
     if (env.useMocks) { setPicking(true); return }
     setError('')
-    // Si la persona cierra la ventana de Google o algo falla: «No pudimos entrar con Google».
     try { await enter(await googleIdToken()) } catch (e) { setError(errorDeGoogle(e)) }
   }
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={start}
-        disabled={busy}
-        className="flex w-full items-center justify-center gap-3 rounded-xl border border-lavanda bg-blanco px-5 py-3 text-sm font-semibold text-grafito transition hover:bg-arena focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-60"
-      >
-        <GoogleLogo />
-        {busy ? 'Entrando…' : 'Continuar con Google'}
-      </button>
+      {useOfficialBtn ? (
+        <div
+          ref={btnRef}
+          className={`flex min-h-[44px] w-full items-center justify-center overflow-hidden rounded-xl ${busy ? 'pointer-events-none opacity-60' : ''}`}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={start}
+          disabled={busy}
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-lavanda bg-blanco px-5 py-3 text-sm font-semibold text-grafito transition hover:bg-arena focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-60"
+        >
+          <GoogleLogo />
+          {busy ? 'Entrando…' : 'Continuar con Google'}
+        </button>
+      )}
       {error && (
         <p
           role="alert"
