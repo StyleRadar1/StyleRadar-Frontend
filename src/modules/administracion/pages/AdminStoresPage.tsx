@@ -1,6 +1,7 @@
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { descargarCsv } from '@/modules/soporte/utils/charts'
+import { AvisoEliminado } from '../components/EliminarRegistro'
 import { AdminHeader, AdminTable, EditLink, StatusBadge, Who, type Columna } from '../components/AdminUi'
 import { adminStoreService } from '../services/adminService'
 import type { AdminStoreDto } from '../types/admin.dto'
@@ -21,6 +22,7 @@ export default function AdminStoresPage() {
   return (
     <>
       <AdminHeader kicker="Configuración" title="Tiendas" />
+      <AvisoEliminado />
       {loading ? <Loading label="Cargando tiendas…" /> : error ? <ErrorState error={error} onRetry={reload} title="No pudimos cargar las tiendas" /> : (
         <AdminTable rows={data} columnas={COLUMNAS} keyOf={(t) => t.id} titulo={(t) => t.nombre} vacio="No hay tiendas con esos filtros."
           buscar={{ placeholder: 'Buscar tienda, NIT o barrio', texto: (t) => `${t.nombre} ${t.nit} ${t.barrio}` }}

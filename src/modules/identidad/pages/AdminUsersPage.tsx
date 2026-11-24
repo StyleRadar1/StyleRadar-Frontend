@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AvisoEliminado } from '@/modules/administracion/components/EliminarRegistro'
 import { Toasts } from '@/modules/core/components/errores'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
@@ -56,6 +57,7 @@ export default function AdminUsersPage() {
       <p className="text-[11px] font-bold uppercase tracking-[.2em] text-arena">Administración</p>
       <h1 className="mt-2 text-4xl font-extrabold tracking-tight md:text-5xl">Usuarios</h1>
       <p className="mt-2 max-w-2xl text-sm text-white/70">Busca una cuenta y cambia su estado. Activa: puede usar StyleRadar. Inactiva: sin uso reciente. Bloqueada: no puede iniciar sesión.</p>
+      <div className="mt-4"><AvisoEliminado /></div>
 
       <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-end">
         <div className="flex-1">

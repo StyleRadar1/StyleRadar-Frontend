@@ -158,6 +158,20 @@ export const usuarioService = {
     return apiClient.get<AdminUserDto>(`/api/v1/admin/users/${encodeURIComponent(id)}`).then((r) => aUsuarioAdmin(r.data))
   },
 
+  /**
+   * SR-RF-115: elimina la cuenta de forma definitiva (DELETE /api/v1/admin/users/{id}) → 204.
+   * 404 (USER_NOT_FOUND) si ya fue eliminada: la pantalla lo trata como ya eliminada.
+   */
+  async removeAdmin(id: string): Promise<void> {
+    if (env.useMocks) {
+      failIfScenario()
+      if (!usuarios.some((x) => x.id === id)) throw new ApiError(404, 'Esa cuenta ya no existe.', 'USER_NOT_FOUND')
+      usuarios = usuarios.filter((x) => x.id !== id)
+      return mockDelay(undefined, 300)
+    }
+    await apiClient.delete(`/api/v1/admin/users/${encodeURIComponent(id)}`)
+  },
+
   /** SR-RF-66: cambia una cuenta a Activa, Inactiva o Bloqueada (PATCH /api/v1/admin/users/{id}/status). */
   async setStatus(id: string, body: ChangeStatusRequestDto): Promise<AdminUserDto> {
     const reason = body.reason?.trim()

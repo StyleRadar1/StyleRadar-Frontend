@@ -76,4 +76,9 @@ describe('admin de tiendas contra ms-tiendas (SR-RF-62 · F-15 · F-16 · F-24)'
     const docs = await screen.findByRole('list', { name: 'Documentos' })
     expect(within(docs).getByRole('link', { name: /Abrir RUT/ })).toHaveAttribute('href', 'https://blob.test/rut-9018801142.pdf')
   })
+  it('SR-RF-119: eliminar la tienda usa DELETE /api/v1/admin/stores/{nit}', async () => {
+    const del = vi.spyOn(apiClient, 'delete').mockResolvedValue({ status: 204, data: '' })
+    await adminStoreService.remove('9018801142')
+    expect(del).toHaveBeenCalledWith('/api/v1/admin/stores/9018801142')
+  })
 })

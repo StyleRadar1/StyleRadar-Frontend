@@ -6,6 +6,7 @@ import { ErrorToast, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { usuarioService } from '@/modules/identidad/services/usuarioService'
+import { EliminarRegistro } from '../components/EliminarRegistro'
 import { AdminCard, AdminHeader, Dl, HBars, StatusBadge, Who } from '../components/AdminUi'
 import { FoundationForm } from '../components/FoundationForm'
 import { aFormularioFundacion, adminFoundationService } from '../services/adminService'
@@ -120,6 +121,16 @@ export default function AdminFoundationDetailPage() {
             {f.estado === 'Activa'
               ? <button type="button" disabled={busy} onClick={() => setCambio('Inactiva')} className="rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-[#ffb4b4]">Desactivar fundación</button>
               : <button type="button" disabled={busy} onClick={() => setCambio('Activa')} className="rounded-xl bg-violeta px-4 py-2.5 text-sm font-semibold">Reactivar fundación</button>}
+          </div>
+        </AdminCard>
+
+        <AdminCard title="Eliminar fundación">
+          <p className="text-sm text-white/75">Borra la fundación y su certificado de personería jurídica. Para que deje de recibir donaciones sin perder su historial usa «Desactivar fundación».</p>
+          <div className="mt-4">
+            <EliminarRegistro boton="Eliminar" titulo={`¿Eliminar ${f.name}?`}
+              texto="Se borran la fundación y su certificado de personería jurídica."
+              eliminar={() => adminFoundationService.remove(f.id)} volverA="/admin/fundaciones"
+              avisoOk={`${f.name} fue eliminada.`} avisoYaNoExiste="Esa fundación ya había sido eliminada." />
           </div>
         </AdminCard>
 

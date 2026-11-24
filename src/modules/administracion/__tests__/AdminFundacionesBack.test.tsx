@@ -66,4 +66,9 @@ describe('fundaciones contra ms-tiendas (SR-RF-63 a 65 · F-17 · F-18)', () => 
       .toEqual({ certificate: 'El certificado de personería jurídica en PDF es obligatorio para registrar la fundación aliada' })
     expect(erroresServidorFundacion(new ApiError(400, 'x', { nit: 'El NIT es obligatorio' }, 'INVALID_DATA'))).toEqual({ nit: 'El NIT es obligatorio' })
   })
+  it('SR-RF-120: eliminar la fundación usa DELETE /api/v1/admin/foundations/{id}', async () => {
+    const del = vi.spyOn(apiClient, 'delete').mockResolvedValue({ status: 204, data: '' })
+    await adminFoundationService.remove('3')
+    expect(del).toHaveBeenCalledWith('/api/v1/admin/foundations/3')
+  })
 })
