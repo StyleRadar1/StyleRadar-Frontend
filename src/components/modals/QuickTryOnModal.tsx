@@ -1,8 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import './QuickTryOnModal.css'
-import { readDimensions } from '@/modules/experiencia/utils/photoRules'
-import { TEXTO_FOTO, TRYON_ACCEPT, validarArchivoPrueba, validarDimensionesPrueba } from '@/modules/experiencia/utils/tryOnRules'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { ITEMS } from '@/modules/catalogo/mocks/items'
 import { MOCK_PLAYLISTS } from '@/modules/catalogo/mocks/playlists'
@@ -142,13 +140,6 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   const bodyMeasurements = useMemo(() => getBodyMeasurements(user?.id), [user?.id])
   const [pendingDeepLinkGarment, setPendingDeepLinkGarment] = useState<{ id: string; talla?: string; color?: string } | null>(null)
 
-  /* Modo foto personal */
-  const [sourceMode, setSourceMode] = useState<'mannequin' | 'photo'>('mannequin')
-  const [userPhoto, setUserPhoto] = useState<string | null>(null)
-  const [photoError, setPhotoError] = useState('')
-  const [photoScale, setPhotoScale] = useState(1)
-  const [photoOffset, setPhotoOffset] = useState({ x: 0, y: 0 })
-  const fileRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
 
   /* Dragging de rotación del maniquí */
@@ -361,14 +352,13 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
   /* Drag rotación con ratón y táctil */
   const handlePointerDownStage = (e: React.PointerEvent) => {
-    if (sourceMode === 'photo') return
     isRotating.current = true
     rotateStart.current = e.clientX - rotationAngle
     ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
   }
 
   const handlePointerMoveStage = (e: React.PointerEvent) => {
-    if (!isRotating.current || sourceMode === 'photo') return
+    if (!isRotating.current) return
     const delta = e.clientX - rotateStart.current
     setRotationAngle(Math.max(-180, Math.min(180, delta)))
   }
@@ -405,34 +395,6 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     setNewPlaylistDesc('')
     showToast(`Look "${newPlaylistName.trim()}" guardado exitosamente como playlist`)
   }
-
-  /* Foto de usuario */
-  const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    const bad = validarArchivoPrueba(file)
-    if (bad) { setPhotoError(bad); return }
-    const url = URL.createObjectURL(file)
-    try {
-      const { width, height } = await readDimensions(url)
-      if (!validarDimensionesPrueba(width, height)) {
-        setPhotoError(`${TEXTO_FOTO.dimensionesTitulo}. ${TEXTO_FOTO.dimensiones}`)
-        return
-      }
-    } catch {
-      setPhotoError(TEXTO_FOTO.ilegible); return
-    } finally { URL.revokeObjectURL(url) }
-    setPhotoError('')
-    const reader = new FileReader()
-    reader.onload = () => {
-      setUserPhoto(reader.result as string)
-      setSourceMode('photo')
-      setPhotoScale(1)
-      setPhotoOffset({ x: 0, y: 0 })
-    }
-    reader.readAsDataURL(file)
-  }, [])
 
   /* Prendas activas en el look */
   const wornList = Object.values(wearing).filter((w): w is WornItem => Boolean(w))
@@ -551,30 +513,21 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
         </div>
 
         <div className="cz-topbar-right">
-          {sourceMode === 'photo' ? (
-            <button className="cz-nav-pill" onClick={() => setSourceMode('mannequin')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 119 9"/><path d="M3 21V12h9"/></svg>
-              Volver al Maniquí
-            </button>
-          ) : (
-            <>
-              <button
-                className="cz-nav-pill"
-                onClick={() => setShowFitMap((v) => !v)}
-                aria-pressed={showFitMap}
-                title="Ver mapa de ajuste anatómico"
-              >
-                Mapa de ajuste
-              </button>
-              <button
-                className="cz-nav-pill"
-                onClick={handleShareLook}
-                title="Compartir look sin datos personales"
-              >
-                Compartir look
-              </button>
-            </>
-          )}
+          <button
+            className="cz-nav-pill"
+            onClick={() => setShowFitMap((v) => !v)}
+            aria-pressed={showFitMap}
+            title="Ver mapa de ajuste anatómico"
+          >
+            Mapa de ajuste
+          </button>
+          <button
+            className="cz-nav-pill"
+            onClick={handleShareLook}
+            title="Compartir look sin datos personales"
+          >
+            Compartir look
+          </button>
 
           {totalCount > 0 && (
             <button
@@ -870,19 +823,18 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               </div>
             </div>
 
-            {sourceMode === 'mannequin' ? (
-              <div
-                className="cz-mannequin-3d-wrapper"
-                data-testid="mannequin-wrapper"
-                style={{
-                  transform: `rotateY(${currentRotationAngle}deg) scaleY(${deformation.heightScale}) scaleX(${isFlipped ? -deformation.chestScale : deformation.chestScale})`,
-                  transformOrigin: 'bottom center',
-                  transition: isRotating.current ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                }}
-              >
-                {/* Maniquí base adaptable según ángulo (frente, lado o espalda) */}
-                <img
-                  src={currentSilhouette}
+            <div
+              className="cz-mannequin-3d-wrapper"
+              data-testid="mannequin-wrapper"
+              style={{
+                transform: `rotateY(${currentRotationAngle}deg) scaleY(${deformation.heightScale}) scaleX(${isFlipped ? -deformation.chestScale : deformation.chestScale})`,
+                transformOrigin: 'bottom center',
+                transition: isRotating.current ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            >
+              {/* Maniquí base adaptable según ángulo (frente, lado o espalda) */}
+              <img
+                src={currentSilhouette}
                   alt="Maniquí anatómico base"
                   className="cz-mannequin-base"
                   data-testid="mannequin-base-img"
@@ -905,19 +857,6 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   />
                 ))}
               </div>
-            ) : (
-              userPhoto && (
-                <img
-                  src={userPhoto}
-                  alt="Tu foto personal"
-                  className="cz-user-photo"
-                  style={{
-                    transform: `translate(${photoOffset.x}px, ${photoOffset.y}px) scale(${photoScale})`,
-                  }}
-                  draggable={false}
-                />
-              )
-            )}
 
             <div className="cz-floor-shadow" aria-hidden="true" />
           </div>
@@ -998,29 +937,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             </div>
           )}
 
-          {/* Bloque para cargar foto personal o ir al Probador IA conectado */}
+          {/* Enlace al Probador IA conectado */}
           <div className="cz-photo-toggle-bar">
-            <input
-              ref={fileRef}
-              type="file"
-              accept={TRYON_ACCEPT}
-              className="sr-only"
-              onChange={handlePhotoUpload}
-              aria-label="Cargar foto personal"
-            />
             <Link
               to="/probador/avanzado"
               className="cz-photo-sub-btn inline-flex items-center justify-center no-underline"
             >
               Probar con tu foto (IA)
             </Link>
-            <button
-              className="cz-photo-sub-btn"
-              onClick={() => fileRef.current?.click()}
-            >
-              Probar con mi foto
-            </button>
-            {photoError && <p className="cz-photo-error">{photoError}</p>}
           </div>
         </section>
       </main>
