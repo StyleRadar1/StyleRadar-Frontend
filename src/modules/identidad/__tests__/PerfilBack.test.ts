@@ -15,10 +15,10 @@ describe('perfil contra ms-usuarios (F-09 · F-10 · F-11 · F-12 · F-32)', () 
   beforeEach(() => { localStorage.setItem('sr_user', JSON.stringify({ id: '12', name: 'laura', email: 'laura@correo.com', role: 'BUYER' })) })
   afterEach(() => { vi.restoreAllMocks(); localStorage.clear() })
 
-  it('lee el perfil con GET /api/v1/users/{id} (sin /me) y lo pasa a la pantalla', async () => {
+  it('lee el perfil con GET /api/v1/users/me (la ruta por id es solo del admin en ms-usuarios) y lo pasa a la pantalla', async () => {
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue({ data: DTO })
     const p = await usuarioService.me()
-    expect(get).toHaveBeenCalledWith('/api/v1/users/12')
+    expect(get).toHaveBeenCalledWith('/api/v1/users/me')
     expect(p).toMatchObject({ id: '12', name: 'Laura Gómez', phone: '', neighborhood: 'Chapinero', stylePreferences: ['CASUAL'], sizesByGarmentType: { TOP: ['M'] } })
     expect(p.plan).toBeUndefined()
   })
