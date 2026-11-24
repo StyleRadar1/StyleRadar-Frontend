@@ -24,6 +24,20 @@ const mine = (): NotificacionDto[] => {
 }
 const changed = () => window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED))
 
+/**
+ * Eliminar avisos: estas rutas piden el id NUMÉRICO de la persona (no el alias «me»), el mismo del token.
+ * Se elimina de la bandeja (el back no tiene «restaurar»; el «Deshacer» de la pantalla es solo del front).
+ */
+const idNumerico = (): string => {
+  const id = String(mockSessionUser()?.id ?? '')
+  if (!/^\d+$/.test(id)) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
+  return id
+}
+const RUTA_USUARIO = (id: string) => `/api/v1/users/${id}/notifications`
+/** El servicio acepta de 1 a 100 ids por petición. */
+export const MAX_ELIMINAR = 100
+const eliminadas = (data: unknown) => Number((data as { cantidadEliminadas?: number } | null)?.cantidadEliminadas ?? 0) || 0
+
 /** Avisos por página; el back acepta de 1 a 100. */
 export const TAM_PAGINA = 20
 export interface PaginaAvisos { items: NotificacionDto[]; hasNext: boolean }
@@ -63,6 +77,64 @@ export const notificationService = {
       await mockDelay(undefined, 150)
     } else await apiClient.patch(`${BASE}/${encodeURIComponent(id)}/read`)
     changed()
+  },
+
+  /** Quita un aviso de la bandeja. Un 404 se toma como éxito: ya no estaba. */
+  async remove(id: string): Promise<void> {
+    if (env.useMocks) {
+      failIfScenario()
+      const lista = mine()
+      const i = lista.findIndex((x) => x.id === id)
+      if (i >= 0) lista.splice(i, 1)
+      await mockDelay(undefined, 150)
+    } else {
+      try { await apiClient.delete(`${RUTA_USUARIO(idNumerico())}/${encodeURIComponent(id)}`) } catch (e) {
+        if (!(e instanceof ApiError && e.status === 404)) throw e
+      }
+    }
+    changed()
+  },
+
+  /** Quita varios avisos (leídos o no). Más de 100 se envían en tandas de 100. Devuelve cuántos se eliminaron de verdad. */
+  async removeMany(ids: string[]): Promise<number> {
+    const unicos = [...new Set(ids)]
+    if (!unicos.length) return 0
+    let total = 0
+    if (env.useMocks) {
+      failIfScenario()
+      const lista = mine()
+      const antes = lista.length
+      const quitar = new Set(unicos)
+      lista.splice(0, lista.length, ...lista.filter((x) => !quitar.has(x.id)))
+      total = antes - lista.length
+      await mockDelay(undefined, 200)
+    } else {
+      const uid = idNumerico()
+      for (let i = 0; i < unicos.length; i += MAX_ELIMINAR) {
+        const { data } = await apiClient.delete<unknown>(RUTA_USUARIO(uid), { params: { ids: unicos.slice(i, i + MAX_ELIMINAR).join(',') } })
+        total += eliminadas(data)
+      }
+    }
+    changed()
+    return total
+  },
+
+  /** Quita todos los avisos leídos; los no leídos se conservan. Devuelve cuántos se eliminaron. */
+  async removeRead(): Promise<number> {
+    let total: number
+    if (env.useMocks) {
+      failIfScenario()
+      const lista = mine()
+      const antes = lista.length
+      lista.splice(0, lista.length, ...lista.filter((x) => !x.leida))
+      total = antes - lista.length
+      await mockDelay(undefined, 200)
+    } else {
+      const { data } = await apiClient.delete<unknown>(RUTA_USUARIO(idNumerico()), { params: { read: true } })
+      total = eliminadas(data)
+    }
+    changed()
+    return total
   },
 
   async markAllRead(): Promise<void> {
