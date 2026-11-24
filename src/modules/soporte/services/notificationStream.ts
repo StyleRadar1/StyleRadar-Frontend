@@ -1,9 +1,16 @@
-import { apiClient } from '@/modules/core/api/apiClient'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import { env } from '@/configs/env'
 import type { NotificacionDto } from '../types/notification.dto'
 import { aNotificacion } from '../utils/notificaciones'
 import { NOTIFICACIONES } from './notificationService'
+
+/**
+ * 401, 403 y 404 al pedir el ticket o abrir el stream no se arreglan reintentando: la sesión venció o la cuenta ya no existe
+ * (al eliminarla, el back borra sus avisos y cierra el stream). En esos casos se deja de reconectar.
+ */
+const SIN_ACCESO = new Set([401, 403, 404])
+class SinAcceso extends Error {}
 
 /** Lee un cuerpo text/event-stream y entrega cada evento completo. */
 async function leer(body: ReadableStream<Uint8Array>, alEvento: (e: { id?: string; event: string; data: string }) => void) {
@@ -56,6 +63,7 @@ export function abrirCampana(alAviso: (n: NotificacionDto) => void): () => void 
           headers: { Accept: 'text/event-stream', ...(ultimo ? { 'Last-Event-ID': ultimo } : {}) },
           signal: ctrl.signal,
         })
+        if (SIN_ACCESO.has(res.status)) throw new SinAcceso()
         if (!res.ok || !res.body) throw new Error('stream')
         espera = 1000
         await leer(res.body, (e) => {
@@ -63,7 +71,11 @@ export function abrirCampana(alAviso: (n: NotificacionDto) => void): () => void 
           if (e.event !== 'notificacion') return
           try { alAviso(aNotificacion(JSON.parse(e.data))) } catch { /* aviso ilegible: se ignora */ }
         })
-      } catch { /* se reintenta abajo */ }
+      } catch (e) {
+        // Sin acceso (cuenta eliminada o sesión vencida): se cierra para siempre en vez de reconectar en bucle
+        if (e instanceof SinAcceso || (e instanceof ApiError && SIN_ACCESO.has(e.status))) { activo = false; return }
+        /* cualquier otro fallo: se reintenta abajo */
+      }
       if (!activo) return
       await dormir(espera)
       espera = Math.min(espera * 2, 30_000)
