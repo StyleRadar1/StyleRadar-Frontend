@@ -435,6 +435,38 @@
           }
         }
       }
+    },
+    "/api/v1/admin/payments/{id}": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Get a payment by id",
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -681,6 +713,16 @@
           "subscriptionId": {
             "type": "integer",
             "format": "int64"
+          },
+          "subscriberId": {
+            "type": "string"
+          },
+          "planId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "planName": {
+            "type": "string"
           },
           "amount": {
             "$ref": "#/components/schemas/AmountResponse"
