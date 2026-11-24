@@ -94,7 +94,7 @@ function legalDesdeServidor(store: StoreResponseDto): Partial<LegalStoreInfo> {
 }
 
 /** Texto cuando no se pudo leer el almacén de la Tienda (GET /users/{userId}/store). */
-const SIN_ALMACEN = 'Tu cuenta todavía no tiene un almacén asociado. Escríbele a soporte de StyleRadar para que lo asignen.'
+const SIN_ALMACEN = 'Tu cuenta todavía no tiene un almacén asociado. Regístralo para empezar a vender.'
 
 function readLegalInfo(): LegalStoreInfo {
   try {
@@ -496,7 +496,8 @@ export default function MiTiendaPage() {
           <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para reintentar el pago con Mercado Pago y mantener tu tienda visible</p></div>
           <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
         </div>
-        {storeError && <ErrorBanner tone="warn" icon="info" title={storeError} />}
+        {storeError && <ErrorBanner tone="warn" icon="info" title={storeError}
+          actions={storeError === SIN_ALMACEN ? <Link to="/tienda/registro" className="font-semibold underline">Registrar mi tienda</Link> : undefined} />}
         {verificationError && (
           <ErrorBanner tone="warn" icon="info" title={verificationError}>
             Nuestro equipo ya está revisando los documentos de tu tienda. Te avisaremos cuando finalice la revisión.
