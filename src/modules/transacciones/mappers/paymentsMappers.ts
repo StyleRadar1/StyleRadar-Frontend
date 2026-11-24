@@ -73,6 +73,7 @@ export interface ApiPaymentResponse {
   id?: number
   subscriptionId?: number
   subscriberId?: string
+  subscriberType?: ApiSubscriberType | string
   planId?: number
   planName?: string
   amount?: ApiAmountResponse
@@ -228,14 +229,74 @@ export function detectPlanPriceDiscrepancies(plans: PlanDto[]): PriceDiscrepancy
   return diffs
 }
 
-/** Traduce un `PlanResponse` del OpenAPI a `PlanDto`, manteniendo el precio real del backend. */
+/** Formatea una fecha ISO (YYYY-MM-DD o ISO-8601 con hora) sin horas, igual que el resto de la app. */
+export function formatSubscriptionDate(iso?: string | null, fallback = '—'): string {
+  if (!iso || !iso.trim()) return fallback
+  const dateOnly = iso.trim().slice(0, 10)
+  const parsed = new Date(`${dateOnly}T00:00:00Z`)
+  if (Number.isNaN(parsed.getTime())) return fallback
+  return parsed.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
+export interface MappedSubscriberRole {
+  subscriberType?: ApiSubscriberType
+  userRole?: Role
+  subscriberRoleLabel: string
+}
+
+/** Traduce `subscriberType` (`USER | STORE`) al rol interno y etiqueta visible; ante vacío o desconocido devuelve «—». */
+export function mapSubscriberTypeToRole(raw: unknown): MappedSubscriberRole {
+  const normalized = typeof raw === 'string' ? raw.trim().toUpperCase() : ''
+  if (normalized === 'USER') {
+    return { subscriberType: 'USER', userRole: 'BUYER', subscriberRoleLabel: 'Comprador' }
+  }
+  if (normalized === 'STORE') {
+    return { subscriberType: 'STORE', userRole: 'STORE_ADMIN', subscriberRoleLabel: 'Tienda' }
+  }
+  return { subscriberType: undefined, userRole: undefined, subscriberRoleLabel: '—' }
+}
+
+let cachedCatalogPlans: PlanDto[] = []
+
+/** Guarda en memoria los planes devueltos por `GET /api/v1/plans` para relacionar `planId` sin fijar ids numéricos. */
+export function registerCatalogPlans(plans: PlanDto[]): void {
+  cachedCatalogPlans = plans
+}
+
+/** Devuelve la última lista de planes registrada desde `GET /api/v1/plans`. */
+export function getCachedCatalogPlans(): PlanDto[] {
+  return cachedCatalogPlans
+}
+
+/** Relaciona un `planId` numérico del backend con los planes de `GET /api/v1/plans` sin usar `planName` ni ids fijos. */
+export function resolvePlanIdFromCatalog(
+  backendPlanId: number | undefined,
+  subscriberType?: ApiSubscriberType,
+  catalogPlans?: PlanDto[],
+): PaymentDto['planId'] {
+  const source = catalogPlans && catalogPlans.length > 0 ? catalogPlans : cachedCatalogPlans
+  if (typeof backendPlanId === 'number') {
+    const matched = source.find((p) => p.backendPlanId === backendPlanId)
+    if (matched) return matched.id
+  }
+  if (subscriberType === 'STORE') return 'store'
+  if (subscriberType === 'USER') return 'plus'
+  return 'free'
+}
+
+/** Traduce un `PlanResponse` del OpenAPI a `PlanDto`, determinando el tipo por `subscriberType` y `price` (nunca por `name`). */
 export function mapPlanResponse(raw: ApiPlanResponse): PlanDto {
-  const subType = String(raw.subscriberType ?? '').toUpperCase()
+  const subType = String(raw.subscriberType ?? '').trim().toUpperCase()
   const priceValue = typeof raw.price?.value === 'number' && Number.isFinite(raw.price.value) ? raw.price.value : 0
   const rawName = (raw.name ?? '').trim()
 
-  const isStore = subType === 'STORE' || /store|tienda|almac[eé]n/i.test(rawName)
-  const isPlus = !isStore && (priceValue > 0 || /plus|\+/i.test(rawName))
+  const isStore = subType === 'STORE'
+  const isPlus = !isStore && priceValue > 0
   const id: PlanDto['id'] = isStore ? 'store' : isPlus ? 'plus' : 'free'
 
   const basePlan = id === 'store'
@@ -256,6 +317,7 @@ export function mapPlanResponse(raw: ApiPlanResponse): PlanDto {
 /** Traduce una lista de `PlanResponse` (solo planes activos) y advierte en desarrollo si difieren de los precios v4. */
 export function mapPlansResponse(rawList: ApiPlanResponse[]): PlanDto[] {
   const activePlans = rawList.filter((p) => p.active !== false).map(mapPlanResponse)
+  registerCatalogPlans(activePlans)
   const diffs = detectPlanPriceDiscrepancies(activePlans)
   if (diffs.length > 0 && import.meta.env.DEV) {
     console.warn('[pagos] Diferencia de precio entre GET /api/v1/plans y constantes v4:', diffs)
@@ -275,16 +337,23 @@ export function mapStartSubscriptionResponse(raw: ApiStartSubscriptionResponse):
   }
 }
 
-/** Traduce `SubscriptionResponse` al modelo de comprador (`MiPlanDto`). */
-export function mapSubscriptionToMiPlanDto(raw: ApiSubscriptionResponse, today?: string): MiPlanDto {
+/** Traduce `SubscriptionResponse` al modelo de comprador (`MiPlanDto`), usando `plan.id` / catálogo y `price` (nunca `plan.name`). */
+export function mapSubscriptionToMiPlanDto(
+  raw: ApiSubscriptionResponse,
+  today?: string,
+  catalogPlans?: PlanDto[],
+): MiPlanDto {
   const mappedStatus = deriveSubscriptionStatus(raw.status, {
     autoRenewal: raw.autoRenewal,
     endDate: raw.endDate,
     today,
   })
-  const planPrice = raw.plan?.price?.value ?? 0
-  const planName = raw.plan?.name ?? ''
-  const isPaidPlan = planPrice > 0 || /plus|\+/i.test(planName)
+  const source = catalogPlans && catalogPlans.length > 0 ? catalogPlans : cachedCatalogPlans
+  const matchedPlan = typeof raw.plan?.id === 'number'
+    ? source.find((p) => p.backendPlanId === raw.plan?.id)
+    : undefined
+  const planPrice = matchedPlan?.price ?? raw.plan?.price?.value ?? 0
+  const isPaidPlan = matchedPlan ? matchedPlan.id !== 'free' && matchedPlan.price > 0 : planPrice > 0
   const isRadarPlus: PlanUsuario = (mappedStatus.status === 'ACTIVA' || raw.access === true) && isPaidPlan
     ? 'RADAR_PLUS'
     : 'RADAR'
@@ -364,10 +433,11 @@ export function mapCancellationToStoreDto(
 
 /**
  * Traduce `PaymentResponse` del OpenAPI a `PaymentDto` usando únicamente los campos reales del contrato:
- * `id`, `subscriptionId`, `subscriberId`, `planId`, `planName`, `amount { value, currency }`, `status`,
- * `externalPaymentId` y `createdAt` (sin inferir plan por monto ni contexto).
+ * `id`, `subscriptionId`, `subscriberId`, `subscriberType`, `planId`, `planName`, `amount { value, currency }`,
+ * `status`, `externalPaymentId` y `createdAt`.
+ * El rol sale exclusivamente de `subscriberType` y la lógica del plan usa `planId` (nunca `planName` ni monto).
  */
-export function mapPaymentResponse(raw: ApiPaymentResponse): PaymentDto {
+export function mapPaymentResponse(raw: ApiPaymentResponse, catalogPlans?: PlanDto[]): PaymentDto {
   const mappedStatus = mapPaymentStatus(raw.status)
   const amount = typeof raw.amount?.value === 'number' && Number.isFinite(raw.amount.value) ? raw.amount.value : 0
   const currency = raw.amount?.currency?.trim() || 'COP'
@@ -377,12 +447,9 @@ export function mapPaymentResponse(raw: ApiPaymentResponse): PaymentDto {
   const planName = raw.planName?.trim() || '—'
   const isoDate = raw.createdAt ? raw.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10)
 
-  const planId: PaymentDto['planId'] =
-    /store|tienda|almac[eé]n/i.test(planName)
-      ? 'store'
-      : /plus|\+/i.test(planName)
-        ? 'plus'
-        : 'free'
+  const roleInfo = mapSubscriberTypeToRole(raw.subscriberType)
+  const backendPlanId = typeof raw.planId === 'number' ? raw.planId : undefined
+  const planId = resolvePlanIdFromCatalog(backendPlanId, roleInfo.subscriberType, catalogPlans)
 
   return {
     id,
@@ -390,10 +457,11 @@ export function mapPaymentResponse(raw: ApiPaymentResponse): PaymentDto {
     suscripcionId: subscriptionId,
     suscriptorId: subscriberId,
     userId: subscriberId,
-    // TODO(contrato): PaymentResponse no incluye userRole; se asigna rol base BUYER/STORE_ADMIN según planName solo para tipado interno.
-    userRole: planId === 'store' ? 'STORE_ADMIN' : 'BUYER',
+    subscriberType: roleInfo.subscriberType,
+    subscriberRoleLabel: roleInfo.subscriberRoleLabel,
+    userRole: roleInfo.userRole,
     planId,
-    backendPlanId: typeof raw.planId === 'number' ? raw.planId : undefined,
+    backendPlanId,
     planName,
     amount,
     valor: amount,

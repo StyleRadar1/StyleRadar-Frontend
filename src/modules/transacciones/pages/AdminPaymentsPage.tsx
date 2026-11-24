@@ -704,6 +704,10 @@ export default function AdminPaymentsPage() {
               <div><dt className="text-white/50">pagoId</dt><dd className="font-mono font-semibold">{selected.pagoId ?? selected.id}</dd></div>
               <div><dt className="text-white/50">suscripcionId</dt><dd className="font-mono">{selected.suscripcionId ?? `SUB-${selected.id}`}</dd></div>
               <div><dt className="text-white/50">suscriptorId</dt><dd className="font-mono font-semibold">{selected.suscriptorId ?? selected.userId}</dd></div>
+              <div>
+                <dt className="text-white/50">Tipo de suscriptor</dt>
+                <dd>{selected.subscriberRoleLabel ?? (selected.userRole === 'STORE_ADMIN' ? 'Tienda' : selected.userRole === 'BUYER' ? 'Comprador' : '—')}</dd>
+              </div>
               <div><dt className="text-white/50">Plan</dt><dd>{selected.planName || '—'}</dd></div>
               <div><dt className="text-white/50">Valor (COP)</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.valor ?? selected.amount)} COP</dd></div>
               <div><dt className="text-white/50">Estado</dt><dd>{selected.estado ?? STATUS_LABELS[selected.status]}</dd></div>

@@ -48,11 +48,11 @@ export const MOCK_CHECKOUT_RESPONSE: CheckoutResponseDto = {
 }
 
 export const MOCK_CHECKOUT_RESULTS: Record<string, CheckoutResultDto> = {
-  'MOCK_ORDER_OK': { orderId: 'MOCK_ORDER_OK', status: 'aprobado', planName: 'Radar+', amount: RADAR_PLUS_PRICE, method: 'Mercado Pago' },
-  'MOCK_ORDER_PENDING': { orderId: 'MOCK_ORDER_PENDING', status: 'pendiente', planName: 'Radar+', amount: RADAR_PLUS_PRICE, method: 'Mercado Pago' },
-  'MOCK_ORDER_FAIL': { orderId: 'MOCK_ORDER_FAIL', status: 'rechazado', planName: 'Radar+', amount: RADAR_PLUS_PRICE, method: 'Mercado Pago' },
+  'MOCK_ORDER_OK': { orderId: 'MOCK_ORDER_OK', status: 'aprobado', planId: 'plus', planName: 'Radar+', amount: RADAR_PLUS_PRICE, method: 'Mercado Pago' },
+  'MOCK_ORDER_PENDING': { orderId: 'MOCK_ORDER_PENDING', status: 'pendiente', planId: 'plus', planName: 'Radar+', amount: RADAR_PLUS_PRICE, method: 'Mercado Pago' },
+  'MOCK_ORDER_FAIL': { orderId: 'MOCK_ORDER_FAIL', status: 'rechazado', planId: 'plus', planName: 'Radar+', amount: RADAR_PLUS_PRICE, method: 'Mercado Pago' },
   // Suscripción de tienda aliada (RF-67)
-  'MOCK_STORE_OK': { orderId: 'MOCK_STORE_OK', status: 'aprobado', planName: 'Tienda aliada', amount: STORE_SUBSCRIPTION_PRICE, method: 'Mercado Pago' },
-  'MOCK_STORE_PENDING': { orderId: 'MOCK_STORE_PENDING', status: 'pendiente', planName: 'Tienda aliada', amount: STORE_SUBSCRIPTION_PRICE, method: 'Mercado Pago' },
-  'MOCK_STORE_FAIL': { orderId: 'MOCK_STORE_FAIL', status: 'rechazado', planName: 'Tienda aliada', amount: STORE_SUBSCRIPTION_PRICE, method: 'Mercado Pago' },
+  'MOCK_STORE_OK': { orderId: 'MOCK_STORE_OK', status: 'aprobado', planId: 'store', planName: 'Tienda aliada', amount: STORE_SUBSCRIPTION_PRICE, method: 'Mercado Pago' },
+  'MOCK_STORE_PENDING': { orderId: 'MOCK_STORE_PENDING', status: 'pendiente', planId: 'store', planName: 'Tienda aliada', amount: STORE_SUBSCRIPTION_PRICE, method: 'Mercado Pago' },
+  'MOCK_STORE_FAIL': { orderId: 'MOCK_STORE_FAIL', status: 'rechazado', planId: 'store', planName: 'Tienda aliada', amount: STORE_SUBSCRIPTION_PRICE, method: 'Mercado Pago' },
 }

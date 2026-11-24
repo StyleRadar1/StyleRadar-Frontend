@@ -183,7 +183,7 @@ export const planService = {
       const result: CheckoutResultDto = {
         ...base,
         payerEmail: base.payerEmail ?? meta?.payerEmail,
-        planId: base.planId ?? (base.planName === 'Tienda aliada' ? 'store' : 'plus'),
+        planId: base.planId ?? meta?.planId ?? 'plus',
         estadoSuscripcion: isApproved ? 'ACTIVA' : 'PENDIENTE',
         fechaInicio: isApproved ? (base.fechaInicio ?? today) : null,
         fechaFin: isApproved ? (base.fechaFin ?? nextMonth) : null,
@@ -246,7 +246,7 @@ export const planService = {
         amount: originalOrder.amount,
         method: 'Mercado Pago',
         payerEmail: payerEmail.trim(),
-        planId: originalOrder.planId ?? (originalOrder.planName === 'Tienda aliada' ? 'store' : 'plus'),
+        planId: originalOrder.planId ?? 'plus',
         estadoSuscripcion: nextStatus === 'aprobado' ? 'ACTIVA' : 'PENDIENTE',
         fechaInicio: nextStatus === 'aprobado' ? new Date().toISOString().slice(0, 10) : null,
         fechaFin: nextStatus === 'aprobado' ? new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) : null,
