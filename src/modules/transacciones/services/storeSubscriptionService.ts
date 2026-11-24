@@ -181,14 +181,7 @@ export const storeSubscriptionService = {
         .then((r) => (Array.isArray(r.data) ? r.data : [])),
     ])
     const payments = rawPayments
-      .map((item) =>
-        mapPaymentResponse(item, {
-          subscriberId,
-          userRole: 'STORE_ADMIN',
-          planId: 'store',
-          planName: subscription.planName || STORE_PLAN.name,
-        }),
-      )
+      .map((item) => mapPaymentResponse(item))
       .sort((a, b) => b.date.localeCompare(a.date))
     return { subscription, payments }
   },
@@ -437,25 +430,6 @@ export const storeSubscriptionService = {
         initPoint: MOCK_CHECKOUT_RESPONSE.initPoint,
       },
     }
-  },
-
-  /**
-   * RF-68: Reactiva la renovación automática.
-   */
-  async reactivateRenewal(): Promise<StoreSubscriptionDto> {
-    if (!env.useMocksPagos) {
-      // TODO(contrato): ms-pagos.openapi.json no expone endpoint para reactivar la renovación automática.
-      throw new ApiError(501, 'La reactivación de la renovación automática no está disponible todavía')
-    }
-    failIfScenario('conflicto')
-    const state = readMockStoreSubscription()
-    const subscription: StoreSubscriptionDto = {
-      ...state.subscription,
-      renewalEnabled: true,
-      autoRenovacion: true,
-    }
-    writeState({ ...state, subscription })
-    return mockDelay(subscription, 250)
   },
 
   /**

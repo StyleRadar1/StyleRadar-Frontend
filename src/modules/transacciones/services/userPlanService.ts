@@ -322,16 +322,9 @@ export const userPlanService = {
       const sorted = [...list].sort((a, b) => b.date.localeCompare(a.date))
       return mockDelay(sorted, 250)
     }
-    const user = me()
+    me()
     const { data } = await apiClient.get<ApiPaymentResponse[]>('/api/v1/payments/history')
-    const mapped = (Array.isArray(data) ? data : []).map((item) =>
-      mapPaymentResponse(item, {
-        subscriberId: user.id,
-        userRole: 'BUYER',
-        planId: 'plus',
-        planName: 'Radar+',
-      }),
-    )
+    const mapped = (Array.isArray(data) ? data : []).map((item) => mapPaymentResponse(item))
     return mapped.sort((a, b) => b.date.localeCompare(a.date))
   },
 

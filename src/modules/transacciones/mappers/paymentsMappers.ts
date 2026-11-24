@@ -72,6 +72,9 @@ export interface ApiCancellationResponse {
 export interface ApiPaymentResponse {
   id?: number
   subscriptionId?: number
+  subscriberId?: string
+  planId?: number
+  planName?: string
   amount?: ApiAmountResponse
   status?: ApiPaymentStatus
   externalPaymentId?: string
@@ -91,6 +94,7 @@ export interface ApiRetryPaymentResponse {
 
 export interface MappedSubscriptionStatus {
   status: SubscriptionStatus
+  label: string
   unknownStatus?: string
 }
 
@@ -105,20 +109,6 @@ export interface PriceDiscrepancy {
   planName: string
   expectedV4: number
   backendValue: number
-}
-
-const SUBSCRIPTION_STATUS_MAP: Record<string, SubscriptionStatus> = {
-  PENDING: 'PENDIENTE',
-  PENDIENTE: 'PENDIENTE',
-  ACTIVE: 'ACTIVA',
-  ACTIVA: 'ACTIVA',
-  SUSPENDED: 'SUSPENDIDA',
-  SUSPENDIDA: 'SUSPENDIDA',
-  EXPIRED: 'VENCIDA',
-  VENCIDA: 'VENCIDA',
-  CANCELLED: 'CANCELADA',
-  CANCELED: 'CANCELADA',
-  CANCELADA: 'CANCELADA',
 }
 
 const PAYMENT_STATUS_MAP: Record<string, { status: PaymentStatus; estado: PaymentStatusV4 }> = {
@@ -136,15 +126,59 @@ const API_PAYMENT_FILTER_MAP: Record<PaymentStatus, 'PENDING' | 'APPROVED' | 'RE
   rechazado: 'REJECTED',
 }
 
-/** Traduce el estado de suscripción del OpenAPI al modelo interno v4 sin romper ante estados desconocidos. */
-export function mapSubscriptionStatus(raw: unknown): MappedSubscriptionStatus {
-  const normalized = typeof raw === 'string' ? raw.trim().toUpperCase() : ''
-  const mapped = SUBSCRIPTION_STATUS_MAP[normalized]
-  if (mapped) return { status: mapped }
+/**
+ * Deriva el estado interno y la etiqueta visual según el contrato confirmado de ms-pagos:
+ * - PENDING → PENDIENTE
+ * - ACTIVE + autoRenewal=true → ACTIVA («ACTIVA»)
+ * - ACTIVE + autoRenewal=false → ACTIVA («Activa sin renovación»)
+ * - SUSPENDED + endDate < hoy → VENCIDA («VENCIDA»)
+ * - SUSPENDED en otro caso → SUSPENDIDA («SUSPENDIDA»)
+ */
+export function deriveSubscriptionStatus(
+  rawStatus: unknown,
+  options?: { autoRenewal?: boolean | null; endDate?: string | null; today?: string },
+): MappedSubscriptionStatus {
+  const normalized = typeof rawStatus === 'string' ? rawStatus.trim().toUpperCase() : ''
+  const todayIso = options?.today ?? new Date().toISOString().slice(0, 10)
+  const endDateIso = typeof options?.endDate === 'string' && options.endDate.trim() ? options.endDate.slice(0, 10) : null
+
+  if (normalized === 'PENDING' || normalized === 'PENDIENTE') {
+    return { status: 'PENDIENTE', label: 'PENDIENTE' }
+  }
+  if (normalized === 'ACTIVE' || normalized === 'ACTIVA') {
+    const autoRenewal = options?.autoRenewal !== false
+    return {
+      status: 'ACTIVA',
+      label: autoRenewal ? 'ACTIVA' : 'Activa sin renovación',
+    }
+  }
+  if (normalized === 'SUSPENDED' || normalized === 'SUSPENDIDA') {
+    if (endDateIso && endDateIso < todayIso) {
+      return { status: 'VENCIDA', label: 'VENCIDA' }
+    }
+    return { status: 'SUSPENDIDA', label: 'SUSPENDIDA' }
+  }
+  if (normalized === 'VENCIDA') {
+    return { status: 'VENCIDA', label: 'VENCIDA' }
+  }
+  if (normalized === 'CANCELADA') {
+    return { status: 'CANCELADA', label: 'CANCELADA' }
+  }
+
+  const unknown = normalized || 'DESCONOCIDO'
   return {
     status: 'PENDIENTE',
-    unknownStatus: normalized || 'DESCONOCIDO',
+    label: `No reconocido (${unknown})`,
+    unknownStatus: unknown,
   }
+}
+
+/** Alias de compatibilidad para traducción directa de estado de suscripción. */
+export function mapSubscriptionStatus(
+  raw: unknown,
+  options?: { autoRenewal?: boolean | null; endDate?: string | null; today?: string },
+): MappedSubscriptionStatus {
+  return deriveSubscriptionStatus(raw, options)
 }
 
 /** Traduce el estado de pago del OpenAPI al modelo interno v4 sin romper ante estados desconocidos. */
@@ -231,7 +265,7 @@ export function mapPlansResponse(rawList: ApiPlanResponse[]): PlanDto[] {
 
 /** Traduce `StartSubscriptionResponse` (202 Accepted) a `CheckoutResponseDto`. */
 export function mapStartSubscriptionResponse(raw: ApiStartSubscriptionResponse): CheckoutResponseDto {
-  const mappedStatus = mapSubscriptionStatus(raw.status)
+  const mappedStatus = deriveSubscriptionStatus(raw.status)
   return {
     initPoint: raw.initPoint ?? '',
     preferenceId: String(raw.orderId ?? raw.subscriptionId ?? ''),
@@ -242,8 +276,12 @@ export function mapStartSubscriptionResponse(raw: ApiStartSubscriptionResponse):
 }
 
 /** Traduce `SubscriptionResponse` al modelo de comprador (`MiPlanDto`). */
-export function mapSubscriptionToMiPlanDto(raw: ApiSubscriptionResponse): MiPlanDto {
-  const mappedStatus = mapSubscriptionStatus(raw.status)
+export function mapSubscriptionToMiPlanDto(raw: ApiSubscriptionResponse, today?: string): MiPlanDto {
+  const mappedStatus = deriveSubscriptionStatus(raw.status, {
+    autoRenewal: raw.autoRenewal,
+    endDate: raw.endDate,
+    today,
+  })
   const planPrice = raw.plan?.price?.value ?? 0
   const planName = raw.plan?.name ?? ''
   const isPaidPlan = planPrice > 0 || /plus|\+/i.test(planName)
@@ -260,15 +298,19 @@ export function mapSubscriptionToMiPlanDto(raw: ApiSubscriptionResponse): MiPlan
     periodEndsAt: raw.endDate ?? undefined,
     proximoCobro: raw.autoRenewal && raw.endDate ? raw.endDate : undefined,
     renewalEnabled: Boolean(raw.autoRenewal),
-    degradedByPayment: mappedStatus.status === 'SUSPENDIDA',
+    degradedByPayment: mappedStatus.status === 'SUSPENDIDA' || mappedStatus.status === 'VENCIDA',
     pendingRenewal: mappedStatus.status === 'PENDIENTE',
     unknownStatus: mappedStatus.unknownStatus,
   }
 }
 
 /** Traduce `SubscriptionResponse` al modelo de almacén (`StoreSubscriptionDto`). */
-export function mapSubscriptionToStoreDto(raw: ApiSubscriptionResponse): StoreSubscriptionDto {
-  const mappedStatus = mapSubscriptionStatus(raw.status)
+export function mapSubscriptionToStoreDto(raw: ApiSubscriptionResponse, today?: string): StoreSubscriptionDto {
+  const mappedStatus = deriveSubscriptionStatus(raw.status, {
+    autoRenewal: raw.autoRenewal,
+    endDate: raw.endDate,
+    today,
+  })
   const amount = typeof raw.plan?.price?.value === 'number' && Number.isFinite(raw.plan.price.value)
     ? raw.plan.price.value
     : STORE_SUBSCRIPTION_PRICE
@@ -295,8 +337,13 @@ export function mapSubscriptionToStoreDto(raw: ApiSubscriptionResponse): StoreSu
 export function mapCancellationToStoreDto(
   raw: ApiCancellationResponse,
   previous?: StoreSubscriptionDto,
+  today?: string,
 ): StoreSubscriptionDto {
-  const mappedStatus = mapSubscriptionStatus(raw.status ?? previous?.status ?? 'ACTIVA')
+  const mappedStatus = deriveSubscriptionStatus(raw.status ?? previous?.status ?? 'ACTIVE', {
+    autoRenewal: raw.autoRenewal ?? false,
+    endDate: raw.endDate ?? previous?.fechaFin,
+    today,
+  })
   return {
     ...(previous ?? {
       planName: STORE_PLAN.name,
@@ -315,25 +362,27 @@ export function mapCancellationToStoreDto(
   }
 }
 
-/** Traduce `PaymentResponse` del OpenAPI a `PaymentDto`. */
-export function mapPaymentResponse(
-  raw: ApiPaymentResponse,
-  context?: { subscriberId?: string; userRole?: Role; planId?: 'free' | 'plus' | 'store'; planName?: string },
-): PaymentDto {
+/**
+ * Traduce `PaymentResponse` del OpenAPI a `PaymentDto` usando únicamente los campos reales del contrato:
+ * `id`, `subscriptionId`, `subscriberId`, `planId`, `planName`, `amount { value, currency }`, `status`,
+ * `externalPaymentId` y `createdAt` (sin inferir plan por monto ni contexto).
+ */
+export function mapPaymentResponse(raw: ApiPaymentResponse): PaymentDto {
   const mappedStatus = mapPaymentStatus(raw.status)
   const amount = typeof raw.amount?.value === 'number' && Number.isFinite(raw.amount.value) ? raw.amount.value : 0
-  const currency = raw.amount?.currency || 'COP'
+  const currency = raw.amount?.currency?.trim() || 'COP'
   const id = raw.id != null ? String(raw.id) : ''
   const subscriptionId = raw.subscriptionId != null ? String(raw.subscriptionId) : undefined
+  const subscriberId = raw.subscriberId?.trim() || '—'
+  const planName = raw.planName?.trim() || '—'
   const isoDate = raw.createdAt ? raw.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10)
 
-  // TODO(contrato): PaymentResponse en ms-pagos.openapi.json no incluye subscriberId, userRole ni planName.
-  // Se infiere planId/planName por monto/contexto mientras el backend agrega esos campos al DTO si se requieren.
-  const inferredPlanId: 'free' | 'plus' | 'store' =
-    context?.planId ?? (amount >= STORE_SUBSCRIPTION_PRICE ? 'store' : 'plus')
-  const inferredPlanName =
-    context?.planName ?? (inferredPlanId === 'store' ? STORE_PLAN.name : 'Radar+')
-  const subscriberId = context?.subscriberId ?? subscriptionId ?? id
+  const planId: PaymentDto['planId'] =
+    /store|tienda|almac[eé]n/i.test(planName)
+      ? 'store'
+      : /plus|\+/i.test(planName)
+        ? 'plus'
+        : 'free'
 
   return {
     id,
@@ -341,16 +390,18 @@ export function mapPaymentResponse(
     suscripcionId: subscriptionId,
     suscriptorId: subscriberId,
     userId: subscriberId,
-    userRole: context?.userRole ?? (inferredPlanId === 'store' ? 'STORE_ADMIN' : 'BUYER'),
-    planId: inferredPlanId,
-    planName: inferredPlanName,
+    // TODO(contrato): PaymentResponse no incluye userRole; se asigna rol base BUYER/STORE_ADMIN según planName solo para tipado interno.
+    userRole: planId === 'store' ? 'STORE_ADMIN' : 'BUYER',
+    planId,
+    backendPlanId: typeof raw.planId === 'number' ? raw.planId : undefined,
+    planName,
     amount,
     valor: amount,
     currency,
     moneda: 'COP',
-    mpReference: raw.externalPaymentId ?? id,
-    referencia: raw.externalPaymentId ?? id,
-    referenciaExterna: raw.externalPaymentId ?? id,
+    mpReference: raw.externalPaymentId?.trim() || id,
+    referencia: raw.externalPaymentId?.trim() || id,
+    referenciaExterna: raw.externalPaymentId?.trim() || id,
     method: 'Mercado Pago',
     date: isoDate,
     fecha: isoDate,
@@ -380,4 +431,22 @@ export function mapRetryPaymentResponse(
     fechaFin: null,
     initPoint: raw.initPoint,
   }
+}
+
+/** Genera el texto CSV del listado de pagos (sin dependencias externas). */
+export function buildPaymentsCsv(payments: PaymentDto[]): string {
+  const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const header = ['pagoId', 'suscripcionId', 'suscriptorId', 'plan', 'valor', 'moneda', 'estado', 'fecha', 'referencia']
+  const rows = payments.map((p) => [
+    p.pagoId ?? p.id,
+    p.suscripcionId ?? '',
+    p.suscriptorId ?? p.userId,
+    p.planName || '—',
+    p.valor ?? p.amount,
+    p.currency ?? p.moneda ?? 'COP',
+    formatStatusLabel(p.estado ?? p.status.toUpperCase(), p.unknownStatus),
+    p.fecha ?? p.date,
+    p.referencia ?? p.mpReference ?? p.id,
+  ])
+  return [header, ...rows].map((row) => row.map(esc).join(';')).join('\n')
 }

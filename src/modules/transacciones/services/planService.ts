@@ -197,7 +197,10 @@ export const planService = {
     const { data } = await apiClient.get<ApiSubscriptionResponse>(
       `/api/v1/subscriptions/${encodeURIComponent(user.id)}`,
     )
-    const mappedStatus = mapSubscriptionStatus(data.status)
+    const mappedStatus = mapSubscriptionStatus(data.status, {
+      autoRenewal: data.autoRenewal,
+      endDate: data.endDate,
+    })
     const isActive = mappedStatus.status === 'ACTIVA'
     const meta = readLastCheckoutMeta()
     return {

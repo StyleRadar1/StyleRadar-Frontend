@@ -118,7 +118,7 @@ export function BuyerPaymentsSection() {
                   <td className="p-4 whitespace-nowrap">{formatFecha(p.date)}</td>
                   <td className="p-4">
                     <div className="font-semibold text-[var(--sr-text-primary,var(--color-text))]">
-                      {p.planName} · mensual
+                      {p.planName || '—'} · mensual
                     </div>
                     <div className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
                       {p.method} · {p.id}

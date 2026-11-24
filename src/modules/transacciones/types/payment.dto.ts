@@ -75,6 +75,8 @@ export interface PaymentDto {
   userEmail?: string
   userRole: Role
   planId: 'free' | 'plus' | 'store'
+  /** Identificador numérico del plan devuelto por ms-pagos (`PaymentResponse.planId`). */
+  backendPlanId?: number
   planName: string
   amount: number
   valor?: number
