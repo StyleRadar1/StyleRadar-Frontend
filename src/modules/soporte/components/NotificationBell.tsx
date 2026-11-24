@@ -108,7 +108,8 @@ export function NotificationBell() {
               <ul className="max-h-80 space-y-1 overflow-y-auto" onScroll={(e) => { const t = e.currentTarget; if (t.scrollTop + t.clientHeight >= t.scrollHeight - 48) void cargarMas() }}>
                 {list.map((n) => (
                   <li key={n.id}>
-                    <button type="button" onClick={() => openItem(n)} className={`w-full rounded-xl p-3 text-left hover:bg-white/5 ${n.leida ? 'text-white/65' : ''}`}>
+                    <button type="button" onClick={() => openItem(n)} disabled={!n.enlace && n.leida}
+                      className={`w-full rounded-xl p-3 text-left disabled:cursor-default ${n.enlace || !n.leida ? 'hover:bg-white/5' : ''} ${n.leida ? 'text-white/65' : ''}`}>
                       <span className="flex items-center gap-2 text-sm font-semibold">
                         {!n.leida && <i aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-violeta-claro" />}
                         <span title={INFO_AVISO[n.tipo].titulo} className="shrink-0 text-white/70"><IconoAviso tipo={n.tipo} /></span>
@@ -122,6 +123,7 @@ export function NotificationBell() {
                 {cargandoMas && <li role="status" className="px-3 py-2 text-center text-xs text-white/60">Cargando más…</li>}
               </ul>
             )}
+          <Link to="/avisos" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Ver todas las notificaciones</Link>
           {rol === 'BUYER' && <Link to="/alertas" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Ver búsquedas y alertas</Link>}
           <Link to="/avisos/preferencias" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Preferencias de avisos</Link>
         </div>
