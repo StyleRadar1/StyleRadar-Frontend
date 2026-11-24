@@ -173,7 +173,7 @@ describe('Playlists · errores del plan (Cristian)', () => {
     expect(screen.getByRole('heading', { level: 2, name: /Playlist sin destacar/i })).toBeInTheDocument()
   })
 
-  it('en modo API consulta /api/v1/playlists/me, /me/guardadas y /destacadas cuando hay sesión', async () => {
+  it('en modo API consulta /api/v1/playlists/me, /me/saved y /featured cuando hay sesión', async () => {
     const prevUseMocks = env.useMocks
     env.useMocks = false
     tokenStorage.set('jwt-qa-test')
@@ -200,7 +200,7 @@ describe('Playlists · errores del plan (Cristian)', () => {
           ],
         } as never)
       }
-      if (url === '/api/v1/playlists/me/guardadas') {
+      if (url === '/api/v1/playlists/me/saved') {
         return Promise.resolve({
           data: [
             {
@@ -218,7 +218,7 @@ describe('Playlists · errores del plan (Cristian)', () => {
           ],
         } as never)
       }
-      if (url === '/api/v1/playlists/destacadas') {
+      if (url === '/api/v1/playlists/featured') {
         return Promise.resolve({
           data: [
             {
@@ -250,8 +250,8 @@ describe('Playlists · errores del plan (Cristian)', () => {
 
       expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists')
       expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/me')
-      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/me/guardadas')
-      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/destacadas')
+      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/me/saved')
+      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/featured')
 
       await user.click(screen.getByRole('tab', { name: /Destacadas \(1\)/i }))
       expect(screen.getByRole('heading', { level: 2, name: /Destacada de \/destacadas/i })).toBeInTheDocument()

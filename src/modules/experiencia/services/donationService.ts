@@ -325,7 +325,6 @@ export const donationService = {
     }
     return apiClient
       .patch<any>(`/api/v1/donations/${id}/decision`, payload)
-      .catch(() => apiClient.patch<any>(`/api/v1/donaciones/${id}/decide`, payload))
       .then((r) => normalizeDonation(r.data))
   },
 
@@ -345,7 +344,6 @@ export const donationService = {
     }
     return apiClient
       .patch<any>(`/api/v1/donations/${id}/pickup`, payload)
-      .catch(() => apiClient.patch<any>(`/api/v1/donaciones/${id}/pickup`, payload))
       .then((r) => normalizeDonation(r.data))
   },
 
@@ -362,7 +360,6 @@ export const donationService = {
     }
     return apiClient
       .patch<any>(`/api/v1/donations/${id}/confirmation`, payload)
-      .catch(() => apiClient.patch<any>(`/api/v1/donaciones/${id}/confirm`, payload))
       .then((r) => normalizeDonation(r.data))
   },
 }

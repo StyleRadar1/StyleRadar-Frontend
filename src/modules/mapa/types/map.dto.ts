@@ -55,7 +55,7 @@ export interface MapPinDto {
   photo?: string
   /** Total de prendas reportadas en el resumen del catálogo */
   totalPrendas?: number
-  /** Productos destacados (solo tiendas, hasta 4 desde /catalogo/resumen) */
+  /** Productos destacados (solo tiendas, hasta 4 desde /catalog/summary) */
   products?: MapProductDto[]
 }
 

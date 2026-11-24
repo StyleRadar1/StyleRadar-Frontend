@@ -1209,10 +1209,7 @@ export default function PlaylistsPage() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={prefersReducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.97 }}
                           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                          className="sr-vinyl-active-title"
-                        >
-                          {currentVinylPlaylist.nombre}
-                        </motion.h2>
+                          className="sr-vinyl-active-title">{(() => { const w = currentVinylPlaylist.nombre.trim().split(/\s+/); if (w.length <= 1) return currentVinylPlaylist.nombre; const s = Math.ceil(w.length / 2); return <>{w.slice(0, s).join(" ")}{" "}<span className="sr-vinyl-active-title__accent">{w.slice(s).join(" ")}</span></>; })()}</motion.h2>
                       </AnimatePresence>
                     </Link>
 
@@ -1231,7 +1228,7 @@ export default function PlaylistsPage() {
                 )}
 
                 {/* Pista 3D con disco central y discos laterales en perspectiva */}
-                <div className="sr-vinyl-coverflow-track">
+                <div className="sr-vinyl-coverflow-track">{carouselPlaylists.length > 1 && (<><button type="button" onClick={() => stepVinylPlaylist(-1)} aria-label="Colección anterior" className="sr-vinyl-side-arrow sr-vinyl-side-arrow--prev">‹</button><button type="button" onClick={() => stepVinylPlaylist(1)} aria-label="Siguiente colección" className="sr-vinyl-side-arrow sr-vinyl-side-arrow--next">›</button></>)}
                   {vinylCoverflowSlots.map(({ playlist: pl, offset, isCenter }) => {
                     if (isCenter) {
                       return (
@@ -1307,7 +1304,7 @@ export default function PlaylistsPage() {
                     // Discos laterales
                     return (
                       <div
-                        key={`${pl.id}-${offset}`}
+                        key={pl.id}
                         className={`sr-vinyl-slot sr-vinyl-slot--lateral sr-vinyl-slot--offset-${offset}`}
                       >
                         <button

@@ -386,8 +386,8 @@ export const storePublicService = {
     let almacenMatch: Record<string, any> | null = null
     if (!storeDto && storeNotFound) {
       const listaAlmacenes = await apiClient
-        .get<Record<string, any>[]>('/api/v1/stores')
-        .then((r) => (Array.isArray(r.data) ? r.data : []))
+        .get<Record<string, any>[] | { content?: Record<string, any>[] }>('/api/v1/stores')
+        .then((r) => (Array.isArray(r.data) ? r.data : Array.isArray(r.data?.content) ? r.data.content : []))
         .catch(() => [] as Record<string, any>[])
       almacenMatch =
         listaAlmacenes.find(

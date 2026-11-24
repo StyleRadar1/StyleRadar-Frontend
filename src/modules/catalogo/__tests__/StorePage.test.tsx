@@ -130,11 +130,11 @@ describe('StorePage & storePublicService sin mocks (VITE_USE_MOCKS=false)', () =
     expect(screen.queryByRole('heading', { level: 1, name: /Luna Store/i })).not.toBeInTheDocument()
   })
 
-  it('cuando /api/v1/stores/{uuid} responde 404 resuelve datos reales desde GET /api/v1/almacenes sin llamar GET /api/v1/almacenes/{id}', async () => {
+  it('cuando /api/v1/stores/{uuid} responde 404 resuelve datos reales desde GET /api/v1/stores y GET /api/v1/stores/{uuid}/catalog sin llamar GET /api/v1/almacenes/{id}', async () => {
     const uuid = 'fc942335-ab30-350a-b6a5-577cf0ca2fb5'
     const getSpy = vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
       if (url === `/api/v1/stores/${uuid}`) throw new ApiError(404, 'No encontrada')
-      if (url === '/api/v1/almacenes') {
+      if (url === '/api/v1/stores') {
         return {
           data: [
             {
@@ -147,7 +147,7 @@ describe('StorePage & storePublicService sin mocks (VITE_USE_MOCKS=false)', () =
           ],
         } as never
       }
-      if (url === `/api/v1/almacenes/${uuid}/catalogo`) {
+      if (url === `/api/v1/stores/${uuid}/catalog`) {
         return {
           data: [
             {
