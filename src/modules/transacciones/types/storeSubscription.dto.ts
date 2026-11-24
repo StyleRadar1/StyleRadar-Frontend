@@ -47,6 +47,8 @@ export interface StoreSubscriptionDto {
   autoRenovacion?: boolean
   nit?: string
   almacenId?: string
+  /** Estado crudo cuando el backend devuelve un estado no reconocido por el front. */
+  unknownStatus?: string
 }
 
 /** Suscripción más el historial de pagos propios de la tienda (RF-97). */

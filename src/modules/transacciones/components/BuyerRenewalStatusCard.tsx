@@ -1,21 +1,16 @@
+import { Link } from 'react-router-dom'
 import { Badge } from '@/modules/core/design-system'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CancelSubscriptionButton } from './CancelSubscriptionButton'
 import { RADAR_PLUS_PRICE } from '../constants/plansByRole'
 import { useUserPlan } from '../hooks/useUserPlan'
+import { deriveSubscriptionStatus, formatSubscriptionDate } from '../mappers/paymentsMappers'
 import { getTryOnPhotoUses } from '../services/userPlanService'
 import { PLAN_LIMITS } from '../types/plan.dto'
 
 const formatFechaCobro = (iso?: string | null) =>
-  iso
-    ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-      })
-    : '9 de diciembre de 2026'
+  formatSubscriptionDate(iso, '9 de diciembre de 2026')
 
 /**
  * RF-95, RF-100, RF-102: Muestra en /planes y /perfil para el comprador:
@@ -32,6 +27,7 @@ export function BuyerRenewalStatusCard() {
   const disponibles = Math.max(0, PLAN_LIMITS.probadorFoto - uses)
 
   if (plan === 'RADAR') {
+    const isExpiredOrSuspended = details?.estado === 'SUSPENDIDA' || details?.estado === 'VENCIDA'
     return (
       <div
         role="region"
@@ -40,14 +36,23 @@ export function BuyerRenewalStatusCard() {
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold">Plan actual:</span>
               <Badge tone="arena">Radar (Gratuito)</Badge>
+              {isExpiredOrSuspended && <Badge tone="lavanda">{details?.estado}</Badge>}
             </div>
             <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
               Límite aplicado: Probador con maniquí (sin probador con foto propia ni alertas de disponibilidad)
             </p>
           </div>
+          {isExpiredOrSuspended && (
+            <Link
+              to="/suscripcion"
+              className="rounded-xl bg-violeta px-4 py-2 text-xs font-semibold text-blanco"
+            >
+              Volver a suscribirme
+            </Link>
+          )}
         </div>
       </div>
     )
@@ -62,6 +67,7 @@ export function BuyerRenewalStatusCard() {
   const fechaFinRaw = details?.fechaFin ?? details?.proximoCobro ?? details?.periodEndsAt ?? '2026-12-09'
   const fechaTexto = formatFechaCobro(fechaFinRaw)
   const valorTexto = formatCOP(RADAR_PLUS_PRICE)
+  const derived = deriveSubscriptionStatus(estado, { autoRenewal: renewalActive, endDate: fechaFinRaw })
 
   return (
     <div
@@ -74,9 +80,9 @@ export function BuyerRenewalStatusCard() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-bold">Renovación automática:</span>
             <Badge tone={renewalActive ? 'violeta' : 'arena'}>
-              {renewalActive ? 'Activa' : 'Desactivada'}
+              {renewalActive ? 'Activa' : 'Activa sin renovación'}
             </Badge>
-            <Badge tone={estado === 'ACTIVA' ? 'violeta' : 'lavanda'}>{estado}</Badge>
+            <Badge tone={estado === 'ACTIVA' ? 'violeta' : 'lavanda'}>{derived.label}</Badge>
           </div>
           <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
             <span>suscripcionId: <b className="font-mono">{suscripcionId}</b></span>
@@ -92,7 +98,7 @@ export function BuyerRenewalStatusCard() {
           <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
             {renewalActive
               ? `Próximo cobro: ${fechaTexto} · ${valorTexto}`
-              : `Radar+ activo hasta ${fechaTexto} · Próximo cobro pausado`}
+              : `Tu plan sigue activo hasta ${fechaTexto}`}
           </p>
           <p className="text-xs font-semibold text-arena">
             Usos disponibles del probador con foto propia: {disponibles} de {PLAN_LIMITS.probadorFoto} ({uses} usados)

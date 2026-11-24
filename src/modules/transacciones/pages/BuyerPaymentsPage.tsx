@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { EmptyState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { PayerEmailForm } from '../components/PayerEmailForm'
+import { formatStatusLabel } from '../mappers/paymentsMappers'
 import { planService } from '../services/planService'
 import { userPlanService } from '../services/userPlanService'
 import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
@@ -116,7 +118,7 @@ export function BuyerPaymentsSection() {
                   <td className="p-4 whitespace-nowrap">{formatFecha(p.date)}</td>
                   <td className="p-4">
                     <div className="font-semibold text-[var(--sr-text-primary,var(--color-text))]">
-                      {p.planName} · mensual
+                      {p.planName || '—'} · mensual
                     </div>
                     <div className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
                       {p.method} · {p.id}
@@ -126,7 +128,7 @@ export function BuyerPaymentsSection() {
                     {formatCOP(p.amount)} {currency}
                   </td>
                   <td className="p-4">
-                    <Badge tone={STATUS_TONE[p.status]}>{STATUS_BADGE_LABEL[p.status]}</Badge>
+                    <Badge tone={STATUS_TONE[p.status]}>{formatStatusLabel(STATUS_BADGE_LABEL[p.status], p.unknownStatus)}</Badge>
                   </td>
                   <td className="p-4 font-mono text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
                     {ref}
@@ -196,6 +198,25 @@ export function BuyerPaymentsSection() {
                 setRetrying(true)
                 setRetryError(null)
                 try {
+                  if (!env.useMocksPagos) {
+                    const retried = await planService.retryRejectedPayment(
+                      {
+                        orderId: retryTarget.id,
+                        status: 'rechazado',
+                        planName: retryTarget.planName,
+                        amount: retryTarget.amount,
+                        planId: retryTarget.planId,
+                      },
+                      payerEmail,
+                    )
+                    setRetryTarget(null)
+                    if (retried.initPoint) {
+                      window.location.assign(retried.initPoint)
+                      return
+                    }
+                    navigate(`/pago/resultado?orden=${encodeURIComponent(retried.orderId)}`)
+                    return
+                  }
                   await planService.createCheckout(retryTarget.planId, payerEmail)
                   setRetryTarget(null)
                   navigate('/pago/resultado?orden=MOCK_ORDER_OK')

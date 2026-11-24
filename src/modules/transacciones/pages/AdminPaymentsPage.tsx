@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { env } from '@/configs/env'
 import { Card, Badge } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { Aviso } from '@/modules/core/components/errores'
@@ -6,7 +7,8 @@ import { errorKind } from '@/modules/core/api/errors'
 import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
-import { calcRevenue } from '../services/paymentService'
+import { buildPaymentsCsv, formatStatusLabel } from '../mappers/paymentsMappers'
+import { calcRevenue, paymentService } from '../services/paymentService'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
 import '@/styles/verdelo-dashboard.css'
 
@@ -140,6 +142,27 @@ export default function AdminPaymentsPage() {
     setFilters((prev) => ({ ...prev, [key]: value || undefined }))
   }, [])
 
+  const handleSelectPayment = useCallback((payment: PaymentDto) => {
+    setSelected(payment)
+    if (!env.useMocksPagos) {
+      const id = payment.pagoId ?? payment.id
+      if (id) {
+        void paymentService.getById(id).then((detail) => setSelected(detail)).catch(() => { /* conserva fila */ })
+      }
+    }
+  }, [])
+
+  const handleExportCsv = useCallback(() => {
+    const csv = buildPaymentsCsv(payments)
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `pagos-styleradar-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [payments])
+
 
   const cycleCard = (dir: 1 | -1) => {
     setFlippedCardId(null)
@@ -186,6 +209,14 @@ export default function AdminPaymentsPage() {
           <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Ingresos aprobados</p>
           <p className="mt-1 text-2xl font-extrabold tabular-nums">{formatCOP(revenue)}</p>
           <p className="text-xs text-white/55">Solo pagos aprobados</p>
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={payments.length === 0}
+            className="mt-3 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blanco transition hover:bg-white/20 disabled:opacity-40"
+          >
+            Exportar CSV
+          </button>
         </Card>
       </div>
 
@@ -615,6 +646,7 @@ export default function AdminPaymentsPage() {
                 <th className="pb-3 pr-4">pagoId</th>
                 <th className="pb-3 pr-4">suscripcionId</th>
                 <th className="pb-3 pr-4">suscriptorId</th>
+                <th className="pb-3 pr-4">Plan</th>
                 <th className="pb-3 pr-4 text-right">Valor (COP)</th>
                 <th className="pb-3 pr-4">Estado</th>
                 <th className="pb-3 pr-4">Fecha</th>
@@ -634,16 +666,17 @@ export default function AdminPaymentsPage() {
                   <tr
                     key={pagoId}
                     className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.06]"
-                    onClick={() => setSelected(p)}
+                    onClick={() => handleSelectPayment(p)}
                   >
                     <td className="py-3.5 pr-4 font-mono text-xs text-lavanda">{pagoId}</td>
                     <td className="py-3.5 pr-4 font-mono text-xs text-white/80">{suscripcionId}</td>
                     <td className="py-3.5 pr-4 font-mono text-xs font-semibold text-blanco">{suscriptorId}</td>
+                    <td className="py-3.5 pr-4 text-white/85">{p.planName || '—'}</td>
                     <td className="py-3.5 pr-4 text-right font-mono font-bold text-arena">
                       {formatCOP(valor)} COP
                     </td>
                     <td className="py-3.5 pr-4">
-                      <Badge tone={STATUS_TONES[p.status]}>{p.estado ?? STATUS_LABELS[p.status]}</Badge>
+                      <Badge tone={STATUS_TONES[p.status]}>{formatStatusLabel(p.estado ?? STATUS_LABELS[p.status], p.unknownStatus)}</Badge>
                     </td>
                     <td className="py-3.5 pr-4 text-white/70">{fecha}</td>
                     <td className="py-3.5 pr-4 font-mono text-xs text-white/75">{referencia}</td>
@@ -671,7 +704,11 @@ export default function AdminPaymentsPage() {
               <div><dt className="text-white/50">pagoId</dt><dd className="font-mono font-semibold">{selected.pagoId ?? selected.id}</dd></div>
               <div><dt className="text-white/50">suscripcionId</dt><dd className="font-mono">{selected.suscripcionId ?? `SUB-${selected.id}`}</dd></div>
               <div><dt className="text-white/50">suscriptorId</dt><dd className="font-mono font-semibold">{selected.suscriptorId ?? selected.userId}</dd></div>
-              <div><dt className="text-white/50">Plan</dt><dd>{selected.planName}</dd></div>
+              <div>
+                <dt className="text-white/50">Tipo de suscriptor</dt>
+                <dd>{selected.subscriberRoleLabel ?? (selected.userRole === 'STORE_ADMIN' ? 'Tienda' : selected.userRole === 'BUYER' ? 'Comprador' : '—')}</dd>
+              </div>
+              <div><dt className="text-white/50">Plan</dt><dd>{selected.planName || '—'}</dd></div>
               <div><dt className="text-white/50">Valor (COP)</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.valor ?? selected.amount)} COP</dd></div>
               <div><dt className="text-white/50">Estado</dt><dd>{selected.estado ?? STATUS_LABELS[selected.status]}</dd></div>
               <div><dt className="text-white/50">Fecha</dt><dd>{selected.fecha ?? selected.date}</dd></div>

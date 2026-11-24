@@ -73,8 +73,14 @@ export interface PaymentDto {
   userId: string
   userName?: string
   userEmail?: string
-  userRole: Role
+  /** Tipo de suscriptor devuelto por ms-pagos (`USER | STORE`). */
+  subscriberType?: 'USER' | 'STORE'
+  /** Etiqueta de rol derivada exclusivamente de `subscriberType` («Comprador», «Tienda» o «—»). */
+  subscriberRoleLabel?: string
+  userRole?: Role
   planId: 'free' | 'plus' | 'store'
+  /** Identificador numérico del plan devuelto por ms-pagos (`PaymentResponse.planId`). */
+  backendPlanId?: number
   planName: string
   amount: number
   valor?: number
@@ -88,6 +94,8 @@ export interface PaymentDto {
   fecha?: string
   status: PaymentStatus
   estado?: PaymentStatusV4
+  /** Estado crudo cuando el backend envía un valor fuera del contrato v4. */
+  unknownStatus?: string
 }
 
 /** Filtros que acepta la búsqueda de pagos (RF-75). */

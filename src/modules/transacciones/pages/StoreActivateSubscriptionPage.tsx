@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
@@ -12,10 +13,10 @@ import { useStoreSubscription } from '../hooks/useStoreSubscription'
 import { STORE_PLAN } from '../mocks/plans'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { CheckoutResultDto } from '../types/plan.dto'
+import { isSubscriptionAlreadyExistsError, SUBSCRIPTION_ALREADY_EXISTS_MSG } from '../utils/erroresPlan'
 import { isValidNit } from '../utils/validation'
 
-export const STORE_ALREADY_SUBSCRIBED_MSG =
-  'Tu almacén ya tiene una suscripción activa o un pago pendiente'
+export const STORE_ALREADY_SUBSCRIBED_MSG = SUBSCRIPTION_ALREADY_EXISTS_MSG
 export const STORE_PENDING_PAYMENT_MSG =
   'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado'
 export const STORE_REJECTED_PAYMENT_MSG =
@@ -77,8 +78,9 @@ export default function StoreActivateSubscriptionPage() {
         setLastResult(res.result ?? null)
         reload()
       } catch (err) {
-        if (err instanceof ApiError && (err.status === 403 || err.status === 409)) {
+        if (isSubscriptionAlreadyExistsError(err) || (err instanceof ApiError && err.status === 403)) {
           setConflictError(true)
+          reload()
         } else if (err instanceof ApiError && err.status === 400) {
           setGatewayError(err.message.replace(/\.$/, ''))
         } else {
@@ -116,7 +118,9 @@ export default function StoreActivateSubscriptionPage() {
 
   const alreadyActiveOrPending =
     conflictError ||
-    ((sub?.status === 'ACTIVA' || payments.some((p) => p.status === 'pendiente')) &&
+    ((sub?.status === 'ACTIVA' ||
+      (!env.useMocksPagos && sub?.status === 'PENDIENTE') ||
+      payments.some((p) => p.status === 'pendiente')) &&
       !lastResult)
 
   return (

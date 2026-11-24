@@ -42,34 +42,13 @@ export function CancelSubscriptionButton({
     return (
       <div className={`flex flex-col gap-2 ${className}`}>
         <div className="rounded-xl border border-arena/40 bg-white/[.04] p-3 text-xs text-[var(--sr-text-primary,var(--color-text))]">
-          <p className="font-semibold text-arena">
-            {effectivePlanName} · Activa hasta {fechaFin}. No se renovará
+          <p className="font-semibold text-arena">Activa sin renovación</p>
+          <p className="mt-0.5 text-[var(--sr-text-muted,var(--color-text-muted))]">
+            Tu plan sigue activo hasta {fechaFin}
           </p>
           <p className="mt-0.5 text-[var(--sr-text-muted,var(--color-text-muted))]">
-            La renovación automática está desactivada
+            No se renovará al finalizar el periodo
           </p>
-        </div>
-        <div>
-          <Button
-            type="button"
-            variant="primario"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true)
-              try {
-                if (tipo === 'comprador') {
-                  await userPlanService.setRenewal(true)
-                } else {
-                  await storeSubscriptionService.reactivateRenewal()
-                }
-                onUpdated?.()
-              } finally {
-                setBusy(false)
-              }
-            }}
-          >
-            {busy ? 'Reactivando…' : 'Reactivar renovación automática'}
-          </Button>
         </div>
       </div>
     )
@@ -124,10 +103,10 @@ export function CancelSubscriptionButton({
       >
         <div className="space-y-2 text-left text-sm text-[var(--sr-text-primary,var(--color-text))]">
           <p>
-            Al cancelar la suscripción de <strong>{effectivePlanName}</strong>, conservarás el acceso a los beneficios hasta el final de tu ciclo de facturación (<strong>{fechaFin}</strong>)
+            Tu plan no se renovará. Mantienes los beneficios hasta el <strong>{fechaFin}</strong>
           </p>
           <p>
-            Se desactiva la renovación automática y no se cobrará el siguiente ciclo en Mercado Pago
+            Se desactiva la renovación automática de <strong>{effectivePlanName}</strong> y no se cobrará el siguiente ciclo en Mercado Pago
           </p>
           <p className="text-xs text-[var(--sr-text-muted,var(--color-text-muted))]">
             No hay devolución por el tiempo restante

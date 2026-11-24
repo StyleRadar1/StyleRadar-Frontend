@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -15,12 +16,26 @@ import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
 import { PagoRechazado } from '../components/PagoRechazado'
 import { PLAN_CHANGED } from '../services/userPlanService'
 import { isPlanCompatibleWithRole } from '../constants/plansByRole'
+import { deriveSubscriptionStatus, formatSubscriptionDate } from '../mappers/paymentsMappers'
 import { avisoDePlan, TEXTOS_PLAN, type AvisoPlan } from '../utils/erroresPlan'
+
+function getMercadoPagoHint(rawStatus: string): string | null {
+  const s = rawStatus.trim().toLowerCase()
+  if (!s) return null
+  if (s === 'approved') return 'Mercado Pago informó el pago como aprobado. Confirmando estado oficial de tu suscripción'
+  if (s === 'pending' || s === 'in_process') return 'Mercado Pago informó que tu pago está en proceso de verificación'
+  if (s === 'rejected' || s === 'failure') return 'Mercado Pago informó que el pago no fue aprobado'
+  return 'Recibimos tu retorno desde Mercado Pago. Consultando el estado oficial de tu suscripción'
+}
 
 /* ─── Subcomponente: resultado del pago (RF-94: dos momentos) ─── */
 function CheckoutResult() {
   const [params] = useSearchParams()
-  const orderId = params.get('orden') ?? 'MOCK_ORDER_OK'
+  const mpStatus = params.get('status') ?? params.get('collection_status') ?? ''
+  const mpPaymentId = params.get('payment_id')?.trim() || ''
+  const mpExternalRef = params.get('external_reference')?.trim() || ''
+  const mpHint = getMercadoPagoHint(mpStatus)
+  const orderId = params.get('orden') ?? (mpExternalRef || mpPaymentId || 'MOCK_ORDER_OK')
   const [result, setResult] = useState<CheckoutResultDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
@@ -28,8 +43,8 @@ function CheckoutResult() {
     setLoading(true)
     planService.getCheckoutResult(orderId)
       .then((r) => {
-        // RF-94, RF-100 y RNF-14: solo un pago aprobado activa el plan y no se procesa dos veces la misma orden
-        if (r.status === 'aprobado' && r.planName === 'Radar+') {
+        // RF-94, RF-100 y RNF-14: en modo real la suscripción la activa el backend por webhook (nunca localmente).
+        if (env.useMocksPagos && r.status === 'aprobado' && r.planId === 'plus') {
           const processedKey = `sr_processed_order_${orderId}`
           let alreadyProcessed = false
           try {
@@ -39,6 +54,8 @@ function CheckoutResult() {
           if (!alreadyProcessed) {
             userPlanService.activatePaid('RADAR_PLUS')
           }
+        } else if (!env.useMocksPagos && r.status === 'aprobado') {
+          window.dispatchEvent(new Event(PLAN_CHANGED))
         }
         setResult(r)
       })
@@ -87,7 +104,7 @@ function CheckoutResult() {
 
   // Mercado Pago no aprobó el pago: pantalla del plan con Reintentar. No se muestran datos del medio de pago.
   if (result.status === 'rechazado') {
-    const reintentar = result.planName === 'Tienda aliada' ? '/tienda/suscripcion' : '/suscripcion'
+    const reintentar = result.planId === 'store' ? '/tienda/suscripcion' : '/suscripcion'
     return (
       <PagoRechazado
         detalle={<p className="text-xs text-[var(--sr-tx-2)]">El pago no fue aprobado · {result.planName} · {formatCOP(result.amount)} · cobro $0</p>}
@@ -112,9 +129,11 @@ function CheckoutResult() {
       <span className="text-5xl">{icons[result.status]}</span>
       <h1 className="mt-4 text-3xl font-extrabold">{result.status === 'aprobado' ? '¡Listo!' : 'Pago pendiente'}</h1>
       <p role="status" className="mt-2 text-white/70">{messages[result.status]}</p>
+      {mpHint && <p className="mt-2 text-xs text-arena">{mpHint}</p>}
       <Card className="mx-auto mt-8 max-w-sm text-left">
         <dl className="grid grid-cols-2 gap-2 text-sm">
           <dt className="text-white/50">Orden</dt><dd className="font-mono">{result.orderId}</dd>
+          {mpPaymentId && <><dt className="text-white/50">Referencia MP</dt><dd className="font-mono">{mpPaymentId}</dd></>}
           <dt className="text-white/50">Plan</dt><dd>{result.planName}</dd>
           <dt className="text-white/50">Total a pagar</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
           {result.payerEmail && <><dt className="text-white/50">Pagador</dt><dd className="truncate">{result.payerEmail}</dd></>}
@@ -211,8 +230,15 @@ function PlanCard({
 
 /* ─── Página principal ─── */
 export default function CheckoutPage() {
+  const location = useLocation()
   const [params] = useSearchParams()
-  const isResult = params.has('orden')
+  const isResult =
+    location.pathname.includes('/pago/resultado') ||
+    params.has('orden') ||
+    params.has('status') ||
+    params.has('collection_status') ||
+    params.has('payment_id') ||
+    params.has('external_reference')
 
   if (isResult) return <CheckoutResult />
 
@@ -228,8 +254,23 @@ function PlansSelector() {
   const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
   // El plan de la persona se lee de un único lugar: useUserPlan (el mismo que usan /planes y los candados).
-  const { plan: userPlan } = useUserPlan(user?.role === 'BUYER')
+  const { plan: userPlan, details: userPlanDetails } = useUserPlan(user?.role === 'BUYER')
   const currentPlan = userPlan === 'RADAR_PLUS' ? 'plus' : userPlan === 'RADAR' ? 'free' : null
+  const derivedBuyerStatus = userPlanDetails?.estado
+    ? deriveSubscriptionStatus(userPlanDetails.estado, {
+        autoRenewal: userPlanDetails.renewalEnabled,
+        endDate: userPlanDetails.fechaFin ?? userPlanDetails.periodEndsAt,
+      })
+    : null
+  const hasActiveOrPendingSubscription =
+    user?.role === 'BUYER' &&
+    (userPlan === 'RADAR_PLUS' ||
+      derivedBuyerStatus?.status === 'ACTIVA' ||
+      derivedBuyerStatus?.status === 'PENDIENTE')
+  const activeEndDateText = formatSubscriptionDate(
+    userPlanDetails?.fechaFin ?? userPlanDetails?.periodEndsAt ?? userPlanDetails?.proximoCobro,
+    'el final del periodo pagado',
+  )
 
   // Solo opciones de comprador según PLANS_BY_ROLE (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
   const buyerPlans = plans.filter((p) => isPlanCompatibleWithRole(p.id, user?.role || 'BUYER'))
@@ -260,15 +301,17 @@ function PlansSelector() {
       return
     }
 
-    // Con sesión: crear checkout mock
+    // Con sesión: iniciar suscripción en Mercado Pago (POST /api/v1/subscriptions/start)
     setBusy(true)
     setCheckoutError(null)
     setAviso(null)
     try {
-      await planService.createCheckout(plan.id, payerEmail)
-      // En producción aquí se redirige al initPoint de Mercado Pago.
-      // En mock mostramos el resultado simulado.
-      navigate(`/pago/resultado?orden=MOCK_ORDER_OK`)
+      const checkout = await planService.createCheckout(plan.id, payerEmail, plan.backendPlanId)
+      if (!env.useMocksPagos && checkout.initPoint) {
+        window.location.assign(checkout.initPoint)
+        return
+      }
+      navigate(`/pago/resultado?orden=${encodeURIComponent(checkout.ordenId ?? 'MOCK_ORDER_OK')}`)
     } catch (e) {
       const a = avisoDePlan(e, PAYMENT_INIT_ERROR_MSG)
       setAviso(a)
@@ -308,6 +351,33 @@ function PlansSelector() {
 
       {loading ? (
         <Loading label="Cargando planes…" />
+      ) : hasActiveOrPendingSubscription ? (
+        <Card className="mx-auto mt-10 max-w-xl text-center">
+          <div className="flex justify-center">
+            <Badge tone={derivedBuyerStatus?.status === 'PENDIENTE' ? 'lavanda' : 'violeta'}>
+              {derivedBuyerStatus?.label ?? (userPlanDetails?.renewalEnabled === false ? 'Activa sin renovación' : 'ACTIVA')}
+            </Badge>
+          </div>
+          <h2 className="mt-4 text-2xl font-extrabold">
+            {derivedBuyerStatus?.status === 'PENDIENTE'
+              ? 'Ya tienes una suscripción en proceso'
+              : userPlanDetails?.renewalEnabled === false
+                ? 'Activa sin renovación'
+                : 'Ya tienes Radar+ activo'}
+          </h2>
+          <p className="mt-2 text-sm text-white/75">
+            {derivedBuyerStatus?.status === 'PENDIENTE'
+              ? 'Tu pago está pendiente de confirmación. Cuando se apruebe se activarán tus beneficios'
+              : userPlanDetails?.renewalEnabled === false
+                ? `Tu plan sigue activo hasta ${activeEndDateText}`
+                : 'Tu suscripción está vigente y no necesitas iniciar un nuevo pago'}
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link to="/planes" className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco">
+              Ver mis planes
+            </Link>
+          </div>
+        </Card>
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : buyerPlans.length === 0 ? (

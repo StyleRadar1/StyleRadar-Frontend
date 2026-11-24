@@ -1,7 +1,8 @@
-import { apiClient } from '@/modules/core/api/apiClient'
+import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { mapPaymentResponse, toApiPaymentStatusFilter, type ApiPaymentResponse } from '../mappers/paymentsMappers'
 import { MOCK_PAYMENTS } from '../mocks/payments'
 import type { PaymentDto, PaymentFiltersDto } from '../types/payment.dto'
 
@@ -20,20 +21,29 @@ function applyFilters(payments: PaymentDto[], f: PaymentFiltersDto): PaymentDto[
   })
 }
 
-/** Servicio de pagos para el admin (RF-75). Patrón: mock o gateway. */
+/** Servicio de pagos para el admin (RF-75). Patrón: mock o gateway (`GET /api/v1/admin/payments`). */
 export const paymentService = {
   async list(filters: PaymentFiltersDto): Promise<PaymentDto[]> {
-    if (env.useMocks) { failIfScenario(); return mockDelay(applyFilters(MOCK_PAYMENTS, filters)) }
-    return apiClient.get<PaymentDto[]>('/api/pagos', { params: filters }).then((r) => r.data)
+    if (env.useMocksPagos) {
+      failIfScenario()
+      return mockDelay(applyFilters(MOCK_PAYMENTS, filters))
+    }
+    const status = toApiPaymentStatusFilter(filters.status)
+    const { data } = await apiClient.get<ApiPaymentResponse[]>('/api/v1/admin/payments', {
+      params: status ? { status } : undefined,
+    })
+    const mapped = (Array.isArray(data) ? data : []).map((item) => mapPaymentResponse(item))
+    return applyFilters(mapped, filters)
   },
 
-  getById(id: string): Promise<PaymentDto> {
-    if (env.useMocks) {
+  async getById(id: string): Promise<PaymentDto> {
+    if (env.useMocksPagos) {
       const p = MOCK_PAYMENTS.find((x) => x.id === id || x.pagoId === id)
-      if (!p) return Promise.reject(new Error('Pago no encontrado'))
+      if (!p) return Promise.reject(new ApiError(404, 'Pago no encontrado'))
       return mockDelay(p)
     }
-    return apiClient.get<PaymentDto>(`/api/pagos/${id}`).then((r) => r.data)
+    const { data } = await apiClient.get<ApiPaymentResponse>(`/api/v1/admin/payments/${encodeURIComponent(id)}`)
+    return mapPaymentResponse(data)
   },
 }
 

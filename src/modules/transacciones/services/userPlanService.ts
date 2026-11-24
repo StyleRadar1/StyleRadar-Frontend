@@ -2,6 +2,15 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { aRol } from '@/modules/core/types/roles'
+import {
+  mapPaymentResponse,
+  mapSubscriptionToMiPlanDto,
+  type ApiCancelSubscriptionRequest,
+  type ApiCancellationResponse,
+  type ApiPaymentResponse,
+  type ApiSubscriptionResponse,
+} from '../mappers/paymentsMappers'
 import { fallarSiDemoPlan } from '../mocks/demoPlan'
 import { MOCK_BUYER_PAYMENTS } from '../mocks/payments'
 import type { PaymentDto } from '../types/payment.dto'
@@ -14,8 +23,6 @@ import {
   type VerificacionBeneficioResultDto,
 } from '../types/plan.dto'
 
-/** Rutas del API Gateway hacia ms-pagos-suscripciones. Provisionales hasta tener el Swagger (Julian). */
-const BASE = '/api/payments/subscriptions/me'
 const BUYER_PAYMENTS_KEY = (id: string) => `sr_buyer_payments_${id}`
 const PLAN_STATE_KEY = (id: string) => `sr_user_plan_state_${id}`
 const PLAN_SCENARIO_KEY = (id: string) => `sr_plan_scenario_${id}`
@@ -252,8 +259,8 @@ function getCurrentUserRole(): string | null {
   try {
     const raw = localStorage.getItem('sr_user')
     if (raw) {
-      const u = JSON.parse(raw) as { role?: string }
-      return u.role ?? null
+      const u = JSON.parse(raw) as { role?: unknown }
+      return aRol(u.role)
     }
   } catch { /* noop */ }
   return null
@@ -266,24 +273,41 @@ const me = () => {
 }
 
 export const userPlanService = {
-  /** P8: plan de la persona, del que dependen los candados y la vigencia. */
+  /** P8: plan de la persona (`GET /api/v1/subscriptions/{subscriberId}`), del que dependen los candados y la vigencia. */
   async mine(): Promise<MiPlanDto> {
-    if (env.useMocks) {
+    if (env.useMocksPagos) {
       const mockMode = sessionStorage.getItem('sr_mock')
       if (mockMode !== 'DEGRADADO_POR_PAGO' && mockMode !== 'RENOVACION_PENDIENTE') {
         failIfScenario()
       }
       return mockDelay(readMockPlanState(me().id), 200)
     }
-    return apiClient.get<MiPlanDto>(BASE).then((r) => r.data)
+    const subscriberId = me().id
+    try {
+      const { data } = await apiClient.get<ApiSubscriptionResponse>(
+        `/api/v1/subscriptions/${encodeURIComponent(subscriberId)}`,
+      )
+      return mapSubscriptionToMiPlanDto(data)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        return {
+          plan: 'RADAR',
+          fechaInicio: null,
+          fechaFin: null,
+          renewalEnabled: false,
+          degradedByPayment: false,
+          pendingRenewal: false,
+        }
+      }
+      throw err
+    }
   },
 
   /**
-   * RF-97: Consultar historial de pagos propios del comprador autenticado.
-   * Endpoint: GET /api/payments/subscriptions/me/payments
+   * RF-97: Consultar historial de pagos propios del comprador autenticado (`GET /api/v1/payments/history`).
    */
   async getMyPayments(): Promise<PaymentDto[]> {
-    if (env.useMocks) {
+    if (env.useMocksPagos) {
       const mockMode = sessionStorage.getItem('sr_mock')
       if (mockMode === 'HISTORIAL_CAIDO' || mockMode === '503') {
         throw new ApiError(503, 'No pudimos cargar tu historial. Inténtalo en unos minutos')
@@ -298,22 +322,24 @@ export const userPlanService = {
       const sorted = [...list].sort((a, b) => b.date.localeCompare(a.date))
       return mockDelay(sorted, 250)
     }
-    return apiClient.get<PaymentDto[]>(`${BASE}/payments`).then((r) =>
-      [...r.data].sort((a, b) => b.date.localeCompare(a.date)),
-    )
+    me()
+    const { data } = await apiClient.get<ApiPaymentResponse[]>('/api/v1/payments/history')
+    const mapped = (Array.isArray(data) ? data : []).map((item) => mapPaymentResponse(item))
+    return mapped.sort((a, b) => b.date.localeCompare(a.date))
   },
 
   /**
    * RF-100 y RF-101:
-   * - Al cancelar Radar+ (solicitar cambio a RADAR), conserva RADAR_PLUS activo hasta `periodEndsAt`
-   *   con `renewalEnabled: false` (RN-01). Al vencer `periodEndsAt`, `evaluateVigencia` pasa a RADAR.
+   * - En mocks: al cancelar Radar+ (solicitar cambio a RADAR), conserva RADAR_PLUS activo hasta `periodEndsAt`.
+   * - Con gateway real: TODO(contrato) no hay endpoint PUT de cambio directo de plan; bajar a Radar cancela renovación
+   *   via `POST /api/v1/subscriptions/{subscriberId}/cancel` y activar Radar+ requiere `POST /api/v1/subscriptions/start`.
    */
   async change(plan: PlanUsuario): Promise<MiPlanDto> {
     const role = getCurrentUserRole()
     if (role && role !== 'BUYER') {
       throw new ApiError(403, 'Tu cuenta no puede cambiar a ese plan')
     }
-    if (env.useMocks) {
+    if (env.useMocksPagos) {
       failIfScenario('conflicto')
       fallarSiDemoPlan()
       const user = me()
@@ -339,16 +365,18 @@ export const userPlanService = {
       window.dispatchEvent(new Event(PLAN_CHANGED))
       return r
     }
-    const r = await apiClient.put<MiPlanDto>(BASE, { plan }).then((res) => res.data)
-    window.dispatchEvent(new Event(PLAN_CHANGED))
-    return r
+    if (plan === 'RADAR') {
+      return userPlanService.setRenewal(false)
+    }
+    // TODO(contrato): ms-pagos.openapi.json no expone cambio directo sin pago; debe iniciarse con POST /api/v1/subscriptions/start.
+    throw new ApiError(422, 'Para activar Radar+ debes completar el pago con Mercado Pago')
   },
 
   /**
-   * RF-95 y RF-101: Activa o desactiva la renovación automática de Radar+ sin perder la vigencia pagada.
+   * RF-95 y RF-101: Desactiva la renovación automática de Radar+ (`POST /api/v1/subscriptions/{subscriberId}/cancel`).
    */
   async setRenewal(enabled: boolean): Promise<MiPlanDto> {
-    if (env.useMocks) {
+    if (env.useMocksPagos) {
       try {
         failIfScenario('conflicto')
       } catch {
@@ -368,18 +396,27 @@ export const userPlanService = {
       window.dispatchEvent(new Event(PLAN_CHANGED))
       return r
     }
-    const r = await apiClient
-      .post<MiPlanDto>(`${BASE}/${enabled ? 'reactivate-renewal' : 'cancel-renewal'}`)
-      .then((res) => res.data)
+    if (enabled) {
+      // TODO(contrato): ms-pagos.openapi.json no expone endpoint para reactivar la renovación automática.
+      throw new ApiError(501, 'La reactivación de la renovación automática no está disponible todavía')
+    }
+    const subscriberId = me().id
+    const body: ApiCancelSubscriptionRequest = { confirmed: true }
+    await apiClient.post<ApiCancellationResponse>(
+      `/api/v1/subscriptions/${encodeURIComponent(subscriberId)}/cancel`,
+      body,
+    )
+    const updated = await userPlanService.mine()
     window.dispatchEvent(new Event(PLAN_CHANGED))
-    return r
+    return updated
   },
 
   /**
-   * RF-100: el plan de pago solo queda activo con un pago aprobado. Se llama desde la pantalla de resultado del pago.
+   * RF-100: el plan de pago solo queda activo con un pago aprobado.
+   * Con backend real nunca se activa localmente: solo notifica recarga desde `GET /api/v1/subscriptions/{subscriberId}`.
    */
   activatePaid(plan: PlanUsuario): void {
-    if (env.useMocks) {
+    if (env.useMocksPagos) {
       const u = mockSessionUser()
       if (u) {
         sessionStorage.removeItem(PLAN_SCENARIO_KEY(u.id))
