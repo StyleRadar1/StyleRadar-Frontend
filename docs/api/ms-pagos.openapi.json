@@ -717,6 +717,13 @@
           "subscriberId": {
             "type": "string"
           },
+          "subscriberType": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "STORE"
+            ]
+          },
           "planId": {
             "type": "integer",
             "format": "int64"
