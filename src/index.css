@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./modules/core/theme/tokens.css";
+@custom-variant dark (&:where(html[data-theme="dark"] *, html[data-theme="oscuro"] *, html[data-tema="oscuro"] *));
 
 /* =====================================================================
    Paleta y tipografía del manual de identidad de StyleRadar.
@@ -205,8 +206,8 @@ html[data-tema="claro"] {
 
   /* Superficie y tokens del Hero Aurora Día (Amanecer luminoso en el radar) */
   --sr-hero-bg: #f3f0f8;
-  --sr-hero-text: #0f172a;
-  --sr-hero-text-muted: #475569;
+  --sr-hero-text: #14111D;
+  --sr-hero-text-muted: #374151;
   --sr-hero-bar: #ffffff;
   --aurora-blur: 75px;
 
@@ -233,7 +234,7 @@ html[data-tema="claro"] {
   /* Tokens del Hero Landing adaptados a modo claro */
   --hero-fg: #ffffff;
   --hero-fg-muted: rgba(255, 255, 255, 0.85);
-  --hero-overlay: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.12) 36%, rgba(15, 23, 42, 0.38) 64%, #f8f9fa 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(15, 23, 42, 0.5));
+  --hero-overlay: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.12) 36%, rgba(15, 23, 42, 0.38) 64%, rgba(15, 23, 42, 0.55) 100%), radial-gradient(90% 95% at 50% 48%, transparent 45%, rgba(15, 23, 42, 0.5));
   --hero-sub-bg: rgba(35, 30, 37, 0.75);
   --hero-sub-border: rgba(255, 255, 255, 0.2);
   --hero-btn-primary-bg: #48119a;
@@ -254,8 +255,8 @@ html[data-tema="claro"] {
   --color-fondo: #f8f9fa;
   --color-grafito: #ffffff;
   --color-blanco: #0f172a;
-  --color-white: #0f172a;
-  --color-black: #ffffff;
+  --color-white: #ffffff;
+  --color-black: #000000;
   --color-arena: #475569;
   --color-lavanda: #64748b;
   --color-violeta-claro: #48119a;
@@ -601,7 +602,7 @@ html[data-theme="claro"] .sr-probador-page,
 html[data-tema="claro"] .sr-probador-page {
   color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/probador-dia.jpg');
+  background-image: url('/img/backgrounds/probador-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -623,7 +624,7 @@ html[data-theme="claro"] .sr-donaciones-page,
 html[data-tema="claro"] .sr-donaciones-page {
   color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/donaciones-dia.jpg');
+  background-image: url('/img/backgrounds/donaciones-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -645,7 +646,7 @@ html[data-theme="claro"] .sr-playlist-page,
 html[data-tema="claro"] .sr-playlist-page {
   color: var(--sr-text-primary);
   background-color: #f6f4fa;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.72) 0%, rgba(248, 249, 250, 0.58) 55%, rgba(248, 249, 250, 0.76) 100%), url('/img/backgrounds/playlist-dia.jpg');
+  background-image: url('/img/backgrounds/playlist-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -667,7 +668,7 @@ html[data-theme="claro"] .sr-planes-page,
 html[data-tema="claro"] .sr-planes-page {
   color: var(--sr-text-primary);
   background-color: #f8f6fc;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/planes-dia.jpg');
+  background-image: url('/img/backgrounds/planes-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -697,7 +698,7 @@ html[data-tema="claro"] .inv-page,
 html[data-tema="claro"] .store-subscription {
   color: var(--sr-text-primary);
   background-color: #f8f9fa !important;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/tienda-dia.jpg') !important;
+  background-image: url('/img/backgrounds/tienda-dia.jpg') !important;
   background-size: cover !important;
   background-position: center top !important;
   background-attachment: fixed !important;
@@ -719,7 +720,7 @@ html[data-theme="claro"] .sr-mensajes-page,
 html[data-tema="claro"] .sr-mensajes-page {
   color: var(--sr-text-primary);
   background-color: #faf8fc;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/mensajes-dia.jpg');
+  background-image: url('/img/backgrounds/mensajes-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -741,7 +742,7 @@ html[data-theme="claro"] .sr-perfil-page,
 html[data-tema="claro"] .sr-perfil-page {
   color: var(--sr-text-primary);
   background-color: #f7f5fa;
-  background-image: linear-gradient(180deg, rgba(248, 249, 250, 0.74) 0%, rgba(248, 249, 250, 0.62) 55%, rgba(248, 249, 250, 0.78) 100%), url('/img/backgrounds/perfil-dia.jpg');
+  background-image: url('/img/backgrounds/perfil-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;

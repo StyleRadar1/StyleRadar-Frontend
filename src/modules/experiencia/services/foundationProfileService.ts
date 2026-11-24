@@ -18,8 +18,7 @@ export const foundationProfileService = {
       return mockDelay(p)
     }
     return apiClient
-      .get<FoundationProfileDto>('/api/v1/donaciones/foundations/me')
-      .catch(() => apiClient.get<FoundationProfileDto>('/api/donations/foundations/me'))
+      .get<FoundationProfileDto>('/api/v1/donations/foundations/representative')
       .then((r) => r.data)
   },
 }

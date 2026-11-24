@@ -242,6 +242,13 @@ export const secondHandService = {
     const u = me()
     const resolvedUserId = toLong(data.userId || u.id) || 101
 
+    const uploadedUrls: string[] = []
+    for (const file of files) {
+      const uploaded = await this.uploadPhoto(file)
+      if (uploaded?.photoUrl) uploadedUrls.push(uploaded.photoUrl)
+    }
+    const combinedPhotos = [...(data.photos || []), ...uploadedUrls]
+
     const payload = {
       userId: resolvedUserId,
       garmentName: data.garmentName || data.titulo,
@@ -255,7 +262,7 @@ export const secondHandService = {
       localidad: data.localidad || 'CHAPINERO',
       price: data.esDonacion ? 0 : data.price || data.precio || 0,
       esDonacion: !!data.esDonacion,
-      photos: data.photos || [],
+      photos: combinedPhotos,
     }
 
     return apiClient
@@ -284,7 +291,13 @@ export const secondHandService = {
 
     const u = me()
     const resolvedUserId = toLong(data.userId || u.id) || 101
-    const combinedPhotos = [...(data.photos || data.fotosConservadas || [])]
+
+    const uploadedUrls: string[] = []
+    for (const file of files) {
+      const uploaded = await this.uploadPhoto(file)
+      if (uploaded?.photoUrl) uploadedUrls.push(uploaded.photoUrl)
+    }
+    const combinedPhotos = [...(data.photos || data.fotosConservadas || []), ...uploadedUrls]
 
     const payload = {
       userId: resolvedUserId,

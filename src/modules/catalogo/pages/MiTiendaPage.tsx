@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { hasScenario } from '@/modules/core/api/mockScenario'
@@ -94,7 +94,7 @@ function legalDesdeServidor(store: StoreResponseDto): Partial<LegalStoreInfo> {
 }
 
 /** Texto cuando no se pudo leer el almacén de la Tienda (GET /users/{userId}/store). */
-const SIN_ALMACEN = 'Tu cuenta todavía no tiene un almacén asociado. Escríbele a soporte de StyleRadar para que lo asignen.'
+const SIN_ALMACEN = 'Tu cuenta todavía no tiene un almacén asociado. Regístralo para empezar a vender.'
 
 function readLegalInfo(): LegalStoreInfo {
   try {
@@ -186,6 +186,8 @@ export default function MiTiendaPage() {
   const [verificationError, setVerificationError] = useState('')
   const [badgesDialogOpen, setBadgesDialogOpen] = useState(false)
   const [lastUnitsLimit, setLastUnitsLimit] = useState(LOW_STOCK_DEFAULT)
+  /** Si la tienda ya guardó, una lectura inicial que llegue tarde no debe pisar lo guardado. */
+  const badgesSaved = useRef(false)
   const [newArrivalDays, setNewArrivalDays] = useState(NEW_ARRIVAL_DEFAULT)
   const [lastUnitsDraft, setLastUnitsDraft] = useState(String(LOW_STOCK_DEFAULT))
   const [newArrivalDaysDraft, setNewArrivalDaysDraft] = useState(String(NEW_ARRIVAL_DEFAULT))
@@ -199,7 +201,7 @@ export default function MiTiendaPage() {
     let active = true
     storeSettingsService.getCatalogSettings(storeNit)
       .then((c) => {
-        if (!active) return
+        if (!active || badgesSaved.current) return
         setLastUnitsLimit(c.lowStockThreshold)
         setNewArrivalDays(c.newArrivalDays)
       })
@@ -393,6 +395,7 @@ export default function MiTiendaPage() {
     } finally {
       setBadgesBusy(false)
     }
+    badgesSaved.current = true
     const threshold = guardado.lowStockThreshold
     const days = guardado.newArrivalDays
     setLastUnitsLimit(threshold)
@@ -493,7 +496,8 @@ export default function MiTiendaPage() {
           <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para reintentar el pago con Mercado Pago y mantener tu tienda visible</p></div>
           <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
         </div>
-        {storeError && <ErrorBanner tone="warn" icon="info" title={storeError} />}
+        {storeError && <ErrorBanner tone="warn" icon="info" title={storeError}
+          actions={storeError === SIN_ALMACEN ? <Link to="/tienda/registro" className="font-semibold underline">Registrar mi tienda</Link> : undefined} />}
         {verificationError && (
           <ErrorBanner tone="warn" icon="info" title={verificationError}>
             Nuestro equipo ya está revisando los documentos de tu tienda. Te avisaremos cuando finalice la revisión.

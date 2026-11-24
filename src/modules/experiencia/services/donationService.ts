@@ -292,9 +292,23 @@ export const donationService = {
       if (body.estado === 'ENTREGADA') d.comprobante = { codigo: `SR-DON-${id.replace(/\W/g, '').slice(-4).toUpperCase().padStart(4, '0')}`, emitidoEn: isoDay() }
       return mockDelay({ ...d }, 500)
     }
+    const est = String(body.estado).toUpperCase()
+    if (est === 'EN_RECOGIDA' || est === 'SCHEDULED') {
+      return apiClient
+        .patch<any>(`/api/v1/donations/${encodeURIComponent(id)}/pickup`, {})
+        .then((r) => normalizeDonation(r.data))
+    }
+    if (est === 'ENTREGADA' || est === 'CONFIRMED') {
+      return apiClient
+        .patch<any>(`/api/v1/donations/${encodeURIComponent(id)}/confirmation`, {})
+        .then((r) => normalizeDonation(r.data))
+    }
+    const approve = est === 'APROBADA' || est === 'APPROVED'
     return apiClient
-      .patch<any>(`/api/v1/donations/${encodeURIComponent(id)}/status`, body)
-      .catch(() => apiClient.patch<any>(`/api/v1/donaciones/${encodeURIComponent(id)}/status`, body))
+      .patch<any>(`/api/v1/donations/${encodeURIComponent(id)}/decision`, {
+        approve,
+        reason: body.justificacion ?? null,
+      })
       .then((r) => normalizeDonation(r.data))
   },
 

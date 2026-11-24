@@ -6,13 +6,25 @@ import { mockPlanOf } from '@/modules/transacciones/services/userPlanService'
 import { LIMITES_RADAR } from '@/modules/transacciones/types/plan.dto'
 import { seedAlerts } from '../mocks/notifications'
 import { itemService } from '@/modules/catalogo/services/itemService'
+import { savedSearchService } from '@/modules/identidad/services/savedSearchService'
 import { fechaUtc } from '../utils/notificaciones'
 import { type AlertaPrendaDto, type AlertasResumenDto, type BusquedaGuardadaDto } from '../types/notification.dto'
 
 /** Rutas de ms-notificaciones según su Swagger, vía API Gateway. «me» es el usuario del token. */
 const ALERTAS = '/api/v1/users/me/alerts'
-/** Las búsquedas guardadas son de ms-usuarios; su ruta sigue provisional hasta tener su Swagger. */
-const BUSQUEDAS = '/api/notifications/saved-searches'
+/**
+ * Las búsquedas guardadas las guarda ms-usuarios (savedSearchService: /api/v1/users/{id}/saved-searches);
+ * ms-notificaciones solo guarda la alerta de esa búsqueda (tipoAlerta BUSQUEDA_GUARDADA + busquedaGuardadaId).
+ */
+const PREFIJO_GUARDADA = 'g-' // búsqueda ya guardada pero todavía sin alerta: su id aún no es el de una alerta
+/** id de la alerta → id de la búsqueda guardada, leído de la última lista */
+const guardadaDeAlerta = new Map<string, string>()
+const nombreGuardada = new Map<string, string>()
+const idSesion = () => {
+  const id = mockSessionUser()?.id
+  if (!id) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
+  return String(id)
+}
 
 const texto = (v: unknown) => (typeof v === 'string' && v ? v : undefined)
 
@@ -30,6 +42,7 @@ async function aResumen(data: unknown): Promise<AlertasResumenDto> {
     const activa = String(r.estado ?? 'ACTIVA').toUpperCase() === 'ACTIVA'
     const creadaEn = fechaUtc(texto(r.fechaCreacion ?? r.creadaEn)) ?? new Date().toISOString()
     const busqueda = texto(r.busquedaGuardadaId)
+    if (busqueda) guardadaDeAlerta.set(id, busqueda)
     if (busqueda) busquedas.push({ id, nombre: texto(r.nombreBusqueda) ?? 'Búsqueda guardada', descripcion: 'Te avisamos cuando llegue algo que coincida', alerta: activa, coincidenciasNuevas: 0, creadaEn })
     else {
       const talla = texto(r.tallaObjetivo)
@@ -159,6 +172,18 @@ export const alertService = {
       s.alerta = alerta
       return mockDelay(s, 250)
     }
+    if (id.startsWith(PREFIJO_GUARDADA)) {
+      // Primera vez: la alerta nace con la búsqueda guardada
+      if (!alerta) throw new ApiError(404, 'Esa búsqueda todavía no tiene alerta.')
+      const guardada = id.slice(PREFIJO_GUARDADA.length)
+      const nombre = nombreGuardada.get(id) ?? ultima?.busquedas.find((x) => x.id === id)?.nombre ?? 'Búsqueda guardada'
+      const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS, {
+        tipoAlerta: 'BUSQUEDA_GUARDADA', busquedaGuardadaId: Number(guardada) || guardada, nombreBusqueda: nombre, canal: 'IN_APP',
+      })
+      const nuevo = String(data.id ?? data.alertaId ?? '')
+      guardadaDeAlerta.set(nuevo, guardada)
+      return { id: nuevo, nombre, descripcion: 'Te avisamos cuando llegue algo que coincida', alerta: true, coincidenciasNuevas: 0, creadaEn: new Date().toISOString() }
+    }
     await cambiarEstado(id, alerta)
     const s = ultima?.busquedas.find((x) => x.id === id)
     if (!s) throw new ApiError(404, 'Esa búsqueda ya no existe.')
@@ -173,7 +198,11 @@ export const alertService = {
       r.busquedas = r.busquedas.filter((x) => x.id !== id)
       return mockDelay(undefined, 250)
     }
-    await apiClient.delete(`${BUSQUEDAS}/${encodeURIComponent(id)}`)
+    // Se apaga la alerta (si la tiene) y se borra la búsqueda guardada en ms-usuarios
+    const guardada = id.startsWith(PREFIJO_GUARDADA) ? id.slice(PREFIJO_GUARDADA.length) : guardadaDeAlerta.get(id)
+    if (!id.startsWith(PREFIJO_GUARDADA)) await cambiarEstado(id, false).catch(() => undefined)
+    if (guardada) await savedSearchService.remove(idSesion(), guardada)
+    guardadaDeAlerta.delete(id)
   },
 
   /** RF-28: guarda la búsqueda del catálogo (la guarda ms-usuarios; la alerta va aparte). */
@@ -187,7 +216,9 @@ export const alertService = {
       r.busquedas.unshift(nueva)
       return mockDelay(nueva, 250)
     }
-    return apiClient.post<BusquedaGuardadaDto>(BUSQUEDAS, { nombre, descripcion }).then((r) => r.data)
+    const guardada = await savedSearchService.save(idSesion(), { name: nombre })
+    nombreGuardada.set(`${PREFIJO_GUARDADA}${guardada.id}`, nombre)
+    return { id: `${PREFIJO_GUARDADA}${guardada.id}`, nombre, descripcion, alerta: false, coincidenciasNuevas: 0, creadaEn: fechaUtc(guardada.createdAt) ?? new Date().toISOString() }
   },
 
   /**
