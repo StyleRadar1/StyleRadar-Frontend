@@ -10,7 +10,7 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
-import { tiendaContacto } from '@/modules/soporte/utils/contacts'
+import { nitDeTienda, tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { ItemCard } from '../components/ItemCard'
 import { SizeGuideModal } from '../components/SizeGuideModal'
 import { extractAvailableTallasFromInventory, itemService } from '../services/itemService'
@@ -585,6 +585,7 @@ export default function ItemDetailPage() {
                       className="mt-3 w-full"
                       label="Enviar mensaje a la tienda"
                       contacto={tiendaContacto(prenda.tienda)}
+                      nit={nitDeTienda(prenda)}
                       asunto={prenda.nombre}
                       referenciaId={prenda.id}
                     />
