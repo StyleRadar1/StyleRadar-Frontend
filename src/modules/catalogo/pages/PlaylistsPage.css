@@ -482,6 +482,23 @@ html[data-theme='light'] .sr-vinyl-active-title {
   text-shadow: 0 4px 24px rgba(72, 17, 154, 0.14);
 }
 
+.sr-vinyl-active-title__accent {
+  background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 60%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 22px rgba(139, 92, 246, 0.45));
+}
+
+html[data-theme='light'] .sr-vinyl-active-title__accent {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: none;
+}
+
 .sr-vinyl-active-meta {
   display: flex;
   flex-wrap: wrap;
@@ -587,21 +604,21 @@ html[data-theme='light'] .sr-vinyl-meta-desc-btn {
 
 /* Lateral Izquierda (offset -1) */
 .sr-vinyl-slot--offset--1 {
-  transform: translate(calc(-50% - clamp(180px, 25vw, 340px)), -50%) perspective(1000px) rotateY(25deg) scale(0.85);
-  opacity: 0.72;
+  transform: translate(calc(-50% - clamp(200px, 26vw, 370px)), -50%) perspective(1100px) rotateY(28deg) scale(0.74);
+  opacity: 0.62;
   z-index: 15;
-  filter: brightness(0.85);
+  filter: brightness(0.8);
   cursor: pointer;
 }
 
 .sr-vinyl-slot--offset--1:hover {
-  opacity: 0.95;
-  filter: brightness(1.06);
+  opacity: 0.92;
+  filter: brightness(1.04);
 }
 
 /* Disco Central Activo (offset 0) */
 .sr-vinyl-slot--center {
-  transform: translate(-50%, -50%) scale(1.08);
+  transform: translate(-50%, -50%) scale(1.16);
   opacity: 1;
   z-index: 25;
   filter: none;
@@ -610,24 +627,71 @@ html[data-theme='light'] .sr-vinyl-meta-desc-btn {
 
 .sr-vinyl-slot--center .sr-vinyl-disc-interactive {
   box-shadow:
-    0 0 0 3px rgba(139, 92, 246, 0.75),
-    0 0 55px 14px rgba(80, 19, 184, 0.82),
-    0 0 110px 30px rgba(72, 17, 154, 0.55),
+    0 0 0 3px rgba(167, 139, 250, 0.85),
+    0 0 65px 18px rgba(124, 58, 237, 0.78),
+    0 0 130px 36px rgba(72, 17, 154, 0.55),
     0 28px 70px rgba(0, 0, 0, 0.85);
 }
 
 /* Lateral Derecha (offset 1) */
 .sr-vinyl-slot--offset-1 {
-  transform: translate(calc(-50% + clamp(180px, 25vw, 340px)), -50%) perspective(1000px) rotateY(-25deg) scale(0.85);
-  opacity: 0.72;
+  transform: translate(calc(-50% + clamp(200px, 26vw, 370px)), -50%) perspective(1100px) rotateY(-28deg) scale(0.74);
+  opacity: 0.62;
   z-index: 15;
-  filter: brightness(0.85);
+  filter: brightness(0.8);
   cursor: pointer;
 }
 
 .sr-vinyl-slot--offset-1:hover {
-  opacity: 0.95;
-  filter: brightness(1.06);
+  opacity: 0.92;
+  filter: brightness(1.04);
+}
+
+/* Flechas laterales del carrusel */
+.sr-vinyl-side-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  background: rgba(18, 14, 28, 0.72);
+  color: #f3e8ff;
+  font-size: 26px;
+  line-height: 1;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sr-vinyl-side-arrow:hover {
+  background: rgba(109, 40, 217, 0.85);
+  border-color: #c4b5fd;
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.5);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.sr-vinyl-side-arrow--prev {
+  left: clamp(8px, 2.5vw, 32px);
+}
+
+.sr-vinyl-side-arrow--next {
+  right: clamp(8px, 2.5vw, 32px);
+}
+
+html[data-theme='light'] .sr-vinyl-side-arrow {
+  background: rgba(255, 255, 255, 0.88);
+  color: #48119A;
+  border-color: rgba(109, 40, 217, 0.35);
+}
+
+html[data-theme='light'] .sr-vinyl-side-arrow:hover {
+  background: #6d28d9;
+  color: #ffffff;
 }
 
 /* Lateral Lejano Derecha (offset 2) */
@@ -745,20 +809,20 @@ html[data-theme='light'] .sr-vinyl-slot__lateral-caption {
   pointer-events: none;
 }
 
-/* Etiqueta central del vinilo con la portada del álbum activa */
+/* Etiqueta central del vinilo con la portada del álbum activa y marco violeta */
 .sr-vinyl-label {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 36%;
-  height: 36%;
+  width: 38%;
+  height: 38%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: #18151f;
-  border: 3px solid rgba(232, 220, 203, 0.45);
+  border: 3px solid rgba(167, 139, 250, 0.88);
   box-shadow:
     0 0 0 6px #121017,
-    0 0 24px rgba(0, 0, 0, 0.65),
+    0 0 24px rgba(139, 92, 246, 0.5),
     inset 0 0 12px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   pointer-events: none;

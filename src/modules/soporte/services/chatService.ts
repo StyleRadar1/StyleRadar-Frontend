@@ -41,7 +41,7 @@ const nombresConocidos = new Map<string, string>()
 async function nombreDe(uid: string): Promise<void> {
   if (!uid || nombresConocidos.has(uid)) return
   try {
-    const { data } = await apiClient.get<{ nombre?: string; name?: string }>(`/api/v1/usuarios/${encodeURIComponent(uid)}`)
+    const { data } = await apiClient.get<{ nombre?: string; name?: string }>(`/api/v1/users/${encodeURIComponent(uid)}`)
     const n = data?.nombre ?? data?.name
     if (n) nombresConocidos.set(uid, n)
   } catch { /* se queda con el nombre de respaldo */ }

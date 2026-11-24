@@ -179,7 +179,6 @@ export const secondHandService = {
     }
     return apiClient
       .get<any>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`)
-      .catch(() => apiClient.get<any>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`))
       .then((r) => normalizePublication(r.data))
   },
 
@@ -312,7 +311,6 @@ export const secondHandService = {
 
     return apiClient
       .put<any>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`, payload)
-      .catch(() => apiClient.put<any>(`/api/v1/segunda-mano/${encodeURIComponent(id)}`, payload))
       .then((r) => normalizePublication(r.data))
   },
 
@@ -348,11 +346,6 @@ export const secondHandService = {
       .patch<any>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}/sale`, null, {
         params: { userId: uid, compradorId: cid },
       })
-      .catch(() =>
-        apiClient.patch<any>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/sell`, null, {
-          params: { userId: uid, compradorId: cid },
-        })
-      )
       .then((r) => normalizePublication(r.data))
   },
 
@@ -373,11 +366,6 @@ export const secondHandService = {
       .patch<any>(`/api/v1/second-hand/publications/${encodeURIComponent(id)}/donation`, null, {
         params: { userId: u.id },
       })
-      .catch(() =>
-        apiClient.patch<any>(`/api/v1/segunda-mano/${encodeURIComponent(id)}/donate`, null, {
-          params: { userId: u.id },
-        })
-      )
       .then((r) => normalizePublication(r.data))
   },
 
@@ -397,11 +385,6 @@ export const secondHandService = {
       .delete(`/api/v1/second-hand/publications/${encodeURIComponent(id)}`, {
         params: { userId: u.id },
       })
-      .catch(() =>
-        apiClient.patch(`/api/v1/segunda-mano/${encodeURIComponent(id)}/retire`, null, {
-          params: { userId: u.id },
-        })
-      )
       .then(() => undefined)
   },
 

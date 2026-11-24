@@ -86,7 +86,7 @@ export default function ItemDetailPage() {
     let tallas = prendaData.tallas
     if (!env.useMocks && tallas.length === 0) {
       try {
-        const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(id)}`).then((r) => r.data)
+        const inv = await apiClient.get<any>(`/api/v1/inventory/garment/${encodeURIComponent(id)}`).then((r) => r.data)
         const extraidas = extractAvailableTallasFromInventory(inv)
         if (extraidas.length > 0) tallas = extraidas
       } catch {
