@@ -5,19 +5,12 @@ import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CancelSubscriptionButton } from './CancelSubscriptionButton'
 import { RADAR_PLUS_PRICE } from '../constants/plansByRole'
 import { useUserPlan } from '../hooks/useUserPlan'
-import { deriveSubscriptionStatus } from '../mappers/paymentsMappers'
+import { deriveSubscriptionStatus, formatSubscriptionDate } from '../mappers/paymentsMappers'
 import { getTryOnPhotoUses } from '../services/userPlanService'
 import { PLAN_LIMITS } from '../types/plan.dto'
 
 const formatFechaCobro = (iso?: string | null) =>
-  iso
-    ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-      })
-    : '9 de diciembre de 2026'
+  formatSubscriptionDate(iso, '9 de diciembre de 2026')
 
 /**
  * RF-95, RF-100, RF-102: Muestra en /planes y /perfil para el comprador:

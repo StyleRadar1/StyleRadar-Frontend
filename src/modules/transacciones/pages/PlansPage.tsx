@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { BuyerRenewalStatusCard } from '../components/BuyerRenewalStatusCard'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { isPlanCompatibleWithRole } from '../constants/plansByRole'
+import { formatSubscriptionDate } from '../mappers/paymentsMappers'
 import { userPlanService } from '../services/userPlanService'
 import { PLAN_COMPARISON_ROWS, PLAN_LABEL, PLANES, REGLAS, type PlanInfo } from '../types/plan.dto'
 
@@ -23,14 +25,23 @@ export default function PlansPage() {
   const { plan, details } = useUserPlan(comprador)
   const navigate = useNavigate()
   const [cancelling, setCancelling] = useState(false)
+  const [confirmStopRenewalOpen, setConfirmStopRenewalOpen] = useState(false)
   const [cancelFeedback, setCancelFeedback] = useState<string | null>(null)
 
-  const handleUseFree = async () => {
+  const currentEndDateRaw = details?.fechaFin ?? details?.proximoCobro ?? details?.periodEndsAt ?? null
+  const currentEndDateText = formatSubscriptionDate(currentEndDateRaw, 'el final del periodo pagado')
+
+  const handleConfirmStopRenewal = async () => {
     setCancelling(true)
     setCancelFeedback(null)
     try {
-      await userPlanService.setRenewal(false)
-      setCancelFeedback('Cancelaste la renovación automática. Tu plan sigue activo hasta el final del periodo pagado')
+      const updated = await userPlanService.setRenewal(false)
+      const endText = formatSubscriptionDate(
+        updated.fechaFin ?? updated.periodEndsAt ?? currentEndDateRaw,
+        currentEndDateText,
+      )
+      setConfirmStopRenewalOpen(false)
+      setCancelFeedback(`Activa sin renovación · Tu plan sigue activo hasta ${endText}`)
     } catch (e) {
       setCancelFeedback(
         e instanceof Error && e.message
@@ -47,6 +58,7 @@ export default function PlansPage() {
     : PLANES
 
   const renewalDisabled = plan === 'RADAR_PLUS' && details?.renewalEnabled === false
+  const isPending = details?.estado === 'PENDIENTE'
   const isSuspendedOrExpired = details?.estado === 'SUSPENDIDA' || details?.estado === 'VENCIDA'
 
   const accion = (p: PlanInfo) => {
@@ -88,10 +100,10 @@ export default function PlansPage() {
             <button
               type="button"
               disabled={cancelling}
-              onClick={() => { void handleUseFree() }}
+              onClick={() => setConfirmStopRenewalOpen(true)}
               className="mt-auto rounded-xl border border-[var(--color-border)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-subtle)] disabled:opacity-60"
             >
-              {cancelling ? 'Cancelando renovación…' : 'Usar gratis'}
+              {cancelling ? 'Cancelando renovación…' : 'Dejar de renovar'}
             </button>
           )
         }
@@ -106,6 +118,13 @@ export default function PlansPage() {
           return (
             <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
               {renewalDisabled ? 'Activa sin renovación' : 'Tu plan actual'}
+            </p>
+          )
+        }
+        if (isPending) {
+          return (
+            <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
+              Suscripción pendiente
             </p>
           )
         }
@@ -257,6 +276,21 @@ export default function PlansPage() {
           </li>
         ))}
       </ol>
+
+      <ConfirmDialog
+        open={confirmStopRenewalOpen}
+        title="¿Dejar de renovar Radar+?"
+        confirmLabel="Confirmar cancelación"
+        cancelLabel="Conservar suscripción"
+        danger
+        busy={cancelling}
+        onConfirm={() => { void handleConfirmStopRenewal() }}
+        onCancel={() => setConfirmStopRenewalOpen(false)}
+      >
+        <p className="text-left text-sm text-[var(--sr-text-primary,var(--color-text))]">
+          Tu plan no se renovará. Mantienes los beneficios hasta el <strong>{currentEndDateText}</strong>
+        </p>
+      </ConfirmDialog>
     </section>
   </div>
   )

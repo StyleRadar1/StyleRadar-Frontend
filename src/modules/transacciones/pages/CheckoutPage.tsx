@@ -16,6 +16,7 @@ import type { PlanDto, CheckoutResultDto } from '../types/plan.dto'
 import { PagoRechazado } from '../components/PagoRechazado'
 import { PLAN_CHANGED } from '../services/userPlanService'
 import { isPlanCompatibleWithRole } from '../constants/plansByRole'
+import { deriveSubscriptionStatus, formatSubscriptionDate } from '../mappers/paymentsMappers'
 import { avisoDePlan, TEXTOS_PLAN, type AvisoPlan } from '../utils/erroresPlan'
 
 function getMercadoPagoHint(rawStatus: string): string | null {
@@ -43,7 +44,7 @@ function CheckoutResult() {
     planService.getCheckoutResult(orderId)
       .then((r) => {
         // RF-94, RF-100 y RNF-14: en modo real la suscripción la activa el backend por webhook (nunca localmente).
-        if (env.useMocksPagos && r.status === 'aprobado' && r.planName === 'Radar+') {
+        if (env.useMocksPagos && r.status === 'aprobado' && r.planId === 'plus') {
           const processedKey = `sr_processed_order_${orderId}`
           let alreadyProcessed = false
           try {
@@ -103,7 +104,7 @@ function CheckoutResult() {
 
   // Mercado Pago no aprobó el pago: pantalla del plan con Reintentar. No se muestran datos del medio de pago.
   if (result.status === 'rechazado') {
-    const reintentar = result.planName === 'Tienda aliada' ? '/tienda/suscripcion' : '/suscripcion'
+    const reintentar = result.planId === 'store' ? '/tienda/suscripcion' : '/suscripcion'
     return (
       <PagoRechazado
         detalle={<p className="text-xs text-[var(--sr-tx-2)]">El pago no fue aprobado · {result.planName} · {formatCOP(result.amount)} · cobro $0</p>}
@@ -253,8 +254,23 @@ function PlansSelector() {
   const [aviso, setAviso] = useState<AvisoPlan | null>(null)
 
   // El plan de la persona se lee de un único lugar: useUserPlan (el mismo que usan /planes y los candados).
-  const { plan: userPlan } = useUserPlan(user?.role === 'BUYER')
+  const { plan: userPlan, details: userPlanDetails } = useUserPlan(user?.role === 'BUYER')
   const currentPlan = userPlan === 'RADAR_PLUS' ? 'plus' : userPlan === 'RADAR' ? 'free' : null
+  const derivedBuyerStatus = userPlanDetails?.estado
+    ? deriveSubscriptionStatus(userPlanDetails.estado, {
+        autoRenewal: userPlanDetails.renewalEnabled,
+        endDate: userPlanDetails.fechaFin ?? userPlanDetails.periodEndsAt,
+      })
+    : null
+  const hasActiveOrPendingSubscription =
+    user?.role === 'BUYER' &&
+    (userPlan === 'RADAR_PLUS' ||
+      derivedBuyerStatus?.status === 'ACTIVA' ||
+      derivedBuyerStatus?.status === 'PENDIENTE')
+  const activeEndDateText = formatSubscriptionDate(
+    userPlanDetails?.fechaFin ?? userPlanDetails?.periodEndsAt ?? userPlanDetails?.proximoCobro,
+    'el final del periodo pagado',
+  )
 
   // Solo opciones de comprador según PLANS_BY_ROLE (Radar gratuito y Radar+ única opción de pago; sin tienda ni fundación)
   const buyerPlans = plans.filter((p) => isPlanCompatibleWithRole(p.id, user?.role || 'BUYER'))
@@ -335,6 +351,33 @@ function PlansSelector() {
 
       {loading ? (
         <Loading label="Cargando planes…" />
+      ) : hasActiveOrPendingSubscription ? (
+        <Card className="mx-auto mt-10 max-w-xl text-center">
+          <div className="flex justify-center">
+            <Badge tone={derivedBuyerStatus?.status === 'PENDIENTE' ? 'lavanda' : 'violeta'}>
+              {derivedBuyerStatus?.label ?? (userPlanDetails?.renewalEnabled === false ? 'Activa sin renovación' : 'ACTIVA')}
+            </Badge>
+          </div>
+          <h2 className="mt-4 text-2xl font-extrabold">
+            {derivedBuyerStatus?.status === 'PENDIENTE'
+              ? 'Ya tienes una suscripción en proceso'
+              : userPlanDetails?.renewalEnabled === false
+                ? 'Activa sin renovación'
+                : 'Ya tienes Radar+ activo'}
+          </h2>
+          <p className="mt-2 text-sm text-white/75">
+            {derivedBuyerStatus?.status === 'PENDIENTE'
+              ? 'Tu pago está pendiente de confirmación. Cuando se apruebe se activarán tus beneficios'
+              : userPlanDetails?.renewalEnabled === false
+                ? `Tu plan sigue activo hasta ${activeEndDateText}`
+                : 'Tu suscripción está vigente y no necesitas iniciar un nuevo pago'}
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link to="/planes" className="rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco">
+              Ver mis planes
+            </Link>
+          </div>
+        </Card>
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : buyerPlans.length === 0 ? (

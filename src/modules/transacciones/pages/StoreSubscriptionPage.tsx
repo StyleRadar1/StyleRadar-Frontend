@@ -1,4 +1,5 @@
 import { useCallback, useContext, useState } from 'react'
+import { env } from '@/configs/env'
 import { Button } from '@/modules/core/design-system'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -8,11 +9,12 @@ import { PayerEmailForm } from '../components/PayerEmailForm'
 import { StoreSuspendedBanner } from '../components/StoreSuspendedBanner'
 import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
-import { deriveSubscriptionStatus, formatStatusLabel } from '../mappers/paymentsMappers'
+import { deriveSubscriptionStatus, formatStatusLabel, formatSubscriptionDate } from '../mappers/paymentsMappers'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
 import type { CheckoutResultDto } from '../types/plan.dto'
 import type { StoreSubscriptionStatus } from '../types/storeSubscription.dto'
+import { isSubscriptionAlreadyExistsError, SUBSCRIPTION_ALREADY_EXISTS_MSG } from '../utils/erroresPlan'
 import './StoreSubscriptionPage.css'
 
 const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = {
@@ -28,9 +30,7 @@ const PAYMENT_LABEL: Record<PaymentStatus, string> = {
   pendiente: 'Pendiente',
 }
 
-const fecha = (iso?: string | null) => iso
-  ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
-  : '—'
+const fecha = (iso?: string | null) => formatSubscriptionDate(iso, '—')
 
 const OUTCOME: Record<CheckoutResultDto['status'], { title: string; text: string; alert: boolean }> = {
   aprobado: { title: 'Tu suscripción fue reactivada', text: 'Tu suscripción quedó activa y tu catálogo sigue visible en el radar', alert: false },
@@ -45,6 +45,7 @@ export default function StoreSubscriptionPage() {
   const [paying, setPaying] = useState(false)
   const [outcome, setOutcome] = useState<CheckoutResultDto | null>(null)
   const [payError, setPayError] = useState<unknown>(null)
+  const [conflictMsg, setConflictMsg] = useState<string | null>(null)
 
   // RF-96: Estado para reintento de pago rechazado con PayerEmailForm
   const [retryPaymentTarget, setRetryPaymentTarget] = useState<PaymentDto | null>(null)
@@ -54,6 +55,7 @@ export default function StoreSubscriptionPage() {
   const pay = useCallback(async () => {
     setPaying(true)
     setPayError(null)
+    setConflictMsg(null)
     setOutcome(null)
     try {
       const r = await storeSubscriptionService.pay()
@@ -61,7 +63,12 @@ export default function StoreSubscriptionPage() {
       setOutcome(r.result ?? null)
       reload()
     } catch (e) {
-      setPayError(e)
+      if (isSubscriptionAlreadyExistsError(e)) {
+        setConflictMsg(SUBSCRIPTION_ALREADY_EXISTS_MSG)
+        reload()
+      } else {
+        setPayError(e)
+      }
     } finally {
       setPaying(false)
     }
@@ -212,6 +219,13 @@ export default function StoreSubscriptionPage() {
           </div>
         )}
 
+        {conflictMsg && (
+          <div role="alert" className="store-subscription__notice is-error">
+            <strong>{conflictMsg}</strong>
+            <p>Actualizamos el estado de tu suscripción para que veas la información vigente</p>
+          </div>
+        )}
+
         {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
 
         <article className="store-subscription__plan">
@@ -233,7 +247,7 @@ export default function StoreSubscriptionPage() {
             <span>Método: <b>{lastPayment?.method ?? 'Mercado Pago'}</b></span>
           </div>
           <div className="store-subscription__actions flex flex-wrap items-center gap-3">
-            {sub.status !== 'ACTIVA' && (
+            {(!env.useMocksPagos ? isSuspendedOrExpired : sub.status !== 'ACTIVA') && (
               <Button onClick={() => { void pay() }} disabled={paying}>
                 {paying ? 'Procesando pago…' : isSuspendedOrExpired ? 'Volver a suscribirme' : 'Pagar y activar suscripción'}
               </Button>

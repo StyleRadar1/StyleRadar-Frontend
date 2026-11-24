@@ -533,11 +533,18 @@ export const storeSubscriptionService = {
     if (!env.useMocksPagos) {
       const subscriberId = requireSessionSubscriberId()
       const body: ApiCancelSubscriptionRequest = { confirmed: true }
-      const { data } = await apiClient.post<ApiCancellationResponse>(
+      const { data: cancelData } = await apiClient.post<ApiCancellationResponse>(
         `/api/v1/subscriptions/${encodeURIComponent(subscriberId)}/cancel`,
         body,
       )
-      return mapCancellationToStoreDto(data)
+      try {
+        const { data: freshSub } = await apiClient.get<ApiSubscriptionResponse>(
+          `/api/v1/subscriptions/${encodeURIComponent(subscriberId)}`,
+        )
+        return mapSubscriptionToStoreDto(freshSub)
+      } catch {
+        return mapCancellationToStoreDto(cancelData)
+      }
     }
     try {
       failIfScenario('conflicto')
