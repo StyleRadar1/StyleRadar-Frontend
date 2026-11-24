@@ -1,5 +1,6 @@
 import { useCallback, useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
@@ -135,7 +136,8 @@ export default function AdminStoreDetailPage() {
         <AdminCard title="Suscripción">
           <Dl items={[['Plan', `Tienda aliada · ${formatCOP(PRECIO_TIENDA)} / mes`], ['Estado', <StatusBadge key="e" value={t.suscripcion.estado} />],
             [t.suscripcion.estado === 'Periodo gratuito' ? 'Periodo gratuito hasta' : 'Próximo cobro', t.suscripcion.proximo], ['Inicio', t.suscripcion.inicio]]} />
-          {t.suscripcion.estado === 'Periodo gratuito' && (
+          {/* Extender el periodo gratuito todavía no tiene ruta en el back: solo se muestra con datos de prueba. */}
+          {env.useMocks && t.suscripcion.estado === 'Periodo gratuito' && (
             <button type="button" disabled={busy} onClick={() => ejecutar(() => adminStoreService.extendTrial(t.id), 'Periodo gratuito extendido 15 días.')}
               className="mt-4 rounded-xl border border-white/15 bg-white/[.05] px-4 py-2.5 text-sm font-semibold hover:bg-white/10 disabled:opacity-60">Extender periodo gratuito 15 días</button>
           )}

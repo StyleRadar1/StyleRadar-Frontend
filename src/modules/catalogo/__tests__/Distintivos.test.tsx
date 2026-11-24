@@ -45,8 +45,8 @@ describe('Distintivos automáticos (SR-RF-59 · SR-RF-60 · F-19)', () => {
     await user.selectOptions(within(dialog).getByLabelText('Duración de nueva llegada'), '30')
     await user.click(within(dialog).getByRole('button', { name: 'Guardar' }))
     expect(await screen.findByText('Se guardaron las reglas de distintivos automáticos.')).toBeInTheDocument()
-    expect(screen.getByText('≤ 10 uds')).toBeInTheDocument()
-    expect(screen.getByText('30 días')).toBeInTheDocument()
+    expect(await screen.findByText('≤ 10 uds')).toBeInTheDocument()
+    expect(await screen.findByText('30 días')).toBeInTheDocument()
     expect(await storeSettingsService.getCatalogSettings('901.482.337-1')).toMatchObject({ lowStockThreshold: 10, newArrivalDays: 30 })
   })
 
