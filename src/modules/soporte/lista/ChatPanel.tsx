@@ -81,7 +81,7 @@ export function ChatPanel({ conv, me, onClose, onRead, onSent, className = '' }:
         <div className="min-w-0 flex-1">
           <b className="block truncate text-[15px] text-[var(--sr-text-primary)]">{conv.contacto.nombre}</b>
           <span className="block truncate text-xs text-[var(--sr-text-secondary)]">
-            {CONTACTO_LABEL[conv.contacto.tipo]}{conv.asunto ? ` · ${conv.asunto}` : ''}
+            {CONTACTO_LABEL[conv.contacto.tipo]} · #{conv.contacto.id}{conv.asunto ? ` · ${conv.asunto}` : ''}
           </span>
         </div>
       </header>

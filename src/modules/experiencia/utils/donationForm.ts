@@ -26,11 +26,29 @@ export type DonationErrors = Partial<Record<keyof DonationForm, string>>
 
 export const DONATION_RULES = { maxFotos: 4, minDias: 1, maxDias: 30, maxCantidad: 50 }
 
+const CATEGORY_TO_BACKEND_CODES: Record<string, string[]> = {
+  camisas: ['TOP', 'UPPER'],
+  camisetas: ['TOP', 'UPPER'],
+  'suéteres': ['TOP', 'UPPER'],
+  sueteres: ['TOP', 'UPPER'],
+  chaquetas: ['TOP', 'UPPER'],
+  pantalones: ['BOTTOM', 'LOWER'],
+  faldas: ['BOTTOM', 'LOWER'],
+  vestidos: ['DRESS', 'TOP', 'UPPER'],
+  calzado: ['FOOTWEAR'],
+  accesorios: ['ACCESSORY'],
+}
+
 /** Por qué una fundación no se puede elegir para esta prenda ('' si sí se puede). */
 export function foundationProblem(f: FoundationDto, categoria: string): string {
   if (!f.activa) return 'No está recibiendo donaciones'
-  if (categoria && !f.categorias.includes(categoria)) return `No recibe ${categoria.toLowerCase()}`
-  return ''
+  if (!categoria || !f.categorias.length) return ''
+  const upperSet = new Set(f.categorias.map((c) => c.trim().toUpperCase()))
+  const catLower = categoria.trim().toLowerCase()
+  if (upperSet.has(categoria.trim().toUpperCase())) return ''
+  const mappedCodes = CATEGORY_TO_BACKEND_CODES[catLower] ?? []
+  if (mappedCodes.some((code) => upperSet.has(code))) return ''
+  return `No recibe ${catLower}`
 }
 
 /** Valida un paso. 0: la prenda; 1: la fundación; 2: entrega. */

@@ -165,7 +165,7 @@ export interface ListingDto {
 export interface ListingFiltersDto {
   searchTerm?: string
   texto?: string
-  type?: GarmentType
+  type?: string
   size?: string
   talla?: string
   conservationStatus?: ConservationStatus[]

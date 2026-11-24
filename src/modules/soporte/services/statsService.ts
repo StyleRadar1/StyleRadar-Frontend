@@ -17,44 +17,44 @@ export const statsService = {
   /* ─── Tienda ─── */
   getStoreStats(periodo: StatsPeriod): Promise<StoreStatsDto> {
     if (env.useMocks) return mockDelay(MOCK_STORE_STATS[periodo])
-    return apiClient.get<StoreStatsDto>('/api/estadisticas/tienda/resumen', { params: { periodo } }).then((r) => r.data)
+    return apiClient.get<StoreStatsDto>('/api/v1/statistics/summary/store', { params: { period: periodo, periodo } }).then((r) => r.data)
   },
   getStoreInventory(): Promise<StoreInventoryDto> {
     if (env.useMocks) return mockDelay(MOCK_STORE_INVENTORY)
-    return apiClient.get<StoreInventoryDto>('/api/estadisticas/tienda/inventario-estado').then((r) => r.data)
+    return apiClient.get<StoreInventoryDto>('/api/v1/statistics/distributions/inventory').then((r) => r.data)
   },
 
   /* ─── Fundación ─── */
   getFoundationStats(): Promise<FoundationStatsDto> {
     if (env.useMocks) return mockDelay(MOCK_FOUNDATION_STATS)
-    return apiClient.get<FoundationStatsDto>('/api/estadisticas/fundacion/resumen').then((r) => r.data)
+    return apiClient.get<FoundationStatsDto>('/api/v1/statistics/summary/foundation').then((r) => r.data)
   },
   getFoundationMonths(): Promise<FoundationMonthDto[]> {
     if (env.useMocks) return mockDelay(MOCK_FOUNDATION_MONTHS)
-    return apiClient.get<FoundationMonthDto[]>('/api/estadisticas/fundacion/solicitudes-mensuales').then((r) => r.data)
+    return apiClient.get<FoundationMonthDto[]>('/api/v1/statistics/time-series/foundation-monthly').then((r) => r.data)
   },
 
   /* ─── Admin ─── */
   getAdminIndicators(): Promise<AdminIndicatorsDto> {
     if (env.useMocks) return mockDelay(MOCK_ADMIN_INDICATORS)
-    return apiClient.get<AdminIndicatorsDto>('/api/estadisticas/admin/indicadores').then((r) => r.data)
+    return apiClient.get<AdminIndicatorsDto>('/api/v1/statistics/summary/admin').then((r) => r.data)
   },
   getAdminIncome(): Promise<AdminIncomeDto> {
     if (env.useMocks) return mockDelay(MOCK_ADMIN_INCOME)
-    return apiClient.get<AdminIncomeDto>('/api/estadisticas/admin/ingresos').then((r) => r.data)
+    return apiClient.get<AdminIncomeDto>('/api/v1/statistics/summary/income').then((r) => r.data)
   },
   /** RF-86: búsquedas, registros y publicaciones por día del mes en curso. */
   getAdminDaily(): Promise<AdminDailyDto> {
     if (env.useMocks) return mockDelay(MOCK_ADMIN_DAILY)
-    return apiClient.get<AdminDailyDto>('/api/estadisticas/admin/actividad-diaria').then((r) => r.data)
+    return apiClient.get<AdminDailyDto>('/api/v1/statistics/time-series/daily').then((r) => r.data)
   },
   /** RF-88: sesiones abiertas ahora (la vista consulta cada 15 s con la pestaña visible). */
   getAdminLive(): Promise<AdminLiveDto> {
     if (env.useMocks) return mockDelay(mockAdminLive(), 150)
-    return apiClient.get<AdminLiveDto>('/api/estadisticas/admin/en-vivo').then((r) => r.data)
+    return apiClient.get<AdminLiveDto>('/api/v1/statistics/realtime').then((r) => r.data)
   },
   getAdminAccounts(): Promise<AdminAccountsByPlanDto> {
     if (env.useMocks) return mockDelay(MOCK_ADMIN_ACCOUNTS)
-    return apiClient.get<AdminAccountsByPlanDto>('/api/estadisticas/admin/cuentas-por-plan').then((r) => r.data)
+    return apiClient.get<AdminAccountsByPlanDto>('/api/v1/statistics/distributions/plans').then((r) => r.data)
   },
 }

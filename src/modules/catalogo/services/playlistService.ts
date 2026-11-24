@@ -97,7 +97,7 @@ export const playlistService = {
       return mockDelay(MOCK_PLAYLISTS.filter((p) => isSavedPlaylist(p, user)).map((p) => ({ ...p, esGuardada: true })))
     }
     return apiClient
-      .get<any>('/api/v1/playlists/me/guardadas')
+      .get<any>('/api/v1/playlists/me/saved')
       .then((r) => extractPlaylistList(r.data).map((p) => ({ ...p, esGuardada: true })))
   },
 
@@ -106,7 +106,7 @@ export const playlistService = {
       return mockDelay(MOCK_PLAYLISTS.filter((p) => Boolean(p.destacada)))
     }
     return apiClient
-      .get<any>('/api/v1/playlists/destacadas')
+      .get<any>('/api/v1/playlists/featured')
       .then((r) => extractPlaylistList(r.data).map((p) => ({ ...p, destacada: true })))
   },
 
@@ -228,7 +228,7 @@ export const playlistService = {
 
     const fallbackNombre = nombrePrenda
     return apiClient
-      .post<any>(`/api/v1/playlists/${playlistId}/prendas`, {
+      .post<any>(`/api/v1/playlists/${playlistId}/garments`, {
         prendaId: itemId,
         ...(fallbackNombre ? { nombrePrenda: fallbackNombre } : {}),
       })
@@ -244,7 +244,7 @@ export const playlistService = {
       return mockDelay(pl)
     }
 
-    return apiClient.delete<any>(`/api/v1/playlists/${playlistId}/prendas/${itemId}`).then((r) => normalizePlaylist(r.data))
+    return apiClient.delete<any>(`/api/v1/playlists/${playlistId}/garments/${itemId}`).then((r) => normalizePlaylist(r.data))
   },
 
   toggleLike(playlistId: string): Promise<{ likes: number }> {
@@ -267,7 +267,7 @@ export const playlistService = {
       pl.guardados += pl.esGuardada ? 1 : -1
       return mockDelay({ esGuardada: pl.esGuardada, guardados: pl.guardados })
     }
-    return apiClient.post<any>(`/api/v1/playlists/${playlistId}/guardar`).then((r) => ({
+    return apiClient.post<any>(`/api/v1/playlists/${playlistId}/save`).then((r) => ({
       esGuardada: typeof r.data?.esGuardada === 'boolean' ? r.data.esGuardada : true,
       guardados: Number(r.data?.guardados ?? 0),
     }))

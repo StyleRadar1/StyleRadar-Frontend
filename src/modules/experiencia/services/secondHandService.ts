@@ -103,7 +103,6 @@ export const secondHandService = {
     formData.append('photo', file)
     return apiClient
       .post<UploadPhotoResponse>('/api/v1/second-hand/photos', formData)
-      .catch(() => apiClient.post<UploadPhotoResponse>('/api/v1/segunda-mano/fotos/upload', formData))
       .then((r) => r.data)
   },
 
@@ -126,7 +125,7 @@ export const secondHandService = {
             (!f.conservationStatus?.length || f.conservationStatus.includes(l.conservationStatus as any)) &&
             (!f.talla || l.talla === f.talla || l.size === f.talla) &&
             (!f.size || l.size === f.size || l.talla === f.size) &&
-            (!f.type || l.garmentType === f.type) &&
+            (!f.type || l.categoria === f.type || l.garmentType === f.type) &&
             (!colorQuery || (l.color || '').toLowerCase().includes(colorQuery)) &&
             (!brandQuery || (l.brand || l.marca || '').toLowerCase().includes(brandQuery)) &&
             (!f.localidad || l.localidad === f.localidad) &&
@@ -155,7 +154,6 @@ export const secondHandService = {
 
     return apiClient
       .get<any[]>('/api/v1/second-hand/publications', { params })
-      .catch(() => apiClient.get<any[]>('/api/v1/segunda-mano', { params }))
       .then((r) => r.data.map(normalizePublication))
   },
 
@@ -169,7 +167,6 @@ export const secondHandService = {
     const uid = userId || me().id
     return apiClient
       .get<any[]>(`/api/v1/second-hand/publications/users/${encodeURIComponent(uid)}`)
-      .catch(() => apiClient.get<any[]>('/api/v1/segunda-mano/mine'))
       .then((r) => r.data.map(normalizePublication))
   },
 
@@ -267,7 +264,6 @@ export const secondHandService = {
 
     return apiClient
       .post<any>('/api/v1/second-hand/publications', payload)
-      .catch(() => apiClient.post<any>('/api/v1/segunda-mano', payload))
       .then((r) => normalizePublication(r.data))
   },
 
@@ -430,7 +426,6 @@ export const secondHandService = {
     }
     return apiClient
       .post('/api/v1/donations/claims', { publicationId, foundationId, message })
-      .catch(() => apiClient.post('/api/v1/donaciones/claim', { publicationId, foundationId, message }))
       .then(() => undefined)
   },
 }

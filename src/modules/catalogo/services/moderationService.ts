@@ -59,7 +59,7 @@ export const moderationService = {
   getPending(): Promise<ModerationItemDto[]> {
     if (env.useMocks) return mockDelay([...MOCK_MODERATION_ITEMS])
     return apiClient
-      .get<ModerationPendingResponseDto | ModerationItemDto[]>('/api/v1/prendas/pendientes')
+      .get<ModerationPendingResponseDto | ModerationItemDto[]>('/api/v1/garments/pending')
       .then((r) => mapPendingGroups(r.data))
   },
 
@@ -95,7 +95,7 @@ export const moderationService = {
       decision: decision.aprobado ? 'APROBADA' : 'RECHAZADA',
       ...(decision.aprobado ? {} : { motivo: decision.motivo || decision.comentario }),
     }
-    return apiClient.put(`/api/v1/prendas/${encodeURIComponent(decision.itemId)}/moderacion`, payload).then(() => undefined)
+    return apiClient.put(`/api/v1/garments/${encodeURIComponent(decision.itemId)}/moderation`, payload).then(() => undefined)
   },
 
   decidePublisherBatch(batch: ModerationBatchDecisionDto): Promise<void> {
@@ -129,7 +129,7 @@ export const moderationService = {
       ...(batch.aprobado ? {} : { motivo: batch.motivo }),
     }
     return apiClient
-      .put(`/api/v1/prendas/pendientes/almacenes/${encodeURIComponent(targetId)}/moderacion`, payload)
+      .put(`/api/v1/garments/pending/stores/${encodeURIComponent(targetId)}/moderation`, payload)
       .then(() => undefined)
   },
 }

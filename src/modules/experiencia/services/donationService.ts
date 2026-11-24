@@ -68,7 +68,6 @@ export const donationService = {
     if (env.useMocks) { failIfScenario(); return mockDelay([...FOUNDATIONS].sort((a, b) => a.distanciaKm - b.distanciaKm)) }
     return apiClient
       .get<any[]>('/api/v1/donations/foundations')
-      .catch(() => apiClient.get<any[]>('/api/v1/donaciones/foundations'))
       .then((r) => r.data.map((raw: any) => ({
         id: String(raw.id),
         nombre: raw.nombre,
@@ -219,7 +218,6 @@ export const donationService = {
     }
     return apiClient
       .post<any>('/api/v1/donations', payload)
-      .catch(() => apiClient.post<any>('/api/v1/donaciones', payload))
       .then((r) => normalizeDonation(r.data))
   },
 
@@ -257,7 +255,6 @@ export const donationService = {
     }
     return apiClient
       .post<any>('/api/v1/donations/claims', payload)
-      .catch(() => apiClient.post<any>('/api/v1/donaciones/claim', payload))
       .then((r) => normalizeDonation(r.data))
   },
 
@@ -273,7 +270,6 @@ export const donationService = {
     return apiClient
       .get<any[]>(`/api/v1/donations/foundations/${encodeURIComponent(fid)}/requests`)
       .catch(() => apiClient.get<any[]>('/api/v1/donations'))
-      .catch(() => apiClient.get<any[]>('/api/v1/donaciones'))
       .then((r) => r.data.map(normalizeDonation))
   },
 

@@ -152,8 +152,8 @@ export const inventoryService = {
       return mockDelay(list)
     }
     const [catalogoRes, disponiblesRes] = await Promise.all([
-      apiClient.get<Record<string, any>[]>(`/api/v1/almacenes/${encodeURIComponent(tiendaId)}/catalogo`),
-      apiClient.get<Record<string, any>[]>(`/api/v1/inventario/sedes/${encodeURIComponent(sedeId)}/disponibles`).catch(() => ({ data: [] as Record<string, any>[] })),
+      apiClient.get<Record<string, any>[]>(`/api/v1/stores/${encodeURIComponent(tiendaId)}/catalog`),
+      apiClient.get<Record<string, any>[]>(`/api/v1/inventory/branches/${encodeURIComponent(sedeId)}/available`).catch(() => ({ data: [] as Record<string, any>[] })),
     ])
     const prendas = Array.isArray(catalogoRes.data) ? catalogoRes.data : []
     const disponiblesMap = new Map<string, Record<string, number>>()
@@ -176,7 +176,7 @@ export const inventoryService = {
         let stock = disponiblesMap.get(pid)
         if (!stock) {
           try {
-            const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(pid)}`).then((r) => r.data)
+            const inv = await apiClient.get<any>(`/api/v1/inventory/garment/${encodeURIComponent(pid)}`).then((r) => r.data)
             stock = extractStockMapFromInventory(inv)
           } catch {
             stock = {}
@@ -235,13 +235,13 @@ export const inventoryService = {
     const sedeId = dto.sedeId || DEFAULT_SEDE_ID
     const res = await apiClient
       .patch<Record<string, any>>(
-        `/api/v1/inventario/prenda/${encodeURIComponent(dto.prendaId)}/sede/${encodeURIComponent(sedeId)}/tallas/${encodeURIComponent(dto.talla)}`,
+        `/api/v1/inventory/garment/${encodeURIComponent(dto.prendaId)}/branch/${encodeURIComponent(sedeId)}/sizes/${encodeURIComponent(dto.talla)}`,
         { unidades: dto.nuevoStock }
       )
       .then((r) => r.data)
     if (res && res.id && res.stockPorTalla) return res as InventoryItemDto
-    const prenda = await apiClient.get<Record<string, any>>(`/api/v1/prendas/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data)
-    const inv = await apiClient.get<any>(`/api/v1/inventario/prenda/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => [])
+    const prenda = await apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data)
+    const inv = await apiClient.get<any>(`/api/v1/inventory/garment/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => [])
     const stockMap: Record<string, number> = { [dto.talla]: dto.nuevoStock }
     const list = Array.isArray(inv) ? inv : Array.isArray(inv?.tallas) ? inv.tallas : []
     for (const entry of list) {
@@ -290,7 +290,7 @@ export const inventoryService = {
     return this.updateStock({ prendaId, talla, nuevoStock: 0 })
   },
 
-  /** SR-RF-53: Modificar precio de la prenda mediante PUT /api/v1/prendas/{id}. */
+  /** SR-RF-53: Modificar precio de la prenda mediante PUT /api/v1/garments/{id}. */
   async updatePrice(dto: UpdatePriceDto): Promise<InventoryItemDto> {
     if (!Number.isFinite(dto.nuevoPrecio) || dto.nuevoPrecio <= 0 || dto.nuevoPrecio > MAX_GARMENT_PRICE) {
       throw new ApiError(400, 'El precio debe ser mayor a 0.', { precio: 'El precio debe ser mayor a 0.' })
@@ -314,7 +314,7 @@ export const inventoryService = {
       memoryInventory[idx] = updated
       return mockDelay(updated)
     }
-    const current = await apiClient.get<Record<string, any>>(`/api/v1/prendas/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data)
+    const current = await apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data)
     const body: PrendaRequestDto = {
       almacenId: String(current.almacenId ?? DEFAULT_STORE_ID),
       nombre: String(current.nombre ?? ''),
@@ -325,11 +325,11 @@ export const inventoryService = {
       precio: dto.nuevoPrecio,
       fotografias: Array.isArray(current.fotografias) && current.fotografias.length ? current.fotografias : [DEFAULT_PHOTO],
     }
-    const updatedPrenda = await apiClient.put<Record<string, any>>(`/api/v1/prendas/${encodeURIComponent(dto.prendaId)}`, body).then((r) => r.data)
+    const updatedPrenda = await apiClient.put<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`, body).then((r) => r.data)
     return normalizeBackendInventoryItem(updatedPrenda)
   },
 
-  /** SR-RF-55: Editar prenda del catálogo (PUT /api/v1/prendas/{id}). Si estaba RECHAZADA vuelve a PENDIENTE. */
+  /** SR-RF-55: Editar prenda del catálogo (PUT /api/v1/garments/{id}). Si estaba RECHAZADA vuelve a PENDIENTE. */
   async updateItem(dto: UpdateInventoryItemDto): Promise<InventoryItemDto> {
     const fields = validatePrendaFields({
       nombre: dto.nombre,
@@ -389,12 +389,12 @@ export const inventoryService = {
       fotografias: dto.fotografias.slice(0, MAX_GARMENT_PHOTOS),
     }
     const updatedPrenda = await apiClient
-      .put<Record<string, any>>(`/api/v1/prendas/${encodeURIComponent(dto.prendaId)}`, body)
+      .put<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`, body)
       .then((r) => r.data)
     return normalizeBackendInventoryItem(updatedPrenda)
   },
 
-  /** SR-RF-58: Retirar prenda del catálogo con DELETE /api/v1/prendas/{id}. */
+  /** SR-RF-58: Retirar prenda del catálogo con DELETE /api/v1/garments/{id}. */
   async toggleActive(prendaId: string): Promise<InventoryItemDto> {
     if (env.useMocks) {
       failIfScenario('sin-permiso', 'regla')
@@ -415,8 +415,8 @@ export const inventoryService = {
       memoryInventory[idx] = updated
       return mockDelay(updated)
     }
-    await apiClient.delete(`/api/v1/prendas/${encodeURIComponent(prendaId)}`)
-    const prenda = await apiClient.get<Record<string, any>>(`/api/v1/prendas/${encodeURIComponent(prendaId)}`).then((r) => r.data).catch(() => ({ id: prendaId, estado: 'RETIRADA' }))
+    await apiClient.delete(`/api/v1/garments/${encodeURIComponent(prendaId)}`)
+    const prenda = await apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(prendaId)}`).then((r) => r.data).catch(() => ({ id: prendaId, estado: 'RETIRADA' }))
     return normalizeBackendInventoryItem(prenda)
   },
 
@@ -483,7 +483,7 @@ export const inventoryService = {
       precio: dto.precio,
       fotografias: fotos.slice(0, MAX_GARMENT_PHOTOS),
     }
-    const createdPrenda = await apiClient.post<Record<string, any>>('/api/v1/prendas', prendaPayload).then((r) => r.data)
+    const createdPrenda = await apiClient.post<Record<string, any>>('/api/v1/garments', prendaPayload).then((r) => r.data)
 
     const lotePayload: InventarioLoteRequestDto = {
       prendaId: String(createdPrenda.id),
@@ -495,7 +495,7 @@ export const inventoryService = {
           ? createdPrenda.fechaPublicacion
           : new Date().toISOString(),
     }
-    await apiClient.post('/api/v1/inventario/lote', lotePayload)
+    await apiClient.post('/api/v1/inventory/batch', lotePayload)
 
     return normalizeBackendInventoryItem(createdPrenda, dto.stockPorTalla, lotePayload.sedeId)
   },
@@ -505,7 +505,7 @@ export const inventoryService = {
       memoryInventory = memoryInventory.filter((x) => x.id !== prendaId)
       return mockDelay(undefined)
     }
-    return apiClient.delete(`/api/v1/prendas/${encodeURIComponent(prendaId)}`).then(() => undefined)
+    return apiClient.delete(`/api/v1/garments/${encodeURIComponent(prendaId)}`).then(() => undefined)
   },
 }
 

@@ -3,18 +3,17 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { MyListings } from '../components/MyListings'
 import { donationService } from '../services/donationService'
 import { secondHandService } from '../services/secondHandService'
 import {
+  CATEGORIAS,
   CONSERVACIONES,
   CONSERVACION_LABEL,
-  GARMENT_TYPES,
-  GARMENT_TYPE_LABEL,
   LOCALIDADES_BOGOTA,
   TALLAS,
   type Conservacion,
-  type GarmentType,
   type ListingDto,
   type LocalidadEnum,
 } from '../types/secondhand.dto'
@@ -94,13 +93,14 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
   const [talla, setTalla] = useState('')
   const [color, setColor] = useState('')
   const [brand, setBrand] = useState('')
-  const [tipo, setTipo] = useState<GarmentType | ''>('')
+  const [tipo, setTipo] = useState('')
   const [localidad, setLocalidad] = useState<LocalidadEnum | ''>('')
   const [min, setMin] = useState('')
   const [max, setMax] = useState('')
   const [list, setList] = useState<ListingDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
+  const [detailItem, setDetailItem] = useState<ListingDto | null>(null)
 
   // Modal para reclamar donación
   const [claimingItem, setClaimingItem] = useState<ListingDto | null>(null)
@@ -247,12 +247,12 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
             id="sh-tipo"
             className={inputCls}
             value={tipo}
-            onChange={(e) => setTipo(e.target.value as GarmentType | '')}
+            onChange={(e) => setTipo(e.target.value)}
           >
             <option value="">Todos los tipos</option>
-            {GARMENT_TYPES.map((gt) => (
-              <option key={gt} value={gt}>
-                {GARMENT_TYPE_LABEL[gt]}
+            {CATEGORIAS.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
               </option>
             ))}
           </select>
@@ -417,7 +417,11 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
                   key={l.id}
                   className="flex flex-col justify-between overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm"
                 >
-                  <div>
+                  <button
+                    type="button"
+                    onClick={() => setDetailItem(l)}
+                    className="w-full text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]"
+                  >
                     <div className="aspect-[4/5] bg-[var(--color-surface-subtle)] relative">
                       <img
                         src={(l.photos && l.photos[0]) || (l.fotos && l.fotos[0]) || '/img/productos/gabardina-clasica.jpg'}
@@ -451,10 +455,10 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
                         {l.esDonacion ? '$0 COP' : formatCOP(l.price ?? l.precio)}
                       </p>
                     </div>
-                  </div>
+                  </button>
 
-                  {l.esDonacion && isFoundationOrAdmin && (
-                    <div className="p-4 pt-0">
+                  <div className="p-4 pt-0 flex flex-col gap-2">
+                    {l.esDonacion && isFoundationOrAdmin && (
                       <button
                         type="button"
                         onClick={() => setClaimingItem(l)}
@@ -462,14 +466,121 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
                       >
                         Reclamar Donación
                       </button>
+                    )}
+                    <div className="flex items-center gap-2 relative">
+                      <button
+                        type="button"
+                        onClick={() => setDetailItem(l)}
+                        className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-2 text-xs font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)] transition-colors cursor-pointer"
+                      >
+                        Ver detalle
+                      </button>
+                      <ContactButton
+                        icon
+                        label={`Chatear con ${l.vendedor?.nombre || 'vendedor'}`}
+                        contacto={{
+                          id: l.vendedor?.id || String(l.userId || ''),
+                          nombre: l.vendedor?.nombre || 'Vendedor',
+                          tipo: l.esDonacion ? 'DONANTE' : 'VENDEDOR',
+                        }}
+                        asunto={l.garmentName || l.titulo}
+                        referenciaId={l.id}
+                      />
                     </div>
-                  )}
+                  </div>
                 </li>
               ))}
             </ul>
           </>
         )}
       </div>
+
+      {/* Modal de detalle de prenda */}
+      {detailItem && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="detail-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null) }}
+        >
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">
+                  {CONSERVACION_LABEL[detailItem.conservacion] || detailItem.conservacion} · Talla {detailItem.size || detailItem.talla}
+                </p>
+                <h3 id="detail-title" className="mt-1 text-xl font-bold text-[var(--color-text)]">
+                  {detailItem.garmentName || detailItem.titulo}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailItem(null)}
+                aria-label="Cerrar detalle"
+                className="rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {((detailItem.photos?.length ? detailItem.photos : detailItem.fotos)?.length
+                ? (detailItem.photos?.length ? detailItem.photos : detailItem.fotos)
+                : ['/img/productos/gabardina-clasica.jpg']
+              ).map((src, idx) => (
+                <img
+                  key={idx}
+                  src={src}
+                  alt={`${detailItem.garmentName || detailItem.titulo} ${idx + 1}`}
+                  className={`w-full rounded-xl object-cover bg-[var(--color-surface-subtle)] ${idx === 0 ? 'col-span-2 aspect-[4/3]' : 'aspect-square'}`}
+                />
+              ))}
+            </div>
+
+            <div className="mt-4 space-y-2 text-sm text-[var(--color-text-muted)]">
+              <p className="text-lg font-extrabold text-[var(--color-text)]">
+                {detailItem.esDonacion ? '$0 COP (Donación)' : formatCOP(detailItem.price ?? detailItem.precio)}
+              </p>
+              <p>
+                <strong className="text-[var(--color-text)]">Marca:</strong> {detailItem.brand || detailItem.marca} ·{' '}
+                <strong className="text-[var(--color-text)]">Color:</strong> {detailItem.color || 'No especificado'} ·{' '}
+                <strong className="text-[var(--color-text)]">Tipo:</strong> {detailItem.categoria}
+              </p>
+              <p>
+                <strong className="text-[var(--color-text)]">Vendedor:</strong> {detailItem.vendedor?.nombre} ·{' '}
+                <strong className="text-[var(--color-text)]">Localidad:</strong> {detailItem.localidad || detailItem.barrio}
+              </p>
+              {detailItem.description || detailItem.descripcion ? (
+                <p className="pt-1 text-[var(--color-text)]">{detailItem.description || detailItem.descripcion}</p>
+              ) : null}
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+              {detailItem.esDonacion && isFoundationOrAdmin && (
+                <button
+                  type="button"
+                  onClick={() => { setClaimingItem(detailItem); setDetailItem(null) }}
+                  className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 cursor-pointer"
+                >
+                  Reclamar Donación
+                </button>
+              )}
+              <ContactButton
+                primary
+                label={detailItem.esDonacion ? 'Chatear con donante' : 'Chatear con vendedor'}
+                contacto={{
+                  id: detailItem.vendedor?.id || String(detailItem.userId || ''),
+                  nombre: detailItem.vendedor?.nombre || 'Vendedor',
+                  tipo: detailItem.esDonacion ? 'DONANTE' : 'VENDEDOR',
+                }}
+                asunto={detailItem.garmentName || detailItem.titulo}
+                referenciaId={detailItem.id}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal para confirmar reclamación de donación */}
       {claimingItem && (

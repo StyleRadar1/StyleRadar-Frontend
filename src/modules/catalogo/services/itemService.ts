@@ -261,7 +261,7 @@ export const itemService = {
     if (filters.lat !== undefined) params.lat = filters.lat
     if (filters.lng !== undefined) params.lng = filters.lng
 
-    return apiClient.get<Record<string, unknown>[]>('/api/v1/prendas', { params }).then((r) => {
+    return apiClient.get<Record<string, unknown>[]>('/api/v1/garments', { params }).then((r) => {
       const normalized = (Array.isArray(r.data) ? r.data : []).map(normalizeBackendItem)
       const map = new Map<string, ItemResponseDto>()
       const imageToId = new Map<string, string>()
@@ -286,7 +286,7 @@ export const itemService = {
       }
       return it ? mockDelay(it) : Promise.reject(new ApiError(404, 'La prenda no existe.'))
     }
-    return apiClient.get<Record<string, unknown>>(`/api/v1/prendas/${encodeURIComponent(id)}`).then((r) => normalizeBackendItem(r.data))
+    return apiClient.get<Record<string, unknown>>(`/api/v1/garments/${encodeURIComponent(id)}`).then((r) => normalizeBackendItem(r.data))
   },
 
   /** SR-RF-16: Prendas similares (hasta 10 por mismo tipo o estilo). */
@@ -303,7 +303,7 @@ export const itemService = {
       return mockDelay(similars)
     }
     return apiClient
-      .get<Record<string, unknown>[]>(`/api/v1/prendas/${encodeURIComponent(id)}/similares`)
+      .get<Record<string, unknown>[]>(`/api/v1/garments/${encodeURIComponent(id)}/similar`)
       .then((r) => (Array.isArray(r.data) ? r.data : []).map(normalizeBackendItem).slice(0, 10))
   },
 
@@ -319,6 +319,6 @@ export const itemService = {
     }
     const payload: { prendaId: string; talla: string; sedeId?: string } = { prendaId, talla }
     if (sedeId) payload.sedeId = sedeId
-    return apiClient.post<ReservaDto>('/api/v1/inventario/reserva', payload).then((r) => r.data)
+    return apiClient.post<ReservaDto>('/api/v1/inventory/reserve', payload).then((r) => r.data)
   },
 }

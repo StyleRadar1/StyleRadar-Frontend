@@ -101,8 +101,8 @@ export function MyListings() {
       if (!active) return
       const seen = new Map<string, BuyerOption>()
       for (const c of convs) {
-        if ((c.contacto.tipo === 'COMPRADOR' || c.contacto.tipo === 'VENDEDOR') && !seen.has(c.contacto.id)) {
-          seen.set(c.contacto.id, { id: c.contacto.id, nombre: c.contacto.nombre })
+        if ((c.contacto.tipo === 'COMPRADOR' || c.contacto.tipo === 'VENDEDOR' || c.contacto.tipo === 'DONANTE') && !seen.has(c.contacto.id)) {
+          seen.set(c.contacto.id, { id: c.contacto.id, nombre: `${c.contacto.nombre} (#${c.contacto.id})` })
         }
       }
       setBuyers([...seen.values()])

@@ -350,7 +350,7 @@ export const adminPlaylistService = {
   /** Playlists públicas ordenadas por interacción (me gusta + guardados × 2). */
   async list(): Promise<AdminPlaylistDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...db().playlists].sort((a, b) => interaccion(b) - interaccion(a))) }
-    const r = await apiClient.get<any>('/api/v1/playlists/populares')
+    const r = await apiClient.get<any>('/api/v1/playlists/popular')
     const rows: Record<string, any>[] = Array.isArray(r.data)
       ? r.data
       : Array.isArray(r.data?.content)
@@ -371,7 +371,7 @@ export const adminPlaylistService = {
       p.destacada = destacada
       return mockDelay(p, 250)
     }
-    const url = `/api/v1/playlists/${encodeURIComponent(id)}/destacar`
+    const url = `/api/v1/playlists/${encodeURIComponent(id)}/feature`
     const r = destacada ? await apiClient.put<any>(url) : await apiClient.delete<any>(url)
     return r.data ? { ...toAdminPlaylistDto(r.data), destacada } : { id, nombre: '', creador: '', meGusta: 0, guardados: 0, prendas: 0, destacada }
   },
