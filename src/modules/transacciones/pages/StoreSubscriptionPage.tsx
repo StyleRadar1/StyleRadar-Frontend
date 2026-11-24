@@ -8,7 +8,7 @@ import { PayerEmailForm } from '../components/PayerEmailForm'
 import { StoreSuspendedBanner } from '../components/StoreSuspendedBanner'
 import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
-import { formatStatusLabel } from '../mappers/paymentsMappers'
+import { deriveSubscriptionStatus, formatStatusLabel } from '../mappers/paymentsMappers'
 import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
 import type { CheckoutResultDto } from '../types/plan.dto'
@@ -109,6 +109,14 @@ export default function StoreSubscriptionPage() {
   const fechaInicio = sub.fechaInicio ?? null
   const fechaFin = sub.fechaFin ?? sub.periodEndsAt ?? null
   const autoRenovacion = sub.autoRenovacion ?? sub.renewalEnabled
+  const derivedSub = deriveSubscriptionStatus(sub.status, { autoRenewal: autoRenovacion, endDate: fechaFin })
+  const statusBadgeText = sub.unknownStatus
+    ? formatStatusLabel(STATUS_LABEL[derivedSub.status], sub.unknownStatus)
+    : STATUS_LABEL[derivedSub.status]
+  const planCardBadgeText = sub.unknownStatus
+    ? formatStatusLabel(STATUS_LABEL[derivedSub.status], sub.unknownStatus)
+    : derivedSub.label
+  const isSuspendedOrExpired = derivedSub.status === 'SUSPENDIDA' || derivedSub.status === 'VENCIDA'
   const defaultRetryEmail =
     retryPaymentTarget?.userEmail ??
     failedPayment?.userEmail ??
@@ -125,7 +133,7 @@ export default function StoreSubscriptionPage() {
             <h2>Suscripción</h2>
             <span className="store-subscription__badge">
               <span aria-hidden="true">● </span>
-              <span>{formatStatusLabel(STATUS_LABEL[sub.status], sub.unknownStatus)}</span>
+              <span>{statusBadgeText}</span>
             </span>
           </div>
           <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días</p>
@@ -207,7 +215,7 @@ export default function StoreSubscriptionPage() {
         {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
 
         <article className="store-subscription__plan">
-          <span className="store-subscription__badge">● {STATUS_LABEL[sub.status].toUpperCase()}</span>
+          <span className="store-subscription__badge">● {planCardBadgeText.toUpperCase()}</span>
           <h3>{sub.planName}</h3>
           <p className="store-subscription__price">{formatCOP(sub.amount || STORE_SUBSCRIPTION_PRICE)} <small>/ mes</small></p>
           <ul>
@@ -227,7 +235,7 @@ export default function StoreSubscriptionPage() {
           <div className="store-subscription__actions flex flex-wrap items-center gap-3">
             {sub.status !== 'ACTIVA' && (
               <Button onClick={() => { void pay() }} disabled={paying}>
-                {paying ? 'Procesando pago…' : sub.status === 'SUSPENDIDA' ? 'Pagar y reactivar' : 'Pagar y activar suscripción'}
+                {paying ? 'Procesando pago…' : isSuspendedOrExpired ? 'Volver a suscribirme' : 'Pagar y activar suscripción'}
               </Button>
             )}
             <CancelSubscriptionButton

@@ -42,11 +42,8 @@ export const paymentService = {
       if (!p) return Promise.reject(new ApiError(404, 'Pago no encontrado'))
       return mockDelay(p)
     }
-    // TODO(contrato): ms-pagos.openapi.json no expone GET /api/v1/admin/payments/{id}; se consulta el listado global.
-    const all = await paymentService.list({})
-    const found = all.find((x) => x.id === id || x.pagoId === id)
-    if (!found) throw new ApiError(404, 'Pago no encontrado')
-    return found
+    const { data } = await apiClient.get<ApiPaymentResponse>(`/api/v1/admin/payments/${encodeURIComponent(id)}`)
+    return mapPaymentResponse(data)
   },
 }
 

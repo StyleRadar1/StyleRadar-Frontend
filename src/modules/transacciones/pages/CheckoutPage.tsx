@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { env } from '@/configs/env'
 import { Card, Badge, Button } from '@/modules/core/design-system'
 import { Loading, ErrorState, EmptyState } from '@/modules/core/components/Status'
@@ -18,10 +18,23 @@ import { PLAN_CHANGED } from '../services/userPlanService'
 import { isPlanCompatibleWithRole } from '../constants/plansByRole'
 import { avisoDePlan, TEXTOS_PLAN, type AvisoPlan } from '../utils/erroresPlan'
 
+function getMercadoPagoHint(rawStatus: string): string | null {
+  const s = rawStatus.trim().toLowerCase()
+  if (!s) return null
+  if (s === 'approved') return 'Mercado Pago informó el pago como aprobado. Confirmando estado oficial de tu suscripción'
+  if (s === 'pending' || s === 'in_process') return 'Mercado Pago informó que tu pago está en proceso de verificación'
+  if (s === 'rejected' || s === 'failure') return 'Mercado Pago informó que el pago no fue aprobado'
+  return 'Recibimos tu retorno desde Mercado Pago. Consultando el estado oficial de tu suscripción'
+}
+
 /* ─── Subcomponente: resultado del pago (RF-94: dos momentos) ─── */
 function CheckoutResult() {
   const [params] = useSearchParams()
-  const orderId = params.get('orden') ?? 'MOCK_ORDER_OK'
+  const mpStatus = params.get('status') ?? params.get('collection_status') ?? ''
+  const mpPaymentId = params.get('payment_id')?.trim() || ''
+  const mpExternalRef = params.get('external_reference')?.trim() || ''
+  const mpHint = getMercadoPagoHint(mpStatus)
+  const orderId = params.get('orden') ?? (mpExternalRef || mpPaymentId || 'MOCK_ORDER_OK')
   const [result, setResult] = useState<CheckoutResultDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
@@ -29,8 +42,8 @@ function CheckoutResult() {
     setLoading(true)
     planService.getCheckoutResult(orderId)
       .then((r) => {
-        // RF-94, RF-100 y RNF-14: solo un pago aprobado activa el plan y no se procesa dos veces la misma orden
-        if (r.status === 'aprobado' && r.planName === 'Radar+') {
+        // RF-94, RF-100 y RNF-14: en modo real la suscripción la activa el backend por webhook (nunca localmente).
+        if (env.useMocksPagos && r.status === 'aprobado' && r.planName === 'Radar+') {
           const processedKey = `sr_processed_order_${orderId}`
           let alreadyProcessed = false
           try {
@@ -40,6 +53,8 @@ function CheckoutResult() {
           if (!alreadyProcessed) {
             userPlanService.activatePaid('RADAR_PLUS')
           }
+        } else if (!env.useMocksPagos && r.status === 'aprobado') {
+          window.dispatchEvent(new Event(PLAN_CHANGED))
         }
         setResult(r)
       })
@@ -113,9 +128,11 @@ function CheckoutResult() {
       <span className="text-5xl">{icons[result.status]}</span>
       <h1 className="mt-4 text-3xl font-extrabold">{result.status === 'aprobado' ? '¡Listo!' : 'Pago pendiente'}</h1>
       <p role="status" className="mt-2 text-white/70">{messages[result.status]}</p>
+      {mpHint && <p className="mt-2 text-xs text-arena">{mpHint}</p>}
       <Card className="mx-auto mt-8 max-w-sm text-left">
         <dl className="grid grid-cols-2 gap-2 text-sm">
           <dt className="text-white/50">Orden</dt><dd className="font-mono">{result.orderId}</dd>
+          {mpPaymentId && <><dt className="text-white/50">Referencia MP</dt><dd className="font-mono">{mpPaymentId}</dd></>}
           <dt className="text-white/50">Plan</dt><dd>{result.planName}</dd>
           <dt className="text-white/50">Total a pagar</dt><dd className="font-mono">{formatCOP(result.amount)}</dd>
           {result.payerEmail && <><dt className="text-white/50">Pagador</dt><dd className="truncate">{result.payerEmail}</dd></>}
@@ -212,8 +229,15 @@ function PlanCard({
 
 /* ─── Página principal ─── */
 export default function CheckoutPage() {
+  const location = useLocation()
   const [params] = useSearchParams()
-  const isResult = params.has('orden')
+  const isResult =
+    location.pathname.includes('/pago/resultado') ||
+    params.has('orden') ||
+    params.has('status') ||
+    params.has('collection_status') ||
+    params.has('payment_id') ||
+    params.has('external_reference')
 
   if (isResult) return <CheckoutResult />
 

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
@@ -5,6 +6,7 @@ import { BuyerRenewalStatusCard } from '../components/BuyerRenewalStatusCard'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { isPlanCompatibleWithRole } from '../constants/plansByRole'
+import { userPlanService } from '../services/userPlanService'
 import { PLAN_COMPARISON_ROWS, PLAN_LABEL, PLANES, REGLAS, type PlanInfo } from '../types/plan.dto'
 
 const REGISTRO: Record<string, [string, string]> = {
@@ -18,12 +20,34 @@ const REGISTRO: Record<string, [string, string]> = {
 export default function PlansPage() {
   const { user } = useAuth()
   const comprador = user?.role === 'BUYER'
-  const { plan } = useUserPlan(comprador)
+  const { plan, details } = useUserPlan(comprador)
   const navigate = useNavigate()
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelFeedback, setCancelFeedback] = useState<string | null>(null)
+
+  const handleUseFree = async () => {
+    setCancelling(true)
+    setCancelFeedback(null)
+    try {
+      await userPlanService.setRenewal(false)
+      setCancelFeedback('Cancelaste la renovación automática. Tu plan sigue activo hasta el final del periodo pagado')
+    } catch (e) {
+      setCancelFeedback(
+        e instanceof Error && e.message
+          ? e.message.replace(/\.$/, '')
+          : 'No fue posible cancelar la renovación de Radar+',
+      )
+    } finally {
+      setCancelling(false)
+    }
+  }
 
   const visiblePlans = user
     ? PLANES.filter((p) => isPlanCompatibleWithRole(p.id, user.role))
     : PLANES
+
+  const renewalDisabled = plan === 'RADAR_PLUS' && details?.renewalEnabled === false
+  const isSuspendedOrExpired = details?.estado === 'SUSPENDIDA' || details?.estado === 'VENCIDA'
 
   const accion = (p: PlanInfo) => {
     if (!user) {
@@ -48,6 +72,29 @@ export default function PlansPage() {
             </p>
           )
         }
+        if (plan === 'RADAR_PLUS') {
+          if (renewalDisabled) {
+            return (
+              <button
+                type="button"
+                disabled
+                className="mt-auto rounded-xl border border-[var(--color-border)] px-5 py-3 text-center text-xs font-semibold text-[var(--color-text-muted)] opacity-70"
+              >
+                Plan actual · no se renovará
+              </button>
+            )
+          }
+          return (
+            <button
+              type="button"
+              disabled={cancelling}
+              onClick={() => { void handleUseFree() }}
+              className="mt-auto rounded-xl border border-[var(--color-border)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-subtle)] disabled:opacity-60"
+            >
+              {cancelling ? 'Cancelando renovación…' : 'Usar gratis'}
+            </button>
+          )
+        }
         return (
           <p className="mt-auto rounded-xl border border-[var(--color-border)] px-5 py-3 text-center text-xs text-[var(--color-text-muted)]">
             Incluido en tu cuenta
@@ -58,7 +105,7 @@ export default function PlansPage() {
         if (plan === 'RADAR_PLUS') {
           return (
             <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
-              Tu plan actual
+              {renewalDisabled ? 'Activa sin renovación' : 'Tu plan actual'}
             </p>
           )
         }
@@ -68,7 +115,7 @@ export default function PlansPage() {
             onClick={() => navigate('/suscripcion')}
             className="mt-auto rounded-xl bg-violeta px-5 py-3 text-sm font-semibold text-blanco"
           >
-            Activar Radar+
+            {isSuspendedOrExpired ? 'Volver a suscribirme' : 'Activar Radar+'}
           </button>
         )
       }
@@ -118,6 +165,12 @@ export default function PlansPage() {
       )}
 
       <BuyerRenewalStatusCard />
+
+      {cancelFeedback && (
+        <p role="status" className="mt-4 rounded-xl border border-arena/40 bg-white/[.04] px-4 py-3 text-sm text-[var(--sr-hero-text)]">
+          {cancelFeedback}
+        </p>
+      )}
 
       <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Planes">
         {visiblePlans.map((p) => (
