@@ -9,6 +9,13 @@ import { distanciaKm, formatDistanciaKm, RADIO_KM, type Ubicacion } from '../uti
 /** Rutas del API Gateway hacia ms-geolocalización / ms-item-catalogo */
 const BASE = '/api/v1'
 
+const extractList = (data: unknown): any[] =>
+  Array.isArray(data)
+    ? data
+    : Array.isArray((data as { content?: unknown[] })?.content)
+      ? (data as { content: unknown[] }).content
+      : []
+
 export interface MapQueryParams {
   lat?: number
   lng?: number
@@ -89,10 +96,10 @@ export const mapService = {
       query.categoriaId = params.categoriaId
     }
 
-    const storesRes = await apiClient.get<any[]>(`${BASE}/almacenes`, {
+    const storesRes = await apiClient.get<any[] | { content?: any[] }>(`${BASE}/stores`, {
       params: Object.keys(query).length ? query : undefined,
     })
-    const storePins = (Array.isArray(storesRes.data) ? storesRes.data : []).map(mapAlmacenToPin)
+    const storePins = extractList(storesRes.data).map(mapAlmacenToPin)
 
     if (params?.categoriaId) {
       return storePins
@@ -114,10 +121,10 @@ export const mapService = {
         200,
       )
     }
-    const r = await apiClient.get<any[]>(`${BASE}/fundaciones/cercanas`, {
+    const r = await apiClient.get<any[] | { content?: any[] }>(`${BASE}/foundations/nearby`, {
       params: { lat: u.lat, lng: u.lng, radioKm },
     })
-    return (Array.isArray(r.data) ? r.data : []).map(mapFundacionToPin)
+    return extractList(r.data).map(mapFundacionToPin)
   },
 
   /** Ids de las tiendas y fundaciones a menos de `radioKm` de la persona. */
@@ -136,14 +143,14 @@ export const mapService = {
       )
     }
     const [almacenesRes, fundacionesRes] = await Promise.all([
-      apiClient.get<{ id: string }[]>(`${BASE}/almacenes`, {
+      apiClient.get<{ id: string }[] | { content?: { id: string }[] }>(`${BASE}/stores`, {
         params: { lat: u.lat, lng: u.lng, radioKm, ...(categoriaId ? { categoriaId } : {}) },
       }),
       categoriaId
         ? Promise.resolve([] as MapPinDto[])
         : this.nearbyFoundations(u, radioKm).catch(() => [] as MapPinDto[]),
     ])
-    const storeIds = (Array.isArray(almacenesRes.data) ? almacenesRes.data : []).map((a) => String(a.id))
+    const storeIds = extractList(almacenesRes.data).map((a) => String(a.id))
     const foundationIds = fundacionesRes.map((f) => f.id)
     return [...storeIds, ...foundationIds]
   },
@@ -156,7 +163,7 @@ export const mapService = {
       return mockDelay({ totalPrendas: pin?.products?.length ?? 0, prendas: productos }, 150)
     }
     const r = await apiClient.get<{ totalPrendas?: number; prendas?: any[] }>(
-      `${BASE}/almacenes/${encodeURIComponent(almacenId)}/catalogo/resumen`,
+      `${BASE}/stores/${encodeURIComponent(almacenId)}/catalog/summary`,
     )
     const rawPrendas = Array.isArray(r.data?.prendas) ? r.data.prendas : []
     const prendas: MapProductDto[] = rawPrendas.slice(0, 4).map((p) => ({
@@ -180,7 +187,7 @@ export const mapService = {
       if (!pin) throw new ApiError(404, 'No existe la tienda.')
       return mockDelay(Math.round(distanciaKm(u, pin.lngLat) * 100) / 100, 150)
     }
-    const r = await apiClient.get<{ kilometros: number }>(`${BASE}/almacenes/${encodeURIComponent(id)}/distancia`, { params: { lat: u.lat, lng: u.lng } })
+    const r = await apiClient.get<{ kilometros: number }>(`${BASE}/stores/${encodeURIComponent(id)}/distance`, { params: { lat: u.lat, lng: u.lng } })
     return r.data.kilometros
   },
 }
