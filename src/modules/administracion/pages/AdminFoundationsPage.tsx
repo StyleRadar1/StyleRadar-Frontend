@@ -3,6 +3,7 @@ import { errorKind, errorMessage } from '@/modules/core/api/errors'
 import { ErrorBanner, ErrorToast } from '@/modules/core/components/ErrorFeedback'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
+import { AvisoEliminado } from '../components/EliminarRegistro'
 import { AdminHeader, AdminTable, EditLink, Modal, StatusBadge, Who, type Columna } from '../components/AdminUi'
 import { FoundationForm } from '../components/FoundationForm'
 import { adminFoundationService } from '../services/adminService'
@@ -55,6 +56,7 @@ export default function AdminFoundationsPage() {
   return (
     <>
       <AdminHeader kicker="Configuración" title="Fundaciones" />
+      <AvisoEliminado />
       <ErrorToast open={!!msg} tone={msg?.ok ? 'ok' : 'bad'} icon={msg?.ok ? 'ok' : 'warn'} title={msg?.text ?? ''} onClose={() => setMsg(null)} />
       {loading ? <Loading label="Cargando fundaciones…" /> : error ? <ErrorState error={error} onRetry={reload} title="No pudimos cargar las fundaciones" /> : (
         <AdminTable rows={data} columnas={COLUMNAS} keyOf={(f) => f.id} titulo={(f) => f.name} vacio="No hay fundaciones con esos filtros."

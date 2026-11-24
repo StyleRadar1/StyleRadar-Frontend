@@ -158,6 +158,20 @@ export const usuarioService = {
     return apiClient.get<AdminUserDto>(`/api/v1/admin/users/${encodeURIComponent(id)}`).then((r) => aUsuarioAdmin(r.data))
   },
 
+  /**
+   * SR-RF-115: elimina la cuenta de forma definitiva (DELETE /api/v1/admin/users/{id}) → 204.
+   * 404 (USER_NOT_FOUND) si ya fue eliminada: la pantalla lo trata como ya eliminada.
+   */
+  async removeAdmin(id: string): Promise<void> {
+    if (env.useMocks) {
+      failIfScenario()
+      if (!usuarios.some((x) => x.id === id)) throw new ApiError(404, 'Esa cuenta ya no existe.', 'USER_NOT_FOUND')
+      usuarios = usuarios.filter((x) => x.id !== id)
+      return mockDelay(undefined, 300)
+    }
+    await apiClient.delete(`/api/v1/admin/users/${encodeURIComponent(id)}`)
+  },
+
   /** SR-RF-66: cambia una cuenta a Activa, Inactiva o Bloqueada (PATCH /api/v1/admin/users/{id}/status). */
   async setStatus(id: string, body: ChangeStatusRequestDto): Promise<AdminUserDto> {
     const reason = body.reason?.trim()
@@ -182,20 +196,16 @@ export const usuarioService = {
     return apiClient.patch<AdminUserDto>(`/api/v1/admin/users/${encodeURIComponent(id)}/status`, envio).then((r) => aUsuarioAdmin(r.data))
   },
 
-  /**
-   * Perfil de la persona con sesión. El documento (anexo D15) pide GET /api/v1/users/{id}, pero en
-   * ms-usuarios esa ruta todavía es solo del administrador (B-51 pendiente) y el comprador recibe 403.
-   * Mientras tanto se usa GET /api/v1/users/me, que toma el id del token. El id solo se usa con mocks.
-   */
+  /** Anexo D15 · B-51: perfil de una cuenta (GET /api/v1/users/{id}). El comprador solo puede ver el suyo. */
   async get(id: string): Promise<PerfilDto> {
     if (env.useMocks) {
       failIfScenario()
       return mockDelay(perfilMock(id))
     }
-    return apiClient.get<UserProfileDto>('/api/v1/users/me').then((r) => aPerfil(r.data))
+    return apiClient.get<UserProfileDto>(`/api/v1/users/${encodeURIComponent(id)}`).then((r) => aPerfil(r.data))
   },
 
-  /** Perfil de la persona con sesión. */
+  /** Perfil de la persona con sesión, por su id (sin /me). */
   async me(): Promise<PerfilDto> {
     return this.get(idDeSesion())
   },

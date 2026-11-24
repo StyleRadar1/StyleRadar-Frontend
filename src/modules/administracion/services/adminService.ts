@@ -159,6 +159,21 @@ export const adminStoreService = {
     return apiClient.put<StoreAdministratorDto>(`${API.tiendas}/${encodeURIComponent(nit)}/administrators/${encodeURIComponent(uid)}`).then((r) => r.data)
   },
   /**
+   * SR-RF-119: elimina el almacén de forma definitiva (DELETE /api/v1/admin/stores/{nit}) → 204.
+   * 404 si otro administrador ya lo eliminó: la pantalla lo trata como ya eliminado.
+   */
+  async remove(nit: string): Promise<void> {
+    if (env.useMocks) {
+      failIfScenario()
+      tienda(nit)
+      tiendas = db().tiendas.filter((x) => x.id !== nit)
+      avisar(null)
+      return mockDelay(undefined, 300)
+    }
+    await apiClient.delete(`${API.tiendas}/${encodeURIComponent(nit)}`)
+    avisar(null)
+  },
+  /**
    * Extiende 15 días el periodo gratuito. Solo existe con datos de prueba: ni ms-tiendas
    * ni pagos tienen todavía una ruta para esto, así que con el back no se llama a nada.
    */
@@ -297,6 +312,21 @@ export const adminFoundationService = {
     const accion = estado === 'Inactiva' ? 'deactivate' : 'activate'
     return apiClient.patch<FoundationResponseDto>(`${API.fundaciones}/${encodeURIComponent(id)}/${accion}`, undefined, conMotivo(reason))
       .then((r) => aFundacionAdmin(r.data))
+  },
+  /**
+   * SR-RF-120: elimina la fundación de forma definitiva (DELETE /api/v1/admin/foundations/{id}) → 204.
+   * 404 si otro administrador ya la eliminó: la pantalla lo trata como ya eliminada.
+   */
+  async remove(id: string): Promise<void> {
+    if (env.useMocks) {
+      failIfScenario()
+      fundacion(id)
+      fundaciones = db().fundaciones.filter((x) => x.id !== id)
+      avisar(null)
+      return mockDelay(undefined, 300)
+    }
+    await apiClient.delete(`${API.fundaciones}/${encodeURIComponent(id)}`)
+    avisar(null)
   },
 }
 

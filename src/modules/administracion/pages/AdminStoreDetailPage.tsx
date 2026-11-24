@@ -10,6 +10,7 @@ import { useResource } from '@/modules/core/hooks/useResource'
 import { formatCOP } from '@/modules/core/utils/format'
 import { paymentService } from '@/modules/transacciones/services/paymentService'
 import type { PaymentDto } from '@/modules/transacciones/types/payment.dto'
+import { EliminarRegistro } from '../components/EliminarRegistro'
 import { AdminCard, AdminHeader, Dl, HBars, StatusBadge, Who } from '../components/AdminUi'
 import { adminStoreService, errorDeMotivoRechazo, MOTIVO_RECHAZO_TEXTO } from '../services/adminService'
 import { MOTIVO_RECHAZO_MAX, PRECIO_TIENDA, type AdminStoreDto, type StoreAdministratorDto, type Verificacion } from '../types/admin.dto'
@@ -145,6 +146,16 @@ export default function AdminStoreDetailPage() {
 
         <AdminCard title="Catálogo">
           <HBars unit=" prendas" items={[['Publicadas', t.catalogo.publicadas], ['En revisión', t.catalogo.revision], ['Agotadas', t.catalogo.agotadas], ['Retiradas', t.catalogo.retiradas]]} />
+        </AdminCard>
+
+        <AdminCard title="Eliminar tienda">
+          <p className="text-sm text-white/75">Borra la tienda con sus fotos, su configuración de catálogo y sus administradores. Para sacarla del radar sin perder sus datos usa «Retirar verificación».</p>
+          <div className="mt-4">
+            <EliminarRegistro boton="Eliminar" titulo={`¿Eliminar ${t.nombre}?`}
+              texto="Se borran la tienda, sus fotos, su configuración de catálogo y sus administradores."
+              eliminar={() => adminStoreService.remove(t.id)} volverA="/admin/tiendas"
+              avisoOk={`${t.nombre} fue eliminada.`} avisoYaNoExiste="Esa tienda ya había sido eliminada." />
+          </div>
         </AdminCard>
 
         <AdminCard title="Transacciones" className="lg:col-span-2">

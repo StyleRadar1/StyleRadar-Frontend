@@ -43,4 +43,9 @@ describe('admin de usuarios contra ms-usuarios (SR-RF-66 · F-12 · F-13 · F-14
     await usuarioService.setStatus('25', { status: 'ACTIVE', reason: '   ' })
     expect(patch).toHaveBeenLastCalledWith('/api/v1/admin/users/25/status', { status: 'ACTIVE' })
   })
+  it('SR-RF-115: eliminar la cuenta usa DELETE /api/v1/admin/users/{id}', async () => {
+    const del = vi.spyOn(apiClient, 'delete').mockResolvedValue({ status: 204, data: '' })
+    await usuarioService.removeAdmin('25')
+    expect(del).toHaveBeenCalledWith('/api/v1/admin/users/25')
+  })
 })

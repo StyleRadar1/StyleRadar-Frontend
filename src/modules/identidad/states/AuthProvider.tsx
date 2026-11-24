@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('sr:login-success', { detail: sesion }))
     }
-    // El login de ms-auth no trae el nombre: se lee del perfil (GET /api/v1/users/me) y se actualiza la sesión.
+    // El login de ms-auth no trae el nombre: se lee del perfil (GET /api/v1/users/{id}) y se actualiza la sesión.
     // Solo el comprador tiene perfil en ms-usuarios; para los demás roles esa ruta responde 403.
     if (!env.useMocks && sesion.role === 'BUYER') {
       usuarioService.get(sesion.id).then((p) => {
