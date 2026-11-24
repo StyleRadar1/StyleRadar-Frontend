@@ -105,7 +105,7 @@ describe('moderationService sin mocks (VITE_USE_MOCKS=false)', () => {
     const putSpy = vi.spyOn(apiClient, 'put').mockResolvedValue({ data: undefined } as never)
 
     await moderationService.decide({ itemId: 'p-1', aprobado: true })
-    expect(putSpy).toHaveBeenCalledWith('/api/v1/prendas/p-1/moderacion', { decision: 'APROBADA' })
+    expect(putSpy).toHaveBeenCalledWith('/api/v1/garments/p-1/moderation', { decision: 'APROBADA' })
     expect(putSpy.mock.calls[0][1]).not.toHaveProperty('moderadorId')
 
     await moderationService.decidePublisherBatch({
@@ -114,7 +114,7 @@ describe('moderationService sin mocks (VITE_USE_MOCKS=false)', () => {
       aprobado: false,
       motivo: 'Foto borrosa',
     })
-    expect(putSpy).toHaveBeenCalledWith('/api/v1/prendas/pendientes/almacenes/alm-qa/moderacion', {
+    expect(putSpy).toHaveBeenCalledWith('/api/v1/garments/pending/stores/alm-qa/moderation', {
       decision: 'RECHAZADA',
       motivo: 'Foto borrosa',
     })

@@ -1,6 +1,8 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { env } from '@/configs/env'
+import { apiClient } from '@/modules/core/api/apiClient'
 import ItemDetailPage from '../pages/ItemDetailPage'
 import { renderAt } from '../../experiencia/__tests__/helpers'
 
@@ -43,6 +45,64 @@ describe('ItemDetailPage (RF-16, RF-22, RF-57)', () => {
       expect(btnProbar).toBeInTheDocument()
       expect(btnProbar).toHaveAttribute('href', expect.stringContaining('/probador?prenda=p1'))
     })
+  })
+})
+
+describe('ItemDetailPage sin mocks (VITE_USE_MOCKS=false)', () => {
+  let prevMocks: boolean
+
+  beforeEach(() => {
+    prevMocks = env.useMocks
+    env.useMocks = false
+  })
+
+  afterEach(() => {
+    env.useMocks = prevMocks
+    vi.restoreAllMocks()
+  })
+
+  it('consulta tallas reales en GET /api/v1/inventory/garment/{id}', async () => {
+    const getSpy = vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
+      if (url === '/api/v1/garments/p-qa-1') {
+        return {
+          data: {
+            id: 'p-qa-1',
+            nombre: 'Chaqueta QA',
+            tipo: 'Chaqueta',
+            color: 'Negro',
+            estilo: 'URBANO',
+            precio: 150000,
+            tallas: [],
+            fotografias: [],
+          },
+        } as never
+      }
+      if (url === '/api/v1/garments/p-qa-1/similar') {
+        return { data: [] } as never
+      }
+      if (url === '/api/v1/inventory/garment/p-qa-1') {
+        return {
+          data: {
+            sedes: [
+              {
+                activo: true,
+                variantes: [{ talla: 'M', stockDisponible: 4 }],
+              },
+            ],
+          },
+        } as never
+      }
+      throw new Error(`Unexpected URL ${url}`)
+    })
+
+    renderAt('/catalogo/p-qa-1', routes)
+
+    expect(await screen.findByRole('heading', { level: 1, name: /Chaqueta QA/i })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /^M$/i })).toBeInTheDocument()
+
+    const calledUrls = getSpy.mock.calls.map(([url]) => url)
+    expect(calledUrls).toContain('/api/v1/inventory/garment/p-qa-1')
+    expect(calledUrls).not.toContain('/api/v1/inventario/prenda/p-qa-1')
   })
 })
 
