@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
-import { tiendaContacto } from '@/modules/soporte/utils/contacts'
+import { nitDeTienda, tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
 
@@ -138,6 +138,7 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
             label={`Escribir a ${storeName || 'la tienda'} sobre ${item.nombre}`}
             contacto={tiendaContacto(storeName || 'Tienda')}
+            nit={nitDeTienda(item)}
             asunto={item.nombre}
             referenciaId={item.id}
           />

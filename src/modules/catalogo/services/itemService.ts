@@ -59,6 +59,7 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
   const imagen = (typeof r.imagen === 'string' && r.imagen) || fotos[0] || ''
   const imagenes = fotos.length > 0 ? fotos : (imagen ? [imagen] : [])
   const almacenId = typeof r.almacenId === 'string' ? r.almacenId : undefined
+  const storeNit = [r.storeNit, r.nitAlmacen, r.nit].find((v): v is string => typeof v === 'string' && v.length > 0)
   const tienda =
     (typeof r.tienda === 'string' && r.tienda) ||
     (typeof r.marca === 'string' && r.marca) ||
@@ -68,6 +69,7 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
   return {
     id: String(r.id ?? ''),
     almacenId,
+    storeNit,
     nombre: String(r.nombre ?? ''),
     tienda,
     marca: typeof r.marca === 'string' ? r.marca : tienda,

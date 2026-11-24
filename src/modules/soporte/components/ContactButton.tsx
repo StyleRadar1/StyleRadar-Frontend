@@ -1,6 +1,7 @@
 import { useContext, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthContext } from '@/modules/identidad/states/authContext'
+import { env } from '@/configs/env'
 import { chatService } from '../services/chatService'
 import type { IniciarConversacionDto } from '../types/chat.dto'
 import { ChatIcon } from './ChatIcon'
@@ -44,6 +45,23 @@ export function ContactButton({ label, primary, icon, className = '', ...req }: 
   if (user.role === 'STYLERADAR_ADMIN') return null
   if (user.id === req.contacto.id) return icon ? null : <p className="text-xs text-white/55">Es tu publicación</p>
 
+  // Con el servicio real, a una tienda se le escribe por su NIT. Sin NIT no se llama al servidor con un texto inventado:
+  // el botón queda apagado y dice por qué.
+  const sinNit = !env.useMocks && req.contacto.tipo === 'TIENDA' && !req.nit
+  if (sinNit) {
+    const motivo = 'Esta tienda todavía no se puede contactar desde aquí'
+    return icon ? (
+      <div className={className}>
+        <button type="button" disabled aria-label={`${label}. ${motivo}`} title={motivo} className={`${cls} cursor-not-allowed`}><ChatIcon className={iconCls} /></button>
+      </div>
+    ) : (
+      <div className={className}>
+        <button type="button" disabled title={motivo} className={`${cls} w-full cursor-not-allowed`}><ChatIcon className={iconCls} />{label}</button>
+        <p className="mt-1.5 text-xs text-white/60">{motivo}.</p>
+      </div>
+    )
+  }
+
   const start = async () => {
     if (busy) return
     setBusy(true); setError(null)
@@ -52,7 +70,7 @@ export function ContactButton({ label, primary, icon, className = '', ...req }: 
       navigate(`/mensajes?c=${encodeURIComponent(c.id)}`)
     } catch (e) {
       // 422: publicación propia o no disponible → aviso junto al botón y no se abre el chat
-      setError(problemaInicio(e))
+      setError(problemaInicio(e, req.contacto.tipo))
       setBusy(false)
     }
   }
