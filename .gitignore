@@ -29,3 +29,4 @@ dist-ssr
 !.env.example
 !.env.qa.example
 !.env.production.example
+.vercel
