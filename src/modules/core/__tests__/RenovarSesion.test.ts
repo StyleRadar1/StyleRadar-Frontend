@@ -38,7 +38,30 @@ describe('F-08: renovar la sesión con /api/v1/auth/refresh', () => {
     expect(post).not.toHaveBeenCalled()
   })
 
-  it('si la renovación falla conserva el token actual', async () => {
+  it('si ms-auth responde 401 lleva a iniciar sesión (SR-RF-113 · FA-03)', async () => {
+    tokenStorage.set(jwt(60))
+    vi.spyOn(axios, 'post').mockRejectedValue({ isAxiosError: true, response: { status: 401 } })
+    const expirada = vi.fn()
+    window.addEventListener('sr:sesion-expirada', expirada)
+    await renovarSiHaceFalta('/x')
+    window.removeEventListener('sr:sesion-expirada', expirada)
+    expect(expirada).toHaveBeenCalledTimes(1)
+  })
+
+  it('un 401 cuando otra pestaña ya renovó no cierra la sesión', async () => {
+    tokenStorage.set(jwt(60))
+    vi.spyOn(axios, 'post').mockImplementation(async () => {
+      tokenStorage.set('renovado-en-otra-pestana')
+      throw { isAxiosError: true, response: { status: 401 } }
+    })
+    const expirada = vi.fn()
+    window.addEventListener('sr:sesion-expirada', expirada)
+    await renovarSiHaceFalta('/x')
+    window.removeEventListener('sr:sesion-expirada', expirada)
+    expect(expirada).not.toHaveBeenCalled()
+  })
+
+  it('si la renovación falla por red conserva el token actual y no cierra la sesión', async () => {
     const viejo = jwt(60)
     tokenStorage.set(viejo)
     vi.spyOn(axios, 'post').mockRejectedValue(new Error('401'))
