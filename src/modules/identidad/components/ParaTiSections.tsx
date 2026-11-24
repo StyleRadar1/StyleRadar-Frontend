@@ -28,7 +28,7 @@ function Secciones({ userId }: { userId: string }) {
   return (
     <div className="mb-10 grid gap-10">
       <Recomendado userId={userId} />
-      <ParaTi userId={userId} />
+      <ParaTiFeed userId={userId} />
     </div>
   )
 }
@@ -43,7 +43,7 @@ function Titulo({ id, kicker, children }: { id: string; kicker: string; children
 }
 
 /** SR-RF-05: feed paginado, primero lo que coincide con su talla y estilo y luego lo más reciente. */
-function ParaTi({ userId }: { userId: string }) {
+export function ParaTiFeed({ userId, showHeader = true }: { userId: string; showHeader?: boolean }) {
   const [items, setItems] = useState<FeedItemDto[]>([])
   const [page, setPage] = useState(0)
   const [last, setLast] = useState(true)
@@ -67,8 +67,14 @@ function ParaTi({ userId }: { userId: string }) {
   useEffect(() => { cargar(0) }, [cargar])
 
   return (
-    <section aria-labelledby="para-ti-titulo">
-      <Titulo id="para-ti-titulo" kicker="En tu talla y tu estilo">Para ti</Titulo>
+    <section {...(showHeader ? { 'aria-labelledby': 'para-ti-titulo' } : { 'aria-label': 'Para ti' })}>
+      {showHeader ? (
+        <Titulo id="para-ti-titulo" kicker="En tu talla y tu estilo">Para ti</Titulo>
+      ) : (
+        <p className="mb-4 text-xs text-[var(--color-text-muted)]">
+          En tu talla y tu estilo: primero lo que coincide con tu perfil y luego lo más reciente.
+        </p>
+      )}
       {error && (
         <ErrorBanner className="mb-4" tone="warn" icon="refresh" title={error}
           actions={<button type="button" className={BTN} onClick={() => cargar(items.length ? page + 1 : 0)}>Reintentar</button>} />

@@ -1,14 +1,20 @@
-import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback, useContext } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { isStoreSuspended, STORE_SUB_CHANGED } from '@/modules/transacciones/services/storeSubscriptionService'
 import { env } from '@/configs/env'
 import { ApiError } from '@/modules/core/api/apiClient'
-import { errorKind } from '@/modules/core/api/errors'
+import { errorKind, errorMessage } from '@/modules/core/api/errors'
 import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO, type TonoAviso } from '@/modules/core/components/Aviso'
+import { ErrorBanner } from '@/modules/core/components/ErrorFeedback'
 import { alertService, LIMITE_PLAN } from '@/modules/soporte/services/alertService'
 import type { BusquedaGuardadaDto } from '@/modules/soporte/types/notification.dto'
-import { ParaTiSections } from '@/modules/identidad/components/ParaTiSections'
+import { ParaTiFeed, PARA_TI_SIZE } from '@/modules/identidad/components/ParaTiSections'
+import { AuthContext } from '@/modules/identidad/states/authContext'
+import { feedService, motivoDe } from '@/modules/identidad/services/feedService'
+import { usuarioService } from '@/modules/identidad/services/usuarioService'
+import { TEXTOS_FEED, type FeedItemDto, type RecommendationsPageDto } from '@/modules/identidad/types/feed.dto'
+import type { PerfilDto } from '@/modules/identidad/types/usuario.dto'
 import { ItemCard } from '../components/ItemCard'
 import { ItemGridSkeleton } from '../components/ItemCardSkeleton'
 import { useItems } from '../hooks/useItems'
@@ -71,6 +77,17 @@ const MARCAS = ['Todas', ...MARCAS_TIENDAS_UNIFICADAS] as const
 // Colores disponibles unificados (8 colores, SR-RF-09)
 const COLORES = ['Todos', ...COLORES_UNIFICADOS] as const
 
+const COLOR_SWATCH: Record<string, string> = {
+  Negro: '#18181b',
+  Blanco: '#ffffff',
+  Gris: '#9ca3af',
+  Azul: '#2563eb',
+  Café: '#78350f',
+  Beige: '#d6c3a5',
+  Crudo: '#f3ead8',
+  Plata: '#cbd5e1',
+}
+
 // Los cinco estilos unificados de StyleRadar (SR-RF-13)
 const ESTILOS = ['Todos', ...ESTILOS_UNIFICADOS] as const
 
@@ -112,56 +129,46 @@ export default function CatalogPage() {
   // Menús desplegables
   const [menuFiltrosAbierto, setMenuFiltrosAbierto] = useState(false)
   const [menuOrdenAbierto, setMenuOrdenAbierto] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const botonFiltrosRef = useRef<HTMLButtonElement>(null)
+  const toolbarRef = useRef<HTMLDivElement>(null)
   const ordenRef = useRef<HTMLDivElement>(null)
+  const closeTimerRef = useRef<number | null>(null)
+  const hoverOpenedCatRef = useRef<CategoriaId | null>(null)
 
   type CategoriaId = 'tipo' | 'talla' | 'precio' | 'origen' | 'marca' | 'color' | 'estilo'
 
-  // Categoría activa en el selector de dos columnas
+  // Categoría activa en la barra horizontal de filtros
   const [categoriaActiva, setCategoriaActiva] = useState<CategoriaId>('tipo')
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const prevMenuAbiertoRef = useRef(false)
 
-  // Altura del panel de filtros para reservar espacio dinámico y empujar el contenido
-  const [alturaPanel, setAlturaPanel] = useState(340)
-
-  // Sincroniza la altura real del panel con el espaciador mediante ResizeObserver
-  useLayoutEffect(() => {
-    if (!menuFiltrosAbierto || !menuRef.current) return
-
-    const panelNode = menuRef.current
-
-    const medir = () => {
-      const h = panelNode.offsetHeight
-      if (h > 0) {
-        setAlturaPanel(h)
-      }
+  const cancelClose = useCallback(() => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
     }
+  }, [])
 
-    medir()
-    window.addEventListener('resize', medir)
+  const scheduleClose = useCallback(() => {
+    cancelClose()
+    closeTimerRef.current = window.setTimeout(() => {
+      setMenuFiltrosAbierto(false)
+      hoverOpenedCatRef.current = null
+      closeTimerRef.current = null
+    }, 180)
+  }, [cancelClose])
 
-    let observer: ResizeObserver | null = null
-    if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect?.height ?? panelNode.offsetHeight
-          if (h > 0) {
-            setAlturaPanel(h)
-          }
-        }
-      })
-      observer.observe(panelNode)
-    }
+  useEffect(() => () => cancelClose(), [cancelClose])
 
-    return () => {
-      window.removeEventListener('resize', medir)
-      if (observer) {
-        observer.disconnect()
-      }
-    }
-  }, [menuFiltrosAbierto, categoriaActiva])
+  const openCategory = useCallback(
+    (id: CategoriaId, viaHover = false) => {
+      cancelClose()
+      setMenuOrdenAbierto(false)
+      setMostrarSugerencias(false)
+      setCategoriaActiva(id)
+      setMenuFiltrosAbierto(true)
+      hoverOpenedCatRef.current = viaHover ? id : null
+    },
+    [cancelClose]
+  )
 
   // Filtros del catálogo
   const [filtroTipo, setFiltroTipo] = useState<string>(params.get('tipo') ?? 'Todos')
@@ -176,24 +183,15 @@ export default function CatalogPage() {
   const [filtroColor, setFiltroColor] = useState<string>(params.get('color') ?? 'Todos')
   const [filtroEstilo, setFiltroEstilo] = useState<string>(params.get('estilo') ?? 'Todos')
 
-  const CATEGORIAS_CONFIG: { id: CategoriaId; label: string; count: number }[] = useMemo(() => [
-    { id: 'tipo', label: 'Tipo de prenda', count: filtroTipo !== 'Todos' ? 1 : 0 },
-    { id: 'talla', label: 'Talla disponible', count: filtroTalla !== 'Todas' ? 1 : 0 },
-    { id: 'precio', label: 'Rango de precio', count: filtroPrecio !== 0 ? 1 : 0 },
-    { id: 'origen', label: 'Origen', count: filtroOrigen !== 'Todos' ? 1 : 0 },
-    { id: 'marca', label: 'Marca', count: filtroMarca !== 'Todas' ? 1 : 0 },
-    { id: 'color', label: 'Color', count: filtroColor !== 'Todos' ? 1 : 0 },
-    { id: 'estilo', label: 'Estilo', count: filtroEstilo !== 'Todos' ? 1 : 0 },
+  const CATEGORIAS_CONFIG: { id: CategoriaId; label: string; panelTitle: string; count: number }[] = useMemo(() => [
+    { id: 'tipo', label: 'Tipo de prenda', panelTitle: 'Tipo de prenda', count: filtroTipo !== 'Todos' ? 1 : 0 },
+    { id: 'talla', label: 'Talla', panelTitle: 'Talla disponible', count: filtroTalla !== 'Todas' ? 1 : 0 },
+    { id: 'precio', label: 'Precio', panelTitle: 'Rango de precio', count: filtroPrecio !== 0 ? 1 : 0 },
+    { id: 'origen', label: 'Origen', panelTitle: 'Origen', count: filtroOrigen !== 'Todos' ? 1 : 0 },
+    { id: 'marca', label: 'Marca', panelTitle: 'Marca', count: filtroMarca !== 'Todas' ? 1 : 0 },
+    { id: 'color', label: 'Color', panelTitle: 'Color', count: filtroColor !== 'Todos' ? 1 : 0 },
+    { id: 'estilo', label: 'Estilo', panelTitle: 'Estilo', count: filtroEstilo !== 'Todos' ? 1 : 0 },
   ], [filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
-
-  // Al abrir el panel: empieza en la primera categoría con filtros aplicados, o en 'tipo'
-  useEffect(() => {
-    if (menuFiltrosAbierto && !prevMenuAbiertoRef.current) {
-      const primeraConFiltro = CATEGORIAS_CONFIG.find((cat) => cat.count > 0)?.id ?? 'tipo'
-      setCategoriaActiva(primeraConFiltro)
-    }
-    prevMenuAbiertoRef.current = menuFiltrosAbierto
-  }, [menuFiltrosAbierto, CATEGORIAS_CONFIG])
 
   // Guardar búsqueda y su alerta (RF-28 y RF-30)
   const [busqueda, setBusqueda] = useState<BusquedaGuardadaDto | null>(null)
@@ -211,11 +209,12 @@ export default function CatalogPage() {
     function handleClickOutside(event: MouseEvent) {
       if (
         menuFiltrosAbierto &&
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        (!botonFiltrosRef.current || !botonFiltrosRef.current.contains(event.target as Node))
+        toolbarRef.current &&
+        !toolbarRef.current.contains(event.target as Node)
       ) {
+        cancelClose()
         setMenuFiltrosAbierto(false)
+        hoverOpenedCatRef.current = null
       }
       if (ordenRef.current && !ordenRef.current.contains(event.target as Node)) {
         setMenuOrdenAbierto(false)
@@ -225,36 +224,40 @@ export default function CatalogPage() {
       document.addEventListener('mousedown', handleClickOutside)
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuFiltrosAbierto, menuOrdenAbierto])
+  }, [menuFiltrosAbierto, menuOrdenAbierto, cancelClose])
 
-  // Cerrar con Escape y devolver foco al botón Filtros
+  // Cerrar con Escape y devolver foco al tab activo
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape' && menuFiltrosAbierto) {
         event.preventDefault()
+        cancelClose()
         setMenuFiltrosAbierto(false)
-        botonFiltrosRef.current?.focus()
+        hoverOpenedCatRef.current = null
+        const activeIdx = CATEGORIAS_CONFIG.findIndex((c) => c.id === categoriaActiva)
+        tabRefs.current[activeIdx >= 0 ? activeIdx : 0]?.focus()
       }
     }
     if (menuFiltrosAbierto) {
       document.addEventListener('keydown', handleKeyDown)
     }
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [menuFiltrosAbierto])
+  }, [menuFiltrosAbierto, cancelClose, categoriaActiva, CATEGORIAS_CONFIG])
 
   const handleCerrarFiltros = () => {
+    cancelClose()
     setMenuFiltrosAbierto(false)
-    botonFiltrosRef.current?.focus()
+    hoverOpenedCatRef.current = null
   }
 
   const handleTabKeyDown = (e: React.KeyboardEvent, index: number) => {
     const total = CATEGORIAS_CONFIG.length
     let nextIndex = index
 
-    if (e.key === 'ArrowDown' || (window.innerWidth < 640 && e.key === 'ArrowRight')) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault()
       nextIndex = (index + 1) % total
-    } else if (e.key === 'ArrowUp' || (window.innerWidth < 640 && e.key === 'ArrowLeft')) {
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault()
       nextIndex = (index - 1 + total) % total
     } else if (e.key === 'Home') {
@@ -267,7 +270,8 @@ export default function CatalogPage() {
       return
     }
 
-    setCategoriaActiva(CATEGORIAS_CONFIG[nextIndex].id)
+    const nextCat = CATEGORIAS_CONFIG[nextIndex]
+    openCategory(nextCat.id, false)
     tabRefs.current[nextIndex]?.focus()
   }
 
@@ -303,6 +307,10 @@ export default function CatalogPage() {
       orden,
     }
   }, [texto, filtroTipo, filtroTalla, filtroTipoTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
+
+  const user = useContext(AuthContext)?.user
+  const isBuyer = user?.role === 'BUYER'
+  const [vistaCatalogo, setVistaCatalogo] = useState<'todas' | 'para-ti'>('todas')
 
   const { items, loading, error, status, code: itemsErrorCode } = useItems(activeFilters)
   const [storeSubTick, setStoreSubTick] = useState(0)
@@ -494,8 +502,37 @@ export default function CatalogPage() {
     setParams(new URLSearchParams())
   }
 
+  // Quitar solo el filtro de la categoría actualmente desplegada
+  const handleLimpiarCategoriaActual = () => {
+    switch (categoriaActiva) {
+      case 'tipo':
+        setFiltroTipo('Todos')
+        break
+      case 'talla':
+        setFiltroTalla('Todas')
+        setFiltroTipoTalla(null)
+        break
+      case 'precio':
+        setFiltroPrecio(0)
+        break
+      case 'origen':
+        setFiltroOrigen('Todos')
+        break
+      case 'marca':
+        setFiltroMarca('Todas')
+        break
+      case 'color':
+        setFiltroColor('Todos')
+        break
+      case 'estilo':
+        setFiltroEstilo('Todos')
+        break
+    }
+  }
+
   const hayAlgunFiltro = filtrosActivosCount > 0 || texto.trim().length > 0
-  const mostrarPerchero = env.useMocks && !hayAlgunFiltro && (loading || uniqueItems.length > 0)
+  const mostrarPerchero = isBuyer && !hayAlgunFiltro
+  const vistaActiva = isBuyer && !hayAlgunFiltro ? vistaCatalogo : 'todas'
 
   const opcionOrdenActual = OPCIONES_ORDEN.find((op) => op.id === orden)
 
@@ -504,24 +541,17 @@ export default function CatalogPage() {
       case 'tipo':
         return (
           <div className="sr-filter-chips-grid">
-            {TIPOS_PRENDA.map((t) => {
+            {TIPOS_PRENDA.filter((t) => t !== 'Todos').map((t) => {
               const isSelected = filtroTipo === t
-              const isDefault = t === 'Todos'
               return (
                 <button
                   key={t}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => setFiltroTipo(isSelected && !isDefault ? 'Todos' : t)}
+                  onClick={() => setFiltroTipo(isSelected ? 'Todos' : t)}
                   className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                 >
                   <span>{t}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
                 </button>
               )
             })}
@@ -529,20 +559,10 @@ export default function CatalogPage() {
         )
       case 'talla':
         return (
-          <div className="space-y-3">
-            <div className="sr-filter-chips-grid">
-              <button
-                type="button"
-                aria-pressed={filtroTalla === 'Todas'}
-                onClick={() => { setFiltroTalla('Todas'); setFiltroTipoTalla(null) }}
-                className={`sr-filter-chip ${filtroTalla === 'Todas' ? 'sr-filter-chip--selected' : ''}`}
-              >
-                <span>Todas</span>
-              </button>
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {GRUPOS_TALLAS.map((grupo) => (
               <div key={grupo.id}>
-                <p className="mb-1.5 text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                <p className="mb-1.5 text-[0.65rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
                   {grupo.label}
                 </p>
                 <div className="sr-filter-chips-grid">
@@ -569,12 +589,6 @@ export default function CatalogPage() {
                         className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                       >
                         <span>{sz}</span>
-                        {isSelected && (
-                          <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                        )}
                       </button>
                     )
                   })}
@@ -585,9 +599,9 @@ export default function CatalogPage() {
         )
       case 'precio':
         return (
-          <div>
-            <div className="px-1 pt-1 pb-2">
-              <div className="flex items-center justify-between text-xs mb-1.5">
+          <div className="space-y-3">
+            <div className="max-w-md px-1">
+              <div className="mb-1.5 flex items-center justify-between text-xs">
                 <span className="text-[0.6875rem] font-semibold text-[var(--color-text-muted)]">Rango</span>
                 <span className="text-[0.75rem] font-bold text-[var(--sr-acento-primario,var(--color-accent))]">
                   {PRECIOS_PRESETS[filtroPrecio]?.label ?? 'Cualquier precio'}
@@ -617,23 +631,17 @@ export default function CatalogPage() {
             </div>
             <div className="sr-filter-chips-grid">
               {PRECIOS_PRESETS.map((preset, idx) => {
+                if (idx === 0) return null
                 const isSelected = filtroPrecio === idx
-                const isDefault = idx === 0
                 return (
                   <button
                     key={preset.label}
                     type="button"
                     aria-pressed={isSelected}
-                    onClick={() => setFiltroPrecio(isSelected && !isDefault ? 0 : idx)}
+                    onClick={() => setFiltroPrecio(isSelected ? 0 : idx)}
                     className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                   >
                     <span>{preset.label}</span>
-                    {isSelected && !isDefault && (
-                      <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    )}
                   </button>
                 )
               })}
@@ -643,24 +651,17 @@ export default function CatalogPage() {
       case 'origen':
         return (
           <div className="sr-filter-chips-grid">
-            {ORIGENES.map((orig) => {
+            {ORIGENES.filter((orig) => orig.id !== 'Todos').map((orig) => {
               const isSelected = filtroOrigen === orig.id
-              const isDefault = orig.id === 'Todos'
               return (
                 <button
                   key={orig.id}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => setFiltroOrigen(isSelected && !isDefault ? 'Todos' : orig.id)}
+                  onClick={() => setFiltroOrigen(isSelected ? 'Todos' : orig.id)}
                   className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                 >
                   <span>{orig.label}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
                 </button>
               )
             })}
@@ -669,24 +670,17 @@ export default function CatalogPage() {
       case 'marca':
         return (
           <div className="sr-filter-chips-grid">
-            {MARCAS.filter((m) => m === 'Todas' || !isStoreSuspended(m)).map((m) => {
+            {MARCAS.filter((m) => m !== 'Todas' && !isStoreSuspended(m)).map((m) => {
               const isSelected = filtroMarca === m
-              const isDefault = m === 'Todas'
               return (
                 <button
                   key={m}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => setFiltroMarca(isSelected && !isDefault ? 'Todas' : m)}
+                  onClick={() => setFiltroMarca(isSelected ? 'Todas' : m)}
                   className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                 >
                   <span>{m}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
                 </button>
               )
             })}
@@ -695,24 +689,22 @@ export default function CatalogPage() {
       case 'color':
         return (
           <div className="sr-filter-chips-grid">
-            {COLORES.map((c) => {
+            {COLORES.filter((c) => c !== 'Todos').map((c) => {
               const isSelected = filtroColor === c
-              const isDefault = c === 'Todos'
               return (
                 <button
                   key={c}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => setFiltroColor(isSelected && !isDefault ? 'Todos' : c)}
+                  onClick={() => setFiltroColor(isSelected ? 'Todos' : c)}
                   className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                 >
+                  <span
+                    className="sr-filter-color-swatch"
+                    style={{ backgroundColor: COLOR_SWATCH[c] ?? '#9ca3af' }}
+                    aria-hidden="true"
+                  />
                   <span>{c}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
                 </button>
               )
             })}
@@ -721,24 +713,17 @@ export default function CatalogPage() {
       case 'estilo':
         return (
           <div className="sr-filter-chips-grid">
-            {ESTILOS.map((st) => {
+            {ESTILOS.filter((st) => st !== 'Todos').map((st) => {
               const isSelected = filtroEstilo === st
-              const isDefault = st === 'Todos'
               return (
                 <button
                   key={st}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => setFiltroEstilo(isSelected && !isDefault ? 'Todos' : st)}
+                  onClick={() => setFiltroEstilo(isSelected ? 'Todos' : st)}
                   className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                 >
                   <span>{st}</span>
-                  {isSelected && !isDefault && (
-                    <svg className="sr-filter-chip-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
                 </button>
               )
             })}
@@ -887,266 +872,249 @@ export default function CatalogPage() {
           )}
         </div>
 
-        {/* BARRA DE HERRAMIENTAS: Filtros (botón mediano) + Guardar búsqueda + Ordenar (diseño uniforme) */}
-        <div className="relative z-30 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 backdrop-blur-xl shadow-sm text-[var(--color-text)] mb-6">
-          {/* LADO IZQUIERDO: Botón Filtros mediano con badge y contenedor relativo para el panel flotante */}
-          <div className="relative flex items-center gap-3">
-            <button
-              ref={botonFiltrosRef}
-              type="button"
-              onClick={() => setMenuFiltrosAbierto((prev) => !prev)}
-              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                menuFiltrosAbierto || filtrosActivosCount > 0
-                  ? 'border-[var(--color-accent)] bg-[var(--color-surface-raised)] text-[var(--color-text)]'
-                  : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
-              }`}
-              aria-expanded={menuFiltrosAbierto}
-              aria-controls="catalogo-panel-filtros"
-              aria-label="Filtros del catálogo"
-            >
-              <svg className="h-4 w-4 text-[var(--color-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="4" y1="21" x2="4" y2="14" />
-                <line x1="4" y1="10" x2="4" y2="3" />
-                <line x1="12" y1="21" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12" y2="3" />
-                <line x1="20" y1="21" x2="20" y2="16" />
-                <line x1="20" y1="12" x2="20" y2="3" />
-                <line x1="1" y1="14" x2="7" y2="14" />
-                <line x1="9" y1="8" x2="15" y2="8" />
-                <line x1="17" y1="16" x2="23" y2="16" />
-              </svg>
-              <span>Filtros</span>
-              {filtrosActivosCount > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-[0.625rem] font-black text-[var(--color-text-on-accent)]">
-                  {filtrosActivosCount}
+        {/* BARRA HORIZONTAL DE FILTROS CON DESPLIEGUE AL PASAR EL CURSOR + ACCIONES DERECHA */}
+        <div ref={toolbarRef} className="sr-filter-toolbar relative z-30 mb-6">
+          <div className="sr-filter-toolbar-row">
+            {/* IZQUIERDA: "Filtros" o "× Limpiar (N)" + divisor */}
+            <div className="flex shrink-0 items-center gap-3">
+              {filtrosActivosCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleResetFiltros()
+                    handleCerrarFiltros()
+                  }}
+                  className="sr-filter-clear-pill"
+                  aria-label="Limpiar todos los filtros"
+                >
+                  <span aria-hidden="true">×</span>
+                  <span>Limpiar ({filtrosActivosCount})</span>
+                </button>
+              ) : (
+                <span className="sr-filter-lead">
+                  <svg className="h-4 w-4 text-[var(--sr-acento-primario,var(--color-accent))]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="4" y1="21" x2="4" y2="14" />
+                    <line x1="4" y1="10" x2="4" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12" y2="3" />
+                    <line x1="20" y1="21" x2="20" y2="16" />
+                    <line x1="20" y1="12" x2="20" y2="3" />
+                    <line x1="1" y1="14" x2="7" y2="14" />
+                    <line x1="9" y1="8" x2="15" y2="8" />
+                    <line x1="17" y1="16" x2="23" y2="16" />
+                  </svg>
+                  <span>Filtros</span>
                 </span>
               )}
-              <svg className={`h-3 w-3 text-[var(--color-text-muted)] transition-transform duration-200 ${menuFiltrosAbierto ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
+              <span className="sr-filter-bar-divider" aria-hidden="true" />
+            </div>
 
-            <span className="hidden text-xs text-[var(--color-text-muted)] sm:inline">
-              {filtrosActivosCount === 0 ? 'Sin filtros aplicados' : `${filtrosActivosCount} filtros activos`}
-            </span>
-
-            {/* PANEL FLOTANTE DE FILTROS EN DOS COLUMNAS (NO EMPUJA EL CONTENIDO) */}
-            {menuFiltrosAbierto && (
-              <div
-                ref={menuRef}
-                id="catalogo-panel-filtros"
-                role="dialog"
-                aria-modal="false"
-                aria-label="Filtrar catálogo"
-                className="sr-filter-panel-card"
-              >
-                {/* Cabecera */}
-                <div className="sr-filter-panel-header">
-                  <div className="flex items-center gap-2">
+            {/* CENTRO: Categorías horizontales (se despliegan al pasar el cursor o tocar) */}
+            <div
+              role="tablist"
+              aria-orientation="horizontal"
+              aria-label="Categorías de filtro"
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
+              className="sr-filter-bar-tabs"
+            >
+              {CATEGORIAS_CONFIG.map((cat, index) => {
+                const isOpen = menuFiltrosAbierto && categoriaActiva === cat.id
+                return (
+                  <button
+                    key={cat.id}
+                    ref={(el) => {
+                      tabRefs.current[index] = el
+                    }}
+                    id={`filter-tab-${cat.id}`}
+                    role="tab"
+                    type="button"
+                    aria-selected={isOpen}
+                    aria-expanded={isOpen}
+                    aria-controls="catalogo-panel-filtros"
+                    onMouseEnter={() => openCategory(cat.id, true)}
+                    onFocus={() => cancelClose()}
+                    onClick={() => {
+                      if (menuFiltrosAbierto && categoriaActiva === cat.id && hoverOpenedCatRef.current !== cat.id) {
+                        handleCerrarFiltros()
+                      } else {
+                        openCategory(cat.id, false)
+                      }
+                    }}
+                    onKeyDown={(e) => handleTabKeyDown(e, index)}
+                    className={`sr-filter-bar-tab ${isOpen ? 'sr-filter-bar-tab--open' : ''}`}
+                  >
+                    <span>{cat.label}</span>
+                    {cat.count > 0 && (
+                      <span
+                        className="sr-filter-active-dot"
+                        role="status"
+                        aria-label={`Filtro activo en ${cat.label}`}
+                      />
+                    )}
                     <svg
-                      className="h-4 w-4 text-[var(--sr-acento-primario,var(--color-accent))]"
+                      className={`h-3 w-3 shrink-0 transition-transform duration-150 ${isOpen ? 'rotate-180' : 'opacity-70'}`}
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="2"
+                      strokeWidth="2.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       aria-hidden="true"
                     >
-                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                    </svg>
-                    <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--color-text)]">
-                      Filtrar catálogo
-                    </h3>
-                    {filtrosActivosCount > 0 && (
-                      <span className="rounded-full bg-[var(--sr-surface-raised,var(--color-surface-raised))] border border-[var(--sr-acento-primario,var(--color-accent))] px-2 py-0.5 text-[0.625rem] font-bold text-[var(--sr-acento-primario,var(--color-accent))]">
-                        {filtrosActivosCount} activos
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCerrarFiltros}
-                    className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1.5 rounded-[0.625rem] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
-                    aria-label="Cerrar filtros"
-                  >
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
+                      <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </button>
-                </div>
+                )
+              })}
+            </div>
 
-                {/* Cuerpo en dos columnas (altura fija 17rem) */}
-                <div className="sr-filter-two-col">
-                  {/* Columna izquierda: Categorías (~7.5rem) */}
-                  <div
-                    role="tablist"
-                    aria-orientation="vertical"
-                    aria-label="Categorías de filtro"
-                    className="sr-filter-categories-col"
+            {/* DERECHA: Guardar búsqueda + Ordenar */}
+            <div className="flex shrink-0 items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleGuardarBusqueda}
+                disabled={guardando}
+                className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-60"
+                title="Guardar esta búsqueda en tu perfil para recibir avisos"
+              >
+                <svg className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+                <span>{guardando ? 'Guardando…' : 'Guardar búsqueda'}</span>
+              </button>
+
+              <div className="relative shrink-0" ref={ordenRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCerrarFiltros()
+                    setMenuOrdenAbierto((prev) => !prev)
+                  }}
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-xl border px-3.5 py-2 text-xs font-bold transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
+                    menuOrdenAbierto
+                      ? 'border-[var(--color-accent)] bg-[var(--color-surface-raised)] text-[var(--color-text)]'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
+                  }`}
+                  aria-expanded={menuOrdenAbierto}
+                  aria-label="Ordenar resultados"
+                >
+                  <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                    Ordenar:
+                  </span>
+                  <span className="text-[var(--color-text)] text-xs">
+                    {opcionOrdenActual?.label ?? 'Más recientes'}
+                  </span>
+                  <svg
+                    className={`h-3 w-3 shrink-0 text-[var(--color-text-muted)] transition-transform ${menuOrdenAbierto ? 'rotate-180' : ''}`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    {CATEGORIAS_CONFIG.map((cat, index) => {
-                      const isActiva = categoriaActiva === cat.id
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {menuOrdenAbierto && (
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-1.5 shadow-2xl backdrop-blur-2xl z-40 animate-in fade-in zoom-in-95 duration-100 text-[var(--color-text)]">
+                    {OPCIONES_ORDEN.map((op) => {
+                      const isSelected = orden === op.id
                       return (
                         <button
-                          key={cat.id}
-                          ref={(el) => {
-                            tabRefs.current[index] = el
-                          }}
-                          id={`filter-tab-${cat.id}`}
-                          role="tab"
+                          key={op.id}
                           type="button"
-                          aria-selected={isActiva}
-                          aria-controls={`filter-tabpanel-${cat.id}`}
-                          tabIndex={isActiva ? 0 : -1}
-                          onClick={() => setCategoriaActiva(cat.id)}
-                          onKeyDown={(e) => handleTabKeyDown(e, index)}
-                          className={`sr-filter-cat-btn ${isActiva ? 'sr-filter-cat-btn--active' : ''}`}
+                          onClick={() => {
+                            handleCambiarOrden(op.id)
+                            setMenuOrdenAbierto(false)
+                          }}
+                          className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
+                            isSelected
+                              ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] font-bold'
+                              : 'text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
+                          }`}
                         >
-                          <span className="truncate">{cat.label}</span>
-                          {cat.count > 0 && (
-                            <span className="sr-filter-cat-badge">{cat.count}</span>
+                          <span>{op.label}</span>
+                          {isSelected && (
+                            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
                           )}
                         </button>
                       )
                     })}
                   </div>
-
-                  {/* Columna derecha: Opciones (scroll fino y fade 120ms) */}
-                  <div
-                    id={`filter-tabpanel-${categoriaActiva}`}
-                    role="tabpanel"
-                    aria-labelledby={`filter-tab-${categoriaActiva}`}
-                    className="sr-filter-options-col"
-                  >
-                    <div key={categoriaActiva} className="sr-filter-tabpanel-content">
-                      <div className="flex items-center justify-between mb-2 pb-1 border-b border-[var(--sr-vidrio-borde)]">
-                        <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
-                          {CATEGORIAS_CONFIG.find((c) => c.id === categoriaActiva)?.label}
-                        </span>
-                        {(CATEGORIAS_CONFIG.find((c) => c.id === categoriaActiva)?.count ?? 0) > 0 && (
-                          <span className="text-[0.625rem] font-semibold text-[var(--sr-acento-primario,var(--color-accent))]">
-                            Filtro activo
-                          </span>
-                        )}
-                      </div>
-                      {renderOpcionesCategoria()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pie fijo */}
-                <div className="sr-filter-footer">
-                  <button
-                    type="button"
-                    onClick={handleResetFiltros}
-                    className="sr-filter-btn-secondary"
-                  >
-                    Limpiar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCerrarFiltros}
-                    className="sr-filter-btn-primary"
-                  >
-                    Aplicar filtros {filtrosActivosCount > 0 ? `(${filtrosActivosCount})` : ''}
-                  </button>
-                </div>
+                )}
               </div>
-            )}
-          </div>
-
-          {/* LADO DERECHO: Guardar búsqueda + Selector Ordenar (con diseño uniforme) */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Botón de Guardar Búsqueda */}
-            <button
-              type="button"
-              onClick={handleGuardarBusqueda}
-              disabled={guardando}
-              className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-60"
-              title="Guardar esta búsqueda en tu perfil para recibir avisos"
-            >
-              <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-              </svg>
-              <span>{guardando ? 'Guardando…' : 'Guardar búsqueda'}</span>
-            </button>
-
-            {/* Selector Ordenar rediseñado */}
-            <div className="relative" ref={ordenRef}>
-              <button
-                type="button"
-                onClick={() => setMenuOrdenAbierto((prev) => !prev)}
-                className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                  menuOrdenAbierto
-                    ? 'border-[var(--color-accent)] bg-[var(--color-surface-raised)] text-[var(--color-text)]'
-                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
-                }`}
-                aria-expanded={menuOrdenAbierto}
-                aria-label="Ordenar resultados"
-              >
-                <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-                  Ordenar:
-                </span>
-                <span className="text-[var(--color-text)] text-xs">
-                  {opcionOrdenActual?.label ?? 'Más recientes'}
-                </span>
-                <svg
-                  className={`h-3 w-3 text-[var(--color-text-muted)] transition-transform ${menuOrdenAbierto ? 'rotate-180' : ''}`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-
-              {menuOrdenAbierto && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-1.5 shadow-2xl backdrop-blur-2xl z-30 animate-in fade-in zoom-in-95 duration-100 text-[var(--color-text)]">
-                  {OPCIONES_ORDEN.map((op) => {
-                    const isSelected = orden === op.id
-                    return (
-                      <button
-                        key={op.id}
-                        type="button"
-                        onClick={() => {
-                          handleCambiarOrden(op.id)
-                          setMenuOrdenAbierto(false)
-                        }}
-                        className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                          isSelected
-                            ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] font-bold'
-                            : 'text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]'
-                        }`}
-                      >
-                        <span>{op.label}</span>
-                        {isSelected && (
-                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
             </div>
           </div>
-        </div>
 
-        {/* Espaciador dinámico que reserva el espacio exacto del panel de filtros para desplazar el contenido sin superposición */}
-        <div
-          className="sr-filter-spacer"
-          style={{
-            height: menuFiltrosAbierto ? `calc(${alturaPanel}px + 0.75rem)` : '0px',
-          }}
-          aria-hidden="true"
-        />
+          {/* PANEL DESPLEGABLE COMPLETO CON PUENTE INVISIBLE DE HOVER */}
+          {menuFiltrosAbierto && (
+            <div
+              className="sr-filter-mega-wrap"
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
+            >
+              <div
+                id="catalogo-panel-filtros"
+                role="tabpanel"
+                aria-labelledby={`filter-tab-${categoriaActiva}`}
+                className="sr-filter-mega-card"
+              >
+                <div key={categoriaActiva} className="sr-filter-tabpanel-content">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="sr-filter-mega-title">
+                      {CATEGORIAS_CONFIG.find((c) => c.id === categoriaActiva)?.panelTitle}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={handleCerrarFiltros}
+                      className="rounded-lg p-1 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                      aria-label="Cerrar filtros"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                  {renderOpcionesCategoria()}
+                </div>
+
+                <div className="sr-filter-mega-footer">
+                  <span className="text-xs text-[var(--color-text-muted)]">
+                    {filtrosActivosCount === 0
+                      ? 'Sin filtros aplicados'
+                      : filtrosActivosCount === 1
+                        ? '1 filtro aplicado'
+                        : `${filtrosActivosCount} filtros aplicados`}
+                  </span>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={handleLimpiarCategoriaActual}
+                      disabled={(CATEGORIAS_CONFIG.find((c) => c.id === categoriaActiva)?.count ?? 0) === 0}
+                      className="sr-filter-btn-secondary disabled:opacity-45 disabled:pointer-events-none"
+                    >
+                      Quitar este filtro
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCerrarFiltros}
+                      className="sr-filter-btn-primary"
+                    >
+                      Aplicar filtros
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* CHIPS DE FILTROS ACTIVOS (para remover rápido) */}
         {filtrosActivosCount > 0 && (
@@ -1276,83 +1244,116 @@ export default function CatalogPage() {
           </Aviso>
         )}
 
-        {/* SECCIÓN DE PRENDAS COLGADAS EN BARRA (RELEVANTE) — se pliega suavemente al filtrar */}
+        {/* BLOQUE 1 · PERCHERO DE RECOMENDADOS PARA TI (SR-RF-06) — se pliega suavemente al filtrar */}
         <div
           className={`sr-rack-collapse ${mostrarPerchero ? '' : 'sr-rack-collapse--hidden'}`}
           aria-hidden={!mostrarPerchero}
         >
           <div className="sr-rack-collapse__inner">
-            <HangingSpecialsRack
-              filtroTipo={filtroTipo}
-              filtroEstilo={filtroEstilo}
-            />
+            {isBuyer && <RecommendedHangingRack key={user.id} userId={String(user.id)} />}
           </div>
         </div>
 
-        {/* SR-RF-05 y 06: «Para ti» y «Recomendado para ti», solo para compradores y sin filtros activos */}
-        {!hayAlgunFiltro && <ParaTiSections />}
-
-        {/* LISTADO PRINCIPAL DEL CATÁLOGO */}
+        {/* BLOQUE 2 · CATÁLOGO COMPLETO (SR-RF-07 a 15) Y «PARA TI» (SR-RF-05) */}
         <div>
-          <div className="mb-6 flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text)]">
-              Prendas encontradas ({uniqueItems.length})
-            </h2>
-            <span className="text-xs text-[var(--color-text-muted)] font-mono">
-              {orden === 'DISTANCIA' ? 'Ordenado por cercanía' : `Orden: ${opcionOrdenActual?.label ?? 'Más recientes'}`}
-            </span>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3">
+            {isBuyer && !hayAlgunFiltro ? (
+              <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Vistas del catálogo">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={vistaActiva === 'todas'}
+                  onClick={() => setVistaCatalogo('todas')}
+                  className={`rounded-xl px-3.5 py-1.5 text-sm font-bold uppercase tracking-wider transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
+                    vistaActiva === 'todas'
+                      ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] shadow-sm'
+                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
+                  }`}
+                >
+                  Todas las prendas ({uniqueItems.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={vistaActiva === 'para-ti'}
+                  onClick={() => setVistaCatalogo('para-ti')}
+                  className={`rounded-xl px-3.5 py-1.5 text-sm font-bold uppercase tracking-wider transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
+                    vistaActiva === 'para-ti'
+                      ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] shadow-sm'
+                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]'
+                  }`}
+                >
+                  Para ti
+                </button>
+              </div>
+            ) : (
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text)]">
+                Prendas encontradas ({uniqueItems.length})
+              </h2>
+            )}
+            {vistaActiva === 'todas' && (
+              <span className="text-xs text-[var(--color-text-muted)] font-mono">
+                {orden === 'DISTANCIA' ? 'Ordenado por cercanía' : `Orden: ${opcionOrdenActual?.label ?? 'Más recientes'}`}
+              </span>
+            )}
           </div>
 
-          {error && !mostrarPideUbicacion && (
-            <div role="alert" className="my-8 rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.3))] bg-[var(--color-danger-bg,rgba(239,68,68,0.1))] p-4 text-sm text-[var(--color-danger-text,#ef4444)] flex items-center gap-2">
-              <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <span>{error}</span>
-            </div>
-          )}
-
-          {loading ? (
-            <ItemGridSkeleton count={8} />
-          ) : uniqueItems.length ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(10.625rem,1fr))]">
-              {uniqueItems.map((it) => (
-                <ItemCard key={it.id} item={it} />
-              ))}
-            </div>
+          {vistaActiva === 'para-ti' && isBuyer ? (
+            <ParaTiFeed key={user.id} userId={String(user.id)} showHeader={false} />
           ) : (
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center backdrop-blur-xl text-[var(--color-text)] shadow-sm">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </div>
-              {hayAlgunFiltro ? (
-                <>
-                  <h3 className="text-lg font-bold text-[var(--color-text)]">No encontramos prendas con esos filtros</h3>
-                  <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
-                    Prueba cambiando el tipo de prenda, ajustando la ubicación o eliminando algún filtro.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleResetFiltros}
-                    className="mt-6 rounded-xl bg-[var(--color-accent)] px-6 py-2.5 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                  >
-                    Quitar filtros
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-lg font-bold text-[var(--color-text)]">Aún no hay prendas en el catálogo</h3>
-                  <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
-                    Todavía no hay prendas publicadas disponibles en este momento. Vuelve pronto para explorar nuevas colecciones.
-                  </p>
-                </>
+            <>
+              {error && !mostrarPideUbicacion && (
+                <div role="alert" className="my-8 rounded-xl border border-[var(--color-danger-border,rgba(239,68,68,0.3))] bg-[var(--color-danger-bg,rgba(239,68,68,0.1))] p-4 text-sm text-[var(--color-danger-text,#ef4444)] flex items-center gap-2">
+                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>{error}</span>
+                </div>
               )}
-            </div>
+
+              {loading ? (
+                <ItemGridSkeleton count={8} />
+              ) : uniqueItems.length ? (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(10.625rem,1fr))]">
+                  {uniqueItems.map((it) => (
+                    <ItemCard key={it.id} item={it} />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center backdrop-blur-xl text-[var(--color-text)] shadow-sm">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  </div>
+                  {hayAlgunFiltro ? (
+                    <>
+                      <h3 className="text-lg font-bold text-[var(--color-text)]">No encontramos prendas con esos filtros</h3>
+                      <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
+                        Prueba cambiando el tipo de prenda, ajustando la ubicación o eliminando algún filtro.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleResetFiltros}
+                        className="mt-6 rounded-xl bg-[var(--color-accent)] px-6 py-2.5 text-xs font-bold text-[var(--color-text-on-accent)] hover:brightness-110 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                      >
+                        Quitar filtros
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-bold text-[var(--color-text)]">Aún no hay prendas en el catálogo</h3>
+                      <p className="mt-2 text-xs text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
+                        Todavía no hay prendas publicadas disponibles en este momento. Vuelve pronto para explorar nuevas colecciones.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -1361,44 +1362,15 @@ export default function CatalogPage() {
 }
 
 /* ============================================================================
- * Sección de "Prendas colgadas en una barra" (Selección relevante del catálogo)
+ * Perchero interactivo con «Recomendado para ti» (SR-RF-06)
  * ============================================================================ */
 
-interface HangingRackGarment {
-  id: string
-  nombre: string
-  tienda: string
-  barrio?: string
-  precio: number
-  imagen: string
-  recorte?: string
-  tipoGancho: 'hombros' | 'pinzas'
-  tipoFiltro: string
-  estilo: string
-  anclaY?: number
-  bajada?: number
-}
+const MOCK_CUTOUT_BY_ID = new Map(
+  ITEMS.filter((it): it is ItemResponseDto & { recorte: string } => Boolean(it.recorte)).map((it) => [it.id, it])
+)
 
-const HANGING_RACK_GARMENTS: HangingRackGarment[] = ITEMS
-  .filter((it): it is ItemResponseDto & { recorte: string } => Boolean(it.recorte))
-  .map((found) => {
-    const tipoNorm = found.tipo === 'Suéter' ? 'Saco' : found.tipo
-
-    return {
-      id: found.id,
-      nombre: found.nombre,
-      tienda: found.tienda,
-      barrio: found.barrio,
-      precio: found.precio,
-      imagen: found.imagen,
-      recorte: found.recorte,
-      tipoGancho: found.tipoGancho ?? 'hombros',
-      anclaY: found.anclaY ?? (found.tipoGancho === 'pinzas' ? 0 : 0.05),
-      bajada: found.bajada ?? 0,
-      tipoFiltro: tipoNorm,
-      estilo: found.estilo,
-    }
-  })
+const feedErrorText = (e: unknown) =>
+  e instanceof ApiError && e.status === 503 ? TEXTOS_FEED.catalogoCaido : errorMessage(e)
 
 function HangerBackSvg({ bajada = 0 }: { bajada?: number }) {
   const bajadaSvg = (bajada ?? 0) * 19.2
@@ -1562,36 +1534,49 @@ function HangerClipsFront() {
   )
 }
 
-function HangingSpecialsRack({
-  filtroTipo,
-  filtroEstilo,
-}: {
-  filtroTipo?: string
-  filtroEstilo?: string
-}) {
-  const [activeIndex, setActiveIndex] = useState<number>(3)
+function RecommendedHangingRack({ userId }: { userId: string }) {
+  const [data, setData] = useState<RecommendationsPageDto | null>(null)
+  const [perfil, setPerfil] = useState<PerfilDto | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({})
+  const versionRef = useRef(0)
   const dragStartX = useRef<number | null>(null)
   const dragDeltaX = useRef<number>(0)
   const didDrag = useRef<boolean>(false)
 
-  const availableGarments = useMemo(() => {
-    let list = HANGING_RACK_GARMENTS
-    if (filtroTipo && filtroTipo !== 'Todos') {
-      const filtered = list.filter((g) => g.tipoFiltro.toLowerCase() === filtroTipo.toLowerCase())
-      if (filtered.length >= 3) list = filtered
+  const cargar = useCallback(async () => {
+    const v = ++versionRef.current
+    setLoading(true)
+    setError('')
+    try {
+      const r = await feedService.getRecommendations(userId, { page: 0, size: PARA_TI_SIZE })
+      if (v !== versionRef.current) return
+      setData(r)
+      setActiveIndex(0)
+      if (r.content.some((i) => !i.reason?.trim())) {
+        const p = await usuarioService.get(userId).catch(() => null)
+        if (v === versionRef.current) setPerfil(p)
+      }
+    } catch (e) {
+      if (v === versionRef.current) setError(feedErrorText(e))
+    } finally {
+      if (v === versionRef.current) setLoading(false)
     }
-    if (filtroEstilo && filtroEstilo !== 'Todos') {
-      const filtered = list.filter((g) => g.estilo.toLowerCase() === filtroEstilo.toLowerCase())
-      if (filtered.length >= 3) list = filtered
-    }
-    return list
-  }, [filtroTipo, filtroEstilo])
+  }, [userId])
 
-  const total = availableGarments.length
-  const safeActiveIndex = activeIndex % (total || 1)
+  useEffect(() => {
+    void cargar()
+  }, [cargar])
+
+  const items = useMemo<FeedItemDto[]>(() => data?.content ?? [], [data])
+  const total = items.length
+  const safeActiveIndex = total > 0 ? activeIndex % total : 0
 
   const moveBy = useCallback(
     (delta: number) => {
+      if (total <= 1) return
       setActiveIndex((prev) => (prev + delta + total) % total)
     },
     [total]
@@ -1631,64 +1616,155 @@ function HangingSpecialsRack({
     }
   }
 
-  const featured = availableGarments[safeActiveIndex] ?? availableGarments[0]
-
   const visibleGarments = useMemo(() => {
-    return availableGarments.map((garment, index) => {
-      let offset = index - safeActiveIndex
-      if (offset > total / 2) offset -= total
-      if (offset < -total / 2) offset += total
-      return { garment, index, offset }
-    }).filter(({ offset }) => offset >= -3 && offset <= 3)
-  }, [safeActiveIndex, availableGarments, total])
+    return items
+      .map((item, index) => {
+        let offset = index - safeActiveIndex
+        if (total > 2) {
+          if (offset > total / 2) offset -= total
+          if (offset < -total / 2) offset += total
+        }
+        return { item, index, offset }
+      })
+      .filter(({ offset }) => offset >= -3 && offset <= 3)
+  }, [safeActiveIndex, items, total])
+
+  const header = (
+    <header className="sr-rack-header">
+      <span className="sr-rack-kicker">Según tu perfil de estilo</span>
+      <span className="sr-rack-divider" aria-hidden="true" />
+      <h2 id="recomendado-titulo" className="sr-rack-kicker sr-rack-kicker--muted m-0">
+        Recomendado para ti
+      </h2>
+    </header>
+  )
+
+  if (loading) {
+    return (
+      <section className="sr-rack-section" aria-labelledby="recomendado-titulo">
+        {header}
+        <div className="px-4 sm:px-6">
+          <ItemGridSkeleton count={4} />
+        </div>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className="sr-rack-section" aria-labelledby="recomendado-titulo">
+        {header}
+        <div className="sr-rack-empty-box">
+          <ErrorBanner
+            tone="warn"
+            icon="refresh"
+            title={error}
+            actions={
+              <button
+                type="button"
+                onClick={cargar}
+                className="rounded-xl border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)]"
+              >
+                Reintentar
+              </button>
+            }
+          />
+        </div>
+      </section>
+    )
+  }
+
+  if (data?.generalWithoutPreferences || total === 0) {
+    return (
+      <section className="sr-rack-section" aria-labelledby="recomendado-titulo">
+        {header}
+        <div className="sr-rack-empty-box">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-center text-sm text-[var(--color-text)]">
+            <p>{data?.message || TEXTOS_FEED.sinPreferencias}</p>
+            <Link to="/perfil" className="mt-3 inline-block font-semibold text-[var(--color-accent)] underline">
+              Actualizar mi perfil
+            </Link>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  const featured = items[safeActiveIndex] ?? items[0]
+  const motivoFeatured = motivoDe(featured, perfil)
 
   return (
     <section
       className="sr-rack-section"
-      aria-label="Selección relevante en tiendas locales de Bogotá"
+      aria-labelledby="recomendado-titulo"
       onKeyDown={handleKeyDown}
     >
-      {/* 1. Encabezado pequeño centrado en mayúsculas con separador vertical fino */}
-      <header className="sr-rack-header">
-        <span className="sr-rack-kicker">RELEVANTE</span>
-        <span className="sr-rack-divider" aria-hidden="true" />
-        <span className="sr-rack-kicker sr-rack-kicker--muted">SELECCIÓN DESTACADA · TIENDAS LOCALES BOGOTÁ</span>
-      </header>
+      {header}
+      {data?.message && (
+        <p className="sr-rack-status" role="status">
+          {data.message}
+        </p>
+      )}
 
-      {/* 2. Barra metálica horizontal fina + prendas colgadas de ganchos */}
+      {/* Barra metálica horizontal fina + prendas colgadas */}
       <div
         className="sr-rack-viewport"
         tabIndex={0}
         role="region"
         aria-roledescription="carrusel"
-        aria-label="Perchero interactivo de prendas relevantes"
+        aria-label="Perchero interactivo de prendas recomendadas para ti"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
         onPointerLeave={handlePointerEnd}
       >
+        {total > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => moveBy(-1)}
+              aria-label="Prenda recomendada anterior"
+              className="sr-rack-nav-btn sr-rack-nav-btn--prev"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={() => moveBy(1)}
+              aria-label="Siguiente prenda recomendada"
+              className="sr-rack-nav-btn sr-rack-nav-btn--next"
+            >
+              ›
+            </button>
+          </>
+        )}
+
         {/* Tramo trasero de los lazos de los ganchos (z-index por detrás de la barra) */}
         <div className="sr-rack-stage sr-rack-stage--back" aria-hidden="true">
-          {visibleGarments.map(({ garment, offset, index }) => (
-            <div
-              key={`back-${garment.id}`}
-              data-offset={offset}
-              className="sr-rack-item sr-rack-item--back"
-              style={
-                {
-                  '--rack-delay': `${(index * 0.42) % 2.5}s`,
-                  '--bajada': `${garment.bajada ?? 0}rem`,
-                } as React.CSSProperties
-              }
-            >
-              <div className="sr-rack-sway">
-                <div className="sr-rack-sway-inner">
-                  <HangerBackSvg bajada={garment.bajada} />
+          {visibleGarments.map(({ item, offset, index }) => {
+            const mockMeta = env.useMocks ? MOCK_CUTOUT_BY_ID.get(item.itemId) : undefined
+            const bajada = mockMeta?.bajada ?? 0
+            return (
+              <div
+                key={`back-${item.itemId}`}
+                data-offset={offset}
+                className="sr-rack-item sr-rack-item--back"
+                style={
+                  {
+                    '--rack-delay': `${(index * 0.42) % 2.5}s`,
+                    '--bajada': `${bajada}rem`,
+                  } as React.CSSProperties
+                }
+              >
+                <div className="sr-rack-sway">
+                  <div className="sr-rack-sway-inner">
+                    <HangerBackSvg bajada={bajada} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Barra metálica horizontal de lado a lado */}
@@ -1696,17 +1772,22 @@ function HangingSpecialsRack({
 
         {/* Prendas colgadas */}
         <div className="sr-rack-stage">
-          {visibleGarments.map(({ garment, index, offset }) => {
+          {visibleGarments.map(({ item, index, offset }) => {
             const isCenter = offset === 0
-            const isClips = garment.tipoGancho === 'pinzas'
+            const mockMeta = env.useMocks ? MOCK_CUTOUT_BY_ID.get(item.itemId) : undefined
+            const isClips = mockMeta ? mockMeta.tipoGancho === 'pinzas' : item.garmentType === 'BOTTOM'
+            const bajada = mockMeta?.bajada ?? 0
+            const anclaY = mockMeta?.anclaY ?? (isClips ? 0 : 0.05)
+            const photoUrl = item.photos?.[0] ?? ''
+            const showBrokenFallback = failedImages[item.itemId] || (!mockMeta && !photoUrl)
 
             return (
               <button
-                key={garment.id}
+                key={item.itemId}
                 type="button"
                 data-offset={offset}
                 aria-pressed={isCenter}
-                aria-label={garment.nombre}
+                aria-label={item.name}
                 onClick={() => {
                   if (didDrag.current) {
                     didDrag.current = false
@@ -1718,40 +1799,56 @@ function HangingSpecialsRack({
                 style={
                   {
                     '--rack-delay': `${(index * 0.42) % 2.5}s`,
-                    '--ancla-y': garment.anclaY ?? 0,
-                    '--bajada': `${garment.bajada ?? 0}rem`,
+                    '--ancla-y': anclaY,
+                    '--bajada': `${bajada}rem`,
                   } as React.CSSProperties
                 }
               >
                 <div className="sr-rack-sway">
                   <div className="sr-rack-sway-inner">
-                    {/* Gancho: hombros de madera o barra de pinzas */}
                     {isClips ? (
-                      <ClipsHangerFrontSvg bajada={garment.bajada} />
+                      <ClipsHangerFrontSvg bajada={bajada} />
                     ) : (
-                      <ShoulderHangerFrontSvg bajada={garment.bajada} />
+                      <ShoulderHangerFrontSvg bajada={bajada} />
                     )}
 
-                    {/* Prenda recortada sola, sin marco rectangular ni fondo */}
-                    <div className="sr-rack-garment-cutout">
-                      <img
-                        src={garment.recorte}
-                        alt={garment.nombre}
-                        draggable={false}
-                        className="sr-rack-cutout-img"
-                      />
-                      {/* Si es jean con pinzas, se muestran por delante de la tela */}
-                      {isClips && <HangerClipsFront />}
-                    </div>
+                    {mockMeta ? (
+                      <div className="sr-rack-garment-cutout">
+                        <img
+                          src={mockMeta.recorte}
+                          alt={item.name}
+                          draggable={false}
+                          className="sr-rack-cutout-img"
+                        />
+                        {isClips && <HangerClipsFront />}
+                      </div>
+                    ) : (
+                      <div className="sr-rack-garment-card">
+                        {isClips && <HangerClipsFront />}
+                        {showBrokenFallback ? (
+                          <div className="sr-rack-card-fallback">
+                            <span>{item.brand || 'StyleRadar'}</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={photoUrl}
+                            alt={item.name}
+                            draggable={false}
+                            className="sr-rack-card-img"
+                            onError={() =>
+                              setFailedImages((prev) => ({ ...prev, [item.itemId]: true }))
+                            }
+                          />
+                        )}
+                      </div>
+                    )}
 
-                    {/* Pill flotante que se muestra en hover / focus-visible */}
                     <span className="sr-rack-hover-title" aria-hidden="true">
-                      {garment.nombre}
+                      {item.name}
                     </span>
                   </div>
                 </div>
 
-                {/* Sombra suave bajo cada prenda */}
                 <div className="sr-rack-shadow" aria-hidden="true" />
               </button>
             )
@@ -1759,15 +1856,18 @@ function HangingSpecialsRack({
         </div>
       </div>
 
-      {/* 3. Detalle inferior de la prenda destacada + botón "Ver prenda" */}
+      {/* Detalle inferior de la prenda recomendada + motivo (SR-RF-06) + botón "Ver prenda" */}
       <div className="sr-rack-footer">
-        <p className="sr-rack-title">{featured.nombre}</p>
+        <p className="sr-rack-title">{featured.name}</p>
         <p className="sr-rack-meta">
-          {featured.tienda} · {formatCOP(featured.precio)}
+          {featured.brand ? `${featured.brand} · ` : ''}{formatCOP(featured.price)}
         </p>
+        {motivoFeatured && (
+          <p className="sr-rack-reason">Por qué: {motivoFeatured}</p>
+        )}
 
         <Link
-          to={`/catalogo/${featured.id}`}
+          to={`/catalogo/${featured.itemId}`}
           className="sr-rack-cta"
         >
           Ver prenda

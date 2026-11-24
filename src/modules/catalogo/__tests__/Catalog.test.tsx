@@ -1,6 +1,10 @@
-import { screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { AuthContext } from '@/modules/identidad/states/authContext'
+import { feedService } from '@/modules/identidad/services/feedService'
+import { TEXTOS_FEED } from '@/modules/identidad/types/feed.dto'
 import CatalogPage from '../pages/CatalogPage'
 import { itemService } from '../services/itemService'
 import { loginAs, renderAt } from '../../experiencia/__tests__/helpers'
@@ -57,7 +61,7 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
     expect(screen.queryByRole('button', { name: /^Recomendados$/i })).not.toBeInTheDocument()
   })
 
-  it('el panel de Filtros muestra listas unificadas (12 tipos, 8 colores, 11 marcas, 5 estilos, tallas agrupadas) sin Cerca de por barrio', async () => {
+  it('la barra horizontal despliega filtros al pasar el cursor, muestra listas unificadas sin Cerca de y maneja puntos activos y Limpiar (N)', async () => {
     const user = userEvent.setup()
     renderAt('/catalogo', routes)
 
@@ -65,44 +69,66 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
       expect(screen.getByRole('heading', { level: 1, name: /Todas las prendas/i })).toBeInTheDocument()
     })
 
-    const botonFiltros = screen.getByRole('button', { name: /Filtros del catálogo/i })
-    await user.click(botonFiltros)
-
-    // Título del menú desplegable
-    expect(screen.getByRole('heading', { level: 3, name: /Filtrar catálogo/i })).toBeInTheDocument()
-
-    // Categorías sin Cerca de por barrio
+    // La barra horizontal muestra las 7 categorías sin "Cerca de" y con "Filtros" inicial
+    expect(screen.getByText(/^Filtros$/i)).toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: /^Cerca de$/i })).not.toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /Tipo de prenda/i })).toBeInTheDocument()
+
+    // Desplegar pasando el cursor sobre Tipo de prenda (sin clickear)
+    await user.hover(screen.getByRole('tab', { name: /^Tipo de prenda$/i }))
+    expect(screen.getByRole('heading', { level: 3, name: /^Tipo de prenda$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Camiseta$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Falda$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Conjunto$/i })).toBeInTheDocument()
 
     // Tallas agrupadas por tipo de talla (XXL, 26, 45, Única)
-    await user.click(screen.getByRole('tab', { name: /Talla disponible/i }))
+    await user.hover(screen.getByRole('tab', { name: /^Talla$/i }))
+    expect(screen.getByRole('heading', { level: 3, name: /^Talla disponible$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^XXL$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^26$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^45$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Única$/i })).toBeInTheDocument()
 
     // Colores unificados (incluye Beige y Plata)
-    await user.click(screen.getByRole('tab', { name: /^Color$/i }))
+    await user.hover(screen.getByRole('tab', { name: /^Color$/i }))
     expect(screen.getByRole('button', { name: /^Beige$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Plata$/i })).toBeInTheDocument()
 
     // 11 Marcas / tiendas unificadas
-    await user.click(screen.getByRole('tab', { name: /^Marca$/i }))
+    await user.hover(screen.getByRole('tab', { name: /^Marca$/i }))
     expect(screen.getByRole('button', { name: /^Ropero 57$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Sastrería Antonia$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Nora Vintage$/i })).toBeInTheDocument()
 
-    // 5 Estilos unificados
-    await user.click(screen.getByRole('tab', { name: /^Estilo$/i }))
+    // 5 Estilos unificados y puntos iluminados + Limpiar (N)
+    await user.hover(screen.getByRole('tab', { name: /^Estilo$/i }))
     expect(screen.getByRole('button', { name: /^Casual$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Formal$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Deportivo$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Urbano$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Vintage$/i })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^Urbano$/i }))
+    expect(screen.getByLabelText('Filtro activo en Estilo')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Limpiar todos los filtros/i })).toHaveTextContent('Limpiar (1)')
+    expect(screen.getByText('1 filtro aplicado')).toBeInTheDocument()
+
+    // "Quitar este filtro" limpia la categoría activa
+    await user.click(screen.getByRole('button', { name: /^Quitar este filtro$/i }))
+    expect(screen.queryByLabelText('Filtro activo en Estilo')).not.toBeInTheDocument()
+    expect(screen.getByText(/^Filtros$/i)).toBeInTheDocument()
+
+    // Seleccionar filtro y verificar plegado al salir el cursor
+    await user.hover(screen.getByRole('tab', { name: /^Tipo de prenda$/i }))
+    await user.click(screen.getByRole('button', { name: /^Buzo$/i }))
+    expect(screen.getByRole('button', { name: /Limpiar todos los filtros/i })).toHaveTextContent('Limpiar (1)')
+    await user.unhover(screen.getByRole('tabpanel'))
+    await waitFor(() => {
+      expect(screen.queryByRole('tabpanel')).not.toBeInTheDocument()
+    })
+
+    // Pulsar Limpiar (1) limpia todos los filtros
+    await user.click(screen.getByRole('button', { name: /Limpiar todos los filtros/i }))
+    expect(screen.getByText(/^Filtros$/i)).toBeInTheDocument()
   })
 
   it('permite filtrar por Estilo unificado y muestra el chip correspondiente', async () => {
@@ -113,12 +139,12 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
       expect(screen.getByRole('heading', { level: 1, name: /Todas las prendas/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /Filtros del catálogo/i }))
-    await user.click(screen.getByRole('tab', { name: /^Estilo$/i }))
+    await user.hover(screen.getByRole('tab', { name: /^Estilo$/i }))
     await user.click(screen.getByRole('button', { name: /^Urbano$/i }))
-    await user.click(screen.getByRole('button', { name: /Aplicar filtros/i }))
+    await user.click(screen.getByRole('button', { name: /^Aplicar filtros$/i }))
 
     expect(screen.getByText(/Estilo: Urbano/i)).toBeInTheDocument()
+    expect(screen.queryByRole('tabpanel')).not.toBeInTheDocument()
   })
 
   it('permite guardar la búsqueda y activa su alerta', async () => {
@@ -159,5 +185,103 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
 
     expect(await screen.findByRole('heading', { level: 3, name: /No encontramos prendas con esos filtros/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Quitar filtros/i })).toBeInTheDocument()
+  })
+
+  it('para comprador autenticado muestra el Perchero con Recomendado para ti arriba y pestañas Todas las prendas / Para ti abajo', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(feedService, 'getRecommendations').mockResolvedValue({
+      content: [
+        {
+          itemId: 'rec-1',
+          garmentId: 101,
+          storeId: 'store-1',
+          name: 'Blazer lino arena',
+          garmentType: 'TOP',
+          brand: 'Luna Store',
+          style: 'FORMAL',
+          price: 185000,
+          stock: 3,
+          status: 'AVAILABLE',
+          publishedAt: '2026-11-20T12:00:00Z',
+          photos: ['https://example.com/blazer.jpg'],
+          availableSizes: ['M'],
+          reason: 'Tu estilo Formal y tu talla M',
+        },
+      ],
+      page: 0,
+      size: 8,
+      totalElements: 1,
+      totalPages: 1,
+      first: true,
+      last: true,
+      generalWithoutPreferences: false,
+      message: TEXTOS_FEED.conPerfil,
+    })
+    const feedSpy = vi.spyOn(feedService, 'getFeed').mockResolvedValue({
+      content: [
+        {
+          itemId: 'feed-1',
+          garmentId: 202,
+          storeId: 'store-1',
+          name: 'Jean recto talla M',
+          garmentType: 'BOTTOM',
+          brand: 'Norte Denim',
+          style: 'CASUAL',
+          price: 140000,
+          stock: 2,
+          status: 'AVAILABLE',
+          publishedAt: '2026-11-21T12:00:00Z',
+          photos: ['https://example.com/jean.jpg'],
+          availableSizes: ['30'],
+        },
+      ],
+      page: 0,
+      size: 8,
+      totalElements: 1,
+      totalPages: 1,
+      first: true,
+      last: true,
+    })
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: { id: 'u-1', name: 'Valentina R.', email: 'usuario@styleradar.co', role: 'BUYER' },
+          login: async () => ({ kind: 'session', user: { id: 'u-1', name: 'Valentina R.', email: 'usuario@styleradar.co', role: 'BUYER' } }),
+          register: async () => ({ kind: 'session', user: { id: 'u-1', name: 'Valentina R.', email: 'usuario@styleradar.co', role: 'BUYER' } }),
+          verifyOtp: async () => ({ id: 'u-1', name: 'Valentina R.', email: 'usuario@styleradar.co', role: 'BUYER' }),
+          updateUser: () => {},
+          loginWithGoogle: async () => ({ id: 'u-1', name: 'Valentina R.', email: 'usuario@styleradar.co', role: 'BUYER' }),
+          logout: () => {},
+        }}
+      >
+        <MemoryRouter initialEntries={['/catalogo']}>
+          <Routes>{routes.map((r) => <Route key={r.path} path={r.path} element={r.element} />)}</Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+
+    // Bloque 1: Perchero arriba con "Recomendado para ti" (SR-RF-06) y sin "RELEVANTE"
+    const rack = await screen.findByRole('region', { name: 'Recomendado para ti' })
+    expect(within(rack).getAllByText('Blazer lino arena').length).toBeGreaterThanOrEqual(1)
+    expect(within(rack).getByText(/Por qué: Tu estilo Formal y tu talla M/i)).toBeInTheDocument()
+    expect(within(rack).getByRole('link', { name: 'Ver prenda' })).toHaveAttribute('href', '/catalogo/rec-1')
+    expect(screen.queryByText(/^RELEVANTE$/i)).not.toBeInTheDocument()
+
+    // Bloque 2: Pestañas "Todas las prendas" (activa) y "Para ti"
+    const tabTodas = screen.getByRole('tab', { name: /Todas las prendas/i })
+    const tabParaTi = screen.getByRole('tab', { name: /^Para ti$/i })
+    expect(tabTodas).toHaveAttribute('aria-selected', 'true')
+
+    await user.click(tabParaTi)
+    expect(tabParaTi).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByText('Jean recto talla M')).toBeInTheDocument()
+    expect(feedSpy).toHaveBeenCalledWith('u-1', { page: 0, size: 8 })
+
+    // Al buscar/filtrar se pliega el perchero y vuelve automáticamente al catálogo filtrado
+    await user.type(screen.getByRole('textbox', { name: /Buscar prendas/i }), 'prenda-sin-resultados')
+    await user.click(screen.getByRole('button', { name: /^Buscar$/i }))
+    expect(document.querySelector('.sr-rack-collapse')).toHaveClass('sr-rack-collapse--hidden')
+    expect(await screen.findByRole('heading', { level: 3, name: /No encontramos prendas con esos filtros/i })).toBeInTheDocument()
   })
 })
