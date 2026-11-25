@@ -2,13 +2,13 @@
 
 # Documentación del frontend de StyleRadar
 
-Actualizada con el proyecto en React integrado con el API Gateway, los módulos por squad, la capa legal colombiana y la documentación modular del repositorio. Las versiones anteriores de cada documento están en las carpetas `historico/`.
+Actualizada con el proyecto en React integrado con el API Gateway, los módulos por equipo, la capa legal colombiana y la documentación modular del repositorio. Las versiones anteriores de cada documento están en las carpetas `historico/`.
 
 ## Secciones del README Modular
 
 | Archivo | Contenido |
 |---|---|
-| `secciones/01-roles-modulos-y-rutas.md` | Roles RBAC, reparto por squad en `src/modules/` y matriz completa de 46 rutas |
+| `secciones/01-roles-modulos-y-rutas.md` | Roles RBAC, módulos en `src/modules/` por equipo y matriz completa de 46 rutas |
 | `secciones/02-arquitectura-y-api-gateway.md` | Estructura nivel 3, flujo hacia el API Gateway, renovación JWT y guía para nuevas pantallas |
 | `secciones/03-tecnologias-y-design-system.md` | Stack con versiones reales de `package.json`, tipografía `Poppins` y 3 temas accesibles |
 | `secciones/04-entornos-variables-y-despliegue.md` | Scripts, variables `VITE_*`, autenticación real y despliegue en Vercel |

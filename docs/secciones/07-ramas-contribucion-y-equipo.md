@@ -28,17 +28,19 @@ main                    <-- Versión estable entregable / producción
 
 ---
 
-### Equipo de Desarrollo Frontend
+### Equipo de Desarrollo Frontend y Microservicios Asignados
 
 Proyecto desarrollado para el curso **DOSW (Diseño y Operación de Soluciones Web)**, Escuela Colombiana de Ingeniería Julio Garavito (2026-2), Organización **StyleRadar1**.
 
-| Integrante | Squad / Enfoque | Módulos Principales |
-| :--- | :--- | :--- |
-| **Kevin Ángel** | Base común y experiencia | `core/`, `experiencia/`, integración global y playlists |
-| **Julián Morales** | Transacciones y soporte | `transacciones/` (pagos y suscripciones), `soporte/` (estadísticas) |
-| **Carlos Sánchez** | Squad 2 · Catálogo y Mapa | `catalogo/`, `mapa/`, errores transversales (`README-ERRORES.md`) |
-| **Cristian Moreno** | Squad 1 · Identidad y Admin | `identidad/`, `administracion/`, flujos de autenticación y playlists |
-| **Daniel Barrera** | Mapa y errores de comprador | `mapa/` (cercanía), `experiencia/`, escenarios negativos de comprador |
+Cada integrante del frontend coordina la integración con un equipo de backend y conecta sus microservicios correspondientes en el cliente web. El frontend **nunca consume puertos internos de microservicios directamente**; todas las peticiones pasan por el **API Gateway** (`VITE_API_URL`).
+
+| Integrante Frontend | Equipo de Backend | Líder de Backend | Microservicios Asignados | Módulos en Frontend |
+| :--- | :--- | :--- | :--- | :--- |
+| **Kevin Ángel** | Estación Portal 8080 · Probador Virtual, Donaciones y Gateway | Daniel Valero Quiroga | `ms-probador-virtual`, `ms-segunda-vida-donaciones`, `api-gateway` | `experiencia/`, base común (`core/`, `landing/`) |
+| **Cristian Moreno** | Estación CADche · Identidad | Juan Diego Valderrama | `ms-auth`, `ms-usuarios`, `ms-tiendas` | `identidad/`, `administracion/` |
+| **Julián Morales** | NQS · Pagos y Estadísticas | Cristian Camilo Ortiz Sánchez | `ms-pagos-suscripciones`, `ms-estadisticas` | `transacciones/`, `soporte/` *(estadísticas)* |
+| **Daniel Barrera** | Estación Guatoque Jiraguas · Notificaciones, Chat y Broker | Paula Alejandra Díaz | `ms-notificaciones`, `ms-chat`, `RabbitMQ` | `soporte/` *(notificaciones, alertas y chat)* |
+| **Carlos Sánchez** | Estación RESTrepo · Catálogo | Nicolás Álvarez | `ms-inventario`, `ms-item-catalogo`, `ms-geolocalizacion`, `ms-playlist` | `catalogo/`, `mapa/` |
 
 ---
 

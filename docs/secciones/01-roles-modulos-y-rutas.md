@@ -2,7 +2,7 @@
 
 ---
 
-## <img src="https://img.shields.io/badge/SECCIÓN_01-5600EF?style=for-the-badge" height="20" align="absmiddle" /> 1. ROLES, MÓDULOS, SQUADS Y MAPA DE RUTAS
+## <img src="https://img.shields.io/badge/SECCIÓN_01-5600EF?style=for-the-badge" height="20" align="absmiddle" /> 1. ROLES, MÓDULOS, EQUIPOS Y MAPA DE RUTAS
 
 La aplicación implementa control de acceso basado en roles (**RBAC**) desde el router principal ([`src/app/router.tsx`](../../src/app/router.tsx)) y [`src/modules/core/types/roles.ts`](../../src/modules/core/types/roles.ts).
 
@@ -21,21 +21,21 @@ La aplicación implementa control de acceso basado en roles (**RBAC**) desde el 
 
 ---
 
-### Reparto por Squad y Módulos en `src/modules/`
+### Módulos en `src/modules/` y Equipos de Backend
 
-La base de código está organizada en **10 módulos** alineados con los squads de StyleRadar:
+La base de código está organizada en **10 módulos** alineados con los equipos de StyleRadar:
 
-| Módulo (`src/modules/`) | Squad Responsable | Dominios / Microservicios Consumidos (vía API Gateway) | Requerimientos Asociados |
+| Módulo (`src/modules/`) | Equipo de Backend | Microservicios Consumidos (vía API Gateway) | Requerimientos Asociados |
 | :--- | :--- | :--- | :--- |
-| `identidad/` | **Squad 1 · Identidad** | Auth, Usuarios (perfil, tallas, estilos, feed, búsquedas guardadas) | `SR-RF-01` a `06`, `113`, `115` |
-| `catalogo/` | **Squad 2 · Catálogo** | Ítem-catálogo, Inventario, Playlists, Tiendas públicas/registro | `SR-RF-07` a `16`, `22`, `50` a `61`, `69` a `72`, `74` |
-| `mapa/` | **Squad 2 · Catálogo** | Geolocalización y resumen de catálogo en mapa (Mapbox) | `SR-RF-17` a `21`, `28` |
-| `experiencia/` | **Squad 3 · Experiencia** | Probador virtual IA, Segunda vida (C2C) y Donaciones | `SR-RF-23` a `27`, `33` a `39`, `42` a `49`, `107` a `109` |
-| `transacciones/` | **Squad 4 · Transacciones** | Planes, Pagos y Suscripciones (Mercado Pago) | `SR-RF-67`, `68`, `75`, `93` a `103` |
-| `soporte/` | **Squad 5 · Soporte** | Notificaciones (SSE), Alertas, Chat y Estadísticas | `SR-RF-29` a `32`, `40`, `41`, `73`, `76` a `91` |
-| `administracion/` | **Transversal (Admin)** | Verificación de tiendas, fundaciones, moderación, playlists y pagos admin | `SR-RF-62` a `66`, `119`, `120` |
+| `identidad/` | **Estación CADche · Identidad** | `ms-auth`, `ms-usuarios` (perfil, tallas, estilos, feed, búsquedas guardadas) | `SR-RF-01` a `06`, `113`, `115` |
+| `catalogo/` | **Estación RESTrepo · Catálogo** | `ms-item-catalogo`, `ms-inventario`, `ms-playlist`, `ms-tiendas` | `SR-RF-07` a `16`, `22`, `50` a `61`, `69` a `72`, `74` |
+| `mapa/` | **Estación RESTrepo · Catálogo** | `ms-geolocalizacion` y resumen de `ms-item-catalogo` (Mapbox) | `SR-RF-17` a `21`, `28` |
+| `experiencia/` | **Estación Portal 8080 · Probador Virtual y Donaciones** | `ms-probador-virtual`, `ms-segunda-vida-donaciones` | `SR-RF-23` a `27`, `33` a `39`, `42` a `49`, `107` a `109` |
+| `transacciones/` | **NQS · Pagos y Estadísticas** | `ms-pagos-suscripciones` (Mercado Pago) | `SR-RF-67`, `68`, `75`, `93` a `103` |
+| `soporte/` | **Estación Guatoque Jiraguas** y **NQS** | `ms-notificaciones`, `ms-chat`, `RabbitMQ` y `ms-estadisticas` | `SR-RF-29` a `32`, `40`, `41`, `73`, `76` a `91` |
+| `administracion/` | **Transversal (Admin)** | `ms-tiendas`, `ms-usuarios`, `ms-item-catalogo`, `ms-playlist`, `ms-pagos-suscripciones`, `ms-segunda-vida-donaciones` | `SR-RF-62` a `66`, `119`, `120` |
 | `legal/` | **Transversal (Legal)** | Cumplimiento normativo colombiano, cookies, PQRS y Centro de Ayuda | Marco Ley 1581 / Ley 1480 / SIC |
-| `core/` y `landing/` | **Base Común** | API Client JWT, Design System, Temas A11y, Errores, Router y Landing | Infraestructura transversal |
+| `core/` y `landing/` | **Base Común** | API Gateway (`api-gateway`), Auth refresh, Design System, Temas A11y y Errores | Infraestructura transversal |
 
 ---
 

@@ -55,7 +55,7 @@ La aplicación web de **StyleRadar** integra **10 módulos funcionales**, **46 p
 
 ## <img src="https://img.shields.io/badge/ÍNDICE-5600EF?style=for-the-badge" height="20" align="absmiddle" /> ÍNDICE DE CONTENIDOS
 
-1. [Roles, módulos, squads y mapa de rutas](docs/secciones/01-roles-modulos-y-rutas.md)
+1. [Roles, módulos, equipos y mapa de rutas](docs/secciones/01-roles-modulos-y-rutas.md)
 2. [Arquitectura modular e integración con el API Gateway](docs/secciones/02-arquitectura-y-api-gateway.md)
 3. [Tecnologías, Design System y accesibilidad visual](docs/secciones/03-tecnologias-y-design-system.md)
 4. [Entornos, variables de entorno y despliegue en Vercel](docs/secciones/04-entornos-variables-y-despliegue.md)

@@ -4,7 +4,7 @@
 
 ## <img src="https://img.shields.io/badge/SECCIÓN_02-12063A?style=for-the-badge" height="20" align="absmiddle" /> 2. ARQUITECTURA MODULAR E INTEGRACIÓN CON EL API GATEWAY
 
-El proyecto sigue una arquitectura modular de **nivel 3 (agrupación por dominio/squad)** sobre React 19 + TypeScript, con separación estricta entre vistas, estado/hooks, servicios HTTP y tipos DTO.
+El proyecto sigue una arquitectura modular de **nivel 3 (agrupación por dominio funcional)** sobre React 19 + TypeScript, con separación estricta entre vistas, estado/hooks, servicios HTTP y tipos DTO.
 
 ### Estructura del Repositorio
 
