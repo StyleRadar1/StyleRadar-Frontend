@@ -166,12 +166,14 @@ export const storeSubscriptionService = {
       return mockDelay(readMockStoreSubscription(), 250)
     }
     const subscriberId = requireSessionSubscriberId()
+    let sinSuscripcion = false
     const [subscription, rawPayments] = await Promise.all([
       apiClient
         .get<ApiSubscriptionResponse>(`/api/v1/subscriptions/${encodeURIComponent(subscriberId)}`)
         .then((r) => mapSubscriptionToStoreDto(r.data))
         .catch((err) => {
           if (err instanceof ApiError && err.status === 404) {
+            sinSuscripcion = true
             return SEED().subscription
           }
           throw err
@@ -183,7 +185,7 @@ export const storeSubscriptionService = {
     const payments = rawPayments
       .map((item) => mapPaymentResponse(item))
       .sort((a, b) => b.date.localeCompare(a.date))
-    return { subscription, payments }
+    return sinSuscripcion ? { subscription, payments, sinSuscripcion } : { subscription, payments }
   },
 
   /**

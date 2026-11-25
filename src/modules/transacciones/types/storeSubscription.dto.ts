@@ -55,6 +55,8 @@ export interface StoreSubscriptionDto {
 export interface StoreSubscriptionStateDto {
   subscription: StoreSubscriptionDto
   payments: PaymentDto[]
+  /** El backend respondió 404: el almacén todavía no ha iniciado ninguna suscripción. */
+  sinSuscripcion?: boolean
 }
 
 /** Resultado de pagar: en producción se redirige a Mercado Pago; en mocks ya viene el resultado. */

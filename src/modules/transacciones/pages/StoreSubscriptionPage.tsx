@@ -1,4 +1,5 @@
 import { useCallback, useContext, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { env } from '@/configs/env'
 import { Button } from '@/modules/core/design-system'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
@@ -36,6 +37,15 @@ const OUTCOME: Record<CheckoutResultDto['status'], { title: string; text: string
   aprobado: { title: 'Tu suscripción fue reactivada', text: 'Tu suscripción quedó activa y tu catálogo sigue visible en el radar', alert: false },
   pendiente: { title: 'Pago pendiente', text: 'Tu pago está pendiente de confirmación. Las funcionalidades se habilitarán cuando sea aprobado', alert: false },
   rechazado: { title: 'Pago rechazado', text: 'El pago no fue aprobado. Puedes intentarlo nuevamente. La suscripción no se activó', alert: true },
+}
+
+/**
+ * Sin ninguna suscripción en el back (404), el primer pago se hace en /tienda/suscripcion/activar,
+ * que pide el NIT (taxId) y el correo del pagador y redirige a Mercado Pago.
+ */
+function IrAPagarButton() {
+  const navigate = useNavigate()
+  return <Button onClick={() => navigate('/tienda/suscripcion/activar')}>Ir a pagar</Button>
 }
 
 export default function StoreSubscriptionPage() {
@@ -106,7 +116,7 @@ export default function StoreSubscriptionPage() {
     )
   }
 
-  const { subscription: sub, payments } = data
+  const { subscription: sub, payments, sinSuscripcion = false } = data
   const msg = outcome ? OUTCOME[outcome.status] : null
   const lastPayment = payments[0]
   const failedPayment = lastPayment?.status === 'rechazado' ? lastPayment : null
@@ -124,6 +134,7 @@ export default function StoreSubscriptionPage() {
     ? formatStatusLabel(STATUS_LABEL[derivedSub.status], sub.unknownStatus)
     : derivedSub.label
   const isSuspendedOrExpired = derivedSub.status === 'SUSPENDIDA' || derivedSub.status === 'VENCIDA'
+  const mostrarPagar = env.useMocksPagos ? sub.status !== 'ACTIVA' : isSuspendedOrExpired || derivedSub.status === 'CANCELADA'
   const defaultRetryEmail =
     retryPaymentTarget?.userEmail ??
     failedPayment?.userEmail ??
@@ -140,7 +151,7 @@ export default function StoreSubscriptionPage() {
             <h2>Suscripción</h2>
             <span className="store-subscription__badge">
               <span aria-hidden="true">● </span>
-              <span>{statusBadgeText}</span>
+              <span>{sinSuscripcion ? 'Sin suscripción' : statusBadgeText}</span>
             </span>
           </div>
           <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días</p>
@@ -228,8 +239,15 @@ export default function StoreSubscriptionPage() {
 
         {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
 
+        {sinSuscripcion && (
+          <div role="status" className="store-subscription__notice">
+            <strong>Tu almacén todavía no tiene una suscripción</strong>
+            <p>Paga con Mercado Pago para mantener tu catálogo visible en el radar. Te pediremos el NIT del almacén y el correo del pagador</p>
+          </div>
+        )}
+
         <article className="store-subscription__plan">
-          <span className="store-subscription__badge">● {planCardBadgeText.toUpperCase()}</span>
+          <span className="store-subscription__badge">● {(sinSuscripcion ? 'Sin suscripción' : planCardBadgeText).toUpperCase()}</span>
           <h3>{sub.planName}</h3>
           <p className="store-subscription__price">{formatCOP(sub.amount || STORE_SUBSCRIPTION_PRICE)} <small>/ mes</small></p>
           <ul>
@@ -238,16 +256,17 @@ export default function StoreSubscriptionPage() {
             <li>Estadísticas de visitas y mensajes</li>
             <li>Avisos automáticos a quienes esperan una prenda</li>
           </ul>
-          <div className="store-subscription__metadata">
+          {!sinSuscripcion && <div className="store-subscription__metadata">
             <span>suscripcionId: <b>{suscripcionId}</b></span>
             <span>estado: <b>{estado}</b></span>
             <span>fechaInicio: <b>{fechaInicio ?? '—'}</b></span>
             <span>fechaFin: <b>{fechaFin ?? '—'}</b></span>
             <span>autoRenovacion: <b>{autoRenovacion ? 'true' : 'false'}</b></span>
             <span>Método: <b>{lastPayment?.method ?? 'Mercado Pago'}</b></span>
-          </div>
+          </div>}
           <div className="store-subscription__actions flex flex-wrap items-center gap-3">
-            {(!env.useMocksPagos ? (isSuspendedOrExpired || derivedSub.status === 'CANCELADA') : sub.status !== 'ACTIVA') && (
+            {sinSuscripcion && <IrAPagarButton />}
+            {mostrarPagar && (
               <Button onClick={() => { void pay() }} disabled={paying}>
                 {paying ? 'Procesando pago…' : isSuspendedOrExpired || derivedSub.status === 'CANCELADA' ? 'Volver a suscribirme' : 'Pagar y activar suscripción'}
               </Button>
