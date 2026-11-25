@@ -10,6 +10,7 @@ import {
   TechnicalCroquisSvg,
 } from '@/modules/experiencia/components/FitAnalysis2D'
 import { ITEMS } from '@/modules/catalogo/mocks/items'
+import type { GarmentSizeMeasurementDto } from '@/modules/catalogo/types/garmentMeasurements.dto'
 import { MOCK_PLAYLISTS } from '@/modules/catalogo/mocks/playlists'
 import { itemService } from '@/modules/catalogo/services/itemService'
 import { playlistService } from '@/modules/catalogo/services/playlistService'
@@ -27,6 +28,7 @@ import {
 import {
   clearLookFromStorage,
   evaluateGarmentFit,
+  evaluateGarmentFitWithMeasurements,
   evaluatePlaylistOutfit,
   getLayerForGarment,
   getRecommendedSize,
@@ -39,7 +41,11 @@ import {
 import {
   computeBodyDeformation,
   getBodyMeasurements,
+  hasSavedBodyMeasurements,
+  saveBodyMeasurements,
 } from '@/modules/experiencia/utils/bodyMeasurementsEngine'
+import { BodyMeasurementsWizardModal } from '@/modules/experiencia/components/BodyMeasurementsWizardModal'
+import type { BodyMeasurements } from '@/modules/experiencia/types/bodyMeasurements.dto'
 import { AuthModal } from './AuthModal'
 
 /* ---------- Rutas de capas del maniquí ---------- */
@@ -129,7 +135,12 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
   /* Medidas corporales desde el perfil y autenticación */
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const bodyMeasurements = useMemo(() => getBodyMeasurements(user?.id), [user?.id])
+  const [showMeasurementsWizard, setShowMeasurementsWizard] = useState(false)
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurements | null>(() => getBodyMeasurements(user?.id))
+  useEffect(() => {
+    setBodyMeasurements(getBodyMeasurements(user?.id))
+  }, [user?.id])
+  const hasMeasures = hasSavedBodyMeasurements(user?.id) && Boolean(bodyMeasurements)
   const [pendingDeepLinkGarment, setPendingDeepLinkGarment] = useState<{ id: string; talla?: string; color?: string } | null>(null)
   const [catalogItems, setCatalogItems] = useState<ItemResponseDto[]>(() => (env.useMocks ? ITEMS : []))
   const [availablePlaylists, setAvailablePlaylists] = useState<PlaylistDto[]>(() => (env.useMocks ? MOCK_PLAYLISTS : []))
@@ -214,11 +225,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     showToast('Look limpiado por completo')
   }, [wearing, pushState, showToast])
 
-  /* Poner prenda directamente en el maniquí */
+  /* Poner prenda directamente en el maniquí (usando guía de medidas real cuando exista) */
+  const sizeGuideCacheRef = useRef<Record<string, GarmentSizeMeasurementDto[]>>({})
+
   const wearGarment = useCallback((item: ItemResponseDto, talla: string, color: string) => {
     const slot = getSlotForGarment(item)
     const layer = getLayerForGarment(item, slot)
-    const fit = evaluateGarmentFit(item, talla)
+    const cachedGuide = sizeGuideCacheRef.current[item.id]
+    const fit = evaluateGarmentFitWithMeasurements(item, talla, bodyMeasurements, cachedGuide)
 
     const worn: WornItem = {
       item,
@@ -236,7 +250,25 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
     pushState(nextState)
     showToast(`${item.nombre} en talla ${talla} puesto en el maniquí`)
-  }, [wearing, pushState, showToast])
+
+    if (!cachedGuide) {
+      void itemService.getGarmentSizeGuide(item.id, item.tallas).then((guide) => {
+        if (!guide.length) return
+        sizeGuideCacheRef.current[item.id] = guide
+        const updatedFit = evaluateGarmentFitWithMeasurements(item, talla, bodyMeasurements, guide)
+        if (updatedFit.veredicto !== fit.veredicto) {
+          setWearing((prev) => {
+            const current = prev[slot]
+            if (!current || current.item.id !== item.id || current.talla !== talla) return prev
+            return {
+              ...prev,
+              [slot]: { ...current, veredicto: updatedFit.veredicto },
+            }
+          })
+        }
+      })
+    }
+  }, [wearing, bodyMeasurements, pushState, showToast])
 
   /* Carga de outfit desde Playlist */
   const applyPlaylist = useCallback((playlist: PlaylistDto, mode: 'replace' | 'merge') => {
@@ -603,6 +635,43 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                 ↷
               </button>
             </div>
+          </div>
+
+          {/* Metodología del probador + acceso rápido a medidas */}
+          <div className="mb-3 rounded-2xl border border-white/12 bg-white/[0.04] p-3 text-xs text-white/85">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-violeta-claro">
+              ¿Cómo funciona?
+            </p>
+            <p className="mt-1 leading-snug text-white/75">
+              Aquí podrás ver y comprobar con las medidas de tu cuerpo y la ropa si una prenda te quedaría o no, para luego probarla en nuestro probador con IA.
+            </p>
+            {!hasMeasures ? (
+              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-2">
+                <span className="text-[11px] font-medium text-amber-200">
+                  Aún no has registrado tus medidas corporales.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowMeasurementsWizard(true)}
+                  className="rounded-lg bg-violeta px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-violeta-hover"
+                >
+                  Configurar mis medidas
+                </button>
+              </div>
+            ) : (
+              <div className="mt-2 flex items-center justify-between gap-2 border-t border-white/10 pt-2">
+                <span className="text-[11px] text-white/65">
+                  Medidas activas: <strong className="text-white">{bodyMeasurements?.estatura} cm</strong> · Talla <strong className="text-white">{bodyMeasurements?.tallaHabitual || 'M'}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowMeasurementsWizard(true)}
+                  className="text-[11px] font-semibold text-violeta-claro hover:underline"
+                >
+                  Editar medidas
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Tarjetas principales: Escoger prenda / Probar con tu foto IA */}
@@ -1400,6 +1469,19 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
           initialTab="login"
         />
       )}
+
+      {/* Asistente para registrar o editar medidas corporales */}
+      <BodyMeasurementsWizardModal
+        isOpen={showMeasurementsWizard}
+        onClose={() => setShowMeasurementsWizard(false)}
+        initialMeasurements={bodyMeasurements}
+        onSave={(measurements, persist) => {
+          saveBodyMeasurements(measurements, persist, user?.id)
+          setBodyMeasurements(measurements)
+          setShowMeasurementsWizard(false)
+          showToast('Medidas guardadas. El maniquí y las tallas se actualizaron.')
+        }}
+      />
     </div>
     </TryOnPrivacyShield>
   )

@@ -74,20 +74,31 @@ export function distanciaKm(u: Ubicacion, [lng, lat]: [number, number]): number 
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-/** Barrios principales de Bogotá con sus coordenadas centrales de respaldo. */
-export const BARRIOS_BOGOTA: Record<string, Ubicacion> = {
-  Cedritos: { lat: 4.7244, lng: -74.0365 },
-  Centro: { lat: 4.6031, lng: -74.0721 },
+/** 20 localidades oficiales de Bogotá con sus coordenadas centrales de respaldo. */
+export const LOCALIDADES_BOGOTA_MAPA: Record<string, Ubicacion> = {
+  'Antonio Nariño': { lat: 4.5889, lng: -74.1017 },
+  'Barrios Unidos': { lat: 4.6667, lng: -74.0764 },
+  Bosa: { lat: 4.6167, lng: -74.1917 },
   Chapinero: { lat: 4.6433, lng: -74.0628 },
-  Chicó: { lat: 4.6766, lng: -74.0504 },
+  'Ciudad Bolívar': { lat: 4.5681, lng: -74.1603 },
   Engativá: { lat: 4.7011, lng: -74.1131 },
   Fontibón: { lat: 4.6736, lng: -74.1426 },
   Kennedy: { lat: 4.62, lng: -74.1534 },
+  'La Candelaria': { lat: 4.5967, lng: -74.0728 },
+  'Los Mártires': { lat: 4.6072, lng: -74.0881 },
+  'Puente Aranda': { lat: 4.6167, lng: -74.1167 },
+  'Rafael Uribe Uribe': { lat: 4.5667, lng: -74.1167 },
+  'San Cristóbal': { lat: 4.5667, lng: -74.0833 },
+  'Santa Fe': { lat: 4.6067, lng: -74.0667 },
   Suba: { lat: 4.7431, lng: -74.0886 },
+  Sumapaz: { lat: 4.2667, lng: -74.2667 },
   Teusaquillo: { lat: 4.6297, lng: -74.0725 },
+  Tunjuelito: { lat: 4.575, lng: -74.1333 },
   Usaquén: { lat: 4.6974, lng: -74.0305 },
-  'Zona G': { lat: 4.6525, lng: -74.056 },
+  Usme: { lat: 4.4833, lng: -74.1167 },
 }
+
+export const BARRIOS_BOGOTA: Record<string, Ubicacion> = LOCALIDADES_BOGOTA_MAPA
 
 /** Centro de un barrio a partir de sus puntos o del catálogo de barrios de Bogotá. */
 export function centroBarrio(pins: MapPinDto[], barrio: string): Ubicacion | null {

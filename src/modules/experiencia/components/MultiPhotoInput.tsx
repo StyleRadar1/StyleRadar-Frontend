@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { FieldError } from '@/modules/core/components/ErrorFeedback'
 import { PHOTO_MAX_MB, PHOTO_TYPES, validatePhotoFile } from '../utils/photoRules'
+import { PhotoUploadGuide } from './PhotoUploadGuide'
 
 export interface PhotoItem { key: string; url: string; file?: File }
 
@@ -89,6 +90,7 @@ export function MultiPhotoInput({
       <p id={`${id}-hint`} className="mt-2 text-xs text-[var(--color-text-muted)]">
         {hintText ?? `${photos.length} de ${max} fotos. JPG o PNG de hasta ${maxMb} MB.`}
       </p>
+      <PhotoUploadGuide variant="garment" className="mt-2.5" />
       <input ref={input} id={id} type="file" accept={allowedTypes.join(',')} multiple hidden data-testid={`${id}-input`} onChange={(e) => { add(e.target.files); e.target.value = '' }} />
       <FieldError id={`${id}-err`} message={msg || error} />
     </div>

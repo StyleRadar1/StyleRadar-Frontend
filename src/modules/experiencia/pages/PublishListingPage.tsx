@@ -17,8 +17,8 @@ import {
   LOCALIDADES_BOGOTA,
   STYLE_LABEL,
   STYLES_ENUM,
+  TALLA_LABEL,
   TALLAS,
-  mapCategoriaToGarmentType,
   type ConservationStatus,
   type ListingDto,
   type ListingRequestDto,
@@ -145,18 +145,14 @@ export default function PublishListingPage() {
       garmentName: form.titulo.trim(),
       titulo: form.titulo.trim(),
       categoria: form.categoria || 'Camisas',
-      garmentType: form.garmentType || mapCategoriaToGarmentType(form.categoria || ''),
+      garmentType: (form.garmentType || form.categoria || 'Camisas') as ListingRequestDto['garmentType'],
       talla: form.talla || 'M',
       size: (form.size || form.talla || 'M') as SizeEnum,
       style: (form.style || 'CASUAL') as StyleEnum,
       color: form.color || 'Negro',
       localidad: (form.localidad || 'CHAPINERO') as LocalidadEnum,
       conservacion: form.conservacion as ListingDto['conservacion'],
-      conservationStatus: (form.conservacion === 'COMO_NUEVO'
-        ? 'LIKE_NEW'
-        : form.conservacion === 'MUY_BUENO'
-          ? 'GOOD_CONDITION'
-          : 'ACCEPTABLE') as ConservationStatus,
+      conservationStatus: (form.conservacion || 'GOOD_CONDITION') as ConservationStatus,
       marca: form.marca.trim(),
       brand: form.marca.trim(),
       descripcion: form.descripcion.trim(),
@@ -338,7 +334,7 @@ export default function PublishListingPage() {
                 <option value="">Elige una</option>{CATEGORIAS.map((c) => <option key={c}>{c}</option>)}</select></Field>
             <Field id="ltal" label="Talla" error={errors.talla}>
               <select {...a11y('ltal', errors.talla)} className={inputCls} value={form.talla} onChange={(e) => set('talla', e.target.value)}>
-                <option value="">Elige una</option>{TALLAS.map((t) => <option key={t}>{t}</option>)}</select></Field>
+                <option value="">Elige una</option>{TALLAS.map((t) => <option key={t} value={t}>{TALLA_LABEL[t] ?? t}</option>)}</select></Field>
             <Field id="lcol" label="Color principal" error={errors.color}>
               <input {...a11y('lcol', errors.color)} className={inputCls} value={form.color} onChange={(e) => set('color', e.target.value)} placeholder="Ej. Azul oscuro, Negro, Blanco" /></Field>
             <Field id="lstyle" label="Estilo">

@@ -254,14 +254,14 @@ export default function MapPage() {
           <Aviso tono="info" className="mb-4" titulo="¿Dónde estás?" onCerrar={() => setPideUbicacion(false)}
             acciones={<>
               <button type="button" onClick={usarMiUbicacion} className={BTN_PRINCIPAL}>Usar mi ubicación</button>
-              <label className="sr-only" htmlFor="barrio-mapa">Elegir barrio</label>
+              <label className="sr-only" htmlFor="barrio-mapa">Elegir localidad</label>
               <select id="barrio-mapa" defaultValue="" onChange={(e) => elegirBarrio(e.target.value)}
                 className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-[.12em] text-[var(--color-text)]">
-                <option value="" disabled>Elegir barrio</option>
+                <option value="" disabled>Elegir localidad</option>
                 {barrios.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </>}>
-            <p>Comparte tu ubicación o elige un barrio para ver las tiendas cercanas.</p>
+            <p>Comparte tu ubicación o elige una localidad para ver las tiendas cercanas.</p>
             {ubicacionError && <p className="mt-1 text-[var(--color-danger-text,#ff8a8a)]">{ubicacionError}</p>}
           </Aviso>
         )}

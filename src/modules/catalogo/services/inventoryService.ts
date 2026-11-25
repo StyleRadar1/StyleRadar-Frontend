@@ -6,6 +6,10 @@ import { INVENTORY_ITEMS } from '../mocks/inventory'
 import { extractStockMapFromInventory } from './itemService'
 import { storeSettingsService } from './storeSettingsService'
 import type { Estilo, ItemResponseDto } from '../types/item.dto'
+import {
+  normalizeMeasurementsPayload,
+  type GarmentSizeMeasurementDto,
+} from '../types/garmentMeasurements.dto'
 import type {
   InventoryItemDto,
   InventorySummaryDto,
@@ -35,6 +39,7 @@ export interface StoreContextInfo {
 
 // Copia mutable en memoria para persistencia local de la sesión de prueba
 let memoryInventory: InventoryItemDto[] = structuredClone(INVENTORY_ITEMS)
+const memoryGarmentMeasurements = new Map<string, GarmentSizeMeasurementDto[]>()
 export const resetInventoryMock = () => {
   memoryInventory = structuredClone(INVENTORY_ITEMS)
   storeContextCache.clear()
@@ -590,6 +595,43 @@ export const inventoryService = {
       return mockDelay(undefined)
     }
     return apiClient.delete(`/api/v1/garments/${encodeURIComponent(prendaId)}`).then(() => undefined)
+  },
+
+  async getGarmentMeasurements(garmentId: string): Promise<GarmentSizeMeasurementDto[]> {
+    if (env.useMocks) {
+      return mockDelay(memoryGarmentMeasurements.get(garmentId) ?? [])
+    }
+    try {
+      const res = await apiClient.get<unknown>(
+        `/api/v1/garments/${encodeURIComponent(garmentId)}/measurements`,
+      )
+      return normalizeMeasurementsPayload(res.data)
+    } catch {
+      return []
+    }
+  },
+
+  async saveGarmentMeasurements(
+    garmentId: string,
+    measurements: GarmentSizeMeasurementDto[],
+  ): Promise<void> {
+    const clean = measurements.filter(
+      (m) =>
+        m.minChestCm != null ||
+        m.maxChestCm != null ||
+        m.minWaistCm != null ||
+        m.maxWaistCm != null ||
+        m.minHipCm != null ||
+        m.maxHipCm != null ||
+        m.lengthCm != null,
+    )
+    if (env.useMocks) {
+      memoryGarmentMeasurements.set(garmentId, clean)
+      return mockDelay(undefined)
+    }
+    await apiClient.put(`/api/v1/garments/${encodeURIComponent(garmentId)}/measurements`, {
+      measurements: clean,
+    })
   },
 }
 

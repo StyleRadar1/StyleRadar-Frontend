@@ -10,15 +10,13 @@ export interface MapProductDto {
   imagen: string
 }
 
-/** Categorías de almacén unificadas (SR-RF-18) */
+/** Categorías generales de almacén unificadas (SR-RF-18) */
 export const CATEGORIAS_ALMACEN = [
   { id: 'cat-casual', nombre: 'Casual' },
   { id: 'cat-formal', nombre: 'Formal' },
   { id: 'cat-deportivo', nombre: 'Deportivo' },
   { id: 'cat-urbano', nombre: 'Urbano' },
   { id: 'cat-vintage', nombre: 'Vintage' },
-  { id: 'cat-accesorios', nombre: 'Accesorios' },
-  { id: 'cat-calzado', nombre: 'Calzado' },
 ] as const
 
 export interface MapPinDto {

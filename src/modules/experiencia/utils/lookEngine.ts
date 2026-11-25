@@ -1,4 +1,6 @@
 import type { ItemResponseDto } from '@/modules/catalogo/types/item.dto'
+import type { GarmentSizeMeasurementDto } from '@/modules/catalogo/types/garmentMeasurements.dto'
+import type { BodyMeasurements } from '../types/bodyMeasurements.dto'
 import type { FitEvaluation, LookSlot, LookState, TryOnPlaylistResult, UserMeasurements, WornItem } from '../types/look.dto'
 
 export const DEFAULT_USER_MEASUREMENTS: UserMeasurements = {
@@ -311,5 +313,97 @@ export function clearLookFromStorage(): void {
     sessionStorage.removeItem(STORAGE_LOOK_KEY)
   } catch {
     /* fallback */
+  }
+}
+
+/**
+ * Evalúa el ajuste usando las medidas reales de la prenda en cm (GET /api/v1/garments/{id}/size-guide)
+ * comparadas contra las medidas corporales del usuario. Si faltan datos, hace fallback a evaluateGarmentFit.
+ */
+export function evaluateGarmentFitWithMeasurements(
+  item: ItemResponseDto,
+  talla: string,
+  body: BodyMeasurements | null | undefined,
+  sizeGuide: GarmentSizeMeasurementDto[] | undefined,
+  fallbackUserMeasurements?: UserMeasurements,
+): FitEvaluation {
+  const base = evaluateGarmentFit(item, talla, fallbackUserMeasurements)
+  if (!base.apta || !body || !sizeGuide || sizeGuide.length === 0) return base
+
+  const entry = sizeGuide.find((g) => g.size.toUpperCase() === talla.toUpperCase())
+  if (!entry) return base
+
+  const slot = getSlotForGarment(item)
+  if (slot === 'calzado' || slot === 'accesorios') return base
+
+  const tightZones: string[] = []
+  const looseZones: string[] = []
+  let severeTight = false
+  let severeLoose = false
+
+  if (slot === 'superior' || slot === 'abrigo') {
+    if (entry.maxChestCm != null && body.pecho > entry.maxChestCm) {
+      const diff = body.pecho - entry.maxChestCm
+      tightZones.push(`pecho (+${diff} cm)`)
+      if (diff >= 6) severeTight = true
+    } else if (entry.minChestCm != null && body.pecho < entry.minChestCm) {
+      const diff = entry.minChestCm - body.pecho
+      looseZones.push(`pecho (-${diff} cm)`)
+      if (diff >= 8) severeLoose = true
+    }
+
+    if (entry.maxWaistCm != null && body.cintura > entry.maxWaistCm) {
+      const diff = body.cintura - entry.maxWaistCm
+      tightZones.push(`cintura (+${diff} cm)`)
+      if (diff >= 6) severeTight = true
+    } else if (entry.minWaistCm != null && body.cintura < entry.minWaistCm) {
+      const diff = entry.minWaistCm - body.cintura
+      looseZones.push(`cintura (-${diff} cm)`)
+      if (diff >= 8) severeLoose = true
+    }
+  } else if (slot === 'inferior') {
+    if (entry.maxWaistCm != null && body.cintura > entry.maxWaistCm) {
+      const diff = body.cintura - entry.maxWaistCm
+      tightZones.push(`cintura (+${diff} cm)`)
+      if (diff >= 5) severeTight = true
+    } else if (entry.minWaistCm != null && body.cintura < entry.minWaistCm) {
+      const diff = entry.minWaistCm - body.cintura
+      looseZones.push(`cintura (-${diff} cm)`)
+      if (diff >= 7) severeLoose = true
+    }
+
+    if (entry.maxHipCm != null && body.cadera > entry.maxHipCm) {
+      const diff = body.cadera - entry.maxHipCm
+      tightZones.push(`cadera (+${diff} cm)`)
+      if (diff >= 6) severeTight = true
+    } else if (entry.minHipCm != null && body.cadera < entry.minHipCm) {
+      const diff = entry.minHipCm - body.cadera
+      looseZones.push(`cadera (-${diff} cm)`)
+      if (diff >= 8) severeLoose = true
+    }
+  }
+
+  const lengthNote = entry.lengthCm != null ? ` Largo de prenda: ${entry.lengthCm} cm.` : ''
+
+  if (tightZones.length > 0) {
+    return {
+      apta: !severeTight,
+      veredicto: severeTight ? 'Demasiado pequeña' : 'Ajuste ceñido',
+      motivo: `Queda apretada en ${tightZones.join(' y ')} para talla ${talla}.${lengthNote}`,
+    }
+  }
+
+  if (looseZones.length > 0) {
+    return {
+      apta: true,
+      veredicto: severeLoose ? 'Demasiado grande' : 'Un poco holgada',
+      motivo: `Queda suelta en ${looseZones.join(' y ')} para talla ${talla}.${lengthNote}`,
+    }
+  }
+
+  return {
+    apta: true,
+    veredicto: 'Ajuste ideal',
+    motivo: `Tus medidas encajan dentro del rango de la talla ${talla}.${lengthNote}`,
   }
 }

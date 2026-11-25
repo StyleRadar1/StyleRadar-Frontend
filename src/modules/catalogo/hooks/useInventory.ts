@@ -94,6 +94,7 @@ export function useInventory(tiendaId?: string) {
         setSummary(computeInventorySummary(next))
         return next
       })
+      return created
     },
     []
   )

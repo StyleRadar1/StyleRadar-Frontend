@@ -115,14 +115,23 @@ export const secondHandService = {
       const colorQuery = (f.color || '').trim().toLowerCase()
       const brandQuery = (f.brand || '').trim().toLowerCase()
 
+      const normCons = (c?: string) =>
+        c === 'COMO_NUEVO'
+          ? 'LIKE_NEW'
+          : c === 'MUY_BUENO'
+            ? 'GOOD_CONDITION'
+            : c === 'BUENO'
+              ? 'ACCEPTABLE'
+              : c || ''
+      const filterCons = (f.conservationStatus?.length ? f.conservationStatus : f.conservacion) ?? []
+
       return mockDelay(
         db().filter(
           (l) =>
             (l.status === 'AVAILABLE' || l.estado === 'DISPONIBLE') &&
             (f.esDonacion === undefined || l.esDonacion === f.esDonacion) &&
             (!q || `${l.titulo} ${l.marca} ${l.categoria} ${l.garmentName || ''} ${l.color || ''}`.toLowerCase().includes(q)) &&
-            (!f.conservacion?.length || f.conservacion.includes(l.conservacion)) &&
-            (!f.conservationStatus?.length || f.conservationStatus.includes(l.conservationStatus as any)) &&
+            (!filterCons.length || filterCons.map(normCons).includes(normCons(l.conservationStatus || l.conservacion))) &&
             (!f.talla || l.talla === f.talla || l.size === f.talla) &&
             (!f.size || l.size === f.size || l.talla === f.size) &&
             (!f.type || l.categoria === f.type || l.garmentType === f.type) &&
@@ -236,7 +245,10 @@ export const secondHandService = {
     }
 
     const u = me()
-    const resolvedUserId = toLong(data.userId || u.id) || 101
+    const resolvedUserId = toLong(data.userId || u.id)
+    if (!resolvedUserId) {
+      throw new ApiError(401, 'Inicia sesión nuevamente para publicar una prenda.')
+    }
 
     const uploadedUrls: string[] = []
     for (const file of files) {
@@ -251,7 +263,7 @@ export const secondHandService = {
       description: data.description || data.descripcion,
       brand: data.brand || data.marca,
       color: data.color || 'Varios',
-      garmentType: data.garmentType || mapCategoriaToGarmentType(data.categoria || ''),
+      garmentType: data.garmentType || data.categoria || 'Camisas',
       size: data.size || data.talla,
       style: data.style || 'CASUAL',
       conservationStatus: data.conservationStatus || 'GOOD_CONDITION',
@@ -285,7 +297,10 @@ export const secondHandService = {
     }
 
     const u = me()
-    const resolvedUserId = toLong(data.userId || u.id) || 101
+    const resolvedUserId = toLong(data.userId || u.id)
+    if (!resolvedUserId) {
+      throw new ApiError(401, 'Inicia sesión nuevamente para editar esta publicación.')
+    }
 
     const uploadedUrls: string[] = []
     for (const file of files) {

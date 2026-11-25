@@ -11,7 +11,10 @@ import { errorKind, errorMessage, errorMessageAjeno, fieldErrors } from '@/modul
 import { formatCOP } from '@/modules/core/utils/format'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { useInventory } from '../hooks/useInventory'
-import { MAX_GARMENT_PHOTOS, MAX_GARMENT_PRICE, MAX_PHOTO_URL_LEN, resolveStoreContext, validatePrendaFields } from '../services/inventoryService'
+import { inventoryService, MAX_GARMENT_PHOTOS, MAX_GARMENT_PRICE, MAX_PHOTO_URL_LEN, resolveStoreContext, validatePrendaFields } from '../services/inventoryService'
+import { PhotoUploadGuide } from '@/modules/experiencia/components/PhotoUploadGuide'
+import { GarmentMeasurementsEditor } from '../components/GarmentMeasurementsEditor'
+import type { GarmentSizeMeasurementDto } from '../types/garmentMeasurements.dto'
 import type { InventoryItemDto, InventoryItemStatus, TipoPrendaInventario } from '../types/inventory.dto'
 import {
   COLORES_UNIFICADOS,
@@ -87,6 +90,9 @@ export default function InventoryPage() {
   const [nuevoColor, setNuevoColor] = useState<string>(COLORES_UNIFICADOS[0])
   const [nuevoEstilo, setNuevoEstilo] = useState<string>(ESTILOS_UNIFICADOS[3])
   const [nuevoTipoPrenda, setNuevoTipoPrenda] = useState<TipoPrendaInventario>('ROPA')
+  const [createMeasurements, setCreateMeasurements] = useState<GarmentSizeMeasurementDto[]>([])
+  const [editMeasurements, setEditMeasurements] = useState<GarmentSizeMeasurementDto[]>([])
+  const [loadingEditMeasurements, setLoadingEditMeasurements] = useState(false)
   const [nuevoPrecio, setNuevoPrecio] = useState(120000)
   const [stockPorTallaForm, setStockPorTallaForm] = useState<Record<string, number>>(() => defaultStockForTipoPrenda('ROPA'))
   const [guardando, setGuardando] = useState(false)
@@ -385,7 +391,7 @@ export default function InventoryPage() {
     setGuardando(true)
     setCreateErrors({})
     try {
-      await addItem({
+      const created = await addItem({
         nombre: nuevoNombre.trim(),
         tipo: nuevoTipo,
         color: nuevoColor,
@@ -398,10 +404,14 @@ export default function InventoryPage() {
         fotografias: nuevasImagenes.length > 0 ? nuevasImagenes : undefined,
         stockPorTalla: stockPorTallaForm,
       })
+      if (created?.id && createMeasurements.length > 0) {
+        await inventoryService.saveGarmentMeasurements(created.id, createMeasurements).catch(() => undefined)
+      }
       setMostrarAgregar(false)
       setNuevoNombre('')
       setNuevaImagenUrlInput('')
       setNuevasImagenes([])
+      setCreateMeasurements([])
       setStockPorTallaForm(defaultStockForTipoPrenda(nuevoTipoPrenda))
       showToast('¡Prenda incorporada al inventario del almacén!')
     } catch (err) {
@@ -454,6 +464,12 @@ export default function InventoryPage() {
     )
     setEditFotoUrlInput('')
     setEditErrors({})
+    setEditMeasurements([])
+    setLoadingEditMeasurements(true)
+    void inventoryService
+      .getGarmentMeasurements(item.id)
+      .then((m) => setEditMeasurements(m))
+      .finally(() => setLoadingEditMeasurements(false))
   }
 
   const handleGuardarEdicion = async (e?: React.FormEvent) => {
@@ -487,6 +503,9 @@ export default function InventoryPage() {
         precio: editPrecio,
         fotografias: editFotos,
       })
+      if (editMeasurements.length > 0) {
+        await inventoryService.saveGarmentMeasurements(itemParaEditar.id, editMeasurements).catch(() => undefined)
+      }
       setItemParaEditar(null)
       showToast(
         estabaRechazada
@@ -1477,6 +1496,7 @@ export default function InventoryPage() {
             <p className="mt-0.5 text-[10px] text-white/50">
               La primera foto será la portada en el catálogo. Máximo {MAX_GARMENT_PHOTOS} fotos (URL de hasta {MAX_PHOTO_URL_LEN} caracteres).
             </p>
+            <PhotoUploadGuide variant="garment" darkSurface className="mt-2" />
 
             {/* Cuadrícula de hasta 5 fotos */}
             <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -1554,6 +1574,12 @@ export default function InventoryPage() {
             )}
             <FieldError id="fotosPrenda-err" message={createErrors.fotografias} />
           </div>
+
+          <GarmentMeasurementsEditor
+            sizes={Object.keys(stockPorTallaForm)}
+            value={createMeasurements}
+            onChange={setCreateMeasurements}
+          />
 
           <div>
             <label htmlFor="nombrePrenda" className="block text-xs font-semibold text-white/80">
@@ -1841,6 +1867,13 @@ export default function InventoryPage() {
               )}
               <FieldError id="editFotos-err" message={editErrors.fotografias} />
             </div>
+
+            <GarmentMeasurementsEditor
+              sizes={itemParaEditar.tallasDisponibles ?? []}
+              value={editMeasurements}
+              onChange={setEditMeasurements}
+              loading={loadingEditMeasurements}
+            />
             <FieldError id="editPrenda-err" message={editErrors._global} />
           </form>
         )}
