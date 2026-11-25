@@ -142,3 +142,68 @@ export function camposDeRegistro(campos: CamposConError): Partial<Record<'nombre
   for (const [k, v] of Object.entries(campos)) { const c = CAMPOS_REGISTRO[k]; if (c && !out[c]) out[c] = v }
   return out
 }
+
+/**
+ * Restablecer contraseña (ms-auth · POST /api/v1/auth/password/forgot y /reset).
+ * Regla de ms-usuarios: de 8 a 72 caracteres, con minúscula, mayúscula, número y símbolo; el espacio no cuenta como símbolo.
+ */
+export const CLAVE_NUEVA_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,72}$/
+
+export const TEXTOS_RESTABLECER = {
+  correo: 'Ingresa un correo electrónico válido.',
+  codigo: 'Ingresa el código de 6 dígitos que llegó a tu correo.',
+  clave: 'Usa de 8 a 72 caracteres, con al menos una minúscula, una mayúscula, un número y un símbolo (el espacio no cuenta).',
+  noCoinciden: 'Las contraseñas no coinciden.',
+  vencido: 'El código expiró o no existe. Solicita uno nuevo.',
+  inactiva: 'Tu cuenta no está activa.',
+  agotado: 'Se agotaron los 3 intentos. Espera un momento y pide un código nuevo.',
+  limite: 'Intenta de nuevo en un momento.',
+  servicio: 'No pudimos completar la solicitud. Intenta de nuevo.',
+} as const
+
+type CampoRestablecer = 'email' | 'otpCode' | 'newPassword'
+const CAMPOS_RESTABLECER: readonly CampoRestablecer[] = ['email', 'otpCode', 'newPassword']
+
+export type ErrorRestablecer = {
+  /** Mensaje general; vacío cuando todo está en los campos. */
+  mensaje: string
+  /** Mensajes del servidor por campo (400 INVALID_DATA), para mostrarlos bajo cada campo. */
+  campos: Partial<Record<CampoRestablecer, string>>
+  /** Segundos que el botón queda bloqueado (429). */
+  esperar: number
+  /** El código ya no sirve (OTP_EXPIRED u OTP_ATTEMPTS_EXHAUSTED): hay que pedir otro con «Reenviar código». */
+  pedirCodigo: boolean
+  /** Cuenta inactiva o bloqueada: se muestra el enlace a soporte. */
+  soporte: boolean
+  /** El servicio no respondió: se puede reintentar. */
+  reintentar: boolean
+}
+
+/** Error de «¿Olvidaste tu contraseña?» y de «Cambiar contraseña», decidido por `code` y nunca por el texto. */
+export function errorDeRestablecer(e: unknown): ErrorRestablecer {
+  const base: ErrorRestablecer = { mensaje: '', campos: {}, esperar: 0, pedirCodigo: false, soporte: false, reintentar: false }
+  switch (codigoDe(e)) {
+    case 'OTP_INCORRECT': {
+      const n = e instanceof ApiError ? e.attemptsRemaining : undefined
+      return {
+        ...base,
+        mensaje: n === undefined ? 'Código incorrecto.' : `Código incorrecto, te ${n === 1 ? 'queda 1 intento' : `quedan ${n} intentos`}.`,
+      }
+    }
+    case 'OTP_EXPIRED': return { ...base, mensaje: TEXTOS_RESTABLECER.vencido, pedirCodigo: true }
+    case 'ACCOUNT_NOT_ACTIVE': return { ...base, mensaje: TEXTOS_RESTABLECER.inactiva, soporte: true }
+    case 'OTP_ATTEMPTS_EXHAUSTED': return { ...base, mensaje: TEXTOS_RESTABLECER.agotado, esperar: esperaDe(e), pedirCodigo: true }
+    case 'RATE_LIMIT_EXCEEDED': return { ...base, mensaje: TEXTOS_RESTABLECER.limite, esperar: esperaDe(e) }
+  }
+  switch (errorKind(e)) {
+    case 'datos': {
+      const todos = fieldErrors(e)
+      const campos: ErrorRestablecer['campos'] = {}
+      for (const k of CAMPOS_RESTABLECER) if (todos[k]) campos[k] = todos[k]
+      return { ...base, campos, mensaje: Object.keys(campos).length ? '' : MENSAJES.datos }
+    }
+    case 'limite': return { ...base, mensaje: TEXTOS_RESTABLECER.limite, esperar: esperaDe(e) }
+    case 'sin-conexion': return { ...base, mensaje: MENSAJES['sin-conexion'], reintentar: true }
+    default: return { ...base, mensaje: TEXTOS_RESTABLECER.servicio, reintentar: true }
+  }
+}

@@ -47,6 +47,10 @@ const OTP_ESPERA = 60
 let otpMock: Record<string, { intentos: number; reenvios: number }> = {}
 const otpDe = (email: string) => (otpMock[email] ??= { intentos: OTP_INTENTOS, reenvios: OTP_REENVIOS })
 
+/** Textos del contrato de ms-auth para restablecer la contraseña (se usan si la respuesta no trae `message`). */
+export const MENSAJE_CODIGO_RESTABLECER = 'Si el correo está registrado, te enviamos un código para restablecer tu contraseña.'
+export const MENSAJE_CLAVE_RESTABLECIDA = 'Tu contraseña se actualizó. Inicia sesión con la nueva contraseña.'
+
 export function resetRegistrosMock() { registradas = []; otpMock = {} }
 
 /** Respuesta con el formato de ms-auth para una sesión iniciada (modo demostración). */
@@ -231,34 +235,31 @@ export const authService = {
     return apiClient.post<LoginResponseDto>('/api/v1/auth/oauth2/google', payload).then((res) => res.data)
   },
 
-  /** Solicita el envío de un OTP al correo registrado para restablecer la contraseña. */
+  /**
+   * Restablecer contraseña, paso 1: POST /api/v1/auth/password/forgot { email } → 202.
+   * La respuesta es siempre la misma, exista o no el correo, para no revelar qué correos están registrados.
+   * «Reenviar código» vuelve a llamar este mismo método.
+   */
   async requestPasswordReset(email: string): Promise<{ message: string; expiresInSeconds?: number }> {
     const cleanEmail = email.trim().toLowerCase()
     if (env.useMocks) {
-      const exists =
-        registradas.some((a) => a.email === cleanEmail) ||
-        DEMO_ACCOUNTS.some((a) => a.email === cleanEmail) ||
-        cleanEmail === DEMO_SIN_VERIFICAR.email
-      if (!exists) {
-        throw new ApiError(404, 'No encontramos ninguna cuenta registrada con ese correo.')
-      }
       otpMock[cleanEmail] = { intentos: OTP_INTENTOS, reenvios: OTP_REENVIOS }
-      return mockDelay({
-        message: 'Enviamos un código OTP de 6 dígitos a tu correo registrado.',
-        expiresInSeconds: OTP_SEGUNDOS,
-      })
+      return mockDelay({ message: MENSAJE_CODIGO_RESTABLECER, expiresInSeconds: OTP_SEGUNDOS })
     }
     return apiClient
       .post<{ message?: string; expiresInSeconds?: number }>('/api/v1/auth/password/forgot', {
         email: cleanEmail,
       })
       .then((res) => ({
-        message: res.data?.message || 'Enviamos un código OTP de 6 dígitos a tu correo registrado.',
+        message: res.data?.message || MENSAJE_CODIGO_RESTABLECER,
         expiresInSeconds: res.data?.expiresInSeconds,
       }))
   },
 
-  /** Verifica el código OTP y guarda la nueva contraseña. */
+  /**
+   * Restablecer contraseña, paso 2: POST /api/v1/auth/password/reset { email, otpCode, newPassword } → 200.
+   * No inicia sesión: el servidor revoca todas las sesiones de la cuenta.
+   */
   async confirmPasswordReset(payload: {
     email: string
     otpCode: string
@@ -266,11 +267,13 @@ export const authService = {
   }): Promise<{ message: string }> {
     const cleanEmail = payload.email.trim().toLowerCase()
     if (env.useMocks) {
-      const otp = otpDe(cleanEmail)
+      const otp = otpMock[cleanEmail]
+      // Igual que ms-auth: sin código activo (o correo sin cuenta) responde OTP_EXPIRED, sin decir si el correo existe.
+      if (!otp) throw errorMock(401, 'OTP_EXPIRED')
       if (!/^\d{6}$/.test(payload.otpCode) || payload.otpCode === '000000') {
         otp.intentos -= 1
         if (otp.intentos <= 0) {
-          otp.intentos = OTP_INTENTOS
+          delete otpMock[cleanEmail]
           throw errorMock(429, 'OTP_ATTEMPTS_EXHAUSTED', { retryAfterSeconds: OTP_ESPERA })
         }
         throw errorMock(401, 'OTP_INCORRECT', { attemptsRemaining: otp.intentos })
@@ -278,7 +281,7 @@ export const authService = {
       delete otpMock[cleanEmail]
       const reg = registradas.find((a) => a.email === cleanEmail)
       if (reg) reg.password = payload.newPassword
-      return mockDelay({ message: 'Tu contraseña se restableció correctamente.' })
+      return mockDelay({ message: MENSAJE_CLAVE_RESTABLECIDA })
     }
     return apiClient
       .post<{ message?: string }>('/api/v1/auth/password/reset', {
@@ -287,7 +290,7 @@ export const authService = {
         newPassword: payload.newPassword,
       })
       .then((res) => ({
-        message: res.data?.message || 'Tu contraseña se restableció correctamente.',
+        message: res.data?.message || MENSAJE_CLAVE_RESTABLECIDA,
       }))
   },
 }
