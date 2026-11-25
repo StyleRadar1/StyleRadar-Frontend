@@ -17,7 +17,7 @@ const TEXTO_RADIO = `El radio va de ${RADIO_KM.min} a ${RADIO_KM.max} km.`
 
 export default function MapPage() {
   const [searchParams] = useSearchParams()
-  const tiendaParam = searchParams.get('tienda')
+  const tiendaParam = searchParams.get('tienda') || searchParams.get('fundacion')
   const { data: pins, loading, error, reload } = useMapData()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)

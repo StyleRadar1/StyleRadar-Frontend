@@ -46,7 +46,7 @@ function mapAlmacenToPin(item: Record<string, any>): MapPinDto {
     desc: item.descripcion || undefined,
     rating: item.rating != null ? String(item.rating) : undefined,
     reviews: typeof item.reviews === 'number' ? item.reviews : undefined,
-    href: item.tipo === 'fundacion' ? '/donar' : `/tiendas/${encodeURIComponent(id)}`,
+    href: item.tipo === 'fundacion' ? `/fundaciones/${encodeURIComponent(id)}` : `/tiendas/${encodeURIComponent(id)}`,
     photo: item.foto || item.photo || undefined,
     lngLat: [lng, lat],
   }
@@ -67,7 +67,7 @@ function mapFundacionToPin(item: Record<string, any>): MapPinDto {
     d: km !== undefined ? formatDistanciaKm(km) : undefined,
     hours: item.horario || undefined,
     desc: item.descripcion || undefined,
-    href: '/donar',
+    href: `/fundaciones/${encodeURIComponent(id)}`,
     photo: item.foto || item.photo || undefined,
     accepts: Array.isArray(item.categorias) ? item.categorias : Array.isArray(item.accepts) ? item.accepts : undefined,
     lngLat: [lng, lat],

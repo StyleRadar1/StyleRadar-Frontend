@@ -22,6 +22,7 @@ const Catalog = lazy(() => import('@/modules/catalogo/pages/CatalogPage'))
 const ItemDetail = lazy(() => import('@/modules/catalogo/pages/ItemDetailPage'))
 const MapPage = lazy(() => import('@/modules/mapa/pages/MapPage'))
 const Store = lazy(() => import('@/modules/catalogo/pages/StorePage'))
+const FoundationPublic = lazy(() => import('@/modules/experiencia/pages/FoundationPublicPage'))
 const Inventory = lazy(() => import('@/modules/catalogo/pages/InventoryPage'))
 const MyStore = lazy(() => import('@/modules/catalogo/pages/MiTiendaPage'))
 const StoreInfo = lazy(() => import('@/modules/catalogo/pages/StoreInfoPage'))
@@ -111,6 +112,8 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/mapa', element: page(<MapPage />) },
       { path: '/tiendas/:id', element: page(<Store />) },
       { path: '/tienda/:id', element: page(<Store />) },
+      { path: '/fundaciones/:id', element: page(<FoundationPublic />) },
+      { path: '/fundacion/:id', element: page(<FoundationPublic />) },
       { path: '/playlists', element: page(<Playlists />) },
       { path: '/playlists/:id', element: page(<Playlists />) },
       { path: '/playlist/:id', element: page(<Playlists />) },
