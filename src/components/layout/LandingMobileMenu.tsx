@@ -1,5 +1,8 @@
+import { useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { navCapsules } from '@/data/landingData'
+import { ROLE_HOME } from '@/modules/core/types/roles'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { AppearancePicker } from '@/modules/core/theme'
 
 interface LandingMobileMenuProps {
@@ -9,6 +12,8 @@ interface LandingMobileMenuProps {
 }
 
 export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobileMenuProps) {
+  const auth = useContext(AuthContext)
+  const user = auth?.user ?? null
   if (!isOpen) return null
 
   const handleScrollTo = (targetId: string) => {
@@ -45,7 +50,18 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Apariencia</span>
           <AppearancePicker align="right" />
         </div>
-        {onOpenLogin ? (
+        {user ? (
+          <button
+            type="button"
+            onClick={() => {
+              onClose()
+              auth?.logout()
+            }}
+            className="w-full py-4 text-center rounded-full border border-[var(--color-border)] text-[var(--color-text)] font-bold text-sm tracking-wider uppercase bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          >
+            Cerrar sesión ({user.name})
+          </button>
+        ) : onOpenLogin ? (
           <button
             type="button"
             onClick={() => {
@@ -67,7 +83,7 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
         )}
 
         <Link
-          to="/catalogo"
+          to={user ? ROLE_HOME[user.role] : '/catalogo'}
           onClick={onClose}
           className="w-full py-4 text-center rounded-full bg-[var(--color-accent)] text-[var(--color-text-on-accent)] font-black text-sm tracking-wider uppercase shadow-lg shadow-[var(--color-accent)]/30 hover:opacity-90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >

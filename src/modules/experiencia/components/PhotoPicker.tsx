@@ -72,7 +72,7 @@ export function PhotoPicker({ photo, onUploaded, onConsentRequired }: {
     <div>
       <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
         <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)]">
-          {shown ? <img src={shown} alt="Vista previa de tu foto" className={`h-full w-full object-cover ${uploading ? 'opacity-60' : ''}`} />
+          {shown ? <img src={shown} alt="Vista previa de tu foto" draggable={false} onContextMenu={(e) => e.preventDefault()} className={`h-full w-full select-none object-cover ${uploading ? 'opacity-60' : ''}`} />
             : <div className="grid h-full place-items-center p-4 text-center text-xs text-[var(--color-text-muted)]">Tu foto aparecerá aquí</div>}
         </div>
         <div>

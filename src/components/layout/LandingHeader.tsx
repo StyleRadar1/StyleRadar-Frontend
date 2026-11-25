@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { navCapsules } from '@/data/landingData'
+import { ROLE_HOME } from '@/modules/core/types/roles'
+import { UserMenu } from '@/modules/core/components/UserMenu'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { AppearancePicker } from '@/modules/core/theme'
 import './LandingHeader.css'
 
@@ -25,6 +28,7 @@ export function LandingHeader({
   isMobileMenuOpen = false,
 }: LandingHeaderProps) {
   const navigate = useNavigate()
+  const user = useContext(AuthContext)?.user ?? null
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
@@ -81,22 +85,26 @@ export function LandingHeader({
       <div className="pe-header-right">
         <AppearancePicker className="pe-tema" />
 
-        <button
-          type="button"
-          className="pe-login-btn"
-          id="portalLoginBtn"
-          data-login
-          onClick={onOpenLogin}
-        >
-          Iniciar sesión
-        </button>
+        {user ? (
+          <UserMenu />
+        ) : (
+          <button
+            type="button"
+            className="pe-login-btn"
+            id="portalLoginBtn"
+            data-login
+            onClick={onOpenLogin}
+          >
+            Iniciar sesión
+          </button>
+        )}
 
         <button
           type="button"
           className="pe-explore-btn"
           id="portalEnterBtn"
           data-enter
-          onClick={() => navigate('/catalogo')}
+          onClick={() => navigate(user ? ROLE_HOME[user.role] : '/catalogo')}
         >
           <span>Entrar a StyleRadar</span>
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
