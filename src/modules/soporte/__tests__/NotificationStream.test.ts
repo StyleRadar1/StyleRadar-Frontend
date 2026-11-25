@@ -7,8 +7,8 @@ import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import { abrirCampana } from '../services/notificationStream'
 
 describe('campana en tiempo real: no reconecta en bucle sin acceso', () => {
-  beforeEach(() => { vi.useFakeTimers(); tokenStorage.set('token-de-prueba') })
-  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); tokenStorage.clear() })
+  beforeEach(() => { vi.useFakeTimers(); tokenStorage.set('token-de-prueba'); localStorage.setItem('sr_user', JSON.stringify({ id: '101', name: 'Val', role: 'BUYER' })) })
+  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); tokenStorage.clear(); localStorage.clear() })
 
   const pasar = async (ms: number) => { await vi.advanceTimersByTimeAsync(ms) }
 
