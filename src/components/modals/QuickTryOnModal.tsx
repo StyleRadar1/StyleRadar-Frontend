@@ -4,11 +4,9 @@ import './QuickTryOnModal.css'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { TryOnPrivacyShield } from '@/modules/experiencia/components/TryOnPrivacyShield'
 import {
-  BackGarmentLayersSvg,
   classifyFitVeredict,
   FitAnalysisPanel,
-  FitIndicatorsSvg,
-  getLayerFitTransform,
+  TechnicalCroquisSvg,
 } from '@/modules/experiencia/components/FitAnalysis2D'
 import { ITEMS } from '@/modules/catalogo/mocks/items'
 import { MOCK_PLAYLISTS } from '@/modules/catalogo/mocks/playlists'
@@ -40,23 +38,6 @@ import {
   getBodyMeasurements,
 } from '@/modules/experiencia/utils/bodyMeasurementsEngine'
 import { AuthModal } from './AuthModal'
-
-/* ---------- Filtros de color para capas del maniquí ---------- */
-const COLOR_FILTERS: Record<string, string> = {
-  blanco: 'none',
-  celeste: 'sepia(1) hue-rotate(160deg) saturate(2.4) brightness(.9)',
-  negro: 'brightness(.25) contrast(1.3)',
-  hueso: 'sepia(.5) brightness(1.05)',
-  carbon: 'brightness(.38)',
-  camel: 'sepia(.9) hue-rotate(20deg) saturate(2) brightness(.85)',
-  marino: 'sepia(1) hue-rotate(185deg) saturate(3) brightness(.55)',
-  oliva: 'sepia(1) hue-rotate(60deg) saturate(1.8) brightness(.65)',
-  cuero_negro: 'brightness(.3) contrast(1.4)',
-  cuero_cafe: 'sepia(1) hue-rotate(10deg) saturate(2.2) brightness(.55)',
-  gris: 'grayscale(1) brightness(.7)',
-  vino: 'sepia(1) hue-rotate(300deg) saturate(2.6) brightness(.55)',
-  default: 'none',
-}
 
 /* ---------- Rutas de capas del maniquí ---------- */
 const LAYER_PATHS: Record<string, string> = {
@@ -426,6 +407,9 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     activeLayers.find((l) => l.slot === 'abrigo')?.fitLevel ??
     activeLayers[0]?.fitLevel ??
     null
+
+  const inferiorFitLevel =
+    activeLayers.find((l) => l.slot === 'inferior')?.fitLevel ?? null
 
   /* Deformación y adaptación anatómica del maniquí */
   const deformation = useMemo(() => computeBodyDeformation(bodyMeasurements), [bodyMeasurements])
@@ -857,29 +841,17 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   <img
                     src={deformation.silhouetteSrc}
                     alt="Maniquí anatómico base"
-                    className="cz-mannequin-base"
+                    className="sr-only"
                     data-testid="mannequin-base-img"
                     draggable={false}
                   />
-
-                  {activeLayers.map(({ slot, layer, color, fitLevel }) => (
-                    <img
-                      key={layer}
-                      src={LAYER_PATHS[layer]}
-                      alt=""
-                      className="cz-mannequin-layer"
-                      style={{
-                        filter: COLOR_FILTERS[color] || 'none',
-                        zIndex: LAYER_ORDER.indexOf(layer) + 10,
-                        ...getLayerFitTransform(fitLevel, slot),
-                      }}
-                      draggable={false}
-                    />
-                  ))}
-
-                  {primaryFitLevel && (
-                    <FitIndicatorsSvg level={primaryFitLevel} view="front" />
-                  )}
+                  <TechnicalCroquisSvg
+                    view="front"
+                    female={bodyMeasurements?.cuerpoBase === 'femenino'}
+                    layers={activeLayers}
+                    primaryFitLevel={primaryFitLevel}
+                    inferiorFitLevel={inferiorFitLevel}
+                  />
                 </div>
               </div>
 
@@ -895,17 +867,13 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                     transformOrigin: 'bottom center',
                   }}
                 >
-                  <img
-                    src={deformation.silhouetteBackSrc || deformation.silhouetteSrc}
-                    alt="Maniquí anatómico vista trasera"
-                    className="cz-mannequin-base"
-                    draggable={false}
-                  />
-                  <BackGarmentLayersSvg
-                    layers={activeLayers}
+                  <TechnicalCroquisSvg
+                    view="back"
                     female={bodyMeasurements?.cuerpoBase === 'femenino'}
+                    layers={activeLayers}
+                    primaryFitLevel={primaryFitLevel}
+                    inferiorFitLevel={inferiorFitLevel}
                   />
-                  {primaryFitLevel && <FitIndicatorsSvg level={primaryFitLevel} view="back" />}
                 </div>
               </div>
 

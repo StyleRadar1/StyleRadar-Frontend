@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { Link } from 'react-router-dom'
 
 export type FitLevel = 'perfecto' | 'un_poco_grande' | 'demasiado_grande' | 'muy_ajustada'
 
@@ -32,15 +33,15 @@ export function classifyFitVeredict(veredicto: string, motivo?: string): FitClas
     return {
       level: 'muy_ajustada',
       label: 'Muy ajustada',
-      headline: 'La prenda te queda pequeña',
-      summary: 'Presenta tensión en pecho, brazos y largo por encima de la cintura.',
+      headline: 'Queda apretada en tu cuerpo',
+      summary: 'Tensión en pecho, hombros y mangas cortas según tus proporciones.',
       badgeClass: 'border-rose-400/50 bg-rose-500/15 text-rose-300',
       dotColor: '#f87171',
       zones: [
-        'Mangas demasiado cortas',
-        'Tela estirada en el pecho',
-        'No llega a la cintura',
-        'Ajuste excesivo en brazos y torso',
+        'Pecho / Espalda: apretado',
+        'Mangas: demasiado cortas',
+        'Largo: por encima de la cintura',
+        'Brazos y torso: ajuste excesivo',
       ],
     }
   }
@@ -49,15 +50,15 @@ export function classifyFitVeredict(veredicto: string, motivo?: string): FitClas
     return {
       level: 'demasiado_grande',
       label: 'Demasiado grande',
-      headline: 'La prenda te queda muy grande',
-      summary: 'Sobra tela en torso, hombros caídos y mangas cubriendo parte de las manos.',
+      headline: 'Sobra bastante tela',
+      summary: 'Hombros caídos, torso muy ancho y mangas largas sobre las manos.',
       badgeClass: 'border-rose-400/50 bg-rose-500/15 text-rose-300',
       dotColor: '#f87171',
       zones: [
-        'Hombros caídos bajo la costura',
-        'Mangas largas sobre las manos',
-        'Torso ancho con pliegues laterales',
-        'Largo excesivo sobre la cintura',
+        'Hombros: caídos bajo la costura',
+        'Torso / Espalda: ancho con exceso',
+        'Mangas: largas sobre las manos',
+        'Largo: cubre más de la cintura',
       ],
     }
   }
@@ -66,14 +67,14 @@ export function classifyFitVeredict(veredicto: string, motivo?: string): FitClas
     return {
       level: 'un_poco_grande',
       label: 'Un poco grande',
-      headline: 'La prenda te queda grande',
-      summary: 'Tiene holgura adicional en hombros, espalda y laterales del torso.',
+      headline: 'Queda suelta en algunas zonas',
+      summary: 'Holgura ligera en hombros, espalda y laterales del torso.',
       badgeClass: 'border-amber-400/50 bg-amber-500/15 text-amber-300',
       dotColor: '#fbbf24',
       zones: [
-        'Hombros ligeramente caídos',
-        'Holgura extra en espalda y torso',
-        'Largo suave por debajo de la cintura',
+        'Hombros: ligeramente caídos',
+        'Torso / Espalda: suelto a los lados',
+        'Largo: cae debajo de la cintura',
       ],
     }
   }
@@ -81,11 +82,11 @@ export function classifyFitVeredict(veredicto: string, motivo?: string): FitClas
   return {
     level: 'perfecto',
     label: 'Ajuste perfecto',
-    headline: 'Te queda bien',
-    summary: 'Las medidas coinciden con tu silueta sin exceso ni tensión de tela.',
+    headline: 'Es tu talla ideal',
+    summary: 'Tus medidas coinciden con la prenda sin zonas apretadas ni exceso de tela.',
     badgeClass: 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300',
     dotColor: '#34d399',
-    zones: ['Hombros alineados', 'Largo ideal en cintura', 'Caída equilibrada'],
+    zones: ['Hombros: alineados', 'Pecho / Cintura: ajuste ideal', 'Largo y mangas: proporcionados'],
   }
 }
 
@@ -112,78 +113,20 @@ export function getLayerFitTransform(level: FitLevel, slot: string): CSSProperti
   }
 }
 
-export function FitIndicatorsSvg({
-  level,
-  view,
-}: {
-  level: FitLevel
-  view: 'front' | 'back'
-}) {
-  const isLarge = level === 'un_poco_grande' || level === 'demasiado_grande'
-  const isTight = level === 'muy_ajustada'
-  const stroke =
-    level === 'demasiado_grande' || isTight
-      ? '#f87171'
-      : level === 'un_poco_grande'
-        ? '#fbbf24'
-        : '#34d399'
-
-  return (
-    <svg
-      viewBox="0 0 200 420"
-      className="pointer-events-none absolute inset-0 z-30 h-full w-full"
-      aria-hidden="true"
-    >
-      {isLarge && (
-        <g stroke={stroke} strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.9">
-          {/* Líneas de holgura en hombros caídos */}
-          <path d="M46 92 L35 84 M43 99 L32 95" />
-          <path d="M154 92 L165 84 M157 99 L168 95" />
-          {/* Exceso lateral en torso / espalda */}
-          <path d="M52 152 L41 150 M52 162 L40 164 M54 172 L43 176" />
-          <path d="M148 152 L159 150 M148 162 L160 164 M146 172 L157 176" />
-          {/* Pliegues adicionales y largo extra en cintura */}
-          <path d="M74 188 Q100 198 126 188" strokeDasharray="4 4" />
-          {view === 'back' && <path d="M82 126 Q100 136 118 126" strokeDasharray="3 3" />}
-        </g>
-      )}
-
-      {isTight && (
-        <g stroke={stroke} strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.92">
-          {/* Tensión horizontal en pecho / espalda */}
-          <path d="M70 122 L130 122" strokeDasharray="5 3" />
-          <path d="M75 134 L125 134" strokeDasharray="5 3" />
-          {/* Mangas cortas / tensión en brazos */}
-          <path d="M45 135 L58 130 M155 135 L142 130" />
-          {/* Largo corto sobre cintura */}
-          <path d="M72 170 L128 170" />
-        </g>
-      )}
-
-      {level === 'perfecto' && (
-        <g stroke={stroke} strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.75">
-          <path d="M52 94 L43 90 M148 94 L157 90" />
-          <path d="M78 184 L122 184" strokeDasharray="4 4" />
-        </g>
-      )}
-    </svg>
-  )
-}
-
 const GARMENT_COLOR_HEX: Record<string, { fill: string; stroke: string; detail: string }> = {
-  negro: { fill: '#1c1b22', stroke: '#3a3846', detail: '#2d2b36' },
-  blanco: { fill: '#e8e6e1', stroke: '#b8b5ae', detail: '#d0cdc6' },
-  crudo: { fill: '#e5dccb', stroke: '#bfb49f', detail: '#d3c8b4' },
-  beige: { fill: '#d6c6ad', stroke: '#a99980', detail: '#c2b197' },
-  camel: { fill: '#b88b58', stroke: '#8c663b', detail: '#a37847' },
-  cafe: { fill: '#5b3e2b', stroke: '#3e291b', detail: '#4b3222' },
-  café: { fill: '#5b3e2b', stroke: '#3e291b', detail: '#4b3222' },
-  azul: { fill: '#2c4a75', stroke: '#1d3252', detail: '#3a5d8f' },
-  gris: { fill: '#6b7280', stroke: '#4b5563', detail: '#808896' },
-  verde: { fill: '#2f5241', stroke: '#1e382b', detail: '#3e6854' },
-  rojo: { fill: '#8b2635', stroke: '#5e1722', detail: '#a63344' },
-  vino: { fill: '#611c2c', stroke: '#41111d', detail: '#7a2539' },
-  morado: { fill: '#4c1d95', stroke: '#35126b', detail: '#6128b8' },
+  negro: { fill: 'rgba(30, 29, 38, 0.72)', stroke: '#9ca3af', detail: '#6b7280' },
+  blanco: { fill: 'rgba(236, 234, 228, 0.72)', stroke: '#cbd5e1', detail: '#94a3b8' },
+  crudo: { fill: 'rgba(229, 220, 203, 0.72)', stroke: '#d6c8b0', detail: '#a89b84' },
+  beige: { fill: 'rgba(214, 198, 173, 0.72)', stroke: '#c7b599', detail: '#9c8a70' },
+  camel: { fill: 'rgba(184, 139, 88, 0.72)', stroke: '#d4a36a', detail: '#8c663b' },
+  cafe: { fill: 'rgba(91, 62, 43, 0.72)', stroke: '#a67c5e', detail: '#5b3e2b' },
+  café: { fill: 'rgba(91, 62, 43, 0.72)', stroke: '#a67c5e', detail: '#5b3e2b' },
+  azul: { fill: 'rgba(44, 74, 117, 0.72)', stroke: '#60a5fa', detail: '#3b82f6' },
+  gris: { fill: 'rgba(107, 114, 128, 0.72)', stroke: '#d1d5db', detail: '#9ca3af' },
+  verde: { fill: 'rgba(47, 82, 65, 0.72)', stroke: '#6ee7b7', detail: '#34d399' },
+  rojo: { fill: 'rgba(139, 38, 53, 0.72)', stroke: '#fda4af', detail: '#fb7185' },
+  vino: { fill: 'rgba(97, 28, 44, 0.72)', stroke: '#f472b6', detail: '#db2777' },
+  morado: { fill: 'rgba(91, 33, 182, 0.72)', stroke: '#c4b5fd', detail: '#8b5cf6' },
 }
 
 function pickGarmentPalette(color?: string, slot?: string) {
@@ -194,106 +137,208 @@ function pickGarmentPalette(color?: string, slot?: string) {
   if (slot === 'inferior') return GARMENT_COLOR_HEX.azul
   if (slot === 'calzado') return GARMENT_COLOR_HEX.blanco
   if (slot === 'abrigo') return GARMENT_COLOR_HEX.negro
-  return GARMENT_COLOR_HEX.crudo
+  return GARMENT_COLOR_HEX.morado
 }
 
 /**
- * Capas traseras vectoriales limpias para el maniquí de espalda, evitando
- * huecos de escote frontal y sombras/manchas de recortes delanteros.
+ * Croquis técnico 2D (Frente y Espalda) estilo patrón anatómico gratuito,
+ * con guías punteadas del cuerpo, silueta de prendas y líneas de ajuste (apretado/suelto/ideal).
  */
-export function BackGarmentLayersSvg({
-  layers,
+export function TechnicalCroquisSvg({
+  view,
   female = false,
+  layers,
+  primaryFitLevel,
+  inferiorFitLevel,
 }: {
-  layers: { slot: string; layer: string; color?: string; fitLevel: FitLevel }[]
+  view: 'front' | 'back'
   female?: boolean
+  layers: { slot: string; layer: string; color?: string; fitLevel: FitLevel }[]
+  primaryFitLevel: FitLevel | null
+  inferiorFitLevel?: FitLevel | null
 }) {
+  const shL = female ? 58 : 49
+  const shR = female ? 142 : 151
+  const chestL = female ? 69 : 62
+  const chestR = female ? 131 : 138
+  const waistL = female ? 76 : 70
+  const waistR = female ? 124 : 130
+  const hipL = female ? 63 : 67
+  const hipR = female ? 137 : 133
+
   const inferior = layers.find((l) => l.slot === 'inferior')
   const superior = layers.find((l) => l.slot === 'superior')
   const abrigo = layers.find((l) => l.slot === 'abrigo')
   const calzado = layers.find((l) => l.slot === 'calzado')
 
-  const shL = female ? 58 : 49
-  const shR = female ? 142 : 151
-  const waistL = female ? 72 : 66
-  const waistR = female ? 128 : 134
-  const hipL = female ? 63 : 66
-  const hipR = female ? 137 : 134
+  const topColor =
+    primaryFitLevel === 'muy_ajustada' || primaryFitLevel === 'demasiado_grande'
+      ? '#f87171'
+      : primaryFitLevel === 'un_poco_grande'
+        ? '#fbbf24'
+        : '#34d399'
+
+  const botLevel = inferiorFitLevel ?? primaryFitLevel
+  const botColor =
+    botLevel === 'muy_ajustada' || botLevel === 'demasiado_grande'
+      ? '#f87171'
+      : botLevel === 'un_poco_grande'
+        ? '#fbbf24'
+        : '#34d399'
 
   return (
     <svg
-      viewBox="0 0 200 480"
-      className="pointer-events-none absolute inset-0 z-20 h-full w-full"
-      aria-hidden="true"
+      viewBox="0 0 200 475"
+      className="h-full w-auto max-h-full select-none"
+      role="img"
+      aria-label={view === 'front' ? 'Modelo anatómico técnico vista frontal' : 'Modelo anatómico técnico vista trasera'}
     >
-      {/* Inferior (pantalón / falda vista trasera limpia) */}
+      {/* 1. Figura anatómica base estilo croquis técnico */}
+      <g fill="rgba(255,255,255,0.04)" stroke="rgba(226,222,245,0.78)" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round">
+        {/* Cabeza y cuello */}
+        <ellipse cx="100" cy="36" rx="14" ry="19" />
+        <path d="M92 53 L90 70 L66 84 M108 53 L110 70 L134 84" fill="none" />
+
+        {/* Torso y caderas */}
+        <path
+          d={`M${shL} 88 Q100 80 ${shR} 88 L${chestR} 130 L${waistR} 174 L${hipR} 214 L${hipR - 3} 245 L104 248 L100 238 L96 248 L${hipL + 3} 245 L${hipL} 214 L${waistL} 174 L${chestL} 130 Z`}
+        />
+
+        {/* Brazos izquierdo y derecho */}
+        <path d={`M${shL} 88 L${shL - 12} 145 L${shL - 16} 210 L${shL - 9} 214 L${shL - 1} 152 L${chestL} 126`} />
+        <path d={`M${shR} 88 L${shR + 12} 145 L${shR + 16} 210 L${shR + 9} 214 L${shR + 1} 152 L${chestR} 126`} />
+
+        {/* Piernas y pies */}
+        <path d={`M${hipL + 3} 245 L72 332 L76 422 L66 446 L86 448 L92 422 L97 332 L100 248`} />
+        <path d={`M${hipR - 3} 245 L128 332 L124 422 L134 446 L114 448 L108 422 L103 332 L100 248`} />
+
+        {/* Detalles anatómicos sutiles según vista */}
+        {view === 'front' ? (
+          <g fill="none" stroke="rgba(226,222,245,0.45)" strokeWidth="1.1">
+            {female ? (
+              <path d="M74 126 Q86 138 96 126 M104 126 Q114 138 126 126" />
+            ) : (
+              <path d="M72 124 Q86 130 98 125 M102 125 Q114 130 128 124" />
+            )}
+            <path d="M98 174 Q100 176 102 174" />
+          </g>
+        ) : (
+          <g fill="none" stroke="rgba(226,222,245,0.45)" strokeWidth="1.1">
+            <path d="M75 110 Q85 126 88 140 M125 110 Q115 126 112 140" />
+            <path d="M72 224 Q86 238 99 224 M101 224 Q114 238 128 224" />
+          </g>
+        )}
+      </g>
+
+      {/* 2. Líneas punteadas del patrón anatómico (como croquis de sastrería) */}
+      <g stroke="rgba(196,181,253,0.35)" strokeWidth="1" strokeDasharray="3 3" fill="none">
+        <line x1="100" y1="18" x2="100" y2="248" />
+        <line x1={shL} y1="88" x2={shR} y2="88" />
+        <line x1={chestL} y1="126" x2={chestR} y2="126" />
+        <line x1={waistL} y1="174" x2={waistR} y2="174" />
+        <line x1={hipL} y1="214" x2={hipR} y2="214" />
+      </g>
+
+      {/* 3. Prendas superpuestas con deformación real por ajuste */}
       {inferior && (() => {
         const pal = pickGarmentPalette(inferior.color, 'inferior')
         const t = getLayerFitTransform(inferior.fitLevel, 'inferior')
         return (
           <g style={t}>
             <path
-              d={`M${waistL} 206 L${waistR} 206 L${hipR} 252 L${hipR - 6} 422 L106 422 L101 278 L99 278 L94 422 L${hipL + 6} 422 L${hipL} 252 Z`}
+              d={`M${waistL} 174 L${waistR} 174 L${hipR} 214 L128 332 L124 422 L106 422 L100 256 L94 422 L76 422 L72 332 L${hipL} 214 Z`}
               fill={pal.fill}
               stroke={pal.stroke}
-              strokeWidth="1.6"
+              strokeWidth="1.5"
               strokeLinejoin="round"
             />
-            {/* Bolsillos traseros sutiles */}
-            <path d="M74 226 L92 226 L91 245 L75 245 Z" fill="none" stroke={pal.detail} strokeWidth="1.2" />
-            <path d="M108 226 L126 226 L125 245 L109 245 Z" fill="none" stroke={pal.detail} strokeWidth="1.2" />
+            {view === 'back' && (
+              <g fill="none" stroke={pal.detail} strokeWidth="1.1" opacity="0.8">
+                <path d="M76 202 L93 202 L92 220 L77 220 Z" />
+                <path d="M107 202 L124 202 L123 220 L108 220 Z" />
+              </g>
+            )}
           </g>
         )
       })()}
 
-      {/* Superior (camisa / suéter vista trasera cerrada en cuello) */}
       {superior && (() => {
         const pal = pickGarmentPalette(superior.color, 'superior')
         const t = getLayerFitTransform(superior.fitLevel, 'superior')
+        const neckPath = view === 'front' ? 'M86 78 Q100 94 114 78' : 'M86 78 Q100 84 114 78'
         return (
           <g style={t}>
             <path
-              d={`M83 82 Q100 88 117 82 L${shR} 96 L${shR + 18} 206 L${shR + 4} 209 L${shR - 8} 130 L${waistR} 212 L${waistL} 212 L${shL + 8} 130 L${shL - 4} 209 L${shL - 18} 206 L${shL} 96 Z`}
+              d={`${neckPath} L${shR} 88 L${shR + 14} 198 L${shR + 4} 201 L${chestR} 130 L${waistR + 2} 194 L${waistL - 2} 194 L${chestL} 130 L${shL - 4} 201 L${shL - 14} 198 L${shL} 88 Z`}
               fill={pal.fill}
               stroke={pal.stroke}
-              strokeWidth="1.6"
+              strokeWidth="1.5"
               strokeLinejoin="round"
             />
-            {/* Costura trasera de cuello y hombros */}
-            <path d="M84 84 Q100 91 116 84" fill="none" stroke={pal.detail} strokeWidth="1.4" />
-            <path d={`M${shL + 8} 102 L${shL + 8} 130 M${shR - 8} 102 L${shR - 8} 130`} fill="none" stroke={pal.detail} strokeWidth="1.1" opacity="0.7" />
           </g>
         )
       })()}
 
-      {/* Abrigo / Chaqueta vista trasera */}
       {abrigo && (() => {
         const pal = pickGarmentPalette(abrigo.color, 'abrigo')
         const t = getLayerFitTransform(abrigo.fitLevel, 'abrigo')
+        const neckPath = view === 'front' ? 'M84 76 L100 108 L116 76' : 'M84 76 Q100 83 116 76'
         return (
           <g style={t}>
             <path
-              d={`M81 80 Q100 87 119 80 L${shR + 3} 95 L${shR + 21} 212 L${shR + 5} 215 L${shR - 6} 132 L${waistR + 4} 232 L${waistL - 4} 232 L${shL + 6} 132 L${shL - 5} 215 L${shL - 21} 212 L${shL - 3} 95 Z`}
+              d={`${neckPath} L${shR + 3} 87 L${shR + 17} 204 L${shR + 5} 207 L${chestR + 3} 132 L${waistR + 5} 224 L${waistL - 5} 224 L${chestL - 3} 132 L${shL - 5} 207 L${shL - 17} 204 L${shL - 3} 87 Z`}
               fill={pal.fill}
               stroke={pal.stroke}
-              strokeWidth="1.8"
+              strokeWidth="1.7"
               strokeLinejoin="round"
             />
-            <line x1="100" y1="88" x2="100" y2="230" stroke={pal.detail} strokeWidth="1.1" opacity="0.55" />
+            {view === 'front' && <line x1="100" y1="108" x2="100" y2="224" stroke={pal.detail} strokeWidth="1.2" />}
           </g>
         )
       })()}
 
-      {/* Calzado vista trasera */}
       {calzado && (() => {
         const pal = pickGarmentPalette(calzado.color, 'calzado')
         return (
           <g>
-            <rect x="69" y="424" width="22" height="24" rx="6" fill={pal.fill} stroke={pal.stroke} strokeWidth="1.4" />
-            <rect x="109" y="424" width="22" height="24" rx="6" fill={pal.fill} stroke={pal.stroke} strokeWidth="1.4" />
+            <rect x="65" y="424" width="24" height="24" rx="6" fill={pal.fill} stroke={pal.stroke} strokeWidth="1.4" />
+            <rect x="111" y="424" width="24" height="24" rx="6" fill={pal.fill} stroke={pal.stroke} strokeWidth="1.4" />
           </g>
         )
       })()}
+
+      {/* 4. Líneas indicadoras sobre el cuerpo: dónde queda apretado, suelto o ideal */}
+      {primaryFitLevel && (
+        <g fill="none" strokeLinecap="round">
+          {/* Zona Hombros */}
+          <line x1={shL - 12} y1="84" x2={shR + 12} y2="84" stroke={topColor} strokeWidth="1.6" strokeDasharray="4 3" />
+          {/* Zona Pecho / Espalda */}
+          <line x1={chestL - 10} y1="126" x2={chestR + 10} y2="126" stroke={topColor} strokeWidth="1.8" strokeDasharray={primaryFitLevel === 'muy_ajustada' ? '6 2' : '3 3'} />
+          {/* Zona Cintura */}
+          <line x1={waistL - 8} y1="174" x2={waistR + 8} y2="174" stroke={topColor} strokeWidth="1.6" strokeDasharray="4 3" />
+
+          {(primaryFitLevel === 'un_poco_grande' || primaryFitLevel === 'demasiado_grande') && (
+            <g stroke={topColor} strokeWidth="2">
+              {/* Flechas/marcas de tela sobrante */}
+              <path d={`M${shL - 14} 84 L${shL - 22} 80 M${shL - 14} 84 L${shL - 22} 88`} />
+              <path d={`M${shR + 14} 84 L${shR + 22} 80 M${shR + 14} 84 L${shR + 22} 88`} />
+              <path d={`M${waistL - 10} 166 L${waistL - 19} 169 M${waistR + 10} 166 L${waistR + 19} 169`} />
+            </g>
+          )}
+
+          {primaryFitLevel === 'muy_ajustada' && (
+            <g stroke={topColor} strokeWidth="2">
+              {/* Marcas de tensión apretada hacia adentro */}
+              <path d={`M${chestL - 18} 126 L${chestL - 9} 126 M${chestR + 18} 126 L${chestR + 9} 126`} />
+              <path d={`M${shL - 10} 152 L${shL - 2} 148 M${shR + 10} 152 L${shR + 2} 148`} />
+            </g>
+          )}
+        </g>
+      )}
+
+      {inferior && botLevel && (
+        <line x1={hipL - 10} y1="214" x2={hipR + 10} y2="214" stroke={botColor} strokeWidth="1.6" strokeDasharray="4 3" />
+      )}
     </svg>
   )
 }
@@ -329,33 +374,13 @@ export function FitAnalysisPanel({ wornList }: { wornList: WornFitInput[] }) {
         <p className="mt-1 text-[11px] leading-snug text-white/70">{fit.summary}</p>
       </div>
 
-      {/* Esquema visual SVG de la prenda */}
-      <div className="flex justify-center py-1">
-        <svg viewBox="0 0 120 96" className="h-20 w-24" aria-hidden="true">
-          <path
-            d="M38 14 L20 26 L12 62 L26 65 L32 36 L32 82 L88 82 L88 36 L94 65 L108 62 L100 26 L82 14 Q60 22 38 14 Z"
-            fill="rgba(139,92,246,0.12)"
-            stroke="#c4b5fd"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          {fit.level !== 'perfecto' && (
-            <>
-              <path d="M10 38 L4 35 M10 46 L4 48" stroke={strokeColor} strokeWidth="2" strokeLinecap="round" />
-              <path d="M110 38 L116 35 M110 46 L116 48" stroke={strokeColor} strokeWidth="2" strokeLinecap="round" />
-              <path d="M40 48 L80 48" stroke={strokeColor} strokeWidth="1.6" strokeDasharray="4 3" />
-            </>
-          )}
-        </svg>
-      </div>
-
       {/* Zonas detectadas */}
       <div className="space-y-1 border-t border-white/10 pt-2.5">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">Zonas analizadas</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">Líneas por tu cuerpo</p>
         <ul className="space-y-1 text-[11px] text-white/85">
           {fit.zones.map((z) => (
             <li key={z} className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: fit.dotColor }} />
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: strokeColor }} />
               <span className="truncate">{z}</span>
             </li>
           ))}
@@ -365,7 +390,7 @@ export function FitAnalysisPanel({ wornList }: { wornList: WornFitInput[] }) {
       {/* Resumen del look por prenda */}
       <div className="space-y-1.5 border-t border-white/10 pt-2.5">
         <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">Resumen del look</p>
-        <div className="max-h-36 space-y-1.5 overflow-y-auto pr-0.5">
+        <div className="max-h-32 space-y-1.5 overflow-y-auto pr-0.5">
           {wornList.map((w) => {
             const itemFit = classifyFitVeredict(w.veredicto, w.motivo)
             const title = w.name ?? w.nombre ?? w.slot
@@ -384,6 +409,14 @@ export function FitAnalysisPanel({ wornList }: { wornList: WornFitInput[] }) {
           })}
         </div>
       </div>
+
+      {/* Paso 2: una vez confirmas la talla, probar en foto real con IA */}
+      <Link
+        to="/probador"
+        className="mt-auto flex items-center justify-center gap-1.5 rounded-xl bg-violeta px-3 py-2 text-xs font-bold text-white shadow-lg shadow-purple-900/30 transition hover:bg-violeta-hover"
+      >
+        Probar con foto IA →
+      </Link>
     </aside>
   )
 }
