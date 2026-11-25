@@ -49,6 +49,7 @@ export default function PlaylistsPage() {
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [mostrarEditar, setMostrarEditar] = useState(false)
   const [mostrarAgregarPrenda, setMostrarAgregarPrenda] = useState(false)
+  const [prendaVista, setPrendaVista] = useState<PlaylistDto['prendas'][number] | null>(null)
   const [mostrarEliminar, setMostrarEliminar] = useState(false)
 
   // Catálogo real cuando los mocks están desactivados
@@ -735,10 +736,23 @@ export default function PlaylistsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {prendas.map((p, idx) => (
+                    {prendas.map((p, idx) => {
+                      const autorRaw = p.agregadaPor || selectedPlaylist.creador.nombre
+                      const autorLabel = /^\d+$/.test(autorRaw.trim())
+                        ? (esMia ? usuarioActual.name : `Usuario #${autorRaw.trim()}`)
+                        : autorRaw
+                      const autorIniciales = autorLabel
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase() || 'SR'
+
+                      return (
                       <tr
                         key={p.id}
-                        className={`group transition hover:bg-white/[0.04] ${
+                        onClick={() => setPrendaVista(p)}
+                        className={`group cursor-pointer transition hover:bg-white/[0.04] ${
                           p.noDisponible ? 'opacity-60' : ''
                         }`}
                       >
@@ -757,7 +771,7 @@ export default function PlaylistsPage() {
                               className="h-11 w-11 shrink-0 rounded-lg object-cover bg-black/40 border border-white/10"
                             />
                             <div className="min-w-0">
-                              <p className="font-semibold text-[var(--color-text,#fff)] truncate text-xs">{p.nombre}</p>
+                              <p className="font-semibold text-[var(--color-text,#fff)] truncate text-xs group-hover:text-violeta-claro transition">{p.nombre}</p>
                               <p className="text-[11px] text-[var(--color-text-muted,#b9b9ca)] truncate">
                                 {p.noDisponible ? (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-warning-bg,rgba(245,158,11,0.15))] border border-[var(--color-warning-border,rgba(245,158,11,0.3))] px-2 py-0.5 text-[10px] font-bold text-[var(--color-warning-text,#f59e0b)]">
@@ -765,7 +779,7 @@ export default function PlaylistsPage() {
                                     Agotado · no disponible
                                   </span>
                                 ) : (
-                                  `${p.tienda} · ${p.tallas?.join(' · ') || 'Única'}`
+                                  `${p.tienda ? `${p.tienda} · ` : ''}${p.tallas?.join(' · ') || 'Única'}`
                                 )}
                               </p>
                             </div>
@@ -773,21 +787,15 @@ export default function PlaylistsPage() {
                         </td>
 
                         {/* Tienda */}
-                        <td className="py-3 px-4 text-white/70">{p.tienda}</td>
+                        <td className="py-3 px-4 text-white/70">{p.tienda || '—'}</td>
 
                         {/* Agregada por */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2 text-white/70">
                             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white/90">
-                              {(p.agregadaPor || selectedPlaylist.creador.nombre)
-                                .split(' ')
-                                .map((n) => n[0])
-                                .join('')
-                                .slice(0, 2)}
+                              {autorIniciales}
                             </span>
-                            <span className="truncate">
-                              {p.agregadaPor || selectedPlaylist.creador.nombre}
-                            </span>
+                            <span className="truncate">{autorLabel}</span>
                           </div>
                         </td>
 
@@ -801,7 +809,7 @@ export default function PlaylistsPage() {
                         </td>
 
                         {/* Acción fila */}
-                        <td className="py-3 pr-6 pl-2 text-right">
+                        <td className="py-3 pr-6 pl-2 text-right" onClick={(e) => e.stopPropagation()}>
                           {esMia ? (
                             <button
                               type="button"
@@ -817,14 +825,16 @@ export default function PlaylistsPage() {
                               type="button"
                               onClick={() => showToast('Guardada en favoritos.')}
                               aria-label={`Me gusta ${p.nombre}`}
-                              className="text-white/30 hover:text-rose-400 p-1 text-sm transition"
+                              className="text-white/40 hover:text-rose-400 p-1 text-sm transition"
                             >
-                              
+                              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                              </svg>
                             </button>
                           )}
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
 
@@ -880,6 +890,76 @@ export default function PlaylistsPage() {
         </div>
 
         {/* MODAL AGREGAR PRENDAS */}
+        {prendaVista && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Detalle de ${prendaVista.nombre}`}
+            onClick={() => setPrendaVista(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 bg-[#181520] text-white shadow-2xl"
+            >
+              <div className="relative aspect-[4/5] w-full bg-black/40">
+                <img
+                  src={prendaVista.imagen}
+                  alt={prendaVista.nombre}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPrendaVista(null)}
+                  aria-label="Cerrar detalle de prenda"
+                  className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="space-y-3 p-5">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-violeta-claro">
+                    {prendaVista.tipo || 'Prenda'}{prendaVista.estilo ? ` · ${prendaVista.estilo}` : ''}
+                  </p>
+                  <h3 className="mt-0.5 text-lg font-extrabold text-white">{prendaVista.nombre}</h3>
+                  {prendaVista.tienda && (
+                    <p className="text-xs text-white/60">{prendaVista.tienda}{prendaVista.barrio ? ` · ${prendaVista.barrio}` : ''}</p>
+                  )}
+                </div>
+
+                {prendaVista.tallas?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {prendaVista.tallas.map((t) => (
+                      <span key={t} className="rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/80">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-1">
+                  <strong className="text-lg font-extrabold text-white">{formatCOP(prendaVista.precio)}</strong>
+                  <div className="flex gap-2">
+                    <Link
+                      to={`/probador?prenda=${encodeURIComponent(prendaVista.id)}`}
+                      className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
+                    >
+                      Probar
+                    </Link>
+                    <Link
+                      to={`/catalogo/${encodeURIComponent(prendaVista.id)}`}
+                      className="rounded-xl bg-violeta px-3.5 py-2 text-xs font-bold text-white hover:bg-violeta-hover"
+                    >
+                      Ver en catálogo →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {mostrarAgregarPrenda && (
           <div
             role="dialog"
@@ -926,6 +1006,25 @@ export default function PlaylistsPage() {
                         </option>
                       ))}
                     </select>
+                    {(() => {
+                      const preview = catalogItems.find((it) => it.id === prendaParaAgregar)
+                      if (!preview) return null
+                      return (
+                        <div className="mt-3 flex items-center gap-3 rounded-xl border border-white/15 bg-black/40 p-2.5">
+                          <img
+                            src={preview.imagen}
+                            alt={preview.nombre}
+                            className="h-12 w-12 shrink-0 rounded-lg object-cover border border-white/10"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-bold text-white">{preview.nombre}</p>
+                            <p className="truncate text-[11px] text-white/60">
+                              {preview.tienda} · {formatCOP(preview.precio)}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                   <p className="text-[11px] text-white/40">
                     Límite del sistema: hasta 15 prendas por playlist.
@@ -1627,14 +1726,21 @@ export default function PlaylistsPage() {
                 <span className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
                   Prendas iniciales ({prendasIniciales.length}/{MAX_PLAYLIST_ITEMS})
                 </span>
-                <div className="max-h-32 space-y-1.5 overflow-y-auto rounded-xl border border-white/15 bg-black/40 p-2.5">
+                <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-xl border border-white/15 bg-black/40 p-2.5">
                   {catalogItems.length === 0 ? (
                     <p className="text-xs text-white/50">No hay prendas disponibles en el catálogo.</p>
                   ) : (
                     catalogItems.slice(0, 20).map((item) => {
                       const checked = prendasIniciales.includes(item.id)
                       return (
-                        <label key={item.id} className="flex cursor-pointer items-center gap-2 text-xs text-white/85">
+                        <label
+                          key={item.id}
+                          className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-2 py-1.5 text-xs transition ${
+                            checked
+                              ? 'border-violeta/60 bg-violeta/20 text-white'
+                              : 'border-transparent text-white/85 hover:bg-white/5'
+                          }`}
+                        >
                           <input
                             type="checkbox"
                             checked={checked}
@@ -1646,9 +1752,20 @@ export default function PlaylistsPage() {
                               })
                               setErrorPrendasIniciales(null)
                             }}
-                            className="rounded border-white/30 bg-black/60 text-violeta"
+                            className="shrink-0 rounded border-white/30 bg-black/60 text-violeta"
                           />
-                          <span className="truncate">{item.nombre}</span>
+                          <img
+                            src={item.imagen}
+                            alt={item.nombre}
+                            loading="lazy"
+                            className="h-9 w-9 shrink-0 rounded-md object-cover border border-white/10 bg-black/40"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <span className="block truncate font-semibold">{item.nombre}</span>
+                            <span className="block truncate text-[11px] text-white/55">
+                              {item.tienda ? `${item.tienda} · ` : ''}{formatCOP(item.precio)}
+                            </span>
+                          </div>
                         </label>
                       )
                     })
