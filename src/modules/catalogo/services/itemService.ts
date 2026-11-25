@@ -6,6 +6,11 @@ import { isStoreSuspended } from '@/modules/transacciones/services/storeSubscrip
 import { ITEMS } from '../mocks/items'
 import { getInventoryItemByIdSync } from './inventoryService'
 import type { Estilo, ItemFiltersDto, ItemResponseDto, OrdenCatalogo, ReservaDto } from '../types/item.dto'
+import {
+  normalizeMeasurementsPayload,
+  REFERENCE_GARMENT_MEASUREMENTS,
+  type GarmentSizeMeasurementDto,
+} from '../types/garmentMeasurements.dto'
 
 const ALMACEN_NOMBRE_POR_ID: Record<string, string> = {
   luna: 'Luna Store',
@@ -322,5 +327,30 @@ export const itemService = {
     const payload: { prendaId: string; talla: string; sedeId?: string } = { prendaId, talla }
     if (sedeId) payload.sedeId = sedeId
     return apiClient.post<ReservaDto>('/api/v1/inventory/reservations', payload).then((r) => r.data)
+  },
+
+  /**
+   * Obtiene la guía de medidas de una prenda en cm por talla (GET /api/v1/garments/{id}/size-guide).
+   * Si la tienda no registró medidas, el backend (y el fallback local) devuelve la guía de referencia.
+   */
+  async getGarmentSizeGuide(garmentId: string, sizes: string[] = []): Promise<GarmentSizeMeasurementDto[]> {
+    if (env.useMocks) {
+      const targetSizes = sizes.length > 0 ? sizes : ['XS', 'S', 'M', 'L', 'XL']
+      return mockDelay(
+        targetSizes.map((size) => ({
+          size,
+          ...(REFERENCE_GARMENT_MEASUREMENTS[size] ?? REFERENCE_GARMENT_MEASUREMENTS.M),
+        })),
+        80,
+      )
+    }
+    try {
+      const res = await apiClient.get<unknown>(
+        `/api/v1/garments/${encodeURIComponent(garmentId)}/size-guide`,
+      )
+      return normalizeMeasurementsPayload(res.data)
+    } catch {
+      return []
+    }
   },
 }

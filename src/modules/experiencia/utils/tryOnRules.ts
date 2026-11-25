@@ -40,6 +40,27 @@ export function validarDimensionesPrueba(width: number, height: number): boolean
   return ratio >= 1.2 && ratio <= 2.6
 }
 
+/** Diagnóstico específico de por qué una foto no cumple las dimensiones o proporción requeridas. */
+export function diagnosticarDimensionesPrueba(width: number, height: number): string | null {
+  if (width <= 0 || height <= 0) {
+    return TEXTO_FOTO.ilegible
+  }
+  if (height <= width) {
+    return `La foto es horizontal o cuadrada (${width}×${height} px). Debe ser vertical (más alta que ancha, ideal 3:4).`
+  }
+  if (width < TRYON_MIN.width || height < TRYON_MIN.height) {
+    return `Resolución muy baja (${width}×${height} px). Debe medir al menos ${TRYON_MIN.width}×${TRYON_MIN.height} px para que la IA reconozca tu silueta.`
+  }
+  const ratio = height / width
+  if (ratio < 1.2) {
+    return `La foto es demasiado ancha (${width}×${height} px, proporción ${ratio.toFixed(2)}). Usa un formato vertical 3:4 o 9:16.`
+  }
+  if (ratio > 2.6) {
+    return `La foto es demasiado alargada (${width}×${height} px, proporción ${ratio.toFixed(2)}). Usa un formato vertical estándar (3:4 o 9:16).`
+  }
+  return null
+}
+
 /** Qué se le ofrece a la persona para resolver el problema. */
 export type AccionPrueba = 'consentimiento' | 'planes' | 'reintentar' | 'otra-foto' | 'otra-prenda' | 'volver' | 'iniciar-sesion'
 

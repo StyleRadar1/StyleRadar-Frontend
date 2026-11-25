@@ -811,7 +811,7 @@ html[data-tema="claro"] .cz-fullscreen {
   justify-content: center;
   overflow: hidden;
   padding: 24px;
-  background-image: url('/img/backgrounds/probador-noche.jpg');
+  background-image: url('/img/backgrounds/probador-estudio-noche.jpg');
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
@@ -820,7 +820,7 @@ html[data-tema="claro"] .cz-fullscreen {
 
 html[data-theme="light"] .cz-stage-area,
 html[data-tema="claro"] .cz-stage-area {
-  background-image: url('/img/backgrounds/probador-dia.jpg');
+  background-image: url('/img/backgrounds/probador-estudio-dia.jpg');
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;

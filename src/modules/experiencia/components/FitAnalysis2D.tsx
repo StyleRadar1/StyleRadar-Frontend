@@ -186,58 +186,31 @@ export function TechnicalCroquisSvg({
         ? '#fbbf24'
         : '#34d399'
 
+  const mannequinSrc = female
+    ? view === 'front'
+      ? '/img/mannequins/croquis-f-frente.png'
+      : '/img/mannequins/croquis-f-espalda.png'
+    : view === 'front'
+      ? '/img/mannequins/croquis-m-frente.png'
+      : '/img/mannequins/croquis-m-espalda.png'
+
   return (
     <svg
       viewBox="0 0 200 475"
       className="h-full w-auto max-h-full select-none"
+      style={{ filter: 'drop-shadow(0 0 18px rgba(112, 35, 207, 0.28))' }}
       role="img"
       aria-label={view === 'front' ? 'Modelo anatómico técnico vista frontal' : 'Modelo anatómico técnico vista trasera'}
     >
-      {/* 1. Figura anatómica base estilo croquis técnico */}
-      <g fill="rgba(255,255,255,0.04)" stroke="rgba(226,222,245,0.78)" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round">
-        {/* Cabeza y cuello */}
-        <ellipse cx="100" cy="36" rx="14" ry="19" />
-        <path d="M92 53 L90 70 L66 84 M108 53 L110 70 L134 84" fill="none" />
-
-        {/* Torso y caderas */}
-        <path
-          d={`M${shL} 88 Q100 80 ${shR} 88 L${chestR} 130 L${waistR} 174 L${hipR} 214 L${hipR - 3} 245 L104 248 L100 238 L96 248 L${hipL + 3} 245 L${hipL} 214 L${waistL} 174 L${chestL} 130 Z`}
-        />
-
-        {/* Brazos izquierdo y derecho */}
-        <path d={`M${shL} 88 L${shL - 12} 145 L${shL - 16} 210 L${shL - 9} 214 L${shL - 1} 152 L${chestL} 126`} />
-        <path d={`M${shR} 88 L${shR + 12} 145 L${shR + 16} 210 L${shR + 9} 214 L${shR + 1} 152 L${chestR} 126`} />
-
-        {/* Piernas y pies */}
-        <path d={`M${hipL + 3} 245 L72 332 L76 422 L66 446 L86 448 L92 422 L97 332 L100 248`} />
-        <path d={`M${hipR - 3} 245 L128 332 L124 422 L134 446 L114 448 L108 422 L103 332 L100 248`} />
-
-        {/* Detalles anatómicos sutiles según vista */}
-        {view === 'front' ? (
-          <g fill="none" stroke="rgba(226,222,245,0.45)" strokeWidth="1.1">
-            {female ? (
-              <path d="M74 126 Q86 138 96 126 M104 126 Q114 138 126 126" />
-            ) : (
-              <path d="M72 124 Q86 130 98 125 M102 125 Q114 130 128 124" />
-            )}
-            <path d="M98 174 Q100 176 102 174" />
-          </g>
-        ) : (
-          <g fill="none" stroke="rgba(226,222,245,0.45)" strokeWidth="1.1">
-            <path d="M75 110 Q85 126 88 140 M125 110 Q115 126 112 140" />
-            <path d="M72 224 Q86 238 99 224 M101 224 Q114 238 128 224" />
-          </g>
-        )}
-      </g>
-
-      {/* 2. Líneas punteadas del patrón anatómico (como croquis de sastrería) */}
-      <g stroke="rgba(196,181,253,0.35)" strokeWidth="1" strokeDasharray="3 3" fill="none">
-        <line x1="100" y1="18" x2="100" y2="248" />
-        <line x1={shL} y1="88" x2={shR} y2="88" />
-        <line x1={chestL} y1="126" x2={chestR} y2="126" />
-        <line x1={waistL} y1="174" x2={waistR} y2="174" />
-        <line x1={hipL} y1="214" x2={hipR} y2="214" />
-      </g>
+      {/* 1. Maniquí anatómico vectorial (según género y vista frente/espalda) */}
+      <image
+        href={mannequinSrc}
+        x="4"
+        y="12"
+        width="192"
+        height="446"
+        preserveAspectRatio="xMidYMid meet"
+      />
 
       {/* 3. Prendas superpuestas con deformación real por ajuste */}
       {inferior && (() => {

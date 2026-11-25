@@ -83,6 +83,7 @@ export function useInventory(tiendaId?: string) {
       setItems((prev) => [created, ...prev])
       const sum = await inventoryService.getSummary(tiendaId)
       setSummary(sum)
+      return created
     },
     [tiendaId]
   )

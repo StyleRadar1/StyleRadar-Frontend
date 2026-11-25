@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { errorMessage } from '@/modules/core/api/errors'
 import { authService } from '../services/authService'
 import { PASSWORD_MAX, PASSWORD_MIN } from '../types/auth.dto'
+import './ResetPasswordPage.css'
 
 type Step = 'email' | 'verify' | 'done'
 
@@ -100,8 +101,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div
-      className="relative min-h-[calc(100vh-5rem)] bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/img/backgrounds/restablecer-contrasena.jpg')" }}
+      className="sr-reset-password-page relative min-h-[calc(100vh-5rem)]"
     >
       <div
         aria-hidden="true"
