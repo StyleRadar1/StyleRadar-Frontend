@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import './QuickTryOnModal.css'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { TryOnPrivacyShield } from '@/modules/experiencia/components/TryOnPrivacyShield'
 import { ITEMS } from '@/modules/catalogo/mocks/items'
 import { MOCK_PLAYLISTS } from '@/modules/catalogo/mocks/playlists'
 import type { ItemResponseDto } from '@/modules/catalogo/types/item.dto'
@@ -487,6 +488,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   if (!isOpen) return null
 
   return (
+    <TryOnPrivacyShield active={isOpen}>
     <div
       className="cz-fullscreen"
       role="dialog"
@@ -1409,5 +1411,6 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
         />
       )}
     </div>
+    </TryOnPrivacyShield>
   )
 }
