@@ -158,6 +158,67 @@ function requireSessionSubscriberId(): string {
   return u.id
 }
 
+export interface StartSubscriptionPayload {
+  subscriberType: 'USER' | 'STORE' | 'FOUNDATION' | (string & {})
+  payerEmail: string
+  planId: number
+  taxId?: string
+  [key: string]: unknown
+}
+
+export interface StartSubscriptionResult {
+  subscriptionId?: number
+  orderId?: number
+  status: string
+  initPoint: string
+  message?: string
+}
+
+/**
+ * Obtiene el `id` del plan STORE desde `GET /api/v1/plans` sin dejarlo fijo en el código.
+ */
+export async function resolveStorePlanId(): Promise<number> {
+  const plans = await planService.getPlans()
+  const storePlan = plans.find((p) => p.id === 'store' && typeof p.backendPlanId === 'number')
+  if (storePlan?.backendPlanId !== undefined) {
+    return storePlan.backendPlanId
+  }
+  throw new ApiError(500, 'No encontramos un plan activo para tiendas en el catálogo')
+}
+
+/**
+ * Función reutilizable para iniciar suscripciones (`POST /api/v1/subscriptions/start`).
+ * Sirve para tiendas (`STORE`), fundaciones (`FOUNDATION`) u otros suscriptores variando `subscriberType` y el payload.
+ * Usa `apiClient` para enviar `Authorization: Bearer <token>` como el resto de llamadas.
+ */
+export async function startSubscription(payload: StartSubscriptionPayload): Promise<StartSubscriptionResult> {
+  const cleanEmail = payload.payerEmail?.trim() ?? ''
+  if (!isValidPayerEmail(cleanEmail)) {
+    throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
+  }
+  if (payload.taxId !== undefined && !isValidNit(payload.taxId)) {
+    throw new ApiError(400, 'El NIT debe tener exactamente 9 dígitos numéricos')
+  }
+
+  const body: StartSubscriptionPayload = {
+    ...payload,
+    payerEmail: cleanEmail,
+    ...(payload.taxId !== undefined ? { taxId: payload.taxId.trim() } : {}),
+  }
+  const { data } = await apiClient.post<ApiStartSubscriptionResponse>('/api/v1/subscriptions/start', body)
+  const initPoint = typeof data?.initPoint === 'string' ? data.initPoint.trim() : ''
+  if (!initPoint) {
+    throw new ApiError(502, 'El servidor no devolvió el enlace de pago (initPoint). Inténtalo nuevamente')
+  }
+  return {
+    subscriptionId: data.subscriptionId,
+    orderId: data.orderId,
+    status: data.status ?? 'PENDING',
+    initPoint,
+    message: data.message,
+  }
+}
+
 export const storeSubscriptionService = {
   /** Suscripción vigente (`GET /api/v1/subscriptions/{subscriberId}`) y su historial de pagos (`GET /api/v1/payments/history`). */
   async get(): Promise<StoreSubscriptionStateDto> {
@@ -186,6 +247,28 @@ export const storeSubscriptionService = {
       .map((item) => mapPaymentResponse(item))
       .sort((a, b) => b.date.localeCompare(a.date))
     return sinSuscripcion ? { subscription, payments, sinSuscripcion } : { subscription, payments }
+  },
+
+  /**
+   * Inicia el pago de la suscripción de tienda obteniendo el `planId` STORE desde `GET /api/v1/plans`
+   * y enviando `{ subscriberType: "STORE", payerEmail, planId, taxId }` a `POST /api/v1/subscriptions/start` (sin `storeId`).
+   */
+  async startStoreSubscription(params: { payerEmail: string; taxId: string }): Promise<StartSubscriptionResult> {
+    const cleanEmail = params.payerEmail.trim()
+    const cleanTaxId = params.taxId.trim()
+    if (!isValidPayerEmail(cleanEmail)) {
+      throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
+    }
+    if (!isValidNit(cleanTaxId)) {
+      throw new ApiError(400, 'El NIT debe tener exactamente 9 dígitos numéricos')
+    }
+    const planId = await resolveStorePlanId()
+    return startSubscription({
+      subscriberType: 'STORE',
+      payerEmail: cleanEmail,
+      planId,
+      taxId: cleanTaxId,
+    })
   },
 
   /**
