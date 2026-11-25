@@ -3,6 +3,13 @@ import { useSearchParams, Link } from 'react-router-dom'
 import './QuickTryOnModal.css'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { TryOnPrivacyShield } from '@/modules/experiencia/components/TryOnPrivacyShield'
+import {
+  BackGarmentLayersSvg,
+  classifyFitVeredict,
+  FitAnalysisPanel,
+  FitIndicatorsSvg,
+  getLayerFitTransform,
+} from '@/modules/experiencia/components/FitAnalysis2D'
 import { ITEMS } from '@/modules/catalogo/mocks/items'
 import { MOCK_PLAYLISTS } from '@/modules/catalogo/mocks/playlists'
 import type { ItemResponseDto } from '@/modules/catalogo/types/item.dto'
@@ -405,54 +412,23 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   /* Lista de layers para renderizar ordenadas por Z */
   const activeLayers = wornList
     .map((w) => ({
+      slot: w.slot,
       layer: w.layer,
       color: (w.color || '').toLowerCase(),
+      fitLevel: classifyFitVeredict(w.veredicto).level,
       zIndex: LAYER_ORDER.indexOf(w.layer),
     }))
     .filter((l) => l.zIndex >= 0 && LAYER_PATHS[l.layer])
     .sort((a, b) => a.zIndex - b.zIndex)
 
+  const primaryFitLevel =
+    activeLayers.find((l) => l.slot === 'superior')?.fitLevel ??
+    activeLayers.find((l) => l.slot === 'abrigo')?.fitLevel ??
+    activeLayers[0]?.fitLevel ??
+    null
+
   /* Deformación y adaptación anatómica del maniquí */
   const deformation = useMemo(() => computeBodyDeformation(bodyMeasurements), [bodyMeasurements])
-
-  /* Selección de silueta y rotación según el ángulo de cámara activo (Frente, Lado, Espalda) */
-  const { currentSilhouette, currentRotationAngle, isFlipped, isBackView } = useMemo(() => {
-    const norm = ((rotationAngle % 360) + 360) % 360
-    if (norm >= 45 && norm < 135) {
-      // Vista Lateral derecha (Lado)
-      return {
-        currentSilhouette: deformation.silhouetteSideSrc || deformation.silhouetteSrc,
-        currentRotationAngle: (norm - 90) * 0.35,
-        isFlipped: false,
-        isBackView: false,
-      }
-    } else if (norm >= 135 && norm < 225) {
-      // Vista Posterior (Espalda)
-      return {
-        currentSilhouette: deformation.silhouetteBackSrc || deformation.silhouetteSrc,
-        currentRotationAngle: (norm - 180) * 0.35,
-        isFlipped: false,
-        isBackView: true,
-      }
-    } else if (norm >= 225 && norm < 315) {
-      // Vista Lateral izquierda (Lado opuesto)
-      return {
-        currentSilhouette: deformation.silhouetteSideSrc || deformation.silhouetteSrc,
-        currentRotationAngle: (norm - 270) * 0.35,
-        isFlipped: true,
-        isBackView: false,
-      }
-    } else {
-      // Vista Frontal (Frente)
-      const frontAngle = norm > 180 ? norm - 360 : norm
-      return {
-        currentSilhouette: deformation.silhouetteSrc,
-        currentRotationAngle: frontAngle * 0.35,
-        isFlipped: false,
-        isBackView: false,
-      }
-    }
-  }, [rotationAngle, deformation])
 
   /* Catálogo filtrado dentro del drawer */
   const filteredCatalog = useMemo(() => {
@@ -770,7 +746,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
           {/* Maniquí central interactivo */}
           <div
-            className="cz-mannequin-container"
+            className="cz-mannequin-container !max-w-none"
             ref={canvasRef}
             onPointerDown={handlePointerDownStage}
             onPointerMove={handlePointerMoveStage}
@@ -864,40 +840,77 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               </div>
             </div>
 
-            <div
-              className="cz-mannequin-3d-wrapper"
-              data-testid="mannequin-wrapper"
-              style={{
-                transform: `rotateY(${currentRotationAngle}deg) scaleY(${deformation.heightScale}) scaleX(${isFlipped ? -deformation.chestScale : deformation.chestScale})`,
-                transformOrigin: 'bottom center',
-                transition: isRotating.current ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
-            >
-              {/* Maniquí base adaptable según ángulo (frente, lado o espalda) */}
-              <img
-                src={currentSilhouette}
-                  alt="Maniquí anatómico base"
-                  className="cz-mannequin-base"
-                  data-testid="mannequin-base-img"
-                  draggable={false}
-                />
-
-                {/* Capas activas superpuestas */}
-                {activeLayers.map(({ layer, color }) => (
+            <div className="flex items-center justify-center gap-12 lg:gap-20 xl:gap-24 h-full w-full px-4">
+              <div className="flex flex-col items-center h-full justify-end">
+                <span className="mb-2 rounded-full border border-white/15 bg-black/40 px-3 py-0.5 text-[11px] font-semibold text-white/85 backdrop-blur-sm">
+                  Vista Frontal
+                </span>
+                <div
+                  className="cz-mannequin-3d-wrapper"
+                  data-testid="mannequin-wrapper"
+                  style={{
+                    transform: `scaleY(${deformation.heightScale}) scaleX(${deformation.chestScale})`,
+                    transformOrigin: 'bottom center',
+                    transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
                   <img
-                    key={layer}
-                    src={LAYER_PATHS[layer]}
-                    alt=""
-                    className="cz-mannequin-layer"
-                    style={{
-                      filter: (COLOR_FILTERS[color] || 'none') + (isBackView ? ' brightness(0.92)' : ''),
-                      zIndex: LAYER_ORDER.indexOf(layer) + 10,
-                      opacity: (rotationAngle === 90 || (rotationAngle >= 45 && rotationAngle < 135)) ? 0.35 : 1,
-                    }}
+                    src={deformation.silhouetteSrc}
+                    alt="Maniquí anatómico base"
+                    className="cz-mannequin-base"
+                    data-testid="mannequin-base-img"
                     draggable={false}
                   />
-                ))}
+
+                  {activeLayers.map(({ slot, layer, color, fitLevel }) => (
+                    <img
+                      key={layer}
+                      src={LAYER_PATHS[layer]}
+                      alt=""
+                      className="cz-mannequin-layer"
+                      style={{
+                        filter: COLOR_FILTERS[color] || 'none',
+                        zIndex: LAYER_ORDER.indexOf(layer) + 10,
+                        ...getLayerFitTransform(fitLevel, slot),
+                      }}
+                      draggable={false}
+                    />
+                  ))}
+
+                  {primaryFitLevel && (
+                    <FitIndicatorsSvg level={primaryFitLevel} view="front" />
+                  )}
+                </div>
               </div>
+
+              {/* Segundo modelo 2D simultáneo (Espalda) */}
+              <div className="hidden md:flex flex-col items-center h-full justify-end">
+                <span className="mb-2 rounded-full border border-white/15 bg-black/40 px-3 py-0.5 text-[11px] font-semibold text-white/85 backdrop-blur-sm">
+                  Vista Trasera
+                </span>
+                <div
+                  className="cz-mannequin-3d-wrapper"
+                  style={{
+                    transform: `scaleY(${deformation.heightScale}) scaleX(${deformation.chestScale})`,
+                    transformOrigin: 'bottom center',
+                  }}
+                >
+                  <img
+                    src={deformation.silhouetteBackSrc || deformation.silhouetteSrc}
+                    alt="Maniquí anatómico vista trasera"
+                    className="cz-mannequin-base"
+                    draggable={false}
+                  />
+                  <BackGarmentLayersSvg
+                    layers={activeLayers}
+                    female={bodyMeasurements?.cuerpoBase === 'femenino'}
+                  />
+                  {primaryFitLevel && <FitIndicatorsSvg level={primaryFitLevel} view="back" />}
+                </div>
+              </div>
+
+              <FitAnalysisPanel wornList={wornList} />
+            </div>
 
             <div className="cz-floor-shadow" aria-hidden="true" />
           </div>
@@ -911,30 +924,8 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             </span>
           </div>
 
-          {/* Controles de cámara y rotación */}
+          {/* Controles de zoom */}
           <div className="cz-camera-controls" role="toolbar" aria-label="Controles de cámara del maniquí">
-            <button
-              className={`cz-camera-angle-btn ${rotationAngle === 0 ? 'active' : ''}`}
-              onClick={() => setRotationAngle(0)}
-              title="Vista de frente"
-            >
-              Frente
-            </button>
-            <button
-              className={`cz-camera-angle-btn ${rotationAngle === 90 ? 'active' : ''}`}
-              onClick={() => setRotationAngle(90)}
-              title="Vista lateral"
-            >
-              Lado
-            </button>
-            <button
-              className={`cz-camera-angle-btn ${rotationAngle === 180 ? 'active' : ''}`}
-              onClick={() => setRotationAngle(180)}
-              title="Vista posterior"
-            >
-              Espalda
-            </button>
-            <span className="cz-camera-divider" />
             <button className="cz-camera-zoom-btn" onClick={zoomIn} title="Acercar">+</button>
             <button className="cz-camera-zoom-btn" onClick={zoomOut} title="Alejar">−</button>
             <button className="cz-camera-reset-btn" onClick={resetCamera} title="Restablecer vista">
