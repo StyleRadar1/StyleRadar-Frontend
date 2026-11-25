@@ -1,9 +1,10 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
-import { mockDelay } from '@/modules/core/api/mock'
+import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
 import { extractStockMapFromInventory } from './itemService'
+import { storeSettingsService } from './storeSettingsService'
 import type { Estilo, ItemResponseDto } from '../types/item.dto'
 import type {
   InventoryItemDto,
@@ -142,6 +143,21 @@ function normalizeBackendInventoryItem(
   }
 }
 
+const storeNitCache = new Map<string, string>()
+
+async function resolveStoreId(tiendaId?: string): Promise<string> {
+  if (tiendaId && tiendaId !== DEFAULT_STORE_ID) return tiendaId
+  if (env.useMocks) return tiendaId || DEFAULT_STORE_ID
+  const userId = mockSessionUser()?.id ? String(mockSessionUser()!.id) : ''
+  if (!userId) return tiendaId || DEFAULT_STORE_ID
+  const cached = storeNitCache.get(userId)
+  if (cached) return cached
+  const myStore = await storeSettingsService.getMyStore(userId)
+  const resolved = String(myStore.nit || tiendaId || DEFAULT_STORE_ID)
+  if (myStore.nit) storeNitCache.set(userId, resolved)
+  return resolved
+}
+
 export const inventoryService = {
   async getStoreInventory(tiendaId = DEFAULT_STORE_ID, sedeId = DEFAULT_SEDE_ID): Promise<InventoryItemDto[]> {
     if (env.useMocks) {
@@ -151,8 +167,9 @@ export const inventoryService = {
         : memoryInventory
       return mockDelay(list)
     }
+    const resolvedStoreId = await resolveStoreId(tiendaId)
     const [catalogoRes, disponiblesRes] = await Promise.all([
-      apiClient.get<Record<string, any>[]>(`/api/v1/stores/${encodeURIComponent(tiendaId)}/catalog`),
+      apiClient.get<Record<string, any>[]>(`/api/v1/stores/${encodeURIComponent(resolvedStoreId)}/catalog`),
       apiClient.get<Record<string, any>[]>(`/api/v1/inventory/branches/${encodeURIComponent(sedeId)}/available`).catch(() => ({ data: [] as Record<string, any>[] })),
     ])
     const prendas = Array.isArray(catalogoRes.data) ? catalogoRes.data : []
@@ -379,8 +396,9 @@ export const inventoryService = {
       return mockDelay(updated)
     }
 
+    const resolvedStoreId = await resolveStoreId()
     const body: PrendaRequestDto = {
-      almacenId: DEFAULT_STORE_ID,
+      almacenId: resolvedStoreId,
       nombre: dto.nombre.trim(),
       tipo: dto.tipo.trim(),
       color: dto.color.trim(),
@@ -474,8 +492,9 @@ export const inventoryService = {
       return mockDelay(newItem)
     }
 
+    const resolvedStoreId = await resolveStoreId()
     const prendaPayload: PrendaRequestDto = {
-      almacenId: DEFAULT_STORE_ID,
+      almacenId: resolvedStoreId,
       nombre: dto.nombre.trim(),
       tipo,
       color,
