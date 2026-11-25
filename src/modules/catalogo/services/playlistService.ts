@@ -14,22 +14,60 @@ import {
   type UpdatePlaylistDto,
 } from '../types/playlist.dto'
 
+const PLAYLIST_COVER_FALLBACKS = [
+  '/img/productos/blazer-oversize.jpg',
+  '/img/productos/sueter-de-canale-crudo.jpg',
+  '/img/productos/chaqueta-denim-oversize.jpg',
+  '/img/productos/jean-ancho-azul.jpg',
+  '/img/productos/saco-de-lana-negro.jpg',
+  '/img/productos/camisa-negra-de-popelina.jpg',
+]
+
+function pickCoverFallback(seed: string): string {
+  let h = 0
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
+  return PLAYLIST_COVER_FALLBACKS[h % PLAYLIST_COVER_FALLBACKS.length]
+}
+
 function normalizePlaylist(raw: any): PlaylistDto {
   const uid = raw?.usuarioId != null ? String(raw.usuarioId) : raw?.creador?.id ? String(raw.creador.id) : ''
   const creadorNombre = raw?.creador?.nombre || uid || 'Curador'
   const prendasRaw: any[] = Array.isArray(raw?.prendas) ? raw.prendas : []
-  const prendas: PlaylistItemDto[] = prendasRaw.map((item) => ({
-    ...item,
-    id: String(item?.prendaId ?? item?.id ?? ''),
-    nombre: item?.nombrePrenda ?? item?.nombre ?? '',
-    precio: Number(item?.precio ?? 0),
-    imagen: item?.imagen || (Array.isArray(item?.fotografias) && item.fotografias[0]) || item?.imagenUrl || '',
-    disponible: typeof item?.disponible === 'boolean' ? item.disponible : undefined,
-    noDisponible: item?.disponible === false || Boolean(item?.noDisponible),
-  }))
+  const prendas: PlaylistItemDto[] = prendasRaw.map((item, idx) => {
+    const id = String(item?.prendaId ?? item?.id ?? '')
+    const nombre = String(item?.nombrePrenda ?? item?.nombre ?? '')
+    const normNombre = nombre.trim().toLowerCase()
+    const match = ITEMS.find(
+      (it) => it.id === id || (normNombre && it.nombre.trim().toLowerCase() === normNombre),
+    )
+    const rawImg =
+      item?.imagen ||
+      (Array.isArray(item?.fotografias) && item.fotografias[0]) ||
+      item?.imagenUrl ||
+      ''
+    const imagen =
+      rawImg ||
+      match?.imagen ||
+      PLAYLIST_COVER_FALLBACKS[(idx + id.length) % PLAYLIST_COVER_FALLBACKS.length]
+
+    return {
+      ...item,
+      id,
+      nombre,
+      tipo: item?.tipo ?? match?.tipo ?? 'Prenda',
+      tienda: item?.tienda ?? item?.marca ?? match?.tienda ?? '',
+      tallas: Array.isArray(item?.tallas) && item.tallas.length ? item.tallas : (match?.tallas ?? ['Única']),
+      precio: Number(item?.precio ?? match?.precio ?? 0),
+      imagen,
+      disponible: typeof item?.disponible === 'boolean' ? item.disponible : undefined,
+      noDisponible: item?.disponible === false || Boolean(item?.noDisponible),
+    }
+  })
+  const playlistId = String(raw?.id ?? '')
+  const playlistName = String(raw?.nombre ?? '')
   return {
-    id: String(raw?.id ?? ''),
-    nombre: raw?.nombre ?? '',
+    id: playlistId,
+    nombre: playlistName,
     descripcion: raw?.descripcion ?? '',
     usuarioId: uid || undefined,
     creador: {
@@ -39,7 +77,7 @@ function normalizePlaylist(raw: any): PlaylistDto {
     },
     visibilidad: raw?.visibilidad ?? 'PUBLICA',
     estilo: raw?.estilo as PlaylistEstilo | undefined,
-    portadaUrl: raw?.portadaUrl || prendas[0]?.imagen,
+    portadaUrl: raw?.portadaUrl || prendas[0]?.imagen || pickCoverFallback(playlistId || playlistName),
     prendas,
     likes: Number(raw?.likes ?? 0),
     guardados: Number(raw?.guardados ?? 0),

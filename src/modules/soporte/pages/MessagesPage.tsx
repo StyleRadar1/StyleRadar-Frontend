@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Aviso, BTN_PRINCIPAL } from '@/modules/core/components/Aviso'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
@@ -25,6 +25,10 @@ export default function MessagesPage() {
   const { user } = useAuth()
   const [params, setParams] = useSearchParams()
   const actual = params.get('c')
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [actual])
 
   const { data: convs, loading, error, reload, setData } = useResource(
     chatService.conversations,

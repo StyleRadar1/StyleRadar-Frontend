@@ -32,12 +32,15 @@ export function ChatPanel({ conv, me, onClose, onRead, onSent, className = '' }:
   const largo = texto.length > MAX_MENSAJE
   const noExiste = !!error && error instanceof ApiError && (error.status === 404 || error.status === 403)
   const fin = useRef<HTMLDivElement>(null)
+  const lista = useRef<HTMLDivElement>(null)
   const entrada = useRef<HTMLTextAreaElement>(null)
 
   // Al abrir una conversación sus mensajes quedan leídos
   useEffect(() => { if (!loading && !error) onRead(conv.id) }, [loading, error, conv.id, onRead])
-  useEffect(() => { fin.current?.scrollIntoView({ block: 'nearest' }) }, [msgs.length])
-  useEffect(() => { entrada.current?.focus() }, [conv.id])
+  useEffect(() => {
+    if (lista.current) lista.current.scrollTop = lista.current.scrollHeight
+  }, [msgs.length])
+  useEffect(() => { entrada.current?.focus({ preventScroll: true }) }, [conv.id])
   useEffect(() => {
     const t = window.setInterval(() => { if (document.visibilityState === 'visible') reload() }, REFRESH_MS)
     return () => window.clearInterval(t)
@@ -86,7 +89,7 @@ export function ChatPanel({ conv, me, onClose, onRead, onSent, className = '' }:
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+      <div ref={lista} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         {loading && !msgs.length ? (
           <p className="p-6 text-center text-sm text-[var(--sr-text-muted)]">Cargando…</p>
         ) : noExiste ? (
