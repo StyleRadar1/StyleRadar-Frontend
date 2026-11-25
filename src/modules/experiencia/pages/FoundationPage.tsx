@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { errorKind, errorMessage } from '@/modules/core/api/errors'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
@@ -6,6 +6,7 @@ import { ErrorBanner, ErrorToast, FieldError } from '@/modules/core/components/E
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { donationService } from '../services/donationService'
+import { foundationProfileService } from '../services/foundationProfileService'
 import { ESTADO_DONACION_LABEL, SIGUIENTE, type DonationDto, type EstadoDonacion } from '../types/donation.dto'
 import { CONSERVACION_LABEL } from '../types/secondhand.dto'
 import { formatDay, isoDay } from '../utils/dates'
@@ -40,7 +41,13 @@ type Pending = { d: DonationDto; to: EstadoDonacion }
  * Vista visualmente renovada al estilo editorial de StyleRadar.
  */
 export default function FoundationPage() {
-  const { data: list, loading, error, reload: load, setData: setList } = useResource(donationService.forMyFoundation, [] as DonationDto[])
+  const loader = useCallback(async (): Promise<DonationDto[]> => {
+    const perfil = await foundationProfileService.mine()
+    const fid = perfil?.id ? String(perfil.id).trim() : ''
+    if (!fid || fid.toLowerCase() === 'mine') return []
+    return donationService.forMyFoundation(fid)
+  }, [])
+  const { data: list, loading, error, reload: load, setData: setList } = useResource(loader, [] as DonationDto[])
   const [filtro, setFiltro] = useState<EstadoDonacion | 'TODAS'>('PENDIENTE')
   const [pending, setPending] = useState<Pending | null>(null)
   const [just, setJust] = useState('')

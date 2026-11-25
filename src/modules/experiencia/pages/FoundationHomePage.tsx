@@ -14,15 +14,29 @@ import './FoundationDashboard.css'
  */
 export default function FoundationHomePage() {
   const loader = useCallback(async () => {
-    const [perfil, solicitudes] = await Promise.all([
-      foundationProfileService.mine(),
-      donationService.forMyFoundation().catch(() => []),
-    ])
-    return { perfil, pendientes: solicitudes.filter((d) => d.estado === 'PENDIENTE').length }
+    const perfil = await foundationProfileService.mine()
+    const fid = perfil?.id ? String(perfil.id).trim() : ''
+    const solicitudes =
+      fid && fid.toLowerCase() !== 'mine'
+        ? await donationService.forMyFoundation(fid).catch(() => [])
+        : []
+    const entregadas = solicitudes.filter((d) => d.estado === 'ENTREGADA')
+    const totalPrendas = entregadas.reduce((sum, d) => sum + (d.prenda?.cantidad || 1), 0)
+    return {
+      perfil,
+      pendientes: solicitudes.filter((d) => d.estado === 'PENDIENTE').length,
+      entregadas: entregadas.length,
+      totalPrendas,
+    }
   }, [])
-  const { data, loading, error, reload } = useResource<{ perfil: FoundationProfileDto | null; pendientes: number }>(
+  const { data, loading, error, reload } = useResource<{
+    perfil: FoundationProfileDto | null
+    pendientes: number
+    entregadas: number
+    totalPrendas: number
+  }>(
     loader,
-    { perfil: null, pendientes: 0 }
+    { perfil: null, pendientes: 0, entregadas: 0, totalPrendas: 0 }
   )
   const f = data.perfil
 
@@ -122,7 +136,9 @@ export default function FoundationHomePage() {
               <div className="fnd-hero-card__body">
                 <h2 className="fnd-hero-card__title">Impacto y donaciones</h2>
                 <p className="fnd-hero-card__desc">
-                  420 prendas recibidas de tiendas y personas solidarias en Bogotá. 82% alcanzado en la meta mensual de abrigo.
+                  {data.totalPrendas > 0
+                    ? `${data.totalPrendas} ${data.totalPrendas === 1 ? 'prenda recibida' : 'prendas recibidas'} en ${data.entregadas} ${data.entregadas === 1 ? 'entrega confirmada' : 'entregas confirmadas'}. Consulta el detalle mensual en estadísticas.`
+                    : 'Consulta el historial de entregas confirmadas, el origen de tus donaciones y las métricas de impacto de tu fundación.'}
                 </p>
                 <Link to="/fundacion/estadisticas" className="fnd-hero-card__link">
                   VER REPORTE

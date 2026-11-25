@@ -116,6 +116,7 @@ export interface ItemResponseDto {
   esSegundaMano?: boolean
   sinTablaMedidas?: boolean
   noDisponibleEnProbador?: boolean
+  tryOnEligible?: boolean
   retirada?: boolean
 }
 

@@ -1340,9 +1340,9 @@ export default function PlaylistsPage() {
                         {currentVinylPlaylist.prendas.length === 1 ? 'prenda' : 'prendas'}
                       </span>
                       <span>·</span>
-                      <span>Por {currentVinylPlaylist.creador?.nombre || 'Valentina'}</span>
+                      <span>Por {currentVinylPlaylist.creador?.nombre || 'Curador StyleRadar'}</span>
                       <span className="sr-vinyl-active-meta__chip">
-                        {currentVinylPlaylist.visibilidad || 'Pública'}
+                        {currentVinylPlaylist.visibilidad === 'PRIVADA' ? 'Privada' : 'Pública'}
                       </span>
                     </div>
                   </div>

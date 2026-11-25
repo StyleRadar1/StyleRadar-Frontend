@@ -10,7 +10,7 @@ export const PLANS: PlanDto[] = [
     period: 'gratis',
     features: [
       'Probador con maniquí',
-      'Sin probador con foto propia',
+      'Probador con foto propia hasta 10 usos/mes',
       'Sin alertas de disponibilidad',
     ],
   },
@@ -22,7 +22,7 @@ export const PLANS: PlanDto[] = [
     highlighted: true,
     features: [
       'Probador con maniquí',
-      'Probador con foto propia hasta 30 usos',
+      'Probador con foto propia hasta 50 usos/mes',
       'Alertas de disponibilidad',
     ],
   },

@@ -24,6 +24,18 @@ const STATUS_LABELS: Record<PaymentStatus, string> = {
   pendiente: 'PENDIENTE',
 }
 
+const PAYMENT_DATE_FMT = new Intl.DateTimeFormat('es-CO', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+})
+
+function formatPaymentDate(raw?: string | null): string {
+  if (!raw) return '—'
+  const d = new Date(raw)
+  return Number.isNaN(d.getTime()) ? raw : PAYMENT_DATE_FMT.format(d)
+}
+
 interface RadarCardItem {
   id: string
   planKey: 'plus' | 'store' | 'all'
@@ -171,14 +183,23 @@ export default function AdminPaymentsPage() {
 
   const activeCard = RADAR_CARDS[activeCardIdx]
   const getCardAmount = (card: RadarCardItem) => {
-    if (card.planKey === 'plus' && statsSummary.plusSum > 0) return statsSummary.plusSum
-    if (card.planKey === 'store' && statsSummary.storeSum > 0) return statsSummary.storeSum
-    if (card.planKey === 'all' && revenue > 0) return revenue
-    return card.fallbackAmount
+    if (card.planKey === 'plus') {
+      return statsSummary.plusSum > 0 || !env.useMocksPagos ? statsSummary.plusSum : card.fallbackAmount
+    }
+    if (card.planKey === 'store') {
+      return statsSummary.storeSum > 0 || !env.useMocksPagos ? statsSummary.storeSum : card.fallbackAmount
+    }
+    if (card.planKey === 'all') {
+      return revenue > 0 || !env.useMocksPagos ? revenue : card.fallbackAmount
+    }
+    return env.useMocksPagos ? card.fallbackAmount : 0
   }
 
   const activeAmount = getCardAmount(activeCard)
-  const activeProgress = Math.min(100, Math.max(12, Math.round((activeAmount / activeCard.targetAmount) * 100)))
+  const activeProgress =
+    activeAmount > 0 ? Math.min(100, Math.max(12, Math.round((activeAmount / activeCard.targetAmount) * 100))) : 0
+  const displayBalance = env.useMocksPagos ? (revenue || 2227000) : revenue
+  const pendingLabel = `${statsSummary.pendingCount} ${statsSummary.pendingCount === 1 ? 'pago' : 'pagos'}`
 
   // Coordenadas para la curva suave de balance estilo Verdelo
   const maxBalance = 3000000
@@ -392,50 +413,88 @@ export default function AdminPaymentsPage() {
               <div>
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-lg font-bold text-blanco">Balance consolidado</h2>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-[#9be3b4]/35 bg-[#9be3b4]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#9be3b4]">
-                    ▲ 14.8%
-                  </span>
+                  {env.useMocksPagos && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#9be3b4]/35 bg-[#9be3b4]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#9be3b4]">
+                      ▲ 14.8%
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1 text-3xl font-extrabold tabular-nums tracking-tight text-blanco md:text-4xl">
-                  {formatCOP(revenue || 2227000)}
+                  {formatCOP(displayBalance)}
                 </p>
               </div>
-              <div className="flex items-center gap-4 text-xs text-lavanda">
-                <span className="flex items-center gap-1.5">
-                  <i aria-hidden="true" className="h-2 w-2 rounded-full bg-arena shadow-[0_0_8px_#E8DCCB]" />
-                  Balance real
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <i aria-hidden="true" className="h-0.5 w-3 border-t-2 border-dashed border-violeta-claro" />
-                  Proyección
-                </span>
-              </div>
-            </div>
-
-            {/* Píldoras de resumen por periodo (Hoy / Semana / Mes / Pendientes) */}
-            <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              {[
-                { label: 'Hoy', val: formatCOP(Math.round((revenue || 2227000) * 0.08)), delta: '+4.2%', up: true },
-                { label: 'Esta semana', val: formatCOP(Math.round((revenue || 2227000) * 0.32)), delta: '+9.1%', up: true },
-                { label: 'Este mes', val: formatCOP(revenue || 2227000), delta: '+14.8%', up: true },
-                { label: 'Pendientes', val: formatCOP(statsSummary.pendingSum), delta: `${statsSummary.pendingCount} pagos`, up: false },
-              ].map((pill) => (
-                <div
-                  key={pill.label}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 transition hover:border-white/20 hover:bg-white/[0.05]"
-                >
-                  <div className="flex items-center justify-between text-[11px] text-lavanda">
-                    <span>{pill.label}</span>
-                    <span className={pill.up ? 'font-bold text-[#9be3b4]' : 'font-bold text-arena'}>
-                      {pill.delta}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm font-extrabold tabular-nums text-blanco">{pill.val}</p>
+              {env.useMocksPagos && (
+                <div className="flex items-center gap-4 text-xs text-lavanda">
+                  <span className="flex items-center gap-1.5">
+                    <i aria-hidden="true" className="h-2 w-2 rounded-full bg-arena shadow-[0_0_8px_#E8DCCB]" />
+                    Balance real
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <i aria-hidden="true" className="h-0.5 w-3 border-t-2 border-dashed border-violeta-claro" />
+                    Proyección
+                  </span>
                 </div>
-              ))}
+              )}
             </div>
 
-            {/* Gráfico de área brillante con línea punteada de proyección */}
+            {/* Píldoras de resumen por periodo */}
+            {env.useMocksPagos ? (
+              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {[
+                  { label: 'Hoy', val: formatCOP(Math.round(displayBalance * 0.08)), delta: '+4.2%', up: true },
+                  { label: 'Esta semana', val: formatCOP(Math.round(displayBalance * 0.32)), delta: '+9.1%', up: true },
+                  { label: 'Este mes', val: formatCOP(displayBalance), delta: '+14.8%', up: true },
+                  { label: 'Pendientes', val: formatCOP(statsSummary.pendingSum), delta: pendingLabel, up: false },
+                ].map((pill) => (
+                  <div
+                    key={pill.label}
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 transition hover:border-white/20 hover:bg-white/[0.05]"
+                  >
+                    <div className="flex items-center justify-between text-[11px] text-lavanda">
+                      <span>{pill.label}</span>
+                      <span className={pill.up ? 'font-bold text-[#9be3b4]' : 'font-bold text-arena'}>
+                        {pill.delta}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm font-extrabold tabular-nums text-blanco">{pill.val}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                {[
+                  {
+                    label: 'Aprobados',
+                    val: formatCOP(statsSummary.approvedSum),
+                    delta: `${statsSummary.approvedCount} ${statsSummary.approvedCount === 1 ? 'pago' : 'pagos'}`,
+                    up: true,
+                  },
+                  { label: 'Pendientes', val: formatCOP(statsSummary.pendingSum), delta: pendingLabel, up: false },
+                  {
+                    label: 'Rechazados',
+                    val: `${statsSummary.rejectedCount}`,
+                    delta: statsSummary.rejectedCount === 1 ? 'intento' : 'intentos',
+                    up: false,
+                  },
+                ].map((pill) => (
+                  <div
+                    key={pill.label}
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5"
+                  >
+                    <div className="flex items-center justify-between text-[11px] text-lavanda">
+                      <span>{pill.label}</span>
+                      <span className={pill.up ? 'font-bold text-[#9be3b4]' : 'font-bold text-arena'}>
+                        {pill.delta}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm font-extrabold tabular-nums text-blanco">{pill.val}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Gráfico de área brillante con línea punteada de proyección (solo en modo mock) */}
+            {env.useMocksPagos && (
             <div className="relative mt-5 h-40 w-full">
               <svg viewBox="0 0 640 165" className="h-full w-full overflow-visible" aria-label="Evolución y proyección de ingresos">
                 <defs>
@@ -526,6 +585,7 @@ export default function AdminPaymentsPage() {
                 ))}
               </ul>
             </div>
+            )}
           </div>
 
           {/* Panel inferior: Cobros aprobados y pendientes */}
@@ -547,33 +607,40 @@ export default function AdminPaymentsPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-6 gap-3">
-              {FLOW_BARS.map((bar) => {
-                const inPct = Math.round((bar.entradas / 2500000) * 100)
-                const pendingPct = Math.max(12, Math.round((bar.pendientes / 600000) * 100))
-                return (
-                  <div key={bar.mes} className="flex flex-col items-center">
-                    <div className="flex h-24 w-full items-end justify-center gap-1.5 rounded-2xl bg-white/[0.03] px-2 py-2">
-                      <div className="flex h-full w-3 items-end rounded-full bg-white/[0.06] sm:w-3.5">
-                        <span
-                          className="w-full rounded-full bg-gradient-to-t from-violeta to-violeta-claro shadow-[0_0_12px_rgba(123,77,216,0.45)]"
-                          style={{ height: `${inPct}%` }}
-                          title={`Entradas ${bar.mes}: ${formatCOP(bar.entradas)}`}
-                        />
+            {env.useMocksPagos ? (
+              <div className="mt-4 grid grid-cols-6 gap-3">
+                {FLOW_BARS.map((bar) => {
+                  const inPct = Math.round((bar.entradas / 2500000) * 100)
+                  const pendingPct = Math.max(12, Math.round((bar.pendientes / 600000) * 100))
+                  return (
+                    <div key={bar.mes} className="flex flex-col items-center">
+                      <div className="flex h-24 w-full items-end justify-center gap-1.5 rounded-2xl bg-white/[0.03] px-2 py-2">
+                        <div className="flex h-full w-3 items-end rounded-full bg-white/[0.06] sm:w-3.5">
+                          <span
+                            className="w-full rounded-full bg-gradient-to-t from-violeta to-violeta-claro shadow-[0_0_12px_rgba(123,77,216,0.45)]"
+                            style={{ height: `${inPct}%` }}
+                            title={`Entradas ${bar.mes}: ${formatCOP(bar.entradas)}`}
+                          />
+                        </div>
+                        <div className="flex h-full w-3 items-end rounded-full bg-white/[0.06] sm:w-3.5">
+                          <span
+                            className="w-full rounded-full bg-gradient-to-t from-arena/60 to-arena"
+                            style={{ height: `${pendingPct}%` }}
+                            title={`Pendientes ${bar.mes}: ${formatCOP(bar.pendientes)}`}
+                          />
+                        </div>
                       </div>
-                      <div className="flex h-full w-3 items-end rounded-full bg-white/[0.06] sm:w-3.5">
-                        <span
-                          className="w-full rounded-full bg-gradient-to-t from-arena/60 to-arena"
-                          style={{ height: `${pendingPct}%` }}
-                          title={`Pendientes ${bar.mes}: ${formatCOP(bar.pendientes)}`}
-                        />
-                      </div>
+                      <span className="mt-1.5 text-[11px] font-semibold text-white/60">{bar.mes}</span>
                     </div>
-                    <span className="mt-1.5 text-[11px] font-semibold text-white/60">{bar.mes}</span>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-white/65">
+                Resumen calculado en tiempo real con {payments.length}{' '}
+                {payments.length === 1 ? 'transacción consultada' : 'transacciones consultadas'}.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -582,7 +649,7 @@ export default function AdminPaymentsPage() {
       <Card className="sr-verdelo-panel mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <input
           type="search"
-          placeholder="Buscar por pagoId, suscripcionId o suscriptorId…"
+          placeholder="Buscar por referencia de pago, ID de suscripción o suscriptor…"
           className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/40 focus:border-violeta-claro"
           onChange={(e) => handleFilter('search', e.target.value)}
         />
@@ -643,9 +710,9 @@ export default function AdminPaymentsPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-[.16em] text-arena">
-                <th className="pb-3 pr-4">pagoId</th>
-                <th className="pb-3 pr-4">suscripcionId</th>
-                <th className="pb-3 pr-4">suscriptorId</th>
+                <th className="pb-3 pr-4">Referencia de pago</th>
+                <th className="pb-3 pr-4">ID de suscripción</th>
+                <th className="pb-3 pr-4">ID de suscriptor</th>
                 <th className="pb-3 pr-4">Plan</th>
                 <th className="pb-3 pr-4 text-right">Valor (COP)</th>
                 <th className="pb-3 pr-4">Estado</th>
@@ -660,7 +727,7 @@ export default function AdminPaymentsPage() {
                 const suscripcionId = p.suscripcionId ?? `SUB-${p.id}`
                 const suscriptorId = p.suscriptorId ?? p.userId
                 const valor = p.valor ?? p.amount
-                const fecha = p.fecha ?? p.date
+                const fecha = formatPaymentDate(p.fecha ?? p.date)
                 const referencia = p.referencia ?? p.mpReference ?? pagoId
                 return (
                   <tr
@@ -701,9 +768,9 @@ export default function AdminPaymentsPage() {
               <Badge tone={STATUS_TONES[selected.status]}>{selected.estado ?? STATUS_LABELS[selected.status]}</Badge>
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div><dt className="text-white/50">pagoId</dt><dd className="font-mono font-semibold">{selected.pagoId ?? selected.id}</dd></div>
-              <div><dt className="text-white/50">suscripcionId</dt><dd className="font-mono">{selected.suscripcionId ?? `SUB-${selected.id}`}</dd></div>
-              <div><dt className="text-white/50">suscriptorId</dt><dd className="font-mono font-semibold">{selected.suscriptorId ?? selected.userId}</dd></div>
+              <div><dt className="text-white/50">Referencia de pago</dt><dd className="font-mono font-semibold">{selected.pagoId ?? selected.id}</dd></div>
+              <div><dt className="text-white/50">ID de suscripción</dt><dd className="font-mono">{selected.suscripcionId ?? `SUB-${selected.id}`}</dd></div>
+              <div><dt className="text-white/50">ID de suscriptor</dt><dd className="font-mono font-semibold">{selected.suscriptorId ?? selected.userId}</dd></div>
               <div>
                 <dt className="text-white/50">Tipo de suscriptor</dt>
                 <dd>{selected.subscriberRoleLabel ?? (selected.userRole === 'STORE_ADMIN' ? 'Tienda' : selected.userRole === 'BUYER' ? 'Comprador' : '—')}</dd>
@@ -711,7 +778,7 @@ export default function AdminPaymentsPage() {
               <div><dt className="text-white/50">Plan</dt><dd>{selected.planName || '—'}</dd></div>
               <div><dt className="text-white/50">Valor (COP)</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.valor ?? selected.amount)} COP</dd></div>
               <div><dt className="text-white/50">Estado</dt><dd>{selected.estado ?? STATUS_LABELS[selected.status]}</dd></div>
-              <div><dt className="text-white/50">Fecha</dt><dd>{selected.fecha ?? selected.date}</dd></div>
+              <div><dt className="text-white/50">Fecha</dt><dd>{formatPaymentDate(selected.fecha ?? selected.date)}</dd></div>
               <div><dt className="text-white/50">Referencia</dt><dd className="font-mono">{selected.referencia ?? selected.mpReference ?? selected.id}</dd></div>
               <div><dt className="text-white/50">Método</dt><dd>Mercado Pago</dd></div>
             </dl>

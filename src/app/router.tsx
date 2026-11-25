@@ -11,6 +11,7 @@ import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
 import { RequireStoreActiveSub } from './RequireStoreActiveSub'
+import { RouteErrorBoundary } from './RouteErrorBoundary'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 import LandingPage from '@/modules/landing/pages/LandingPage'
@@ -100,9 +101,10 @@ function RootLayout() {
   )
 }
 
-export const router = createBrowserRouter([{ element: <RootLayout />, children: [
+export const router = createBrowserRouter([{ element: <RootLayout />, errorElement: <RouteErrorBoundary />, children: [
   {
     element: <AppLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       // Públicas
       { path: '/', element: <LandingPage /> },
@@ -163,6 +165,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
   // Administrador: módulo propio con barra lateral (el layout ya exige el rol)
   {
     element: <AdminLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { path: '/admin', element: <Navigate to="/admin/estadisticas" replace /> },
       { path: '/admin/estadisticas', element: page(<Stats />) },

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useInRouterContext, useLocation } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EVENTO_SIN_CONEXION } from '@/modules/core/api/conexion'
 import { clearMockScenarios, hasScenario } from '@/modules/core/api/mockScenario'
@@ -6,16 +7,32 @@ import './errores/errores.css'
 
 const VINILO = '/img/vinyl-record.png'
 
+function SinConexionRouteWatcher({ onRouteChange }: { onRouteChange: () => void }) {
+  const { pathname } = useLocation()
+  const prevPath = useRef(pathname)
+
+  useEffect(() => {
+    if (prevPath.current !== pathname) {
+      prevPath.current = pathname
+      onRouteChange()
+    }
+  }, [pathname, onRouteChange])
+
+  return null
+}
+
 /**
- * Pantalla única de sin conexión. Se abre cuando una petición no llega al servidor
- * (o el navegador pierde internet) y tapa toda la app, sea cual sea la pantalla.
- * Se cierra sola cuando vuelve la conexión.
+ * Pantalla única de sin conexión. Se abre cuando el navegador pierde internet o hay una caída
+ * global repetida, y puede cerrarse manualmente (Cerrar / Escape) o al cambiar de ruta.
  */
 export function SinConexion() {
   const [abierta, setAbierta] = useState(false)
   const [intento, setIntento] = useState(0)
   const reintentar = useRef<HTMLButtonElement>(null)
   const quieto = useReducedMotion()
+  const inRouter = useInRouterContext()
+
+  const cerrarModal = useCallback(() => setAbierta(false), [])
 
   useEffect(() => {
     const abrir = () => setAbierta(true)
@@ -33,9 +50,17 @@ export function SinConexion() {
     }
   }, [])
 
-  useEffect(() => { if (abierta) reintentar.current?.focus() }, [abierta])
+  useEffect(() => {
+    if (!abierta) return
+    reintentar.current?.focus()
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAbierta(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [abierta])
 
-  if (!abierta) return null
+  if (!abierta) return inRouter ? <SinConexionRouteWatcher onRouteChange={cerrarModal} /> : null
 
   const simulada = hasScenario('sin-red')
   const volverAIntentar = () => {
@@ -53,6 +78,16 @@ export function SinConexion() {
       className="fixed inset-0 z-[70] flex items-center justify-center overflow-hidden bg-[#0d0c12] select-none"
       data-testid="sin-conexion"
     >
+      {inRouter && <SinConexionRouteWatcher onRouteChange={cerrarModal} />}
+      <button
+        type="button"
+        onClick={cerrarModal}
+        aria-label="Cerrar"
+        className="absolute right-4 top-4 z-30 inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/50 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        <span aria-hidden="true">✕</span>
+        <span>Cerrar</span>
+      </button>
       {/* Escena del disco de vinilo a pantalla completa integrada directamente en el fondo oscuro sin bordes ni marcos */}
       <div
         role="img"

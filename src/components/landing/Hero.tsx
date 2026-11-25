@@ -51,7 +51,7 @@ export function Hero() {
       aria-label="StyleRadar, descubre tu estilo en tu ciudad"
     >
       {/* Carrusel de diapositivas de fondo */}
-      <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
         {heroSlides.map((slide, index) => (
           <img
             key={slide.id}
@@ -61,17 +61,17 @@ export function Hero() {
             fetchPriority={index === 0 ? 'high' : 'auto'}
             decoding="async"
             style={{ objectPosition: slide.position || 'center' }}
-            className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-out ${
+            className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-out ${
               index === currentSlide
                 ? 'opacity-100 scale-100'
-                : 'opacity-0 scale-105 pointer-events-none'
+                : 'opacity-0 scale-105'
             }`}
           />
         ))}
 
         {/* Gradientes oscurecedores para legibilidad de marca y textos */}
         <div
-          className="absolute inset-0 z-10"
+          className="pointer-events-none absolute inset-0 z-10"
           style={{
             background: 'var(--hero-overlay)',
           }}

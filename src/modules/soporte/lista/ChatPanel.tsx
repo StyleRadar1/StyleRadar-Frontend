@@ -5,6 +5,7 @@ import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO } from '@/modules/core/components/
 import { ErrorState } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { chatService } from '../services/chatService'
+import { connectChatSocket } from '../services/chatSocket'
 import { CONTACTO_LABEL, MAX_MENSAJE, type ConversacionDto, type MensajeDto } from '../types/chat.dto'
 import { NO_DISPONIBLE, problemaEnvio, TEXTO_LARGO, type ProblemaChat } from '../utils/chatErrors'
 import { claveDia, etiquetaDia, horaMensaje } from '../utils/contactos'
@@ -29,6 +30,7 @@ export function ChatPanel({ conv, me, onClose, onRead, onSent, className = '' }:
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<ProblemaChat | null>(null)
   const [cerrado, setCerrado] = useState<ProblemaChat | null>(null)
+  const [wsConnected, setWsConnected] = useState(false)
   const largo = texto.length > MAX_MENSAJE
   const noExiste = !!error && error instanceof ApiError && (error.status === 404 || error.status === 403)
   const fin = useRef<HTMLDivElement>(null)
@@ -42,9 +44,19 @@ export function ChatPanel({ conv, me, onClose, onRead, onSent, className = '' }:
   }, [msgs.length])
   useEffect(() => { entrada.current?.focus({ preventScroll: true }) }, [conv.id])
   useEffect(() => {
+    return connectChatSocket({
+      conversationId: conv.id,
+      onStatusChange: setWsConnected,
+      onMessage: (incoming) => {
+        setData((prev) => (prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]))
+      },
+    })
+  }, [conv.id, setData])
+  useEffect(() => {
+    if (wsConnected) return
     const t = window.setInterval(() => { if (document.visibilityState === 'visible') reload() }, REFRESH_MS)
     return () => window.clearInterval(t)
-  }, [reload])
+  }, [reload, wsConnected])
 
   const send = async (e?: FormEvent) => {
     e?.preventDefault()

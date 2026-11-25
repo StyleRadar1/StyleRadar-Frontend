@@ -596,21 +596,21 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setError('')
     setCamposErr({})
     setOtpFallos(0)
-
-    // Registrar consentimiento de formulario con fecha y versiones de políticas (mock backend)
-    await consentService.recordFormConsent({
-      email: email.trim(),
-      aceptaTerminos: consentState.aceptaTerminos,
-      aceptaDatos: consentState.aceptaDatos,
-      esMayorDeEdad: consentState.esMayorDeEdad,
-      aceptaPromociones: consentState.aceptaPromociones,
-      aceptaReglasTienda: consentState.aceptaReglasTienda,
-      aceptaReglasFundacion: consentState.aceptaReglasFundacion,
-      origen: `AUTH_MODAL_REGISTER_${role}`,
-    })
-
     setLoading(true)
+
     try {
+      // Registrar consentimiento de formulario con fecha y versiones de políticas
+      await consentService.recordFormConsent({
+        email: email.trim(),
+        aceptaTerminos: consentState.aceptaTerminos,
+        aceptaDatos: consentState.aceptaDatos,
+        esMayorDeEdad: consentState.esMayorDeEdad,
+        aceptaPromociones: consentState.aceptaPromociones,
+        aceptaReglasTienda: consentState.aceptaReglasTienda,
+        aceptaReglasFundacion: consentState.aceptaReglasFundacion,
+        origen: `AUTH_MODAL_REGISTER_${role}`,
+      })
+
       if (env.useMocks) {
         const emailLower = email.trim().toLowerCase()
         const isDemo = DEMO_ACCOUNTS.some((a) => a.email === emailLower)
@@ -781,10 +781,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   /** SR-RF-92 FA-07: pide un código nuevo (anula el anterior y da otros 3 intentos). */
   const pedirOtroCodigo = async () => {
-    if (espera > 0) return
+    if (loading || espera > 0) return
     const destino = email.trim()
     setError('')
     setCamposErr({})
+    setLoading(true)
     try {
       const res = await authService.resendOtp({ email: destino })
       setOtp(['', '', '', '', '', ''])
@@ -794,6 +795,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       document.getElementById('otp-input-0')?.focus()
     } catch (err) {
       fallaDelCodigo(err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -996,7 +999,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Mínimo 4 caracteres"
+                        placeholder={`Mínimo ${LOGIN_MIN} caracteres`}
                         aria-invalid={!!camposErr.password}
                         aria-describedby={camposErr.password ? 'authPass-err' : undefined}
                       />
@@ -1333,10 +1336,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               <button
                 type="button"
                 onClick={pedirOtroCodigo}
-                disabled={espera > 0}
+                disabled={loading || espera > 0}
                 className="w-full text-center text-xs font-semibold text-arena underline underline-offset-4 disabled:opacity-50"
               >
-                {espera > 0 ? `Podrás pedir otro código en ${esperaTxt}` : 'Pedir otro código'}
+                {espera > 0 ? `Podrás pedir otro código en ${esperaTxt}` : loading ? 'Enviando código…' : 'Pedir otro código'}
               </button>
 
               <div className="flex items-center justify-between text-xs text-white/70 py-1">
@@ -1344,7 +1347,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                 <button
                   type="button"
                   onClick={pedirOtroCodigo}
-                  disabled={espera > 0}
+                  disabled={loading || espera > 0}
                   className="font-semibold text-[#E8DCCB] hover:underline disabled:opacity-50"
                 >
                   Reenviar código

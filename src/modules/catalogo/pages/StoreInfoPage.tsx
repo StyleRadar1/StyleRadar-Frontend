@@ -1,10 +1,12 @@
-import { useContext, useState, type FormEvent } from 'react'
+import { useContext, useEffect, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { hasScenario } from '@/modules/core/api/mockScenario'
 import { ErrorCard } from '@/modules/core/components/ErrorScene'
 import { FieldError } from '@/modules/core/components/ErrorFeedback'
 import { AuthContext } from '@/modules/identidad/states/authContext'
+import { storeSettingsService } from '../services/storeSettingsService'
 import './StoreInfoPage.css'
 
 type LegalStoreInfo = {
@@ -52,7 +54,17 @@ const STORAGE_KEY = 'styleradar-store-legal-info'
 const PHOTO_KEY = 'styleradar-store-photo'
 const DEFAULT_PHOTO = '/img/sesion/rol-tienda.jpg'
 
-function readInfo(): LegalStoreInfo {
+function readInfo(fallbackName = '', fallbackEmail = ''): LegalStoreInfo {
+  if (!env.useMocks) {
+    return {
+      legalName: fallbackName,
+      nit: '',
+      representative: fallbackName,
+      phone: '',
+      email: fallbackEmail,
+      payoutAccount: '',
+    }
+  }
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     return saved ? { ...INITIAL_INFO, ...JSON.parse(saved) as Partial<LegalStoreInfo> } : INITIAL_INFO
@@ -64,8 +76,8 @@ function readInfo(): LegalStoreInfo {
 export default function StoreInfoPage() {
   const user = useContext(AuthContext)?.user ?? null
   const [searchParams] = useSearchParams()
-  const [info, setInfo] = useState<LegalStoreInfo>(readInfo)
-  const [draft, setDraft] = useState<LegalStoreInfo>(() => readInfo())
+  const [info, setInfo] = useState<LegalStoreInfo>(() => readInfo(user?.name ?? '', user?.email ?? ''))
+  const [draft, setDraft] = useState<LegalStoreInfo>(() => readInfo(user?.name ?? '', user?.email ?? ''))
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({})
   const [notice, setNotice] = useState('')
   const [storePhoto, setStorePhoto] = useState<string>(() => {
@@ -76,8 +88,29 @@ export default function StoreInfoPage() {
     }
   })
 
+  useEffect(() => {
+    if (env.useMocks || !user?.id) return
+    let active = true
+    storeSettingsService.getMyStore(String(user.id))
+      .then((store) => {
+        if (!active) return
+        const loaded: LegalStoreInfo = {
+          legalName: store.tradeName || user.name || '',
+          nit: store.nit || '',
+          representative: user.name || '',
+          phone: store.phone || '',
+          email: store.contactEmail || user.email || '',
+          payoutAccount: '',
+        }
+        setInfo(loaded)
+        setDraft(loaded)
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [user?.id, user?.name, user?.email])
+
   const requestedStoreId = searchParams.get('tiendaId')
-  const forbidden = (requestedStoreId !== null && requestedStoreId !== 't-1')
+  const forbidden = (requestedStoreId !== null && requestedStoreId !== 't-1' && requestedStoreId !== String(user?.id ?? ''))
     || hasScenario('sin-permiso')
     || (user !== null && user.role !== 'STORE_ADMIN')
 

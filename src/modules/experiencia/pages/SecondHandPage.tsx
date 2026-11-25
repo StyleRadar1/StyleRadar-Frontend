@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { MyListings } from '../components/MyListings'
 import { donationService } from '../services/donationService'
+import { foundationProfileService } from '../services/foundationProfileService'
 import { secondHandService } from '../services/secondHandService'
 import {
   CATEGORIAS,
@@ -79,7 +82,7 @@ export default function SecondHandPage() {
           {vista === 'mias' ? (
             <MyListings />
           ) : (
-            <Explore esDonacionTab={vista === 'donaciones'} />
+            <Explore key={vista} esDonacionTab={vista === 'donaciones'} />
           )}
         </div>
       </section>
@@ -108,8 +111,11 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
   const [claimBusy, setClaimBusy] = useState(false)
   const [claimFeedback, setClaimFeedback] = useState<{ ok: boolean; text: string } | null>(null)
 
-  const user = mockSessionUser()
-  const isFoundationOrAdmin = user?.id === 'f-1' || user?.id?.startsWith('admin') || true
+  const auth = useContext(AuthContext)
+  const user = auth?.user ?? mockSessionUser()
+  const userRole = (user as { role?: string } | null)?.role
+  const isFoundationOrAdmin =
+    userRole === 'FOUNDATION_REPRESENTATIVE' || userRole === 'STYLERADAR_ADMIN'
 
   const nMin = Number(min || 0)
   const nMax = Number(max || 0)
@@ -143,6 +149,7 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
     if (priceError) return
     setLoading(true)
     setError(null)
+    setList([])
     secondHandService
       .search(filters)
       .then(setList)
@@ -175,9 +182,22 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
     setClaimBusy(true)
     setClaimFeedback(null)
     try {
+      const profile = await foundationProfileService.mine().catch(() => null)
+      const resolvedFoundationId = profile?.id
+        ? String(profile.id)
+        : env.useMocks
+          ? 'abrigo'
+          : ''
+      if (!resolvedFoundationId) {
+        setClaimFeedback({
+          ok: false,
+          text: 'No se pudo identificar tu fundación verificada. Completa tu perfil de fundación primero.',
+        })
+        return
+      }
       await donationService.claim({
         publicationId: claimingItem.id,
-        foundationId: 'abrigo',
+        foundationId: resolvedFoundationId,
         message: claimMessage.trim() || undefined,
       })
       setClaimFeedback({

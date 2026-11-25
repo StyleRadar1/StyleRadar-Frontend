@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
+import { storeSubscriptionService } from '@/modules/transacciones/services/storeSubscriptionService'
 import { hasScenario } from '@/modules/core/api/mockScenario'
 import { ErrorCard } from '@/modules/core/components/ErrorScene'
 import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
@@ -8,6 +9,7 @@ import { AuthContext } from '@/modules/identidad/states/authContext'
 import { env } from '@/configs/env'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
+import { inventoryService } from '../services/inventoryService'
 import { erroresDeConfiguracion, storeSettingsService } from '../services/storeSettingsService'
 import { errorDeFoto, ordenadas, storePhotoService, TEXTOS_FOTOS } from '../services/storePhotoService'
 import {
@@ -75,6 +77,7 @@ const DEFAULT_COLLECTIONS: StoreCollection[] = [
 ]
 
 function readCollections(): StoreCollection[] {
+  if (!env.useMocks) return []
   try {
     const saved = localStorage.getItem(COLLECTIONS_STORAGE_KEY)
     return saved ? JSON.parse(saved) as StoreCollection[] : DEFAULT_COLLECTIONS
@@ -96,7 +99,19 @@ function legalDesdeServidor(store: StoreResponseDto): Partial<LegalStoreInfo> {
 /** Texto cuando no se pudo leer el almacén de la Tienda (GET /users/{userId}/store). */
 const SIN_ALMACEN = 'Tu cuenta todavía no tiene un almacén asociado. Regístralo para empezar a vender.'
 
-function readLegalInfo(): LegalStoreInfo {
+function readLegalInfo(fallbackName = '', fallbackEmail = ''): LegalStoreInfo {
+  if (!env.useMocks) {
+    return {
+      legalName: fallbackName,
+      nit: '',
+      representative: fallbackName,
+      phone: '',
+      email: fallbackEmail,
+      payoutAccount: '',
+      address: '',
+      hours: '',
+    }
+  }
   try {
     const saved = localStorage.getItem(STORAGE_LEGAL_KEY)
     return saved ? { ...INITIAL_LEGAL_INFO, ...JSON.parse(saved) as Partial<LegalStoreInfo> } : INITIAL_LEGAL_INFO
@@ -135,16 +150,18 @@ export default function MiTiendaPage() {
   const user = useContext(AuthContext)?.user ?? null
   const [searchParams] = useSearchParams()
   const [notice, setNotice] = useState('')
-  const [items, setItems] = useState(ITEMS)
+  const [items, setItems] = useState<StoreItem[]>(() => (env.useMocks ? ITEMS : []))
 
   /* Información de la tienda */
-  const [legalInfo, setLegalInfo] = useState<LegalStoreInfo>(readLegalInfo)
+  const [legalInfo, setLegalInfo] = useState<LegalStoreInfo>(() => readLegalInfo(user?.name ?? '', user?.email ?? ''))
   const [editingInfo, setEditingInfo] = useState(false)
-  const [legalDraft, setLegalDraft] = useState<LegalStoreInfo>(readLegalInfo)
+  const [legalDraft, setLegalDraft] = useState<LegalStoreInfo>(() => readLegalInfo(user?.name ?? '', user?.email ?? ''))
 
   /* F-19: el NIT del almacén sale de ms-tiendas (GET /api/v1/users/{userId}/store). Con datos de prueba se usa el guardado. */
   const [storeError, setStoreError] = useState('')
-  const [storeNit, setStoreNit] = useState(() => (env.useMocks ? readLegalInfo().nit : ''))
+  const [storeNit, setStoreNit] = useState(() => (env.useMocks ? INITIAL_LEGAL_INFO.nit : ''))
+  const [subStatusLabel, setSubStatusLabel] = useState(() => (env.useMocks ? 'Suscripción activa' : 'Consultando suscripción…'))
+  const [rejectedSubAlert, setRejectedSubAlert] = useState(false)
   const userId = user?.id ? String(user.id) : ''
   useEffect(() => {
     if (env.useMocks || !userId) return
@@ -156,9 +173,47 @@ export default function MiTiendaPage() {
         setLegalInfo((li) => ({ ...li, ...desdeServidor }))
         setLegalDraft((li) => ({ ...li, ...desdeServidor }))
         setStoreNit(store.nit)
+        if (store.verificationStatus === 'APPROVED') setVerificationStatus('VERIFICADA')
+        else if (store.verificationStatus === 'PENDING') setVerificationStatus('EN_REVISION')
+        else setVerificationStatus('SIN_VERIFICAR')
+        if (store.nit) {
+          inventoryService.getStoreInventory(store.nit).then((invList) => {
+            if (!active) return
+            setItems(invList.map((it) => ({
+              id: it.id,
+              name: it.nombre,
+              category: it.categoria,
+              color: it.color || '',
+              brand: it.marca || store.tradeName || '',
+              style: it.estilo,
+              price: it.precio,
+              stock: it.stockTotal,
+              stockBySize: it.stockPorTalla,
+              sizes: it.tallasDisponibles.join(' '),
+              image: it.imagenUrl,
+              status: it.estado === 'RETIRADO' ? 'Retiradas' : it.estado === 'AGOTADA' ? 'Agotadas' : it.estadoPublicacion === 'PENDIENTE' ? 'En revisión' : 'Publicadas',
+            })))
+          }).catch(() => {})
+        }
       })
       .catch((e) => {
         if (active) setStoreError(errorKind(e) === 'no-existe' ? SIN_ALMACEN : errorMessage(e, 'No pudimos cargar los datos de tu almacén.'))
+      })
+    storeSubscriptionService.get()
+      .then((res) => {
+        if (!active) return
+        if (res.sinSuscripcion) {
+          setSubStatusLabel('Sin suscripción')
+        } else if (res.subscription.status === 'ACTIVA') {
+          setSubStatusLabel('Suscripción activa')
+        } else {
+          setSubStatusLabel(`Suscripción ${res.subscription.status.toLowerCase()}`)
+        }
+        const lastPay = res.payments[0]
+        setRejectedSubAlert(Boolean(lastPay?.status === 'rechazado' && res.subscription.status !== 'ACTIVA'))
+      })
+      .catch(() => {
+        if (active) setSubStatusLabel('Suscripción')
       })
     return () => { active = false }
   }, [userId])
@@ -221,8 +276,8 @@ export default function MiTiendaPage() {
   /* Resumen del panel */
   const activeCount = items.filter((item) => item.status === 'Publicadas' && item.stock > 0).length
   const lowStockCount = items.filter((item) => item.status !== 'Retiradas' && item.stock > 0 && item.stock <= lastUnitsLimit).length
-  const visitorsToday = WEEK_VISITS[WEEK_VISITS.length - 1].visits
-  const weeklyProgress = Math.min(100, Math.round((WEEKLY_VISITS / WEEKLY_GOAL) * 100))
+  const visitorsToday = env.useMocks ? WEEK_VISITS[WEEK_VISITS.length - 1].visits : '—'
+  const weeklyProgress = env.useMocks ? Math.min(100, Math.round((WEEKLY_VISITS / WEEKLY_GOAL) * 100)) : 0
 
   /* Guardar / descartar información de tienda */
   const saveLegalInfo = (event: FormEvent<HTMLFormElement>) => {
@@ -454,11 +509,18 @@ export default function MiTiendaPage() {
             <span className="msd-pill msd-pill--glass">◉ Así te ven tus clientes · Las herramientas de edición solo las ves tú</span>
             <span className="msd-pill msd-pill--glass">DEPORTIVO & URBANO</span>
             <span className="msd-pill msd-pill--verified">{verificationStatus === 'VERIFICADA' ? 'Verificada' : verificationStatus === 'EN_REVISION' ? 'En revisión' : 'Sin verificar'}</span>
-            <span className="msd-pill msd-pill--glass">Suscripción activa</span>
+            <span className="msd-pill msd-pill--glass">{subStatusLabel}</span>
           </div>
           <div className="msd-hero__actions">
             <Link className="msd-btn msd-btn--primary" to="/tienda/inventario">＋ Nueva prenda</Link>
-            <Link className="msd-btn msd-btn--ghost" to="/tiendas/luna" target="_blank" rel="noopener noreferrer">Ver tienda pública (como comprador) ↗</Link>
+            <Link
+              className="msd-btn msd-btn--ghost"
+              to={env.useMocks ? '/tiendas/luna' : storeNit ? `/tiendas/${encodeURIComponent(storeNit)}` : '/tienda/registro'}
+              target={env.useMocks || storeNit ? '_blank' : undefined}
+              rel={env.useMocks || storeNit ? 'noopener noreferrer' : undefined}
+            >
+              Ver tienda pública (como comprador) ↗
+            </Link>
             {verificationStatus !== 'VERIFICADA' && (
               <button className="msd-btn msd-btn--ghost" type="button" onClick={requestVerification}>Solicitar verificación</button>
             )}
@@ -491,11 +553,13 @@ export default function MiTiendaPage() {
       </section>
 
       <div className="msd-content">
-        <div className="msd-alert" role="alert">
-          <span className="msd-alert__mark" aria-hidden="true">!</span>
-          <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Tienes hasta el <b>25 sep 2026</b> para reintentar el pago con Mercado Pago y mantener tu tienda visible</p></div>
-          <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
-        </div>
+        {rejectedSubAlert && (
+          <div className="msd-alert" role="alert">
+            <span className="msd-alert__mark" aria-hidden="true">!</span>
+            <div><strong>No pudimos cobrar tu suscripción</strong><p>El pago reciente fue rechazado. Reintenta el pago con Mercado Pago para mantener tu tienda visible</p></div>
+            <Link to="/tienda/suscripcion">Pagar ahora <span aria-hidden="true">↗</span></Link>
+          </div>
+        )}
         {storeError && <ErrorBanner tone="warn" icon="info" title={storeError}
           actions={storeError === SIN_ALMACEN ? <Link to="/tienda/registro" className="font-semibold underline">Registrar mi tienda</Link> : undefined} />}
         {verificationError && (
@@ -769,7 +833,7 @@ export default function MiTiendaPage() {
       {collectionDialogOpen ? <div className="my-store__dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCollectionDialogOpen(false) }}>
         <form className="my-store__dialog my-store__dialog--collection" role="dialog" aria-modal="true" aria-labelledby="new-collection-title" onSubmit={createCollection}>
           <button className="my-store__dialog-close" type="button" onClick={() => setCollectionDialogOpen(false)} aria-label="Cerrar">×</button>
-          <span className="my-store__eyebrow">LUNA STORE</span>
+          <span className="my-store__eyebrow">{(legalInfo.legalName || 'Mi tienda').toUpperCase()}</span>
           <h2 id="new-collection-title">Nueva colección</h2>
           <label className="my-store__collection-label">TÍTULO<input autoFocus value={collectionTitle} onChange={(event) => setCollectionTitle(event.target.value)} placeholder="Ej. Temporada de lluvias" maxLength={60} required /></label>
           <label className="my-store__collection-label">DESCRIPCIÓN <span>opcional</span><textarea value={collectionDescription} onChange={(event) => setCollectionDescription(event.target.value)} rows={4} maxLength={240} /></label>

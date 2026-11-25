@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Clock, Lock, RefreshCw, SearchX, ServerOff, WifiOff } from 'lucide-react'
+import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind, errorMessage, type ErrorKind } from '@/modules/core/api/errors'
 import { clearMockScenarios, mockScenarios, type MockScenario } from '@/modules/core/api/mockScenario'
 import { ErrorScene, type SceneVariant } from './ErrorScene'
@@ -24,7 +25,7 @@ function kindMeta(kind: ErrorKind): {
 } {
   switch (kind) {
     case 'servidor':
-      return { color: 'var(--sr-bad)', chip: 'Falla del servidor', code: '503', scene: 'tornamesa', Icon: ServerOff }
+      return { color: 'var(--sr-bad)', chip: 'Falla del servidor', scene: 'tornamesa', Icon: ServerOff }
     case 'sin-conexion':
       return { color: 'var(--sr-bad)', chip: 'Sin conexión', scene: 'tornamesa', Icon: WifiOff }
     case 'sesion':
@@ -57,6 +58,7 @@ export function ErrorState({
 }) {
   const kind = errorKind(error)
   const meta = kindMeta(kind)
+  const detectedCode = error instanceof ApiError && error.status > 0 ? String(error.status) : meta.code
   const Icon = meta.Icon
   const showScene = !compact && !!meta.scene
 
@@ -80,7 +82,7 @@ export function ErrorState({
             }}
           >
             <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>{meta.chip}{meta.code ? ` · ${meta.code}` : ''}</span>
+            <span>{meta.chip}{detectedCode ? ` · ${detectedCode}` : ''}</span>
           </span>
           <p className="mt-3 text-lg font-bold text-blanco">{title}</p>
           <p className="mt-1 text-sm text-white/80">{errorMessage(error)}</p>

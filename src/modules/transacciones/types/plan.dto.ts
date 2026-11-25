@@ -37,20 +37,20 @@ export type FuncionPago = 'probador-foto' | 'alertas-sin-limite'
 
 /**
  * Configuración única de beneficios y límites por plan (RF-102, B.14, A.3):
- * - RADAR: probador con maniquí. Sin alertas de disponibilidad y sin probador con foto propia.
- * - RADAR+: probador con foto propia con máximo 30 usos, y alertas de disponibilidad.
+ * - RADAR: probador con maniquí y hasta 10 usos/mes en probador con foto propia. Sin alertas de disponibilidad.
+ * - RADAR+: probador con foto propia con máximo 50 usos/mes, y alertas de disponibilidad.
  */
 export const PLAN_LIMITS = {
   alertas: 0,
-  probadorFoto: 30,
+  probadorFoto: 50,
   RADAR: {
     probadorManiqui: true,
-    probadorFoto: 0,
+    probadorFoto: 10,
     alertasDisponibilidad: false,
   },
   RADAR_PLUS: {
     probadorManiqui: true,
-    probadorFoto: 30,
+    probadorFoto: 50,
     alertasDisponibilidad: true,
   },
 } as const
@@ -72,7 +72,7 @@ export interface PlanInfo {
 /** Comparación de los planes de personas: [qué, Radar, Radar+] (RF-102: solo 3 filas). */
 export const PLAN_COMPARISON_ROWS: [string, string, string][] = [
   ['Probador con maniquí', 'Incluido', 'Incluido'],
-  ['Probador con foto propia', 'Sin foto propia', `Máximo ${PLAN_LIMITS.probadorFoto} usos`],
+  ['Probador con foto propia', `Máximo ${PLAN_LIMITS.RADAR.probadorFoto} usos/mes`, `Máximo ${PLAN_LIMITS.RADAR_PLUS.probadorFoto} usos/mes`],
   ['Alertas de disponibilidad', 'Sin alertas', 'Incluidas'],
 ]
 
@@ -80,8 +80,8 @@ export const COMPARATIVA: [string, string, string][] = PLAN_COMPARISON_ROWS
 
 /** Reglas de negocio de los planes (RF-102, RF-101, RF-103). */
 export const REGLAS: [string, string][] = [
-  ['Plan Radar (gratis)', 'Incluye probador con maniquí. No incluye alertas de disponibilidad ni probador con foto propia'],
-  ['Plan Radar+', `Incluye probador con foto propia con máximo ${PLAN_LIMITS.probadorFoto} usos y alertas de disponibilidad`],
+  ['Plan Radar (gratis)', `Incluye probador con maniquí y hasta ${PLAN_LIMITS.RADAR.probadorFoto} usos/mes con foto propia. No incluye alertas de disponibilidad`],
+  ['Plan Radar+', `Incluye probador con foto propia con máximo ${PLAN_LIMITS.RADAR_PLUS.probadorFoto} usos/mes y alertas de disponibilidad`],
   ['Candado de función', 'Esta función está disponible en el plan Radar+'],
   ['Límite de probador', `Alcanzaste el límite de ${PLAN_LIMITS.probadorFoto} usos del probador con foto propia`],
   ['Cambio de plan', 'El comprador puede activar Radar+ en cualquier momento mediante Mercado Pago'],
@@ -95,9 +95,9 @@ export const REGLAS: [string, string][] = [
 /** Tabla de precios de los planes (RF-102, A.3, B.14). */
 export const PLANES: PlanInfo[] = [
   { id: 'RADAR', para: 'Personas', nombre: 'Radar', precio: 0, periodo: 'gratis', nota: 'Para descubrir tu estilo en la ciudad',
-    incluye: ['Probador con maniquí', 'Sin foto propia ni alertas'] },
+    incluye: ['Probador con maniquí', `Probador con foto propia (hasta ${PLAN_LIMITS.RADAR.probadorFoto} usos/mes)`, 'Sin alertas de disponibilidad'] },
   { id: 'RADAR_PLUS', para: 'Personas', nombre: 'Radar+', precio: RADAR_PLUS_PRICE, periodo: 'al mes', nota: 'Para probarte la ropa sobre ti y no perderte nada', destacado: true,
-    incluye: ['Probador con maniquí', `Probador con foto propia (máximo ${PLAN_LIMITS.probadorFoto} usos)`, 'Alertas de disponibilidad'] },
+    incluye: ['Probador con maniquí', `Probador con foto propia (hasta ${PLAN_LIMITS.RADAR_PLUS.probadorFoto} usos/mes)`, 'Alertas de disponibilidad'] },
   { id: 'TIENDA', para: 'Tiendas', nombre: 'Tienda aliada', precio: STORE_SUBSCRIPTION_PRICE, periodo: 'al mes', nota: 'Los primeros 30 días son gratis',
     incluye: ['Tu catálogo visible en el radar y en el mapa', 'Publica en 3 pasos, con inventario por talla', 'Distintivos automáticos: Nueva llegada y Últimas unidades', 'Estadísticas de visitas y mensajes', 'Cancela la renovación cuando quieras'] },
   { id: 'FUNDACION', para: 'Fundaciones', nombre: 'Fundación aliada', precio: 0, periodo: 'siempre', nota: 'Sin costo para las fundaciones verificadas',

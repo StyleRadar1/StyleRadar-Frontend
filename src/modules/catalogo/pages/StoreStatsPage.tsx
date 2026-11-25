@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { statsService } from '@/modules/soporte/services/statsService'
+import type { StoreInventoryDto, StoreStatsDto } from '@/modules/soporte/types/stats.dto'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
+import { resolveStoreContext } from '../services/inventoryService'
 import './StoreStatsPage.css'
 
 export type StoreStatsPeriod = '7_DIAS' | '30_DIAS' | '90_DIAS'
@@ -174,23 +179,69 @@ function ActivityChart({ points, period, table }: { points: Point[]; period: Sto
 }
 
 export default function StoreStatsPage() {
+  const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const [period, setPeriod] = useState<StoreStatsPeriod>('30_DIAS')
   const [showTable, setShowTable] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
-  const [liveVisitors, setLiveVisitors] = useState(12)
+  const [liveVisitors, setLiveVisitors] = useState(() => (env.useMocks ? 12 : 0))
+  const [storeName, setStoreName] = useState(() => (env.useMocks ? 'Luna Store' : user?.name || 'Tu tienda'))
+  const [apiStats, setApiStats] = useState<StoreStatsDto | null>(null)
+  const [apiInventory, setApiInventory] = useState<StoreInventoryDto | null>(null)
+
+  useEffect(() => {
+    if (env.useMocks) return
+    let active = true
+    resolveStoreContext()
+      .then((ctx) => {
+        if (active && ctx.storeName) setStoreName(ctx.storeName)
+      })
+      .catch(() => {})
+    statsService
+      .getStoreStats(period)
+      .then((res) => {
+        if (active) setApiStats(res)
+      })
+      .catch(() => {})
+    statsService
+      .getStoreInventory()
+      .then((res) => {
+        if (active) setApiInventory(res)
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [period, user?.id])
 
   // RF-79: soporte para tienda con o sin meta semanal definida (?meta=sin-meta o sessionStorage sr_store_no_goal)
   const noGoalScenario =
+    !env.useMocks ||
     searchParams.get('meta') === 'sin-meta' ||
     (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('sr_store_no_goal') === '1')
-  const weeklyVisits = 445
-  const weeklyGoal: number | null = noGoalScenario ? null : 500
-  const weeklyProgress = weeklyGoal && weeklyGoal > 0 ? Math.min(100, Math.round((weeklyVisits / weeklyGoal) * 100)) : null
 
-  const points = useMemo(() => buildPeriodSeries(period), [period])
+  const points = useMemo(() => {
+    if (env.useMocks) return buildPeriodSeries(period)
+    const visitsList = apiStats?.visitasPorDia ?? []
+    const msgsList = apiStats?.mensajesPorDia ?? []
+    return visitsList.map((v, idx) => ({
+      fecha: v.fecha,
+      visits: v.visitas,
+      messages: msgsList[idx]?.mensajes ?? 0,
+    }))
+  }, [period, apiStats])
 
   const kpiData = useMemo(() => {
+    if (!env.useMocks) {
+      return {
+        visitas: {
+          actual: apiStats?.kpis.visitas.valor ?? 0,
+          anterior: apiStats?.kpis.visitas.periodoAnterior ?? 0,
+        },
+        mensajes: {
+          actual: apiStats?.kpis.mensajes.valor ?? 0,
+          anterior: apiStats?.kpis.mensajes.periodoAnterior ?? 0,
+        },
+      }
+    }
     const modoCero = searchParams.get('escenario')
     if (modoCero === 'ambos-cero') {
       return { visitas: { actual: 0, anterior: 0 }, mensajes: { actual: 0, anterior: 0 } }
@@ -208,10 +259,27 @@ export default function StoreStatsPage() {
       return { visitas: { actual: 2145, anterior: 1872 }, mensajes: { actual: 165, anterior: 155 } }
     }
     return { visitas: { actual: 6418, anterior: 5590 }, mensajes: { actual: 492, anterior: 462 } }
-  }, [period, searchParams])
+  }, [period, searchParams, apiStats])
+
+  const weeklyVisits = env.useMocks ? 445 : kpiData.visitas.actual
+  const weeklyGoal: number | null = noGoalScenario ? null : 500
+  const weeklyProgress = weeklyGoal && weeklyGoal > 0 ? Math.min(100, Math.round((weeklyVisits / weeklyGoal) * 100)) : null
 
   // RF-81: prendasDisponibles, prendasUltimasUnidades y prendasAgotadas con porcentaje a 2 decimales (0.0 si no hay prendas)
   const inventoryStats = useMemo(() => {
+    if (!env.useMocks) {
+      const disp = apiInventory?.disponibles ?? 0
+      const ult = apiInventory?.ultimasUnidades ?? 0
+      const agot = apiInventory?.agotadas ?? 0
+      const total = apiInventory?.total ?? (disp + ult + agot)
+      const calcPct = (n: number) => (total > 0 ? Number(((n / total) * 100).toFixed(2)) : 0.0)
+      return {
+        total,
+        prendasDisponibles: apiInventory?.prendasDisponibles ?? { cantidad: disp, porcentaje: calcPct(disp) },
+        prendasUltimasUnidades: apiInventory?.prendasUltimasUnidades ?? { cantidad: ult, porcentaje: calcPct(ult) },
+        prendasAgotadas: apiInventory?.prendasAgotadas ?? { cantidad: agot, porcentaje: calcPct(agot) },
+      }
+    }
     const sinPrendas = searchParams.get('inventario') === 'vacio'
     const disp = sinPrendas ? 0 : 10
     const ult = sinPrendas ? 0 : 2
@@ -224,9 +292,10 @@ export default function StoreStatsPage() {
       prendasUltimasUnidades: { cantidad: ult, porcentaje: calcPct(ult) },
       prendasAgotadas: { cantidad: agot, porcentaje: calcPct(agot) },
     }
-  }, [searchParams])
+  }, [searchParams, apiInventory])
 
   useEffect(() => {
+    if (!env.useMocks) return
     const timer = window.setInterval(() => {
       if (document.visibilityState !== 'visible') return
       setLiveVisitors((count) => Math.max(0, count + (Math.random() > 0.5 ? 1 : -1)))
@@ -263,9 +332,9 @@ export default function StoreStatsPage() {
       <section className="store-stats__content" id="estadisticas">
         <header className="store-stats__heading">
           <div>
-            <p className="store-stats__eyebrow">LUNA STORE · MÉTRICAS PRIVADAS</p>
+            <p className="store-stats__eyebrow">{storeName.toUpperCase()} · MÉTRICAS PRIVADAS</p>
             <h1>Estadísticas de tu tienda</h1>
-            <p>Consulta las métricas clave de Luna Store · Solo tú y StyleRadar ven estos datos</p>
+            <p>Consulta las métricas clave de {storeName} · Solo tú y StyleRadar ven estos datos</p>
           </div>
           <div className="store-stats__tools">
             <div className="store-stats__period" role="group" aria-label="Periodo de estadísticas">
@@ -311,7 +380,13 @@ export default function StoreStatsPage() {
               <span aria-hidden="true">☷</span>{showTable ? 'Ver gráfico' : 'Ver como tabla'}
             </button>
           </div>
-          <ActivityChart points={points} period={period} table={showTable} />
+          {points.length > 0 ? (
+            <ActivityChart points={points} period={period} table={showTable} />
+          ) : (
+            <p className="py-6 text-center text-sm text-[var(--color-text-muted)]">
+              Aún no hay actividad diaria registrada en este periodo.
+            </p>
+          )}
         </section>
 
         {/* RF-78 y RF-79 */}

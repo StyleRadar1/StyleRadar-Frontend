@@ -266,11 +266,13 @@ export const donationService = {
       if (!fid) throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
       return mockDelay(db().filter((d) => d.fundacion.id === fid))
     }
-    const fid = foundationId || 'mine'
+    const fid = foundationId ? String(foundationId).trim() : ''
+    if (!fid || fid.toLowerCase() === 'mine' || !/^\d+$/.test(fid)) {
+      return []
+    }
     return apiClient
       .get<any[]>(`/api/v1/donations/foundations/${encodeURIComponent(fid)}/requests`)
-      .catch(() => apiClient.get<any[]>('/api/v1/donations'))
-      .then((r) => r.data.map(normalizeDonation))
+      .then((r) => (Array.isArray(r.data) ? r.data : []).map(normalizeDonation))
   },
 
   /** RF-47 y RF-49: aprobar, rechazar, iniciar recogida o confirmar recepción. */

@@ -229,7 +229,7 @@ export function checkFeatureAccess(feature: FuncionPago, userId = 'u-1'): Verifi
   if (feature === 'probador-foto') {
     const uses = getTryOnPhotoUses(userId)
     if (uses >= PLAN_LIMITS.probadorFoto) {
-      throw new ApiError(422, 'Alcanzaste el límite de 30 usos del probador con foto propia')
+      throw new ApiError(422, `Alcanzaste el límite de ${PLAN_LIMITS.probadorFoto} usos del probador con foto propia`)
     }
   }
 

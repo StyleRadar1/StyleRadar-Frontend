@@ -17,6 +17,7 @@ import { extractAvailableTallasFromInventory, itemService } from '../services/it
 import { ITEMS } from '../mocks/items'
 import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
+import { isGarmentTryOnEligible } from '../utils/tryOnEligibility'
 import './ItemDetailPage.css'
 
 type Accion = 'reintentar-alerta' | 'reservar' | 'planes' | 'login' | 'ver-alertas'
@@ -529,7 +530,7 @@ export default function ItemDetailPage() {
                 <div>
                   {/* a) Marca o tienda en pequeño, mayúsculas, letter-spacing y color de acento */}
                   <Link
-                    to={`/tiendas/${getStoreIdByName(prenda.tienda)}`}
+                    to={`/tiendas/${encodeURIComponent(prenda.storeNit || prenda.almacenId || getStoreIdByName(prenda.tienda))}`}
                     className="text-xs font-bold uppercase tracking-[.22em] text-[var(--sr-acento-primario,var(--color-accent))] hover:underline inline-flex items-center gap-1"
                     title={`Ver tienda ${prenda.tienda}`}
                   >
@@ -699,7 +700,7 @@ export default function ItemDetailPage() {
 
                       {/* Botón primario Ver tienda (morado suave con glow) */}
                       <Link
-                        to={`/tiendas/${getStoreIdByName(prenda.tienda)}`}
+                        to={`/tiendas/${encodeURIComponent(prenda.storeNit || prenda.almacenId || getStoreIdByName(prenda.tienda))}`}
                         className="flex-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] px-6 py-3 text-xs font-bold text-white shadow-[0_4px_20px_-2px_rgba(139,92,246,0.5)] border border-white/20 transition-all hover:from-[#B49BFB] hover:to-[#8B5CF6] hover:shadow-[0_6px_25px_-2px_rgba(139,92,246,0.65)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                       >
                         Ver tienda
@@ -722,7 +723,7 @@ export default function ItemDetailPage() {
                     </button>
 
                     {/* Enlace directo para probarse la prenda en el probador virtual / maniquí (RF-24 / RF-57) */}
-                    {prenda.noDisponibleEnProbador || /^(Calzado|Tenis|Zapatos|Botas|Accesorio|Cinturón|Bufanda|Bolso|Gorra|Gafas|Chaqueta|Abrigo|Gabardina)$/i.test(prenda.tipo || '') ? (
+                    {!isGarmentTryOnEligible(prenda) ? (
                       <div className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-2.5 text-center text-xs text-[var(--color-text-muted)]">
                         La prenda no está disponible o no admite prueba virtual.
                       </div>
@@ -770,7 +771,7 @@ export default function ItemDetailPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                 {/* 1. Tienda */}
                 <Link
-                  to={`/tiendas/${getStoreIdByName(prenda.tienda)}`}
+                  to={`/tiendas/${encodeURIComponent(prenda.storeNit || prenda.almacenId || getStoreIdByName(prenda.tienda))}`}
                   className="group flex flex-col items-center gap-2"
                   title={`Ver tienda ${prenda.tienda}`}
                 >
@@ -798,7 +799,7 @@ export default function ItemDetailPage() {
                   </div>
                   <div>
                     <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">SECTOR</p>
-                    <p className="text-xs font-bold text-[var(--color-text)]">{prenda.barrio || 'Bogotá'}</p>
+                    <p className="text-xs font-bold text-[var(--color-text)]">{prenda.barrio || 'Sin especificar'}</p>
                   </div>
                 </div>
 
@@ -813,7 +814,7 @@ export default function ItemDetailPage() {
                   <div>
                     <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">CERCANÍA</p>
                     <p className="text-xs font-bold text-[var(--color-text)]">
-                      {prenda.distanciaKm > 0 ? `a ${prenda.distanciaKm.toLocaleString('es-CO', { maximumFractionDigits: 2 })} km` : 'Bogotá'}
+                      {prenda.distanciaKm > 0 ? `a ${prenda.distanciaKm.toLocaleString('es-CO', { maximumFractionDigits: 2 })} km` : 'Ubicación no calculada'}
                     </p>
                   </div>
                 </div>

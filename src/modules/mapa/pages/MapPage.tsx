@@ -102,16 +102,27 @@ export default function MapPage() {
   const buscar = useCallback(async (u: Ubicacion | null, km: number) => {
     setAviso(null); setRadioError('')
     try {
-      const ids = await mapService.nearby(u, km, categoriaId || undefined)
-      setCercanos(ids)
-      if (u && !env.useMocks) {
+      if (!u) {
+        setPideUbicacion(true)
+        return
+      }
+      if (km < RADIO_KM.min || km > RADIO_KM.max) {
+        setRadioError(TEXTO_RADIO)
+        setRadio(RADIO_KM.inicial)
+        return
+      }
+      if (env.useMocks) {
+        const ids = await mapService.nearby(u, km, categoriaId || undefined)
+        setCercanos(ids)
+      } else {
         const updated = await mapService.getAll({
           lat: u.lat,
           lng: u.lng,
           radioKm: km,
           categoriaId: categoriaId || undefined,
-        }).catch(() => null)
-        if (updated) setPinsFiltrados(updated)
+        })
+        setPinsFiltrados(updated)
+        setCercanos(updated.map((p) => p.id))
       }
       setPideUbicacion(false)
     } catch (e) {

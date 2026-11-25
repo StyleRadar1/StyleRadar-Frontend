@@ -391,7 +391,9 @@ export const storePublicService = {
         .catch(() => [] as Record<string, any>[])
       almacenMatch =
         listaAlmacenes.find(
-          (a) => String(a?.id ?? a?.almacenId ?? '').trim().toLowerCase() === cleanId
+          (a) =>
+            String(a?.id ?? a?.almacenId ?? '').trim().toLowerCase() === cleanId ||
+            String(a?.nit ?? '').trim().toLowerCase() === cleanId
         ) ?? null
     }
 
@@ -400,10 +402,13 @@ export const storePublicService = {
       return null
     }
 
+    const matchedStoreDto: StoreResponseDto | null =
+      storeDto ??
+      (almacenMatch?.nit ? (almacenMatch as StoreResponseDto) : null)
     const prendas = catalogoItems
     const novedades = novedadesItems.length > 0 ? novedadesItems.slice(0, 3) : prendas.slice(0, 3)
     const categorias = buildCategoriasFromItems(prendas)
-    const api = storeDto ? aTiendaPublica(storeDto, null) : {}
+    const api = matchedStoreDto ? aTiendaPublica(matchedStoreDto, null) : {}
     const matchLng =
       typeof almacenMatch?.longitud === 'number'
         ? almacenMatch.longitud

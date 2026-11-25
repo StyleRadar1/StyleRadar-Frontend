@@ -128,7 +128,7 @@ function AdminShell() {
                   <span className="text-[11px] font-bold uppercase tracking-[.14em]">Admin</span>
                 </span>
               </div>
-              <button type="button" onClick={() => setSalir(true)} className="rounded-lg px-2 py-1.5 text-sm text-white/70 hover:text-blanco lg:hidden">Salir</button>
+              <button type="button" onClick={() => setSalir(true)} className="rounded-lg px-2 py-1.5 text-sm text-white/70 hover:text-blanco lg:hidden">Cerrar sesión</button>
             </div>
             {/* En pantallas pequeñas las secciones van en una fila desplazable */}
             <nav aria-label="Administración (móvil)" className="flex gap-1 overflow-x-auto px-3 pb-2 lg:hidden [&>*]:shrink-0 [&>*]:py-2">{nav}</nav>
