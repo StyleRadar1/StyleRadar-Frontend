@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { ADMIN_CHANGED, adminStoreService } from '@/modules/administracion/services/adminService'
 import { moderationService } from '@/modules/catalogo/services/moderationService'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
-import { EnvironmentBanner, MockBanner } from '@/modules/core/components/Status'
+import { EnvironmentBanner } from '@/modules/core/components/Status'
 import { iniciales } from '@/modules/core/components/UserMenu'
 import { Logo } from '@/modules/core/design-system'
 import { AppearancePicker } from '@/modules/core/theme'
@@ -93,7 +93,6 @@ function AdminShell() {
 
   return (
     <div className="sr-verdelo-shell flex min-h-screen flex-col">
-      {env.useMocks && <MockBanner />}
       {env.appEnvironment === 'qa' && <EnvironmentBanner environment="qa" />}
       <div className="flex flex-1">
         {/* Barra lateral */}
