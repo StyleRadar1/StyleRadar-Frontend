@@ -82,6 +82,7 @@ export default function PlaylistsPage() {
   const [prendasIniciales, setPrendasIniciales] = useState<string[]>(() =>
     env.useMocks && ITEMS[0]?.id ? [ITEMS[0].id] : []
   )
+  const [buscarPrendaInicial, setBuscarPrendaInicial] = useState('')
   const [errorCrear, setErrorCrear] = useState<string | null>(null)
   const [errorPrendasIniciales, setErrorPrendasIniciales] = useState<string | null>(null)
   /** 422 al agregar: la playlist llegó al límite de 15 prendas. */
@@ -1726,11 +1727,31 @@ export default function PlaylistsPage() {
                 <span className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
                   Prendas iniciales ({prendasIniciales.length}/{MAX_PLAYLIST_ITEMS})
                 </span>
+                <input
+                  type="search"
+                  value={buscarPrendaInicial}
+                  onChange={(e) => setBuscarPrendaInicial(e.target.value)}
+                  placeholder="Buscar prenda o tienda en el catálogo…"
+                  aria-label="Buscar prenda inicial"
+                  className="mb-2 w-full rounded-xl border border-white/15 bg-black/50 px-3 py-1.5 text-xs text-white placeholder:text-white/40 outline-none focus:border-violeta"
+                />
                 <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-xl border border-white/15 bg-black/40 p-2.5">
-                  {catalogItems.length === 0 ? (
-                    <p className="text-xs text-white/50">No hay prendas disponibles en el catálogo.</p>
-                  ) : (
-                    catalogItems.slice(0, 20).map((item) => {
+                  {(() => {
+                    const q = buscarPrendaInicial.trim().toLowerCase()
+                    const visibles = q
+                      ? catalogItems.filter(
+                          (it) =>
+                            it.nombre.toLowerCase().includes(q) ||
+                            (it.tienda ?? '').toLowerCase().includes(q),
+                        )
+                      : catalogItems
+                    if (catalogItems.length === 0) {
+                      return <p className="text-xs text-white/50">No hay prendas disponibles en el catálogo.</p>
+                    }
+                    if (visibles.length === 0) {
+                      return <p className="text-xs text-white/50">Ninguna prenda coincide con «{buscarPrendaInicial}».</p>
+                    }
+                    return visibles.map((item) => {
                       const checked = prendasIniciales.includes(item.id)
                       return (
                         <label
@@ -1769,7 +1790,7 @@ export default function PlaylistsPage() {
                         </label>
                       )
                     })
-                  )}
+                  })()}
                 </div>
                 {errorPrendasIniciales ? (
                   <p className="mt-1 text-[11px] text-[var(--sr-bad)]">{errorPrendasIniciales}</p>

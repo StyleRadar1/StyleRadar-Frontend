@@ -247,9 +247,9 @@ export default function StoreSubscriptionPage() {
             <span>Método: <b>{lastPayment?.method ?? 'Mercado Pago'}</b></span>
           </div>
           <div className="store-subscription__actions flex flex-wrap items-center gap-3">
-            {(!env.useMocksPagos ? isSuspendedOrExpired : sub.status !== 'ACTIVA') && (
+            {(!env.useMocksPagos ? (isSuspendedOrExpired || derivedSub.status === 'CANCELADA') : sub.status !== 'ACTIVA') && (
               <Button onClick={() => { void pay() }} disabled={paying}>
-                {paying ? 'Procesando pago…' : isSuspendedOrExpired ? 'Volver a suscribirme' : 'Pagar y activar suscripción'}
+                {paying ? 'Procesando pago…' : isSuspendedOrExpired || derivedSub.status === 'CANCELADA' ? 'Volver a suscribirme' : 'Pagar y activar suscripción'}
               </Button>
             )}
             <CancelSubscriptionButton
