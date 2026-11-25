@@ -22,7 +22,7 @@ export function resolveEnv(source: EnvSource) {
   if (rawMocks !== undefined && rawMocks !== 'true' && rawMocks !== 'false') {
     throw new Error('VITE_USE_MOCKS debe ser true o false.')
   }
-  const useMocks = rawMocks === 'true'
+  const useMocks = rawMocks === undefined ? appEnvironment === 'local' : rawMocks === 'true'
 
   const rawMocksPagos = source.VITE_USE_MOCKS_PAGOS
   if (rawMocksPagos !== undefined && rawMocksPagos !== '' && rawMocksPagos !== 'true' && rawMocksPagos !== 'false') {

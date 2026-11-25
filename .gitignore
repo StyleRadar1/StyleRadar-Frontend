@@ -26,6 +26,7 @@ dist-ssr
 # Variables de entorno locales
 .env
 .env.*
+!.env.development
 !.env.example
 !.env.qa.example
 !.env.production.example

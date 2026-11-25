@@ -32,11 +32,10 @@ Se necesita Node.js 20 o superior.
 
 ```
 npm install
-cp .env.example .env
 npm run dev
 ```
 
-En Windows, el segundo comando es `copy .env.example .env`.
+Los mocks y el mapa ya vienen activos por defecto con `.env.development`. Para usar la API real, crea `.env.local` con `VITE_USE_MOCKS=false` y `VITE_API_URL`.
 
 Abrir http://localhost:5173.
 
