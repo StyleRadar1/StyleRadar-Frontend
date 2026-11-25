@@ -265,13 +265,15 @@ export default function PlaylistsPage() {
 
   const esMia = useMemo(() => {
     if (!selectedPlaylist) return false
+    const myId = String(usuarioActual.id ?? '')
     return (
-      selectedPlaylist.usuarioId === usuarioActual.id ||
-      selectedPlaylist.creador?.email === usuarioEmail ||
-      selectedPlaylist.creador?.id === usuarioActual.id ||
-      selectedPlaylist.creador?.nombre.toLowerCase().includes('valentina')
+      myPlaylists.some((p) => p.id === selectedPlaylist.id) ||
+      (Boolean(myId) && String(selectedPlaylist.usuarioId ?? '') === myId) ||
+      (Boolean(usuarioEmail) && selectedPlaylist.creador?.email === usuarioEmail) ||
+      (Boolean(myId) && String(selectedPlaylist.creador?.id ?? '') === myId) ||
+      Boolean(selectedPlaylist.creador?.nombre?.toLowerCase().includes('valentina'))
     )
-  }, [selectedPlaylist, usuarioEmail, usuarioActual.id])
+  }, [selectedPlaylist, myPlaylists, usuarioEmail, usuarioActual.id])
 
   const handleSeleccionarPlaylist = (p: PlaylistDto) => {
     setSelectedLocalId(p.id)
@@ -305,6 +307,15 @@ export default function PlaylistsPage() {
         estilo,
         prendaIds: prendasIniciales,
       })
+      if (!nueva.prendas || nueva.prendas.length === 0) {
+        const matched = catalogItems
+          .filter((it) => prendasIniciales.includes(it.id))
+          .map((it) => ({ ...it, agregadaPor: usuarioActual.name }))
+        if (matched.length > 0) {
+          nueva.prendas = matched
+          if (!nueva.portadaUrl) nueva.portadaUrl = matched[0].imagen
+        }
+      }
       setMostrarCrear(false)
       setNombre('')
       setDescripcion('')
@@ -617,7 +628,13 @@ export default function PlaylistsPage() {
                         title="Eliminar playlist"
                         className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:bg-rose-500/20 hover:border-rose-400/50 hover:text-rose-400 text-white/70 flex items-center justify-center text-sm transition active:scale-95"
                       >
-                        
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                        </svg>
                       </button>
                       <button
                         type="button"
@@ -631,13 +648,6 @@ export default function PlaylistsPage() {
                     </>
                   ) : (
                     <>
-                      <Link
-                        to={`/probador?playlist=${selectedPlaylist.id}`}
-                        aria-label="Probar outfit completo en el probador"
-                        className="flex items-center gap-2 rounded-full bg-[#5013b8] hover:bg-[#6318e3] text-white text-xs font-bold px-6 py-2.5 shadow-lg shadow-purple-900/40 transition active:scale-95"
-                      >
-                        ▶ Probar outfit completo
-                      </Link>
                       <button
                         type="button"
                         onClick={handleMezclar}
@@ -656,7 +666,18 @@ export default function PlaylistsPage() {
                             : 'border-white/20 bg-white/5 hover:bg-white/10 text-white/70'
                         }`}
                       >
-                        {isLiked ? '' : ''}
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-4 w-4"
+                          fill={isLiked ? 'currentColor' : 'none'}
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
                       </button>
                       <button
                         type="button"

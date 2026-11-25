@@ -17,22 +17,31 @@ import {
 const PLAYLIST_COVER_FALLBACKS = [
   '/img/productos/blazer-oversize.jpg',
   '/img/productos/sueter-de-canale-crudo.jpg',
-  '/img/productos/chaqueta-denim-oversize.jpg',
+  '/img/productos/hoodie-azul-noche.jpg',
   '/img/productos/jean-ancho-azul.jpg',
-  '/img/productos/saco-de-lana-negro.jpg',
-  '/img/productos/camisa-negra-de-popelina.jpg',
+  '/img/productos/chaqueta-de-nylon.jpg',
+  '/img/productos/gabardina-clasica.jpg',
+  '/img/productos/pantalon-de-pinzas.jpg',
+  '/img/productos/r2c3-chaqueta-cuero.jpg',
+  '/img/productos/botas-de-plataforma.jpg',
 ]
 
 function pickCoverFallback(seed: string): string {
-  let h = 0
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
-  return PLAYLIST_COVER_FALLBACKS[h % PLAYLIST_COVER_FALLBACKS.length]
+  let h = 2166136261
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return PLAYLIST_COVER_FALLBACKS[(h >>> 0) % PLAYLIST_COVER_FALLBACKS.length]
 }
 
 function normalizePlaylist(raw: any): PlaylistDto {
   const uid = raw?.usuarioId != null ? String(raw.usuarioId) : raw?.creador?.id ? String(raw.creador.id) : ''
   const creadorNombre = raw?.creador?.nombre || uid || 'Curador'
+  const playlistId = String(raw?.id ?? '')
+  const playlistName = String(raw?.nombre ?? '')
   const prendasRaw: any[] = Array.isArray(raw?.prendas) ? raw.prendas : []
+  let firstRealImg: string | undefined
   const prendas: PlaylistItemDto[] = prendasRaw.map((item, idx) => {
     const id = String(item?.prendaId ?? item?.id ?? '')
     const nombre = String(item?.nombrePrenda ?? item?.nombre ?? '')
@@ -45,10 +54,9 @@ function normalizePlaylist(raw: any): PlaylistDto {
       (Array.isArray(item?.fotografias) && item.fotografias[0]) ||
       item?.imagenUrl ||
       ''
-    const imagen =
-      rawImg ||
-      match?.imagen ||
-      PLAYLIST_COVER_FALLBACKS[(idx + id.length) % PLAYLIST_COVER_FALLBACKS.length]
+    const resolvedReal = rawImg || match?.imagen || ''
+    if (idx === 0 && resolvedReal) firstRealImg = resolvedReal
+    const imagen = resolvedReal || pickCoverFallback(`${id}|${nombre}|${idx}`)
 
     return {
       ...item,
@@ -63,8 +71,6 @@ function normalizePlaylist(raw: any): PlaylistDto {
       noDisponible: item?.disponible === false || Boolean(item?.noDisponible),
     }
   })
-  const playlistId = String(raw?.id ?? '')
-  const playlistName = String(raw?.nombre ?? '')
   return {
     id: playlistId,
     nombre: playlistName,
@@ -77,7 +83,7 @@ function normalizePlaylist(raw: any): PlaylistDto {
     },
     visibilidad: raw?.visibilidad ?? 'PUBLICA',
     estilo: raw?.estilo as PlaylistEstilo | undefined,
-    portadaUrl: raw?.portadaUrl || prendas[0]?.imagen || pickCoverFallback(playlistId || playlistName),
+    portadaUrl: raw?.portadaUrl || firstRealImg || pickCoverFallback(`${playlistId}|${playlistName}`),
     prendas,
     likes: Number(raw?.likes ?? 0),
     guardados: Number(raw?.guardados ?? 0),
@@ -220,7 +226,13 @@ export const playlistService = {
         estilo,
         prendaIds: dto.prendaIds ?? [],
       })
-      .then((r) => normalizePlaylist(r.data))
+      .then(async (r) => {
+        const normalized = normalizePlaylist(r.data)
+        if (normalized.id && normalized.prendas.length === 0 && (dto.prendaIds?.length ?? 0) > 0) {
+          return this.getById(normalized.id).catch(() => normalized)
+        }
+        return normalized
+      })
   },
 
   update(id: string, dto: UpdatePlaylistDto): Promise<PlaylistDto> {
@@ -274,7 +286,13 @@ export const playlistService = {
         prendaId: itemId,
         ...(fallbackNombre ? { nombrePrenda: fallbackNombre } : {}),
       })
-      .then((r) => normalizePlaylist(r.data))
+      .then(async (r) => {
+        const normalized = normalizePlaylist(r.data)
+        if (normalized.prendas.length === 0 || !normalized.prendas.some((p) => p.id === itemId)) {
+          return this.getById(playlistId).catch(() => normalized)
+        }
+        return normalized
+      })
   },
 
   removeItem(playlistId: string, itemId: string): Promise<PlaylistDto> {

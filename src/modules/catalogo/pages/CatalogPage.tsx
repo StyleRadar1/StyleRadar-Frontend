@@ -53,6 +53,11 @@ const PRECIOS_PRESETS = [
   { label: 'Más de $400.000', min: 400000, max: undefined },
 ]
 
+const PRICE_SLIDER_MIN = 0
+const PRICE_SLIDER_MAX = 600000
+const PRICE_SLIDER_STEP = 10000
+const formatPesos = (n: number) => `$${n.toLocaleString('es-CO')}`
+
 // Origen de prendas
 const ORIGENES = [
   { id: 'Todos', label: 'Todos' },
@@ -178,20 +183,37 @@ export default function CatalogPage() {
     return t ? (GRUPOS_TALLAS.find((g) => g.tallas.includes(t))?.id ?? null) : null
   })
   const [filtroPrecio, setFiltroPrecio] = useState<number>(0)
+  const [precioMinCustom, setPrecioMinCustom] = useState<number | null>(null)
+  const [precioMaxCustom, setPrecioMaxCustom] = useState<number | null>(null)
   const [filtroOrigen, setFiltroOrigen] = useState<string>(params.get('origen') ?? 'Todos')
   const [filtroMarca, setFiltroMarca] = useState<string>(params.get('marca') ?? 'Todas')
   const [filtroColor, setFiltroColor] = useState<string>(params.get('color') ?? 'Todos')
   const [filtroEstilo, setFiltroEstilo] = useState<string>(params.get('estilo') ?? 'Todos')
 
+  const hasCustomPrecio = precioMinCustom !== null || precioMaxCustom !== null
+  const hasPrecioFilter = filtroPrecio !== 0 || hasCustomPrecio
+
+  const precioLabelActual = useMemo(() => {
+    if (hasCustomPrecio) {
+      const minV = precioMinCustom ?? PRICE_SLIDER_MIN
+      const maxV = precioMaxCustom ?? PRICE_SLIDER_MAX
+      if (minV <= PRICE_SLIDER_MIN && maxV >= PRICE_SLIDER_MAX) return 'Cualquier precio'
+      if (minV <= PRICE_SLIDER_MIN) return `Hasta ${formatPesos(maxV)}`
+      if (maxV >= PRICE_SLIDER_MAX) return `Más de ${formatPesos(minV)}`
+      return `${formatPesos(minV)} a ${formatPesos(maxV)}`
+    }
+    return PRECIOS_PRESETS[filtroPrecio]?.label ?? 'Cualquier precio'
+  }, [hasCustomPrecio, precioMinCustom, precioMaxCustom, filtroPrecio])
+
   const CATEGORIAS_CONFIG: { id: CategoriaId; label: string; panelTitle: string; count: number }[] = useMemo(() => [
     { id: 'tipo', label: 'Tipo de prenda', panelTitle: 'Tipo de prenda', count: filtroTipo !== 'Todos' ? 1 : 0 },
     { id: 'talla', label: 'Talla', panelTitle: 'Talla disponible', count: filtroTalla !== 'Todas' ? 1 : 0 },
-    { id: 'precio', label: 'Precio', panelTitle: 'Rango de precio', count: filtroPrecio !== 0 ? 1 : 0 },
+    { id: 'precio', label: 'Precio', panelTitle: 'Rango de precio', count: hasPrecioFilter ? 1 : 0 },
     { id: 'origen', label: 'Origen', panelTitle: 'Origen', count: filtroOrigen !== 'Todos' ? 1 : 0 },
     { id: 'marca', label: 'Marca', panelTitle: 'Marca', count: filtroMarca !== 'Todas' ? 1 : 0 },
     { id: 'color', label: 'Color', panelTitle: 'Color', count: filtroColor !== 'Todos' ? 1 : 0 },
     { id: 'estilo', label: 'Estilo', panelTitle: 'Estilo', count: filtroEstilo !== 'Todos' ? 1 : 0 },
-  ], [filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
+  ], [filtroTipo, filtroTalla, hasPrecioFilter, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
 
   // Guardar búsqueda y su alerta (RF-28 y RF-30)
   const [busqueda, setBusqueda] = useState<BusquedaGuardadaDto | null>(null)
@@ -280,24 +302,30 @@ export default function CatalogPage() {
     let count = 0
     if (filtroTipo !== 'Todos') count++
     if (filtroTalla !== 'Todas') count++
-    if (filtroPrecio !== 0) count++
+    if (hasPrecioFilter) count++
     if (filtroOrigen !== 'Todos') count++
     if (filtroMarca !== 'Todas') count++
     if (filtroColor !== 'Todos') count++
     if (filtroEstilo !== 'Todos') count++
     return count
-  }, [filtroTipo, filtroTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
+  }, [filtroTipo, filtroTalla, hasPrecioFilter, filtroOrigen, filtroMarca, filtroColor, filtroEstilo])
 
   // Filtros combinados para el hook
   const activeFilters = useMemo<ItemFiltersDto>(() => {
     const selectedPreset = PRECIOS_PRESETS[filtroPrecio]
+    const precioMin = hasCustomPrecio
+      ? (precioMinCustom !== null && precioMinCustom > PRICE_SLIDER_MIN ? precioMinCustom : undefined)
+      : selectedPreset?.min
+    const precioMax = hasCustomPrecio
+      ? (precioMaxCustom !== null && precioMaxCustom < PRICE_SLIDER_MAX ? precioMaxCustom : undefined)
+      : selectedPreset?.max
     return {
       texto: texto.trim() || undefined,
       tipo: filtroTipo !== 'Todos' ? filtroTipo : undefined,
       talla: filtroTalla !== 'Todas' ? filtroTalla : undefined,
       tipoTalla: filtroTalla !== 'Todas' ? (filtroTipoTalla ?? undefined) : undefined,
-      precioMin: selectedPreset?.min,
-      precioMax: selectedPreset?.max,
+      precioMin,
+      precioMax,
       origen: filtroOrigen !== 'Todos' ? filtroOrigen : undefined,
       marca: filtroMarca !== 'Todas' ? filtroMarca : undefined,
       color: filtroColor !== 'Todos' ? filtroColor : undefined,
@@ -306,7 +334,7 @@ export default function CatalogPage() {
       lng: orden === 'DISTANCIA' ? coords?.lng : undefined,
       orden,
     }
-  }, [texto, filtroTipo, filtroTalla, filtroTipoTalla, filtroPrecio, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
+  }, [texto, filtroTipo, filtroTalla, filtroTipoTalla, filtroPrecio, hasCustomPrecio, precioMinCustom, precioMaxCustom, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
 
   const user = useContext(AuthContext)?.user
   const isBuyer = user?.role === 'BUYER'
@@ -494,6 +522,8 @@ export default function CatalogPage() {
     setFiltroTalla('Todas')
     setFiltroTipoTalla(null)
     setFiltroPrecio(0)
+    setPrecioMinCustom(null)
+    setPrecioMaxCustom(null)
     setFiltroOrigen('Todos')
     setFiltroMarca('Todas')
     setFiltroColor('Todos')
@@ -514,6 +544,8 @@ export default function CatalogPage() {
         break
       case 'precio':
         setFiltroPrecio(0)
+    setPrecioMinCustom(null)
+    setPrecioMaxCustom(null)
         break
       case 'origen':
         setFiltroOrigen('Todos')
@@ -597,48 +629,79 @@ export default function CatalogPage() {
             ))}
           </div>
         )
-      case 'precio':
+      case 'precio': {
+        const sliderMinVal = hasCustomPrecio
+          ? (precioMinCustom ?? PRICE_SLIDER_MIN)
+          : (PRECIOS_PRESETS[filtroPrecio]?.min ?? PRICE_SLIDER_MIN)
+        const sliderMaxVal = hasCustomPrecio
+          ? (precioMaxCustom ?? PRICE_SLIDER_MAX)
+          : (PRECIOS_PRESETS[filtroPrecio]?.max ?? PRICE_SLIDER_MAX)
+        const leftPct = ((sliderMinVal - PRICE_SLIDER_MIN) / (PRICE_SLIDER_MAX - PRICE_SLIDER_MIN)) * 100
+        const rightPct = 100 - ((sliderMaxVal - PRICE_SLIDER_MIN) / (PRICE_SLIDER_MAX - PRICE_SLIDER_MIN)) * 100
+        const maxLeftPct = 100 - rightPct
+
         return (
           <div className="space-y-3">
             <div className="max-w-md px-1">
               <div className="mb-1.5 flex items-center justify-between text-xs">
                 <span className="text-[0.6875rem] font-semibold text-[var(--color-text-muted)]">Rango</span>
                 <span className="text-[0.75rem] font-bold text-[var(--sr-acento-primario,var(--color-accent))]">
-                  {PRECIOS_PRESETS[filtroPrecio]?.label ?? 'Cualquier precio'}
+                  {precioLabelActual}
                 </span>
               </div>
-              <div className="sr-filter-range-track" aria-hidden="true">
+              <div className="sr-filter-range-track">
                 <div
                   className="sr-filter-range-bar"
-                  style={{
-                    left: filtroPrecio === 0 ? '0%' : filtroPrecio === 1 ? '0%' : filtroPrecio === 2 ? '25%' : filtroPrecio === 3 ? '58%' : '78%',
-                    right: filtroPrecio === 0 ? '0%' : filtroPrecio === 1 ? '75%' : filtroPrecio === 2 ? '42%' : filtroPrecio === 3 ? '18%' : '0%',
-                  }}
+                  style={{ left: `${leftPct}%`, right: `${rightPct}%` }}
                 />
-                <div
-                  className="sr-filter-range-thumb"
-                  style={{
-                    left: filtroPrecio === 0 ? '0%' : filtroPrecio === 1 ? '0%' : filtroPrecio === 2 ? '25%' : filtroPrecio === 3 ? '58%' : '78%',
+                <div className="sr-filter-range-thumb" style={{ left: `${leftPct}%` }} />
+                <div className="sr-filter-range-thumb" style={{ left: `${maxLeftPct}%` }} />
+                <input
+                  type="range"
+                  aria-label="Precio mínimo"
+                  min={PRICE_SLIDER_MIN}
+                  max={PRICE_SLIDER_MAX}
+                  step={PRICE_SLIDER_STEP}
+                  value={sliderMinVal}
+                  onChange={(e) => {
+                    const nextMin = Math.min(Number(e.target.value), sliderMaxVal - PRICE_SLIDER_STEP)
+                    setFiltroPrecio(0)
+                    setPrecioMinCustom(nextMin)
+                    setPrecioMaxCustom(sliderMaxVal)
                   }}
+                  className="sr-filter-range-input"
                 />
-                <div
-                  className="sr-filter-range-thumb"
-                  style={{
-                    left: filtroPrecio === 0 ? '100%' : filtroPrecio === 1 ? '25%' : filtroPrecio === 2 ? '58%' : filtroPrecio === 3 ? '82%' : '100%',
+                <input
+                  type="range"
+                  aria-label="Precio máximo"
+                  min={PRICE_SLIDER_MIN}
+                  max={PRICE_SLIDER_MAX}
+                  step={PRICE_SLIDER_STEP}
+                  value={sliderMaxVal}
+                  onChange={(e) => {
+                    const nextMax = Math.max(Number(e.target.value), sliderMinVal + PRICE_SLIDER_STEP)
+                    setFiltroPrecio(0)
+                    setPrecioMinCustom(sliderMinVal)
+                    setPrecioMaxCustom(nextMax)
                   }}
+                  className="sr-filter-range-input"
                 />
               </div>
             </div>
             <div className="sr-filter-chips-grid">
               {PRECIOS_PRESETS.map((preset, idx) => {
                 if (idx === 0) return null
-                const isSelected = filtroPrecio === idx
+                const isSelected = !hasCustomPrecio && filtroPrecio === idx
                 return (
                   <button
                     key={preset.label}
                     type="button"
                     aria-pressed={isSelected}
-                    onClick={() => setFiltroPrecio(isSelected ? 0 : idx)}
+                    onClick={() => {
+                      setPrecioMinCustom(null)
+                      setPrecioMaxCustom(null)
+                      setFiltroPrecio(isSelected ? 0 : idx)
+                    }}
                     className={`sr-filter-chip ${isSelected ? 'sr-filter-chip--selected' : ''}`}
                   >
                     <span>{preset.label}</span>
@@ -648,6 +711,7 @@ export default function CatalogPage() {
             </div>
           </div>
         )
+      }
       case 'origen':
         return (
           <div className="sr-filter-chips-grid">
@@ -1142,10 +1206,10 @@ export default function CatalogPage() {
                 </button>
               </span>
             )}
-            {filtroPrecio !== 0 && (
+            {hasPrecioFilter && (
               <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-semibold text-[var(--color-text)]">
-                {PRECIOS_PRESETS[filtroPrecio].label}
-                <button type="button" onClick={() => setFiltroPrecio(0)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de precio">
+                {precioLabelActual}
+                <button type="button" onClick={() => { setFiltroPrecio(0); setPrecioMinCustom(null); setPrecioMaxCustom(null) }} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-full" aria-label="Quitar filtro de precio">
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
