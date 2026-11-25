@@ -25,8 +25,10 @@ export function problemaEnvio(e: unknown): ProblemaChat {
 }
 
 /** Error al abrir una conversación desde una prenda, una publicación o una donación. */
-export function problemaInicio(e: unknown): ProblemaChat {
+export function problemaInicio(e: unknown, tipo?: string): ProblemaChat {
   const status = e instanceof ApiError ? e.status : 0
+  // Con una tienda, el 422 es «el almacén no existe o no está habilitado para chat» (ms-chat lo valida contra ms-tiendas)
+  if (tipo === 'TIENDA' && (status === 422 || status === 400 || status === 404)) return { titulo: 'Esta tienda aún no recibe mensajes', texto: 'No está habilitada para chat en este momento.', tipo: 'cerrado' }
   if (status === 422 || status === 400) return { titulo: 'No puedes escribir sobre esta publicación', texto: 'Es tuya o ya no está disponible.', tipo: 'cerrado' }
   if (status === 404 || status === 403) return { titulo: 'Esta publicación ya no está disponible', texto: 'Puede que la hayan retirado.', tipo: 'no-existe' }
   return general(e, 'No pudimos abrir la conversación', 'Intenta en unos minutos.')

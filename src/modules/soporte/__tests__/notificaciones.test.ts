@@ -33,6 +33,8 @@ describe('enlaces de los avisos del servicio → rutas del front', () => {
     expect(enlaceFront('//malo.example/x', 'BUYER')).toBeUndefined()
     expect(enlaceFront('javascript:alert(1)', 'BUYER')).toBeUndefined()
     expect(enlaceFront('', 'BUYER')).toBeUndefined()
+    expect(enlaceFront(null, 'BUYER')).toBeUndefined()
+    expect(enlaceFront(undefined, 'BUYER')).toBeUndefined()
   })
 })
 
@@ -41,6 +43,11 @@ describe('aviso del servidor → aviso de la campana', () => {
     const n = aNotificacion({ id: 7, tipo: 'MENSAJE_NUEVO', titulo: 'Nuevo mensaje de Sofía', mensaje: 'Hola', enlace: '/chat/conversaciones/3', leida: false, fechaCreacion: '2026-11-17T10:00:00' }, 'STORE_ADMIN')
     expect(n).toMatchObject({ id: '7', tipo: 'MENSAJE_NUEVO', titulo: 'Nuevo mensaje de Sofía', detalle: 'Hola', enlace: '/mensajes?c=3', leida: false })
     expect(aNotificacion({ id: 8, tipo: 'PAGO_CONFIRMADO', enlace: '/planes/mi-plan' }, 'STORE_ADMIN').enlace).toBe('/tienda/suscripcion')
+  })
+
+  it('un aviso con enlace null (prenda retirada) o vacío queda sin enlace y no rompe', () => {
+    expect(aNotificacion({ id: 9, tipo: 'REPOSICION_STOCK', enlace: null }, 'BUYER').enlace).toBeUndefined()
+    expect(aNotificacion({ id: 9, tipo: 'REPOSICION_STOCK', enlace: '' }, 'BUYER').enlace).toBeUndefined()
   })
 
   it('un tipo desconocido o un aviso incompleto no rompe la campana', () => {
