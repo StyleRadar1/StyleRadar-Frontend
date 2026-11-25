@@ -5,10 +5,10 @@ import { env } from '@/configs/env'
 import { seedNotifications } from '../mocks/notifications'
 import type { NotificacionDto } from '../types/notification.dto'
 import { aNotificacion } from '../utils/notificaciones'
+import { idNumericoSesion, rutaUsuario } from '../utils/rutaUsuario'
 
-/** Rutas de ms-notificaciones según su Swagger, vía API Gateway. «me» es el usuario del token. */
-export const NOTIFICACIONES = '/api/v1/users/me/notifications'
-const BASE = NOTIFICACIONES
+/** Rutas de ms-notificaciones según su Swagger, vía API Gateway: /api/v1/users/{id}/notifications. */
+export const notificaciones = () => `${rutaUsuario()}/notifications`
 /** La campana escucha este evento para actualizar el contador sin esperar a la próxima consulta. */
 export const NOTIFICATIONS_CHANGED = 'sr:notificaciones'
 
@@ -29,8 +29,8 @@ const changed = () => window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED))
  * Se elimina de la bandeja (el back no tiene «restaurar»; el «Deshacer» de la pantalla es solo del front).
  */
 const idNumerico = (): string => {
-  const id = String(mockSessionUser()?.id ?? '')
-  if (!/^\d+$/.test(id)) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
+  const id = idNumericoSesion()
+  if (!id) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
   return id
 }
 const RUTA_USUARIO = (id: string) => `/api/v1/users/${id}/notifications`
@@ -52,7 +52,7 @@ export const notificationService = {
       return mockDelay({ items, hasNext: todos.length > (n + 1) * TAM_PAGINA })
     }
     // Con page y size devuelve { content, hasNext, … }; sin parámetros, un arreglo
-    const { data } = await apiClient.get<unknown>(BASE, { params: { page: n, size: TAM_PAGINA } })
+    const { data } = await apiClient.get<unknown>(notificaciones(), { params: { page: n, size: TAM_PAGINA } })
     const p = (Array.isArray(data) ? { content: data } : (data ?? {})) as { content?: unknown[]; hasNext?: boolean }
     return { items: (p.content ?? []).map((x) => aNotificacion(x)), hasNext: !!p.hasNext }
   },
@@ -64,7 +64,7 @@ export const notificationService = {
 
   async unreadCount(): Promise<number> {
     if (env.useMocks) { failIfScenario(); return mockDelay(mine().filter((n) => !n.leida).length, 150) }
-    return apiClient.get<{ cantidadNoLeidas: number }>(`${BASE}/unread/count`).then((r) => r.data.cantidadNoLeidas ?? 0)
+    return apiClient.get<{ cantidadNoLeidas: number }>(`${notificaciones()}/unread/count`).then((r) => r.data.cantidadNoLeidas ?? 0)
   },
 
   async markRead(id: string): Promise<void> {
@@ -75,7 +75,7 @@ export const notificationService = {
       const n = mine().find((x) => x.id === id)
       if (n) n.leida = true
       await mockDelay(undefined, 150)
-    } else await apiClient.patch(`${BASE}/${encodeURIComponent(id)}/read`)
+    } else await apiClient.patch(`${notificaciones()}/${encodeURIComponent(id)}/read`)
     changed()
   },
 
@@ -142,7 +142,7 @@ export const notificationService = {
       failIfScenario()
       mine().forEach((n) => { n.leida = true })
       await mockDelay(undefined, 200)
-    } else await apiClient.patch(`${BASE}/read-all`)
+    } else await apiClient.patch(`${notificaciones()}/read-all`)
     changed()
   },
 }

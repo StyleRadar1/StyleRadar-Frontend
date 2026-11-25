@@ -2,10 +2,11 @@ import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
+import { rutaUsuario } from '../utils/rutaUsuario'
 import { TIPOS_AVISO, type CanalAviso, type PreferenciaAvisoDto, type TipoNotificacion } from '../types/notification.dto'
 
-/** SR-RF-105: canal de cada tipo de aviso. «me» es el usuario del token. */
-const PREFERENCIAS = '/api/v1/users/me/notification-preferences'
+/** SR-RF-105: canal de cada tipo de aviso: /api/v1/users/{id}/notification-preferences. */
+const PREFERENCIAS = () => `${rutaUsuario()}/notification-preferences`
 
 const CANALES: CanalAviso[] = ['SOLO_PLATAFORMA', 'CORREO_Y_PLATAFORMA']
 const esCanal = (v: unknown): v is CanalAviso => CANALES.includes(v as CanalAviso)
@@ -27,7 +28,7 @@ const completas = (filas: Partial<Record<TipoNotificacion, CanalAviso>>): Prefer
 export const preferenceService = {
   async list(): Promise<PreferenciaAvisoDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay(completas(mine())) }
-    const { data } = await apiClient.get<unknown>(PREFERENCIAS)
+    const { data } = await apiClient.get<unknown>(PREFERENCIAS())
     const filas = (Array.isArray(data) ? data : ((data as { content?: unknown[] } | null)?.content ?? [])) as Record<string, unknown>[]
     const m: Partial<Record<TipoNotificacion, CanalAviso>> = {}
     for (const f of filas) {
@@ -44,7 +45,7 @@ export const preferenceService = {
       mine()[tipo] = canal
       return mockDelay({ tipo, canal }, 200)
     }
-    const { data } = await apiClient.put<{ canal?: unknown }>(`${PREFERENCIAS}/${encodeURIComponent(tipo)}`, { canal })
+    const { data } = await apiClient.put<{ canal?: unknown }>(`${PREFERENCIAS()}/${encodeURIComponent(tipo)}`, { canal })
     return { tipo, canal: esCanal(data?.canal) ? data.canal : canal }
   },
 }

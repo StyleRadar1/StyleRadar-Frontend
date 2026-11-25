@@ -3,7 +3,7 @@ import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import { env } from '@/configs/env'
 import type { NotificacionDto } from '../types/notification.dto'
 import { aNotificacion } from '../utils/notificaciones'
-import { NOTIFICACIONES } from './notificationService'
+import { notificaciones } from './notificationService'
 
 /**
  * 401, 403 y 404 al pedir el ticket o abrir el stream no se arreglan reintentando: la sesión venció o la cuenta ya no existe
@@ -55,11 +55,11 @@ export function abrirCampana(alAviso: (n: NotificacionDto) => void): () => void 
   void (async () => {
     while (activo && tokenStorage.get()) {
       try {
-        const t = await apiClient.post<{ ticket?: string; token?: string }>(`${NOTIFICACIONES}/stream-ticket`)
+        const t = await apiClient.post<{ ticket?: string; token?: string }>(`${notificaciones()}/stream-ticket`)
         const ticket = t.data.ticket ?? t.data.token
         if (!ticket) throw new Error('sin ticket')
         ctrl = new AbortController()
-        const res = await fetch(`${env.apiUrl}${NOTIFICACIONES}/stream?ticket=${encodeURIComponent(ticket)}`, {
+        const res = await fetch(`${env.apiUrl}${notificaciones()}/stream?ticket=${encodeURIComponent(ticket)}`, {
           headers: { Accept: 'text/event-stream', ...(ultimo ? { 'Last-Event-ID': ultimo } : {}) },
           signal: ctrl.signal,
         })

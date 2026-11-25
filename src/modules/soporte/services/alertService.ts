@@ -8,10 +8,11 @@ import { seedAlerts } from '../mocks/notifications'
 import { itemService } from '@/modules/catalogo/services/itemService'
 import { savedSearchService } from '@/modules/identidad/services/savedSearchService'
 import { fechaUtc } from '../utils/notificaciones'
+import { rutaUsuario } from '../utils/rutaUsuario'
 import { type AlertaPrendaDto, type AlertasResumenDto, type BusquedaGuardadaDto } from '../types/notification.dto'
 
-/** Rutas de ms-notificaciones según su Swagger, vía API Gateway. «me» es el usuario del token. */
-const ALERTAS = '/api/v1/users/me/alerts'
+/** Rutas de ms-notificaciones según su Swagger, vía API Gateway: /api/v1/users/{id}/alerts. */
+const ALERTAS = () => `${rutaUsuario()}/alerts`
 /**
  * Las búsquedas guardadas las guarda ms-usuarios (savedSearchService: /api/v1/users/{id}/saved-searches);
  * ms-notificaciones solo guarda la alerta de esa búsqueda (tipoAlerta BUSQUEDA_GUARDADA + busquedaGuardadaId).
@@ -98,7 +99,7 @@ const alertaAjenaOBorrada = () => {
 
 /** Activar es PATCH /alerts/{id}/activate; apagar es DELETE /alerts/{id} (desactiva, no borra). */
 const cambiarEstado = async (id: string, activa: boolean) => {
-  const url = `${ALERTAS}/${encodeURIComponent(id)}`
+  const url = `${ALERTAS()}/${encodeURIComponent(id)}`
   if (activa) await apiClient.patch(`${url}/activate`)
   else await apiClient.delete(url)
 }
@@ -107,7 +108,7 @@ export const alertService = {
   /** RF-28 y RF-29: búsquedas guardadas y alertas de prendas, con el plan para aplicar el límite. */
   async summary(): Promise<AlertasResumenDto> {
     if (env.useMocks) { failIfScenario(); return mockDelay(mine()) }
-    return aResumen((await apiClient.get<unknown>(ALERTAS)).data).then((r) => (ultima = r))
+    return aResumen((await apiClient.get<unknown>(ALERTAS())).data).then((r) => (ultima = r))
   },
 
   /** RF-29 y RF-32: activar o desactivar la alerta de una prenda. */
@@ -154,7 +155,7 @@ export const alertService = {
       return mockDelay(a ? { suscrita: true, alertaId: a.id } : { suscrita: false }, 120)
     }
     try {
-      const { data } = await apiClient.get<{ suscrita?: boolean; alertaId?: string | number }>(`${ALERTAS}/check`, { params: { itemId, tallaObjetivo: talla || undefined } })
+      const { data } = await apiClient.get<{ suscrita?: boolean; alertaId?: string | number }>(`${ALERTAS()}/check`, { params: { itemId, tallaObjetivo: talla || undefined } })
       return { suscrita: !!data.suscrita, alertaId: data.alertaId != null ? String(data.alertaId) : undefined }
     } catch { return { suscrita: false } }
   },
@@ -177,7 +178,7 @@ export const alertService = {
       if (!alerta) throw new ApiError(404, 'Esa búsqueda todavía no tiene alerta.')
       const guardada = id.slice(PREFIJO_GUARDADA.length)
       const nombre = nombreGuardada.get(id) ?? ultima?.busquedas.find((x) => x.id === id)?.nombre ?? 'Búsqueda guardada'
-      const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS, {
+      const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS(), {
         tipoAlerta: 'BUSQUEDA_GUARDADA', busquedaGuardadaId: Number(guardada) || guardada, nombreBusqueda: nombre, canal: 'IN_APP',
       })
       const nuevo = String(data.id ?? data.alertaId ?? '')
@@ -239,7 +240,7 @@ export const alertService = {
       return mockDelay(nueva, 250)
     }
     // tipoAlerta del back: ITEM_AGOTADO (prenda agotada) o BUSQUEDA_GUARDADA
-    const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS, { tipoAlerta: 'ITEM_AGOTADO', itemId: prendaId, tallaObjetivo: talla || undefined, canal: 'IN_APP' })
+    const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(ALERTAS(), { tipoAlerta: 'ITEM_AGOTADO', itemId: prendaId, tallaObjetivo: talla || undefined, canal: 'IN_APP' })
     return { id: String(data.id ?? data.alertaId ?? ''), prendaId, prenda: talla ? `${prenda} · talla ${talla}` : prenda, tienda, activa: true, creadaEn: new Date().toISOString() }
   },
 }
