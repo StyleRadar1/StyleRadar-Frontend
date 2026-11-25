@@ -366,7 +366,19 @@ export default function ItemDetailPage() {
                   className={`group/stage relative w-full max-w-[24.5rem] sm:max-w-[27rem] aspect-[3/4] flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 ${
                     zoomActivo ? 'cursor-zoom-out' : 'cursor-zoom-in'
                   }`}
-                  onClick={() => setZoomActivo((prev) => !prev)}
+                  onClick={(e) => {
+                    if (!zoomActivo) {
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      if (rect.width > 0 && rect.height > 0) {
+                        const x = ((e.clientX - rect.left) / rect.width) * 100
+                        const y = ((e.clientY - rect.top) / rect.height) * 100
+                        setZoomPos({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) })
+                      } else {
+                        setZoomPos({ x: 50, y: 50 })
+                      }
+                    }
+                    setZoomActivo((prev) => !prev)
+                  }}
                   onMouseMove={handleMouseMoveZoom}
                   onMouseLeave={() => setZoomActivo(false)}
                 >
@@ -398,7 +410,11 @@ export default function ItemDetailPage() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      setZoomActivo((prev) => !prev)
+                      setZoomActivo((prev) => {
+                        const next = !prev
+                        if (next) setZoomPos({ x: 50, y: 50 })
+                        return next
+                      })
                     }}
                     className="absolute top-3 right-3 z-30 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-[11px] font-bold text-white/90 hover:text-white hover:bg-black/90 backdrop-blur-md border border-white/15 transition shadow-sm"
                     title={zoomActivo ? 'Desactivar zoom' : 'Inspeccionar textura / Zoom'}
@@ -443,23 +459,33 @@ export default function ItemDetailPage() {
                     <img
                       src={imagenActiva || prenda.imagen}
                       alt={`${prenda.nombre} - ${ANGLE_LABELS[indiceImagen] || 'vista de prenda'}`}
+                      data-zoom-active={zoomActivo ? 'true' : 'false'}
                       style={
                         zoomActivo
                           ? {
                               transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                               transform: 'scale(2.3)',
-                              transition: 'transform 100ms ease-out',
                             }
                           : undefined
                       }
-                      className={`max-h-[92%] max-w-[92%] w-auto h-auto object-contain sr-hero-image-animate drop-shadow-2xl transition-all duration-300 ${
-                        zoomActivo ? 'brightness-105' : 'group-hover/stage:scale-[1.02]'
+                      className={`max-h-[92%] max-w-[92%] w-auto h-auto object-contain drop-shadow-2xl ${
+                        zoomActivo
+                          ? 'brightness-105 transition-transform duration-75 ease-out'
+                          : 'sr-hero-image-animate transition-all duration-300 group-hover/stage:scale-[1.02]'
                       }`}
                     />
                   </div>
 
+                  {zoomActivo && (
+                    <div className="pointer-events-none absolute bottom-3 inset-x-0 z-30 flex justify-center">
+                      <span className="rounded-full bg-black/75 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md border border-white/15 shadow-sm">
+                        Mueve el cursor para inspeccionar · Clic para salir
+                      </span>
+                    </div>
+                  )}
+
                   {/* Indicador de puntos (dots) en la parte inferior de la imagen */}
-                  {imagenesDisponibles.length > 1 && (
+                  {!zoomActivo && imagenesDisponibles.length > 1 && (
                     <div className="absolute bottom-3 inset-x-0 z-30 flex items-center justify-center gap-1.5 pointer-events-none">
                       {imagenesDisponibles.map((_, dotIdx) => (
                         <span

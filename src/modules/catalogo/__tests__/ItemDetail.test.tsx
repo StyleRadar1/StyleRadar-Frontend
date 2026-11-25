@@ -46,6 +46,26 @@ describe('ItemDetailPage (RF-16, RF-22, RF-57)', () => {
       expect(btnProbar).toHaveAttribute('href', expect.stringContaining('/probador?prenda=p1'))
     })
   })
+
+  it('activa zoom interactivo en la imagen principal al pulsar Zoom textura y lo desactiva con Cerrar zoom', async () => {
+    const user = userEvent.setup()
+    renderAt('/catalogo/p1', routes)
+
+    const zoomBtn = await screen.findByRole('button', { name: /Inspeccionar textura \/ Zoom/i })
+    const img = screen.getByAltText(/Blazer oversize/i)
+    expect(img).toHaveAttribute('data-zoom-active', 'false')
+
+    await user.click(zoomBtn)
+    expect(img).toHaveAttribute('data-zoom-active', 'true')
+    expect(img.style.transform).toBe('scale(2.3)')
+    expect(img.className).not.toContain('sr-hero-image-animate')
+    expect(screen.getByText(/Mueve el cursor para inspeccionar/i)).toBeInTheDocument()
+
+    const closeBtn = screen.getByRole('button', { name: /Desactivar zoom/i })
+    await user.click(closeBtn)
+    expect(img).toHaveAttribute('data-zoom-active', 'false')
+    expect(img.style.transform).toBe('')
+  })
 })
 
 describe('ItemDetailPage sin mocks (VITE_USE_MOCKS=false)', () => {
