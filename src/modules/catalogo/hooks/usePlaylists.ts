@@ -125,6 +125,19 @@ export function usePlaylists(userId?: string) {
     [setData]
   )
 
+  const deletePlaylist = useCallback(
+    async (id: string) => {
+      await playlistService.delete(id)
+      setData((prev) => ({
+        all: prev.all.filter((p) => p.id !== id),
+        mine: prev.mine.filter((p) => p.id !== id),
+        saved: prev.saved.filter((p) => p.id !== id),
+        featured: prev.featured.filter((p) => p.id !== id),
+      }))
+    },
+    [setData]
+  )
+
   return {
     playlists: bundle.all,
     myPlaylists: bundle.mine,
@@ -135,6 +148,7 @@ export function usePlaylists(userId?: string) {
     reload,
     createPlaylist,
     updatePlaylist,
+    deletePlaylist,
     addItem,
     removeItem,
     like,

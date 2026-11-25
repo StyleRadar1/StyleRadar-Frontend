@@ -10,11 +10,25 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { usePlaylists } from '../hooks/usePlaylists'
+import { PLAYLIST_COVER_FALLBACKS } from '../services/playlistService'
 import { itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
 import type { ItemResponseDto } from '../types/item.dto'
 import { ESTILOS_PLAYLIST, MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistEstilo, type PlaylistVisibility } from '../types/playlist.dto'
 import './PlaylistsPage.css'
+
+const FAVORITE_GARMENTS_KEY = 'sr_favorite_garments'
+
+function readFavoriteGarments(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(FAVORITE_GARMENTS_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
 
 export default function PlaylistsPage() {
   const { id: urlId } = useParams<{ id?: string }>()
@@ -23,14 +37,16 @@ export default function PlaylistsPage() {
   const user = auth?.user ?? mockSessionUser()
 
   const {
-    playlists,
-    myPlaylists,
-    savedPlaylists,
-    featuredPlaylists,
+    playlists: rawPlaylists,
+    myPlaylists: rawMyPlaylists,
+    savedPlaylists: rawSavedPlaylists,
+    featuredPlaylists: rawFeaturedPlaylists,
     loading,
     error,
     reload,
     createPlaylist,
+    updatePlaylist,
+    deletePlaylist,
     addItem,
     removeItem,
     like,
@@ -89,11 +105,20 @@ export default function PlaylistsPage() {
   const [limiteAlcanzado, setLimiteAlcanzado] = useState(false)
   const [prendaParaAgregar, setPrendaParaAgregar] = useState<string>('')
 
-  // Like y guardado local para playlist activa
+  // Like, guardado y favoritos locales
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({})
   const [userSaved, setUserSaved] = useState<Record<string, boolean>>((): Record<string, boolean> =>
     env.useMocks ? { '3': true, 'pl-2': true } : {}
   )
+  const [favoriteGarments, setFavoriteGarments] = useState<Record<string, boolean>>(readFavoriteGarments)
+  const [shuffledOrder, setShuffledOrder] = useState<Record<string, string[]>>({})
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
 
   // Estado del carrusel 3D
   const [carouselIndex, setCarouselIndex] = useState(0)
@@ -103,9 +128,60 @@ export default function PlaylistsPage() {
   const usuarioEmail = (user && 'email' in user ? (user as { email?: string }).email : undefined) ?? 'usuario@styleradar.co'
 
   const showToast = (msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setMensajeExito(msg)
-    setTimeout(() => setMensajeExito(null), 3500)
+    toastTimerRef.current = setTimeout(() => setMensajeExito(null), 3500)
   }
+
+  // Índice rápido de prendas reales (GET /api/v1/garments) para enriquecer prendas de playlist sin datos de catálogo
+  const { catalogById, catalogByName } = useMemo(() => {
+    const byId = new Map<string, ItemResponseDto>()
+    const byName = new Map<string, ItemResponseDto>()
+    for (const item of catalogItems) {
+      byId.set(item.id, item)
+      const key = item.nombre.trim().toLowerCase()
+      if (key && !byName.has(key)) byName.set(key, item)
+    }
+    return { catalogById: byId, catalogByName: byName }
+  }, [catalogItems])
+
+  const enrichPlaylist = useCallback(
+    (pl: PlaylistDto): PlaylistDto => {
+      let firstRealImage = ''
+      const prendasEnriched = pl.prendas.map((g) => {
+        const match = catalogById.get(g.id) ?? catalogByName.get(g.nombre.trim().toLowerCase())
+        const hasFallbackImage = PLAYLIST_COVER_FALLBACKS.includes(g.imagen)
+        const matchImg = match?.imagen || match?.fotografias?.[0] || ''
+        const resolvedImg = (!g.imagen || hasFallbackImage) && matchImg ? matchImg : g.imagen
+        if (!firstRealImage && matchImg) firstRealImage = matchImg
+        else if (!firstRealImage && resolvedImg && !PLAYLIST_COVER_FALLBACKS.includes(resolvedImg)) {
+          firstRealImage = resolvedImg
+        }
+        if (!match) return g
+        return {
+          ...g,
+          imagen: resolvedImg,
+          precio: g.precio > 0 ? g.precio : match.precio,
+          tienda: g.tienda || match.tienda,
+          tipo: g.tipo || match.tipo,
+          color: g.color || match.color,
+          tallas: g.tallas?.length && g.tallas[0] !== 'Única' ? g.tallas : match.tallas,
+        }
+      })
+      const portadaEsFallback = !pl.portadaUrl || PLAYLIST_COVER_FALLBACKS.includes(pl.portadaUrl)
+      return {
+        ...pl,
+        portadaUrl: portadaEsFallback && firstRealImage ? firstRealImage : pl.portadaUrl,
+        prendas: prendasEnriched,
+      }
+    },
+    [catalogById, catalogByName]
+  )
+
+  const playlists = useMemo(() => rawPlaylists.map(enrichPlaylist), [rawPlaylists, enrichPlaylist])
+  const myPlaylists = useMemo(() => rawMyPlaylists.map(enrichPlaylist), [rawMyPlaylists, enrichPlaylist])
+  const savedPlaylists = useMemo(() => rawSavedPlaylists.map(enrichPlaylist), [rawSavedPlaylists, enrichPlaylist])
+  const featuredPlaylists = useMemo(() => rawFeaturedPlaylists.map(enrichPlaylist), [rawFeaturedPlaylists, enrichPlaylist])
 
   // Unión deduplicada de playlists (incluye privadas de /me, guardadas y destacadas)
   const allUniquePlaylists = useMemo(() => {
@@ -273,7 +349,7 @@ export default function PlaylistsPage() {
       (Boolean(myId) && String(selectedPlaylist.usuarioId ?? '') === myId) ||
       (Boolean(usuarioEmail) && selectedPlaylist.creador?.email === usuarioEmail) ||
       (Boolean(myId) && String(selectedPlaylist.creador?.id ?? '') === myId) ||
-      Boolean(selectedPlaylist.creador?.nombre?.toLowerCase().includes('valentina'))
+      (env.useMocks && Boolean(selectedPlaylist.creador?.nombre?.toLowerCase().includes('valentina')))
     )
   }, [selectedPlaylist, myPlaylists, usuarioEmail, usuarioActual.id])
 
@@ -338,33 +414,45 @@ export default function PlaylistsPage() {
     setNombre(selectedPlaylist.nombre)
     setDescripcion(selectedPlaylist.descripcion)
     setVisibilidad(selectedPlaylist.visibilidad)
+    setErrorAccion(null)
     setMostrarEditar(true)
   }
 
-  const handleGuardarEditar = (e?: React.FormEvent) => {
+  const handleGuardarEditar = async (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!selectedPlaylist || !nombre.trim()) return
-    selectedPlaylist.nombre = nombre.trim()
-    selectedPlaylist.descripcion = descripcion.trim()
-    selectedPlaylist.visibilidad = visibilidad
-    setMostrarEditar(false)
-    showToast('Playlist actualizada con éxito.')
+    setErrorAccion(null)
+    try {
+      await updatePlaylist(selectedPlaylist.id, {
+        nombre: nombre.trim(),
+        descripcion: descripcion.trim(),
+        visibilidad,
+        estilo: selectedPlaylist.estilo ?? estilo,
+      })
+      setMostrarEditar(false)
+      showToast('Playlist actualizada con éxito.')
+    } catch (er: unknown) {
+      setErrorAccion(errorDeCrear(er).general ?? 'No pudimos actualizar la playlist.')
+    }
   }
 
   const handleEliminarPlaylist = () => {
+    setErrorAccion(null)
     setMostrarEliminar(true)
   }
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (!selectedPlaylist) return
-    const id = selectedPlaylist.id
-    const index = playlists.findIndex((p) => p.id === id)
-    if (index !== -1) {
-      playlists.splice(index, 1)
+    const deletedName = selectedPlaylist.nombre
+    setErrorAccion(null)
+    try {
+      await deletePlaylist(selectedPlaylist.id)
+      setMostrarEliminar(false)
+      showToast(`Playlist «${deletedName}» eliminada.`)
+      handleVolver()
+    } catch (er: unknown) {
+      setErrorAccion(errorDeCrear(er).general ?? 'No pudimos eliminar la playlist.')
     }
-    setMostrarEliminar(false)
-    showToast(`Playlist «${selectedPlaylist.nombre}» eliminada.`)
-    handleVolver()
   }
 
   const handleAgregarPrenda = async () => {
@@ -426,9 +514,27 @@ export default function PlaylistsPage() {
     }
   }
 
+  const handleToggleFavoritoPrenda = (itemId: string) => {
+    setFavoriteGarments((prev) => {
+      const nextFav = !prev[itemId]
+      const updated = { ...prev, [itemId]: nextFav }
+      if (!nextFav) delete updated[itemId]
+      try {
+        localStorage.setItem(FAVORITE_GARMENTS_KEY, JSON.stringify(updated))
+      } catch {
+        // Ignora errores de almacenamiento local
+      }
+      showToast(nextFav ? 'Guardada en favoritos.' : 'Quitada de favoritos.')
+      return updated
+    })
+  }
+
   const handleMezclar = () => {
     if (!selectedPlaylist) return
-    selectedPlaylist.prendas = [...selectedPlaylist.prendas].sort(() => Math.random() - 0.5)
+    const shuffledIds = [...selectedPlaylist.prendas]
+      .sort(() => Math.random() - 0.5)
+      .map((p) => p.id)
+    setShuffledOrder((prev) => ({ ...prev, [selectedPlaylist.id]: shuffledIds }))
     showToast('Playlist mezclada.')
   }
 
@@ -456,11 +562,19 @@ export default function PlaylistsPage() {
   // VISTA DETALLE TIPO SPOTIFY CON DISCO DE VINILO PROTAGONISTA
   // ==========================================
   if (selectedPlaylist) {
-    const prendas = selectedPlaylist.prendas || []
+    const rawPrendas = selectedPlaylist.prendas || []
+    const order = shuffledOrder[selectedPlaylist.id]
+    const prendas = order
+      ? [...rawPrendas].sort((a, b) => {
+          const ia = order.indexOf(a.id)
+          const ib = order.indexOf(b.id)
+          return (ia === -1 ? Number.MAX_SAFE_INTEGER : ia) - (ib === -1 ? Number.MAX_SAFE_INTEGER : ib)
+        })
+      : rawPrendas
     const disponibles = prendas.filter((p) => !p.noDisponible)
     const noDisponibles = prendas.filter((p) => p.noDisponible)
     const totalDisponible = disponibles.reduce((acc, p) => acc + p.precio, 0)
-    const tiendasUnicas = Array.from(new Set(prendas.map((p) => p.tienda)))
+    const tiendasUnicas = Array.from(new Set(prendas.map((p) => p.tienda).filter(Boolean)))
     const isLiked = userLikes[selectedPlaylist.id]
     const isSaved =
       userSaved[selectedPlaylist.id] !== undefined
@@ -822,16 +936,36 @@ export default function PlaylistsPage() {
                               ✕
                             </button>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => showToast('Guardada en favoritos.')}
-                              aria-label={`Me gusta ${p.nombre}`}
-                              className="text-white/40 hover:text-rose-400 p-1 text-sm transition"
-                            >
-                              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                              </svg>
-                            </button>
+                            (() => {
+                              const isGarmentFav = Boolean(favoriteGarments[p.id])
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleFavoritoPrenda(p.id)}
+                                  aria-pressed={isGarmentFav}
+                                  aria-label={isGarmentFav ? `Quitar ${p.nombre} de favoritos` : `Guardar ${p.nombre} en favoritos`}
+                                  title={isGarmentFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                                  className={
+                                    isGarmentFav
+                                      ? 'text-rose-500 hover:text-rose-400 p-1 text-sm transition scale-110'
+                                      : 'text-white/40 hover:text-rose-400 p-1 text-sm transition'
+                                  }
+                                >
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    className="h-4 w-4"
+                                    fill={isGarmentFav ? 'currentColor' : 'none'}
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                  </svg>
+                                </button>
+                              )
+                            })()
                           )}
                         </td>
                       </tr>
@@ -846,7 +980,7 @@ export default function PlaylistsPage() {
                     {noDisponibles.length > 0 && `${noDisponibles.length} no disponibles · `}
                     {formatCOP(totalDisponible)} disponibles
                   </span>
-                  <span>Tiendas: {tiendasUnicas.join(' · ')}</span>
+                  <span>Tiendas: {tiendasUnicas.length > 0 ? tiendasUnicas.join(' · ') : '—'}</span>
                 </div>
               </div>
             )}
@@ -1126,6 +1260,10 @@ export default function PlaylistsPage() {
                   </div>
                 </div>
 
+                {errorAccion && (
+                  <div className="mt-3"><Aviso tono="error" titulo={errorAccion} /></div>
+                )}
+
                 <div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
                   <button
                     type="button"
@@ -1159,6 +1297,9 @@ export default function PlaylistsPage() {
               <p className="text-xs text-white/70 mb-6 leading-relaxed">
                 Se borrará «{selectedPlaylist.nombre}» con sus {prendas.length} prendas. Las prendas seguirán disponibles en el catálogo.
               </p>
+              {errorAccion && (
+                <div className="mb-4"><Aviso tono="error" titulo={errorAccion} /></div>
+              )}
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
