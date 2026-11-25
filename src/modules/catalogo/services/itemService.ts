@@ -105,7 +105,7 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
 }
 
 /**
- * Extrae `{ talla: stockDisponible }` desde `GET /api/v1/inventario/prenda/{prendaId}`
+ * Extrae `{ talla: stockDisponible }` desde `GET /api/v1/inventory/garments/{prendaId}`
  * soportando tanto el objeto desglosado (`sedes[].variantes[]`) como listas planas.
  */
 export function extractStockMapFromInventory(inv: unknown): Record<string, number> {
@@ -308,7 +308,7 @@ export const itemService = {
   },
 
   /**
-   * Reserva una unidad de la talla en la tienda por 15 minutos (ms-inventario, POST /api/v1/inventario/reserva).
+   * Reserva una unidad de la talla en la tienda por 15 minutos (ms-inventario, POST /api/v1/inventory/reservations).
    * Responde 409 si ya no quedan unidades de esa talla.
    */
   async reserve(prendaId: string, talla: string, sedeId?: string): Promise<ReservaDto> {

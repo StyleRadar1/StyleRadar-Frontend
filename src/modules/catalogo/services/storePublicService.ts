@@ -333,7 +333,7 @@ export const storePublicService = {
     return (Array.isArray(r.data) ? r.data : []).map(normalizeBackendItem).slice(0, 3)
   },
 
-  /** SR-RF-22: Catálogo del almacén (GET /almacenes/{id}/catalog) y tallas en GET /inventario/prenda/{prendaId}. */
+  /** SR-RF-22: Catálogo del almacén (GET /stores/{id}/catalog) y tallas en GET /inventory/garments/{prendaId}. */
   async getCatalogo(id: string): Promise<ItemResponseDto[]> {
     const cleanId = (id || '').trim().toLowerCase()
     if (env.useMocks) {

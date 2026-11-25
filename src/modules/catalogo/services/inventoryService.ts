@@ -235,7 +235,7 @@ export const inventoryService = {
     const sedeId = dto.sedeId || DEFAULT_SEDE_ID
     const res = await apiClient
       .patch<Record<string, any>>(
-        `/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}/branch/${encodeURIComponent(sedeId)}/sizes/${encodeURIComponent(dto.talla)}`,
+        `/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}/branches/${encodeURIComponent(sedeId)}/sizes/${encodeURIComponent(dto.talla)}`,
         { unidades: dto.nuevoStock }
       )
       .then((r) => r.data)

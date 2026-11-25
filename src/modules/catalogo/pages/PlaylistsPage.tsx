@@ -131,13 +131,13 @@ export default function PlaylistsPage() {
     )
   }, [allUniquePlaylists, activeId])
 
-  // Playlists creadas por la usuaria (GET /api/v1/playlists/me)
+  // Playlists creadas por la usuaria (GET /api/v1/playlists/users/{userId})
   const creadasPorTi = myPlaylists
 
-  // Playlists destacadas (GET /api/v1/playlists/destacadas)
+  // Playlists destacadas (GET /api/v1/playlists/featured)
   const destacadas = featuredPlaylists
 
-  // Playlists guardadas (GET /api/v1/playlists/me/guardadas + cambios locales en sesión)
+  // Playlists guardadas (GET /api/v1/playlists/users/{userId}/saved + cambios locales en sesión)
   const guardadas = useMemo(() => {
     const byId = new Map<string, PlaylistDto>()
     for (const p of savedPlaylists) {
