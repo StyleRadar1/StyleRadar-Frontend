@@ -1,5 +1,6 @@
 import { useCallback, useContext, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { Button } from '@/modules/core/design-system'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -39,6 +40,32 @@ const OUTCOME: Record<CheckoutResultDto['status'], { title: string; text: string
   rechazado: { title: 'Pago rechazado', text: 'El pago no fue aprobado. Puedes intentarlo nuevamente. La suscripción no se activó', alert: true },
 }
 
+type MockEstadoParam = 'PENDIENTE' | 'CANCELADA' | 'VENCIDA' | 'ACTIVA' | 'ACTIVA_SIN_RENOVACION'
+
+function applyMockEstado<T extends { status: StoreSubscriptionStatus; estado?: StoreSubscriptionStatus; renewalEnabled: boolean; autoRenovacion?: boolean; fechaInicio?: string | null; fechaFin?: string | null; periodEndsAt?: string | null }>(
+  sub: T,
+  rawParam: string | null,
+): T {
+  if (!env.useMocksPagos || !rawParam) return sub
+  const normalized = rawParam.trim().toUpperCase() as MockEstadoParam
+  const defaultStart = sub.fechaInicio ?? '2026-11-01'
+  const defaultEnd = sub.fechaFin ?? sub.periodEndsAt ?? '2026-12-01'
+  switch (normalized) {
+    case 'PENDIENTE':
+      return { ...sub, status: 'PENDIENTE', estado: 'PENDIENTE', renewalEnabled: false, autoRenovacion: false, fechaFin: null, periodEndsAt: null }
+    case 'CANCELADA':
+      return { ...sub, status: 'CANCELADA', estado: 'CANCELADA', renewalEnabled: false, autoRenovacion: false, fechaInicio: defaultStart, fechaFin: defaultEnd, periodEndsAt: defaultEnd }
+    case 'VENCIDA':
+      return { ...sub, status: 'VENCIDA', estado: 'VENCIDA', renewalEnabled: false, autoRenovacion: false, fechaInicio: defaultStart, fechaFin: '2026-10-01', periodEndsAt: '2026-10-01' }
+    case 'ACTIVA':
+      return { ...sub, status: 'ACTIVA', estado: 'ACTIVA', renewalEnabled: true, autoRenovacion: true, fechaInicio: defaultStart, fechaFin: defaultEnd, periodEndsAt: defaultEnd }
+    case 'ACTIVA_SIN_RENOVACION':
+      return { ...sub, status: 'ACTIVA', estado: 'ACTIVA', renewalEnabled: false, autoRenovacion: false, fechaInicio: defaultStart, fechaFin: defaultEnd, periodEndsAt: defaultEnd }
+    default:
+      return sub
+  }
+}
+
 export default function StoreSubscriptionPage() {
   const auth = useContext(AuthContext)
   const user = auth?.user ?? null
@@ -53,6 +80,7 @@ export default function StoreSubscriptionPage() {
   const [outcome, setOutcome] = useState<CheckoutResultDto | null>(null)
   const [payError, setPayError] = useState<unknown>(null)
   const [conflictMsg, setConflictMsg] = useState<string | null>(null)
+  const [simulatedNotice, setSimulatedNotice] = useState<string | null>(null)
 
   // Formulario inline para iniciar pago (payerEmail + taxId)
   const [showStartForm, setShowStartForm] = useState(false)
@@ -71,6 +99,7 @@ export default function StoreSubscriptionPage() {
     setFormValidationError(null)
     setPayError(null)
     setConflictMsg(null)
+    setSimulatedNotice(null)
     setShowStartForm(true)
   }, [])
 
@@ -93,11 +122,20 @@ export default function StoreSubscriptionPage() {
     setPayError(null)
     setConflictMsg(null)
     setOutcome(null)
+    setSimulatedNotice(null)
     try {
       const res = await storeSubscriptionService.startStoreSubscription({
         payerEmail: cleanEmail,
         taxId: cleanTaxId,
       })
+      if (res.simulated) {
+        setSimulatedNotice(
+          res.message ?? `Modo demostración: pago simulado con Mercado Pago (initPoint: ${res.initPoint}). No se redirige a un sitio externo.`,
+        )
+        setShowStartForm(false)
+        reload()
+        return
+      }
       window.location.href = res.initPoint
     } catch (err) {
       if (isSubscriptionAlreadyExistsError(err)) {
@@ -144,7 +182,9 @@ export default function StoreSubscriptionPage() {
     )
   }
 
-  const { subscription: sub, payments, sinSuscripcion = false } = data
+  const { subscription: rawSub, payments, sinSuscripcion = false } = data
+  const mockEstadoParam = env.useMocksPagos ? searchParams.get('mockEstado') : null
+  const sub = applyMockEstado(rawSub, mockEstadoParam)
   const msg = outcome ? OUTCOME[outcome.status] : null
   const lastPayment = payments[0]
   const failedPayment = lastPayment?.status === 'rechazado' ? lastPayment : null
@@ -267,6 +307,13 @@ export default function StoreSubscriptionPage() {
           <div role="status" className="store-subscription__notice">
             <strong>Retorno desde Mercado Pago</strong>
             <p>Consultamos el estado actualizado de tu suscripción en el servidor.</p>
+          </div>
+        )}
+
+        {simulatedNotice && (
+          <div role="status" className="store-subscription__notice">
+            <strong>Pago simulado (modo demostración)</strong>
+            <p>{simulatedNotice}</p>
           </div>
         )}
 
