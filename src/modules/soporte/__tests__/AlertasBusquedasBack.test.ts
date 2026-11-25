@@ -22,7 +22,7 @@ describe('búsquedas guardadas y su alerta contra el back', () => {
       .mockResolvedValueOnce({ data: { id: 77 } })
     const b = await alertService.saveSearch('Botas', '')
     const activa = await alertService.setSearchAlert(b.id, true)
-    expect(post).toHaveBeenLastCalledWith('/api/v1/users/me/alerts', { tipoAlerta: 'BUSQUEDA_GUARDADA', busquedaGuardadaId: 5, nombreBusqueda: 'Botas', canal: 'IN_APP' })
+    expect(post).toHaveBeenLastCalledWith('/api/v1/users/12/alerts', { tipoAlerta: 'BUSQUEDA_GUARDADA', busquedaGuardadaId: 5, nombreBusqueda: 'Botas', canal: 'IN_APP' })
     expect(activa).toMatchObject({ id: '77', alerta: true })
   })
 
@@ -31,7 +31,7 @@ describe('búsquedas guardadas y su alerta contra el back', () => {
     await alertService.summary()
     const del = vi.spyOn(apiClient, 'delete').mockResolvedValue({ data: undefined })
     await alertService.removeSearch('77')
-    expect(del).toHaveBeenCalledWith('/api/v1/users/me/alerts/77')
+    expect(del).toHaveBeenCalledWith('/api/v1/users/12/alerts/77')
     expect(del).toHaveBeenCalledWith('/api/v1/users/12/saved-searches/5')
   })
 })

@@ -3,7 +3,7 @@ import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import { env } from '@/configs/env'
 import type { NotificacionDto } from '../types/notification.dto'
 import { aNotificacion } from '../utils/notificaciones'
-import { NOTIFICACIONES } from './notificationService'
+import { notificacionesUrl } from './notificationService'
 
 /** Lee un cuerpo text/event-stream y entrega cada evento completo. */
 async function leer(body: ReadableStream<Uint8Array>, alEvento: (e: { id?: string; event: string; data: string }) => void) {
@@ -48,11 +48,12 @@ export function abrirCampana(alAviso: (n: NotificacionDto) => void): () => void 
   void (async () => {
     while (activo && tokenStorage.get()) {
       try {
-        const t = await apiClient.post<{ ticket?: string; token?: string }>(`${NOTIFICACIONES}/stream-ticket`)
+        const base = notificacionesUrl()
+        const t = await apiClient.post<{ ticket?: string; token?: string }>(`${base}/stream-ticket`)
         const ticket = t.data.ticket ?? t.data.token
         if (!ticket) throw new Error('sin ticket')
         ctrl = new AbortController()
-        const res = await fetch(`${env.apiUrl}${NOTIFICACIONES}/stream?ticket=${encodeURIComponent(ticket)}`, {
+        const res = await fetch(`${env.apiUrl}${base}/stream?ticket=${encodeURIComponent(ticket)}`, {
           headers: { Accept: 'text/event-stream', ...(ultimo ? { 'Last-Event-ID': ultimo } : {}) },
           signal: ctrl.signal,
         })

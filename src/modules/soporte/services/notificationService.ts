@@ -6,9 +6,14 @@ import { seedNotifications } from '../mocks/notifications'
 import type { NotificacionDto } from '../types/notification.dto'
 import { aNotificacion } from '../utils/notificaciones'
 
-/** Rutas de ms-notificaciones según su Swagger, vía API Gateway. «me» es el usuario del token. */
-export const NOTIFICACIONES = '/api/v1/users/me/notifications'
-const BASE = NOTIFICACIONES
+const idSesion = () => {
+  const id = mockSessionUser()?.id
+  if (!id) throw new ApiError(401, 'Tu sesión venció. Inicia sesión otra vez.')
+  return String(id)
+}
+
+/** Rutas de ms-notificaciones según su relación FINAL (sin /me), vía API Gateway. */
+export const notificacionesUrl = () => `/api/v1/users/${encodeURIComponent(idSesion())}/notifications`
 /** La campana escucha este evento para actualizar el contador sin esperar a la próxima consulta. */
 export const NOTIFICATIONS_CHANGED = 'sr:notificaciones'
 
@@ -38,7 +43,7 @@ export const notificationService = {
       return mockDelay({ items, hasNext: todos.length > (n + 1) * TAM_PAGINA })
     }
     // Con page y size devuelve { content, hasNext, … }; sin parámetros, un arreglo
-    const { data } = await apiClient.get<unknown>(BASE, { params: { page: n, size: TAM_PAGINA } })
+    const { data } = await apiClient.get<unknown>(notificacionesUrl(), { params: { page: n, size: TAM_PAGINA } })
     const p = (Array.isArray(data) ? { content: data } : (data ?? {})) as { content?: unknown[]; hasNext?: boolean }
     return { items: (p.content ?? []).map((x) => aNotificacion(x)), hasNext: !!p.hasNext }
   },
@@ -50,7 +55,7 @@ export const notificationService = {
 
   async unreadCount(): Promise<number> {
     if (env.useMocks) { failIfScenario(); return mockDelay(mine().filter((n) => !n.leida).length, 150) }
-    return apiClient.get<{ cantidadNoLeidas: number }>(`${BASE}/unread/count`).then((r) => r.data.cantidadNoLeidas ?? 0)
+    return apiClient.get<{ cantidadNoLeidas: number }>(`${notificacionesUrl()}/unread/count`).then((r) => r.data.cantidadNoLeidas ?? 0)
   },
 
   async markRead(id: string): Promise<void> {
@@ -61,7 +66,7 @@ export const notificationService = {
       const n = mine().find((x) => x.id === id)
       if (n) n.leida = true
       await mockDelay(undefined, 150)
-    } else await apiClient.patch(`${BASE}/${encodeURIComponent(id)}/read`)
+    } else await apiClient.patch(`${notificacionesUrl()}/${encodeURIComponent(id)}/read`)
     changed()
   },
 
@@ -70,7 +75,7 @@ export const notificationService = {
       failIfScenario()
       mine().forEach((n) => { n.leida = true })
       await mockDelay(undefined, 200)
-    } else await apiClient.patch(`${BASE}/read-all`)
+    } else await apiClient.patch(`${notificacionesUrl()}/read-all`)
     changed()
   },
 }

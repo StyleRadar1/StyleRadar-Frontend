@@ -6,7 +6,7 @@ import { aRol } from '@/modules/core/types/roles'
 import { seedConversations, seedMessages } from '../mocks/chat'
 import { aNotificacion } from '../utils/notificaciones'
 import { aConversacion, aMensaje, filasDe, idDelOtro, necesitaNombre } from './chatMapper'
-import { NOTIFICACIONES, NOTIFICATIONS_CHANGED } from './notificationService'
+import { notificacionesUrl, NOTIFICATIONS_CHANGED } from './notificationService'
 import { MAX_MENSAJE, TIPO_ESPEJO, type ConversacionDto, type IniciarConversacionDto, type MensajeDto } from '../types/chat.dto'
 
 /** Rutas de ms-chat según su Swagger, vía API Gateway. */
@@ -59,7 +59,7 @@ async function nombreDe(uid: string): Promise<void> {
 async function avisosDeChat(): Promise<Map<string, string[]>> {
   const porConversacion = new Map<string, string[]>()
   try {
-    const { data } = await apiClient.get<unknown>(NOTIFICACIONES, { params: { page: 0, size: 100, unreadOnly: true } })
+    const { data } = await apiClient.get<unknown>(notificacionesUrl(), { params: { page: 0, size: 100, unreadOnly: true } })
     const filas = filasDe(data).filas
     for (const raw of filas) {
       const n = aNotificacion(raw)
@@ -165,7 +165,7 @@ export const chatService = {
     const filas = await todas(conversacion(id), 100)
     // Abrir la conversación deja leídos sus avisos de mensaje nuevo; eso baja el contador del menú
     const pendientes = (await avisosDeChat()).get(id) ?? []
-    await Promise.allSettled(pendientes.map((aviso) => apiClient.patch(`${NOTIFICACIONES}/${encodeURIComponent(aviso)}/read`)))
+    await Promise.allSettled(pendientes.map((aviso) => apiClient.patch(`${notificacionesUrl()}/${encodeURIComponent(aviso)}/read`)))
     if (pendientes.length) window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED))
     const r = { data: filas.map(aMensaje) }
     changed()
