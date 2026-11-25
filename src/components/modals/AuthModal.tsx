@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAccounts'
-import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
+import { ROLE_HOME } from '@/modules/core/types/roles'
 import { authService } from '@/modules/identidad/services/authService'
 import { env } from '@/configs/env'
 import { tomarRetorno } from '@/modules/core/api/retorno'
@@ -540,14 +540,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     } finally {
       setLoading(false)
     }
-  }
-
-  const selectDemoAccount = (demoEmail: string) => {
-    const account = DEMO_ACCOUNTS.find((item) => item.email === demoEmail)
-    setEmail(demoEmail)
-    setPassword(DEMO_PASSWORD)
-    setError('')
-    setPreviewRole(account?.role ?? null)
   }
 
   const handleRegisterSubmit = async (e: FormEvent) => {
@@ -1233,28 +1225,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                           : 'Crear cuenta'}
                   </button>
                 </form>
-              )}
-
-              {activeTab === 'login' && (
-                <div className="sr-auth-demo">
-                  <span className="sr-lbl">
-                    <span>Cuentas de prueba</span>
-                    <span>Clave: 1234</span>
-                  </span>
-                  <div className="sr-auth-demo-row">
-                    {DEMO_ACCOUNTS.map((acc) => (
-                      <button
-                        key={acc.email}
-                        type="button"
-                        disabled={loading}
-                        className={email === acc.email ? 'on' : ''}
-                        onClick={() => selectDemoAccount(acc.email)}
-                      >
-                        {ROLE_LABEL[acc.role]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               )}
 
               <p className="sr-auth-foot">

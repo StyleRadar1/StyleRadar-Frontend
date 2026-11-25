@@ -99,8 +99,16 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-lg items-center px-4 py-12">
-      <div className="w-full rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]/90 p-7 text-[var(--color-text)] shadow-2xl backdrop-blur-xl sm:p-9">
+    <div
+      className="relative min-h-[calc(100vh-5rem)] bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: "url('/img/backgrounds/restablecer-contrasena.jpg')" }}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0e0b16]/85 via-[#0e0b16]/65 to-[#0e0b16]/35"
+      />
+      <main className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center px-4 py-12 sm:px-8">
+        <div className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#151121]/85 p-7 text-white shadow-2xl backdrop-blur-xl sm:p-9">
         <p className="text-[11px] font-bold uppercase tracking-[.18em] text-violeta-claro">
           Seguridad de cuenta
         </p>
@@ -273,5 +281,6 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </main>
+    </div>
   )
 }
