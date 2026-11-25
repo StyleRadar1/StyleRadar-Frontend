@@ -74,12 +74,29 @@ export function distanciaKm(u: Ubicacion, [lng, lat]: [number, number]): number 
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-/** Centro de un barrio a partir de sus puntos, para quien no comparte su ubicación. */
+/** Barrios principales de Bogotá con sus coordenadas centrales de respaldo. */
+export const BARRIOS_BOGOTA: Record<string, Ubicacion> = {
+  Cedritos: { lat: 4.7244, lng: -74.0365 },
+  Centro: { lat: 4.6031, lng: -74.0721 },
+  Chapinero: { lat: 4.6433, lng: -74.0628 },
+  Chicó: { lat: 4.6766, lng: -74.0504 },
+  Engativá: { lat: 4.7011, lng: -74.1131 },
+  Fontibón: { lat: 4.6736, lng: -74.1426 },
+  Kennedy: { lat: 4.62, lng: -74.1534 },
+  Suba: { lat: 4.7431, lng: -74.0886 },
+  Teusaquillo: { lat: 4.6297, lng: -74.0725 },
+  Usaquén: { lat: 4.6974, lng: -74.0305 },
+  'Zona G': { lat: 4.6525, lng: -74.056 },
+}
+
+/** Centro de un barrio a partir de sus puntos o del catálogo de barrios de Bogotá. */
 export function centroBarrio(pins: MapPinDto[], barrio: string): Ubicacion | null {
   const del = pins.filter((p) => p.barrio === barrio)
-  if (!del.length) return null
-  return {
-    lng: del.reduce((s, p) => s + p.lngLat[0], 0) / del.length,
-    lat: del.reduce((s, p) => s + p.lngLat[1], 0) / del.length,
+  if (del.length) {
+    return {
+      lng: del.reduce((s, p) => s + p.lngLat[0], 0) / del.length,
+      lat: del.reduce((s, p) => s + p.lngLat[1], 0) / del.length,
+    }
   }
+  return BARRIOS_BOGOTA[barrio] ?? null
 }

@@ -11,7 +11,7 @@ import MapaBogota from '../components/MapaBogota'
 import MapCard from '../components/MapCard'
 import BubbleColumn from '../components/BubbleColumn'
 import { CATEGORIAS_ALMACEN, type MapPinDto, type MapFilter } from '../types/map.dto'
-import { centroBarrio, filterPins, formatDistanciaKm, RADIO_KM, type Ubicacion } from '../utils/mapUtils'
+import { BARRIOS_BOGOTA, centroBarrio, filterPins, formatDistanciaKm, RADIO_KM, type Ubicacion } from '../utils/mapUtils'
 
 const TEXTO_RADIO = `El radio va de ${RADIO_KM.min} a ${RADIO_KM.max} km.`
 
@@ -55,7 +55,13 @@ export default function MapPage() {
   }, [pins])
 
   const barrios = useMemo(
-    () => [...new Set(pins.map((p) => p.barrio).filter((b): b is string => Boolean(b)))].sort(),
+    () =>
+      [
+        ...new Set([
+          ...pins.map((p) => p.barrio).filter((b): b is string => Boolean(b)),
+          ...Object.keys(BARRIOS_BOGOTA),
+        ]),
+      ].sort(),
     [pins],
   )
   const vigentes = activePins.filter((p) => !retirados.includes(p.id))
