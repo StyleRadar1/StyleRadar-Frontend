@@ -39,10 +39,15 @@ export function usePlaylists(userId?: string) {
     }
 
     const hasToken = Boolean(tokenStorage.get())
+    const resolvedUserId = userId || mockSessionUser()?.id
     const [all, mine, saved, featured] = await Promise.all([
       playlistService.getAll(),
-      hasToken ? playlistService.getMine().catch(() => [] as PlaylistDto[]) : Promise.resolve([] as PlaylistDto[]),
-      hasToken ? playlistService.getSaved().catch(() => [] as PlaylistDto[]) : Promise.resolve([] as PlaylistDto[]),
+      hasToken && resolvedUserId
+        ? playlistService.getMine(resolvedUserId).catch(() => [] as PlaylistDto[])
+        : Promise.resolve([] as PlaylistDto[]),
+      hasToken && resolvedUserId
+        ? playlistService.getSaved(resolvedUserId).catch(() => [] as PlaylistDto[])
+        : Promise.resolve([] as PlaylistDto[]),
       playlistService.getFeatured().catch(() => [] as PlaylistDto[]),
     ])
     return { all, mine, saved, featured }

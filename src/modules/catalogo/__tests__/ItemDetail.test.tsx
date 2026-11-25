@@ -61,7 +61,7 @@ describe('ItemDetailPage sin mocks (VITE_USE_MOCKS=false)', () => {
     vi.restoreAllMocks()
   })
 
-  it('consulta tallas reales en GET /api/v1/inventory/garment/{id}', async () => {
+  it('consulta tallas reales en GET /api/v1/inventory/garments/{id}', async () => {
     const getSpy = vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
       if (url === '/api/v1/garments/p-qa-1') {
         return {
@@ -80,7 +80,7 @@ describe('ItemDetailPage sin mocks (VITE_USE_MOCKS=false)', () => {
       if (url === '/api/v1/garments/p-qa-1/similar') {
         return { data: [] } as never
       }
-      if (url === '/api/v1/inventory/garment/p-qa-1') {
+      if (url === '/api/v1/inventory/garments/p-qa-1') {
         return {
           data: {
             sedes: [
@@ -101,7 +101,7 @@ describe('ItemDetailPage sin mocks (VITE_USE_MOCKS=false)', () => {
     expect(screen.getByRole('radio', { name: /^M$/i })).toBeInTheDocument()
 
     const calledUrls = getSpy.mock.calls.map(([url]) => url)
-    expect(calledUrls).toContain('/api/v1/inventory/garment/p-qa-1')
+    expect(calledUrls).toContain('/api/v1/inventory/garments/p-qa-1')
     expect(calledUrls).not.toContain('/api/v1/inventario/prenda/p-qa-1')
   })
 })

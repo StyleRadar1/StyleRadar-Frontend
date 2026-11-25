@@ -176,7 +176,7 @@ export const inventoryService = {
         let stock = disponiblesMap.get(pid)
         if (!stock) {
           try {
-            const inv = await apiClient.get<any>(`/api/v1/inventory/garment/${encodeURIComponent(pid)}`).then((r) => r.data)
+            const inv = await apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(pid)}`).then((r) => r.data)
             stock = extractStockMapFromInventory(inv)
           } catch {
             stock = {}
@@ -235,13 +235,13 @@ export const inventoryService = {
     const sedeId = dto.sedeId || DEFAULT_SEDE_ID
     const res = await apiClient
       .patch<Record<string, any>>(
-        `/api/v1/inventory/garment/${encodeURIComponent(dto.prendaId)}/branch/${encodeURIComponent(sedeId)}/sizes/${encodeURIComponent(dto.talla)}`,
+        `/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}/branches/${encodeURIComponent(sedeId)}/sizes/${encodeURIComponent(dto.talla)}`,
         { unidades: dto.nuevoStock }
       )
       .then((r) => r.data)
     if (res && res.id && res.stockPorTalla) return res as InventoryItemDto
     const prenda = await apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data)
-    const inv = await apiClient.get<any>(`/api/v1/inventory/garment/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => [])
+    const inv = await apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => [])
     const stockMap: Record<string, number> = { [dto.talla]: dto.nuevoStock }
     const list = Array.isArray(inv) ? inv : Array.isArray(inv?.tallas) ? inv.tallas : []
     for (const entry of list) {

@@ -96,7 +96,7 @@ export const mapService = {
       query.categoriaId = params.categoriaId
     }
 
-    const storesRes = await apiClient.get<any[] | { content?: any[] }>(`${BASE}/stores`, {
+    const storesRes = await apiClient.get<any[] | { content?: any[] }>(`${BASE}/stores/nearby`, {
       params: Object.keys(query).length ? query : undefined,
     })
     const storePins = extractList(storesRes.data).map(mapAlmacenToPin)
@@ -143,7 +143,7 @@ export const mapService = {
       )
     }
     const [almacenesRes, fundacionesRes] = await Promise.all([
-      apiClient.get<{ id: string }[] | { content?: { id: string }[] }>(`${BASE}/stores`, {
+      apiClient.get<{ id: string }[] | { content?: { id: string }[] }>(`${BASE}/stores/nearby`, {
         params: { lat: u.lat, lng: u.lng, radioKm, ...(categoriaId ? { categoriaId } : {}) },
       }),
       categoriaId

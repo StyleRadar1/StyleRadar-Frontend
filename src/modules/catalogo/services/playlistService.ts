@@ -83,21 +83,25 @@ export const playlistService = {
     return apiClient.get<any>('/api/v1/playlists').then((r) => extractPlaylistList(r.data))
   },
 
-  getMine(): Promise<PlaylistDto[]> {
+  getMine(userId?: string): Promise<PlaylistDto[]> {
     if (env.useMocks) {
-      const user = mockSessionUser() ?? { id: 'u-1', email: 'usuario@styleradar.co' }
+      const user = mockSessionUser() ?? { id: userId ?? 'u-1', email: 'usuario@styleradar.co' }
       return mockDelay(MOCK_PLAYLISTS.filter((p) => isOwnedPlaylist(p, user)))
     }
-    return apiClient.get<any>('/api/v1/playlists/me').then((r) => extractPlaylistList(r.data))
+    const uid = userId || mockSessionUser()?.id
+    if (!uid) return Promise.resolve([])
+    return apiClient.get<any>(`/api/v1/playlists/users/${encodeURIComponent(uid)}`).then((r) => extractPlaylistList(r.data))
   },
 
-  getSaved(): Promise<PlaylistDto[]> {
+  getSaved(userId?: string): Promise<PlaylistDto[]> {
     if (env.useMocks) {
-      const user = mockSessionUser() ?? { id: 'u-1', email: 'usuario@styleradar.co' }
+      const user = mockSessionUser() ?? { id: userId ?? 'u-1', email: 'usuario@styleradar.co' }
       return mockDelay(MOCK_PLAYLISTS.filter((p) => isSavedPlaylist(p, user)).map((p) => ({ ...p, esGuardada: true })))
     }
+    const uid = userId || mockSessionUser()?.id
+    if (!uid) return Promise.resolve([])
     return apiClient
-      .get<any>('/api/v1/playlists/me/saved')
+      .get<any>(`/api/v1/playlists/users/${encodeURIComponent(uid)}/saved`)
       .then((r) => extractPlaylistList(r.data).map((p) => ({ ...p, esGuardada: true })))
   },
 
@@ -254,7 +258,7 @@ export const playlistService = {
       pl.likes += 1
       return mockDelay({ likes: pl.likes })
     }
-    return apiClient.post<any>(`/api/v1/playlists/${playlistId}/like`).then((r) => ({
+    return apiClient.post<any>(`/api/v1/playlists/${encodeURIComponent(playlistId)}/likes`).then((r) => ({
       likes: Number(r.data?.likes ?? 0),
     }))
   },
@@ -267,7 +271,7 @@ export const playlistService = {
       pl.guardados += pl.esGuardada ? 1 : -1
       return mockDelay({ esGuardada: pl.esGuardada, guardados: pl.guardados })
     }
-    return apiClient.post<any>(`/api/v1/playlists/${playlistId}/save`).then((r) => ({
+    return apiClient.post<any>(`/api/v1/playlists/${encodeURIComponent(playlistId)}/saves`).then((r) => ({
       esGuardada: typeof r.data?.esGuardada === 'boolean' ? r.data.esGuardada : true,
       guardados: Number(r.data?.guardados ?? 0),
     }))

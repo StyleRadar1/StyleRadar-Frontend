@@ -173,22 +173,24 @@ describe('Playlists · errores del plan (Cristian)', () => {
     expect(screen.getByRole('heading', { level: 2, name: /Playlist sin destacar/i })).toBeInTheDocument()
   })
 
-  it('en modo API consulta /api/v1/playlists/me, /me/saved y /featured cuando hay sesión', async () => {
+  it('en modo API consulta /api/v1/playlists/users/{userId}, /saved y /featured cuando hay sesión', async () => {
     const prevUseMocks = env.useMocks
+    const prevUser = localStorage.getItem('sr_user')
     env.useMocks = false
     tokenStorage.set('jwt-qa-test')
+    localStorage.setItem('sr_user', JSON.stringify({ id: 'u-qa', name: 'Usuario QA', email: 'qa@styleradar.co', role: 'BUYER' }))
 
     const spyGet = vi.spyOn(apiClient, 'get').mockImplementation((url) => {
       if (url === '/api/v1/playlists') {
         return Promise.resolve({ data: [] } as never)
       }
-      if (url === '/api/v1/playlists/me') {
+      if (url === '/api/v1/playlists/users/u-qa') {
         return Promise.resolve({
           data: [
             {
               id: 'pl-priv-me',
-              nombre: 'Privada de /me',
-              descripcion: 'Desde endpoint me',
+              nombre: 'Privada de usuario',
+              descripcion: 'Desde endpoint users/{userId}',
               visibilidad: 'PRIVADA',
               estilo: 'CASUAL',
               usuarioId: 'u-qa',
@@ -200,13 +202,13 @@ describe('Playlists · errores del plan (Cristian)', () => {
           ],
         } as never)
       }
-      if (url === '/api/v1/playlists/me/saved') {
+      if (url === '/api/v1/playlists/users/u-qa/saved') {
         return Promise.resolve({
           data: [
             {
               id: 'pl-saved-me',
-              nombre: 'Guardada de /me/guardadas',
-              descripcion: 'Desde guardadas',
+              nombre: 'Guardada de usuario',
+              descripcion: 'Desde users/{userId}/saved',
               visibilidad: 'PUBLICA',
               estilo: 'URBANO',
               usuarioId: 'u-otro',
@@ -223,8 +225,8 @@ describe('Playlists · errores del plan (Cristian)', () => {
           data: [
             {
               id: 'pl-feat-api',
-              nombre: 'Destacada de /destacadas',
-              descripcion: 'Desde destacadas',
+              nombre: 'Destacada de /featured',
+              descripcion: 'Desde featured',
               visibilidad: 'PUBLICA',
               estilo: 'FORMAL',
               usuarioId: 'u-admin',
@@ -249,15 +251,36 @@ describe('Playlists · errores del plan (Cristian)', () => {
       expect(screen.getByRole('tab', { name: /Guardadas \(1\)/i })).toBeInTheDocument()
 
       expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists')
-      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/me')
-      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/me/saved')
+      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/users/u-qa')
+      expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/users/u-qa/saved')
       expect(spyGet).toHaveBeenCalledWith('/api/v1/playlists/featured')
 
       await user.click(screen.getByRole('tab', { name: /Destacadas \(1\)/i }))
-      expect(screen.getByRole('heading', { level: 2, name: /Destacada de \/destacadas/i })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 2, name: /Destacada de \/featured/i })).toBeInTheDocument()
     } finally {
       env.useMocks = prevUseMocks
       tokenStorage.clear()
+      if (prevUser === null) localStorage.removeItem('sr_user')
+      else localStorage.setItem('sr_user', prevUser)
+    }
+  })
+
+  it('en modo API toggleLike y toggleSave llaman a /likes y /saves', async () => {
+    const prevUseMocks = env.useMocks
+    env.useMocks = false
+    const postSpy = vi.spyOn(apiClient, 'post').mockResolvedValue({
+      data: { likes: 7, esGuardada: true, guardados: 4 },
+    } as never)
+    try {
+      const liked = await playlistService.toggleLike('pl-1')
+      expect(liked).toEqual({ likes: 7 })
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/playlists/pl-1/likes')
+
+      const saved = await playlistService.toggleSave('pl-1')
+      expect(saved).toEqual({ esGuardada: true, guardados: 4 })
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/playlists/pl-1/saves')
+    } finally {
+      env.useMocks = prevUseMocks
     }
   })
 })

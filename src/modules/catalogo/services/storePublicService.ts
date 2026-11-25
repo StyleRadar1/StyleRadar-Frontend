@@ -333,7 +333,7 @@ export const storePublicService = {
     return (Array.isArray(r.data) ? r.data : []).map(normalizeBackendItem).slice(0, 3)
   },
 
-  /** SR-RF-22: Catálogo del almacén (GET /almacenes/{id}/catalog) y tallas en GET /inventario/prenda/{prendaId}. */
+  /** SR-RF-22: Catálogo del almacén (GET /stores/{id}/catalog) y tallas en GET /inventory/garments/{prendaId}. */
   async getCatalogo(id: string): Promise<ItemResponseDto[]> {
     const cleanId = (id || '').trim().toLowerCase()
     if (env.useMocks) {
@@ -345,7 +345,7 @@ export const storePublicService = {
       items.map(async (item) => {
         if (item.tallas.length > 0) return item
         try {
-          const inv = await apiClient.get<any>(`/api/v1/inventory/garment/${encodeURIComponent(item.id)}`).then((res) => res.data)
+          const inv = await apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(item.id)}`).then((res) => res.data)
           return { ...item, tallas: extractAvailableTallasFromInventory(inv) }
         } catch {
           return item

@@ -16,9 +16,9 @@ describe('mapService sin mocks (VITE_USE_MOCKS=false)', () => {
     vi.restoreAllMocks()
   })
 
-  it('getAll consulta GET /api/v1/stores y GET /api/v1/foundations/nearby (array y paginado)', async () => {
+  it('getAll consulta GET /api/v1/stores/nearby y GET /api/v1/foundations/nearby (array y paginado)', async () => {
     const getSpy = vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
-      if (url === '/api/v1/stores') {
+      if (url === '/api/v1/stores/nearby') {
         return {
           data: {
             content: [
@@ -54,7 +54,7 @@ describe('mapService sin mocks (VITE_USE_MOCKS=false)', () => {
     expect(pins[0]).toMatchObject({ id: 'store-1', tipo: 'tienda', name: 'Tienda Centro' })
     expect(pins[1]).toMatchObject({ id: 'found-1', tipo: 'fundacion', name: 'Fundación Aliada' })
 
-    expect(getSpy).toHaveBeenCalledWith('/api/v1/stores', {
+    expect(getSpy).toHaveBeenCalledWith('/api/v1/stores/nearby', {
       params: { lat: 4.64, lng: -74.06, radioKm: 5 },
     })
     expect(getSpy).toHaveBeenCalledWith('/api/v1/foundations/nearby', {
@@ -66,9 +66,9 @@ describe('mapService sin mocks (VITE_USE_MOCKS=false)', () => {
     expect(urls).not.toContain('/api/v1/fundaciones/cercanas')
   })
 
-  it('nearby consulta GET /api/v1/stores y GET /api/v1/foundations/nearby y combina los ids', async () => {
+  it('nearby consulta GET /api/v1/stores/nearby y GET /api/v1/foundations/nearby y combina los ids', async () => {
     const getSpy = vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
-      if (url === '/api/v1/stores') return { data: [{ id: 's-1' }] } as never
+      if (url === '/api/v1/stores/nearby') return { data: [{ id: 's-1' }] } as never
       if (url === '/api/v1/foundations/nearby') return { data: { content: [{ id: 'f-1' }] } } as never
       throw new Error(`Unexpected URL ${url}`)
     })
@@ -76,7 +76,7 @@ describe('mapService sin mocks (VITE_USE_MOCKS=false)', () => {
     const ids = await mapService.nearby({ lat: 4.65, lng: -74.06 }, 3)
 
     expect(ids).toEqual(['s-1', 'f-1'])
-    expect(getSpy).toHaveBeenCalledWith('/api/v1/stores', {
+    expect(getSpy).toHaveBeenCalledWith('/api/v1/stores/nearby', {
       params: { lat: 4.65, lng: -74.06, radioKm: 3 },
     })
     expect(getSpy).toHaveBeenCalledWith('/api/v1/foundations/nearby', {
