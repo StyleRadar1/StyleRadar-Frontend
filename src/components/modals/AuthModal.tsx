@@ -1039,6 +1039,19 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                     {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Entrando…' : 'Entrar'}
                   </button>
 
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose()
+                        navigate('/restablecer-contrasena')
+                      }}
+                      className="text-xs font-semibold text-white/65 hover:text-white underline underline-offset-2"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
+
                   {/* Solo en demostración: con ms-auth el código existe únicamente después de un inicio de sesión con el correo sin verificar. */}
                   {env.useMocks && (
                     <button

@@ -230,4 +230,64 @@ export const authService = {
     }
     return apiClient.post<LoginResponseDto>('/api/v1/auth/oauth2/google', payload).then((res) => res.data)
   },
+
+  /** Solicita el envío de un OTP al correo registrado para restablecer la contraseña. */
+  async requestPasswordReset(email: string): Promise<{ message: string; expiresInSeconds?: number }> {
+    const cleanEmail = email.trim().toLowerCase()
+    if (env.useMocks) {
+      const exists =
+        registradas.some((a) => a.email === cleanEmail) ||
+        DEMO_ACCOUNTS.some((a) => a.email === cleanEmail) ||
+        cleanEmail === DEMO_SIN_VERIFICAR.email
+      if (!exists) {
+        throw new ApiError(404, 'No encontramos ninguna cuenta registrada con ese correo.')
+      }
+      otpMock[cleanEmail] = { intentos: OTP_INTENTOS, reenvios: OTP_REENVIOS }
+      return mockDelay({
+        message: 'Enviamos un código OTP de 6 dígitos a tu correo registrado.',
+        expiresInSeconds: OTP_SEGUNDOS,
+      })
+    }
+    return apiClient
+      .post<{ message?: string; expiresInSeconds?: number }>('/api/v1/auth/password/forgot', {
+        email: cleanEmail,
+      })
+      .then((res) => ({
+        message: res.data?.message || 'Enviamos un código OTP de 6 dígitos a tu correo registrado.',
+        expiresInSeconds: res.data?.expiresInSeconds,
+      }))
+  },
+
+  /** Verifica el código OTP y guarda la nueva contraseña. */
+  async confirmPasswordReset(payload: {
+    email: string
+    otpCode: string
+    newPassword: string
+  }): Promise<{ message: string }> {
+    const cleanEmail = payload.email.trim().toLowerCase()
+    if (env.useMocks) {
+      const otp = otpDe(cleanEmail)
+      if (!/^\d{6}$/.test(payload.otpCode) || payload.otpCode === '000000') {
+        otp.intentos -= 1
+        if (otp.intentos <= 0) {
+          otp.intentos = OTP_INTENTOS
+          throw errorMock(429, 'OTP_ATTEMPTS_EXHAUSTED', { retryAfterSeconds: OTP_ESPERA })
+        }
+        throw errorMock(401, 'OTP_INCORRECT', { attemptsRemaining: otp.intentos })
+      }
+      delete otpMock[cleanEmail]
+      const reg = registradas.find((a) => a.email === cleanEmail)
+      if (reg) reg.password = payload.newPassword
+      return mockDelay({ message: 'Tu contraseña se restableció correctamente.' })
+    }
+    return apiClient
+      .post<{ message?: string }>('/api/v1/auth/password/reset', {
+        email: cleanEmail,
+        otpCode: payload.otpCode.trim(),
+        newPassword: payload.newPassword,
+      })
+      .then((res) => ({
+        message: res.data?.message || 'Tu contraseña se restableció correctamente.',
+      }))
+  },
 }

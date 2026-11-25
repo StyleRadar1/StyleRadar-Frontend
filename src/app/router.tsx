@@ -15,6 +15,7 @@ import { RequireStoreActiveSub } from './RequireStoreActiveSub'
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 import LandingPage from '@/modules/landing/pages/LandingPage'
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
+const ResetPassword = lazy(() => import('@/modules/identidad/pages/ResetPasswordPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
 const AdminUsers = lazy(() => import('@/modules/identidad/pages/AdminUsersPage'))
 const AdminUserDetail = lazy(() => import('@/modules/identidad/pages/AdminUserDetailPage'))
@@ -108,6 +109,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       // Un solo inicio de sesion: el modal del landing (/?login). /login redirige ahi.
       { path: '/login', element: <Navigate to="/?login" replace /> },
       { path: '/registro', element: page(<Register />) },
+      { path: '/restablecer-contrasena', element: page(<ResetPassword />) },
       { path: '/catalogo', element: page(<Catalog />) },
       { path: '/catalogo/:id', element: page(<ItemDetail />) },
       { path: '/mapa', element: page(<MapPage />) },
