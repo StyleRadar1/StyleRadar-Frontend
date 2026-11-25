@@ -91,9 +91,9 @@ export const LOCALIDADES_BOGOTA: { id: LocalidadEnum; nombre: string }[] = [
   { id: 'SUMAPAZ', nombre: 'Sumapaz' },
 ]
 
-/** Alias de compatibilidad hacia atrás */
+/** Estados de conservación oficiales del backend */
 export type Conservacion = ConservationStatus | 'COMO_NUEVO' | 'MUY_BUENO' | 'BUENO'
-export const CONSERVACIONES: Conservacion[] = ['COMO_NUEVO', 'MUY_BUENO', 'BUENO']
+export const CONSERVACIONES: Conservacion[] = ['NEW_WITH_TAGS', 'LIKE_NEW', 'GOOD_CONDITION', 'ACCEPTABLE']
 export const CONSERVACION_LABEL: Record<string, string> = {
   COMO_NUEVO: 'Como nuevo',
   MUY_BUENO: 'Muy bueno',
@@ -118,7 +118,8 @@ export const ESTADO_PUBLICACION_LABEL: Record<string, string> = {
 }
 
 export const CATEGORIAS = ['Camisas', 'Camisetas', 'Suéteres', 'Chaquetas', 'Pantalones', 'Faldas', 'Vestidos', 'Calzado', 'Accesorios'] as const
-export const TALLAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '28', '30', '32', '34', '36', '37', '38', '39', '40', '41', '42', 'Única', 'ONE_SIZE'] as const
+export const TALLAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '28', '30', '32', '34', '36', '37', '38', '39', '40', '41', '42', 'UNICA'] as const
+export const TALLA_LABEL: Record<string, string> = { UNICA: 'Talla única' }
 
 /** Mapeo de Categoría tradicional a garmentType de backend */
 export function mapCategoriaToGarmentType(cat: string): GarmentType {

@@ -1,20 +1,20 @@
 import type { LegalDocMeta } from '../types/legal.types'
 
 export const PROVIDER_INFO = {
-  razonSocial: '[RAZÓN SOCIAL DE LA EMPRESA OPERADORA S.A.S.]',
+  razonSocial: 'StyleRadar S.A.S.',
   nombreComercial: 'Style Radar',
-  nit: '[NIT: XXXXXXXXX-X]',
-  direccion: '[DIRECCIÓN COMERCIAL, EJ. CARRERA 45 # 205-59, BOGOTÁ D.C., COLOMBIA]',
-  correoGeneral: '[CORREO DE ATENCIÓN: contacto@styleradar.co]',
-  correoDatos: '[CORREO DE PROTECCIÓN DE DATOS: privacidad@styleradar.co]',
-  correoPqrs: '[CORREO PQRS: pqrs@styleradar.co]',
-  telefono: '[TELÉFONO / LÍNEA WHATSAPP: +57 (601) XXX-XXXX / +57 3XX XXXXXXX]',
+  nit: 'En trámite de registro mercantil (Bogotá D.C.)',
+  direccion: 'Bogotá D.C., Colombia',
+  correoGeneral: 'contacto@styleradar.co',
+  correoDatos: 'privacidad@styleradar.co',
+  correoPqrs: 'pqrs@styleradar.co',
+  telefono: 'Atención digital vía contacto@styleradar.co y módulo PQRS',
   horarioAtencion: 'Lunes a viernes de 8:00 a.m. a 6:00 p.m. y sábados de 9:00 a.m. a 1:00 p.m. (Hora de Colombia)',
   ciudad: 'Bogotá D.C., Colombia',
   sicUrl: 'https://www.sic.gov.co',
   sicLineaGratuita: 'Línea gratuita nacional SIC: 01 8000 910165 | Contact Center Bogotá: +57 (601) 592 0400',
-  pasarelaPagos: '[PASARELA DE PAGOS CERTIFICADA - MERCADO PAGO COLOMBIA]',
-  comisionTiendas: '[COMISIÓN POR TRANSACCIÓN, EJ. 8% + IVA]',
+  pasarelaPagos: 'Mercado Pago Colombia',
+  comisionTiendas: 'Según plan comercial vigente de tienda',
 } as const
 
 export const LEGAL_VERSIONS = {

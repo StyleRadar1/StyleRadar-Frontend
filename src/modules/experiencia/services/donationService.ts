@@ -62,7 +62,39 @@ export const normalizeDonation = (raw: any): DonationDto => {
   }
 }
 
+function toWindowIso(fecha?: string, franja?: string): { start?: string; end?: string } {
+  if (!fecha) return {}
+  if (fecha.includes('T')) return { start: fecha }
+  if (franja?.includes('8:00')) return { start: `${fecha}T08:00:00`, end: `${fecha}T12:00:00` }
+  if (franja?.includes('12:00')) return { start: `${fecha}T12:00:00`, end: `${fecha}T15:00:00` }
+  if (franja?.includes('15:00')) return { start: `${fecha}T15:00:00`, end: `${fecha}T18:00:00` }
+  return { start: `${fecha}T09:00:00`, end: `${fecha}T12:00:00` }
+}
+
+function requireDonorId(explicitId?: string | number): number {
+  const raw = explicitId ?? mockSessionUser()?.id
+  const num = Number(raw)
+  if (!Number.isFinite(num) || num <= 0) {
+    throw new ApiError(401, 'Inicia sesión nuevamente para registrar tu donación.')
+  }
+  return Math.trunc(num)
+}
+
 export const donationService = {
+  /** Resuelve el ID real de la fundación del representante autenticado. */
+  async getMyFoundationId(): Promise<string> {
+    if (env.useMocks) {
+      const fid = MOCK_FOUNDATION_OF[mockSessionUser()?.id ?? '']
+      if (!fid) throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
+      return fid
+    }
+    const res = await apiClient.get<{ id?: number | string }>('/api/v1/donations/foundations/representative')
+    const id = res.data?.id
+    if (id === undefined || id === null || id === '') {
+      throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
+    }
+    return String(id)
+  },
   /** RF-44: fundaciones ordenadas por cercanía, con las categorías que reciben. */
   async foundations(): Promise<FoundationDto[]> {
     if (env.useMocks) { failIfScenario(); return mockDelay([...FOUNDATIONS].sort((a, b) => a.distanciaKm - b.distanciaKm)) }
@@ -110,15 +142,19 @@ export const donationService = {
       db().unshift(d)
       return mockDelay(d, 700)
     }
+    const donorId = requireDonorId(data.donorId)
+    const win = toWindowIso(data.logistica?.fecha, data.logistica?.franja)
+
     if (data.publicationId) {
       return this.createDirect({
         publicationId: data.publicationId,
         foundationId: data.fundacionId,
-        donorId: data.donorId || 101,
+        donorId,
         message: data.prenda?.descripcion || data.message,
         deliveryMode: data.logistica?.modalidad,
         deliveryPoint: data.logistica?.direccion || 'Sede Fundación',
-        pickupWindowStart: data.logistica?.fecha,
+        pickupWindowStart: win.start,
+        pickupWindowEnd: win.end,
       })
     }
 
@@ -141,7 +177,8 @@ export const donationService = {
       categoria: data.prenda?.categoria || 'Chaquetas',
       marca: 'Donación',
       talla: data.prenda?.talla || 'M',
-      conservacion: data.prenda?.conservacion || 'BUENO',
+      conservacion: data.prenda?.conservacion || 'GOOD_CONDITION',
+      conservationStatus: (data.prenda?.conservacion || 'GOOD_CONDITION') as any,
       precio: 0,
       esDonacion: true,
       photos: photoUrls,
@@ -151,11 +188,12 @@ export const donationService = {
     return this.createDirect({
       publicationId: pub.id,
       foundationId: data.fundacionId,
-      donorId: data.donorId || 101,
+      donorId,
       message: data.prenda?.descripcion || data.message,
       deliveryMode: data.logistica?.modalidad,
       deliveryPoint: data.logistica?.direccion || 'Sede Fundación',
-      pickupWindowStart: data.logistica?.fecha,
+      pickupWindowStart: win.start,
+      pickupWindowEnd: win.end,
     })
   },
 
@@ -166,8 +204,10 @@ export const donationService = {
     const now = new Date()
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
     const tomorrowEnd = new Date(tomorrow.getTime() + 3 * 60 * 60 * 1000)
-    const startTime = body.deliveryProposal?.startTime || body.pickupWindowStart || tomorrow.toISOString().slice(0, 19)
-    const endTime = body.deliveryProposal?.endTime || body.pickupWindowEnd || tomorrowEnd.toISOString().slice(0, 19)
+    const rawStart = body.deliveryProposal?.startTime || body.pickupWindowStart || tomorrow.toISOString().slice(0, 19)
+    const rawEnd = body.deliveryProposal?.endTime || body.pickupWindowEnd || tomorrowEnd.toISOString().slice(0, 19)
+    const startTime = rawStart.includes('T') ? rawStart : `${rawStart}T09:00:00`
+    const endTime = rawEnd.includes('T') ? rawEnd : `${rawEnd}T12:00:00`
 
     const payload = {
       publicationId: Number(body.publicationId) || body.publicationId,
@@ -266,10 +306,9 @@ export const donationService = {
       if (!fid) throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
       return mockDelay(db().filter((d) => d.fundacion.id === fid))
     }
-    const fid = foundationId || 'mine'
+    const fid = foundationId || (await this.getMyFoundationId())
     return apiClient
       .get<any[]>(`/api/v1/donations/foundations/${encodeURIComponent(fid)}/requests`)
-      .catch(() => apiClient.get<any[]>('/api/v1/donations'))
       .then((r) => r.data.map(normalizeDonation))
   },
 
@@ -288,24 +327,27 @@ export const donationService = {
       if (body.estado === 'ENTREGADA') d.comprobante = { codigo: `SR-DON-${id.replace(/\W/g, '').slice(-4).toUpperCase().padStart(4, '0')}`, emitidoEn: isoDay() }
       return mockDelay({ ...d }, 500)
     }
+    const foundationId = await this.getMyFoundationId()
     const est = String(body.estado).toUpperCase()
     if (est === 'EN_RECOGIDA' || est === 'SCHEDULED') {
-      return apiClient
-        .patch<any>(`/api/v1/donations/${encodeURIComponent(id)}/pickup`, {})
-        .then((r) => normalizeDonation(r.data))
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      const tomorrowEnd = new Date(tomorrow.getTime() + 3 * 60 * 60 * 1000)
+      return this.schedulePickup(id, {
+        userId: Number(mockSessionUser()?.id) || 0,
+        deliveryPoint: 'Sede Principal Fundación',
+        startTime: tomorrow.toISOString().slice(0, 19),
+        endTime: tomorrowEnd.toISOString().slice(0, 19),
+      })
     }
     if (est === 'ENTREGADA' || est === 'CONFIRMED') {
-      return apiClient
-        .patch<any>(`/api/v1/donations/${encodeURIComponent(id)}/confirmation`, {})
-        .then((r) => normalizeDonation(r.data))
+      return this.confirmReception(id, { foundationId })
     }
     const approve = est === 'APROBADA' || est === 'APPROVED'
-    return apiClient
-      .patch<any>(`/api/v1/donations/${encodeURIComponent(id)}/decision`, {
-        approve,
-        reason: body.justificacion ?? null,
-      })
-      .then((r) => normalizeDonation(r.data))
+    return this.decide(id, {
+      foundationId,
+      approve,
+      reason: body.justificacion ?? null,
+    })
   },
 
   /** PATCH /api/v1/donations/{id}/decision (SR-RF-47) */

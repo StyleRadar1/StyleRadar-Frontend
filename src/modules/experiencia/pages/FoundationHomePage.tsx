@@ -122,7 +122,7 @@ export default function FoundationHomePage() {
               <div className="fnd-hero-card__body">
                 <h2 className="fnd-hero-card__title">Impacto y donaciones</h2>
                 <p className="fnd-hero-card__desc">
-                  420 prendas recibidas de tiendas y personas solidarias en Bogotá. 82% alcanzado en la meta mensual de abrigo.
+                  Consulta las prendas recibidas de tiendas y personas solidarias en Bogotá y el avance real de tus entregas.
                 </p>
                 <Link to="/fundacion/estadisticas" className="fnd-hero-card__link">
                   VER REPORTE
