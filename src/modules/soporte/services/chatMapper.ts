@@ -14,8 +14,17 @@ export interface ContextoChat {
   nombres: Map<string, string>
 }
 
-const texto = (v: unknown) => (typeof v === 'string' && v ? v : undefined)
+const texto = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
 const id = (v: unknown) => (v === null || v === undefined ? '' : String(v))
+
+/** Nombre de la contraparte incluido directamente por ms-chat (evita llamadas extra a ms-usuarios). */
+export function nombreEnFila(raw: Record<string, unknown>): string | undefined {
+  return (
+    texto(raw.participantDisplayName) ??
+    texto(raw.otherParticipantName) ??
+    texto(raw.contactName)
+  )
+}
 
 /** Las listas de ms-chat vienen como { content, page, size, totalElements, totalPages }; por si acaso, también un arreglo. */
 export function filasDe(data: unknown): { filas: Record<string, unknown>[]; totalPages: number } {
@@ -34,8 +43,9 @@ export function idDelOtro(raw: Record<string, unknown>, me: string): string {
   return comprador === me ? vendedor : comprador
 }
 
-/** Si hay que pedir el nombre de la otra persona a ms-usuarios (las tiendas ya traen su nombre). */
+/** Si hay que pedir el nombre de la otra persona a ms-usuarios (las tiendas y filas con participantDisplayName ya traen su nombre). */
 export function necesitaNombre(raw: Record<string, unknown>, ctx: Pick<ContextoChat, 'me' | 'rol'>): boolean {
+  if (nombreEnFila(raw)) return false
   const tipo = String(raw.type ?? '').toUpperCase()
   return !esTienda(tipo) || ctx.rol === 'STORE_ADMIN'
 }
@@ -43,7 +53,10 @@ export function necesitaNombre(raw: Record<string, unknown>, ctx: Pick<ContextoC
 export function aConversacion(raw: Record<string, unknown>, ctx: ContextoChat, noLeidos = 0): ConversacionDto {
   const tipo = String(raw.type ?? raw.tipo ?? '').toUpperCase()
   const otro = idDelOtro(raw, ctx.me)
-  const nombreOtro = (fallback: string) => ctx.nombres.get(otro) ?? (otro ? `Usuario #${otro}` : fallback)
+  const convId = id(raw.id)
+  const directo = nombreEnFila(raw)
+  const nombreOtro = (fallback: string) =>
+    directo ?? ctx.nombres.get(otro) ?? (otro ? `Usuario #${otro}` : convId ? `Conversación #${convId}` : fallback)
   const vendo = id(raw.sellerId) === ctx.me
 
   let contacto: { id: string; nombre: string; tipo: TipoContacto }
@@ -51,8 +64,8 @@ export function aConversacion(raw: Record<string, unknown>, ctx: ContextoChat, n
   if (esTienda(tipo)) {
     asunto = 'Consulta a la tienda'
     contacto = ctx.rol === 'STORE_ADMIN'
-      ? { id: otro, nombre: nombreOtro('Cliente'), tipo: 'COMPRADOR' }
-      : { id: id(raw.storeNit), nombre: texto(raw.storeName) ?? 'Tienda', tipo: 'TIENDA' }
+      ? { id: otro, nombre: nombreOtro('Contacto de tienda'), tipo: 'COMPRADOR' }
+      : { id: id(raw.storeNit), nombre: texto(raw.storeName) ?? directo ?? 'Contacto de tienda', tipo: 'TIENDA' }
   } else if (esDonacion(tipo)) {
     asunto = `Donación #${id(raw.donationId)}`
     contacto = ctx.rol === 'FOUNDATION_REPRESENTATIVE'
@@ -64,7 +77,7 @@ export function aConversacion(raw: Record<string, unknown>, ctx: ContextoChat, n
   }
 
   return {
-    id: id(raw.id),
+    id: convId,
     contacto,
     asunto,
     referenciaId: id(raw.publicationId ?? raw.donationId ?? raw.storeNit) || undefined,

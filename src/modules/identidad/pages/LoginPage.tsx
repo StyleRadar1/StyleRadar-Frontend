@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
 import { tomarRetorno } from '@/modules/core/api/retorno'
@@ -7,13 +8,16 @@ import { errorDeLogin } from '../utils/erroresAcceso'
 import { GoogleSignIn } from '../components/GoogleSignIn'
 import { useAuth } from '../hooks/useAuth'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../mocks/demoAccounts'
+import { PASSWORD_MIN } from '../types/auth.dto'
 
-/** RF-02 Iniciar sesión. Con ?jurado muestra primero las cuentas de prueba (kit de jurados). */
+const LOGIN_MIN = env.useMocks ? DEMO_PASSWORD.length : PASSWORD_MIN
+
+/** RF-02 Iniciar sesión. Con ?jurado en modo demo muestra primero las cuentas de prueba. */
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const jurado = params.has('jurado')
+  const jurado = env.useMocks && params.has('jurado')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -37,8 +41,8 @@ export default function LoginPage() {
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (!email || password.length < 4)
-      return setError('Escribe tu correo y una contraseña de al menos 4 caracteres.')
+    if (!email || password.length < LOGIN_MIN)
+      return setError(`Escribe tu correo y una contraseña de al menos ${LOGIN_MIN} caracteres.`)
     enter(email, password)
   }
 
@@ -116,7 +120,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                placeholder="Mínimo 4 caracteres"
+                placeholder={`Mínimo ${LOGIN_MIN} caracteres`}
                 className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm font-normal normal-case tracking-normal text-[var(--color-text)] outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/20 transition-colors"
               />
             </label>
@@ -143,7 +147,7 @@ export default function LoginPage() {
             <Button type="submit" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}
             </Button>
-            {!jurado && (
+            {env.useMocks && !jurado && (
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[var(--color-text-muted)]">
                   Cuentas de prueba

@@ -1,20 +1,20 @@
 import type { LegalDocMeta } from '../types/legal.types'
 
 export const PROVIDER_INFO = {
-  razonSocial: 'StyleRadar S.A.S.',
+  razonSocial: 'StyleRadar Colombia (Proyecto Académico DOSW — Escuela Colombiana de Ingeniería Julio Garavito)',
   nombreComercial: 'Style Radar',
-  nit: 'En trámite de registro mercantil (Bogotá D.C.)',
-  direccion: 'Bogotá D.C., Colombia',
+  nit: '860.034.811-3 (Proyecto Académico DOSW — ECI Julio Garavito)',
+  direccion: 'AK. 45 # 205-59 (Autopista Norte), Bogotá D.C., Colombia',
   correoGeneral: 'contacto@styleradar.co',
   correoDatos: 'privacidad@styleradar.co',
   correoPqrs: 'pqrs@styleradar.co',
-  telefono: 'Atención digital vía contacto@styleradar.co y módulo PQRS',
+  telefono: '+57 (601) 668 3600 (Canal académico de orientación)',
   horarioAtencion: 'Lunes a viernes de 8:00 a.m. a 6:00 p.m. y sábados de 9:00 a.m. a 1:00 p.m. (Hora de Colombia)',
   ciudad: 'Bogotá D.C., Colombia',
   sicUrl: 'https://www.sic.gov.co',
   sicLineaGratuita: 'Línea gratuita nacional SIC: 01 8000 910165 | Contact Center Bogotá: +57 (601) 592 0400',
   pasarelaPagos: 'Mercado Pago Colombia',
-  comisionTiendas: 'Según plan comercial vigente de tienda',
+  comisionTiendas: 'Suscripción mensual fija para tiendas aliadas (sin comisión por prenda)',
 } as const
 
 export const LEGAL_VERSIONS = {
@@ -40,13 +40,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Define el marco contractual entre Style Radar y los usuarios. Aclara nuestro rol como plataforma intermediaria de moda local en Bogotá, mayoría de edad (+18 años), reglas de registro, roles, precios en COP con IVA y resolución de controversias en Colombia.',
     readTimeMinutes: 8,
-    bracketedPlaceholders: [
-      '[RAZÓN SOCIAL DE LA EMPRESA OPERADORA S.A.S.]',
-      '[NIT: XXXXXXXXX-X]',
-      '[DIRECCIÓN COMERCIAL]',
-      '[CORREO DE ATENCIÓN]',
-      '[TRIBUNAL DE ARBITRAMENTO / JURISDICCIÓN COMPETENTE]',
-    ],
+    bracketedPlaceholders: [],
   },
   'datos-personales': {
     id: 'datos-personales',
@@ -59,13 +53,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Garantiza el cumplimiento estricto de la Ley 1581 de 2012 y el Decreto 1377 de 2013 en Colombia. Explica qué datos recolectamos, finalidades, derechos ARCO (conocer, actualizar, rectificar, suprimir), tiempos legales de respuesta (10 y 15 días hábiles) y canales de atención.',
     readTimeMinutes: 10,
-    bracketedPlaceholders: [
-      '[RAZÓN SOCIAL DE LA EMPRESA OPERADORA S.A.S.]',
-      '[NIT: XXXXXXXXX-X]',
-      '[CORREO DE PROTECCIÓN DE DATOS: privacidad@styleradar.co]',
-      '[NÚMERO DE RADICACIÓN RNBD ANTE LA SIC, SI APLICA]',
-      '[OFICIAL DE PRIVACIDAD / ÁREA RESPONSABLE]',
-    ],
+    bracketedPlaceholders: [],
   },
   'aviso-privacidad': {
     id: 'aviso-privacidad',
@@ -78,11 +66,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Resumen conciso y en lenguaje sencillo para que conozcas de inmediato quién es el responsable de tus datos, para qué los usamos y cómo ejercer tus derechos de Habeas Data antes de compartir cualquier información.',
     readTimeMinutes: 3,
-    bracketedPlaceholders: [
-      '[RAZÓN SOCIAL DE LA EMPRESA OPERADORA S.A.S.]',
-      '[NIT: XXXXXXXXX-X]',
-      '[CORREO DE PROTECCIÓN DE DATOS]',
-    ],
+    bracketedPlaceholders: [],
   },
   cookies: {
     id: 'cookies',
@@ -95,10 +79,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Detalla los tipos de cookies utilizadas (necesarias, funcionales, analíticas y publicitarias), proveedores, finalidades y plazos de conservación, así como el procedimiento transparente para configurar o revocar el consentimiento en cualquier momento.',
     readTimeMinutes: 6,
-    bracketedPlaceholders: [
-      '[PROVEEDOR ANALÍTICO: EJ. GOOGLE ANALYTICS 4 ID / SELF-HOSTED]',
-      '[PROVEEDOR PUBLICITARIO / META PIXEL ID, SI APLICA]',
-    ],
+    bracketedPlaceholders: [],
   },
   'devoluciones-garantias': {
     id: 'devoluciones-garantias',
@@ -111,10 +92,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Establece los lineamientos conforme a la Ley 1480 de 2011 (Estatuto del Consumidor en Colombia): derecho legal de retracto en 5 días hábiles en compras no presenciales, excepciones (prendas de uso personal/íntimo), términos de garantía legal y pasos para solicitar devoluciones a tiendas aliadas.',
     readTimeMinutes: 7,
-    bracketedPlaceholders: [
-      '[PLAZO DE RESPUESTA A RECLAMOS DE GARANTÍA POR TIENDAS, EJ. 15 DÍAS HÁBILES]',
-      '[CANAL EXCLUSIVO DE DEVOLUCIONES / LOGÍSTICA INVERSA]',
-    ],
+    bracketedPlaceholders: [],
   },
   'envios-entregas': {
     id: 'envios-entregas',
@@ -127,11 +105,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Informa sobre la cobertura de envíos en Bogotá y municipios aledaños, tiempos de preparación por las tiendas locales, costos de flete, número de guía, intentos de entrega fallida y protocolo ante paquetes extraviados o averiados.',
     readTimeMinutes: 5,
-    bracketedPlaceholders: [
-      '[EMPRESAS TRANSPORTADORAS ALIADAS: EJ. ENVÍA, SERVIENTREGA, MENSAJERÍA URBANA BOGOTÁ]',
-      '[COSTO BASE ESTÁNDAR DE ENVÍO URBANO BOGOTÁ: $X.XXX COP]',
-      '[TIEMPO MÁXIMO DE DESPACHO PARA TIENDAS, EJ. 48 HORAS HÁBILES]',
-    ],
+    bracketedPlaceholders: [],
   },
   'pagos-seguridad': {
     id: 'pagos-seguridad',
@@ -144,9 +118,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Los pagos de planes y suscripciones se hacen con Mercado Pago como único medio de pago y StyleRadar no almacena datos de tarjetas ni de otros medios de pago',
     readTimeMinutes: 5,
-    bracketedPlaceholders: [
-      '[PASARELA DE PAGOS CERTIFICADA]',
-    ],
+    bracketedPlaceholders: [],
   },
   pqrs: {
     id: 'pqrs',
@@ -159,11 +131,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Canal oficial y formal de radicación para el consumidor según el Código de Procedimiento Administrativo y Estatuto del Consumidor: tiempos de respuesta garantizados (10 días para peticiones y 15 días hábiles para reclamos) con escalamiento ante la SIC.',
     readTimeMinutes: 4,
-    bracketedPlaceholders: [
-      '[RESPONSABLE DEL CANAL DE ATENCIÓN AL CLIENTE]',
-      '[CORREO PQRS]',
-      '[PLAZO DE ATENCIÓN DE SUGERENCIAS, EJ. 10 DÍAS HÁBILES]',
-    ],
+    bracketedPlaceholders: [],
   },
   'reglas-tiendas': {
     id: 'reglas-tiendas',
@@ -176,12 +144,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Normativa contractual para almacenes y diseñadores de Bogotá: prohibición total de réplicas y contrabando, exactitud de tallas y precios, cumplimiento de garantías y retractos, comisiones de plataforma y causales de suspensión inmediata.',
     readTimeMinutes: 9,
-    bracketedPlaceholders: [
-      '[COMISIÓN POR TRANSACCIÓN]',
-      '[VALOR SUSCRIPCIÓN PLAN TIENDA RADAR ALIADA: $XX.XXX COP/MES]',
-      '[PLAZO LÍMITE DE DESPACHO O ENTREGA EN TIENDA]',
-      '[PORCENTAJE DE RETENCIÓN DE FONDOS POR LITIGIO]',
-    ],
+    bracketedPlaceholders: [],
   },
   'reglas-fundaciones': {
     id: 'reglas-fundaciones',
@@ -194,10 +157,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Marco ético y legal para la recepción y trazabilidad de donaciones de ropa en Bogotá: verificación del RUT y personería jurídica ESAL, prohibición absoluta de reventa comercial de prendas donadas y emisión de certificados de donación según el Estatuto Tributario.',
     readTimeMinutes: 6,
-    bracketedPlaceholders: [
-      '[REQUISITOS DOCUMENTALES DIAN / CÁMARA DE COMERCIO]',
-      '[PLAZO DE EMISIÓN DE CERTIFICADOS DE DONACIÓN]',
-    ],
+    bracketedPlaceholders: [],
   },
   'segunda-vida': {
     id: 'segunda-vida',
@@ -210,10 +170,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Condiciones de publicación y compra de prendas pre-amadas: clasificación de estado (Como nuevo, Muy bueno, Con detalles), fotos reales sin filtros engañosos, estándares de higiene obligatorios y lista de artículos no permitidos por bioseguridad.',
     readTimeMinutes: 6,
-    bracketedPlaceholders: [
-      '[PORCENTAJE DE COMISIÓN POR TRANSACCIÓN C2C, SI APLICA: X%]',
-      '[LÍMITE MÁXIMO DE PRENDAS PUBLICADAS EN PLAN GRATIS]',
-    ],
+    bracketedPlaceholders: [],
   },
   'normas-comunidad': {
     id: 'normas-comunidad',
@@ -226,10 +183,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Reglas de convivencia para la creación de playlists, reseñas, comentarios y fotografías de estilo: política de tolerancia cero frente al acoso, lenguaje de odio o discriminación, proceso de moderación comunitaria y sanciones aplicables.',
     readTimeMinutes: 5,
-    bracketedPlaceholders: [
-      '[CORREO DEL EQUIPO DE MODERACIÓN: comunidad@styleradar.co]',
-      '[TIEMPO MÁXIMO DE REVISIÓN DE DENUNCIAS: 24-48 HORAS]',
-    ],
+    bracketedPlaceholders: [],
   },
   'probador-virtual-datos': {
     id: 'probador-virtual-datos',
@@ -242,10 +196,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Regulación del uso voluntario de tecnología de ajuste virtual: autorización expresa y diferenciada para fotos o medidas anatómicas (consideradas datos sensibles), aislamiento en servidores seguros, prohibición de uso publicitario sin consentimiento y derecho de borrado inmediato.',
     readTimeMinutes: 5,
-    bracketedPlaceholders: [
-      '[PROVEEDOR TECNOLÓGICO DE INFERENCIA VISUAL / VIRTUAL TRY-ON]',
-      '[PLAZO DE ELIMINACIÓN AUTOMÁTICA DE IMÁGENES TEMPORALES, EJ. 7 DÍAS]',
-    ],
+    bracketedPlaceholders: [],
   },
   'propiedad-intelectual': {
     id: 'propiedad-intelectual',
@@ -258,10 +209,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Protección de marcas, logotipos, código fuente y contenidos editoriales de Style Radar y de diseñadores aliados. Aviso de uso de imágenes generadas o editadas digitalmente y protocolo de notificación de infracción marcaria o de derechos de autor (DMCA / Decisión Andina 351).',
     readTimeMinutes: 6,
-    bracketedPlaceholders: [
-      '[NÚMERO DE EXPEDIENTE / REGISTRO DE MARCA ANTE LA SIC]',
-      '[CORREO DE NOTIFICACIONES DE PROPIEDAD INTELECTUAL]',
-    ],
+    bracketedPlaceholders: [],
   },
   'uso-aceptable': {
     id: 'uso-aceptable',
@@ -274,10 +222,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Directrices técnicas para el uso debido de la plataforma: prohibición de scraping automatizado, ingeniería inversa, creación de perfiles falsos o ataques cibernéticos. Deberes del usuario en la custodia de credenciales y autenticación OTP.',
     readTimeMinutes: 5,
-    bracketedPlaceholders: [
-      '[PROVEEDOR DE PROTECCIÓN CONTRA ATAQUES WAF / CLOUDFLARE]',
-      '[LÍMITE DE CONSULTAS POR MINUTO (RATE LIMIT)]',
-    ],
+    bracketedPlaceholders: [],
   },
   'promociones-descuentos': {
     id: 'promociones-descuentos',
@@ -290,10 +235,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Condiciones de vigencia, canales de redención, cupos de inventario y restricciones de ofertas promocionales, cupones de bienvenida y rebajas de temporada, acompañado del modelo estandarizado de letra pequeña exigido por la SIC.',
     readTimeMinutes: 4,
-    bracketedPlaceholders: [
-      '[VIGENCIA ESPECÍFICA DE CADA CAMPAÑA PROMOCIONAL]',
-      '[CANTIDAD MÍNIMA DE UNIDADES DISPONIBLES POR PROMOCIÓN]',
-    ],
+    bracketedPlaceholders: [],
   },
   'centro-ayuda': {
     id: 'centro-ayuda',
@@ -306,10 +248,7 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     summary:
       'Guía integral de asistencia rápida para compradores, tiendas y fundaciones: preguntas frecuentes organizadas por módulo, canales directos de soporte y compromiso de accesibilidad web bajo lineamientos WCAG 2.1 nivel AA.',
     readTimeMinutes: 6,
-    bracketedPlaceholders: [
-      '[LÍNEA DE ATENCIÓN TELEFÓNICA DIRECTA]',
-      '[CANAL DE CHAT EN VIVO / SOPORTE BOGOTÁ]',
-    ],
+    bracketedPlaceholders: [],
   },
   'mapa-legal': {
     id: 'mapa-legal',

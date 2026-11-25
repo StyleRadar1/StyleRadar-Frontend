@@ -9,6 +9,24 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { useModeration } from '../hooks/useModeration'
 import { REJECTION_REASONS, type ModerationItemDto, type ModerationType } from '../types/moderation.dto'
 
+function formatModerationDate(iso?: string): string {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    return isNaN(d.getTime())
+      ? iso
+      : d.toLocaleDateString('es-CO', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+  } catch {
+    return iso
+  }
+}
+
 export default function ModerationPage() {
   const {
     items,
@@ -293,7 +311,7 @@ export default function ModerationPage() {
                   </p>
                 )}
 
-                <p className="mt-3 text-[11px] text-white/50">{item.fecha}</p>
+                <p className="mt-3 text-[11px] text-white/50">{formatModerationDate(item.fecha)}</p>
 
                 {/* Acciones */}
                 <div className="mt-5 flex items-center justify-end gap-2 border-t border-white/10 pt-4">
@@ -418,7 +436,7 @@ export default function ModerationPage() {
                     <p className="mt-0.5 text-xs text-rose-300/80">Motivo: {h.motivo}</p>
                   )}
                 </div>
-                <span className="text-xs text-white/40">{h.fecha}</span>
+                <span className="text-xs text-white/40">{formatModerationDate(h.fecha)}</span>
               </li>
             ))
           )}

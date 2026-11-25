@@ -307,9 +307,12 @@ export const donationService = {
       return mockDelay(db().filter((d) => d.fundacion.id === fid))
     }
     const fid = foundationId || (await this.getMyFoundationId())
+    if (!fid || fid.toLowerCase() === 'mine') {
+      return []
+    }
     return apiClient
       .get<any[]>(`/api/v1/donations/foundations/${encodeURIComponent(fid)}/requests`)
-      .then((r) => r.data.map(normalizeDonation))
+      .then((r) => (Array.isArray(r.data) ? r.data : []).map(normalizeDonation))
   },
 
   /** RF-47 y RF-49: aprobar, rechazar, iniciar recogida o confirmar recepción. */

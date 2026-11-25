@@ -97,15 +97,34 @@ export const statsService = {
   async getStoreStats(periodo: StatsPeriod): Promise<StoreStatsDto> {
     if (env.useMocks) return mockDelay(MOCK_STORE_STATS[periodo])
     // Valida permisos contra ms-estadisticas usando la métrica vigente de tienda sin llamar rutas eliminadas.
-    await this.getDistribution('STORE_INVENTORY_BY_STATE').catch(() => null)
+    const raw = await this.getDistribution('STORE_INVENTORY_BY_STATE').catch(() => null)
+    const visitasActual = num(raw?.visitas?.valor ?? raw?.visitasActual ?? raw?.visits, 0)
+    const visitasPrev = num(raw?.visitas?.periodoAnterior ?? raw?.visitasAnterior, 0)
+    const mensajesActual = num(raw?.mensajes?.valor ?? raw?.mensajesActual ?? raw?.messages, 0)
+    const mensajesPrev = num(raw?.mensajes?.periodoAnterior ?? raw?.mensajesAnterior, 0)
+    const calcPct = (act: number, prev: number) =>
+      prev > 0 ? Number((((act - prev) / prev) * 100).toFixed(1)) : 0
+    const dir = (act: number, prev: number): 'up' | 'down' | 'neutral' =>
+      act > prev ? 'up' : act < prev ? 'down' : 'neutral'
+
     return {
       periodo,
       kpis: {
-        visitas: { valor: 0, variacionPct: 0, direccion: 'neutral', periodoAnterior: 0 },
-        mensajes: { valor: 0, variacionPct: 0, direccion: 'neutral', periodoAnterior: 0 },
+        visitas: {
+          valor: visitasActual,
+          variacionPct: calcPct(visitasActual, visitasPrev),
+          direccion: dir(visitasActual, visitasPrev),
+          periodoAnterior: visitasPrev,
+        },
+        mensajes: {
+          valor: mensajesActual,
+          variacionPct: calcPct(mensajesActual, mensajesPrev),
+          direccion: dir(mensajesActual, mensajesPrev),
+          periodoAnterior: mensajesPrev,
+        },
       },
-      visitasPorDia: [],
-      mensajesPorDia: [],
+      visitasPorDia: Array.isArray(raw?.visitasPorDia) ? raw.visitasPorDia : [],
+      mensajesPorDia: Array.isArray(raw?.mensajesPorDia) ? raw.mensajesPorDia : [],
     }
   },
 
@@ -157,7 +176,7 @@ export const statsService = {
 
   async getFoundationMonths(): Promise<FoundationMonthDto[]> {
     if (env.useMocks) return mockDelay(MOCK_FOUNDATION_MONTHS)
-    const raw = await this.getSummaryTotal('PLATFORM_MONTHLY_DONATIONS').catch(() => null)
+    const raw = await this.getSummaryTotal('FOUNDATION_GARMENTS_RECEIVED').catch(() => null)
     const points = extractSeriesPoints(raw)
     return points.map((p: any) => {
       const personas = num(p?.personas, 0)
@@ -177,30 +196,55 @@ export const statsService = {
   /* ─── Admin ─── */
   async getAdminIndicators(): Promise<AdminIndicatorsDto> {
     if (env.useMocks) return mockDelay(MOCK_ADMIN_INDICATORS)
-    const [garmentsRaw, playlistsRaw, donationsRaw, usersRaw, revenueRaw] = await Promise.all([
-      this.getSummaryTotal('PLATFORM_GARMENT_PUBLICATIONS').catch(() => 0),
-      this.getSummaryTotal('PLATFORM_PLAYLISTS_CREATED').catch(() => 0),
-      this.getSummaryTotal('PLATFORM_MONTHLY_DONATIONS').catch(() => 0),
-      this.getTimeSeries('PLATFORM_USER_REGISTRATIONS').catch(() => []),
-      this.getTimeSeries('PLATFORM_SUBSCRIPTION_REVENUE').catch(() => []),
-    ])
+    const [garmentsRaw, playlistsRaw, donationsRaw, usersRaw, revenueRaw, storesByPlanRaw, storesVerifRaw, foundationsRaw] =
+      await Promise.all([
+        this.getSummaryTotal('PLATFORM_GARMENT_PUBLICATIONS').catch(() => 0),
+        this.getSummaryTotal('PLATFORM_PLAYLISTS_CREATED').catch(() => 0),
+        this.getSummaryTotal('PLATFORM_MONTHLY_DONATIONS').catch(() => 0),
+        this.getTimeSeries('PLATFORM_USER_REGISTRATIONS').catch(() => []),
+        this.getTimeSeries('PLATFORM_SUBSCRIPTION_REVENUE').catch(() => []),
+        this.getDistribution('PLATFORM_STORES_BY_PLAN').catch(() => null),
+        apiClient.get<any>('/api/v1/admin/stores/verifications', { params: { page: 0, size: 100 } }).then((r) => r.data).catch(() => null),
+        apiClient.get<any>('/api/v1/admin/foundations').then((r) => r.data).catch(() => null),
+      ])
 
     const userPoints = extractSeriesPoints(usersRaw)
-    const usuariosActivos = userPoints.reduce(
-      (acc, p) => acc + num(p?.value ?? p?.count ?? p?.registros, 0),
-      num(usersRaw?.total, 0),
-    )
+    const usuariosActivos =
+      usersRaw && typeof usersRaw === 'object' && !Array.isArray(usersRaw) && usersRaw.total != null
+        ? num(usersRaw.total, 0)
+        : userPoints.reduce((acc, p) => acc + num(p?.value ?? p?.count ?? p?.registros, 0), 0)
+
     const revPoints = extractSeriesPoints(revenueRaw)
-    const ingresosMes = revPoints.reduce(
-      (acc, p) => acc + num(p?.value ?? p?.amount ?? p?.total, 0),
-      num(revenueRaw?.total, 0),
-    )
+    const ingresosMes =
+      revenueRaw && typeof revenueRaw === 'object' && !Array.isArray(revenueRaw) && revenueRaw.total != null
+        ? num(revenueRaw.total, 0)
+        : revPoints.reduce((acc, p) => acc + num(p?.value ?? p?.amount ?? p?.total, 0), 0)
+
+    const storeRows: any[] = Array.isArray(storesVerifRaw)
+      ? storesVerifRaw
+      : Array.isArray(storesVerifRaw?.content)
+        ? storesVerifRaw.content
+        : []
+    const verificadas = storeRows.filter((s) => s?.verificationStatus === 'APPROVED').length
+    const pendientes = storeRows.filter((s) => s?.verificationStatus === 'PENDING').length
+    const storesPlanTotal = extractDistributionEntries(storesByPlanRaw).reduce((acc, e) => acc + e.count, 0)
+    const totalTiendas =
+      typeof storesVerifRaw?.totalElements === 'number'
+        ? storesVerifRaw.totalElements
+        : storeRows.length || storesPlanTotal
+
+    const foundationRows: any[] = Array.isArray(foundationsRaw)
+      ? foundationsRaw
+      : Array.isArray(foundationsRaw?.content)
+        ? foundationsRaw.content
+        : []
+    const fundacionesActivas = foundationRows.filter((f) => f?.active !== false).length
 
     return {
       usuariosActivos,
       variacionUsuarios: { pct: 0, direccion: 'neutral' },
-      tiendas: { verificadas: 0, pendientes: 0, total: 0 },
-      fundacionesActivas: 0,
+      tiendas: { verificadas, pendientes, total: totalTiendas },
+      fundacionesActivas,
       ingresosMes,
       variacionIngresos: { pct: 0, direccion: 'neutral' },
       prendasPublicadas: extractTotalValue(garmentsRaw),

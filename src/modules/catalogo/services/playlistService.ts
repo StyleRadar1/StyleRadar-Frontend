@@ -37,7 +37,15 @@ function pickCoverFallback(seed: string): string {
 
 function normalizePlaylist(raw: any): PlaylistDto {
   const uid = raw?.usuarioId != null ? String(raw.usuarioId) : raw?.creador?.id ? String(raw.creador.id) : ''
-  const creadorNombre = raw?.creador?.nombre || uid || 'Curador'
+  const rawNombre = typeof raw?.creador?.nombre === 'string' ? raw.creador.nombre.trim() : ''
+  const creadorNombre =
+    rawNombre && !/^\d+$/.test(rawNombre)
+      ? rawNombre
+      : uid
+        ? /^\d+$/.test(uid)
+          ? `Curador #${uid}`
+          : uid
+        : 'Curador'
   const playlistId = String(raw?.id ?? '')
   const playlistName = String(raw?.nombre ?? '')
   const prendasRaw: any[] = Array.isArray(raw?.prendas) ? raw.prendas : []

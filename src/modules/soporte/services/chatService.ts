@@ -43,13 +43,19 @@ async function todas(ruta: string, size: number): Promise<Record<string, unknown
  */
 const nombresConocidos = new Map<string, string>()
 const sinNombre = new Set<string>()
+let usuariosSinPermiso = false
 async function nombreDe(uid: string): Promise<void> {
-  if (!uid || nombresConocidos.has(uid) || sinNombre.has(uid)) return
+  if (!uid || usuariosSinPermiso || nombresConocidos.has(uid) || sinNombre.has(uid)) return
   try {
     const { data } = await apiClient.get<{ name?: string }>(`/api/v1/users/${encodeURIComponent(uid)}`)
     if (data?.name) nombresConocidos.set(uid, data.name)
     else sinNombre.add(uid)
-  } catch { sinNombre.add(uid) }
+  } catch (err) {
+    sinNombre.add(uid)
+    if (err instanceof ApiError && err.status === 403) {
+      usuariosSinPermiso = true
+    }
+  }
 }
 
 /**
@@ -78,7 +84,7 @@ let convs: Record<string, ConversacionDto[]> | null = null
 let msgs: Record<string, MensajeDto[]> | null = null
 const db = () => ({ convs: (convs ??= seedConversations()), msgs: (msgs ??= seedMessages()) })
 /** Solo para pruebas: vuelve a los datos iniciales. */
-export const resetChatMock = () => { convs = null; msgs = null; nombresConocidos.clear(); sinNombre.clear() }
+export const resetChatMock = () => { convs = null; msgs = null; nombresConocidos.clear(); sinNombre.clear(); usuariosSinPermiso = false }
 
 const me = () => {
   const u = mockSessionUser()

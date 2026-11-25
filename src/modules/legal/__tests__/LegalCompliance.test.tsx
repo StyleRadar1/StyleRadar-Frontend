@@ -142,17 +142,20 @@ describe('Cumplimiento Legal y Consentimiento de Cookies (Colombia)', () => {
     ).rejects.toThrow(/Debes autorizar el tratamiento de datos personales/i)
   })
 
-  it('LegalFooter: renderiza datos del proveedor con corchetes, enlace a la SIC y canal de datos', () => {
+  it('LegalFooter: renderiza datos del proveedor sin corchetes, enlace a la SIC y canal de datos', () => {
     render(
       <MemoryRouter>
         <LegalFooter />
       </MemoryRouter>
     )
 
-    // Información del proveedor
+    // Información del proveedor sin placeholders entre corchetes
+    expect(PROVIDER_INFO.razonSocial).not.toMatch(/\[|\]/)
+    expect(PROVIDER_INFO.correoDatos).toBe('privacidad@styleradar.co')
     expect(screen.getByText(PROVIDER_INFO.razonSocial)).toBeInTheDocument()
     expect(screen.getByText(`NIT ${PROVIDER_INFO.nit}`)).toBeInTheDocument()
     expect(screen.getByText(PROVIDER_INFO.direccion)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'privacidad@styleradar.co' })).toHaveAttribute('href', 'mailto:privacidad@styleradar.co')
 
     // Enlace a la SIC
     const sicLinks = screen.getAllByRole('link', { name: /Superintendencia de Industria y Comercio|Portal SIC/i })

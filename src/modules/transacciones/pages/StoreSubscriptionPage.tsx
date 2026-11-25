@@ -1,5 +1,4 @@
-import { useCallback, useContext, useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useCallback, useContext, useMemo, useState, type FormEvent } from 'react'
 import { env } from '@/configs/env'
 import { Button } from '@/modules/core/design-system'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
@@ -69,7 +68,13 @@ function applyMockEstado<T extends { status: StoreSubscriptionStatus; estado?: S
 export default function StoreSubscriptionPage() {
   const auth = useContext(AuthContext)
   const user = auth?.user ?? null
-  const [searchParams] = useSearchParams()
+  const searchParams = useMemo(() => {
+    try {
+      return typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+    } catch {
+      return new URLSearchParams()
+    }
+  }, [])
   const returnedFromMp =
     searchParams.has('status') ||
     searchParams.has('collection_status') ||
@@ -188,8 +193,8 @@ export default function StoreSubscriptionPage() {
   const msg = outcome ? OUTCOME[outcome.status] : null
   const lastPayment = payments[0]
   const failedPayment = lastPayment?.status === 'rechazado' ? lastPayment : null
-  const nextCharge = (sub.fechaFin ?? sub.periodEndsAt) ? fecha(sub.fechaFin ?? sub.periodEndsAt) : '23 oct 2026'
-  const suscripcionId = sub.suscripcionId ?? 'SUB-ALM-1'
+  const nextCharge = (sub.fechaFin ?? sub.periodEndsAt) ? fecha(sub.fechaFin ?? sub.periodEndsAt) : 'Sin fecha programada'
+  const suscripcionId = sub.suscripcionId ?? 'Pendiente de asignación'
   const estado = sub.estado ?? sub.status
   const fechaInicio = sub.fechaInicio ?? null
   const fechaFin = sub.fechaFin ?? sub.periodEndsAt ?? null
@@ -213,7 +218,7 @@ export default function StoreSubscriptionPage() {
     failedPayment?.userEmail ??
     sub.payerEmail ??
     user?.email ??
-    'luna@styleradar.co'
+    ''
 
   return (
     <section className="store-subscription">
@@ -344,11 +349,11 @@ export default function StoreSubscriptionPage() {
             <li>Avisos automáticos a quienes esperan una prenda</li>
           </ul>
           {!sinSuscripcion && <div className="store-subscription__metadata">
-            <span>suscripcionId: <b>{suscripcionId}</b></span>
-            <span>estado: <b>{estado}</b></span>
-            <span>fechaInicio: <b>{fechaInicio ?? '—'}</b></span>
-            <span>fechaFin: <b>{fechaFin ?? '—'}</b></span>
-            <span>autoRenovacion: <b>{autoRenovacion ? 'true' : 'false'}</b></span>
+            <span>ID de suscripción: <b>{suscripcionId}</b></span>
+            <span>Estado: <b>{estado}</b></span>
+            <span>Inicio: <b>{fechaInicio ? fecha(fechaInicio) : '—'}</b></span>
+            <span>Vencimiento: <b>{fechaFin ? fecha(fechaFin) : '—'}</b></span>
+            <span>Renovación automática: <b>{autoRenovacion ? 'Sí' : 'No'}</b></span>
             <span>Método: <b>{lastPayment?.method ?? 'Mercado Pago'}</b></span>
           </div>}
           <div className="store-subscription__actions flex flex-wrap items-center gap-3">

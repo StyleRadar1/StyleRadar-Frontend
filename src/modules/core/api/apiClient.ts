@@ -13,8 +13,13 @@ import { renovarSiHaceFalta } from './renovarSesion'
 export const apiClient = axios.create({
   baseURL: env.apiUrl,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
+  timeout: 25000,
 })
+
+let consecutiveNetworkFailures = 0
+export const resetNetworkFailureCount = () => {
+  consecutiveNetworkFailures = 0
+}
 
 apiClient.interceptors.request.use(async (config) => {
   await renovarSiHaceFalta(config.url)
@@ -69,8 +74,18 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
     tokenStorage.clear()
     window.dispatchEvent(new Event('sr:sesion-expirada'))
   }
-  // La petición no llegó al servidor (sin internet o servidor caído sin respuesta): pantalla única de sin conexión.
-  if (!error.response && error.code !== 'ERR_CANCELED') avisarSinConexion()
+  // Si hay respuesta HTTP, el servidor está alcanzable: reiniciar contador de fallos de red.
+  if (error.response) {
+    consecutiveNetworkFailures = 0
+  } else if (error.code !== 'ERR_CANCELED') {
+    const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false
+    if (isOffline) {
+      avisarSinConexion()
+    } else if (error.code !== 'ECONNABORTED') {
+      consecutiveNetworkFailures += 1
+      if (consecutiveNetworkFailures >= 3) avisarSinConexion()
+    }
+  }
   // El detalle técnico solo se ve en la consola y solo en desarrollo.
   if (import.meta.env.DEV) {
     console.warn(`[api] ${status || 'sin respuesta'} ${error.config?.method?.toUpperCase() ?? ''} ${error.config?.url ?? ''}`, data ?? error.message)
@@ -106,6 +121,9 @@ function cabecera(error: AxiosError<unknown>, nombre: string): unknown {
 }
 
 apiClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    consecutiveNetworkFailures = 0
+    return res
+  },
   (error: AxiosError<unknown>) => Promise.reject(aApiError(error)),
 )

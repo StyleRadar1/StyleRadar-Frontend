@@ -108,6 +108,13 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
     descripcion: typeof r.descripcion === 'string' ? r.descripcion : undefined,
     esNuevo: typeof r.esNuevo === 'boolean' ? r.esNuevo : undefined,
     esSegundaMano: typeof r.esSegundaMano === 'boolean' ? r.esSegundaMano : undefined,
+    tryOnEligible: typeof r.tryOnEligible === 'boolean' ? r.tryOnEligible : undefined,
+    noDisponibleEnProbador:
+      typeof r.noDisponibleEnProbador === 'boolean'
+        ? r.noDisponibleEnProbador
+        : r.tryOnEligible === false
+          ? true
+          : undefined,
   }
 }
 

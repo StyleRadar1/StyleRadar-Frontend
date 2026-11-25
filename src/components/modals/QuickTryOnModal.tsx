@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import './QuickTryOnModal.css'
+import { env } from '@/configs/env'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { TryOnPrivacyShield } from '@/modules/experiencia/components/TryOnPrivacyShield'
 import {
@@ -9,9 +10,10 @@ import {
   TechnicalCroquisSvg,
 } from '@/modules/experiencia/components/FitAnalysis2D'
 import { ITEMS } from '@/modules/catalogo/mocks/items'
-import { itemService } from '@/modules/catalogo/services/itemService'
 import type { GarmentSizeMeasurementDto } from '@/modules/catalogo/types/garmentMeasurements.dto'
 import { MOCK_PLAYLISTS } from '@/modules/catalogo/mocks/playlists'
+import { itemService } from '@/modules/catalogo/services/itemService'
+import { playlistService } from '@/modules/catalogo/services/playlistService'
 import type { ItemResponseDto } from '@/modules/catalogo/types/item.dto'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import {
@@ -140,6 +142,22 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   }, [user?.id])
   const hasMeasures = hasSavedBodyMeasurements(user?.id) && Boolean(bodyMeasurements)
   const [pendingDeepLinkGarment, setPendingDeepLinkGarment] = useState<{ id: string; talla?: string; color?: string } | null>(null)
+  const [catalogItems, setCatalogItems] = useState<ItemResponseDto[]>(() => (env.useMocks ? ITEMS : []))
+  const [availablePlaylists, setAvailablePlaylists] = useState<PlaylistDto[]>(() => (env.useMocks ? MOCK_PLAYLISTS : []))
+
+  useEffect(() => {
+    if (!isOpen || env.useMocks) return
+    let active = true
+    itemService
+      .search({})
+      .then((list) => { if (active) setCatalogItems(list) })
+      .catch(() => {})
+    playlistService
+      .getAll()
+      .then((pls) => { if (active) setAvailablePlaylists(pls) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [isOpen])
 
   const canvasRef = useRef<HTMLDivElement>(null)
 
@@ -294,39 +312,50 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     const key = `${prendaId || ''}_${tallaParam || ''}_${colorParam || ''}_${playlistId || ''}_${user?.id || 'anon'}`
     if (processedDeepLinkRef.current === key) return
 
+    let active = true
+
+    const resolvePlaylist = async () => {
+      if (!playlistId) return
+      const localPl = (env.useMocks ? MOCK_PLAYLISTS : availablePlaylists).find((p) => p.id === playlistId)
+      const pl = localPl ?? (!env.useMocks ? await playlistService.getById(playlistId).catch(() => null) : null)
+      if (!active || !pl) return
+      processedDeepLinkRef.current = key
+      applyPlaylist(pl, 'replace')
+    }
+
+    const resolvePrenda = async () => {
+      if (!prendaId) return
+      const localItem = (env.useMocks ? ITEMS : catalogItems).find((it) => it.id === prendaId)
+      const item = localItem ?? (!env.useMocks ? await itemService.getById(prendaId).catch(() => null) : null)
+      if (!active || !item) return
+      // Verificar si el usuario tiene sesión
+      if (!user) {
+        setPendingDeepLinkGarment({ id: prendaId, talla: tallaParam || undefined, color: colorParam || undefined })
+        setShowAuthModal(true)
+        return
+      }
+      processedDeepLinkRef.current = key
+      const tallaFinal = tallaParam || getRecommendedSize(item, userMeasurements)
+      const colorFinal = colorParam || item.color || 'default'
+      wearGarment(item, tallaFinal, colorFinal)
+    }
+
     if (playlistId) {
-      const pl = MOCK_PLAYLISTS.find((p) => p.id === playlistId)
-      if (pl) {
-        processedDeepLinkRef.current = key
-        applyPlaylist(pl, 'replace')
-      }
-      return
+      void resolvePlaylist()
+    } else if (prendaId) {
+      void resolvePrenda()
     }
 
-    if (prendaId) {
-      const item = ITEMS.find((it) => it.id === prendaId)
-      if (item) {
-        // Verificar si el usuario tiene sesión
-        if (!user) {
-          setPendingDeepLinkGarment({ id: prendaId, talla: tallaParam || undefined, color: colorParam || undefined })
-          setShowAuthModal(true)
-          return
-        }
-
-        processedDeepLinkRef.current = key
-        const tallaFinal = tallaParam || getRecommendedSize(item, userMeasurements)
-        const colorFinal = colorParam || item.color || 'default'
-        wearGarment(item, tallaFinal, colorFinal)
-      }
-    }
-  }, [isOpen, searchParams, initialGarmentId, user, userMeasurements, wearGarment, applyPlaylist])
+    return () => { active = false }
+  }, [isOpen, searchParams, initialGarmentId, user, userMeasurements, wearGarment, applyPlaylist, catalogItems, availablePlaylists])
 
   /* Escuchar inicio de sesión exitoso para reanudar prenda pendiente */
   useEffect(() => {
-    const onLoginSuccess = () => {
+    const onLoginSuccess = async () => {
       setShowAuthModal(false)
       if (pendingDeepLinkGarment) {
-        const item = ITEMS.find((it) => it.id === pendingDeepLinkGarment.id)
+        const localItem = (env.useMocks ? ITEMS : catalogItems).find((it) => it.id === pendingDeepLinkGarment.id)
+        const item = localItem ?? (!env.useMocks ? await itemService.getById(pendingDeepLinkGarment.id).catch(() => null) : null)
         if (item) {
           const t = pendingDeepLinkGarment.talla || getRecommendedSize(item)
           wearGarment(item, t, pendingDeepLinkGarment.color || item.color || 'default')
@@ -334,9 +363,10 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
         }
       }
     }
-    window.addEventListener('sr:login-success', onLoginSuccess)
-    return () => window.removeEventListener('sr:login-success', onLoginSuccess)
-  }, [pendingDeepLinkGarment, wearGarment])
+    const handler = () => { void onLoginSuccess() }
+    window.addEventListener('sr:login-success', handler)
+    return () => window.removeEventListener('sr:login-success', handler)
+  }, [pendingDeepLinkGarment, wearGarment, catalogItems])
 
   /* Acciones principales del probador */
   const handlePickGarment = useCallback(() => {
@@ -449,7 +479,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
   /* Catálogo filtrado dentro del drawer */
   const filteredCatalog = useMemo(() => {
-    return ITEMS.filter((item) => {
+    return catalogItems.filter((item) => {
       if (catalogSearch.trim()) {
         const q = catalogSearch.toLowerCase()
         const matchName = item.nombre.toLowerCase().includes(q)
@@ -472,11 +502,11 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       }
       return true
     })
-  }, [catalogSearch, selectedSlotFilter, selectedStoreFilter, selectedStyleFilter, selectedSizeFilter])
+  }, [catalogItems, catalogSearch, selectedSlotFilter, selectedStoreFilter, selectedStyleFilter, selectedSizeFilter])
 
   /* Tiendas y estilos únicos para los filtros */
-  const tiendasDisponibles = useMemo(() => Array.from(new Set(ITEMS.map((i) => i.tienda))), [])
-  const estilosDisponibles = useMemo(() => Array.from(new Set(ITEMS.map((i) => i.estilo).filter(Boolean))), [])
+  const tiendasDisponibles = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.tienda).filter(Boolean))), [catalogItems])
+  const estilosDisponibles = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.estilo).filter(Boolean))), [catalogItems])
 
   if (!isOpen) return null
 
@@ -1200,7 +1230,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             {drawerTab === 'playlists' && (
               <div className="cz-drawer-tab-content">
                 <div className="cz-playlists-list">
-                  {MOCK_PLAYLISTS.map((pl) => (
+                  {availablePlaylists.map((pl) => (
                     <div key={pl.id} className="cz-playlist-row-card">
                       <img
                         src={pl.portadaUrl || pl.prendas[0]?.imagen}

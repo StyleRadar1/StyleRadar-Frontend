@@ -273,7 +273,10 @@ export default function PqrsPage() {
 
           <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-[11px] text-[var(--color-text-muted)]">
-              Se generará radicado instantáneo con trazabilidad legal.
+              Se generará radicado instantáneo con trazabilidad. En el ambiente local/QA los radicados se conservan en la sesión del navegador y también puedes escribir al canal oficial{' '}
+              <a href={`mailto:${PROVIDER_INFO.correoPqrs}`} className="font-semibold text-[var(--color-accent)] underline">
+                {PROVIDER_INFO.correoPqrs}
+              </a>.
             </p>
             <button
               type="submit"

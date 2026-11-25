@@ -129,7 +129,15 @@ export default function CatalogPage() {
 
   // Estados de búsqueda y orden
   const [texto, setTexto] = useState(params.get('q') ?? '')
+  const [debouncedTexto, setDebouncedTexto] = useState(params.get('q') ?? '')
   const [orden, setOrden] = useState<OrdenCatalogo>(() => normOrdenParam(params.get('orden')))
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedTexto(texto)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [texto])
 
   // Menús desplegables
   const [menuFiltrosAbierto, setMenuFiltrosAbierto] = useState(false)
@@ -320,7 +328,7 @@ export default function CatalogPage() {
       ? (precioMaxCustom !== null && precioMaxCustom < PRICE_SLIDER_MAX ? precioMaxCustom : undefined)
       : selectedPreset?.max
     return {
-      texto: texto.trim() || undefined,
+      texto: debouncedTexto.trim() || undefined,
       tipo: filtroTipo !== 'Todos' ? filtroTipo : undefined,
       talla: filtroTalla !== 'Todas' ? filtroTalla : undefined,
       tipoTalla: filtroTalla !== 'Todas' ? (filtroTipoTalla ?? undefined) : undefined,
@@ -334,7 +342,7 @@ export default function CatalogPage() {
       lng: orden === 'DISTANCIA' ? coords?.lng : undefined,
       orden,
     }
-  }, [texto, filtroTipo, filtroTalla, filtroTipoTalla, filtroPrecio, hasCustomPrecio, precioMinCustom, precioMaxCustom, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
+  }, [debouncedTexto, filtroTipo, filtroTalla, filtroTipoTalla, filtroPrecio, hasCustomPrecio, precioMinCustom, precioMaxCustom, filtroOrigen, filtroMarca, filtroColor, filtroEstilo, coords, orden])
 
   const user = useContext(AuthContext)?.user
   const isBuyer = user?.role === 'BUYER'
@@ -427,6 +435,7 @@ export default function CatalogPage() {
 
   const aplicarBusquedaRapida = (termino: string) => {
     setTexto(termino)
+    setDebouncedTexto(termino)
     guardarBusquedaReciente(termino)
     setMostrarSugerencias(false)
     const next = new URLSearchParams(params)
@@ -439,6 +448,7 @@ export default function CatalogPage() {
     e.preventDefault()
     setMostrarSugerencias(false)
     const q = texto.trim()
+    setDebouncedTexto(q)
     if (q) guardarBusquedaReciente(q)
     const next = new URLSearchParams(params)
     if (q) next.set('q', q); else next.delete('q')
@@ -529,6 +539,7 @@ export default function CatalogPage() {
     setFiltroColor('Todos')
     setFiltroEstilo('Todos')
     setTexto('')
+    setDebouncedTexto('')
     setParams(new URLSearchParams())
   }
 
@@ -850,7 +861,13 @@ export default function CatalogPage() {
               {texto && (
                 <button
                   type="button"
-                  onClick={() => setTexto('')}
+                  onClick={() => {
+                    setTexto('')
+                    setDebouncedTexto('')
+                    const next = new URLSearchParams(params)
+                    next.delete('q')
+                    setParams(next)
+                  }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                   aria-label="Borrar texto"
                 >
