@@ -36,15 +36,20 @@ async function todas(ruta: string, size: number): Promise<Record<string, unknown
   return filas
 }
 
-/** ms-chat no guarda nombres: se piden a ms-usuarios por id y se recuerdan. Si falla, queda «Usuario #id». */
+/**
+ * ms-chat no guarda nombres: se piden a ms-usuarios por id (GET /api/v1/users/{id}, SR-RF-114) y se recuerdan.
+ * Esa ruta solo deja ver el perfil propio, o cualquiera si es el administrador: con otra cuenta responde 403.
+ * Si falla, queda «Usuario #id» y no se vuelve a pedir en esta sesión.
+ */
 const nombresConocidos = new Map<string, string>()
+const sinNombre = new Set<string>()
 async function nombreDe(uid: string): Promise<void> {
-  if (!uid || nombresConocidos.has(uid)) return
+  if (!uid || nombresConocidos.has(uid) || sinNombre.has(uid)) return
   try {
-    const { data } = await apiClient.get<{ nombre?: string; name?: string }>(`/api/v1/users/${encodeURIComponent(uid)}`)
-    const n = data?.nombre ?? data?.name
-    if (n) nombresConocidos.set(uid, n)
-  } catch { /* se queda con el nombre de respaldo */ }
+    const { data } = await apiClient.get<{ name?: string }>(`/api/v1/users/${encodeURIComponent(uid)}`)
+    if (data?.name) nombresConocidos.set(uid, data.name)
+    else sinNombre.add(uid)
+  } catch { sinNombre.add(uid) }
 }
 
 /**
@@ -73,7 +78,7 @@ let convs: Record<string, ConversacionDto[]> | null = null
 let msgs: Record<string, MensajeDto[]> | null = null
 const db = () => ({ convs: (convs ??= seedConversations()), msgs: (msgs ??= seedMessages()) })
 /** Solo para pruebas: vuelve a los datos iniciales. */
-export const resetChatMock = () => { convs = null; msgs = null }
+export const resetChatMock = () => { convs = null; msgs = null; nombresConocidos.clear(); sinNombre.clear() }
 
 const me = () => {
   const u = mockSessionUser()
