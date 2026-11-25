@@ -1,6 +1,20 @@
+[⬅ Volver al README Principal](../README.md)
+
 # Documentación del frontend de StyleRadar
 
-Actualizada el 2 de noviembre de 2026 con el landing, el inicio de sesión por rol, los personajes nuevos y el proyecto React. Las versiones anteriores de cada documento están en las carpetas `historico/`.
+Actualizada con el proyecto en React integrado con el API Gateway, los módulos por squad, la capa legal colombiana y la documentación modular del repositorio. Las versiones anteriores de cada documento están en las carpetas `historico/`.
+
+## Secciones del README Modular
+
+| Archivo | Contenido |
+|---|---|
+| `secciones/01-roles-modulos-y-rutas.md` | Roles RBAC, reparto por squad en `src/modules/` y matriz completa de 46 rutas |
+| `secciones/02-arquitectura-y-api-gateway.md` | Estructura nivel 3, flujo hacia el API Gateway, renovación JWT y guía para nuevas pantallas |
+| `secciones/03-tecnologias-y-design-system.md` | Stack con versiones reales de `package.json`, tipografía `Poppins` y 3 temas accesibles |
+| `secciones/04-entornos-variables-y-despliegue.md` | Scripts, variables `VITE_*`, autenticación real y despliegue en Vercel |
+| `secciones/05-errores-y-cumplimiento-legal.md` | Manejo centralizado de errores (`README-ERRORES.md`) y capa legal (`LEGAL_PENDIENTES.md`) |
+| `secciones/06-pruebas-y-cicd.md` | Suites de Vitest (90 archivos), `oxlint` y pipeline `.github/workflows/ci.yml` |
+| `secciones/07-ramas-contribucion-y-equipo.md` | Flujo de ramas, commits en español, integrantes y enlaces oficiales |
 
 ## Arquitectura
 
@@ -29,10 +43,6 @@ Actualizada el 2 de noviembre de 2026 con el landing, el inicio de sesión por r
 | `identidad/logo/` | Logo, isotipo y versión negativa en SVG |
 | `identidad/color/` | Muestras de la paleta: grafito, blanco, arena, lavanda y violeta |
 | `identidad/personajes/` | Fotos de los cinco personajes: Antonia (Sastre), Mateo (Calle), Aura (Futuro), Nora (Rebelde) y Tomás (Esencial) |
-
-## Marketing
-
-`marketing/StyleRadar_Propuesta_Marketing_y_Cronograma_v6.docx`: plan de difusión en Instagram y TikTok, stand de fotos en el campus, cronograma hasta la exposición final, indicadores, presupuesto y kit de los jurados.
 
 ## Gestión
 

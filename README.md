@@ -1,131 +1,115 @@
-<img src="docs/identidad/logo/styleradar-logo.svg" alt="StyleRadar" width="220">
+<!-- ==============================================================================
+  STYLE RADAR · FRONTEND WEB (REACT + TYPESCRIPT + VITE)
+  Asignatura: DOSW (Diseño y Operación de Soluciones Web) · 2026
+  Organización: StyleRadar1
+============================================================================== -->
 
-# StyleRadar-Frontend
+<div align="center">
 
-Frontend de StyleRadar, la plataforma que conecta a compradores con los almacenes de moda locales de Bogotá: buscar prendas en su talla, verlas en el mapa, probarlas en un probador virtual y vender o donar ropa usada.
+  <a href="https://github.com/StyleRadar1">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/identidad/logo/styleradar-logo-negativo.svg" />
+      <source media="(prefers-color-scheme: light)" srcset="docs/identidad/logo/styleradar-logo.svg" />
+      <img src="docs/identidad/logo/styleradar-logo.svg" width="320" alt="StyleRadar Logo Oficial" />
+    </picture>
+  </a>
 
-Proyecto del curso DOSW, Escuela Colombiana de Ingeniería Julio Garavito, 2026-2. Organización: StyleRadar1.
+  <h1>STYLE<font color="#5600EF">RADAR</font> &nbsp;·&nbsp; <code>Frontend</code></h1>
 
-## Integrantes del equipo de frontend
+  <p align="center">
+    <img src="https://img.shields.io/badge/ARQUITECTURA-MODULAR_(10_MÓDULOS)-12063A?style=for-the-badge" alt="Arquitectura Modular" />
+    <img src="https://img.shields.io/badge/PANTALLAS-46_VISTAS-5600EF?style=for-the-badge" alt="46 Vistas" />
+    <img src="https://img.shields.io/badge/ROLES_RBAC-4_PERFILES_+_PÚBLICO-16A34A?style=for-the-badge" alt="Roles RBAC" />
+    <img src="https://img.shields.io/badge/ORGANIZACIÓN-STYLERADAR1-12063A?style=for-the-badge" alt="StyleRadar1" />
+  </p>
 
-- Kevin Ángel
-- Julián Morales
-- Carlos Sánchez
-- Cristian Moreno
-- Daniel Barrera
+  <p align="center">
+    <strong><font color="#5600EF">Descubre tu estilo. En tu ciudad.</font></strong><br />
+    <em>Aplicación web en React que conecta a compradores con almacenes de moda local de Bogotá: catálogo personalizado, mapa interactivo, probador virtual con IA, segunda vida, donaciones, suscripciones y cumplimiento legal colombiano.</em>
+  </p>
 
-## Estado
+  <p align="center">
+    <a href="docs/secciones/04-entornos-variables-y-despliegue.md"><img src="https://img.shields.io/badge/DEV_LOCAL-Active-16A34A?style=for-the-badge&logo=vite&logoColor=white" alt="DEV Local Active" /></a>
+    <a href="https://styleradar-qa.vercel.app/"><img src="https://img.shields.io/badge/QA_VERCEL-Active-5600EF?style=for-the-badge&logo=vercel&logoColor=white" alt="QA Vercel Active" /></a>
+    <a href=".github/workflows/ci.yml"><img src="https://img.shields.io/badge/CI_WORKFLOW-ci.yml-16A34A?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Workflow" /></a>
+    <a href="docs/secciones/06-pruebas-y-cicd.md"><img src="https://img.shields.io/badge/VITEST_SUITES-90_ARCHIVOS-16A34A?style=for-the-badge&logo=vitest&logoColor=white" alt="90 Test Suites" /></a>
+    <a href="docs/secciones/03-tecnologias-y-design-system.md"><img src="https://img.shields.io/badge/TEMAS_A11Y-OSCURO_%7C_CLARO_%7C_DALTÓNICO-12063A?style=for-the-badge" alt="Temas Accesibles" /></a>
+  </p>
 
-El proyecto en React tiene la base común lista (rutas por rol, inicio de sesión, acceso para jurados, cliente HTTP y design system) y el catálogo funcionando con datos de prueba. Las demás vistas están creadas como pantallas pendientes, cada una con su squad y sus requerimientos, y se van migrando desde el prototipo.
+  <p align="center">
+    <a href="docs/secciones/03-tecnologias-y-design-system.md"><img src="https://img.shields.io/badge/REACT-19.3.1-12063A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19.3.1" /></a>
+    <a href="docs/secciones/03-tecnologias-y-design-system.md"><img src="https://img.shields.io/badge/TYPESCRIPT-7.0.2-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+    <a href="docs/secciones/03-tecnologias-y-design-system.md"><img src="https://img.shields.io/badge/VITE-8.3.5-5600EF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite 8.3.5" /></a>
+    <a href="docs/secciones/03-tecnologias-y-design-system.md"><img src="https://img.shields.io/badge/TAILWIND_CSS-4.3.3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4.3.3" /></a>
+    <a href="docs/secciones/03-tecnologias-y-design-system.md"><img src="https://img.shields.io/badge/REACT_ROUTER-7.18.5-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white" alt="React Router" /></a>
+    <a href="docs/secciones/03-tecnologias-y-design-system.md"><img src="https://img.shields.io/badge/MAPBOX_GL-3.34.2-12063A?style=for-the-badge&logo=mapbox&logoColor=white" alt="Mapbox GL" /></a>
+  </p>
 
-El prototipo navegable completo, en HTML, está en `public/prototipo/`. Es la referencia de diseño para todas las vistas. Se abre con doble clic en `public/prototipo/index.html`, sin instalar nada, o en `/prototipo/index.html` con el servidor de desarrollo.
+</div>
 
-Los cambios pendientes del prototipo (accesibilidad, registro, probador, consistencia y limpieza) están en el [plan de cambios](docs/gestion/StyleRadar_Plan_de_Cambios_Prototipo_v2_0.docx).
+---
 
-## Tecnologías
+La aplicación web de **StyleRadar** integra **10 módulos funcionales**, **46 pantallas navegables** con carga diferida (*lazy loading*) y **31 servicios** conectados directamente al **API Gateway** de la plataforma. Cuenta con diseño adaptable, 3 temas visuales accesibles (oscuro, claro y daltónico), capa de cumplimiento legal colombiana (`/legal`) y suite automatizada con **90 archivos de pruebas**.
 
-React 19, TypeScript, Vite, Tailwind CSS 4, React Router y Axios. Se despliega en Vercel.
+---
 
-## Cómo ejecutarlo
+## <img src="https://img.shields.io/badge/ÍNDICE-5600EF?style=for-the-badge" height="20" align="absmiddle" /> ÍNDICE DE CONTENIDOS
 
-Se necesita Node.js 20 o superior.
+1. [Roles, módulos, squads y mapa de rutas](docs/secciones/01-roles-modulos-y-rutas.md)
+2. [Arquitectura modular e integración con el API Gateway](docs/secciones/02-arquitectura-y-api-gateway.md)
+3. [Tecnologías, Design System y accesibilidad visual](docs/secciones/03-tecnologias-y-design-system.md)
+4. [Entornos, variables de entorno y despliegue en Vercel](docs/secciones/04-entornos-variables-y-despliegue.md)
+5. [Manejo de errores y cumplimiento legal](docs/secciones/05-errores-y-cumplimiento-legal.md)
+6. [Pruebas automatizadas, linter y CI/CD](docs/secciones/06-pruebas-y-cicd.md)
+7. [Ramas, convenciones y equipo de frontend](docs/secciones/07-ramas-contribucion-y-equipo.md)
 
-```
+---
+
+## <img src="https://img.shields.io/badge/ENTORNOS-12063A?style=for-the-badge" height="20" align="absmiddle" /> ENTORNOS Y DESPLIEGUE
+
+| Entorno | Estado | URL Frontend | Backend (API Gateway) | `VITE_USE_MOCKS` |
+| :--- | :---: | :--- | :--- | :---: |
+| **Desarrollo Local** | Activo | `http://localhost:5173` | `VITE_API_URL` (`http://localhost:8080` o Gateway QA) | `true` / `false` |
+| **QA Cloud (Vercel)** | Activo | [`https://styleradar-qa.vercel.app/`](https://styleradar-qa.vercel.app/) | `https://styleradar-gateway-qa.azurewebsites.net` | `false` |
+| **Producción** | Configurado | Dominio productivo Vercel | URL oficial del Gateway productivo | `false` |
+
+> [!IMPORTANT]
+> El frontend **nunca se comunica directamente con los puertos individuales de los microservicios**. Toda petición HTTP sale hacia `VITE_API_URL` (API Gateway), con `Authorization: Bearer <token>` y `VITE_USE_MOCKS=false` en QA y Producción.
+
+---
+
+## <img src="https://img.shields.io/badge/INICIO_RÁPIDO-16A34A?style=for-the-badge" height="20" align="absmiddle" /> INICIO RÁPIDO EN LOCAL
+
+Prerrequisito: **Node.js 22 LTS** (alineado con CI) y `npm`.
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/StyleRadar1/StyleRadar_Frontend.git
+cd StyleRadar_Frontend
+
+# 2. Instalar dependencias
 npm install
-cp .env.example .env
+
+# 3. Configurar variables de entorno
+cp .env.example .env            # Linux / macOS
+# copy .env.example .env        # Windows (CMD / PowerShell)
+
+# 4. Levantar servidor de desarrollo en http://localhost:5173
 npm run dev
 ```
 
-En Windows, el segundo comando es `copy .env.example .env`.
+| Comando | Propósito |
+| :--- | :--- |
+| `npm run dev` | Servidor de desarrollo Vite con recarga rápida (`http://localhost:5173`) |
+| `npm run build` | Verificación TypeScript (`tsc -b`) y compilación para producción |
+| `npm run build:qa` | Verificación TypeScript (`tsc -b`) y compilación con perfil `--mode qa` |
+| `npm run lint` | Análisis estático de código con `oxlint` |
+| `npm test` / `npm run test:watch` | Suite de pruebas unitarias e integración con Vitest |
 
-Abrir http://localhost:5173.
+---
 
-Otros comandos: `npm run build` (compila), `npm run preview` (sirve lo compilado), `npm run lint` (revisa el código) y `npm test` (corre las pruebas).
+## <img src="https://img.shields.io/badge/DOCUMENTACIÓN_ADICIONAL-5600EF?style=for-the-badge" height="20" align="absmiddle" /> DOCUMENTOS COMPLEMENTARIOS
 
-### Variables de entorno
-
-| Variable | Para qué sirve |
-|---|---|
-| `VITE_APP_ENV` | `local`, `qa` o `production`. El build de QA muestra una banda para distinguirlo de producción. |
-| `VITE_API_URL` | URL del API Gateway del ambiente. El front solo habla con el gateway. Es obligatoria con mocks desactivados en QA/producción. |
-| `VITE_USE_MOCKS` | Por defecto `true` solo en local y `false` en QA/producción. Cuando está activo, la app muestra «Modo demostración». Los casos de error se simulan con `?mock=<escenario>` (ver el README de `experiencia`). |
-
-Para desplegar, configura `VITE_APP_ENV`, `VITE_API_URL` y `VITE_USE_MOCKS` como variables de build en Vercel: `develop` usa `qa` y la URL del Gateway de QA; `main` usa `production` y la URL del Gateway de producción. No uses los puertos de los microservicios como `VITE_API_URL`. Las plantillas `.env.qa.example` y `.env.production.example` muestran las variables requeridas; `npm run build:qa` compila usando `.env.qa`.
-
-### Cuentas de prueba
-
-La contraseña de todas es `1234`: usuario@styleradar.co, luna@styleradar.co (tienda), abrigo@styleradar.co (fundación) y admin@styleradar.co. En `/login?jurado` aparecen como botones de un clic, para el kit de los jurados.
-
-En el prototipo, después de la contraseña se pide un código de verificación: es `123456`, o se toca «Usar código de prueba».
-
-## Estructura
-
-Se usa el nivel 3 de organización visto en clase: agrupación por módulos. Cada módulo corresponde a un squad y a sus microservicios, así cada equipo trabaja en su carpeta.
-
-```
-src/
-├── app/                 router, rutas por rol y layouts
-├── configs/             variables de entorno
-└── modules/
-    ├── core/            base común: apiClient, design system, tipos
-    ├── landing/         página de bienvenida
-    ├── identidad/       Squad 1
-    ├── catalogo/        Squad 2
-    ├── experiencia/     Squad 3
-    ├── transacciones/   Squad 4
-    └── soporte/         Squad 5
-public/
-├── img/                 imágenes
-└── prototipo/           prototipo en HTML (referencia de diseño)
-docs/                    documentación del proyecto
-```
-
-Dentro de cada módulo: `components/`, `hooks/`, `services/`, `states/`, `types/`, `mocks/`, `pages/` y `utils/`, según se necesiten. Cada módulo tiene un README con su squad, sus requerimientos y sus pantallas.
-
-## Reparto por squad
-
-| Módulo | Squad | Microservicios | Requerimientos |
-|---|---|---|---|
-| identidad | 1 · Identidad (CADCHE) | Authentication, Usuarios, Tiendas | RF 1–6, 62–66, 92 |
-| catalogo | 2 · Catálogo (RST) | ItemCatalog, Inventory, Geolocation, Playlist | RF 7–22, 28, 50–61, 69–72, 74 |
-| experiencia | 3 · Experiencia (PT8080) | ms-probador-virtual (8092), ms-segunda-vida-donaciones (8093) | RF 23–27, 33–39, 42–49 |
-| transacciones | 4 · Transacciones | Pagos y suscripciones | RF 67, 68, 75, 93–103 |
-| soporte | 5 · Soporte (GJ) | Notification, Chat, Estadísticas | RF 29–32, 40, 41, 73, 76–91 |
-| core, landing | Base común | API Gateway | Router, roles, design system, landing y acceso para jurados |
-
-## Cómo agregar una pantalla
-
-1. Definir los DTOs en `types/` según el Swagger del microservicio.
-2. Crear el servicio en `services/` con `apiClient` y, mientras tanto, su versión con datos de `mocks/`.
-3. Crear un hook en `hooks/` que llame al servicio y maneje la carga y los errores.
-4. Crear la página en `pages/` y registrarla en `src/app/router.tsx` con los roles que la pueden ver.
-
-El ejemplo completo está en el catálogo: `CatalogPage.tsx` → `useItems.ts` → `itemService.ts`.
-
-## Forma de trabajo
-
-- `main` tiene la versión entregable y `develop` la de integración.
-- Cada tarea va en una rama `feature/<modulo>-<tarea>` (por ejemplo `feature/catalogo-filtro-talla`) que sale de `develop`.
-- Los cambios del plan de cambios del prototipo van en ramas `fix/ux-<grupo>` (por ejemplo `fix/ux-accesibilidad`), también desde `develop`.
-- Los cambios entran a `develop` por pull request revisado por otra persona; a `main` solo desde `develop`.
-- Los commits van en español: `feat(catalogo): agregar filtro por talla`, `fix(identidad): validar correo`.
-- El CI revisa el código, corre las pruebas y compila en cada pull request.
-
-## Documentación
-
-Toda la documentación del front está en `docs/`. El índice con la descripción de cada documento está en [docs/README.md](docs/README.md).
-
-| Carpeta | Contenido |
-|---|---|
-| `docs/arquitectura/` | Documento de arquitectura y diseño del front v3.0, figuras y versiones anteriores |
-| `docs/diagramas-flujo/` | Flujo de navegación entre pantallas para cada rol |
-| `docs/requerimientos/` | Requerimientos funcionales y su recorrido en el prototipo |
-| `docs/identidad/` | Manual de identidad, logo, colores y personajes |
-| `docs/marketing/` | Propuesta de marketing y cronograma |
-| `docs/gestion/` | Reparto del front por squad, registro de cambios, plan de cambios del prototipo, sprints y presentación |
-| `docs/plantillas/` | Plantilla institucional para los documentos del proyecto |
-| `docs/diseno/` | Capturas actuales del prototipo y mockups anteriores |
-
-## Identidad visual
-
-Colores del manual: grafito `#262626`, blanco `#FFFFFF`, arena `#E8DCCB`, lavanda `#B9B9CA` y violeta `#48119A`. Tipografía Poppins. Están definidos en `src/index.css` y se usan como clases de Tailwind (`bg-violeta`, `text-arena`, etc.).
+* [Índice documental completo del proyecto](docs/README.md) — Arquitectura v3.0, diagramas de flujo por rol, requerimientos y manual de identidad.
+* [Guía unificada de manejo de errores](README-ERRORES.md) — Escenas visuales, componentes transversales y catálogo de escenarios `?mock=<escenario>` en desarrollo.
+* [Registro de cumplimiento legal](LEGAL_PENDIENTES.md) — Cobertura normativa colombiana, banner de cookies y documentos de `/legal`.
