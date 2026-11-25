@@ -10,7 +10,7 @@ import { env } from '@/configs/env'
 import { tomarRetorno } from '@/modules/core/api/retorno'
 import { ErrorCampo } from '@/modules/core/components/errores'
 import { correoValido } from '@/modules/identidad/utils/formato'
-import { errorDeLogin, errorDeOtp } from '@/modules/identidad/utils/erroresAcceso'
+import { errorDeLogin, errorDeOtp, errorDeRegistro } from '@/modules/identidad/utils/erroresAcceso'
 import { NAME_MAX, NAME_MIN, NEIGHBORHOOD_MAX, PASSWORD_MAX, PASSWORD_MIN, type UserSessionDto } from '@/modules/identidad/types/auth.dto'
 import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
 import { consentService } from '@/modules/legal/services/consentService'
@@ -658,8 +658,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         return
       }
     } catch (err) {
-      const r = errorDeLogin(err)
-      setError(r.mensaje || (err instanceof Error ? err.message : 'Error al registrar la cuenta.'))
+      // SR-RF-01: el mensaje sale del error de ms-usuarios (campo inválido, correo ya registrado…), no del login.
+      const r = errorDeRegistro(err)
+      setError(r.mensaje)
+      setReintentar(r.reintentar)
+      if (r.esperar) bloquear(r.esperar)
       return
     } finally {
       setLoading(false)

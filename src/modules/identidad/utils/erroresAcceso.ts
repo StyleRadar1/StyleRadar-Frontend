@@ -60,6 +60,35 @@ export function errorDeLogin(e: unknown): ErrorAcceso {
   }
 }
 
+/** Orden en que se muestran los errores por campo del registro (SR-RF-01 · EX-01 a EX-12). */
+const ORDEN_CAMPOS_REGISTRO = ['name', 'nombre', 'email', 'correo', 'password', 'phone', 'neighborhood', 'barrio', 'dataPolicyAccepted'] as const
+
+/** Códigos que solo puede mandar el inicio de sesión que sigue al registro (la cuenta ya se creó). */
+const CODIGOS_DEL_LOGIN = new Set(['INVALID_CREDENTIALS', 'ACCOUNT_NOT_ACTIVE', 'OTP_RESEND_BLOCKED'])
+
+/**
+ * SR-RF-01: error de «Crear cuenta» (POST /api/v1/users y el login que sigue).
+ * - 400 INVALID_DATA: se muestra el mensaje de ms-usuarios del primer campo con error
+ *   («El formato del email es inválido», «El dominio del correo no es válido»…), no uno genérico.
+ * - 409 EMAIL_ALREADY_REGISTERED: el texto seguro del plan, sin confirmar que el correo tiene cuenta.
+ * - Si el error viene del login que sigue al registro, se trata como error del login.
+ */
+export function errorDeRegistro(e: unknown): ErrorAcceso {
+  if (CODIGOS_DEL_LOGIN.has(codigoDe(e) ?? '')) return errorDeLogin(e)
+  const base: ErrorAcceso = { mensaje: '', campos: {}, esperar: 0, reintentar: false }
+  const campos = fieldErrors(e)
+  switch (errorKind(e)) {
+    case 'datos': {
+      const clave = ORDEN_CAMPOS_REGISTRO.find((k) => campos[k]) ?? Object.keys(campos)[0]
+      return { ...base, campos, mensaje: clave ? campos[clave] : MENSAJES.datos }
+    }
+    case 'conflicto': return { ...base, mensaje: TEXTOS_ACCESO.registro }
+    case 'limite': return { ...base, mensaje: TEXTOS_ACCESO.limite, esperar: esperaDe(e) }
+    case 'sin-conexion': return { ...base, mensaje: MENSAJES['sin-conexion'], reintentar: true }
+    default: return { ...base, mensaje: TEXTOS_ACCESO.servicio, reintentar: true }
+  }
+}
+
 export type ErrorOtp = {
   mensaje: string
   /** Segundos que quedan bloqueados Confirmar y Pedir otro código. */
