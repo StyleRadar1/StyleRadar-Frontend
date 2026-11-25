@@ -345,7 +345,7 @@ export const storePublicService = {
       items.map(async (item) => {
         if (item.tallas.length > 0) return item
         try {
-          const inv = await apiClient.get<any>(`/api/v1/inventory/garment/${encodeURIComponent(item.id)}`).then((res) => res.data)
+          const inv = await apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(item.id)}`).then((res) => res.data)
           return { ...item, tallas: extractAvailableTallasFromInventory(inv) }
         } catch {
           return item

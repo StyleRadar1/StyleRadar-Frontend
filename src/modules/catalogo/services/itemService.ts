@@ -319,6 +319,6 @@ export const itemService = {
     }
     const payload: { prendaId: string; talla: string; sedeId?: string } = { prendaId, talla }
     if (sedeId) payload.sedeId = sedeId
-    return apiClient.post<ReservaDto>('/api/v1/inventory/reserve', payload).then((r) => r.data)
+    return apiClient.post<ReservaDto>('/api/v1/inventory/reservations', payload).then((r) => r.data)
   },
 }
