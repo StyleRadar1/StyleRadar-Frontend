@@ -1,7 +1,8 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlaylistsPage from '../pages/PlaylistsPage'
+import { playlistService } from '../services/playlistService'
 import { renderAt } from '../../experiencia/__tests__/helpers'
 
 const routes = [
@@ -11,6 +12,11 @@ const routes = [
 ]
 
 describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
+  afterEach(() => {
+    localStorage.removeItem('sr_favorite_garments')
+    vi.restoreAllMocks()
+  })
+
   it('muestra el encabezado de perfil, Mis playlists y la regla de máximo 15 prendas', async () => {
     renderAt('/playlists', routes)
     expect(screen.getByRole('heading', { level: 2, name: /Mis playlists/i })).toBeInTheDocument()
@@ -59,5 +65,55 @@ describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.getAllByText(/\/15 prendas/i).length).toBeGreaterThanOrEqual(1)
     expect(screen.queryByText(/RNF-12/i)).not.toBeInTheDocument()
+  })
+
+  it('alterna el corazón rojo de favoritos en prendas de playlist ajena y actualiza el mensaje', async () => {
+    const user = userEvent.setup()
+    renderAt('/playlists/3', routes)
+
+    const heartBtn = await screen.findByRole('button', { name: /Guardar Saco sastre negro en favoritos/i })
+    expect(heartBtn).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(heartBtn)
+    const activeBtn = screen.getByRole('button', { name: /Quitar Saco sastre negro de favoritos/i })
+    expect(activeBtn).toHaveAttribute('aria-pressed', 'true')
+    expect(activeBtn.className).toContain('text-rose-500')
+    expect(screen.getByText('Guardada en favoritos.')).toBeInTheDocument()
+
+    await user.click(activeBtn)
+    const resetBtn = screen.getByRole('button', { name: /Guardar Saco sastre negro en favoritos/i })
+    expect(resetBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByText('Quitada de favoritos.')).toBeInTheDocument()
+  })
+
+  it('conecta editar y eliminar playlist con playlistService.update y playlistService.delete', async () => {
+    const updateSpy = vi.spyOn(playlistService, 'update')
+    const deleteSpy = vi.spyOn(playlistService, 'delete').mockResolvedValueOnce(true)
+
+    const user = userEvent.setup()
+    renderAt('/playlists/u-weekend', routes)
+
+    const editBtn = await screen.findByRole('button', { name: /Editar/i })
+    await user.click(editBtn)
+
+    const titleInput = screen.getByDisplayValue(/Fin de semana en Usaquén/i)
+    await user.clear(titleInput)
+    await user.type(titleInput, 'Domingo en Chapinero')
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    await waitFor(() => {
+      expect(updateSpy).toHaveBeenCalledWith(
+        'u-weekend',
+        expect.objectContaining({ nombre: 'Domingo en Chapinero' }),
+      )
+    })
+
+    await user.click(screen.getByRole('button', { name: /Eliminar playlist/i }))
+    const confirmDialog = screen.getByRole('dialog', { name: /Confirmar eliminación/i })
+    await user.click(within(confirmDialog).getByRole('button', { name: /Eliminar playlist/i }))
+
+    await waitFor(() => {
+      expect(deleteSpy).toHaveBeenCalledWith('u-weekend')
+    })
   })
 })

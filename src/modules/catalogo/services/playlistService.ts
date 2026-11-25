@@ -14,7 +14,7 @@ import {
   type UpdatePlaylistDto,
 } from '../types/playlist.dto'
 
-const PLAYLIST_COVER_FALLBACKS = [
+export const PLAYLIST_COVER_FALLBACKS = [
   '/img/productos/blazer-oversize.jpg',
   '/img/productos/sueter-de-canale-crudo.jpg',
   '/img/productos/hoodie-azul-noche.jpg',
@@ -54,9 +54,11 @@ function normalizePlaylist(raw: any): PlaylistDto {
     const id = String(item?.prendaId ?? item?.id ?? '')
     const nombre = String(item?.nombrePrenda ?? item?.nombre ?? '')
     const normNombre = nombre.trim().toLowerCase()
-    const match = ITEMS.find(
-      (it) => it.id === id || (normNombre && it.nombre.trim().toLowerCase() === normNombre),
-    )
+    const match = env.useMocks
+      ? ITEMS.find(
+          (it) => it.id === id || (normNombre && it.nombre.trim().toLowerCase() === normNombre),
+        )
+      : undefined
     const rawImg =
       item?.imagen ||
       (Array.isArray(item?.fotografias) && item.fotografias[0]) ||
