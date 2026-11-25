@@ -172,16 +172,21 @@ export interface StartSubscriptionResult {
   status: string
   initPoint: string
   message?: string
+  simulated?: boolean
 }
 
 /**
  * Obtiene el `id` del plan STORE desde `GET /api/v1/plans` sin dejarlo fijo en el código.
+ * En modo demostración (`env.useMocksPagos`) devuelve un id simulado si el catálogo mock no incluye STORE.
  */
 export async function resolveStorePlanId(): Promise<number> {
   const plans = await planService.getPlans()
   const storePlan = plans.find((p) => p.id === 'store' && typeof p.backendPlanId === 'number')
   if (storePlan?.backendPlanId !== undefined) {
     return storePlan.backendPlanId
+  }
+  if (env.useMocksPagos) {
+    return 2
   }
   throw new ApiError(500, 'No encontramos un plan activo para tiendas en el catálogo')
 }
@@ -200,6 +205,23 @@ export async function startSubscription(payload: StartSubscriptionPayload): Prom
     throw new ApiError(400, 'El NIT debe tener exactamente 9 dígitos numéricos')
   }
 
+  if (env.useMocksPagos) {
+    try {
+      failIfScenario()
+    } catch {
+      throw new ApiError(503, 'No fue posible iniciar el pago en este momento. Inténtalo nuevamente')
+    }
+    await mockDelay(MOCK_CHECKOUT_RESPONSE, 300)
+    return {
+      subscriptionId: 1001,
+      orderId: 9001,
+      status: 'PENDING',
+      initPoint: MOCK_CHECKOUT_RESPONSE.initPoint,
+      message: 'Modo demostración: pago simulado con Mercado Pago (sin redirección externa)',
+      simulated: true,
+    }
+  }
+
   const body: StartSubscriptionPayload = {
     ...payload,
     payerEmail: cleanEmail,
@@ -216,6 +238,7 @@ export async function startSubscription(payload: StartSubscriptionPayload): Prom
     status: data.status ?? 'PENDING',
     initPoint,
     message: data.message,
+    simulated: false,
   }
 }
 
