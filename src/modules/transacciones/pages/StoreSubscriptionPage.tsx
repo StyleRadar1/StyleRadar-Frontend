@@ -134,7 +134,7 @@ export default function StoreSubscriptionPage() {
     ? formatStatusLabel(STATUS_LABEL[derivedSub.status], sub.unknownStatus)
     : derivedSub.label
   const isSuspendedOrExpired = derivedSub.status === 'SUSPENDIDA' || derivedSub.status === 'VENCIDA'
-  const mostrarPagar = env.useMocksPagos ? sub.status !== 'ACTIVA' : isSuspendedOrExpired
+  const mostrarPagar = env.useMocksPagos ? sub.status !== 'ACTIVA' : isSuspendedOrExpired || derivedSub.status === 'CANCELADA'
   const defaultRetryEmail =
     retryPaymentTarget?.userEmail ??
     failedPayment?.userEmail ??
@@ -268,7 +268,7 @@ export default function StoreSubscriptionPage() {
             {sinSuscripcion && <IrAPagarButton />}
             {mostrarPagar && (
               <Button onClick={() => { void pay() }} disabled={paying}>
-                {paying ? 'Procesando pago…' : isSuspendedOrExpired ? 'Volver a suscribirme' : 'Pagar y activar suscripción'}
+                {paying ? 'Procesando pago…' : isSuspendedOrExpired || derivedSub.status === 'CANCELADA' ? 'Volver a suscribirme' : 'Pagar y activar suscripción'}
               </Button>
             )}
             <CancelSubscriptionButton
