@@ -221,6 +221,96 @@ html[data-tema="claro"] .cz-fullscreen {
   z-index: 10;
 }
 
+.cz-action-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cz-action-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 12px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  background: rgba(139, 92, 246, 0.08);
+  color: var(--probador-text, #f8fafc);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cz-action-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(167, 139, 250, 0.65);
+  background: rgba(139, 92, 246, 0.16);
+  box-shadow: 0 8px 24px rgba(109, 40, 217, 0.22);
+}
+
+.cz-action-card--ia {
+  border-color: rgba(168, 85, 247, 0.45);
+  background: linear-gradient(145deg, rgba(124, 58, 237, 0.2), rgba(72, 17, 154, 0.14));
+}
+
+.cz-action-card-icon {
+  color: #c4b5fd;
+  margin-bottom: 4px;
+}
+
+.cz-action-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.cz-action-card-desc {
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0.72;
+  padding-right: 14px;
+}
+
+.cz-action-card-arrow {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.cz-look-section-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cz-look-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.cz-look-clear-btn {
+  background: none;
+  border: none;
+  color: #c4b5fd;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+.cz-look-clear-btn:hover {
+  background: rgba(139, 92, 246, 0.14);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    TARJETA «MIS MEDIDAS»
    ═══════════════════════════════════════════════════════════════ */

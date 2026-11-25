@@ -587,8 +587,8 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
         <aside className="cz-left-panel" aria-label="Mi look actual">
           <div className="cz-look-header">
             <div>
-              <span className="cz-look-subtitle">Tu combinación actual</span>
-              <h1 className="cz-look-title">Mi look</h1>
+              <h1 className="cz-look-title">Tu probador</h1>
+              <span className="cz-look-subtitle">Crea tu look ideal de forma fácil y divertida.</span>
             </div>
             <div className="cz-history-actions">
               <button
@@ -598,7 +598,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                 aria-label="Deshacer"
                 title="Deshacer última acción"
               >
-                ↶ Deshacer
+                ↶
               </button>
               <button
                 className="cz-history-btn"
@@ -607,28 +607,67 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                 aria-label="Rehacer"
                 title="Rehacer acción"
               >
-                ↷ Rehacer
+                ↷
               </button>
             </div>
           </div>
 
-          {/* Botones de acción principales */}
-          <div className="cz-primary-buttons-stack">
+          {/* Tarjetas principales: Escoger prenda / Probar con tu foto IA */}
+          <div className="cz-action-cards-grid">
             <button
-              className="cz-btn-primary-purple"
+              type="button"
+              className="cz-action-card"
               onClick={handlePickGarment}
             >
-              <span></span>
-              <span>Escoger prenda para probar</span>
+              <span className="cz-action-card-icon" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 6a2 2 0 1 0-2-2c0 1.1.9 2 2 2v1l8.5 5.4a1.5 1.5 0 0 1-.8 2.6H4.3a1.5 1.5 0 0 1-.8-2.6L12 7" />
+                </svg>
+              </span>
+              <span className="cz-action-card-title">Escoger prenda</span>
+              <span className="cz-action-card-desc">Arma tu look con nuestras prendas</span>
+              <span className="cz-action-card-arrow" aria-hidden="true">→</span>
             </button>
 
-            <button
-              className="cz-btn-secondary-glass"
-              onClick={handlePickPlaylist}
+            <Link
+              to={
+                wornList.length > 0
+                  ? `/probador/avanzado?prenda=${encodeURIComponent(wornList[0].item.id)}&talla=${encodeURIComponent(wornList[0].talla)}`
+                  : '/probador/avanzado'
+              }
+              className="cz-action-card cz-action-card--ia"
             >
-              <span></span>
-              <span>Escoger una playlist</span>
-            </button>
+              <span className="cz-action-card-icon" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                  <circle cx="12" cy="13" r="3" />
+                </svg>
+              </span>
+              <span className="cz-action-card-title">Probar con tu foto IA</span>
+              <span className="cz-action-card-desc">Sube una foto y pruébate el outfit</span>
+              <span className="cz-action-card-arrow" aria-hidden="true">→</span>
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            className="cz-btn-secondary-glass mb-4"
+            onClick={handlePickPlaylist}
+          >
+            <span>Escoger una playlist</span>
+          </button>
+
+          <div className="cz-look-section-bar">
+            <h2 className="cz-look-section-title">Mi look</h2>
+            {totalCount > 0 && (
+              <button
+                type="button"
+                className="cz-look-clear-btn"
+                onClick={resetAll}
+              >
+                Limpiar todo
+              </button>
+            )}
           </div>
 
           {/* Lista de prendas agrupadas por espacio */}
@@ -937,15 +976,6 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             </div>
           )}
 
-          {/* Enlace al Probador IA conectado */}
-          <div className="cz-photo-toggle-bar">
-            <Link
-              to="/probador/avanzado"
-              className="cz-photo-sub-btn inline-flex items-center justify-center no-underline"
-            >
-              Probar con tu foto (IA)
-            </Link>
-          </div>
         </section>
       </main>
 
