@@ -6,10 +6,11 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { playlistService, resolvePlaylistCreatorName } from '@/modules/catalogo/services/playlistService'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import { alertService } from '@/modules/soporte/services/alertService'
+import { chatService } from '@/modules/soporte/services/chatService'
+import type { ConversacionDto } from '@/modules/soporte/types/chat.dto'
 import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
 import { PLAN_LABEL } from '@/modules/transacciones/types/plan.dto'
-import { getUserMeasurements, loadLookFromStorage } from '@/modules/experiencia/utils/lookEngine'
-import { SLOT_LABELS, type WornItem } from '@/modules/experiencia/types/look.dto'
+import { getUserMeasurements } from '@/modules/experiencia/utils/lookEngine'
 import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
 import { RecomendadosTrail } from '../components/RecomendadosTrail'
@@ -38,6 +39,7 @@ export default function HomePage() {
   const [busyLikeId, setBusyLikeId] = useState<string | null>(null)
   const [busySaveId, setBusySaveId] = useState<string | null>(null)
   const [alertStats, setAlertStats] = useState<{ alertas: number; busquedas: number } | null>(null)
+  const [chats, setChats] = useState<ConversacionDto[]>([])
   const { plan: planActual, details: planDetails } = useUserPlan(Boolean(user))
 
   const planResuelto = planActual ?? 'RADAR'
@@ -56,12 +58,6 @@ export default function HomePage() {
 
   const nombreUsuario = user?.name?.trim() || 'de nuevo'
   const medidas = getUserMeasurements()
-  const lookGuardado = loadLookFromStorage()
-  const prendasLook = useMemo(
-    () => Object.values(lookGuardado).filter((x): x is WornItem => Boolean(x)),
-    [lookGuardado],
-  )
-  const prendasEnLook = prendasLook.length
 
   useEffect(() => {
     let activo = true
@@ -91,6 +87,13 @@ export default function HomePage() {
               busquedas: res.busquedas.length,
             })
           }
+        })
+        .catch(() => {})
+
+      chatService
+        .conversations()
+        .then((list) => {
+          if (activo) setChats(list.slice(0, 3))
         })
         .catch(() => {})
     }
@@ -394,41 +397,54 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Columna derecha: Look en vivo + Tallas/Alertas + Accesos */}
+          {/* Columna derecha: Últimos chats + Tallas/Alertas + Plan */}
           <div className="sr-personal-col">
             <div className="sr-personal-card">
               <div className="sr-personal-card__head">
                 <div>
-                  <span className="sr-bento-mini__tag">Probador</span>
-                  <h2 className="sr-personal-card__title">Tu look actual</h2>
+                  <span className="sr-bento-mini__tag">Tus mensajes</span>
+                  <h2 className="sr-personal-card__title">Mis últimos chats</h2>
                 </div>
-                <span className="sr-personal-badge">
-                  {prendasEnLook > 0 ? `${prendasEnLook} puesta${prendasEnLook === 1 ? '' : 's'}` : 'Disponible'}
-                </span>
+                <Link to="/mensajes" className="sr-inicio-enlace">Ir a mensajes →</Link>
               </div>
 
-              {prendasEnLook > 0 ? (
-                <div className="sr-look-preview-list">
-                  {prendasLook.slice(0, 3).map((w) => (
-                    <Link key={w.slot} to={`/catalogo/${w.item.id}`} className="sr-look-preview-item">
-                      <img src={w.item.imagen || '/img/productos/blazer-oversize.jpg'} alt={w.item.nombre} />
-                      <div className="sr-look-preview-meta">
-                        <span>{SLOT_LABELS[w.slot]} · Talla {w.talla}</span>
-                        <strong>{w.item.nombre}</strong>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+              {chats.length > 0 ? (
+                <ul className="sr-personal-chats">
+                  {chats.map((c) => {
+                    const iniciales = c.contacto.nombre
+                      .trim()
+                      .split(/\s+/)
+                      .map((w) => w.charAt(0).toUpperCase())
+                      .join('')
+                      .slice(0, 2) || 'SR'
+                    return (
+                      <li key={c.id}>
+                        <Link to={`/mensajes?c=${encodeURIComponent(c.id)}`} className="sr-personal-chat-item">
+                          <span className="sr-personal-chat-avatar" aria-hidden="true">{iniciales}</span>
+                          <div className="sr-personal-chat-meta">
+                            <strong>{c.contacto.nombre}</strong>
+                            <span>{c.ultimoMensaje || c.asunto}</span>
+                          </div>
+                          {c.noLeidos > 0 ? (
+                            <span className="sr-personal-chat-unread" aria-label={`${c.noLeidos} sin leer`}>
+                              {c.noLeidos}
+                            </span>
+                          ) : (
+                            <span aria-hidden="true" className="sr-personal-playlist-go">↗</span>
+                          )}
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
               ) : (
-                <p className="sr-personal-card__desc">
-                  Arma un outfit en el maniquí o pruébate prendas con tu foto usando IA.
-                </p>
+                <div className="sr-personal-empty">
+                  <p>Aún no tienes conversaciones recientes.</p>
+                  <Link to="/mensajes" className="sr-pl-action-pill">
+                    Abrir mensajes →
+                  </Link>
+                </div>
               )}
-
-              <Link to="/probador" className="sr-bento-cta sr-bento-cta--primary">
-                <span>{prendasEnLook > 0 ? 'Seguir probando' : 'Abrir probador'}</span>
-                <span aria-hidden="true">→</span>
-              </Link>
             </div>
 
             <div className="sr-personal-duo-mini">
