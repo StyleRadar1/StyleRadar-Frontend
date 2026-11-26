@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -135,7 +135,58 @@ describe('HomePage - inicio del comprador', () => {
 
     expect(await screen.findByText('No pudimos cargar las tiendas y fundaciones.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Actualizar mi perfil' })).toHaveAttribute('href', '/perfil')
+    expect(screen.getAllByRole('link', { name: 'Actualizar mi perfil' })[0]).toHaveAttribute('href', '/perfil')
     expect(screen.getByRole('link', { name: 'Abrir el probador' })).toBeInTheDocument()
+  })
+
+  it('el rastro de prendas aparece al mover el cursor, la última se queda quieta y al hacer clic muestra su información', async () => {
+    vi.spyOn(feedService, 'getRecommendations').mockResolvedValue({
+      content: [
+        {
+          itemId: 'rec-1',
+          garmentId: 101,
+          storeId: 'store-1',
+          name: 'Blazer lino arena',
+          garmentType: 'TOP',
+          brand: 'Luna Store',
+          style: 'FORMAL',
+          price: 185000,
+          stock: 3,
+          status: 'AVAILABLE',
+          publishedAt: '2026-11-20T12:00:00Z',
+          photos: ['https://example.com/blazer.jpg'],
+          availableSizes: ['M', 'L'],
+          reason: 'Tu estilo Formal y tu talla M',
+        },
+      ],
+      page: 0,
+      size: 8,
+      totalElements: 1,
+      totalPages: 1,
+      first: true,
+      last: true,
+      generalWithoutPreferences: false,
+      message: TEXTOS_FEED.conPerfil,
+    })
+    vi.spyOn(mapService, 'getAll').mockResolvedValue(PINES)
+
+    renderInicio()
+
+    const seccion = await screen.findByRole('region', { name: 'ELEGIDO PARA TU TALLA' })
+    const zona = seccion.querySelector('.sr-trail-zona') as HTMLElement
+    await within(zona).findByText(TEXTOS_FEED.conPerfil)
+
+    fireEvent.pointerMove(zona, { clientX: 100, clientY: 100 })
+    fireEvent.pointerMove(zona, { clientX: 300, clientY: 120 })
+
+    const prendas = within(zona).getAllByRole('button', { name: 'Ver información de Blazer lino arena' })
+    expect(prendas.length).toBeGreaterThanOrEqual(1)
+
+    fireEvent.click(prendas[prendas.length - 1])
+
+    const info = await screen.findByRole('dialog', { name: 'Blazer lino arena' })
+    expect(within(info).getByText(/Luna Store/)).toBeInTheDocument()
+    expect(within(info).getByText('Tallas: M, L')).toBeInTheDocument()
+    expect(within(info).getByRole('link', { name: 'Ver prenda' })).toHaveAttribute('href', '/catalogo/rec-1')
   })
 })
