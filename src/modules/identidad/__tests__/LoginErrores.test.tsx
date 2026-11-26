@@ -13,7 +13,7 @@ const abrir = () => render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route path="/" element={<AuthModal isOpen onClose={() => {}} />} />
-        <Route path="/catalogo" element={<p>Inicio del comprador</p>} />
+        <Route path="/inicio" element={<p>Inicio del comprador</p>} />
         <Route path="/playlists/12" element={<p>La playlist donde estaba</p>} />
       </Routes>
     </MemoryRouter>
