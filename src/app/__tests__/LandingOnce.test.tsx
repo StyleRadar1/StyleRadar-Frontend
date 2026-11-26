@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AuthProvider } from '@/modules/identidad/states/AuthProvider'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 import { LegalFooter } from '@/modules/legal/components/LegalFooter'
-import { hasSeenLanding, LANDING_SEEN_KEY, markLandingSeen } from '@/modules/landing/landingSeen'
+import { LANDING_SEEN_KEY, markLandingSeen } from '@/modules/landing/landingSeen'
 import LoginPage from '@/modules/identidad/pages/LoginPage'
 
 function RutaActual() {
@@ -47,24 +47,19 @@ function ExpireHarness() {
 }
 
 function PortadaPrueba() {
-  const [params] = useSearchParams()
-  const [seenOnEntry] = useState(() => hasSeenLanding())
   useEffect(() => {
-    if (!seenOnEntry) markLandingSeen()
-  }, [seenOnEntry])
-  if (seenOnEntry) {
-    return <p data-testid="redir">{params.has('login') ? '/login' : '/catalogo'}</p>
-  }
+    markLandingSeen()
+  }, [])
   return <p data-testid="landing">LandingPage</p>
 }
 
-describe('Landing una sola vez, /login y enlace StyleRadar', () => {
+describe('Landing, /login y enlace StyleRadar', () => {
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.clear()
   })
 
-  it('muestra LandingPage en la primera visita sin expulsar y marca localStorage para las siguientes', async () => {
+  it('muestra LandingPage en cada visita sin sesión, aunque ya se haya visto', async () => {
     const { unmount } = render(
       <MemoryRouter initialEntries={['/']}>
         <PortadaPrueba />
@@ -75,7 +70,6 @@ describe('Landing una sola vez, /login y enlace StyleRadar', () => {
     await waitFor(() => {
       expect(localStorage.getItem(LANDING_SEEN_KEY)).toBe('true')
     })
-    expect(screen.getByTestId('landing')).toBeInTheDocument()
     unmount()
 
     render(
@@ -83,7 +77,7 @@ describe('Landing una sola vez, /login y enlace StyleRadar', () => {
         <PortadaPrueba />
       </MemoryRouter>,
     )
-    expect(screen.getByTestId('redir')).toHaveTextContent('/catalogo')
+    expect(screen.getByTestId('landing')).toBeInTheDocument()
   })
 
   it('vuelve al landing después de un logout voluntario aunque ya se hubiera visto', async () => {
