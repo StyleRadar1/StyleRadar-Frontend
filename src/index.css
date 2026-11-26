@@ -747,3 +747,104 @@ html[data-tema="claro"] .sr-perfil-page {
   background-position: center top;
   background-attachment: fixed;
 }
+
+/* Velo glass sutil sobre los fondos con imagen para mejorar la legibilidad del texto */
+.sr-probador-page,
+.sr-donaciones-page,
+.sr-playlist-page,
+.sr-planes-page,
+.sr-tienda-page,
+.inv-page,
+.store-subscription,
+.sr-mensajes-page,
+.sr-perfil-page,
+.sr-catalog-page,
+.sr-rack-section,
+.sr-map-page-shell,
+.sr-map-landing-section,
+.fnd-dashboard,
+.fnd-donations,
+.sr-landing {
+  position: relative;
+  isolation: isolate;
+}
+
+.sr-probador-page::before,
+.sr-donaciones-page::before,
+.sr-playlist-page::before,
+.sr-planes-page::before,
+.sr-tienda-page::before,
+.inv-page::before,
+.store-subscription::before,
+.sr-mensajes-page::before,
+.sr-perfil-page::before,
+.sr-catalog-page::before,
+.sr-rack-section::before,
+.sr-map-page-shell::before,
+.sr-map-landing-section::before,
+.fnd-dashboard::before,
+.fnd-donations::before,
+.sr-landing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(11, 8, 19, 0.42);
+  backdrop-filter: blur(6px) saturate(1.1);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  transition: background-color 0.4s ease;
+}
+
+html[data-theme="light"] .sr-probador-page::before,
+html[data-theme="claro"] .sr-probador-page::before,
+html[data-tema="claro"] .sr-probador-page::before,
+html[data-theme="light"] .sr-donaciones-page::before,
+html[data-theme="claro"] .sr-donaciones-page::before,
+html[data-tema="claro"] .sr-donaciones-page::before,
+html[data-theme="light"] .sr-playlist-page::before,
+html[data-theme="claro"] .sr-playlist-page::before,
+html[data-tema="claro"] .sr-playlist-page::before,
+html[data-theme="light"] .sr-planes-page::before,
+html[data-theme="claro"] .sr-planes-page::before,
+html[data-tema="claro"] .sr-planes-page::before,
+html[data-theme="light"] .sr-tienda-page::before,
+html[data-theme="claro"] .sr-tienda-page::before,
+html[data-tema="claro"] .sr-tienda-page::before,
+html[data-theme="light"] .inv-page::before,
+html[data-theme="claro"] .inv-page::before,
+html[data-tema="claro"] .inv-page::before,
+html[data-theme="light"] .store-subscription::before,
+html[data-theme="claro"] .store-subscription::before,
+html[data-tema="claro"] .store-subscription::before,
+html[data-theme="light"] .sr-mensajes-page::before,
+html[data-theme="claro"] .sr-mensajes-page::before,
+html[data-tema="claro"] .sr-mensajes-page::before,
+html[data-theme="light"] .sr-perfil-page::before,
+html[data-theme="claro"] .sr-perfil-page::before,
+html[data-tema="claro"] .sr-perfil-page::before,
+html[data-theme="light"] .sr-catalog-page::before,
+html[data-theme="claro"] .sr-catalog-page::before,
+html[data-tema="claro"] .sr-catalog-page::before,
+html[data-theme="light"] .sr-rack-section::before,
+html[data-theme="claro"] .sr-rack-section::before,
+html[data-tema="claro"] .sr-rack-section::before,
+html[data-theme="light"] .sr-map-page-shell::before,
+html[data-theme="claro"] .sr-map-page-shell::before,
+html[data-tema="claro"] .sr-map-page-shell::before,
+html[data-theme="light"] .sr-map-landing-section::before,
+html[data-theme="claro"] .sr-map-landing-section::before,
+html[data-tema="claro"] .sr-map-landing-section::before,
+html[data-theme="light"] .fnd-dashboard::before,
+html[data-theme="claro"] .fnd-dashboard::before,
+html[data-tema="claro"] .fnd-dashboard::before,
+html[data-theme="light"] .fnd-donations::before,
+html[data-theme="claro"] .fnd-donations::before,
+html[data-tema="claro"] .fnd-donations::before,
+html[data-theme="light"] .sr-landing::before,
+html[data-theme="claro"] .sr-landing::before,
+html[data-tema="claro"] .sr-landing::before {
+  background: rgba(248, 246, 252, 0.56);
+  backdrop-filter: blur(6px) saturate(1.08);
+  -webkit-backdrop-filter: blur(6px) saturate(1.08);
+}

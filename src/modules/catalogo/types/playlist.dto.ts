@@ -34,6 +34,8 @@ export interface PlaylistDto {
   prendas: PlaylistItemDto[]
   likes: number
   guardados: number
+  liked?: boolean
+  saved?: boolean
   destacada?: boolean
   esGuardada?: boolean
   fechaCreacion: string

@@ -14,7 +14,7 @@ import {
   type UpdatePlaylistDto,
 } from '../types/playlist.dto'
 
-const PLAYLIST_COVER_FALLBACKS = [
+export const PLAYLIST_COVER_FALLBACKS = [
   '/img/productos/blazer-oversize.jpg',
   '/img/productos/sueter-de-canale-crudo.jpg',
   '/img/productos/hoodie-azul-noche.jpg',
@@ -35,17 +35,63 @@ function pickCoverFallback(seed: string): string {
   return PLAYLIST_COVER_FALLBACKS[(h >>> 0) % PLAYLIST_COVER_FALLBACKS.length]
 }
 
+export function resolvePlaylistCreatorName(
+  pl: Pick<PlaylistDto, 'usuarioId' | 'creador'>,
+  currentUser?: { id?: string | number; name?: string; email?: string } | null,
+  isOwn?: boolean,
+): string {
+  const uid = String(pl.usuarioId ?? pl.creador?.id ?? '').trim()
+  const rawNombre = (pl.creador?.nombre ?? '').trim()
+  const esNombreReal =
+    Boolean(rawNombre) &&
+    !/^\d+$/.test(rawNombre) &&
+    !/^(Curador|Usuario)(\s*#?\S*)?$/i.test(rawNombre)
+  const esDelUsuarioActual =
+    Boolean(isOwn) ||
+    (Boolean(currentUser?.id) && uid !== '' && String(currentUser?.id) === uid) ||
+    (Boolean(currentUser?.email) && Boolean(pl.creador?.email) && pl.creador?.email === currentUser?.email)
+
+  if (esDelUsuarioActual && currentUser?.name?.trim() && !esNombreReal) {
+    return currentUser.name.trim()
+  }
+  if (esNombreReal) {
+    return rawNombre
+  }
+  if (uid) {
+    return /^\d+$/.test(uid) ? `Usuario #${uid}` : `Usuario ${uid}`
+  }
+  return 'Usuario StyleRadar'
+}
+
+export function getCreatorInitials(displayName: string): string {
+  const trimmed = displayName.trim()
+  if (!trimmed || /^(Usuario|Curador)\b/i.test(trimmed) || /^\d+$/.test(trimmed)) {
+    return 'U'
+  }
+  const words = trimmed
+    .split(/\s+/)
+    .filter((w) => /[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(w.charAt(0)))
+  if (words.length === 0) return 'SR'
+  return words
+    .map((w) => w.charAt(0).toUpperCase())
+    .join('')
+    .slice(0, 2)
+}
+
 function normalizePlaylist(raw: any): PlaylistDto {
   const uid = raw?.usuarioId != null ? String(raw.usuarioId) : raw?.creador?.id ? String(raw.creador.id) : ''
-  const rawNombre = typeof raw?.creador?.nombre === 'string' ? raw.creador.nombre.trim() : ''
-  const creadorNombre =
-    rawNombre && !/^\d+$/.test(rawNombre)
-      ? rawNombre
-      : uid
-        ? /^\d+$/.test(uid)
-          ? `Curador #${uid}`
-          : uid
-        : 'Curador'
+  const rawNombre = String(raw?.creador?.nombre ?? raw?.creadorNombre ?? raw?.usuarioNombre ?? '').trim()
+  const creadorNombre = resolvePlaylistCreatorName(
+    {
+      usuarioId: uid || undefined,
+      creador: {
+        id: uid,
+        nombre: rawNombre,
+        email: raw?.creador?.email,
+      },
+    },
+    mockSessionUser(),
+  )
   const playlistId = String(raw?.id ?? '')
   const playlistName = String(raw?.nombre ?? '')
   const prendasRaw: any[] = Array.isArray(raw?.prendas) ? raw.prendas : []
@@ -54,9 +100,11 @@ function normalizePlaylist(raw: any): PlaylistDto {
     const id = String(item?.prendaId ?? item?.id ?? '')
     const nombre = String(item?.nombrePrenda ?? item?.nombre ?? '')
     const normNombre = nombre.trim().toLowerCase()
-    const match = ITEMS.find(
-      (it) => it.id === id || (normNombre && it.nombre.trim().toLowerCase() === normNombre),
-    )
+    const match = env.useMocks
+      ? ITEMS.find(
+          (it) => it.id === id || (normNombre && it.nombre.trim().toLowerCase() === normNombre),
+        )
+      : undefined
     const rawImg =
       item?.imagen ||
       (Array.isArray(item?.fotografias) && item.fotografias[0]) ||
@@ -79,6 +127,8 @@ function normalizePlaylist(raw: any): PlaylistDto {
       noDisponible: item?.disponible === false || Boolean(item?.noDisponible),
     }
   })
+  const liked = Boolean(raw?.liked ?? raw?.esLike)
+  const saved = Boolean(raw?.saved ?? raw?.esGuardada)
   return {
     id: playlistId,
     nombre: playlistName,
@@ -95,8 +145,10 @@ function normalizePlaylist(raw: any): PlaylistDto {
     prendas,
     likes: Number(raw?.likes ?? 0),
     guardados: Number(raw?.guardados ?? 0),
+    liked,
+    saved,
     destacada: Boolean(raw?.destacada),
-    esGuardada: Boolean(raw?.esGuardada),
+    esGuardada: saved,
     fechaCreacion: raw?.fechaCreacion ?? '',
     actualizada: raw?.actualizada,
   }
@@ -108,8 +160,9 @@ function extractPlaylistList(data: any): PlaylistDto[] {
 }
 
 export function isOwnedPlaylist(p: PlaylistDto, user: { id: string; email?: string }): boolean {
+  const isSaved = Boolean(p.saved ?? p.esGuardada)
   return (
-    !p.esGuardada &&
+    !isSaved &&
     (p.usuarioId === user.id ||
       p.creador?.id === user.id ||
       (Boolean(user.email) && p.creador?.email === user.email) ||
@@ -119,7 +172,7 @@ export function isOwnedPlaylist(p: PlaylistDto, user: { id: string; email?: stri
 
 export function isSavedPlaylist(p: PlaylistDto, user: { id: string; email?: string }): boolean {
   return (
-    Boolean(p.esGuardada) ||
+    Boolean(p.saved ?? p.esGuardada) ||
     p.id === '3' ||
     p.id === 'pl-2' ||
     (p.usuarioId !== user.id &&
@@ -148,13 +201,19 @@ export const playlistService = {
   getSaved(userId?: string): Promise<PlaylistDto[]> {
     if (env.useMocks) {
       const user = mockSessionUser() ?? { id: userId ?? 'u-1', email: 'usuario@styleradar.co' }
-      return mockDelay(MOCK_PLAYLISTS.filter((p) => isSavedPlaylist(p, user)).map((p) => ({ ...p, esGuardada: true })))
+      return mockDelay(
+        MOCK_PLAYLISTS.filter((p) => isSavedPlaylist(p, user)).map((p) => ({
+          ...p,
+          saved: true,
+          esGuardada: true,
+        })),
+      )
     }
     const uid = userId || mockSessionUser()?.id
     if (!uid) return Promise.resolve([])
     return apiClient
       .get<any>(`/api/v1/playlists/users/${encodeURIComponent(uid)}/saved`)
-      .then((r) => extractPlaylistList(r.data).map((p) => ({ ...p, esGuardada: true })))
+      .then((r) => extractPlaylistList(r.data).map((p) => ({ ...p, saved: true, esGuardada: true })))
   },
 
   getFeatured(): Promise<PlaylistDto[]> {
@@ -218,6 +277,8 @@ export const playlistService = {
         prendas,
         likes: 0,
         guardados: 0,
+        liked: false,
+        saved: false,
         esGuardada: false,
         fechaCreacion: new Date().toISOString().split('T')[0],
         actualizada: 'ahora',
@@ -315,29 +376,49 @@ export const playlistService = {
     return apiClient.delete<any>(`/api/v1/playlists/${playlistId}/garments/${itemId}`).then((r) => normalizePlaylist(r.data))
   },
 
-  toggleLike(playlistId: string): Promise<{ likes: number }> {
+  toggleLike(playlistId: string): Promise<{ likes: number; liked?: boolean }> {
     if (env.useMocks) {
       const pl = MOCK_PLAYLISTS.find((p) => p.id === playlistId)
       if (!pl) return Promise.reject(new ApiError(404, 'Playlist no encontrada.'))
-      pl.likes += 1
-      return mockDelay({ likes: pl.likes })
+      pl.liked = !pl.liked
+      pl.likes = Math.max(0, pl.likes + (pl.liked ? 1 : -1))
+      return mockDelay({ likes: pl.likes, liked: pl.liked })
     }
-    return apiClient.post<any>(`/api/v1/playlists/${encodeURIComponent(playlistId)}/likes`).then((r) => ({
-      likes: Number(r.data?.likes ?? 0),
-    }))
+    return apiClient.post<any>(`/api/v1/playlists/${encodeURIComponent(playlistId)}/likes`).then((r) => {
+      const liked =
+        typeof r.data?.liked === 'boolean'
+          ? r.data.liked
+          : typeof r.data?.esLike === 'boolean'
+            ? r.data.esLike
+            : undefined
+      return {
+        likes: Number(r.data?.likes ?? 0),
+        ...(liked !== undefined ? { liked } : {}),
+      }
+    })
   },
 
-  toggleSave(playlistId: string): Promise<{ esGuardada: boolean; guardados: number }> {
+  toggleSave(playlistId: string): Promise<{ saved?: boolean; esGuardada?: boolean; guardados: number }> {
     if (env.useMocks) {
       const pl = MOCK_PLAYLISTS.find((p) => p.id === playlistId)
       if (!pl) return Promise.reject(new ApiError(404, 'Playlist no encontrada.'))
-      pl.esGuardada = !pl.esGuardada
-      pl.guardados += pl.esGuardada ? 1 : -1
-      return mockDelay({ esGuardada: pl.esGuardada, guardados: pl.guardados })
+      const nextSaved = !(pl.saved ?? pl.esGuardada)
+      pl.saved = nextSaved
+      pl.esGuardada = nextSaved
+      pl.guardados = Math.max(0, pl.guardados + (nextSaved ? 1 : -1))
+      return mockDelay({ saved: nextSaved, esGuardada: nextSaved, guardados: pl.guardados })
     }
-    return apiClient.post<any>(`/api/v1/playlists/${encodeURIComponent(playlistId)}/saves`).then((r) => ({
-      esGuardada: typeof r.data?.esGuardada === 'boolean' ? r.data.esGuardada : true,
-      guardados: Number(r.data?.guardados ?? 0),
-    }))
+    return apiClient.post<any>(`/api/v1/playlists/${encodeURIComponent(playlistId)}/saves`).then((r) => {
+      const saved =
+        typeof r.data?.saved === 'boolean'
+          ? r.data.saved
+          : typeof r.data?.esGuardada === 'boolean'
+            ? r.data.esGuardada
+            : undefined
+      return {
+        ...(saved !== undefined ? { saved, esGuardada: saved } : {}),
+        guardados: Number(r.data?.guardados ?? 0),
+      }
+    })
   },
 }

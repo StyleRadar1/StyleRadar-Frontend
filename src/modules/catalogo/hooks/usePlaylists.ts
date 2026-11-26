@@ -87,7 +87,13 @@ export function usePlaylists(userId?: string) {
   const like = useCallback(
     async (playlistId: string) => {
       const res = await playlistService.toggleLike(playlistId)
-      setData((prev) => mapInBundle(prev, playlistId, (p) => ({ ...p, likes: res.likes })))
+      setData((prev) =>
+        mapInBundle(prev, playlistId, (p) => {
+          const nextLiked = typeof res.liked === 'boolean' ? res.liked : !p.liked
+          return { ...p, likes: res.likes, liked: nextLiked }
+        })
+      )
+      return res
     },
     [setData]
   )
@@ -96,12 +102,25 @@ export function usePlaylists(userId?: string) {
     async (playlistId: string) => {
       const res = await playlistService.toggleSave(playlistId)
       setData((prev) => {
+        const current =
+          prev.all.find((p) => p.id === playlistId) ??
+          prev.featured.find((p) => p.id === playlistId) ??
+          prev.mine.find((p) => p.id === playlistId) ??
+          prev.saved.find((p) => p.id === playlistId)
+        const wasSaved = Boolean(current?.saved ?? current?.esGuardada ?? prev.saved.some((p) => p.id === playlistId))
+        const nextSaved =
+          typeof res.saved === 'boolean'
+            ? res.saved
+            : typeof res.esGuardada === 'boolean'
+              ? res.esGuardada
+              : !wasSaved
         const next = mapInBundle(prev, playlistId, (p) => ({
           ...p,
           guardados: res.guardados,
-          esGuardada: res.esGuardada,
+          saved: nextSaved,
+          esGuardada: nextSaved,
         }))
-        if (res.esGuardada) {
+        if (nextSaved) {
           const found =
             next.all.find((p) => p.id === playlistId) ??
             next.featured.find((p) => p.id === playlistId) ??
@@ -125,6 +144,19 @@ export function usePlaylists(userId?: string) {
     [setData]
   )
 
+  const deletePlaylist = useCallback(
+    async (id: string) => {
+      await playlistService.delete(id)
+      setData((prev) => ({
+        all: prev.all.filter((p) => p.id !== id),
+        mine: prev.mine.filter((p) => p.id !== id),
+        saved: prev.saved.filter((p) => p.id !== id),
+        featured: prev.featured.filter((p) => p.id !== id),
+      }))
+    },
+    [setData]
+  )
+
   return {
     playlists: bundle.all,
     myPlaylists: bundle.mine,
@@ -135,6 +167,7 @@ export function usePlaylists(userId?: string) {
     reload,
     createPlaylist,
     updatePlaylist,
+    deletePlaylist,
     addItem,
     removeItem,
     like,

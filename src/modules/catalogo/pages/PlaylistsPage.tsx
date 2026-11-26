@@ -10,11 +10,20 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { usePlaylists } from '../hooks/usePlaylists'
+import { PLAYLIST_COVER_FALLBACKS, getCreatorInitials, resolvePlaylistCreatorName } from '../services/playlistService'
 import { itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
 import type { ItemResponseDto } from '../types/item.dto'
 import { ESTILOS_PLAYLIST, MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistEstilo, type PlaylistVisibility } from '../types/playlist.dto'
 import './PlaylistsPage.css'
+
+function ShareArrowIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M13.5 4.25c-.41 0-.75.34-.75.75v3.52C7.05 9.1 3.7 13.05 2.55 18.85a.65.65 0 0 0 1.16.51c2.28-2.96 5.42-4.38 9.04-4.5v3.64c0 .65.77.99 1.25.55l7.25-6.5a.75.75 0 0 0 0-1.1L14 4.45a.75.75 0 0 0-.5-.2z" />
+    </svg>
+  )
+}
 
 export default function PlaylistsPage() {
   const { id: urlId } = useParams<{ id?: string }>()
@@ -23,14 +32,16 @@ export default function PlaylistsPage() {
   const user = auth?.user ?? mockSessionUser()
 
   const {
-    playlists,
-    myPlaylists,
-    savedPlaylists,
-    featuredPlaylists,
+    playlists: rawPlaylists,
+    myPlaylists: rawMyPlaylists,
+    savedPlaylists: rawSavedPlaylists,
+    featuredPlaylists: rawFeaturedPlaylists,
     loading,
     error,
     reload,
     createPlaylist,
+    updatePlaylist,
+    deletePlaylist,
     addItem,
     removeItem,
     like,
@@ -89,11 +100,21 @@ export default function PlaylistsPage() {
   const [limiteAlcanzado, setLimiteAlcanzado] = useState(false)
   const [prendaParaAgregar, setPrendaParaAgregar] = useState<string>('')
 
-  // Like y guardado local para playlist activa
+  // Like, guardado y orden local
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({})
   const [userSaved, setUserSaved] = useState<Record<string, boolean>>((): Record<string, boolean> =>
     env.useMocks ? { '3': true, 'pl-2': true } : {}
   )
+  const [pendingLikeId, setPendingLikeId] = useState<string | null>(null)
+  const [pendingSaveId, setPendingSaveId] = useState<string | null>(null)
+  const [shuffledOrder, setShuffledOrder] = useState<Record<string, string[]>>({})
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
 
   // Estado del carrusel 3D
   const [carouselIndex, setCarouselIndex] = useState(0)
@@ -103,9 +124,60 @@ export default function PlaylistsPage() {
   const usuarioEmail = (user && 'email' in user ? (user as { email?: string }).email : undefined) ?? 'usuario@styleradar.co'
 
   const showToast = (msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setMensajeExito(msg)
-    setTimeout(() => setMensajeExito(null), 3500)
+    toastTimerRef.current = setTimeout(() => setMensajeExito(null), 3500)
   }
+
+  // Índice rápido de prendas reales (GET /api/v1/garments) para enriquecer prendas de playlist sin datos de catálogo
+  const { catalogById, catalogByName } = useMemo(() => {
+    const byId = new Map<string, ItemResponseDto>()
+    const byName = new Map<string, ItemResponseDto>()
+    for (const item of catalogItems) {
+      byId.set(item.id, item)
+      const key = item.nombre.trim().toLowerCase()
+      if (key && !byName.has(key)) byName.set(key, item)
+    }
+    return { catalogById: byId, catalogByName: byName }
+  }, [catalogItems])
+
+  const enrichPlaylist = useCallback(
+    (pl: PlaylistDto): PlaylistDto => {
+      let firstRealImage = ''
+      const prendasEnriched = pl.prendas.map((g) => {
+        const match = catalogById.get(g.id) ?? catalogByName.get(g.nombre.trim().toLowerCase())
+        const hasFallbackImage = PLAYLIST_COVER_FALLBACKS.includes(g.imagen)
+        const matchImg = match?.imagen || match?.fotografias?.[0] || ''
+        const resolvedImg = (!g.imagen || hasFallbackImage) && matchImg ? matchImg : g.imagen
+        if (!firstRealImage && matchImg) firstRealImage = matchImg
+        else if (!firstRealImage && resolvedImg && !PLAYLIST_COVER_FALLBACKS.includes(resolvedImg)) {
+          firstRealImage = resolvedImg
+        }
+        if (!match) return g
+        return {
+          ...g,
+          imagen: resolvedImg,
+          precio: g.precio > 0 ? g.precio : match.precio,
+          tienda: g.tienda || match.tienda,
+          tipo: g.tipo || match.tipo,
+          color: g.color || match.color,
+          tallas: g.tallas?.length && g.tallas[0] !== 'Única' ? g.tallas : match.tallas,
+        }
+      })
+      const portadaEsFallback = !pl.portadaUrl || PLAYLIST_COVER_FALLBACKS.includes(pl.portadaUrl)
+      return {
+        ...pl,
+        portadaUrl: portadaEsFallback && firstRealImage ? firstRealImage : pl.portadaUrl,
+        prendas: prendasEnriched,
+      }
+    },
+    [catalogById, catalogByName]
+  )
+
+  const playlists = useMemo(() => rawPlaylists.map(enrichPlaylist), [rawPlaylists, enrichPlaylist])
+  const myPlaylists = useMemo(() => rawMyPlaylists.map(enrichPlaylist), [rawMyPlaylists, enrichPlaylist])
+  const savedPlaylists = useMemo(() => rawSavedPlaylists.map(enrichPlaylist), [rawSavedPlaylists, enrichPlaylist])
+  const featuredPlaylists = useMemo(() => rawFeaturedPlaylists.map(enrichPlaylist), [rawFeaturedPlaylists, enrichPlaylist])
 
   // Unión deduplicada de playlists (incluye privadas de /me, guardadas y destacadas)
   const allUniquePlaylists = useMemo(() => {
@@ -147,7 +219,10 @@ export default function PlaylistsPage() {
       byId.set(p.id, p)
     }
     for (const p of allUniquePlaylists) {
-      if (userSaved[p.id] === true && !byId.has(p.id)) {
+      const markedSaved =
+        userSaved[p.id] === true ||
+        (userSaved[p.id] === undefined && Boolean(p.saved ?? p.esGuardada))
+      if (markedSaved && !byId.has(p.id)) {
         byId.set(p.id, p)
       }
     }
@@ -273,7 +348,7 @@ export default function PlaylistsPage() {
       (Boolean(myId) && String(selectedPlaylist.usuarioId ?? '') === myId) ||
       (Boolean(usuarioEmail) && selectedPlaylist.creador?.email === usuarioEmail) ||
       (Boolean(myId) && String(selectedPlaylist.creador?.id ?? '') === myId) ||
-      Boolean(selectedPlaylist.creador?.nombre?.toLowerCase().includes('valentina'))
+      (env.useMocks && Boolean(selectedPlaylist.creador?.nombre?.toLowerCase().includes('valentina')))
     )
   }, [selectedPlaylist, myPlaylists, usuarioEmail, usuarioActual.id])
 
@@ -338,33 +413,45 @@ export default function PlaylistsPage() {
     setNombre(selectedPlaylist.nombre)
     setDescripcion(selectedPlaylist.descripcion)
     setVisibilidad(selectedPlaylist.visibilidad)
+    setErrorAccion(null)
     setMostrarEditar(true)
   }
 
-  const handleGuardarEditar = (e?: React.FormEvent) => {
+  const handleGuardarEditar = async (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!selectedPlaylist || !nombre.trim()) return
-    selectedPlaylist.nombre = nombre.trim()
-    selectedPlaylist.descripcion = descripcion.trim()
-    selectedPlaylist.visibilidad = visibilidad
-    setMostrarEditar(false)
-    showToast('Playlist actualizada con éxito.')
+    setErrorAccion(null)
+    try {
+      await updatePlaylist(selectedPlaylist.id, {
+        nombre: nombre.trim(),
+        descripcion: descripcion.trim(),
+        visibilidad,
+        estilo: selectedPlaylist.estilo ?? estilo,
+      })
+      setMostrarEditar(false)
+      showToast('Playlist actualizada con éxito.')
+    } catch (er: unknown) {
+      setErrorAccion(errorDeCrear(er).general ?? 'No pudimos actualizar la playlist.')
+    }
   }
 
   const handleEliminarPlaylist = () => {
+    setErrorAccion(null)
     setMostrarEliminar(true)
   }
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (!selectedPlaylist) return
-    const id = selectedPlaylist.id
-    const index = playlists.findIndex((p) => p.id === id)
-    if (index !== -1) {
-      playlists.splice(index, 1)
+    const deletedName = selectedPlaylist.nombre
+    setErrorAccion(null)
+    try {
+      await deletePlaylist(selectedPlaylist.id)
+      setMostrarEliminar(false)
+      showToast(`Playlist «${deletedName}» eliminada.`)
+      handleVolver()
+    } catch (er: unknown) {
+      setErrorAccion(errorDeCrear(er).general ?? 'No pudimos eliminar la playlist.')
     }
-    setMostrarEliminar(false)
-    showToast(`Playlist «${selectedPlaylist.nombre}» eliminada.`)
-    handleVolver()
   }
 
   const handleAgregarPrenda = async () => {
@@ -394,41 +481,64 @@ export default function PlaylistsPage() {
     }
   }
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!selectedPlaylist) return
-    const cur = userLikes[selectedPlaylist.id]
-    setUserLikes((prev) => ({ ...prev, [selectedPlaylist.id]: !cur }))
-    if (!cur) {
-      selectedPlaylist.likes += 1
-      like(selectedPlaylist.id)
-      showToast('Te gusta esta playlist.')
-    } else {
-      selectedPlaylist.likes = Math.max(0, selectedPlaylist.likes - 1)
-      showToast('Ya no te gusta esta playlist.')
+    const pid = selectedPlaylist.id
+    if (pendingLikeId === pid) return
+    const curLiked = userLikes[pid] !== undefined ? userLikes[pid] : Boolean(selectedPlaylist.liked)
+    const nextLiked = !curLiked
+    setErrorAccion(null)
+    setPendingLikeId(pid)
+    setUserLikes((prev) => ({ ...prev, [pid]: nextLiked }))
+    try {
+      const res = await like(pid)
+      const finalLiked = typeof res.liked === 'boolean' ? res.liked : nextLiked
+      setUserLikes((prev) => ({ ...prev, [pid]: finalLiked }))
+      showToast(finalLiked ? 'Te gusta esta playlist.' : 'Ya no te gusta esta playlist.')
+    } catch (er: unknown) {
+      setUserLikes((prev) => ({ ...prev, [pid]: curLiked }))
+      setErrorAccion(errorDeCrear(er).general ?? 'No pudimos actualizar tu me gusta.')
+    } finally {
+      setPendingLikeId((prev) => (prev === pid ? null : prev))
     }
   }
 
   const handleGuardar = async () => {
     if (!selectedPlaylist) return
+    const pid = selectedPlaylist.id
+    if (pendingSaveId === pid) return
     const curSaved =
-      userSaved[selectedPlaylist.id] !== undefined
-        ? userSaved[selectedPlaylist.id]
-        : Boolean(selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === selectedPlaylist.id))
+      userSaved[pid] !== undefined
+        ? userSaved[pid]
+        : Boolean(selectedPlaylist.saved || selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === pid))
     const nextSaved = !curSaved
-    setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: nextSaved }))
+    setErrorAccion(null)
+    setPendingSaveId(pid)
+    setUserSaved((prev) => ({ ...prev, [pid]: nextSaved }))
     try {
-      const res = await save(selectedPlaylist.id)
-      setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: res.esGuardada }))
-      showToast(res.esGuardada ? 'Guardada en Mis playlists.' : 'Quitada de tu perfil.')
+      const res = await save(pid)
+      const finalSaved =
+        typeof res.saved === 'boolean'
+          ? res.saved
+          : typeof res.esGuardada === 'boolean'
+            ? res.esGuardada
+            : nextSaved
+      setUserSaved((prev) => ({ ...prev, [pid]: finalSaved }))
+      showToast(finalSaved ? 'Guardada en Mis playlists.' : 'Quitada de tu perfil.')
     } catch (er: unknown) {
-      setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: !nextSaved }))
+      setUserSaved((prev) => ({ ...prev, [pid]: curSaved }))
       setErrorAccion(errorDeCrear(er).general ?? 'No pudimos actualizar tu playlist guardada.')
+    } finally {
+      setPendingSaveId((prev) => (prev === pid ? null : prev))
     }
   }
 
   const handleMezclar = () => {
     if (!selectedPlaylist) return
-    selectedPlaylist.prendas = [...selectedPlaylist.prendas].sort(() => Math.random() - 0.5)
+    const shuffledIds = [...selectedPlaylist.prendas]
+      .sort(() => Math.random() - 0.5)
+      .map((p) => p.id)
+    setShuffledOrder((prev) => ({ ...prev, [selectedPlaylist.id]: shuffledIds }))
     showToast('Playlist mezclada.')
   }
 
@@ -456,16 +566,29 @@ export default function PlaylistsPage() {
   // VISTA DETALLE TIPO SPOTIFY CON DISCO DE VINILO PROTAGONISTA
   // ==========================================
   if (selectedPlaylist) {
-    const prendas = selectedPlaylist.prendas || []
+    const rawPrendas = selectedPlaylist.prendas || []
+    const order = shuffledOrder[selectedPlaylist.id]
+    const prendas = order
+      ? [...rawPrendas].sort((a, b) => {
+          const ia = order.indexOf(a.id)
+          const ib = order.indexOf(b.id)
+          return (ia === -1 ? Number.MAX_SAFE_INTEGER : ia) - (ib === -1 ? Number.MAX_SAFE_INTEGER : ib)
+        })
+      : rawPrendas
     const disponibles = prendas.filter((p) => !p.noDisponible)
     const noDisponibles = prendas.filter((p) => p.noDisponible)
     const totalDisponible = disponibles.reduce((acc, p) => acc + p.precio, 0)
-    const tiendasUnicas = Array.from(new Set(prendas.map((p) => p.tienda)))
-    const isLiked = userLikes[selectedPlaylist.id]
+    const tiendasUnicas = Array.from(new Set(prendas.map((p) => p.tienda).filter(Boolean)))
+    const isLiked =
+      userLikes[selectedPlaylist.id] !== undefined
+        ? userLikes[selectedPlaylist.id]
+        : Boolean(selectedPlaylist.liked)
     const isSaved =
       userSaved[selectedPlaylist.id] !== undefined
         ? userSaved[selectedPlaylist.id]
-        : Boolean(selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === selectedPlaylist.id))
+        : Boolean(selectedPlaylist.saved || selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === selectedPlaylist.id))
+    const creatorDisplayName = resolvePlaylistCreatorName(selectedPlaylist, usuarioActual, esMia)
+    const creatorInitials = getCreatorInitials(creatorDisplayName)
 
     return (
       <section
@@ -508,6 +631,11 @@ export default function PlaylistsPage() {
           {mensajeExito && (
             <div role="status" className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 backdrop-blur-md">
               {mensajeExito}
+            </div>
+          )}
+          {errorAccion && !mostrarAgregarPrenda && !mostrarEditar && !mostrarEliminar && (
+            <div className="mb-6">
+              <Aviso tono="error" titulo={errorAccion} />
             </div>
           )}
 
@@ -560,14 +688,10 @@ export default function PlaylistsPage() {
                 {/* Creador / Curador */}
                 <div className="flex items-center gap-2.5 text-sm font-semibold text-white/80 mb-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violeta text-[11px] font-bold text-white shadow-sm">
-                    {selectedPlaylist.creador.nombre
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .slice(0, 2) || 'VR'}
+                    {creatorInitials}
                   </span>
                   <span>
-                    {selectedPlaylist.creador.nombre}
+                    {creatorDisplayName}
                     {esMia && <span className="text-white/40 font-normal"> · tú</span>}
                   </span>
                 </div>
@@ -642,10 +766,10 @@ export default function PlaylistsPage() {
                         type="button"
                         onClick={handleCompartir}
                         aria-label="Compartir playlist"
-                        title="Compartir"
-                        className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white/70 flex items-center justify-center text-sm transition active:scale-95"
+                        title="Copiar enlace para compartir"
+                        className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:border-violeta-claro/60 hover:bg-violeta/25 hover:text-white text-white/75 flex items-center justify-center transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
                       >
-                        ···
+                        <ShareArrowIcon />
                       </button>
                     </>
                   ) : (
@@ -660,9 +784,11 @@ export default function PlaylistsPage() {
                       <button
                         type="button"
                         onClick={handleLike}
-                        aria-label="Me gusta"
-                        title="Me gusta"
-                        className={`h-10 w-10 rounded-full border flex items-center justify-center text-sm transition active:scale-95 ${
+                        disabled={pendingLikeId === selectedPlaylist.id}
+                        aria-pressed={isLiked}
+                        aria-label={isLiked ? 'Quitar me gusta' : 'Me gusta'}
+                        title={isLiked ? 'Quitar me gusta' : 'Me gusta'}
+                        className={`h-10 w-10 rounded-full border flex items-center justify-center text-sm transition active:scale-95 disabled:opacity-60 ${
                           isLiked
                             ? 'bg-violeta border-violeta text-white'
                             : 'border-white/20 bg-white/5 hover:bg-white/10 text-white/70'
@@ -684,7 +810,9 @@ export default function PlaylistsPage() {
                       <button
                         type="button"
                         onClick={handleGuardar}
-                        className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold px-5 py-2.5 transition active:scale-95"
+                        disabled={pendingSaveId === selectedPlaylist.id}
+                        aria-pressed={isSaved}
+                        className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold px-5 py-2.5 transition active:scale-95 disabled:opacity-60"
                       >
                         {isSaved ? '✓ Guardada' : '+ Guardar en mi perfil'}
                       </button>
@@ -692,10 +820,10 @@ export default function PlaylistsPage() {
                         type="button"
                         onClick={handleCompartir}
                         aria-label="Compartir playlist"
-                        title="Compartir"
-                        className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white/70 flex items-center justify-center text-sm transition active:scale-95"
+                        title="Copiar enlace para compartir"
+                        className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:border-violeta-claro/60 hover:bg-violeta/25 hover:text-white text-white/75 flex items-center justify-center transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
                       >
-                        ···
+                        <ShareArrowIcon />
                       </button>
                     </>
                   )}
@@ -732,22 +860,19 @@ export default function PlaylistsPage() {
                       <th className="py-3.5 px-4">Prenda</th>
                       <th className="py-3.5 px-4">Tienda</th>
                       <th className="py-3.5 px-4">Agregada por</th>
-                      <th className="py-3.5 px-4 text-right">Precio</th>
-                      <th className="py-3.5 pr-6 pl-2 w-12 text-right"></th>
+                      <th className={esMia ? 'py-3.5 px-4 text-right' : 'py-3.5 pl-4 pr-6 text-right'}>Precio</th>
+                      {esMia && <th className="py-3.5 pr-6 pl-2 w-12 text-right"></th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {prendas.map((p, idx) => {
-                      const autorRaw = p.agregadaPor || selectedPlaylist.creador.nombre
-                      const autorLabel = /^\d+$/.test(autorRaw.trim())
-                        ? (esMia ? usuarioActual.name : `Usuario #${autorRaw.trim()}`)
-                        : autorRaw
-                      const autorIniciales = autorLabel
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase() || 'SR'
+                      const autorRaw = (p.agregadaPor ?? '').trim()
+                      const autorEsGenerico =
+                        !autorRaw ||
+                        /^\d+$/.test(autorRaw) ||
+                        /^(Usuario|Curador)(\s*#?\S*)?$/i.test(autorRaw)
+                      const autorLabel = autorEsGenerico ? creatorDisplayName : autorRaw
+                      const autorIniciales = getCreatorInitials(autorLabel)
 
                       return (
                       <tr
@@ -801,7 +926,7 @@ export default function PlaylistsPage() {
                         </td>
 
                         {/* Precio */}
-                        <td className="py-3 px-4 text-right font-mono font-semibold text-white">
+                        <td className={esMia ? 'py-3 px-4 text-right font-mono font-semibold text-white' : 'py-3 pl-4 pr-6 text-right font-mono font-semibold text-white'}>
                           {p.noDisponible ? (
                             <s className="text-white/40">{formatCOP(p.precio)}</s>
                           ) : (
@@ -809,9 +934,9 @@ export default function PlaylistsPage() {
                           )}
                         </td>
 
-                        {/* Acción fila */}
-                        <td className="py-3 pr-6 pl-2 text-right" onClick={(e) => e.stopPropagation()}>
-                          {esMia ? (
+                        {/* Acción fila (solo en playlists propias) */}
+                        {esMia && (
+                          <td className="py-3 pr-6 pl-2 text-right" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={() => handleQuitarPrenda(p.id)}
@@ -821,19 +946,8 @@ export default function PlaylistsPage() {
                             >
                               ✕
                             </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => showToast('Guardada en favoritos.')}
-                              aria-label={`Me gusta ${p.nombre}`}
-                              className="text-white/40 hover:text-rose-400 p-1 text-sm transition"
-                            >
-                              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                              </svg>
-                            </button>
-                          )}
-                        </td>
+                          </td>
+                        )}
                       </tr>
                     )})}
                   </tbody>
@@ -846,7 +960,7 @@ export default function PlaylistsPage() {
                     {noDisponibles.length > 0 && `${noDisponibles.length} no disponibles · `}
                     {formatCOP(totalDisponible)} disponibles
                   </span>
-                  <span>Tiendas: {tiendasUnicas.join(' · ')}</span>
+                  <span>Tiendas: {tiendasUnicas.length > 0 ? tiendasUnicas.join(' · ') : '—'}</span>
                 </div>
               </div>
             )}
@@ -881,7 +995,7 @@ export default function PlaylistsPage() {
                       {pl.nombre}
                     </span>
                     <span className="text-[11px] text-white/50 truncate w-full mt-0.5">
-                      {pl.creador.nombre} · {pl.likes.toLocaleString('es-CO')} me gusta
+                      {resolvePlaylistCreatorName(pl, usuarioActual)} · {pl.likes.toLocaleString('es-CO')} me gusta
                     </span>
                   </button>
                 ))}
@@ -1126,6 +1240,10 @@ export default function PlaylistsPage() {
                   </div>
                 </div>
 
+                {errorAccion && (
+                  <div className="mt-3"><Aviso tono="error" titulo={errorAccion} /></div>
+                )}
+
                 <div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
                   <button
                     type="button"
@@ -1159,6 +1277,9 @@ export default function PlaylistsPage() {
               <p className="text-xs text-white/70 mb-6 leading-relaxed">
                 Se borrará «{selectedPlaylist.nombre}» con sus {prendas.length} prendas. Las prendas seguirán disponibles en el catálogo.
               </p>
+              {errorAccion && (
+                <div className="mb-4"><Aviso tono="error" titulo={errorAccion} /></div>
+              )}
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
@@ -1340,7 +1461,7 @@ export default function PlaylistsPage() {
                         {currentVinylPlaylist.prendas.length === 1 ? 'prenda' : 'prendas'}
                       </span>
                       <span>·</span>
-                      <span>Por {currentVinylPlaylist.creador?.nombre || 'Curador StyleRadar'}</span>
+                      <span>Por {resolvePlaylistCreatorName(currentVinylPlaylist, usuarioActual)}</span>
                       <span className="sr-vinyl-active-meta__chip">
                         {currentVinylPlaylist.visibilidad === 'PRIVADA' ? 'Privada' : 'Pública'}
                       </span>
