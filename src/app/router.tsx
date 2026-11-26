@@ -18,7 +18,6 @@ import { RouteErrorBoundary } from './RouteErrorBoundary'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 const LandingPage = lazy(() => import('@/modules/landing/pages/LandingPage'))
-const Login = lazy(() => import('@/modules/identidad/pages/LoginPage'))
 const Home = lazy(() => import('@/modules/inicio/pages/HomePage'))
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
 const ResetPassword = lazy(() => import('@/modules/identidad/pages/ResetPasswordPage'))
@@ -128,7 +127,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
       // Públicas
       { path: '/', element: <Portada /> },
       // En visitas posteriores a la primera entrada, /?login redirige aquí para iniciar sesión sin reabrir el landing.
-      { path: '/login', element: page(<Login />) },
+      { path: '/login', element: <Navigate to="/?login" replace /> },
       { path: '/registro', element: page(<Register />) },
       { path: '/restablecer-contrasena', element: page(<ResetPassword />) },
       { path: '/catalogo', element: page(<Catalog />) },
