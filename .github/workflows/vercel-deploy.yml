@@ -1,0 +1,32 @@
+name: Deploy Vercel (UNIFICADO-REACT)
+
+on:
+  push:
+    branches: [UNIFICADO-REACT]
+  workflow_dispatch:
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Descargar configuración y variables de Vercel
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Compilar proyecto para producción
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Desplegar a Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
