@@ -56,7 +56,6 @@ export default function ItemDetailPage() {
 
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string>('')
   const [guiaTallasAbierta, setGuiaTallasAbierta] = useState(false)
-  const [guardado, setGuardado] = useState(false)
   const [guardadoPlaylist, setGuardadoPlaylist] = useState(false)
   const [mensajeFeedback, setMensajeFeedback] = useState<string | null>(null)
   const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null)
@@ -181,12 +180,6 @@ export default function ItemDetailPage() {
       case 'ver-alertas': return <Link to="/alertas" className={BTN_SECUNDARIO}>Ver mis alertas</Link>
       default: return undefined
     }
-  }
-
-  const handleGuardar = () => {
-    setGuardado((prev) => !prev)
-    setMensajeFeedback(guardado ? 'Prenda retirada de tus favoritos' : '¡Prenda guardada en tus favoritos!')
-    setTimeout(() => setMensajeFeedback(null), 3000)
   }
 
   const handleGuardarPlaylist = () => {
@@ -698,40 +691,13 @@ export default function ItemDetailPage() {
 
                   {/* c) Botones de acción principales */}
                   <div className="mt-8 flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
-                      {/* Botón secundario Favorito (solo borde, con corazón) */}
-                      <button
-                        type="button"
-                        onClick={handleGuardar}
-                        aria-pressed={guardado}
-                        className={`flex-1 inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-xs font-bold backdrop-blur-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
-                          guardado
-                            ? 'border-purple-400 bg-purple-500/20 text-purple-300 shadow-[0_2px_12px_rgba(168,85,247,0.25)]'
-                            : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:bg-white/10 hover:border-purple-400/40'
-                        }`}
-                      >
-                        <svg
-                          className={`h-4 w-4 ${guardado ? 'fill-[var(--color-danger,#ef4444)] text-[var(--color-danger,#ef4444)]' : 'fill-none text-current'}`}
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                        <span>Favorito</span>
-                      </button>
-
-                      {/* Botón primario Ver tienda (morado suave con glow) */}
-                      <Link
-                        to={`/tiendas/${encodeURIComponent(prenda.storeNit || prenda.almacenId || getStoreIdByName(prenda.tienda))}`}
-                        className="flex-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] px-6 py-3 text-xs font-bold text-white shadow-[0_4px_20px_-2px_rgba(139,92,246,0.5)] border border-white/20 transition-all hover:from-[#B49BFB] hover:to-[#8B5CF6] hover:shadow-[0_6px_25px_-2px_rgba(139,92,246,0.65)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
-                      >
-                        Ver tienda
-                      </Link>
-                    </div>
+                    {/* Botón primario Ver tienda (morado suave con glow) */}
+                    <Link
+                      to={`/tiendas/${encodeURIComponent(prenda.storeNit || prenda.almacenId || getStoreIdByName(prenda.tienda))}`}
+                      className="w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] px-6 py-3 text-xs font-bold text-white shadow-[0_4px_20px_-2px_rgba(139,92,246,0.5)] border border-white/20 transition-all hover:from-[#B49BFB] hover:to-[#8B5CF6] hover:shadow-[0_6px_25px_-2px_rgba(139,92,246,0.65)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                    >
+                      Ver tienda
+                    </Link>
 
                     {/* Botón secundario Guardar en playlist */}
                     <button
