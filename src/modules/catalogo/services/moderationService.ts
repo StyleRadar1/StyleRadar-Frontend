@@ -3,6 +3,7 @@ import { mockDelay } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { MOCK_MODERATION_ITEMS, MOCK_MODERATION_HISTORY } from '../mocks/moderation'
+import { guardarDecision, leerHistorial } from './moderationHistoryStore'
 import type {
   BackendModerationRequestDto,
   ModerationDecisionDto,
@@ -20,7 +21,6 @@ export interface ModerationBatchDecisionDto {
   moderadorId?: string
 }
 
-const sessionHistory: ModerationHistoryItemDto[] = []
 
 function mapPendingGroups(data: ModerationPendingResponseDto | ModerationItemDto[]): ModerationItemDto[] {
   if (Array.isArray(data)) return data
@@ -63,9 +63,19 @@ export const moderationService = {
       .then((r) => mapPendingGroups(r.data))
   },
 
+  /** Decisiones recientes. Se guardan en este navegador (el back no tiene historial), así que sobreviven al recargar. */
   getHistory(): Promise<ModerationHistoryItemDto[]> {
-    if (env.useMocks) return mockDelay([...MOCK_MODERATION_HISTORY])
-    return Promise.resolve([...sessionHistory])
+    const guardado = leerHistorial()
+    if (env.useMocks) {
+      const ids = new Set(guardado.map((h) => h.itemId))
+      return mockDelay([...guardado, ...MOCK_MODERATION_HISTORY.filter((h) => !ids.has(h.itemId))])
+    }
+    return Promise.resolve(guardado)
+  },
+
+  /** Guarda una decisión ya tomada en el historial. */
+  registrar(entrada: ModerationHistoryItemDto): void {
+    guardarDecision(entrada)
   },
 
   decide(decision: ModerationDecisionDto): Promise<void> {
