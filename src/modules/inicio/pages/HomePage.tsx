@@ -1,6 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { playlistService } from '@/modules/catalogo/services/playlistService'
+import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
+import { alertService } from '@/modules/soporte/services/alertService'
+import { getUserMeasurements, loadLookFromStorage } from '@/modules/experiencia/utils/lookEngine'
 import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
 import { RecomendadosTrail } from '../components/RecomendadosTrail'
@@ -10,7 +14,46 @@ export default function HomePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [busqueda, setBusqueda] = useState('')
-  const primerNombre = user?.name?.trim().split(/\s+/)[0] || 'de nuevo'
+  const [playlists, setPlaylists] = useState<PlaylistDto[]>([])
+  const [alertStats, setAlertStats] = useState<{ alertas: number; busquedas: number } | null>(null)
+
+  const nombreUsuario = user?.name?.trim() || 'de nuevo'
+  const medidas = getUserMeasurements()
+  const lookGuardado = loadLookFromStorage()
+  const prendasEnLook = Object.values(lookGuardado).filter(Boolean).length
+
+  useEffect(() => {
+    let activo = true
+    if (user?.id) {
+      playlistService
+        .getMine(String(user.id))
+        .then(async (mine) => {
+          if (mine.length > 0) return mine
+          const saved = await playlistService.getSaved(String(user.id)).catch(() => [])
+          if (saved.length > 0) return saved
+          return playlistService.getAll().catch(() => [])
+        })
+        .then((list) => {
+          if (activo) setPlaylists(list.slice(0, 3))
+        })
+        .catch(() => {})
+
+      alertService
+        .summary()
+        .then((res) => {
+          if (activo) {
+            setAlertStats({
+              alertas: res.alertas.filter((a) => a.activa).length,
+              busquedas: res.busquedas.length,
+            })
+          }
+        })
+        .catch(() => {})
+    }
+    return () => {
+      activo = false
+    }
+  }, [user?.id])
 
   const handleBuscar = (e: FormEvent) => {
     e.preventDefault()
@@ -21,19 +64,19 @@ export default function HomePage() {
   return (
     <div className="sr-inicio">
       <div className="sr-inicio-fondo" aria-hidden="true" />
-      {/* 1. Hero Editorial Bento: bienvenida, buscador y entrada clara a todas las secciones */}
+      {/* 1. Home personal: saludo con nombre de usuario + tus playlists, look, tallas y alertas */}
       <section className="sr-inicio-bento" aria-labelledby="inicioSaludo">
         <div className="sr-inicio-bento__header">
           <div className="sr-inicio-bento__headline">
-            <p className="sr-inicio-kicker">Hola, {primerNombre} · Tu espacio en StyleRadar</p>
+            <p className="sr-inicio-kicker">Tu lugar en StyleRadar</p>
             <h1 id="inicioSaludo" className="sr-inicio-bento__title">
-              TU RADAR DE MODA LOCAL EN BOGOTÁ
+              Hola, <span className="sr-inicio-acento">{nombreUsuario}</span>
             </h1>
           </div>
 
           <div className="sr-inicio-bento__aside">
             <p className="sr-inicio-bento__lead">
-              Explora prendas en tu talla, arma playlists, pruébate ropa con IA y ubica tiendas o fundaciones cercanas.
+              Aquí tienes tus playlists recientes, tu look en el probador, tus tallas y tus alertas.
             </p>
             <form onSubmit={handleBuscar} className="sr-inicio-search" role="search" aria-label="Buscar en el catálogo">
               <input
@@ -51,85 +94,98 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="sr-inicio-bento__grid">
-          {/* Columna izquierda: Estrenos y curaduría en tu talla */}
-          <Link to="/catalogo" className="sr-bento-card sr-bento-card--tall">
-            <img
-              src="/img/representantes/C2.png"
-              alt="Novedades de moda local en tu talla"
-              className="sr-bento-card__img"
-            />
-            <div className="sr-bento-card__shade" />
-            <div className="sr-bento-card__body">
-              <span className="sr-bento-pill">Novedades</span>
-              <strong className="sr-bento-card__title">Estrenos en tu talla hoy</strong>
-              <span className="sr-bento-card__sub">Prendas recién publicadas en Bogotá</span>
-            </div>
-          </Link>
-
-          {/* Columna central: Acciones de intención + Looks / Perfil / Alertas */}
-          <div className="sr-bento-center">
-            <div className="sr-bento-ctas">
-              <Link to="/catalogo" className="sr-bento-cta sr-bento-cta--primary">
-                <span>Ver prendas en mi talla</span>
-                <span aria-hidden="true">→</span>
-              </Link>
-              <Link to="/probador" className="sr-bento-cta sr-bento-cta--outline">
-                <span>Probarme un look ahora</span>
+        <div className="sr-inicio-personal-grid">
+          {/* Columna izquierda: Últimas playlists */}
+          <div className="sr-personal-card sr-personal-card--playlists">
+            <div className="sr-personal-card__head">
+              <div>
+                <span className="sr-bento-mini__tag">Tus colecciones</span>
+                <h2 className="sr-personal-card__title">Últimas playlists</h2>
+              </div>
+              <Link to="/playlists" className="sr-inicio-enlace">
+                Ver todas →
               </Link>
             </div>
 
-            <div className="sr-bento-subgrid">
-              <Link to="/playlists" className="sr-bento-card sr-bento-card--mid">
-                <img
-                  src="/img/representantes/C1.png"
-                  alt="Looks de la comunidad"
-                  className="sr-bento-card__img"
-                />
-                <div className="sr-bento-card__shade" />
-                <div className="sr-bento-card__body">
-                  <span className="sr-bento-pill">Inspiración</span>
-                  <strong className="sr-bento-card__title">Looks de la comunidad</strong>
-                  <span className="sr-bento-card__sub">Combinaciones listas para probar</span>
-                </div>
-              </Link>
-
-              <div className="sr-bento-mini-stack">
-                <Link to="/perfil" className="sr-bento-mini">
-                  <span className="sr-bento-mini__tag">Tu cuenta</span>
-                  <strong>Mi perfil y tallas ↗</strong>
-                  <span>Ajusta medidas y preferencias</span>
-                </Link>
-                <Link to="/alertas" className="sr-bento-mini">
-                  <span className="sr-bento-mini__tag">Seguimiento</span>
-                  <strong>Mis alertas ↗</strong>
-                  <span>Avisos cuando vuelva tu talla</span>
+            {playlists.length > 0 ? (
+              <ul className="sr-personal-playlists">
+                {playlists.map((pl) => {
+                  const thumb = pl.portadaUrl || pl.prendas?.[0]?.imagen || '/img/productos/blazer-oversize.jpg'
+                  return (
+                    <li key={pl.id}>
+                      <Link to={`/playlists/${pl.id}`} className="sr-personal-playlist-item">
+                        <img src={thumb} alt="" className="sr-personal-playlist-img" />
+                        <div className="sr-personal-playlist-meta">
+                          <strong>{pl.nombre}</strong>
+                          <span>{pl.prendas?.length ?? 0} prendas · {pl.visibilidad === 'PUBLICA' ? 'Pública' : 'Privada'}</span>
+                        </div>
+                        <span aria-hidden="true" className="sr-personal-playlist-go">↗</span>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <div className="sr-personal-empty">
+                <p>Todavía no tienes playlists guardadas.</p>
+                <Link to="/playlists" className="sr-bento-cta sr-bento-cta--outline">
+                  Crear mi primera playlist →
                 </Link>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Columna derecha: Hallazgos circulares + Donar */}
-          <div className="sr-bento-right">
-            <Link to="/segunda-mano" className="sr-bento-card sr-bento-card--medium">
-              <img
-                src="/img/representantes/C5.png"
-                alt="Hallazgos de segunda mano"
-                className="sr-bento-card__img"
-              />
-              <div className="sr-bento-card__shade" />
-              <div className="sr-bento-card__body">
-                <span className="sr-bento-pill">Circular</span>
-                <strong className="sr-bento-card__title">Hallazgos de segunda mano</strong>
-                <span className="sr-bento-card__sub">Piezas únicas a mejor precio</span>
+          {/* Columna central: Look guardado + Perfil y tallas */}
+          <div className="sr-personal-col">
+            <div className="sr-personal-card">
+              <div className="sr-personal-card__head">
+                <div>
+                  <span className="sr-bento-mini__tag">Probador</span>
+                  <h2 className="sr-personal-card__title">Tu look actual</h2>
+                </div>
+                <span className="sr-personal-badge">
+                  {prendasEnLook > 0 ? `${prendasEnLook} puesta${prendasEnLook === 1 ? '' : 's'}` : 'Disponible'}
+                </span>
               </div>
+              <p className="sr-personal-card__desc">
+                {prendasEnLook > 0
+                  ? 'Tienes prendas cargadas en tu maniquí listas para seguir combinando.'
+                  : 'Arma un outfit en el maniquí o pruébate prendas con tu foto.'}
+              </p>
+              <Link to="/probador" className="sr-bento-cta sr-bento-cta--primary">
+                <span>{prendasEnLook > 0 ? 'Seguir probando' : 'Abrir probador'}</span>
+                <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+
+            <Link to="/perfil" className="sr-bento-mini">
+              <span className="sr-bento-mini__tag">Tu perfil y tallas</span>
+              <strong>Superior {medidas.superior} · Pantalón {medidas.inferior} · Calzado {medidas.calzado} ↗</strong>
+              <span>Ajusta tus medidas corporales y preferencias de estilo</span>
+            </Link>
+          </div>
+
+          {/* Columna derecha: Alertas + Accesos de cuenta */}
+          <div className="sr-personal-col">
+            <Link to="/alertas" className="sr-bento-mini sr-bento-mini--accent">
+              <span className="sr-bento-mini__tag">Seguimiento</span>
+              <strong>
+                {alertStats
+                  ? `${alertStats.alertas} alerta${alertStats.alertas === 1 ? '' : 's'} activa${alertStats.alertas === 1 ? '' : 's'} · ${alertStats.busquedas} búsqueda${alertStats.busquedas === 1 ? '' : 's'} ↗`
+                  : 'Mis alertas y búsquedas ↗'}
+              </strong>
+              <span>Te avisamos cuando vuelva tu talla o baje un precio</span>
             </Link>
 
-            <Link to="/donar" className="sr-bento-mini sr-bento-mini--accent">
-              <span className="sr-bento-mini__tag">Impacto social</span>
-              <strong>Donar ropa a fundaciones ↗</strong>
-              <span>Dale una segunda vida a tus prendas</span>
-            </Link>
+            <div className="sr-personal-card sr-personal-card--quick">
+              <span className="sr-bento-mini__tag">Tus accesos</span>
+              <div className="sr-personal-quick-grid">
+                <Link to="/perfil/pagos" className="sr-personal-quick-btn">Mis pagos ↗</Link>
+                <Link to="/mensajes" className="sr-personal-quick-btn">Mensajes ↗</Link>
+                <Link to="/segunda-mano/publicar" className="sr-personal-quick-btn">Vender ropa ↗</Link>
+                <Link to="/donar" className="sr-personal-quick-btn">Donar ropa ↗</Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
