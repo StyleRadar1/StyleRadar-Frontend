@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { navCapsules } from '@/data/landingData'
 import { ROLE_HOME } from '@/modules/core/types/roles'
 import { AuthContext } from '@/modules/identidad/states/authContext'
+import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 import { AppearancePicker } from '@/modules/core/theme'
 
 interface LandingMobileMenuProps {
@@ -55,6 +56,7 @@ export function LandingMobileMenu({ isOpen, onClose, onOpenLogin }: LandingMobil
             type="button"
             onClick={() => {
               onClose()
+              marcarSalidaVoluntaria()
               auth?.logout()
             }}
             className="w-full py-4 text-center rounded-full border border-[var(--color-border)] text-[var(--color-text)] font-bold text-sm tracking-wider uppercase bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"

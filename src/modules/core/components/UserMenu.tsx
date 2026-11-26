@@ -93,7 +93,7 @@ export function UserMenu() {
           title="¿Cerrar sesión?"
           confirmLabel="Cerrar sesión"
           cancelLabel="Seguir aquí"
-          onConfirm={() => { setAskLogout(false); marcarSalidaVoluntaria(); navigate('/', { replace: true }); logout() }}
+          onConfirm={() => { setAskLogout(false); marcarSalidaVoluntaria(); logout(); navigate('/', { replace: true }) }}
           onCancel={() => setAskLogout(false)}
         >
           Tendrás que volver a entrar con tu correo y contraseña.

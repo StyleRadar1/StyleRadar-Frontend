@@ -15,3 +15,12 @@ export function markLandingSeen(): void {
     // sin almacenamiento disponible
   }
 }
+
+
+export function resetLandingSeen(): void {
+  try {
+    localStorage.removeItem(LANDING_SEEN_KEY)
+  } catch {
+    // sin almacenamiento disponible
+  }
+}
