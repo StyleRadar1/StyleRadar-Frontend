@@ -372,11 +372,17 @@ export default function ItemDetailPage() {
                 >
                   {/* Fondo difuminado de la misma imagen activa */}
                   <img
-                    src={imagenActiva || prenda.imagen}
+                    src={imagenActiva || prenda.imagen || '/img/productos/blazer-oversize.jpg'}
                     alt=""
                     aria-hidden="true"
                     loading="lazy"
                     decoding="async"
+                    onError={(e) => {
+                      const target = e.currentTarget
+                      if (!target.src.endsWith('/img/productos/blazer-oversize.jpg')) {
+                        target.src = '/img/productos/blazer-oversize.jpg'
+                      }
+                    }}
                     className="pointer-events-none absolute inset-0 h-full w-full scale-[1.4] object-cover opacity-60 blur-[36px] saturate-[1.25]"
                   />
                   {/* Gradiente radial de luz editorial */}
@@ -441,8 +447,14 @@ export default function ItemDetailPage() {
                   {/* Prenda activa completa: con zoom interactivo o presentación hero */}
                   <div className="relative z-10 flex h-full w-full items-center justify-center overflow-hidden p-3">
                     <img
-                      src={imagenActiva || prenda.imagen}
+                      src={imagenActiva || prenda.imagen || '/img/productos/blazer-oversize.jpg'}
                       alt={`${prenda.nombre} - ${ANGLE_LABELS[indiceImagen] || 'vista de prenda'}`}
+                      onError={(e) => {
+                        const target = e.currentTarget
+                        if (!target.src.endsWith('/img/productos/blazer-oversize.jpg')) {
+                          target.src = '/img/productos/blazer-oversize.jpg'
+                        }
+                      }}
                       style={
                         zoomActivo
                           ? {

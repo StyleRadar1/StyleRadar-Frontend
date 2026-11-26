@@ -84,7 +84,18 @@ export function GarmentSelector({
                 } disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 <div className="relative aspect-[4/5] bg-[var(--color-surface-subtle)]">
-                  <img src={g.imagen} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  <img
+                    src={g.imagen || '/img/productos/blazer-oversize.jpg'}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget
+                      if (!target.src.endsWith('/img/productos/blazer-oversize.jpg')) {
+                        target.src = '/img/productos/blazer-oversize.jpg'
+                      }
+                    }}
+                  />
                   {problem && (
                     <span className="absolute left-2 top-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-2 py-1 text-[11px] font-semibold text-[var(--color-text)] backdrop-blur-sm shadow-sm">
                       {problem}

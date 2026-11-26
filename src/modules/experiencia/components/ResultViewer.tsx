@@ -75,6 +75,25 @@ export function ResultViewer({
     }
   }
 
+  const rawResultUrl = result.resultImageUrl || result.resultUrl || ''
+  const sanitizedResultUrl = rawResultUrl.replace(
+    'styleradarpt8080blobqa.blob.core.windows.net',
+    'styleradarpt8080blob.blob.core.windows.net'
+  )
+
+  const handleRenderError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.currentTarget
+    if (target.src.includes('styleradarpt8080blobqa.blob.core.windows.net')) {
+      target.src = target.src.replace(
+        'styleradarpt8080blobqa.blob.core.windows.net',
+        'styleradarpt8080blob.blob.core.windows.net'
+      )
+      return
+    }
+    console.warn('Error al cargar imagen renderizada del probador virtual:', target.src)
+    setBroken(true)
+  }
+
   if (expired || broken) {
     return (
       <div role="alert" className="rounded-2xl border border-[var(--color-warning-border,#d97706)] bg-[var(--color-warning-bg,rgba(217,119,6,0.1))] text-[var(--color-warning-text,#92400e)] p-5">
@@ -107,12 +126,12 @@ export function ResultViewer({
               <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[10px] font-bold text-white">Antes</span>
             </div>
             <div className="relative">
-              <img src={result.resultImageUrl || result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} draggable={false} onError={() => setBroken(true)} className="mx-auto max-h-[520px] w-full select-none object-contain" />
+              <img src={sanitizedResultUrl} alt={`Resultado de la prueba con ${garmentName}`} draggable={false} onError={handleRenderError} className="mx-auto max-h-[520px] w-full select-none object-contain" />
               <span className="absolute bottom-2 right-2 rounded-full bg-[var(--color-accent)] px-2.5 py-0.5 text-[10px] font-bold text-white">Después</span>
             </div>
           </div>
         ) : (
-          <img src={result.resultImageUrl || result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} draggable={false} onError={() => setBroken(true)} className="mx-auto max-h-[520px] w-full select-none object-contain" />
+          <img src={sanitizedResultUrl} alt={`Resultado de la prueba con ${garmentName}`} draggable={false} onError={handleRenderError} className="mx-auto max-h-[520px] w-full select-none object-contain" />
         )}
         <span
           aria-hidden="true"

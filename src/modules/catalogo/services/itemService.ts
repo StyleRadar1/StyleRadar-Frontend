@@ -53,16 +53,29 @@ function normalizeOrden(orden?: string): OrdenCatalogo {
   return 'RECIENTES'
 }
 
+/** Sanitiza URLs de imágenes de prendas corrigiendo rutas malformadas o hosts no resolubles. */
+export function sanitizeGarmentImageUrl(rawUrl: unknown): string {
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) return ''
+  let clean = rawUrl.trim()
+  // Corregir BUG-019: JUANNICOLASA%20Frontend-Style-Radar o espacios entre usuario y repositorio
+  clean = clean.replace(/JUANNICOLASA(%20|\s+)Frontend-Style-Radar/gi, 'JUANNICOLASA/Frontend-Style-Radar')
+  // Corregir hostname de almacenamiento Azure en QA si vino con el typo no resoluble
+  clean = clean.replace('styleradarpt8080blobqa.blob.core.windows.net', 'styleradarpt8080blob.blob.core.windows.net')
+  return clean
+}
+
 /** Normaliza una prenda recibida del backend (ms-item-catalogo) al DTO del front. */
 export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponseDto {
   const r = raw as Record<string, any>
-  const fotos: string[] = Array.isArray(r.fotografias)
+  const rawFotos: string[] = Array.isArray(r.fotografias)
     ? r.fotografias.filter((x: unknown): x is string => typeof x === 'string' && x.length > 0)
     : Array.isArray(r.imagenes)
       ? r.imagenes.filter((x: unknown): x is string => typeof x === 'string' && x.length > 0)
       : []
-  const imagen = (typeof r.imagen === 'string' && r.imagen) || fotos[0] || ''
-  const imagenes = fotos.length > 0 ? fotos : (imagen ? [imagen] : [])
+  const fotos = rawFotos.map(sanitizeGarmentImageUrl).filter(Boolean)
+  const rawImagen = (typeof r.imagen === 'string' && r.imagen) || (typeof r.imagenUrl === 'string' && r.imagenUrl) || fotos[0] || ''
+  const imagen = sanitizeGarmentImageUrl(rawImagen) || fotos[0] || '/img/productos/blazer-oversize.jpg'
+  const imagenes = fotos.length > 0 ? fotos : [imagen]
   const almacenId = typeof r.almacenId === 'string' ? r.almacenId : undefined
   const storeNit = [r.storeNit, r.nitAlmacen, r.nit].find((v): v is string => typeof v === 'string' && v.length > 0)
   const tienda =
@@ -70,6 +83,10 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
     (typeof r.marca === 'string' && r.marca) ||
     (almacenId ? ALMACEN_NOMBRE_POR_ID[almacenId.toLowerCase()] ?? almacenId : '') ||
     ''
+
+  const rawTallas = Array.isArray(r.tallas)
+    ? r.tallas.filter((t: unknown): t is string => typeof t === 'string' && t.trim().length > 0)
+    : []
 
   return {
     id: String(r.id ?? ''),
@@ -86,7 +103,7 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
     tipo: String(r.tipo ?? ''),
     color: String(r.color ?? ''),
     coloresDisponibles: Array.isArray(r.coloresDisponibles) ? r.coloresDisponibles : undefined,
-    tallas: Array.isArray(r.tallas) ? r.tallas : [],
+    tallas: rawTallas,
     imagen,
     imagenSecundaria: typeof r.imagenSecundaria === 'string' ? r.imagenSecundaria : undefined,
     imagenes,
@@ -278,14 +295,9 @@ export const itemService = {
     return apiClient.get<Record<string, unknown>[]>('/api/v1/garments', { params }).then((r) => {
       const normalized = (Array.isArray(r.data) ? r.data : []).map(normalizeBackendItem)
       const map = new Map<string, ItemResponseDto>()
-      const imageToId = new Map<string, string>()
       for (const it of normalized) {
-        if (it.imagen && imageToId.has(it.imagen)) {
-          continue
-        }
         if (!map.has(it.id)) {
           map.set(it.id, it)
-          if (it.imagen) imageToId.set(it.imagen, it.id)
         }
       }
       return Array.from(map.values())

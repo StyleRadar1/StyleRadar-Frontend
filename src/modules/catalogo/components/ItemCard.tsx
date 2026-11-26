@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
@@ -5,6 +6,8 @@ import { nitDeTienda, tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
 import { isGarmentTryOnEligible } from '../utils/tryOnEligibility'
+
+const FALLBACK_PRODUCT_IMAGE = '/img/productos/blazer-oversize.jpg'
 
 const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
   maskImage:
@@ -18,7 +21,18 @@ const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
 export function ItemCard({ item }: { item: ItemResponseDto }) {
   const storeName = item.tienda || item.marca || ''
   const storeRouteId = item.storeNit || item.almacenId || getStoreIdByName(storeName)
-  const imgPrincipal = item.imagen || item.fotografias?.[0] || ''
+  const imgPrincipal = item.imagen || item.fotografias?.[0] || FALLBACK_PRODUCT_IMAGE
+  const [currentImg, setCurrentImg] = useState(imgPrincipal)
+
+  useEffect(() => {
+    setCurrentImg(imgPrincipal)
+  }, [imgPrincipal])
+
+  const handleImgError = () => {
+    if (currentImg !== FALLBACK_PRODUCT_IMAGE) {
+      setCurrentImg(FALLBACK_PRODUCT_IMAGE)
+    }
+  }
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm transition duration-200 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-md">
@@ -28,22 +42,24 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
         className="relative block aspect-[3/4] w-full shrink-0 overflow-hidden rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
       >
         {/* Fondo uniforme: copia de la misma foto con blur fuerte (32px), scale 1.4, saturate 1.15 y opacidad 1 */}
-        {imgPrincipal && (
+        {currentImg && (
           <img
-            src={imgPrincipal}
+            src={currentImg}
             alt=""
             aria-hidden="true"
             loading="lazy"
             decoding="async"
+            onError={handleImgError}
             className="pointer-events-none absolute inset-0 h-full w-full scale-[1.4] object-cover opacity-100 blur-[32px] saturate-[1.15]"
           />
         )}
         {/* Foto principal completa (object-contain) con máscara de degradado en los 4 bordes para fundirse con el fondo */}
         <img
-          src={imgPrincipal}
+          src={currentImg}
           alt={item.nombre}
           loading="lazy"
           decoding="async"
+          onError={handleImgError}
           style={MAIN_PHOTO_MASK_STYLE}
           className="relative z-10 h-full w-full object-contain transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.03]"
         />

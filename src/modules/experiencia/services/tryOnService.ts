@@ -246,11 +246,17 @@ export const tryOnService = {
     }
     return apiClient
       .get<TryOnJobStatusDto>(`/api/v1/try-on/jobs/${encodeURIComponent(jobId)}`)
-      .then((r) => ({
-        ...r.data,
-        resultUrl: r.data.resultImageUrl || r.data.resultUrl,
-        resultImageUrl: r.data.resultImageUrl || r.data.resultUrl,
-      }))
+      .then((r) => {
+        const rawUrl = r.data.resultImageUrl || r.data.resultUrl
+        const sanitizedUrl = typeof rawUrl === 'string'
+          ? rawUrl.replace('styleradarpt8080blobqa.blob.core.windows.net', 'styleradarpt8080blob.blob.core.windows.net')
+          : rawUrl
+        return {
+          ...r.data,
+          resultUrl: sanitizedUrl,
+          resultImageUrl: sanitizedUrl,
+        }
+      })
   },
 
   /** SR-P5-N03: consultar historial de pruebas virtuales del usuario */
@@ -274,11 +280,17 @@ export const tryOnService = {
     }
     return apiClient
       .get<TryOnJobStatusDto[]>('/api/v1/try-on/jobs', { params: userId ? { userId } : undefined })
-      .then((r) => r.data.map((j) => ({
-        ...j,
-        resultUrl: j.resultImageUrl || j.resultUrl,
-        resultImageUrl: j.resultImageUrl || j.resultUrl,
-      })))
+      .then((r) => r.data.map((j) => {
+        const rawUrl = j.resultImageUrl || j.resultUrl
+        const sanitizedUrl = typeof rawUrl === 'string'
+          ? rawUrl.replace('styleradarpt8080blobqa.blob.core.windows.net', 'styleradarpt8080blob.blob.core.windows.net')
+          : rawUrl
+        return {
+          ...j,
+          resultUrl: sanitizedUrl,
+          resultImageUrl: sanitizedUrl,
+        }
+      }))
   },
 
   /** SR-P5-N01: consultar estado de consentimiento biométrico */
