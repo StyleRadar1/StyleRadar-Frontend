@@ -13,7 +13,8 @@ import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { nitDeTienda, tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { ItemCard } from '../components/ItemCard'
 import { SizeGuideModal } from '../components/SizeGuideModal'
-import { extractAvailableTallasFromInventory, itemService } from '../services/itemService'
+import { itemService } from '../services/itemService'
+import { ordenarTallas, tallasDeInventario } from '../utils/tallas'
 import { ITEMS } from '../mocks/items'
 import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
@@ -83,28 +84,38 @@ export default function ItemDetailPage() {
       itemService.getSimilar(id).catch(() => [] as ItemResponseDto[]),
     ])
     let tallas = prendaData.tallas
-    if (!env.useMocks && tallas.length === 0) {
+    // Tallas agotadas: Catálogo no las lista, pero se siguen mostrando para poder pedir el aviso «avísame cuando llegue»
+    let sinStock: string[] = []
+    if (!env.useMocks) {
       try {
         const inv = await apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(id)}`).then((r) => r.data)
-        const extraidas = extractAvailableTallasFromInventory(inv)
-        if (extraidas.length > 0) tallas = extraidas
+        const t = tallasDeInventario(inv)
+        sinStock = t.sinStock.filter((x) => !tallas.includes(x))
+        if (tallas.length === 0 && t.conStock.length > 0) tallas = t.conStock
+        tallas = [...tallas, ...sinStock]
       } catch {
-        // Mantiene tallas vacías si inventario no responde
+        // Mantiene las tallas que ya trae la prenda si inventario no responde
       }
     }
     return {
-      prenda: { ...prendaData, tallas },
+      // Siempre en orden S, M, L, XL: el back las entrega en cualquier orden
+      prenda: { ...prendaData, tallas: ordenarTallas(tallas) },
+      sinStock,
       similares: similaresData.filter((x) => x.id !== prendaData.id).slice(0, 10),
     }
   }, [id])
 
   const { data, loading, error, reload: recargar } = useResource<{
     prenda: ItemResponseDto | null
+    sinStock: string[]
     similares: ItemResponseDto[]
-  }>(loader, { prenda: null, similares: [] })
+  }>(loader, { prenda: null, sinStock: [], similares: [] })
 
   const prenda = data.prenda
   const similares = data.similares
+  /** Talla agotada (según inventario o por un 409 al reservar): se ve y se puede elegir, pero solo para pedir el aviso. */
+  const esAgotada = (talla: string) => data.sinStock.includes(talla) || agotadas.includes(talla)
+  const tallaAgotada = !!tallaSeleccionada && esAgotada(tallaSeleccionada)
 
   // Accesibilidad: Escape solo cierra el zoom si está activo, sin sacar al usuario del detalle
   useEffect(() => {
@@ -159,13 +170,14 @@ export default function ItemDetailPage() {
   const reservar = async () => {
     if (!prenda || ocupado) return
     if (!tallaSeleccionada) { setAviso({ tono: 'info', titulo: 'Elige tu talla', texto: 'Así reservamos la unidad correcta en la tienda.' }); return }
+    if (tallaAgotada) { setAviso({ tono: 'info', titulo: `La talla ${tallaSeleccionada} está agotada`, texto: 'No se puede reservar, pero puedes pedir que te avisemos cuando llegue.' }); return }
     setOcupado('reserva'); setAviso(null)
     try {
       await itemService.reserve(prenda.id, tallaSeleccionada)
       setAviso({ tono: 'exito', titulo: `Reservamos tu talla ${tallaSeleccionada}`, texto: `Tienes 15 minutos para recogerla en ${prenda.tienda}.` })
     } catch (e) {
       const a = avisoReserva(e)
-      if (e instanceof ApiError && e.status === 409) { setAgotadas((l) => [...l, tallaSeleccionada]); setTallaSeleccionada('') }
+      if (e instanceof ApiError && e.status === 409) setAgotadas((l) => (l.includes(tallaSeleccionada) ? l : [...l, tallaSeleccionada]))
       setAviso(a)
     } finally { setOcupado(null) }
   }
@@ -634,24 +646,24 @@ export default function ItemDetailPage() {
                         </div>
                         {tallaSeleccionada && (
                           <span className="text-[var(--sr-acento-primario,var(--color-accent))] font-bold text-xs lowercase first-letter:uppercase">
-                            Talla elegida: {tallaSeleccionada}
+                            Talla elegida: {tallaSeleccionada}{tallaAgotada ? ' · agotada' : ''}
                           </span>
                         )}
                       </div>
                       <div className="mt-2.5 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Tallas disponibles">
                         {prenda.tallas.map((talla) => {
                           const isSelected = tallaSeleccionada === talla
-                          const isAgotada = agotadas.includes(talla)
+                          const isAgotada = esAgotada(talla)
                           return (
                             <button
                               key={talla}
                               type="button"
                               role="radio"
                               aria-checked={isSelected}
-                              disabled={isAgotada}
-                              aria-label={isAgotada ? `${talla}, agotada` : talla}
+                              aria-label={isAgotada ? `${talla}, agotada: puedes pedir que te avisemos` : talla}
+                              title={isAgotada ? 'Agotada: elígela y pulsa «Avisarme cuando llegue»' : undefined}
                               onClick={() => setTallaSeleccionada(isSelected ? '' : talla)}
-                              className={`h-10 w-10 rounded-full border text-xs font-bold transition flex items-center justify-center disabled:cursor-not-allowed disabled:line-through disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                              className={`h-10 w-10 rounded-full border text-xs font-bold transition flex items-center justify-center ${isAgotada && !isSelected ? 'line-through opacity-50 border-dashed' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                                 isSelected
                                   ? 'border-purple-400 bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6] text-white shadow-[0_4px_14px_rgba(139,92,246,0.45)] scale-105'
                                   : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:border-purple-400/50 hover:bg-white/10'
@@ -738,7 +750,7 @@ export default function ItemDetailPage() {
 
                     {/* Reserva en tienda (ms-inventario) y alerta de disponibilidad (ms-notificaciones) */}
                     <div className="flex flex-wrap gap-2 pt-1">
-                      <button type="button" onClick={reservar} disabled={!!ocupado} className={`${BTN_PRINCIPAL} flex-1`}>
+                      <button type="button" onClick={reservar} disabled={!!ocupado || tallaAgotada} title={tallaAgotada ? 'Esta talla está agotada: pide que te avisemos cuando llegue' : undefined} className={`${BTN_PRINCIPAL} flex-1 disabled:opacity-50 disabled:cursor-not-allowed`}>
                         {ocupado === 'reserva' ? 'Reservando…' : 'Reservar en tienda'}
                       </button>
                       <button type="button" onClick={seguimiento === null ? crearAlerta : cancelarSeguimiento} disabled={!!ocupado} className={`${BTN_SECUNDARIO} flex-1`}>
