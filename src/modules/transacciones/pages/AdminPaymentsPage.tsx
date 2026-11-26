@@ -7,6 +7,7 @@ import { errorKind } from '@/modules/core/api/errors'
 import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
+import { BalanceWallet } from '../components/BalanceWallet'
 import { buildPaymentsCsv, formatStatusLabel } from '../mappers/paymentsMappers'
 import { calcRevenue, filterPayments, paymentService } from '../services/paymentService'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
@@ -410,6 +411,8 @@ export default function AdminPaymentsPage() {
                 </div>
               ))}
             </div>
+            <BalanceWallet total={displayBalance} plusSum={statsSummary.plusSum} storeSum={statsSummary.storeSum} />
+
             <div className="mt-auto border-t border-white/10 pt-4 text-xs text-lavanda/70">
               <p>El balance suma únicamente pagos aprobados.</p>
               <p className="mt-1">Los filtros no modifican este valor global.</p>
