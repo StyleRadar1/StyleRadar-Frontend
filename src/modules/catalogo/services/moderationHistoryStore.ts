@@ -39,7 +39,7 @@ export function guardarDecision(entrada: ModerationHistoryItemDto): void {
 
 /** Arma la entrada de una decisión con la hora real (la pantalla la muestra con fecha y hora). */
 export function nuevaDecision(
-  item: { id: string; titulo: string; publicador: string },
+  item: { id: string; titulo: string; publicador: string; publicadorNit?: string },
   aprobado: boolean,
   motivo?: string,
 ): ModerationHistoryItemDto {
@@ -48,6 +48,7 @@ export function nuevaDecision(
     itemId: item.id,
     titulo: item.titulo,
     publicador: item.publicador,
+    ...(item.publicadorNit ? { publicadorNit: item.publicadorNit } : {}),
     aprobado,
     ...(motivo ? { motivo } : {}),
     fecha: new Date().toISOString(),
