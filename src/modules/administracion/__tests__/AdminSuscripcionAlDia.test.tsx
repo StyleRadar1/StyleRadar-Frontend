@@ -40,6 +40,12 @@ describe('BUG-20: el panel de admin muestra la suscripción real (lista «al dí
     expect(get).toHaveBeenCalledWith(AL_DIA)
   })
 
+  it('BUG-17: Pagos devuelve el NIT sin dígito de verificación y la tienda lo trae con él', async () => {
+    fingir({ taxIds: ['900555777', '901880114'] })
+    const lista = await adminStoreService.list()
+    expect(lista.map((t) => t.suscripcion.estado)).toEqual(['Activa', 'Activa'])
+  })
+
   it('compara solo los dígitos: puntos, guiones y espacios no importan', async () => {
     fingir({ taxIds: ['900.555.777-1', ' 901 880 114 2 '] })
     const lista = await adminStoreService.list()
@@ -81,7 +87,7 @@ describe('BUG-20: el panel de admin muestra la suscripción real (lista «al dí
     const base = (await adminStoreService.list())[0]
     expect(conSuscripcionAlDia(base, null)).toBe(base)
     expect(conSuscripcionAlDia(base, new Set(['999']))).toBe(base)
-    expect(conSuscripcionAlDia(base, new Set(['9005557771'])).suscripcion).toMatchObject({ estado: 'Activa', proximo: '—', inicio: '—' })
+    expect(conSuscripcionAlDia(base, new Set(['900555777'])).suscripcion).toMatchObject({ estado: 'Activa', proximo: '—', inicio: '—' })
   })
 
   it('en la pantalla de tiendas se ve «Activa» para la tienda al día', async () => {

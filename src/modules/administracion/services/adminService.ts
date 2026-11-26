@@ -16,17 +16,21 @@ const API = { tiendas: '/api/v1/admin/stores', fundaciones: '/api/v1/admin/found
 
 /** ms-pagos (BUG-20): GET /api/v1/subscriptions/stores/up-to-date → { taxIds: [...] } con los NIT de las tiendas al día. */
 const SUSCRIPCIONES_AL_DIA = '/api/v1/subscriptions/stores/up-to-date'
-const soloDigitos = (v: unknown) => String(v ?? '').replace(/\D/g, '')
+/**
+ * Clave para cruzar un NIT: sus 9 primeros dígitos. ms-tiendas lo entrega con dígito de verificación
+ * («900555777-1») y Pagos sin él («900555777»), así que comparar el número completo nunca coincide.
+ */
+const claveNit = (v: unknown) => String(v ?? '').replace(/\D/g, '').slice(0, 9)
 
 /**
- * NIT (solo dígitos, así «900.555.777-1» y «9005557771» coinciden) de las tiendas con la suscripción al día.
+ * Claves de NIT (ver claveNit) de las tiendas con la suscripción al día.
  * Devuelve null si Pagos aún no ofrece la lista o falla: en ese caso la tienda sigue como «Sin suscripción» y no se inventa nada.
  */
 export async function nitsConSuscripcionAlDia(): Promise<Set<string> | null> {
   try {
     const { data } = await apiClient.get<{ taxIds?: unknown }>(SUSCRIPCIONES_AL_DIA)
     const ids = Array.isArray(data?.taxIds) ? data.taxIds : []
-    return new Set(ids.map(soloDigitos).filter(Boolean))
+    return new Set(ids.map(claveNit).filter(Boolean))
   } catch {
     return null
   }
@@ -34,7 +38,7 @@ export async function nitsConSuscripcionAlDia(): Promise<Set<string> | null> {
 
 /** Marca «Activa» a la tienda cuyo NIT está en la lista de Pagos; el resto queda como estaba. */
 export function conSuscripcionAlDia(t: AdminStoreDto, alDia: Set<string> | null): AdminStoreDto {
-  if (!alDia || !alDia.has(soloDigitos(t.nit))) return t
+  if (!alDia || !alDia.has(claveNit(t.nit))) return t
   return { ...t, suscripcion: { ...t.suscripcion, estado: 'Activa' } }
 }
 
