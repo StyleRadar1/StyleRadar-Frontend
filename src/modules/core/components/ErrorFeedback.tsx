@@ -77,7 +77,7 @@ export function ErrorBanner({
         <span className="mt-0.5"><ToneIcon tone={tone} kind={icon} /></span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{title}</p>
-          {children && <div className="mt-1 text-sm text-white/80">{children}</div>}
+          {children && <div className="mt-1 text-sm text-[var(--sr-text-primary)]">{children}</div>}
           {actions && <div className="mt-3 flex flex-wrap gap-2">{actions}</div>}
         </div>
       </div>
@@ -123,21 +123,21 @@ export function ErrorToast({
           animate={reduced ? undefined : { opacity: 1, y: 0, scale: 1 }}
           exit={reduced ? undefined : { opacity: 0, y: 8 }}
           transition={{ duration: 0.22 }}
-          className="relative overflow-hidden rounded-xl border bg-grafito px-4 py-3 shadow-xl"
+          className="relative overflow-hidden rounded-xl border bg-[var(--sr-surface-raised)] px-4 py-3 text-[var(--sr-text-primary)] shadow-xl"
           style={{ borderColor: `color-mix(in srgb, ${color} 50%, transparent)` }}
         >
           <div className="flex items-center gap-3">
             <span style={{ color }}><ToneIcon tone={tone} kind={icon} /></span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-blanco">{title}</p>
-              {subtitle && <p className="text-xs text-white/70">{subtitle}</p>}
+              <p className="text-sm font-semibold text-[var(--sr-text-primary)]">{title}</p>
+              {subtitle && <p className="text-xs text-[var(--sr-text-secondary)]">{subtitle}</p>}
             </div>
             {action}
             <button
               type="button"
               onClick={onClose}
               aria-label="Cerrar aviso"
-              className="rounded-lg p-1 text-white/60 hover:bg-white/10 hover:text-blanco"
+              className="rounded-lg p-1 text-[var(--sr-text-muted)] hover:bg-[var(--sr-surface)] hover:text-[var(--sr-text-primary)]"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>

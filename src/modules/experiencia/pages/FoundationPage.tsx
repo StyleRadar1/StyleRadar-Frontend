@@ -15,16 +15,16 @@ import './FoundationDashboard.css'
 const FILTROS: (EstadoDonacion | 'TODAS')[] = ['TODAS', 'PENDIENTE', 'APROBADA', 'EN_RECOGIDA', 'ENTREGADA', 'RECHAZADA']
 
 const TONE: Record<string, string> = {
-  PENDIENTE: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30',
-  PENDING: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30',
-  APROBADA: 'bg-violeta/15 text-violeta dark:text-violeta-claro border border-violeta/30',
-  APPROVED: 'bg-violeta/15 text-violeta dark:text-violeta-claro border border-violeta/30',
-  EN_RECOGIDA: 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border border-sky-500/30',
-  IN_PICKUP: 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border border-sky-500/30',
-  ENTREGADA: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30',
-  DELIVERED: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30',
-  RECHAZADA: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30',
-  REJECTED: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30',
+  PENDIENTE: 'bg-[var(--sr-warn-bg)] text-[var(--sr-warn)] border border-[var(--sr-warn)]/35',
+  PENDING: 'bg-[var(--sr-warn-bg)] text-[var(--sr-warn)] border border-[var(--sr-warn)]/35',
+  APROBADA: 'bg-[var(--color-accent-soft)] text-[var(--sr-accent-text)] border border-[var(--sr-accent)]/35',
+  APPROVED: 'bg-[var(--color-accent-soft)] text-[var(--sr-accent-text)] border border-[var(--sr-accent)]/35',
+  EN_RECOGIDA: 'bg-[var(--sr-info-bg)] text-[var(--sr-info)] border border-[var(--sr-info)]/35',
+  IN_PICKUP: 'bg-[var(--sr-info-bg)] text-[var(--sr-info)] border border-[var(--sr-info)]/35',
+  ENTREGADA: 'bg-[var(--sr-ok-bg)] text-[var(--sr-ok)] border border-[var(--sr-ok)]/35',
+  DELIVERED: 'bg-[var(--sr-ok-bg)] text-[var(--sr-ok)] border border-[var(--sr-ok)]/35',
+  RECHAZADA: 'bg-[var(--sr-bad-bg)] text-[var(--sr-bad)] border border-[var(--sr-bad)]/35',
+  REJECTED: 'bg-[var(--sr-bad-bg)] text-[var(--sr-bad)] border border-[var(--sr-bad)]/35',
 }
 
 const ACCION: Partial<Record<EstadoDonacion, string>> = {
@@ -124,7 +124,7 @@ export default function FoundationPage() {
       <section className="fnd-hero" aria-label="Cabecera de donaciones">
         <div className="fnd-hero__media" aria-hidden="true">
           <img
-            src="/img/fundaciones/abrigo-trabajo.jpg"
+            src="/img/fundaciones/abrigo-acopio.jpg"
             alt="Fondo de donaciones"
           />
         </div>
@@ -289,13 +289,13 @@ export default function FoundationPage() {
                       </p>
 
                       {d.justificacion && (
-                        <p className="mt-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 text-xs text-rose-700 dark:text-rose-300">
+                        <p className="mt-2 rounded-xl bg-[var(--sr-bad-bg)] border border-[var(--sr-bad)]/30 px-3 py-1.5 text-xs text-[var(--sr-bad)]">
                           <strong>Motivo:</strong> {d.justificacion}
                         </p>
                       )}
 
                       {d.comprobante && (
-                        <p className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        <p className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[var(--sr-ok-bg)] border border-[var(--sr-ok)]/30 px-3 py-1.5 text-xs font-semibold text-[var(--sr-ok)]">
                           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 stroke-current fill-none stroke-[2]" aria-hidden="true">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
@@ -318,16 +318,16 @@ export default function FoundationPage() {
                               aria-label={`${ACCION[to]}: ${d.prenda.titulo}`}
                               className={`rounded-full px-4 py-2 text-xs font-bold transition disabled:opacity-50 ${
                                 isDanger
-                                  ? 'border border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950/40'
+                                  ? 'border border-[var(--sr-bad)]/40 text-[var(--sr-bad)] hover:bg-[var(--sr-bad-bg)]'
                                   : isPrimary
-                                  ? 'bg-violeta text-white hover:bg-violeta-hover shadow-sm'
-                                  : 'border border-gray-300 text-grafito hover:bg-gray-100 dark:border-white/20 dark:text-white dark:hover:bg-white/10'
+                                  ? 'bg-[var(--sr-accent)] text-[var(--sr-text-on-accent)] hover:brightness-110 shadow-sm'
+                                  : 'border border-[var(--sr-border-control)] text-[var(--sr-text-primary)] hover:bg-[var(--sr-surface-raised)]'
                               }`}
                             >
                               {ACCION[to]}
                             </button>
                             {why && (
-                              <span className="mt-1 max-w-44 text-right text-[11px] text-gray-500 dark:text-white/55">
+                              <span className="mt-1 max-w-44 text-right text-[11px] text-[var(--sr-text-muted)]">
                                 {why}
                               </span>
                             )}
@@ -336,7 +336,7 @@ export default function FoundationPage() {
                       })}
 
                       {!SIGUIENTE[d.estado].length && (
-                        <span className="text-xs text-gray-400 dark:text-white/50">Sin acciones</span>
+                        <span className="text-xs text-[var(--sr-text-muted)]">Sin acciones</span>
                       )}
 
                       {/* RF-41: coordinar la entrega con quien dona, sin publicar la dirección */}
@@ -368,7 +368,7 @@ export default function FoundationPage() {
       >
         {pending?.to === 'RECHAZADA' ? (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="rjust" className="font-semibold text-[var(--color-text)]">
+            <label htmlFor="rjust" className="font-semibold text-[var(--sr-text-primary)]">
               Motivo del rechazo
             </label>
             <textarea
@@ -380,7 +380,7 @@ export default function FoundationPage() {
               }}
               aria-invalid={!!justErr}
               aria-describedby={justErr ? 'rjust-err' : undefined}
-              className="min-h-24 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+              className="min-h-24 rounded-xl border border-[var(--sr-border-control)] bg-[var(--sr-surface)] p-3 text-sm text-[var(--sr-text-primary)] outline-none focus:border-[var(--sr-accent)]"
             />
             <FieldError id="rjust-err" message={justErr} />
           </div>

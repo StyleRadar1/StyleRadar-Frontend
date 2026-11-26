@@ -95,7 +95,7 @@ describe('menú según el rol', () => {
 
     loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     const { unmount: u2 } = renderNav()
-    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/catalogo')
+    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/inicio')
     u2()
 
     // La tienda no tiene logo-enlace (ver la prueba «la tienda no muestra el logo…»).

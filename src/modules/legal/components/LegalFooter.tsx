@@ -1,7 +1,12 @@
+import { useContext } from 'react'
 import { Link } from 'react-router-dom'
+import { ROLE_HOME } from '@/modules/core/types/roles'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { PROVIDER_INFO } from '../config/legalConfig'
 
 export function LegalFooter() {
+  const user = useContext(AuthContext)?.user ?? null
+  const homePath = user ? ROLE_HOME[user.role] : '/'
   const currentYear = new Date().getFullYear()
 
   const handleOpenCookieSettings = () => {
@@ -22,7 +27,7 @@ export function LegalFooter() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
           {/* Bloque Identidad de Marca y Redes */}
           <div className="lg:col-span-2 space-y-4">
-            <Link to="/" className="inline-flex items-center gap-2 group">
+            <Link to={homePath} className="inline-flex items-center gap-2 group">
               <span className="text-xl font-black tracking-tight text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
                 Style<span className="text-[var(--color-accent)]">Radar</span>
               </span>

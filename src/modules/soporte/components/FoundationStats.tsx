@@ -17,23 +17,26 @@ export function FoundationStatsView() {
   }, [status, navigate])
 
   return (
-    <section className="mx-auto max-w-4xl text-[var(--color-text)]">
+    <section className="mx-auto max-w-4xl text-[var(--sr-text-primary,var(--color-text))]">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">Estadísticas de tu fundación</h1>
+        <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--sr-accent-text,var(--color-accent))]">
+          Resumen de impacto
+        </p>
+        <h1 className="mt-1 text-2xl font-bold text-[var(--sr-text-primary,var(--color-text))]">Estadísticas de tu fundación</h1>
       </header>
 
       <Card>
-        <h2 className="text-lg font-bold text-[var(--color-text)]">Prendas recibidas</h2>
+        <h2 className="text-lg font-bold text-[var(--sr-text-primary,var(--color-text))]">Prendas recibidas</h2>
 
         {loading && (
-          <p role="status" className="mt-4 text-sm text-[var(--color-text-muted)]">
+          <p role="status" className="mt-4 text-sm text-[var(--sr-text-muted,var(--color-text-muted))]">
             Cargando...
           </p>
         )}
 
         {!loading && error && (
           <div role="alert" className="mt-4 space-y-3">
-            <p className="text-sm text-[var(--color-text)]">{error}</p>
+            <p className="text-sm text-[var(--sr-bad,var(--color-danger))]">{error}</p>
             <div className="flex flex-wrap gap-2">
               {status === 401 ? (
                 <Button
@@ -56,11 +59,11 @@ export function FoundationStatsView() {
 
         {!loading && !error && data && (
           <div className="mt-4 space-y-2">
-            <p className="text-4xl font-extrabold tabular-nums text-[var(--color-text)]">
+            <p className="text-4xl font-extrabold tabular-nums text-[var(--sr-text-primary,var(--color-text))]">
               {data.total.toLocaleString('es-CO')}
             </p>
             {empty && (
-              <p role="status" className="text-sm text-[var(--color-text-muted)]">
+              <p role="status" className="text-sm text-[var(--sr-text-muted,var(--color-text-muted))]">
                 Aún no registras prendas recibidas confirmadas
               </p>
             )}

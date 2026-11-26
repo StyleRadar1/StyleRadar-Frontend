@@ -11,7 +11,7 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
       <label htmlFor={id} className="sr-only">Tema de color</label>
-      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-white/70" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20V2Z" /><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[var(--sr-hero-text-muted)]" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20V2Z" /><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
       <select
         ref={selectRef}
         id={id}
@@ -20,7 +20,7 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
           const next = e.target.value as Tema
           executeThemeTransition(() => setTema(next), selectRef.current)
         }}
-        className="rounded-lg border border-white/25 bg-black/20 px-2 py-2 text-xs font-semibold text-blanco"
+        className="rounded-lg border border-[var(--sr-border-control)] bg-[var(--sr-surface)] px-2.5 py-2 text-xs font-semibold text-[var(--sr-text-primary)] shadow-xs transition-colors"
       >
         {TEMAS.map((t) => <option key={t} value={t}>{TEMA_LABEL[t]}</option>)}
       </select>

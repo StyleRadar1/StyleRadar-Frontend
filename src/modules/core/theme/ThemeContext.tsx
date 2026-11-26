@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -118,7 +119,7 @@ export function applyThemeToDom(
   )
   root.setAttribute('data-cvd', cvd ? 'on' : 'off')
   root.setAttribute('data-contrast', cvd ? 'on' : 'off')
-  root.style.colorScheme = resolved
+  root.style.colorScheme = cvd ? 'dark' : resolved
 }
 
 export interface ThemeContextValue {
@@ -166,8 +167,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return mode === 'system' ? systemTheme : mode
   }, [mode, systemTheme])
 
-  // Aplicar atributos al DOM y persistir en localStorage de forma segura
-  useEffect(() => {
+  // Aplicar atributos al DOM de forma síncrona (compatible con View Transitions / flushSync) y persistir en localStorage
+  useLayoutEffect(() => {
     applyThemeToDom(resolvedTheme, colorblind)
 
     try {

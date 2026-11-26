@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { RecommendedHangingRack } from '@/modules/catalogo/components/RecommendedHangingRack'
 import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
+import { RecomendadosTrail } from '../components/RecomendadosTrail'
 import './HomePage.css'
 
 export default function HomePage() {
@@ -134,26 +134,28 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. Selección destacada estilo Featured Collection */}
-      <section className="sr-inicio-bloque sr-inicio-featured" aria-label="Recomendaciones según tu estilo">
-        <div className="sr-inicio-featured__head">
-          <p className="sr-inicio-kicker">Selección destacada</p>
-          <h2 className="sr-inicio-featured__title">ELEGIDO PARA TU TALLA</h2>
-          <Link to="/catalogo" className="sr-inicio-enlace">
-            Ver todo el catálogo →
-          </Link>
-        </div>
-
-        <div className="sr-inicio-rack-compact">
-          {user && <RecommendedHangingRack key={user.id} userId={String(user.id)} />}
-        </div>
-      </section>
+      {user && <RecomendadosTrail key={`trail-${user.id}`} userId={String(user.id)} />}
 
       {/* 3. Probador y Mapa: dos cuadros a la par */}
       <div className="sr-inicio-duo">
         <ProbadorIntro />
         <MapaCercano />
       </div>
+
+      {/* 4. Marco legal y soporte */}
+      <section className="sr-inicio-bloque sr-inicio-legal" aria-label="Marco legal y soporte">
+        <div className="sr-inicio-legal__info">
+          <p className="sr-inicio-kicker">Transparencia y respaldo</p>
+          <h2 className="sr-inicio-legal__title">Marco legal y derechos del usuario</h2>
+        </div>
+        <nav className="sr-inicio-legal__links" aria-label="Documentos legales">
+          <Link to="/legal" className="sr-inicio-legal__pill">Marco legal</Link>
+          <Link to="/legal/terminos" className="sr-inicio-legal__pill">Términos y condiciones</Link>
+          <Link to="/legal/datos-personales" className="sr-inicio-legal__pill">Habeas Data</Link>
+          <Link to="/legal/pqrs" className="sr-inicio-legal__pill">PQRS</Link>
+          <Link to="/legal/centro-ayuda" className="sr-inicio-legal__pill">Centro de ayuda</Link>
+        </nav>
+      </section>
     </div>
   )
 }

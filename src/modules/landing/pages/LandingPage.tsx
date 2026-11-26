@@ -13,6 +13,7 @@ import {
 } from '@/components/landing'
 import MapaLanding from '@/modules/mapa/components/MapaLanding'
 import { AuthModal, QuickTryOnModal } from '@/components/modals'
+import { markLandingSeen } from '../landingSeen'
 import './LandingPage.css'
 
 export default function LandingPage() {
@@ -24,6 +25,10 @@ export default function LandingPage() {
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
   const [authRole, setAuthRole] = useState<'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'>('BUYER')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
+
+  useEffect(() => {
+    markLandingSeen()
+  }, [])
 
   useEffect(() => {
     if (!user && params.has('login')) {
