@@ -12,7 +12,7 @@ const PRENDA_CREADA = {
   color: 'Negro', marca: 'Almacén Pruebas QA', estilo: 'Urbano', precio: 120000, fotografias: ['https://picsum.photos/seed/prueba1/600'],
   estado: 'PENDIENTE', disponible: true, fechaPublicacion: '2026-11-26T17:10:35.253406887', storeNit: '900555777-1',
 }
-const DTO = { nombre: 'Prueba historial 1', tipo: 'Saco', color: 'Negro', estilo: 'Urbano', precio: 120000, fotografias: ['https://picsum.photos/seed/prueba1/600'], stockPorTalla: { XS: 0, S: 2, M: 4, L: 2, XL: 0, XXL: 0 }, tipoPrenda: 'ROPA' as const, sedeId: 'sede-1' }
+const DTO = { nombre: 'Prueba historial 1', tipo: 'Saco', categoria: 'Saco', color: 'Negro', estilo: 'Urbano', precio: 120000, fotografias: ['https://picsum.photos/seed/prueba1/600'], stockPorTalla: { XS: 0, S: 2, M: 4, L: 2, XL: 0, XXL: 0 }, tipoPrenda: 'ROPA' as const, sedeId: 'sede-1' }
 
 describe('crear una prenda desde el perfil de tienda: el stock inicial no se rechaza por la fecha', () => {
   afterEach(() => vi.restoreAllMocks())
