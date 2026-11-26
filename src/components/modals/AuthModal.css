@@ -13,7 +13,7 @@
   z-index: 110;
   display: grid;
   place-items: center;
-  padding: clamp(8px, 1.2vw, 18px);
+  padding: clamp(16px, 3.2vh, 36px) clamp(16px, 3vw, 40px);
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
   color: #FFFFFF;
 }
@@ -48,8 +48,8 @@
 
 .sr-auth-stack {
   position: relative;
-  width: min(1140px, 100%);
-  height: min(820px, calc(100svh - 20px));
+  width: min(1040px, 100%);
+  height: min(690px, calc(100svh - 68px));
   display: grid;
   place-items: center;
   z-index: 1;
@@ -269,11 +269,11 @@
 }
 
 .sr-auth-card.is-register {
-  width: min(670px, calc(100% - 24px));
-  padding: 14px 22px;
-  gap: 7px;
-  margin-top: 22px;
-  max-height: calc(100% - 44px);
+  width: min(660px, calc(100% - 24px));
+  padding: 12px 20px;
+  gap: 6px;
+  margin-top: 20px;
+  max-height: calc(100% - 36px);
 }
 
 .sr-auth-card.is-register h2 {

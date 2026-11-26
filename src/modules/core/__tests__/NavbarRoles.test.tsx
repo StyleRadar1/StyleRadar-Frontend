@@ -81,6 +81,13 @@ describe('menú según el rol', () => {
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/?login')
   })
 
+  it('la tienda no muestra el logo de StyleRadar que lleva al landing; su inicio es «Mi tienda»', () => {
+    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'STORE_ADMIN')
+    renderNav()
+    expect(screen.queryByRole('link', { name: /^StyleRadar/ })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Mi tienda' })[0]).toHaveAttribute('href', '/mi-tienda')
+  })
+
   it('el logo de StyleRadar lleva al inicio de cada rol si hay sesión, o al landing si no', () => {
     const { unmount } = renderNav()
     expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/')
@@ -91,10 +98,7 @@ describe('menú según el rol', () => {
     expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/inicio')
     u2()
 
-    loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'STORE_ADMIN')
-    const { unmount: u3 } = renderNav()
-    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/mi-tienda')
-    u3()
+    // La tienda no tiene logo-enlace (ver la prueba «la tienda no muestra el logo…»).
 
     loginAs('f-1', 'Ropero Comunitario', 'fundacion@styleradar.co', 'FOUNDATION_REPRESENTATIVE')
     const { unmount: u4 } = renderNav()

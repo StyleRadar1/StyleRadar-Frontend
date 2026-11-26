@@ -17,6 +17,7 @@ import type { StoreSubscriptionStatus } from '../types/storeSubscription.dto'
 import { isSubscriptionAlreadyExistsError, SUBSCRIPTION_ALREADY_EXISTS_MSG } from '../utils/erroresPlan'
 import { isValidNit, isValidPayerEmail } from '../utils/validation'
 import './StoreSubscriptionPage.css'
+import '@/styles/tienda-glass.css'
 
 const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = {
   PENDIENTE: 'Pendiente',
@@ -181,7 +182,7 @@ export default function StoreSubscriptionPage() {
 
   if (!data) {
     return (
-      <section className="store-subscription">
+      <section className="store-subscription sr-tienda-glass">
         {loading ? <Loading label="Cargando tu suscripción…" /> : <ErrorState error={error} onRetry={reload} title="No pudimos cargar tu suscripción" />}
       </section>
     )
@@ -221,7 +222,7 @@ export default function StoreSubscriptionPage() {
     ''
 
   return (
-    <section className="store-subscription">
+    <section className="store-subscription sr-tienda-glass">
       <StoreSuspendedBanner status={sub.status} onPayClick={() => openStartForm(defaultPayerEmail)} />
       <div className="store-subscription__main">
         <div className="store-subscription__title">

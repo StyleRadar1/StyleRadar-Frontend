@@ -144,14 +144,18 @@ describe('detalle de prenda', () => {
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument()
   })
 
-  it('409 al reservar: ya no quedan unidades y la talla queda deshabilitada', async () => {
+  it('409 al reservar: ya no quedan unidades; la talla se marca agotada pero se puede elegir para pedir el aviso', async () => {
     const user = userEvent.setup()
     escenario('sin-unidades')
     abrir()
     await user.click(await screen.findByRole('radio', { name: 'M' }))
     await user.click(screen.getByRole('button', { name: 'Reservar en tienda' }))
     expect(await screen.findByText('Ya no quedan unidades en esa talla')).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'M, agotada' })).toBeDisabled()
+    const m = screen.getByRole('radio', { name: /^M, agotada/ })
+    expect(m).toBeEnabled()
+    expect(m).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('button', { name: 'Reservar en tienda' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Avisarme cuando llegue' })).toBeEnabled()
   })
 })
 

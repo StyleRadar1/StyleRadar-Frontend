@@ -9,6 +9,7 @@ import {
   type InventoryCategoryCode,
 } from '@/modules/soporte/types/statistics.dto'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
+import '@/styles/tienda-glass.css'
 
 const INVENTORY_ORDER: InventoryCategoryCode[] = ['AVAILABLE', 'LOW_STOCK', 'OUT_OF_STOCK']
 
@@ -41,14 +42,15 @@ export default function StoreStatsPage() {
   const totalReferences = entries.reduce((sum, entry) => sum + entry.count, 0)
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 text-[var(--color-text)]">
+    <main className="sr-tienda-glass">
+      <div className="mx-auto max-w-4xl px-4 py-10 text-[var(--color-text)]">
       <StoreSuspendedBanner />
 
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-[var(--color-text)]">Estadísticas de tu tienda</h1>
       </header>
 
-      <Card>
+      <Card className="sr-glass-card">
         <h2 className="text-lg font-bold text-[var(--color-text)]">Inventario por estado</h2>
 
         {loading && (
@@ -127,6 +129,7 @@ export default function StoreStatsPage() {
           </div>
         )}
       </Card>
+      </div>
     </main>
   )
 }
