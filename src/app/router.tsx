@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { ROLE_HOME, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
@@ -84,12 +84,14 @@ const ANY: Role[] = ['BUYER', 'STORE_ADMIN', 'FOUNDATION_REPRESENTATIVE', 'STYLE
 function Portada() {
   const { user } = useAuth()
   const [params] = useSearchParams()
-  const [seenOnEntry] = useState(() => hasSeenLanding())
+  // Se lee en cada render: el logout borra esta marca y Portada debe reaccionar
+  // sin conservar un `seenOnEntry` viejo en el estado del componente.
+  const seen = hasSeenLanding()
 
   if (user) return <Navigate to={ROLE_HOME[user.role]} replace />
   // /?login siempre abre el modal sobre la landing. Evita montar LoginPage
   // y LandingPage en el mismo flujo, que duplicaba el modal de autenticación.
-  if (seenOnEntry && !params.has('login')) {
+  if (seen && !params.has('login')) {
     return <Navigate to="/catalogo" replace />
   }
   return page(<LandingPage />)
