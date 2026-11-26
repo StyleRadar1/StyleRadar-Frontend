@@ -160,6 +160,35 @@ function normalizeBackendInventoryItem(
   }
 }
 
+/**
+ * Stock de TODAS las prendas de la sede, también las que quedaron en 0: { prendaId → { talla → unidades } }.
+ * GET /api/v1/inventory (ms-inventario) trae hasta 100 prendas por página, una fila por talla. Si no hay permiso o falla, queda vacío.
+ */
+async function stockCompletoDeSede(sede: string): Promise<Map<string, Record<string, number>>> {
+  const porPrenda = new Map<string, Record<string, number>>()
+  try {
+    for (let page = 0; page < 20; page++) {
+      const { data } = await apiClient.get<Record<string, any>[]>('/api/v1/inventory', { params: { storeId: sede, page, size: 100 } })
+      const filas = Array.isArray(data) ? data : []
+      if (filas.length === 0) break
+      const items = new Set<string>()
+      for (const f of filas) {
+        const pid = String(f?.prendaId ?? '')
+        if (!pid || !f?.talla) continue
+        items.add(String(f.id ?? `${pid}:${f.sedeId ?? ''}`))
+        const mapa = (porPrenda.get(pid) ?? {})
+        const qty = Number(f.stockDisponible ?? f.cantidad ?? 0)
+        mapa[String(f.talla)] = (mapa[String(f.talla)] ?? 0) + (Number.isFinite(qty) ? Math.max(0, qty) : 0)
+        porPrenda.set(pid, mapa)
+      }
+      if (items.size < 100) break // última página
+    }
+  } catch {
+    // Sin permiso o sin servicio: se sigue con el catálogo, como antes
+  }
+  return porPrenda
+}
+
 const storeContextCache = new Map<string, StoreContextInfo>()
 
 export async function resolveStoreContext(tiendaId?: string, sedeId?: string): Promise<StoreContextInfo> {
@@ -231,14 +260,27 @@ export const inventoryService = {
     const ctx = await resolveStoreContext(tiendaId, sedeId)
     if (!ctx.storeId) return []
     const resolvedSede = sedeId || ctx.sedeId || ctx.storeId
-    const [catalogoRes, disponiblesRes] = await Promise.all([
+    const [catalogoRes, disponiblesRes, stockSede] = await Promise.all([
       apiClient.get<Record<string, any>[]>(`/api/v1/stores/${encodeURIComponent(ctx.storeId)}/catalog`),
       resolvedSede
         ? apiClient.get<Record<string, any>[]>(`/api/v1/inventory/branches/${encodeURIComponent(resolvedSede)}/available`).catch(() => ({ data: [] as Record<string, any>[] }))
         : Promise.resolve({ data: [] as Record<string, any>[] }),
+      resolvedSede ? stockCompletoDeSede(resolvedSede) : Promise.resolve(new Map<string, Record<string, number>>()),
     ])
-    const prendas = Array.isArray(catalogoRes.data) ? catalogoRes.data : []
+    const catalogo = Array.isArray(catalogoRes.data) ? catalogoRes.data : []
+    // Catálogo deja de listar la prenda cuando TODAS sus tallas quedan en 0 (SR-RF-57), pero la tienda debe seguir viéndola
+    // para poder reponer. Se trae su detalle por id (ese sí responde) y se conserva su stock en 0 por talla.
+    const conocidas = new Set(catalogo.map((p) => String(p.id ?? '')))
+    const agotadas = (
+      await Promise.all(
+        [...stockSede.keys()]
+          .filter((pid) => !conocidas.has(pid))
+          .map((pid) => apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(pid)}`).then((r) => r.data).catch(() => null))
+      )
+    ).filter((p): p is Record<string, any> => !!p && String(p.estado) === 'APROBADA')
+    const prendas = [...catalogo, ...agotadas]
     const disponiblesMap = new Map<string, Record<string, number>>()
+    for (const p of agotadas) disponiblesMap.set(String(p.id), stockSede.get(String(p.id)) ?? {})
     if (Array.isArray(disponiblesRes.data)) {
       for (const row of disponiblesRes.data) {
         const pid = String(row.prendaId ?? row.id ?? '')
@@ -326,11 +368,9 @@ export const inventoryService = {
     if (res && res.id && res.stockPorTalla) return res as InventoryItemDto
     const prenda = await apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data)
     const inv = await apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => [])
-    const stockMap: Record<string, number> = { [dto.talla]: dto.nuevoStock }
-    const list = Array.isArray(inv) ? inv : Array.isArray(inv?.tallas) ? inv.tallas : []
-    for (const entry of list) {
-      if (entry?.talla) stockMap[String(entry.talla)] = Number(entry.cantidad ?? entry.unidades ?? 0)
-    }
+    // El inventario responde { sedes: [{ variantes: [...] }] }: se leen TODAS las tallas (con extractStockMapFromInventory)
+    // y solo la talla ajustada toma el valor nuevo. Antes solo quedaba la talla ajustada y las demás desaparecían.
+    const stockMap: Record<string, number> = { ...extractStockMapFromInventory(inv), [dto.talla]: dto.nuevoStock }
     return normalizeBackendInventoryItem(prenda, stockMap, sedeId, ctx.storeName)
   },
 
