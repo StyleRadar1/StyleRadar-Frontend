@@ -54,7 +54,7 @@ describe('tienda sin suscripción con pagos reales (VITE_USE_MOCKS_PAGOS=false)'
     vi.restoreAllMocks()
   })
 
-  it('/tienda/suscripcion muestra «Sin suscripción», sin datos inventados, y «Ir a pagar» lleva al formulario de activación', async () => {
+  it('/tienda/suscripcion muestra «Sin suscripción», sin datos inventados, y «Pagar suscripción» lleva al formulario de activación', async () => {
     backSinSuscripcion()
     render(app('/tienda/suscripcion'))
 
@@ -62,8 +62,8 @@ describe('tienda sin suscripción con pagos reales (VITE_USE_MOCKS_PAGOS=false)'
     expect(screen.queryByText('SUB-ALM-1')).not.toBeInTheDocument()
     expect(screen.queryByText('Pendiente')).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Ir a pagar' }))
-    expect(await screen.findByLabelText(/NIT del almacén/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Pagar suscripción' }))
+    expect(await screen.findByLabelText(/NIT de la tienda/)).toBeInTheDocument()
     expect(screen.queryByText('Ya tienes una suscripción activa o en proceso')).not.toBeInTheDocument()
   })
 

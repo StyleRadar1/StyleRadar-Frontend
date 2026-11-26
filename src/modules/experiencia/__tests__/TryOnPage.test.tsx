@@ -2,10 +2,12 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import TryOnPage from '../pages/TryOnPage'
-import { png, renderAt } from './helpers'
+import { png, renderAt, simularImagenesSinCanvas } from './helpers'
 
 vi.mock('../utils/photoRules', async (orig) => ({ ...(await orig<typeof import('../utils/photoRules')>()), readDimensions: vi.fn().mockResolvedValue({ width: 800, height: 1200 }) }))
 vi.mock('../mocks/tryon', async (orig) => ({ ...(await orig<typeof import('../mocks/tryon')>()), MOCK_JOB_TIMES: { pending: 50, done: 150 } }))
+
+simularImagenesSinCanvas()
 
 const open = () => renderAt('/probador', [{ path: '/probador', element: <TryOnPage /> }])
 const upload = async (file: File) => {

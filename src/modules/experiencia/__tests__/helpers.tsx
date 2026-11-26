@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import type { ReactNode } from 'react'
 import { render } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -14,5 +15,22 @@ export function renderAt(path: string, routes: { path: string; element: ReactNod
     <MemoryRouter initialEntries={[path]}>
       <Routes>{routes.map((r) => <Route key={r.path} path={r.path} element={r.element} />)}</Routes>
     </MemoryRouter>,
+  )
+}
+
+/**
+ * jsdom no carga imágenes: `new Image()` nunca dispara `onload` ni `onerror`, y la revisión de brillo de la foto
+ * se quedaba esperando. Aquí la imagen "falla" al instante, así la revisión se omite como en un navegador sin canvas.
+ */
+export function simularImagenesSinCanvas() {
+  vi.stubGlobal(
+    'Image',
+    class {
+      onload: (() => void) | null = null
+      onerror: (() => void) | null = null
+      set src(_: string) {
+        queueMicrotask(() => this.onerror?.())
+      }
+    },
   )
 }
