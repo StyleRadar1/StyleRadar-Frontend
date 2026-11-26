@@ -4,6 +4,7 @@ import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
 import { extractStockMapFromInventory } from './itemService'
+import { aInstanteUtc } from '../utils/instante'
 import { ordenarStockPorTalla } from '../utils/tallas'
 import { storeSettingsService } from './storeSettingsService'
 import type { Estilo, ItemResponseDto } from '../types/item.dto'
@@ -622,10 +623,8 @@ export const inventoryService = {
       sedeId: dto.sedeId || ctx.sedeId || ctx.storeId,
       tipoPrenda: dto.tipoPrenda ?? 'ROPA',
       tallas: Object.entries(dto.stockPorTalla).map(([talla, cantidad]) => ({ talla, cantidad })),
-      fechaPublicacion:
-        typeof createdPrenda.fechaPublicacion === 'string'
-          ? createdPrenda.fechaPublicacion
-          : new Date().toISOString(),
+      // Catálogo la entrega sin zona (LocalDateTime) e Inventario pide un instante con «Z»: sin ella responde 400
+      fechaPublicacion: aInstanteUtc(createdPrenda.fechaPublicacion),
     }
     await apiClient.post('/api/v1/inventory/batch', lotePayload)
 
