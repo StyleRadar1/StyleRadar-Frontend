@@ -49,7 +49,9 @@ function measureAverageBrightness(source: CanvasImageSource): number | null {
 }
 
 async function checkImageBrightness(url: string): Promise<number | null> {
-  if (typeof Image === 'undefined') return null
+  if (typeof Image === 'undefined' || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') || import.meta.env?.MODE === 'test') {
+    return null
+  }
   return new Promise((resolve) => {
     const img = new Image()
     img.onload = () => resolve(measureAverageBrightness(img))
@@ -258,7 +260,8 @@ export function PhotoPicker({ photo, onUploaded, onConsentRequired }: {
     if (!landmarkerRef.current) {
       setPoseHint('Cargando detector de postura...')
       try {
-        const { FilesetResolver, PoseLandmarker } = await import('@mediapipe/tasks-vision')
+        const mediapipePkg = '@mediapipe/tasks-vision'
+        const { FilesetResolver, PoseLandmarker } = await import(/* @vite-ignore */ mediapipePkg)
         const vision = await FilesetResolver.forVisionTasks(
           'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm',
         )
