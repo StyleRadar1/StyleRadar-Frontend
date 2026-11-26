@@ -87,8 +87,10 @@ function Portada() {
   const [seenOnEntry] = useState(() => hasSeenLanding())
 
   if (user) return <Navigate to={ROLE_HOME[user.role]} replace />
-  if (seenOnEntry) {
-    return <Navigate to={params.has('login') ? '/login' : '/catalogo'} replace />
+  // /?login siempre abre el modal sobre la landing. Evita montar LoginPage
+  // y LandingPage en el mismo flujo, que duplicaba el modal de autenticación.
+  if (seenOnEntry && !params.has('login')) {
+    return <Navigate to="/catalogo" replace />
   }
   return page(<LandingPage />)
 }
