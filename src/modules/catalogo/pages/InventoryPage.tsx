@@ -15,6 +15,7 @@ import { inventoryService, MAX_GARMENT_PHOTOS, MAX_GARMENT_PRICE, MAX_PHOTO_URL_
 import { PhotoUploadGuide } from '@/modules/experiencia/components/PhotoUploadGuide'
 import { GarmentMeasurementsEditor } from '../components/GarmentMeasurementsEditor'
 import type { GarmentSizeMeasurementDto } from '../types/garmentMeasurements.dto'
+import { ordenarTallas } from '../utils/tallas'
 import type { InventoryItemDto, InventoryItemStatus, TipoPrendaInventario } from '../types/inventory.dto'
 import {
   COLORES_UNIFICADOS,
@@ -134,7 +135,7 @@ export default function InventoryPage() {
       item.tallasDisponibles?.forEach((t) => set.add(t))
       Object.keys(item.stockPorTalla || {}).forEach((t) => set.add(t))
     })
-    return Array.from(set)
+    return ordenarTallas(Array.from(set))
   }, [items])
 
   const isLoadPermError = Boolean(error) && errorKind(error) === 'permiso'
