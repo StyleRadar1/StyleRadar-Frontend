@@ -6,45 +6,6 @@ import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
 import './HomePage.css'
 
-const HUB_ACCESOS = [
-  {
-    to: '/catalogo',
-    titulo: 'Catálogo',
-    desc: 'Explora prendas y filtra por tu talla',
-    tag: 'Explorar',
-  },
-  {
-    to: '/probador',
-    titulo: 'Probador',
-    desc: 'Arma tu look en maniquí o con IA',
-    tag: 'Probar',
-  },
-  {
-    to: '/playlists',
-    titulo: 'Playlists',
-    desc: 'Tus looks guardados y comunidad',
-    tag: 'Looks',
-  },
-  {
-    to: '/mapa',
-    titulo: 'Mapa',
-    desc: 'Tiendas y fundaciones cerca de ti',
-    tag: 'Bogotá',
-  },
-  {
-    to: '/segunda-mano',
-    titulo: 'Segunda mano',
-    desc: 'Compra, publica o dona ropa',
-    tag: 'Circular',
-  },
-  {
-    to: '/alertas',
-    titulo: 'Mis alertas',
-    desc: 'Avisos cuando vuelva tu talla',
-    tag: 'Alertas',
-  },
-] as const
-
 export default function HomePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -59,61 +20,140 @@ export default function HomePage() {
 
   return (
     <div className="sr-inicio">
-      <section className="sr-inicio-hub" aria-labelledby="inicioSaludo">
-        <div className="sr-inicio-hub__top">
-          <div>
-            <p className="sr-inicio-kicker">Tu espacio en StyleRadar</p>
-            <h1 id="inicioSaludo" className="sr-inicio-titulo">
-              Hola, <span className="sr-inicio-acento">{primerNombre}</span>
+      {/* 1. Hero Editorial Bento: bienvenida, buscador y entrada clara a todas las secciones */}
+      <section className="sr-inicio-bento" aria-labelledby="inicioSaludo">
+        <div className="sr-inicio-bento__header">
+          <div className="sr-inicio-bento__headline">
+            <p className="sr-inicio-kicker">Hola, {primerNombre} · Tu espacio en StyleRadar</p>
+            <h1 id="inicioSaludo" className="sr-inicio-bento__title">
+              TU RADAR DE MODA LOCAL EN BOGOTÁ
             </h1>
-            <p className="sr-inicio-descripcion">
-              Desde aquí puedes buscar prendas, abrir el probador, revisar tus playlists o ubicar tiendas cercanas.
-            </p>
           </div>
-          <Link to="/perfil" className="sr-inicio-perfil-btn">
-            Mi perfil y tallas
-          </Link>
+
+          <div className="sr-inicio-bento__aside">
+            <p className="sr-inicio-bento__lead">
+              Explora prendas en tu talla, arma playlists, pruébate ropa con IA y ubica tiendas o fundaciones cercanas.
+            </p>
+            <form onSubmit={handleBuscar} className="sr-inicio-search" role="search" aria-label="Buscar en el catálogo">
+              <input
+                type="search"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar prenda, tienda o estilo…"
+                aria-label="Buscar prendas, tiendas o estilos"
+                className="sr-inicio-search__input"
+              />
+              <button type="submit" className="sr-inicio-search__btn">
+                Buscar
+              </button>
+            </form>
+          </div>
         </div>
 
-        <form onSubmit={handleBuscar} className="sr-inicio-search" role="search" aria-label="Buscar en el catálogo">
-          <input
-            type="search"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="¿Qué buscas hoy? Ej. blazer, jeans, tenis…"
-            aria-label="Buscar prendas, tiendas o estilos"
-            className="sr-inicio-search__input"
-          />
-          <button type="submit" className="sr-inicio-search__btn">
-            Buscar
-          </button>
-        </form>
+        <div className="sr-inicio-bento__grid">
+          {/* Columna izquierda: Catálogo */}
+          <Link to="/catalogo" className="sr-bento-card sr-bento-card--tall">
+            <img
+              src="/img/representantes/C2.png"
+              alt="Explorar catálogo de moda local"
+              className="sr-bento-card__img"
+            />
+            <div className="sr-bento-card__shade" />
+            <div className="sr-bento-card__body">
+              <span className="sr-bento-pill">01 · Catálogo</span>
+              <strong className="sr-bento-card__title">Prendas locales en tu talla</strong>
+              <span className="sr-bento-card__sub">Filtra por estilo, color, precio y tienda</span>
+            </div>
+          </Link>
 
-        <nav className="sr-inicio-hub__grid" aria-label="Accesos rápidos a apartados">
-          {HUB_ACCESOS.map((item) => (
-            <Link key={item.to} to={item.to} className="sr-inicio-hub__card">
-              <div className="sr-inicio-hub__card-head">
-                <span className="sr-inicio-hub__tag">{item.tag}</span>
-                <span className="sr-inicio-hub__arrow" aria-hidden="true">↗</span>
+          {/* Columna central: CTAs principales + Playlists / Alertas */}
+          <div className="sr-bento-center">
+            <div className="sr-bento-ctas">
+              <Link to="/catalogo" className="sr-bento-cta sr-bento-cta--primary">
+                <span>Explorar catálogo</span>
+                <span aria-hidden="true">→</span>
+              </Link>
+              <Link to="/probador" className="sr-bento-cta sr-bento-cta--outline">
+                <span>Probarme en maniquí o IA</span>
+              </Link>
+            </div>
+
+            <div className="sr-bento-subgrid">
+              <Link to="/playlists" className="sr-bento-card sr-bento-card--mid">
+                <img
+                  src="/img/representantes/C1.png"
+                  alt="Playlists de outfits"
+                  className="sr-bento-card__img"
+                />
+                <div className="sr-bento-card__shade" />
+                <div className="sr-bento-card__body">
+                  <span className="sr-bento-pill">02 · Playlists</span>
+                  <strong className="sr-bento-card__title">Arma y guarda tus looks</strong>
+                  <span className="sr-bento-card__sub">Outfits de varias tiendas</span>
+                </div>
+              </Link>
+
+              <div className="sr-bento-mini-stack">
+                <Link to="/perfil" className="sr-bento-mini">
+                  <span className="sr-bento-mini__tag">Tu cuenta</span>
+                  <strong>Mi perfil y tallas ↗</strong>
+                  <span>Ajusta medidas y preferencias</span>
+                </Link>
+                <Link to="/alertas" className="sr-bento-mini">
+                  <span className="sr-bento-mini__tag">Seguimiento</span>
+                  <strong>Mis alertas ↗</strong>
+                  <span>Avisos cuando vuelva tu talla</span>
+                </Link>
               </div>
-              <strong className="sr-inicio-hub__title">{item.titulo}</strong>
-              <span className="sr-inicio-hub__desc">{item.desc}</span>
+            </div>
+          </div>
+
+          {/* Columna derecha: Segunda mano + Mapa */}
+          <div className="sr-bento-right">
+            <Link to="/segunda-mano" className="sr-bento-card sr-bento-card--medium">
+              <img
+                src="/img/representantes/C5.png"
+                alt="Moda circular y segunda mano"
+                className="sr-bento-card__img"
+              />
+              <div className="sr-bento-card__shade" />
+              <div className="sr-bento-card__body">
+                <span className="sr-bento-pill">03 · Circular</span>
+                <strong className="sr-bento-card__title">Segunda mano y donar</strong>
+                <span className="sr-bento-card__sub">Compra, vende o dona a fundaciones</span>
+              </div>
             </Link>
-          ))}
-        </nav>
+
+            <Link to="/mapa" className="sr-bento-mini sr-bento-mini--accent">
+              <span className="sr-bento-mini__tag">04 · Mapa Bogotá</span>
+              <strong>Tiendas y fundaciones cerca ↗</strong>
+              <span>Explora puntos aliados por barrio</span>
+            </Link>
+          </div>
+        </div>
       </section>
 
-      <section className="sr-inicio-bloque sr-inicio-recomendados" aria-label="Recomendaciones según tu estilo">
-        {user && <RecommendedHangingRack key={user.id} userId={String(user.id)} />}
-        <div className="sr-inicio-recomendados__pie">
+      {/* 2. Perchero recomendado compacto */}
+      <section className="sr-inicio-bloque sr-inicio-rack-panel" aria-label="Recomendaciones según tu estilo">
+        <div className="sr-inicio-section-head">
+          <div>
+            <p className="sr-inicio-kicker">Selección destacada</p>
+            <h2 className="sr-inicio-section-title">Elegido para tu talla y estilo</h2>
+          </div>
           <Link to="/catalogo" className="sr-inicio-enlace">
             Ver todo el catálogo →
           </Link>
         </div>
+
+        <div className="sr-inicio-rack-compact">
+          {user && <RecommendedHangingRack key={user.id} userId={String(user.id)} />}
+        </div>
       </section>
 
+      {/* 3. Probador Virtual */}
       <ProbadorIntro />
 
+      {/* 4. Mapa cercano */}
       <MapaCercano />
     </div>
   )
