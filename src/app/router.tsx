@@ -173,7 +173,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
       // Fundación
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },
-      { path: '/fundacion/estadisticas', element: only(FOUND, <Stats />) },
+      { path: '/fundacion/estadisticas', element: <Navigate to="/fundacion" replace /> },
       ...(ErroresDemo ? [{ path: '/dev/errores', element: page(<ErroresDemo />) }] : []),
       { path: '*', element: <NotFound /> },
     ],
