@@ -157,11 +157,12 @@ describe('Código OTP · errores del plan', () => {
   it('RESENDS_EXHAUSTED: después de 3 reenvíos vuelve al inicio de sesión con el aviso', async () => {
     await irAlCodigo()
     for (let i = 0; i < 3; i++) {
-      fireEvent.click(screen.getByRole('button', { name: 'Pedir otro código' }))
+      // Mientras envía, el botón cambia de texto: se espera a que vuelva antes de pedir otro
+      fireEvent.click(await screen.findByRole('button', { name: 'Pedir otro código' }, { timeout: 3000 }))
       await screen.findByRole('status')
       await act(async () => {})
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Pedir otro código' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Pedir otro código' }, { timeout: 3000 }))
     expect(await screen.findByText('Ya pediste el código muchas veces. Inicia sesión de nuevo para recibir otro.')).toBeInTheDocument()
     expect(screen.queryByText('Verifica que eres tú')).not.toBeInTheDocument()
   })

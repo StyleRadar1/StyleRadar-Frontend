@@ -1,3 +1,4 @@
+import { ApiError } from '@/modules/core/api/apiClient'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,36 +15,50 @@ beforeEach(() => {
 const slow = { timeout: 4000 }
 
 describe('suscripción de la tienda (RF-67, RF-68)', () => {
+  const abrirFormulario = async (user: ReturnType<typeof userEvent.setup>, nit = '900555777') => {
+    await user.click(await screen.findByRole('button', { name: 'Pagar suscripción' }, slow))
+    await user.clear(screen.getByLabelText(/NIT de la tienda/))
+    await user.type(screen.getByLabelText(/NIT de la tienda/), nit)
+    const correo = screen.getByLabelText(/Correo del pagador/)
+    await user.clear(correo)
+    await user.type(correo, 'tienda@correo.co')
+    await user.click(screen.getByRole('button', { name: 'Pagar suscripción' }))
+  }
+
   it('en estado PENDIENTE muestra el precio y ofrece pagar, sin pagos todavía y sin botón de cancelar', async () => {
     render(<StoreSubscriptionPage />)
     expect(await screen.findByText('Pendiente')).toBeInTheDocument()
     expect(screen.getByText(/\/ mes/).closest('p')).toHaveTextContent(/89\.000/)
-    expect(screen.getByRole('button', { name: 'Pagar y activar suscripción' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Pagar suscripción' })).toBeEnabled()
     expect(screen.queryByRole('button', { name: 'Cancelar suscripción' })).not.toBeInTheDocument()
     expect(screen.getByText('Aún no tienes pagos')).toBeInTheDocument()
   })
 
-  it('con el pago aprobado la suscripción queda activa y el pago aparece en el historial', async () => {
+  it('el formulario envía correo y NIT a Mercado Pago; en demostración avisa y no la da por activa', async () => {
     const user = userEvent.setup()
+    const iniciar = vi.spyOn(storeSubscriptionService, 'startStoreSubscription')
     render(<StoreSubscriptionPage />)
-    await user.click(await screen.findByRole('button', { name: 'Pagar y activar suscripción' }))
-    expect(await screen.findByText('Tu suscripción fue reactivada', undefined, slow)).toBeInTheDocument()
-    expect(await screen.findByText('Activa', undefined, slow)).toBeInTheDocument()
-    const tabla = screen.getByRole('table', { name: 'Historial de pagos' })
-    expect(within(tabla).getByText(/Aprobado/)).toBeInTheDocument()
-    expect(within(tabla).getByText(/89\.000/)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Pagar y activar suscripción' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Cancelar suscripción' })).toBeInTheDocument()
+    await abrirFormulario(user)
+    expect(await screen.findByText('Pago simulado (modo demostración)', undefined, slow)).toBeInTheDocument()
+    expect(iniciar).toHaveBeenCalledWith({ payerEmail: 'tienda@correo.co', taxId: '900555777' })
+    expect(screen.queryByText('Activa')).not.toBeInTheDocument()
   })
 
-  it('un pago rechazado avisa y no activa la suscripción', async () => {
+  it('un NIT que no tiene 9 dígitos no se envía', async () => {
     const user = userEvent.setup()
-    vi.spyOn(storeSubscriptionService, 'pay').mockResolvedValue({
-      result: { orderId: 'MOCK_STORE_FAIL', status: 'rechazado', planName: 'Tienda aliada', amount: 89_000, method: 'Mercado Pago' },
-    })
+    const iniciar = vi.spyOn(storeSubscriptionService, 'startStoreSubscription')
     render(<StoreSubscriptionPage />)
-    await user.click(await screen.findByRole('button', { name: 'Pagar y activar suscripción' }))
-    expect(await screen.findByRole('alert', undefined, slow)).toHaveTextContent('La suscripción no se activó')
+    await abrirFormulario(user, '123')
+    expect(await screen.findByRole('alert', undefined, slow)).toHaveTextContent('9 dígitos')
+    expect(iniciar).not.toHaveBeenCalled()
+  })
+
+  it('si no se puede iniciar el pago avisa y no activa la suscripción', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(storeSubscriptionService, 'startStoreSubscription').mockRejectedValue(new ApiError(503, 'No fue posible iniciar el pago'))
+    render(<StoreSubscriptionPage />)
+    await abrirFormulario(user)
+    expect(await screen.findByText('No pudimos procesar el pago', undefined, slow)).toBeInTheDocument()
     expect(screen.getByText('Pendiente')).toBeInTheDocument()
   })
 

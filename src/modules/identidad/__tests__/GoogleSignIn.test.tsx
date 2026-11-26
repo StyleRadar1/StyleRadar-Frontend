@@ -41,6 +41,8 @@ describe('ingreso con Google (P14)', () => {
     renderLogin()
     await user.click(screen.getByRole('button', { name: 'Continuar con Google' }))
     await user.keyboard('{Escape}')
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Elige una cuenta' })).not.toBeInTheDocument()
+    // Escape cierra solo el selector: el formulario de ingreso sigue ahí
+    expect(screen.getByRole('button', { name: 'Continuar con Google' })).toBeInTheDocument()
   })
 })

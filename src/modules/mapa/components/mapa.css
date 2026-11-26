@@ -294,6 +294,88 @@ html[data-tema="claro"] .sr-map-landing-section {
   100% { transform: scale(1.6); opacity: 0; }
 }
 
+/* ── Pin agrupado (BUG-20): varios lugares en el mismo sitio, con el número adentro ── */
+.sr-mb-cluster i.sr-pin-shape.store,
+.sr-mb-cluster.found i.sr-pin-shape.found {
+  width: 32px;
+  height: 32px;
+}
+
+.sr-pin-count {
+  display: block;
+  font: 700 13px/1 'Poppins', sans-serif;
+  color: #FFFFFF;
+}
+
+.sr-mb-cluster.found .sr-pin-count {
+  color: #262626;
+}
+
+.sr-cluster-names,
+.sr-cluster-items {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.sr-cluster-names li {
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 2px 0;
+}
+
+.sr-cluster-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sr-cluster-item:hover,
+.sr-cluster-item:focus-visible {
+  background: rgba(167, 139, 250, 0.25);
+  border-color: rgba(167, 139, 250, 0.7);
+  outline: none;
+}
+
+.sr-cluster-item-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.sr-cluster-item-type {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.sr-mb-cluster-popup .mapboxgl-popup-close-button {
+  color: inherit;
+  font-size: 18px;
+  padding: 2px 8px;
+}
+
+html[data-theme='light'] .sr-cluster-item {
+  border-color: var(--color-border, rgba(0, 0, 0, 0.15));
+  background: rgba(72, 17, 154, 0.05);
+}
+
+html[data-theme='light'] .sr-cluster-item:hover,
+html[data-theme='light'] .sr-cluster-item:focus-visible {
+  background: rgba(72, 17, 154, 0.14);
+  border-color: var(--color-accent, #48119a);
+}
+
 /* ── Mini card popup ── */
 .sr-mb-mini-popup .mapboxgl-popup-content {
   background: rgba(30, 30, 34, 0.95);

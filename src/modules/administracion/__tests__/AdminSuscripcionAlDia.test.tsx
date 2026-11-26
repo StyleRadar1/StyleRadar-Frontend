@@ -6,7 +6,7 @@ vi.mock('@/configs/env', () => ({ env: { appEnvironment: 'qa', apiUrl: 'http://g
 
 import { ApiError, apiClient } from '@/modules/core/api/apiClient'
 import AdminStoresPage from '../pages/AdminStoresPage'
-import { adminStoreService, conSuscripcionAlDia, nitsConSuscripcionAlDia } from '../services/adminService'
+import { adminStoreService, clavesDeNit, conSuscripcionAlDia, nitsConSuscripcionAlDia } from '../services/adminService'
 import type { StoreVerificationDto } from '../types/admin.dto'
 
 const AL_DIA = '/api/v1/subscriptions/stores/up-to-date'
@@ -28,7 +28,7 @@ describe('BUG-20: el panel de admin muestra la suscripción real (lista «al dí
   afterEach(() => vi.restoreAllMocks())
 
   it('la tienda cuyo NIT está en la lista sale «Activa»; la que no, sigue «Sin suscripción»', async () => {
-    fingir({ taxIds: ['900555777-1'] })
+    fingir({ taxIds: ['900555777'] })
     const [luna, ropero] = await adminStoreService.list()
     expect(luna.suscripcion.estado).toBe('Activa')
     expect(ropero.suscripcion.estado).toBe('Sin suscripción')
@@ -40,8 +40,37 @@ describe('BUG-20: el panel de admin muestra la suscripción real (lista «al dí
     expect(get).toHaveBeenCalledWith(AL_DIA)
   })
 
+  it('Pagos manda el NIT SIN dígito de verificación: «900555777» coincide con la tienda «900555777-1»', async () => {
+    fingir({ taxIds: ['900555777'] }) // el formato real de QA
+    const [luna, ropero] = await adminStoreService.list()
+    expect(luna.nit).toBe('900555777-1')
+    expect(luna.suscripcion.estado).toBe('Activa')
+    expect(ropero.suscripcion.estado).toBe('Sin suscripción')
+  })
+
+  it('un NIT de tienda sin guion («9018801142») también coincide con el de Pagos sin dígito («901880114»)', async () => {
+    fingir({ taxIds: ['901880114'] })
+    const [luna, ropero] = await adminStoreService.list()
+    expect(ropero.suscripcion.estado).toBe('Activa')
+    expect(luna.suscripcion.estado).toBe('Sin suscripción')
+  })
+
+  it('no confunde NIT parecidos: otro NIT con el mismo inicio no marca la tienda', async () => {
+    fingir({ taxIds: ['900555778', '90055577', '9005557770'] })
+    const [luna] = await adminStoreService.list()
+    expect(luna.suscripcion.estado).toBe('Sin suscripción')
+  })
+
+  it('clavesDeNit: con guion quita el dígito de verificación; sin guion de 10 cifras prueba con y sin el último', () => {
+    expect(clavesDeNit('900555777-1')).toEqual(['900555777', '9005557771'])
+    expect(clavesDeNit('900.555.777-1')).toEqual(['900555777', '9005557771'])
+    expect(clavesDeNit('9018801142')).toEqual(['901880114', '9018801142'])
+    expect(clavesDeNit('900555777')).toEqual(['900555777'])
+    expect(clavesDeNit(undefined)).toEqual([])
+  })
+
   it('compara solo los dígitos: puntos, guiones y espacios no importan', async () => {
-    fingir({ taxIds: ['900.555.777-1', ' 901 880 114 2 '] })
+    fingir({ taxIds: ['900.555.777', ' 901 880 114 '] })
     const lista = await adminStoreService.list()
     expect(lista.map((t) => t.suscripcion.estado)).toEqual(['Activa', 'Activa'])
   })
@@ -65,12 +94,12 @@ describe('BUG-20: el panel de admin muestra la suscripción real (lista «al dí
   })
 
   it('el detalle de una tienda también muestra «Activa»', async () => {
-    fingir({ taxIds: ['900555777-1'] })
+    fingir({ taxIds: ['900555777'] })
     expect((await adminStoreService.get('900555777-1')).suscripcion.estado).toBe('Activa')
   })
 
   it('tras aprobar o rechazar, la tienda no vuelve a «Sin suscripción»', async () => {
-    fingir({ taxIds: ['900555777-1'] })
+    fingir({ taxIds: ['900555777'] })
     vi.spyOn(apiClient, 'patch').mockResolvedValue({ data: LUNA } as never)
     expect((await adminStoreService.setVerification('900555777-1', 'Verificada')).suscripcion.estado).toBe('Activa')
   })
@@ -85,7 +114,7 @@ describe('BUG-20: el panel de admin muestra la suscripción real (lista «al dí
   })
 
   it('en la pantalla de tiendas se ve «Activa» para la tienda al día', async () => {
-    fingir({ taxIds: ['900555777-1'] })
+    fingir({ taxIds: ['900555777'] })
     render(<MemoryRouter><AdminStoresPage /></MemoryRouter>)
     expect((await screen.findAllByText('Luna Store')).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Activa').length).toBeGreaterThan(0)

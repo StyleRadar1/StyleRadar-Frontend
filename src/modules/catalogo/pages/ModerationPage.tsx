@@ -27,6 +27,16 @@ function formatModerationDate(iso?: string): string {
   }
 }
 
+/** NIT de la tienda al lado de su nombre, para reconocerla sin ver un ID. No sale en las publicaciones de personas. */
+export function NitDeTienda({ nit, grande = false }: { nit?: string; grande?: boolean }) {
+  if (!nit) return null
+  return (
+    <span className={grande ? 'ml-2 text-sm font-medium text-white/50' : 'text-white/45'} data-testid="nit-tienda">
+      {' · '}NIT {nit}
+    </span>
+  )
+}
+
 export default function ModerationPage() {
   const {
     items,
@@ -70,6 +80,7 @@ export default function ModerationPage() {
     return Array.from(mapa.entries()).map(([publicador, publicaciones]) => ({
       publicador,
       publicaciones,
+      publicadorNit: publicaciones[0]?.publicadorNit,
       tipoPublicador: publicaciones[0]?.tipoPublicador ?? 'Persona',
       tipo: publicaciones[0]?.tipo ?? 'Segunda mano',
     }))
@@ -291,7 +302,10 @@ export default function ModerationPage() {
                     {item.tipoPublicador}
                   </span>
                   <span className="text-xs text-white/40">·</span>
-                  <span className="truncate text-xs font-medium text-white/70">{item.publicador}</span>
+                  <span className="truncate text-xs font-medium text-white/70" title={item.publicadorNit ? `${item.publicador} · NIT ${item.publicadorNit}` : item.publicador}>
+                    {item.publicador}
+                    <NitDeTienda nit={item.publicadorNit} />
+                  </span>
                 </div>
 
                 <h3 className="mt-1.5 line-clamp-1 font-bold text-white">{item.titulo}</h3>
@@ -354,7 +368,10 @@ export default function ModerationPage() {
                     </span>
                     <span className="text-xs text-white/50">{grupo.tipo}</span>
                   </div>
-                  <h2 className="mt-1 text-xl font-bold text-white">{grupo.publicador}</h2>
+                  <h2 className="mt-1 text-xl font-bold text-white">
+                    {grupo.publicador}
+                    <NitDeTienda nit={grupo.publicadorNit} grande />
+                  </h2>
                   <p className="text-xs text-white/60">
                     {grupo.publicaciones.length} {grupo.publicaciones.length === 1 ? 'publicación pendiente' : 'publicaciones pendientes'}
                   </p>
@@ -431,7 +448,7 @@ export default function ModerationPage() {
                     {h.aprobado ? 'APROBADA' : 'RECHAZADA'}
                   </span>
                   <span className="font-semibold text-white">{h.titulo}</span>
-                  <span className="text-white/50"> · {h.publicador}</span>
+                  <span className="text-white/50"> · {h.publicador}<NitDeTienda nit={h.publicadorNit} /></span>
                   {!h.aprobado && h.motivo && (
                     <p className="mt-0.5 text-xs text-rose-300/80">Motivo: {h.motivo}</p>
                   )}

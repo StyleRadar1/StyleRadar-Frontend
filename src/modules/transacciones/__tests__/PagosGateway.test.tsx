@@ -693,7 +693,7 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
     expect(updated.fechaFin).toBe('2026-12-09')
   })
 
-  it('StoreSubscriptionPage: en VENCIDA/SUSPENDIDA muestra «Volver a suscribirme» y llama POST /subscriptions/start con storeId de sesión', async () => {
+  it('StoreSubscriptionPage: en VENCIDA/SUSPENDIDA muestra «Volver a pagar», pide el NIT y llama POST /subscriptions/start', async () => {
     setSession('store-uuid-9', 'STORE_ADMIN', 'tienda@correo.co')
     const user = userEvent.setup()
     const getSpy = vi.spyOn(apiClient, 'get')
@@ -716,16 +716,12 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
     postSpy.mockResolvedValueOnce({
       data: { subscriptionId: 78, orderId: 90, status: 'PENDING', initPoint: '' },
     })
-    getSpy.mockResolvedValue({
-      data: {
-        id: 78,
-        subscriberId: 'store-uuid-9',
-        subscriberType: 'STORE',
-        plan: { id: 3, name: 'Store Basic', subscriberType: 'STORE', price: { value: 89000, currency: 'COP' } },
-        status: 'PENDING',
-        autoRenewal: false,
-      },
-    })
+    // Al enviar, la página busca el plan de tiendas y vuelve a consultar la suscripción
+    getSpy.mockImplementation(async (url: string) =>
+      url === '/api/v1/plans'
+        ? { data: [{ id: 3, name: 'Tienda aliada', subscriberType: 'STORE', price: { value: 89000, currency: 'COP' }, active: true }] }
+        : { data: { id: 78, subscriberId: 'store-uuid-9', subscriberType: 'STORE', plan: { id: 3, name: 'Tienda aliada', subscriberType: 'STORE', price: { value: 89000, currency: 'COP' } }, status: 'PENDING', autoRenewal: false } },
+    )
 
     render(
       withAuth(
@@ -738,15 +734,15 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
       ),
     )
 
-    const volverBtn = await screen.findByRole('button', { name: 'Volver a suscribirme' })
-    await user.click(volverBtn)
+    await user.click(await screen.findByRole('button', { name: 'Volver a pagar' }))
+    await user.type(screen.getByLabelText(/NIT de la tienda/), '900555777')
+    await user.click(screen.getByRole('button', { name: 'Volver a pagar' }))
 
     await waitFor(() => {
-      expect(postSpy).toHaveBeenCalledWith('/api/v1/subscriptions/start', {
-        subscriberType: 'STORE',
-        payerEmail: 'tienda@correo.co',
-        storeId: 'store-uuid-9',
-      })
+      expect(postSpy).toHaveBeenCalledWith(
+        '/api/v1/subscriptions/start',
+        expect.objectContaining({ subscriberType: 'STORE', payerEmail: 'tienda@correo.co', taxId: '900555777' }),
+      )
     })
   })
 

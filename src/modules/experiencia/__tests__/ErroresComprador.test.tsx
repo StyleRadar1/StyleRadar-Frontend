@@ -13,11 +13,13 @@ import { resetChatMock } from '@/modules/soporte/services/chatService'
 import { setMockPlan } from '@/modules/transacciones/services/userPlanService'
 import TryOnPage from '../pages/TryOnPage'
 import { problemaFoto, problemaPrueba, problemaResultado, validarArchivoPrueba, validarDimensionesPrueba } from '../utils/tryOnRules'
-import { loginAs, png, renderAt } from './helpers'
+import { loginAs, png, renderAt, simularImagenesSinCanvas } from './helpers'
 import { loginAs as loginSoporte, renderAt as renderSoporte } from '@/modules/soporte/__tests__/helpers'
 
 vi.mock('../utils/photoRules', async (orig) => ({ ...(await orig<typeof import('../utils/photoRules')>()), readDimensions: vi.fn().mockResolvedValue({ width: 800, height: 1200 }) }))
 vi.mock('../mocks/tryon', async (orig) => ({ ...(await orig<typeof import('../mocks/tryon')>()), MOCK_JOB_TIMES: { pending: 50, done: 150 } }))
+
+simularImagenesSinCanvas()
 
 const escenario = (s: string) => sessionStorage.setItem('sr_mock', s)
 

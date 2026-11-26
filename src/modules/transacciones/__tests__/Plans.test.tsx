@@ -61,7 +61,8 @@ describe('planes (P7)', () => {
     await user.click(btn)
     const dialogo = screen.getByRole('dialog', { name: '¿Cancelar suscripción?' })
     await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
-    expect(await screen.findByText(/No se renovará/, {}, { timeout: 3000 })).toBeInTheDocument()
+    // El aviso aparece en la tarjeta del plan y junto al botón de cancelación
+    expect((await screen.findAllByText(/No se renovará/, {}, { timeout: 3000 })).length).toBeGreaterThan(0)
   })
 })
 

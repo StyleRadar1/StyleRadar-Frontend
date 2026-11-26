@@ -111,3 +111,42 @@ export function centroBarrio(pins: MapPinDto[], barrio: string): Ubicacion | nul
   }
   return BARRIOS_BOGOTA[barrio] ?? null
 }
+
+/** Distancia máxima (en metros) para que dos lugares se vean como un solo pin con número. */
+export const RADIO_AGRUPAR_M = 15
+
+/** Pines que quedan en el mismo sitio: un solo pin en el mapa. Con un único lugar, es el pin de siempre. */
+export interface GrupoPines {
+  /** El id del pin si está solo; «grupo:a|b» (ids ordenados) si hay varios, para que no cambie al refrescar. */
+  id: string
+  /** Dónde se dibuja: el del pin si está solo, el centro de todos si hay varios. */
+  lngLat: [number, number]
+  pins: MapPinDto[]
+}
+
+/**
+ * BUG-20: junta los lugares que están a `metros` o menos entre sí (cadena: A cerca de B y B cerca de C quedan juntos),
+ * para que un pin no tape a otro con la misma coordenada. Conserva el orden de entrada dentro de cada grupo.
+ */
+export function agruparPines(pins: MapPinDto[], metros: number = RADIO_AGRUPAR_M): GrupoPines[] {
+  const padre = pins.map((_, i) => i)
+  const raiz = (i: number): number => (padre[i] === i ? i : (padre[i] = raiz(padre[i])))
+  const km = metros / 1000
+  for (let i = 0; i < pins.length; i++) {
+    for (let j = i + 1; j < pins.length; j++) {
+      const [lng, lat] = pins[i].lngLat
+      if (distanciaKm({ lat, lng }, pins[j].lngLat) <= km) padre[raiz(j)] = raiz(i)
+    }
+  }
+  const porRaiz = new Map<number, MapPinDto[]>()
+  pins.forEach((p, i) => {
+    const r = raiz(i)
+    porRaiz.set(r, [...(porRaiz.get(r) ?? []), p])
+  })
+  return [...porRaiz.values()].map((grupo) => {
+    if (grupo.length === 1) return { id: grupo[0].id, lngLat: grupo[0].lngLat, pins: grupo }
+    const lng = grupo.reduce((s, p) => s + p.lngLat[0], 0) / grupo.length
+    const lat = grupo.reduce((s, p) => s + p.lngLat[1], 0) / grupo.length
+    return { id: `grupo:${grupo.map((p) => p.id).sort().join('|')}`, lngLat: [lng, lat] as [number, number], pins: grupo }
+  })
+}

@@ -123,11 +123,16 @@ export function BuyerRenewalStatusCard() {
                   </p>
                 )
               ) : derived.status === 'ACTIVA' && renewalActive ? (
-                fechaFinTexto && (
+                <>
+                  {fechaFinTexto && (
+                    <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                      Vigente hasta el {fechaFinTexto}
+                    </p>
+                  )}
                   <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                    Vigente hasta el {fechaFinTexto} · Se renovará el {fechaFinTexto} ({valorTexto})
+                    Se renovará automáticamente ({valorTexto}).
                   </p>
-                )
+                </>
               ) : derived.status === 'ACTIVA' && !renewalActive ? (
                 <>
                   {fechaFinTexto && (
@@ -136,9 +141,7 @@ export function BuyerRenewalStatusCard() {
                     </p>
                   )}
                   <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                    {fechaFinTexto
-                      ? `Tu plan sigue activo hasta el ${fechaFinTexto}. No se renovará al finalizar el periodo.`
-                      : 'Tu plan sigue activo. No se renovará al finalizar el periodo.'}
+                    No se renovará al finalizar el período.
                   </p>
                 </>
               ) : (
@@ -156,12 +159,14 @@ export function BuyerRenewalStatusCard() {
           </p>
         </div>
 
-        <CancelSubscriptionButton
-          tipo="comprador"
-          status={estado}
-          renewalEnabled={renewalActive}
-          fechaFin={fechaFinTexto ?? undefined}
-        />
+        {renewalActive && (
+          <CancelSubscriptionButton
+            tipo="comprador"
+            status={estado}
+            renewalEnabled={renewalActive}
+            fechaFin={fechaFinTexto ?? undefined}
+          />
+        )}
       </div>
     </div>
   )
