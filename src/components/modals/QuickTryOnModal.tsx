@@ -138,6 +138,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
   /* Medidas corporales desde el perfil y autenticación */
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const authCompletedRef = useRef(false)
   const [showMeasurementsWizard, setShowMeasurementsWizard] = useState(false)
   const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurements | null>(() => getBodyMeasurements(user?.id))
   useEffect(() => {
@@ -333,6 +334,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       if (!active || !item) return
       // Verificar si el usuario tiene sesión
       if (!user) {
+        authCompletedRef.current = false
         setPendingDeepLinkGarment({ id: prendaId, talla: tallaParam || undefined, color: colorParam || undefined })
         setShowAuthModal(true)
         return
@@ -355,6 +357,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   /* Escuchar inicio de sesión exitoso para reanudar prenda pendiente */
   useEffect(() => {
     const onLoginSuccess = async () => {
+      authCompletedRef.current = true
       setShowAuthModal(false)
       if (pendingDeepLinkGarment) {
         const localItem = (env.useMocks ? ITEMS : catalogItems).find((it) => it.id === pendingDeepLinkGarment.id)
@@ -1469,7 +1472,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       {showAuthModal && (
         <AuthModal
           isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
+          onClose={() => {
+            setShowAuthModal(false)
+            // Si se cancela el login, no se deja abierto el probador ni la prenda pendiente.
+            if (!authCompletedRef.current && !user) {
+              setPendingDeepLinkGarment(null)
+              onClose()
+            }
+          }}
           initialTab="login"
         />
       )}
