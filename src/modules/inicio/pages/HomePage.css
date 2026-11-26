@@ -537,80 +537,60 @@ html[data-tema='claro'] .sr-inicio-fondo {
   height: 12.5rem;
 }
 
-/* ── 4. Mi plan actual ── */
-.sr-inicio-plan {
+/* ── 4. Marco legal y soporte ── */
+.sr-inicio-legal {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1.25rem 2rem;
-  padding: 1.35rem 1.5rem;
+  gap: 1rem 1.5rem;
+  padding: 1.15rem 1.4rem;
   border-radius: 1.35rem;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(139, 92, 246, 0.12) 55%, rgba(255, 255, 255, 0.04) 100%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(139, 92, 246, 0.08) 55%, rgba(255, 255, 255, 0.04) 100%);
   backdrop-filter: blur(22px) saturate(1.4);
   -webkit-backdrop-filter: blur(22px) saturate(1.4);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 14px 32px rgba(0, 0, 0, 0.32);
 }
 
-.sr-inicio-plan__info {
-  flex: 1 1 20rem;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+.sr-inicio-legal__title {
+  margin-top: 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--sr-hero-text);
 }
 
-.sr-inicio-plan__top {
+.sr-inicio-legal__links {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sr-inicio-legal__pill {
+  display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sr-hero-text);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.sr-inicio-legal__pill:hover,
+.sr-inicio-legal__pill:focus-visible {
+  border-color: var(--sr-accent);
+  background: rgba(157, 92, 255, 0.22);
 }
 
 .sr-plan-badge--plus {
   background: rgba(16, 185, 129, 0.22);
   border-color: rgba(52, 211, 153, 0.5);
   color: #d1fae5;
-}
-
-.sr-inicio-plan__title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--sr-hero-text);
-}
-
-.sr-inicio-plan__desc {
-  font-size: 0.84rem;
-  line-height: 1.45;
-  color: var(--sr-hero-text-muted);
-}
-
-.sr-inicio-plan__aside {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.9rem 1.25rem;
-}
-
-.sr-inicio-plan__tiempo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.65rem 0.95rem;
-  border-radius: 0.95rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.sr-inicio-plan__tiempo strong {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--sr-hero-text);
-}
-
-.sr-inicio-plan__cta {
-  white-space: nowrap;
 }
 
 /* ── Grilla personal ("Tu lugar donde ves tus cosas") ── */

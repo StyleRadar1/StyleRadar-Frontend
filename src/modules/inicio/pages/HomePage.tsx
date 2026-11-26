@@ -6,10 +6,8 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { playlistService, resolvePlaylistCreatorName } from '@/modules/catalogo/services/playlistService'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import { alertService } from '@/modules/soporte/services/alertService'
-import { chatService } from '@/modules/soporte/services/chatService'
-import type { ConversacionDto } from '@/modules/soporte/types/chat.dto'
 import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
-import { PLAN_LABEL, PLAN_LIMITS } from '@/modules/transacciones/types/plan.dto'
+import { PLAN_LABEL } from '@/modules/transacciones/types/plan.dto'
 import { getUserMeasurements, loadLookFromStorage } from '@/modules/experiencia/utils/lookEngine'
 import { SLOT_LABELS, type WornItem } from '@/modules/experiencia/types/look.dto'
 import { ProbadorIntro } from '../components/ProbadorIntro'
@@ -40,7 +38,6 @@ export default function HomePage() {
   const [busyLikeId, setBusyLikeId] = useState<string | null>(null)
   const [busySaveId, setBusySaveId] = useState<string | null>(null)
   const [alertStats, setAlertStats] = useState<{ alertas: number; busquedas: number } | null>(null)
-  const [chats, setChats] = useState<ConversacionDto[]>([])
   const { plan: planActual, details: planDetails } = useUserPlan(Boolean(user))
 
   const planResuelto = planActual ?? 'RADAR'
@@ -94,13 +91,6 @@ export default function HomePage() {
               busquedas: res.busquedas.length,
             })
           }
-        })
-        .catch(() => {})
-
-      chatService
-        .conversations()
-        .then((list) => {
-          if (activo) setChats(list.slice(0, 3))
         })
         .catch(() => {})
     }
@@ -459,48 +449,20 @@ export default function HomePage() {
             <div className="sr-personal-card sr-personal-card--quick">
               <div className="sr-personal-card__head">
                 <div>
-                  <span className="sr-bento-mini__tag">Tus mensajes</span>
-                  <h2 className="sr-personal-card__title">Mis últimos chats</h2>
+                  <span className="sr-bento-mini__tag">Tu suscripción</span>
+                  <h2 className="sr-personal-card__title">
+                    Mi plan actual: <span className="sr-inicio-acento">{planNombre}</span>
+                  </h2>
                 </div>
-                <Link to="/mensajes" className="sr-inicio-enlace">Ir a mensajes →</Link>
+                <span className={`sr-personal-badge ${planResuelto === 'RADAR_PLUS' ? 'sr-plan-badge--plus' : ''}`}>
+                  {planNombre}
+                </span>
               </div>
-              {chats.length > 0 ? (
-                <ul className="sr-personal-chats">
-                  {chats.map((c) => {
-                    const iniciales = c.contacto.nombre
-                      .trim()
-                      .split(/\s+/)
-                      .map((w) => w.charAt(0).toUpperCase())
-                      .join('')
-                      .slice(0, 2) || 'SR'
-                    return (
-                      <li key={c.id}>
-                        <Link to={`/mensajes?c=${encodeURIComponent(c.id)}`} className="sr-personal-chat-item">
-                          <span className="sr-personal-chat-avatar" aria-hidden="true">{iniciales}</span>
-                          <div className="sr-personal-chat-meta">
-                            <strong>{c.contacto.nombre}</strong>
-                            <span>{c.ultimoMensaje || c.asunto}</span>
-                          </div>
-                          {c.noLeidos > 0 ? (
-                            <span className="sr-personal-chat-unread" aria-label={`${c.noLeidos} sin leer`}>
-                              {c.noLeidos}
-                            </span>
-                          ) : (
-                            <span aria-hidden="true" className="sr-personal-playlist-go">↗</span>
-                          )}
-                        </Link>
-                      </li>
-                    )
-                  })}
-                </ul>
-              ) : (
-                <div className="sr-personal-empty">
-                  <p>Aún no tienes conversaciones recientes.</p>
-                  <Link to="/mensajes" className="sr-pl-action-pill">
-                    Abrir mensajes →
-                  </Link>
-                </div>
-              )}
+              <p className="sr-personal-card__desc">{tiempoRestante}</p>
+              <Link to="/planes" className="sr-bento-cta sr-bento-cta--primary">
+                <span>{planResuelto === 'RADAR_PLUS' ? 'Administrar o renovar plan' : 'Actualizar plan'}</span>
+                <span aria-hidden="true">→</span>
+              </Link>
             </div>
           </div>
         </div>
@@ -515,35 +477,19 @@ export default function HomePage() {
       {/* 3. Elegido para tu talla (rastro interactivo de recomendaciones) */}
       {user && <RecomendadosTrail key={`trail-${user.id}`} userId={String(user.id)} />}
 
-      {/* 4. Mi plan actual */}
-      <section className="sr-inicio-bloque sr-inicio-plan" aria-label="Mi plan actual">
-        <div className="sr-inicio-plan__info">
-          <div className="sr-inicio-plan__top">
-            <p className="sr-inicio-kicker">Tu suscripción</p>
-            <span className={`sr-personal-badge ${planResuelto === 'RADAR_PLUS' ? 'sr-plan-badge--plus' : ''}`}>
-              {planNombre}
-            </span>
-          </div>
-          <h2 className="sr-inicio-plan__title">
-            Mi plan actual: <span className="sr-inicio-acento">{planNombre}</span>
-          </h2>
-          <p className="sr-inicio-plan__desc">
-            {planResuelto === 'RADAR_PLUS'
-              ? `Incluye hasta ${PLAN_LIMITS.RADAR_PLUS.probadorFoto} usos/mes en probador con foto propia y alertas de disponibilidad.`
-              : `Incluye maniquí ilimitado y hasta ${PLAN_LIMITS.RADAR.probadorFoto} usos/mes en probador con foto. Actualiza a Radar+ para desbloquear alertas.`}
-          </p>
+      {/* 4. Marco legal y soporte */}
+      <section className="sr-inicio-bloque sr-inicio-legal" aria-label="Marco legal y soporte">
+        <div className="sr-inicio-legal__info">
+          <p className="sr-inicio-kicker">Transparencia y respaldo</p>
+          <h2 className="sr-inicio-legal__title">Marco legal y derechos del usuario</h2>
         </div>
-
-        <div className="sr-inicio-plan__aside">
-          <div className="sr-inicio-plan__tiempo">
-            <span className="sr-bento-mini__tag">Tiempo restante</span>
-            <strong>{tiempoRestante}</strong>
-          </div>
-          <Link to="/planes" className="sr-bento-cta sr-bento-cta--primary sr-inicio-plan__cta">
-            <span>{planResuelto === 'RADAR_PLUS' ? 'Administrar o renovar plan' : 'Actualizar plan'}</span>
-            <span aria-hidden="true">→</span>
-          </Link>
-        </div>
+        <nav className="sr-inicio-legal__links" aria-label="Documentos legales">
+          <Link to="/legal" className="sr-inicio-legal__pill">Marco legal</Link>
+          <Link to="/legal/terminos" className="sr-inicio-legal__pill">Términos y condiciones</Link>
+          <Link to="/legal/datos-personales" className="sr-inicio-legal__pill">Habeas Data</Link>
+          <Link to="/legal/pqrs" className="sr-inicio-legal__pill">PQRS</Link>
+          <Link to="/legal/centro-ayuda" className="sr-inicio-legal__pill">Centro de ayuda</Link>
+        </nav>
       </section>
     </div>
   )
