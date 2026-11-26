@@ -1062,7 +1062,7 @@ export default function InventoryPage() {
                               aria-label={`Reducir stock talla ${talla}`}
                               disabled={isSuspended || cantidad <= 0}
                               onClick={() => { void handleUpdateStock(item, talla, cantidad - 1) }}
-                              className="flex h-5 w-5 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text)] transition hover:opacity-80 disabled:opacity-30"
+                              className="flex h-7 w-7 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text)] transition hover:opacity-80 disabled:opacity-30"
                             >
                               −
                             </button>
@@ -1071,7 +1071,7 @@ export default function InventoryPage() {
                               aria-label={`Aumentar stock talla ${talla}`}
                               disabled={isSuspended}
                               onClick={() => { void handleUpdateStock(item, talla, cantidad + 1) }}
-                              className="flex h-5 w-5 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text)] transition hover:opacity-80 disabled:opacity-30"
+                              className="flex h-7 w-7 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text)] transition hover:opacity-80 disabled:opacity-30"
                             >
                               +
                             </button>
@@ -1081,7 +1081,7 @@ export default function InventoryPage() {
                               title={`Quitar talla ${talla}`}
                               disabled={isSuspended}
                               onClick={() => { void handleRemoveSize(item, talla) }}
-                              className="flex h-5 w-5 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text-muted)] transition hover:text-[var(--inv-text)] disabled:opacity-30"
+                              className="flex h-7 w-7 items-center justify-center rounded border border-[var(--inv-card-border)] text-xs font-bold text-[var(--inv-text-muted)] transition hover:text-[var(--inv-text)] disabled:opacity-30"
                             >
                               ×
                             </button>
@@ -1118,10 +1118,10 @@ export default function InventoryPage() {
                             </span>
                           )}
 
-                          <div className="inv-card__foot-links">
+                          <div className="inv-card__foot-links flex items-center gap-2">
                             <button
                               type="button"
-                              className="text-xs font-semibold text-violeta-claro hover:underline disabled:opacity-40"
+                              className="min-h-8 rounded-md px-2 py-1 text-xs font-semibold text-violeta-claro hover:underline disabled:opacity-40"
                               aria-label={`Editar prenda ${item.nombre}`}
                               title="Editar prenda"
                               disabled={isSuspended || item.estado === 'RETIRADO'}
@@ -1133,7 +1133,7 @@ export default function InventoryPage() {
                               type="button"
                               disabled={isSuspended}
                               onClick={() => setItemParaToggle(item)}
-                              className={`text-xs font-semibold transition disabled:opacity-40 ${
+                              className={`min-h-8 rounded-md px-2 py-1 text-xs font-semibold transition disabled:opacity-40 ${
                                 item.estado === 'RETIRADO'
                                   ? 'text-emerald-500 hover:underline'
                                   : 'text-amber-500 hover:underline'

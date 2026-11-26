@@ -715,62 +715,62 @@ export default function TryOnPage() {
             Se borra de StyleRadar tu foto original y los resultados generados con ella. No se puede deshacer.
           </ConfirmDialog>
 
-        <ConfirmDialog
-          open={!!consent}
-          title="Consentimiento biométrico (Ley 1581 de 2012)"
-          confirmLabel="Aceptar y continuar"
-          cancelLabel="Ahora no"
-          busy={consintiendo}
-          confirmDisabled={!consentChecked}
-          onConfirm={aceptarConsentimiento}
-          onCancel={() => {
-            setConsent(null)
-            setConsentChecked(false)
-            setConsentMsg('')
-            if (job.phase === 'error') job.reset()
-          }}
-        >
-          <p>
-            Finalidades autorizadas: uso exclusivo en el probador virtual y almacenamiento temporal de tu fotografía biométrica conforme a la Ley 1581 de 2012 (términos <code className="text-xs">v1.0-LEY1581-2026</code>). Puedes revocar y eliminar tus datos cuando quieras.
-          </p>
-          <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-white/15 bg-white/5 p-3 text-xs text-white/90">
-            <input
-              type="checkbox"
-              checked={consentChecked}
-              onChange={(e) => setConsentChecked(e.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
-            />
-            <span>Autorizo expresamente el tratamiento biométrico de mi fotografía para el probador virtual (v1.0-LEY1581-2026).</span>
-          </label>
-          {consent === 'foto' && <p className="mt-2 text-xs">Después de aceptar, podrás subir o reemplazar tu fotografía frontal.</p>}
-          {consentMsg && <p role="alert" className="mt-2 text-[#ffb4b4]">{consentMsg}</p>}
-        </ConfirmDialog>
+          <ConfirmDialog
+            open={!!consent}
+            title="Consentimiento biométrico (Ley 1581 de 2012)"
+            confirmLabel="Aceptar y continuar"
+            cancelLabel="Ahora no"
+            busy={consintiendo}
+            confirmDisabled={!consentChecked}
+            onConfirm={aceptarConsentimiento}
+            onCancel={() => {
+              setConsent(null)
+              setConsentChecked(false)
+              setConsentMsg('')
+              if (job.phase === 'error') job.reset()
+            }}
+          >
+            <p>
+              Finalidades autorizadas: uso exclusivo en el probador virtual y almacenamiento temporal de tu fotografía biométrica conforme a la Ley 1581 de 2012 (términos <code className="text-xs">v1.0-LEY1581-2026</code>). Puedes revocar y eliminar tus datos cuando quieras.
+            </p>
+            <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-white/15 bg-white/5 p-3 text-xs text-white/90">
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={(e) => setConsentChecked(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+              />
+              <span>Autorizo expresamente el tratamiento biométrico de mi fotografía para el probador virtual (v1.0-LEY1581-2026).</span>
+            </label>
+            {consent === 'foto' && <p className="mt-2 text-xs">Después de aceptar, podrás subir o reemplazar tu fotografía frontal.</p>}
+            {consentMsg && <p role="alert" className="mt-2 text-[#ffb4b4]">{consentMsg}</p>}
+          </ConfirmDialog>
 
-        <ConfirmDialog
-          open={confirmDel}
-          title="¿Eliminar tu foto?"
-          confirmLabel="Eliminar"
-          danger
-          busy={deleting}
-          onConfirm={deletePhoto}
-          onCancel={() => setConfirmDel(false)}
-        >
-          Se borra de StyleRadar tu foto original y los resultados generados con ella. No se puede deshacer.
-        </ConfirmDialog>
+          <ConfirmDialog
+            open={confirmDel}
+            title="¿Eliminar tu foto?"
+            confirmLabel="Eliminar"
+            danger
+            busy={deleting}
+            onConfirm={deletePhoto}
+            onCancel={() => setConfirmDel(false)}
+          >
+            Se borra de StyleRadar tu foto original y los resultados generados con ella. No se puede deshacer.
+          </ConfirmDialog>
 
-        <ConfirmDialog
-          open={confirmRevokeConsent}
-          title="¿Revocar consentimiento biométrico?"
-          confirmLabel="Revocar y purgar"
-          danger
-          busy={revokingConsent}
-          onConfirm={handleRevokeConsent}
-          onCancel={() => setConfirmRevokeConsent(false)}
-        >
-          Conforme a la Ley 1581 de 2012, revocar tu consentimiento suprime tu autorización biométrica y purga cualquier fotografía frontal activa asociada a tu cuenta.
-        </ConfirmDialog>
-      </section>
-    </div>
+          <ConfirmDialog
+            open={confirmRevokeConsent}
+            title="¿Revocar consentimiento biométrico?"
+            confirmLabel="Revocar y purgar"
+            danger
+            busy={revokingConsent}
+            onConfirm={handleRevokeConsent}
+            onCancel={() => setConfirmRevokeConsent(false)}
+          >
+            Conforme a la Ley 1581 de 2012, revocar tu consentimiento suprime tu autorización biométrica y purga cualquier fotografía frontal activa asociada a tu cuenta.
+          </ConfirmDialog>
+        </section>
+      </div>
     </TryOnPrivacyShield>
   )
 }

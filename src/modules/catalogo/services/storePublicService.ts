@@ -383,8 +383,18 @@ export const storePublicService = {
       this.getNovedades(cleanId).catch(() => [] as ItemResponseDto[]),
     ])
 
+    let resolvedStoreDto = storeDto
     let almacenMatch: Record<string, any> | null = null
-    if (!storeDto && storeNotFound) {
+    if (!resolvedStoreDto && storeNotFound) {
+      const nitFromItems = catalogoItems.find((p) => p.storeNit)?.storeNit
+      if (nitFromItems && nitFromItems.toLowerCase() !== cleanId) {
+        resolvedStoreDto = await apiClient
+          .get<StoreResponseDto>(`/api/v1/stores/${encodeURIComponent(nitFromItems)}`)
+          .then((r) => r.data ?? null)
+          .catch(() => null)
+      }
+    }
+    if (!resolvedStoreDto && storeNotFound) {
       const listaAlmacenes = await apiClient
         .get<Record<string, any>[] | { content?: Record<string, any>[] }>('/api/v1/stores')
         .then((r) => (Array.isArray(r.data) ? r.data : Array.isArray(r.data?.content) ? r.data.content : []))
@@ -397,13 +407,13 @@ export const storePublicService = {
         ) ?? null
     }
 
-    if (!storeDto && !almacenMatch && catalogoItems.length === 0) {
+    if (!resolvedStoreDto && !almacenMatch && catalogoItems.length === 0) {
       if (!storeNotFound && storeError) throw storeError
       return null
     }
 
     const matchedStoreDto: StoreResponseDto | null =
-      storeDto ??
+      resolvedStoreDto ??
       (almacenMatch?.nit ? (almacenMatch as StoreResponseDto) : null)
     const prendas = catalogoItems
     const novedades = novedadesItems.length > 0 ? novedadesItems.slice(0, 3) : prendas.slice(0, 3)

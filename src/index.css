@@ -251,10 +251,11 @@ html[data-tema="claro"] {
 
   color-scheme: light;
 
-  /* Mapeo retrocompatible para componentes que aún lean variables históricas */
+  /* Mapeo retrocompatible para componentes que aún lean variables históricas.
+     No invertir --color-grafito ni --color-blanco porque muchas superficies usan bg-grafito + text-white. */
   --color-fondo: #f8f9fa;
-  --color-grafito: #ffffff;
-  --color-blanco: #0f172a;
+  --color-grafito: #262626;
+  --color-blanco: #ffffff;
   --color-white: #ffffff;
   --color-black: #000000;
   --color-arena: #475569;
@@ -285,7 +286,7 @@ html[data-tema="daltonico"] {
   --sr-tx: #ffffff;
   --sr-tx-2: #d6d6e2;
 
-  --sr-accent: #56b4e9;
+  --sr-accent: #0072b2;
   --sr-accent-text: #56b4e9;
   --sr-acc-tx: #d6d6e2;
   --sr-focus: #f0e442;

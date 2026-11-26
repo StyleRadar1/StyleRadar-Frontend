@@ -14,7 +14,7 @@ import { RequireStoreActiveSub } from './RequireStoreActiveSub'
 import { RouteErrorBoundary } from './RouteErrorBoundary'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
-import LandingPage from '@/modules/landing/pages/LandingPage'
+const LandingPage = lazy(() => import('@/modules/landing/pages/LandingPage'))
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
 const ResetPassword = lazy(() => import('@/modules/identidad/pages/ResetPasswordPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
@@ -107,7 +107,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
     errorElement: <RouteErrorBoundary />,
     children: [
       // Públicas
-      { path: '/', element: <LandingPage /> },
+      { path: '/', element: page(<LandingPage />) },
       // Un solo inicio de sesion: el modal del landing (/?login). /login redirige ahi.
       { path: '/login', element: <Navigate to="/?login" replace /> },
       { path: '/registro', element: page(<Register />) },

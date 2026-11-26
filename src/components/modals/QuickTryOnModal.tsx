@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import './QuickTryOnModal.css'
 import { env } from '@/configs/env'
+import { useFocusTrap } from '@/modules/core/hooks/useFocusTrap'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { TryOnPrivacyShield } from '@/modules/experiencia/components/TryOnPrivacyShield'
 import {
@@ -91,6 +92,8 @@ interface QuickTryOnModalProps {
 export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryOnModalProps) {
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, isOpen)
 
   /* Estado del look puesto */
   const [wearing, setWearing] = useState<LookState>(() => loadLookFromStorage())
@@ -513,6 +516,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   return (
     <TryOnPrivacyShield active={isOpen}>
     <div
+      ref={dialogRef}
       className="cz-fullscreen"
       role="dialog"
       aria-modal="true"

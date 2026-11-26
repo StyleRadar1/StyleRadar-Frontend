@@ -25,7 +25,16 @@ export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const esTienda = params.get('tipo') === 'tienda'
+  const tipoParam = params.get('tipo')?.toLowerCase()
+  const registerRole: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE' =
+    tipoParam === 'tienda'
+      ? 'STORE_ADMIN'
+      : tipoParam === 'fundacion'
+        ? 'FOUNDATION_REPRESENTATIVE'
+        : 'BUYER'
+  const esTienda = registerRole === 'STORE_ADMIN'
+  const esFundacion = registerRole === 'FOUNDATION_REPRESENTATIVE'
+  const esComprador = registerRole === 'BUYER'
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [barrio, setBarrio] = useState('')
@@ -99,7 +108,11 @@ export default function RegisterPage() {
       aceptaDatos: consentState.aceptaDatos,
       esMayorDeEdad: consentState.esMayorDeEdad,
       aceptaPromociones: consentState.aceptaPromociones,
-      origen: 'REGISTER_PAGE_COMPRADOR',
+      origen: esFundacion
+        ? 'REGISTER_PAGE_FUNDACION'
+        : esTienda
+          ? 'REGISTER_PAGE_TIENDA'
+          : 'REGISTER_PAGE_COMPRADOR',
     })
 
     try {
@@ -108,10 +121,10 @@ export default function RegisterPage() {
         email: email.trim(),
         password,
         neighborhood: barrio,
-        maniqui,
+        ...(esComprador ? { maniqui } : {}),
         aceptaTerminos: consentState.aceptaTerminos,
         dataPolicyAccepted: consentState.aceptaDatos,
-        ...(esTienda ? { role: 'STORE_ADMIN' as const } : {}),
+        ...(registerRole !== 'BUYER' ? { role: registerRole } : {}),
       })
       // Correo sin verificar (SR-RF-01): el código OTP se ingresa en el modal de inicio de sesión.
       if (r.kind === 'otp') { navigate('/?login', { replace: true }); return }
@@ -164,7 +177,11 @@ export default function RegisterPage() {
             aria-labelledby="su-titulo"
           >
             <h2 id="su-titulo" className="text-3xl font-extrabold text-[var(--color-text)]">
-              Crea tu cuenta
+              {esFundacion
+                ? 'Registra tu fundación'
+                : esTienda
+                  ? 'Registra tu tienda'
+                  : 'Crea tu cuenta'}
             </h2>
             <p className="-mt-2 text-sm text-[var(--color-text-muted)]">
               ¿Ya tienes cuenta?{' '}
@@ -176,14 +193,30 @@ export default function RegisterPage() {
               </Link>
             </p>
 
-            <Campo id="su-nombre" label="Nombre completo" error={errores.nombre}>
+            <Campo
+              id="su-nombre"
+              label={
+                esFundacion
+                  ? 'Nombre de la fundación'
+                  : esTienda
+                    ? 'Nombre de la tienda'
+                    : 'Nombre completo'
+              }
+              error={errores.nombre}
+            >
               <input
                 {...a11y('su-nombre', errores.nombre)}
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                autoComplete="name"
+                autoComplete={esComprador ? 'name' : 'organization'}
                 maxLength={60}
-                placeholder="Ej. Valentina Rojas"
+                placeholder={
+                  esFundacion
+                    ? 'Ej. Fundación Abrigo Bogotá'
+                    : esTienda
+                      ? 'Ej. Taller Chapinero'
+                      : 'Ej. Valentina Rojas'
+                }
                 className={inputCls}
               />
             </Campo>
@@ -235,18 +268,20 @@ export default function RegisterPage() {
                 </button>
               </div>
             </Campo>
-            <div>
-              <Opciones
-                label="Maniquí del probador"
-                options={['MUJER', 'HOMBRE'] as const}
-                value={maniqui}
-                onChange={setManiqui}
-                labels={MANIQUI_LABEL}
-              />
-              <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
-                Puedes cambiarlo después en tu perfil.
-              </p>
-            </div>
+            {esComprador && (
+              <div>
+                <Opciones
+                  label="Maniquí del probador"
+                  options={['MUJER', 'HOMBRE'] as const}
+                  value={maniqui}
+                  onChange={setManiqui}
+                  labels={MANIQUI_LABEL}
+                />
+                <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
+                  Puedes cambiarlo después en tu perfil.
+                </p>
+              </div>
+            )}
             {/* Consentimientos legales normativos separados */}
             <LegalConsentCheckboxes
               state={consentState}
@@ -261,7 +296,7 @@ export default function RegisterPage() {
                 })
               }}
               errors={consentErrors}
-              role="BUYER"
+              role={registerRole}
               showPromociones={true}
             />
 

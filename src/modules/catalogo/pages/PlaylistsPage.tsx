@@ -877,8 +877,7 @@ export default function PlaylistsPage() {
                       return (
                       <tr
                         key={p.id}
-                        onClick={() => setPrendaVista(p)}
-                        className={`group cursor-pointer transition hover:bg-white/[0.04] ${
+                        className={`group transition hover:bg-white/[0.04] ${
                           p.noDisponible ? 'opacity-60' : ''
                         }`}
                       >
@@ -890,10 +889,14 @@ export default function PlaylistsPage() {
 
                         {/* Prenda y foto */}
                         <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setPrendaVista(p)}
+                            className="flex w-full items-center gap-3 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sr-focus,#a855f7)]"
+                          >
                             <img
                               src={p.imagen}
-                              alt={p.nombre}
+                              alt=""
                               className="h-11 w-11 shrink-0 rounded-lg object-cover bg-black/40 border border-white/10"
                             />
                             <div className="min-w-0">
@@ -909,7 +912,7 @@ export default function PlaylistsPage() {
                                 )}
                               </p>
                             </div>
-                          </div>
+                          </button>
                         </td>
 
                         {/* Tienda */}
