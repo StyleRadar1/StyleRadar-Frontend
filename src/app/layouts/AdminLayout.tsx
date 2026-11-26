@@ -136,7 +136,7 @@ function AdminShell() {
       </div>
 
       <ConfirmDialog open={salir} title="¿Cerrar sesión?" confirmLabel="Cerrar sesión" cancelLabel="Seguir aquí"
-        onConfirm={() => { setSalir(false); marcarSalidaVoluntaria(); navigate('/', { replace: true }); logout() }} onCancel={() => setSalir(false)}>
+        onConfirm={() => { setSalir(false); marcarSalidaVoluntaria(); logout(); navigate('/', { replace: true }) }} onCancel={() => setSalir(false)}>
         Tendrás que volver a entrar con tu correo y contraseña.
       </ConfirmDialog>
     </div>

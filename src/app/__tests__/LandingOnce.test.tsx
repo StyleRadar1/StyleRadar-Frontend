@@ -1,8 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AuthProvider } from '@/modules/identidad/states/AuthProvider'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 import { LegalFooter } from '@/modules/legal/components/LegalFooter'
 import { hasSeenLanding, LANDING_SEEN_KEY, markLandingSeen } from '@/modules/landing/landingSeen'
 import LoginPage from '@/modules/identidad/pages/LoginPage'
@@ -10,6 +12,23 @@ import LoginPage from '@/modules/identidad/pages/LoginPage'
 function RutaActual() {
   const { pathname, search } = useLocation()
   return <p data-testid="ruta">{pathname + search}</p>
+}
+
+function LogoutHarness() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        marcarSalidaVoluntaria()
+        logout()
+        navigate('/', { replace: true })
+      }}
+    >
+      Cerrar sesión
+    </button>
+  )
 }
 
 function PortadaPrueba() {
@@ -50,6 +69,30 @@ describe('Landing una sola vez, /login y enlace StyleRadar', () => {
       </MemoryRouter>,
     )
     expect(screen.getByTestId('redir')).toHaveTextContent('/catalogo')
+  })
+
+  it('vuelve al landing después de un logout voluntario aunque ya se hubiera visto', async () => {
+    localStorage.setItem(LANDING_SEEN_KEY, 'true')
+    localStorage.setItem('sr_token', 'jwt-test')
+    localStorage.setItem(
+      'sr_user',
+      JSON.stringify({ id: 'u-1', name: 'Valentina Rojas', email: 'usuario@styleradar.co', role: 'BUYER' }),
+    )
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/catalogo']}>
+          <Routes>
+            <Route path="/" element={<PortadaPrueba />} />
+            <Route path="/catalogo" element={<LogoutHarness />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+    expect(screen.getByTestId('landing')).toHaveTextContent('LandingPage')
+    expect(localStorage.getItem(LANDING_SEEN_KEY)).toBe('true')
   })
 
   it('redirige /?login a /login cuando la landing ya fue vista y LoginPage abre AuthModal sin LandingPage', () => {
