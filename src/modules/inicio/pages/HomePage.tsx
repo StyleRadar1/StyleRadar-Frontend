@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { RecommendedHangingRack } from '@/modules/catalogo/components/RecommendedHangingRack'
 import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
 import { RecomendadosTrail } from '../components/RecomendadosTrail'
@@ -132,21 +131,6 @@ export default function HomePage() {
               <span>Dale una segunda vida a tus prendas</span>
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* 2. Selección destacada estilo Featured Collection */}
-      <section className="sr-inicio-bloque sr-inicio-featured" aria-label="Recomendaciones según tu estilo">
-        <div className="sr-inicio-featured__head">
-          <p className="sr-inicio-kicker">Selección destacada</p>
-          <h2 className="sr-inicio-featured__title">ELEGIDO PARA TU TALLA</h2>
-          <Link to="/catalogo" className="sr-inicio-enlace">
-            Ver todo el catálogo →
-          </Link>
-        </div>
-
-        <div className="sr-inicio-rack-compact">
-          {user && <RecommendedHangingRack key={user.id} userId={String(user.id)} />}
         </div>
       </section>
 
