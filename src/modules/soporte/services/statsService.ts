@@ -56,18 +56,18 @@ function extractSeriesPoints(raw: any): any[] {
 function extractDistributionEntries(raw: any): { key: string; count: number }[] {
   if (Array.isArray(raw)) {
     return raw.map((it: any) => ({
-      key: String(it?.state ?? it?.plan ?? it?.key ?? it?.label ?? it?.name ?? ''),
+      key: String(it?.categoryCode ?? it?.state ?? it?.plan ?? it?.key ?? it?.label ?? it?.name ?? ''),
       count: num(it?.count ?? it?.cantidad ?? it?.value ?? it?.total, 0),
     }))
   }
-  const mapSource = raw?.distribution ?? raw?.counts ?? raw?.buckets ?? raw?.items
+  const mapSource = raw?.entries ?? raw?.distribution ?? raw?.counts ?? raw?.buckets ?? raw?.items
   if (Array.isArray(mapSource)) return extractDistributionEntries(mapSource)
   if (mapSource && typeof mapSource === 'object') {
     return Object.entries(mapSource).map(([key, count]) => ({ key, count: num(count, 0) }))
   }
   if (raw && typeof raw === 'object') {
     return Object.entries(raw)
-      .filter(([k]) => !['metricCode', 'total', 'scope', 'storeId', 'foundationId'].includes(k))
+      .filter(([k]) => !['metricCode', 'total', 'scope', 'scopeType', 'scopeId', 'storeId', 'foundationId'].includes(k))
       .map(([key, count]) => ({ key, count: num(count, 0) }))
   }
   return []
@@ -274,8 +274,6 @@ export const statsService = {
       mesActual: {
         mes: last?.mes || new Date().toISOString().slice(0, 7),
         ingresosNetos: totalMes,
-        meta: raw?.meta ?? null,
-        porcentajeAvance: num(raw?.porcentajeAvance, 0),
       },
       historico,
     }
@@ -292,7 +290,6 @@ export const statsService = {
       return {
         etiqueta: String(p?.etiqueta ?? fecha),
         fecha,
-        busquedas: num(p?.busquedas, 0),
         registros,
         publicaciones: num(p?.publicaciones, 0),
       }

@@ -2,9 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { statisticsService } from '../services/statisticsService'
 import type {
+  BuyerPlanCategoryCode,
   DistributionResponse,
   InventoryCategoryCode,
   MetricTotalResponse,
+  StorePlanCategoryCode,
+  TimeSeriesResponse,
 } from '../types/statistics.dto'
 
 export interface StatisticState<T> {
@@ -86,6 +89,18 @@ function useMetricQuery<T>(
   return { data, loading, empty, error, status, retry }
 }
 
+function currentMonthRange(): { startDate: string; endDate: string } {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  const mm = String(month + 1).padStart(2, '0')
+  return {
+    startDate: `${year}-${mm}-01`,
+    endDate: `${year}-${mm}-${String(lastDay).padStart(2, '0')}`,
+  }
+}
+
 const fetchStoreInventory = () => statisticsService.getStoreInventoryByState()
 const isInventoryEmpty = (res: DistributionResponse<InventoryCategoryCode>) =>
   res.entries.reduce((sum, entry) => sum + entry.count, 0) === 0
@@ -101,4 +116,48 @@ const isFoundationEmpty = (res: MetricTotalResponse) => res.total === 0
 
 export function useFoundationGarmentsReceived(): StatisticState<MetricTotalResponse> {
   return useMetricQuery(fetchFoundationGarments, isFoundationEmpty)
+}
+
+const fetchPlatformBuyers = () => statisticsService.getPlatformBuyersByPlan()
+const isBuyersEmpty = (res: DistributionResponse<BuyerPlanCategoryCode>) =>
+  (res.entries ?? []).reduce((sum, entry) => sum + entry.count, 0) === 0
+
+export function usePlatformBuyersByPlan(): StatisticState<
+  DistributionResponse<BuyerPlanCategoryCode>
+> {
+  return useMetricQuery(fetchPlatformBuyers, isBuyersEmpty)
+}
+
+const fetchPlatformStores = () => statisticsService.getPlatformStoresByPlan()
+const isStoresEmpty = (res: DistributionResponse<StorePlanCategoryCode>) =>
+  (res.entries ?? []).reduce((sum, entry) => sum + entry.count, 0) === 0
+
+export function usePlatformStoresByPlan(): StatisticState<
+  DistributionResponse<StorePlanCategoryCode>
+> {
+  return useMetricQuery(fetchPlatformStores, isStoresEmpty)
+}
+
+const fetchPlatformRevenue = () =>
+  statisticsService.getPlatformSubscriptionRevenue({ granularity: 'MONTH' })
+const isRevenueEmpty = (res: TimeSeriesResponse) =>
+  (res.points ?? []).every((point) => point.value === 0)
+
+export function usePlatformSubscriptionRevenue(): StatisticState<TimeSeriesResponse> {
+  return useMetricQuery(fetchPlatformRevenue, isRevenueEmpty)
+}
+
+const fetchPlatformRegistrations = () => {
+  const { startDate, endDate } = currentMonthRange()
+  return statisticsService.getPlatformUserRegistrations({
+    startDate,
+    endDate,
+    granularity: 'DAY',
+  })
+}
+const isRegistrationsEmpty = (res: TimeSeriesResponse) =>
+  (res.points ?? []).every((point) => point.value === 0)
+
+export function usePlatformUserRegistrations(): StatisticState<TimeSeriesResponse> {
+  return useMetricQuery(fetchPlatformRegistrations, isRegistrationsEmpty)
 }

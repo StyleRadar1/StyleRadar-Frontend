@@ -5,16 +5,26 @@ import {
   getMockStatsEstado,
   MOCK_FOUNDATION_GARMENTS_RECEIVED,
   MOCK_FOUNDATION_GARMENTS_RECEIVED_EMPTY,
+  MOCK_PLATFORM_BUYERS_BY_PLAN,
+  MOCK_PLATFORM_BUYERS_BY_PLAN_EMPTY,
+  MOCK_PLATFORM_STORES_BY_PLAN,
+  MOCK_PLATFORM_STORES_BY_PLAN_EMPTY,
+  MOCK_PLATFORM_SUBSCRIPTION_REVENUE,
+  MOCK_PLATFORM_SUBSCRIPTION_REVENUE_EMPTY,
+  MOCK_PLATFORM_USER_REGISTRATIONS,
+  MOCK_PLATFORM_USER_REGISTRATIONS_EMPTY,
   MOCK_STORE_INVENTORY_BY_STATE,
   MOCK_STORE_INVENTORY_BY_STATE_EMPTY,
   throwIfMockStatsError,
 } from '../mocks/statistics'
 import type {
+  BuyerPlanCategoryCode,
   CategoryCode,
   DistributionMetricCode,
   DistributionResponse,
   InventoryCategoryCode,
   MetricTotalResponse,
+  StorePlanCategoryCode,
   TimeSeriesMetricCode,
   TimeSeriesQueryParams,
   TimeSeriesResponse,
@@ -59,6 +69,20 @@ export const statisticsService = {
     if (env.useMocks) {
       const estado = getMockStatsEstado()
       throwIfMockStatsError(estado)
+      if (metricCode === 'PLATFORM_SUBSCRIPTION_REVENUE') {
+        const data =
+          estado === 'VACIO'
+            ? MOCK_PLATFORM_SUBSCRIPTION_REVENUE_EMPTY
+            : MOCK_PLATFORM_SUBSCRIPTION_REVENUE
+        return mockDelay(data)
+      }
+      if (metricCode === 'PLATFORM_USER_REGISTRATIONS') {
+        const data =
+          estado === 'VACIO'
+            ? MOCK_PLATFORM_USER_REGISTRATIONS_EMPTY
+            : MOCK_PLATFORM_USER_REGISTRATIONS
+        return mockDelay(data)
+      }
       return mockDelay({
         metricCode,
         scopeType: 'PLATFORM',
@@ -90,6 +114,20 @@ export const statisticsService = {
             : MOCK_STORE_INVENTORY_BY_STATE
         return mockDelay(data as DistributionResponse<C>)
       }
+      if (metricCode === 'PLATFORM_BUYERS_BY_PLAN') {
+        const data =
+          estado === 'VACIO'
+            ? MOCK_PLATFORM_BUYERS_BY_PLAN_EMPTY
+            : MOCK_PLATFORM_BUYERS_BY_PLAN
+        return mockDelay(data as DistributionResponse<C>)
+      }
+      if (metricCode === 'PLATFORM_STORES_BY_PLAN') {
+        const data =
+          estado === 'VACIO'
+            ? MOCK_PLATFORM_STORES_BY_PLAN_EMPTY
+            : MOCK_PLATFORM_STORES_BY_PLAN
+        return mockDelay(data as DistributionResponse<C>)
+      }
       return mockDelay({
         metricCode,
         scopeType: 'PLATFORM',
@@ -111,5 +149,31 @@ export const statisticsService = {
   /** Métrica de FUNDACIÓN (FOUNDATION_ADMIN): total de prendas recibidas confirmadas. */
   getFoundationGarmentsReceived(): Promise<MetricTotalResponse> {
     return this.getTotal('FOUNDATION_GARMENTS_RECEIVED')
+  },
+
+  /** Métrica de ADMIN: distribución de compradores por plan (devuelve entries completas). */
+  getPlatformBuyersByPlan(): Promise<DistributionResponse<BuyerPlanCategoryCode>> {
+    return this.getDistribution<BuyerPlanCategoryCode>('PLATFORM_BUYERS_BY_PLAN')
+  },
+
+  /** Métrica de ADMIN: distribución de almacenes aliados por estado/plan (devuelve entries completas). */
+  getPlatformStoresByPlan(): Promise<DistributionResponse<StorePlanCategoryCode>> {
+    return this.getDistribution<StorePlanCategoryCode>('PLATFORM_STORES_BY_PLAN')
+  },
+
+  /** Métrica de ADMIN: serie mensual de ingresos totales por suscripciones (COP). */
+  getPlatformSubscriptionRevenue(params?: TimeSeriesQueryParams): Promise<TimeSeriesResponse> {
+    return this.getTimeSeries('PLATFORM_SUBSCRIPTION_REVENUE', {
+      granularity: 'MONTH',
+      ...params,
+    })
+  },
+
+  /** Métrica de ADMIN: serie diaria de usuarios registrados en un mes calendario. */
+  getPlatformUserRegistrations(params?: TimeSeriesQueryParams): Promise<TimeSeriesResponse> {
+    return this.getTimeSeries('PLATFORM_USER_REGISTRATIONS', {
+      granularity: 'DAY',
+      ...params,
+    })
   },
 }
