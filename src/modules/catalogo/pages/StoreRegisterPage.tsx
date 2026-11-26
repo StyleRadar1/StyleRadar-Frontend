@@ -15,6 +15,7 @@ import {
   type StoreCategory, type StoreResponseDto,
 } from '../types/store.dto'
 import './StoreInfoPage.css'
+import '@/styles/tienda-glass.css'
 
 const VACIO: StoreRegisterForm = { nit: '', tradeName: '', description: '', phone: '', contactEmail: '', latitude: '', longitude: '', categories: [] }
 const ORDEN: (keyof StoreRegisterErrors)[] = ['nit', 'tradeName', 'contactEmail', 'phone', 'description', 'latitude', 'longitude', 'categories', 'rut']
@@ -51,12 +52,12 @@ export default function StoreRegisterPage() {
     return () => { active = false }
   }, [userId])
 
-  if (revisando) return <main className="store-info"><Loading label="Revisando si ya tienes un almacén…" /></main>
+  if (revisando) return <main className="store-info sr-tienda-glass"><Loading label="Revisando si ya tienes un almacén…" /></main>
 
   if (registrado) {
     const estado = registrado.verificationStatus ?? 'PENDING'
     return (
-      <main className="store-info">
+      <main className="store-info sr-tienda-glass">
         <div className="store-info__layout">
           <header className="store-info__heading">
             <h2>{registrado.tradeName || 'Tu almacén'}</h2>
@@ -129,7 +130,7 @@ export default function StoreRegisterPage() {
   )
 
   return (
-    <main className="store-info">
+    <main className="store-info sr-tienda-glass">
       <div className="store-info__layout">
         <header className="store-info__heading">
           <h2>Registrar mi tienda</h2>

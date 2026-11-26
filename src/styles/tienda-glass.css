@@ -1,0 +1,155 @@
+/* =============================================================
+   Secciones de tienda · fondo y tarjetas en vidrio (glass)
+   Se activa con la clase .sr-tienda-glass en la raíz de cada página
+   de tienda (Mi tienda, Inventario, Información, Registro, Estadísticas,
+   Suscripción, Activar suscripción y Donar cuando entra una tienda).
+   Colores del manual de identidad: violeta #48119A, violeta claro #7B4DD8,
+   arena #E8DCCB y grafito #262626. No cambia el orden ni el tamaño de nada:
+   solo fondos, bordes, sombras y desenfoque.
+   En modo daltónico (alto contraste) las tarjetas siguen sólidas.
+   ============================================================= */
+
+/* ── Tokens ── */
+.sr-tienda-glass {
+  --tg-veil: linear-gradient(180deg, rgba(11, 8, 19, 0.58) 0%, rgba(11, 8, 19, 0.74) 100%);
+  --tg-glow-1: rgba(123, 77, 216, 0.30);
+  --tg-glow-2: rgba(72, 17, 154, 0.34);
+  --tg-glow-3: rgba(232, 220, 203, 0.10);
+  --tg-photo: url('/img/backgrounds/tienda-noche.jpg');
+  --tg-base: #0d0a14;
+
+  --tg-card: linear-gradient(150deg, rgba(56, 34, 98, 0.42) 0%, rgba(20, 16, 33, 0.62) 100%);
+  --tg-card-solid: rgba(26, 20, 42, 0.62);
+  --tg-tile: rgba(255, 255, 255, 0.045);
+  --tg-border: rgba(232, 220, 203, 0.16);
+  --tg-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  --tg-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.75), 0 0 36px -14px rgba(72, 17, 154, 0.45);
+  --tg-blur: blur(20px) saturate(1.35);
+}
+
+html[data-theme="light"] .sr-tienda-glass,
+html[data-theme="claro"] .sr-tienda-glass,
+html[data-tema="claro"] .sr-tienda-glass {
+  --tg-veil: linear-gradient(180deg, rgba(248, 246, 252, 0.62) 0%, rgba(244, 239, 231, 0.74) 100%);
+  --tg-glow-1: rgba(123, 77, 216, 0.22);
+  --tg-glow-2: rgba(72, 17, 154, 0.12);
+  --tg-glow-3: rgba(232, 220, 203, 0.55);
+  --tg-photo: url('/img/backgrounds/tienda-dia.jpg');
+  --tg-base: #f8f6fc;
+
+  --tg-card: linear-gradient(150deg, rgba(255, 255, 255, 0.74) 0%, rgba(255, 255, 255, 0.52) 100%);
+  --tg-card-solid: rgba(255, 255, 255, 0.62);
+  --tg-tile: rgba(255, 255, 255, 0.55);
+  --tg-border: rgba(255, 255, 255, 0.78);
+  --tg-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --tg-shadow: 0 22px 48px -24px rgba(72, 17, 154, 0.30), 0 2px 10px -4px rgba(38, 38, 38, 0.08);
+  --tg-blur: blur(20px) saturate(1.5);
+}
+
+/* ── Fondo común: foto de tienda + velo + halos del manual ──
+   .inv-page y .store-subscription ya traen la foto desde index.css y Donar
+   conserva su foto propia; aquí se suma el fondo a las páginas que no lo tenían. */
+.sr-tienda-glass:not(.inv-page):not(.store-subscription):not(.sr-donaciones-page) {
+  min-height: calc(100vh - 72px);
+  background-color: var(--tg-base);
+  background-image:
+    radial-gradient(55vw 45vh at 88% 8%, var(--tg-glow-1), transparent 70%),
+    radial-gradient(45vw 45vh at 6% 92%, var(--tg-glow-3), transparent 70%),
+    radial-gradient(40vw 40vh at 40% 55%, var(--tg-glow-2), transparent 75%),
+    var(--tg-veil),
+    var(--tg-photo);
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+}
+
+/* El velo de .store-subscription en index.css usa ::before; aquí solo se suman los halos */
+.store-subscription.sr-tienda-glass::after,
+.inv-page.sr-tienda-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55vw 45vh at 88% 8%, var(--tg-glow-1), transparent 70%),
+    radial-gradient(45vw 45vh at 6% 92%, var(--tg-glow-3), transparent 70%);
+}
+
+/* ── Variables locales de cada página → vidrio ── */
+html:not([data-cvd="on"]) .my-store.msd.sr-tienda-glass {
+  --msd-card-bg: var(--tg-card-solid);
+  --msd-kpi-bg: var(--tg-card-solid);
+  --msd-pill-bg: var(--tg-tile);
+  --msd-card-border: var(--tg-border);
+  --msd-kpi-border: var(--tg-border);
+  --msd-shadow: var(--tg-shadow);
+}
+
+html:not([data-cvd="on"]) .inv-page.sr-tienda-glass {
+  --inv-card-bg: var(--tg-card-solid);
+  --inv-card-border: var(--tg-border);
+  --inv-shadow: var(--tg-shadow);
+}
+
+/* ── Tarjetas en vidrio ── */
+html:not([data-cvd="on"]) .sr-tienda-glass .msd-card,
+html:not([data-cvd="on"]) .sr-tienda-glass .inv-kpi,
+html:not([data-cvd="on"]) .sr-tienda-glass .inv-card,
+html:not([data-cvd="on"]) .sr-tienda-glass .store-info__photo-card {
+  background: var(--tg-card);
+  border-color: var(--tg-border);
+  box-shadow: var(--tg-shadow), var(--tg-highlight);
+  backdrop-filter: var(--tg-blur);
+  -webkit-backdrop-filter: var(--tg-blur);
+}
+
+/* Tarjetas hechas con utilidades (Estadísticas, Activar, Donar): conservan su
+   borde (p. ej. el violeta de los avisos) y solo cambian el relleno */
+html:not([data-cvd="on"]) .sr-tienda-glass .sr-glass-card {
+  background: var(--tg-card);
+  box-shadow: var(--tg-shadow), var(--tg-highlight);
+  backdrop-filter: var(--tg-blur);
+  -webkit-backdrop-filter: var(--tg-blur);
+}
+
+/* Las KPI del hero ya tenían blur: solo se les da el mismo brillo */
+html:not([data-cvd="on"]) .sr-tienda-glass .msd-kpi {
+  background: var(--tg-card);
+  box-shadow: var(--tg-shadow), var(--tg-highlight);
+  backdrop-filter: var(--tg-blur);
+  -webkit-backdrop-filter: var(--tg-blur);
+}
+
+/* Fichas internas (datos de la tienda): vidrio más suave para no recargar */
+html:not([data-cvd="on"]) .sr-tienda-glass .msd-info-tile {
+  background: var(--tg-tile);
+  border-color: var(--tg-border);
+}
+
+/* Foto de las prendas: deja ver el vidrio alrededor */
+html:not([data-cvd="on"]) .sr-tienda-glass .inv-card__media {
+  background: transparent;
+}
+
+/* La tarjeta del plan en Suscripción ya era vidrio en index.css/StoreSubscriptionPage.css: no se toca */
+
+/* Navegadores sin backdrop-filter: tarjetas un poco más opacas para que se lean */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sr-tienda-glass {
+    --tg-card: rgba(20, 16, 33, 0.92);
+    --tg-card-solid: rgba(20, 16, 33, 0.92);
+  }
+  html[data-tema="claro"] .sr-tienda-glass,
+  html[data-theme="light"] .sr-tienda-glass {
+    --tg-card: rgba(255, 255, 255, 0.94);
+    --tg-card-solid: rgba(255, 255, 255, 0.94);
+  }
+}
+
+/* Móvil: la imagen fija pesa en iOS; se deja desplazable */
+@media (max-width: 768px) {
+  .sr-tienda-glass:not(.inv-page):not(.store-subscription):not(.sr-donaciones-page) {
+    background-attachment: scroll;
+  }
+}

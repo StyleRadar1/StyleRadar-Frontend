@@ -19,6 +19,7 @@ import {
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import './MiTiendaPage.css'
 import './MiTiendaDashboard.css'
+import '@/styles/tienda-glass.css'
 
 type StoreItem = {
   id: string
@@ -471,7 +472,7 @@ export default function MiTiendaPage() {
 
   if (forbidden) {
     return (
-      <main className="my-store">
+      <main className="my-store sr-tienda-glass">
         <div className="my-store__content">
           <ErrorCard
             grande
@@ -492,7 +493,7 @@ export default function MiTiendaPage() {
   }
 
   return (
-    <main className="my-store msd">
+    <main className="my-store msd sr-tienda-glass">
       <StoreSuspendedBanner />
       {/* ── Hero a todo el ancho ── */}
       <section className="msd-hero" aria-labelledby="store-title">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { Link } from 'react-router-dom'
 import { errorKind, fieldErrors } from '@/modules/core/api/errors'
@@ -13,6 +13,8 @@ import { CATEGORIAS, CONSERVACIONES, CONSERVACION_LABEL } from '../types/secondh
 import { formatDay, isoDay } from '../utils/dates'
 import { DONATION_RULES, emptyDonation, foundationProblem, validateDonationStep, type DonationErrors, type DonationForm } from '../utils/donationForm'
 import { a11y, inputCls } from '../utils/form'
+import { AuthContext } from '@/modules/identidad/states/authContext'
+import '@/styles/tienda-glass.css'
 
 const STEPS = ['La prenda', 'Fundación', 'Entrega y resumen']
 const MODALIDAD_LABEL: Record<Modalidad, string> = { RECOGIDA: 'Que la recojan', ENTREGA_EN_PUNTO: 'La llevo a un punto de acopio' }
@@ -28,6 +30,9 @@ export default function DonatePage() {
   const [sendError, setSendError] = useState<unknown>(null)
   const [done, setDone] = useState<DonationDto | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
+  const user = useContext(AuthContext)?.user
+  /** Cuando dona una tienda, las tarjetas toman el vidrio de las secciones de tienda. */
+  const raiz = `sr-donaciones-page min-h-screen${user?.role === 'STORE_ADMIN' ? ' sr-tienda-glass' : ''}`
 
   useEffect(() => { heading.current?.focus() }, [step, done])
 
@@ -56,7 +61,7 @@ export default function DonatePage() {
   }
 
   if (done) return (
-    <div className="sr-donaciones-page min-h-screen">
+    <div className={raiz}>
       <section className="mx-auto max-w-3xl px-4 py-16 text-center">
         <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Solicitud enviada</p>
         <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">Gracias por donar</h1>
@@ -72,13 +77,13 @@ export default function DonatePage() {
   const shown = foundations.filter((f) => !onlyCompatible || !foundationProblem(f, form.categoria))
 
   return (
-    <div className="sr-donaciones-page min-h-screen">
+    <div className={raiz}>
       <section className="mx-auto max-w-3xl px-4 py-12">
       <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Donar una prenda</p>
       <h1 ref={heading} tabIndex={-1} className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-text)] outline-none md:text-4xl">{STEPS[step]}</h1>
       <div className="mt-5"><Steps steps={STEPS} current={step} /></div>
 
-      <form className="mt-8 space-y-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-7 shadow-sm" noValidate onSubmit={(e) => { e.preventDefault(); if (step < 2) next(); else submit() }}>
+      <form className="sr-glass-card mt-8 space-y-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-7 shadow-sm" noValidate onSubmit={(e) => { e.preventDefault(); if (step < 2) next(); else submit() }}>
         {step === 0 && (<>
           <div><p className="mb-2 text-sm font-semibold text-[var(--color-text)]">Fotos (hasta {DONATION_RULES.maxFotos})</p>
             <MultiPhotoInput id="dfotos" photos={form.fotos} onChange={(p) => set('fotos', p)} max={DONATION_RULES.maxFotos} error={errors.fotos} /></div>
