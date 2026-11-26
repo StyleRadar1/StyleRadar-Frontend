@@ -20,6 +20,7 @@ export default function HomePage() {
 
   return (
     <div className="sr-inicio">
+      <div className="sr-inicio-fondo" aria-hidden="true" />
       {/* 1. Hero Editorial Bento: bienvenida, buscador y entrada clara a todas las secciones */}
       <section className="sr-inicio-bento" aria-labelledby="inicioSaludo">
         <div className="sr-inicio-bento__header">
