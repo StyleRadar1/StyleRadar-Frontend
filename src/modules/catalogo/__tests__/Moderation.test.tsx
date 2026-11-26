@@ -73,7 +73,7 @@ describe('ModerationPage (RF-61)', () => {
     })
   })
 
-  it('permite rechazar con «Otro» sin observaciones adicionales (BUG-14)', async () => {
+  it('exige comentario cuando el motivo es «Otro» (BUG-14)', async () => {
     const user = userEvent.setup()
     renderAt('/admin/moderacion', routes)
 
@@ -83,6 +83,15 @@ describe('ModerationPage (RF-61)', () => {
 
     await user.click(screen.getAllByRole('button', { name: /^Rechazar$/i })[0])
     await user.selectOptions(screen.getByLabelText(/Motivo de rechazo/i), 'Otro')
+    await user.click(screen.getByRole('button', { name: /Rechazar con motivo/i }))
+
+    expect(await screen.findByText(/Escribe el motivo real del rechazo/i)).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    await user.type(
+      screen.getByLabelText(/Comentario del rechazo/i),
+      'La prenda no corresponde con la publicación',
+    )
     await user.click(screen.getByRole('button', { name: /Rechazar con motivo/i }))
 
     await waitFor(() => {
