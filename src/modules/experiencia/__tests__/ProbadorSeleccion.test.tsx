@@ -230,7 +230,7 @@ describe('Pruebas adicionales de selección 9B (Flujo UI y probador)', () => {
     })
 
     // Abrir drawer de selección
-    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda para probar/i })
+    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda/i })
     fireEvent.click(btnEscoger)
 
     await waitFor(() => {
@@ -280,7 +280,7 @@ describe('Pruebas adicionales de selección 9B (Flujo UI y probador)', () => {
     renderProbador()
 
     // Abrir panel lateral
-    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda para probar/i })
+    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda/i })
     fireEvent.click(btnEscoger)
 
     await waitFor(() => {
@@ -366,11 +366,11 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
     expect(screen.getByRole('heading', { name: /Mi look/i })).toBeInTheDocument()
   })
 
-  it('«Escoger prenda para probar» abre directamente el catálogo sin interceptar con medidas', async () => {
+  it('«Escoger prenda» abre directamente el catálogo sin interceptar con medidas', async () => {
     loginAs('u-1', 'Valentina Rojas')
     renderProbador('/probador')
 
-    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda para probar/i })
+    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda/i })
     fireEvent.click(btnEscoger)
 
     await waitFor(() => {
@@ -476,37 +476,14 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
     })
   })
 
-  it('permite cambiar entre vistas Frente, Lado y Espalda cargando sus siluetas anatómicas respectivas', async () => {
-    // Maniquí femenino
+  it('muestra a la vez la vista frontal y la trasera, sin botones para cambiar de vista', async () => {
     setupMeasurements({ cuerpoBase: 'femenino', estatura: 165 })
     loginAs('u-1', 'Valentina Rojas')
     renderProbador('/probador')
 
-    const baseImg = await screen.findByTestId('mannequin-base-img')
-    // 1. Frente inicial
-    expect(baseImg).toHaveAttribute('src', expect.stringContaining('maniqui-f.png'))
-
-    // 2. Cambiar a Lado
-    const btnLado = screen.getByRole('button', { name: /Vista lateral|Lado/i })
-    fireEvent.click(btnLado)
-    await waitFor(() => {
-      expect(baseImg).toHaveAttribute('src', expect.stringContaining('maniqui-f-lado.png'))
-    })
-
-    // 3. Cambiar a Espalda
-    const btnEspalda = screen.getByRole('button', { name: /Vista posterior|Espalda/i })
-    fireEvent.click(btnEspalda)
-    await waitFor(() => {
-      expect(baseImg).toHaveAttribute('src', expect.stringContaining('maniqui-f-espalda.png'))
-    })
-
-    // 4. Volver a Frente
-    const btnFrente = screen.getByRole('button', { name: /Vista de frente|Frente/i })
-    fireEvent.click(btnFrente)
-    await waitFor(() => {
-      expect(baseImg).toHaveAttribute('src', expect.stringContaining('maniqui-f.png'))
-      expect(baseImg).not.toHaveAttribute('src', expect.stringContaining('lado'))
-      expect(baseImg).not.toHaveAttribute('src', expect.stringContaining('espalda'))
-    })
+    expect(await screen.findByTestId('mannequin-base-img')).toHaveAttribute('src', expect.stringContaining('maniqui-f.png'))
+    expect(screen.getByText('Vista Frontal')).toBeInTheDocument()
+    expect(screen.getByText('Vista Trasera')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Vista (lateral|de frente|posterior)/i })).not.toBeInTheDocument()
   })
 })

@@ -66,34 +66,28 @@ describe('módulo de administración', () => {
 describe('estadísticas del administrador (RF-86 a 91)', () => {
   beforeEach(() => loginAs('a-1', 'Mariana Bernal', 'STYLERADAR_ADMIN'))
 
-  it('muestra los siete indicadores con sus variaciones', async () => {
+  it('muestra los seis indicadores principales con sus totales y sin «NaN»', async () => {
     renderAdmin()
     expect(await screen.findByRole('heading', { level: 1, name: 'Estadísticas' }, { timeout: 3000 })).toBeInTheDocument()
-    expect(screen.getByText('1.859')).toBeInTheDocument()
-    expect(screen.getByText(/11.2% vs\. agosto/)).toBeInTheDocument()
-    expect(screen.getByText('1 pendiente de verificación')).toBeInTheDocument()
-    expect(screen.getByText('Ingresos de septiembre')).toBeInTheDocument()
-    expect(screen.getByText('Solicitudes registradas')).toBeInTheDocument()
+    const indicadores = screen.getByRole('region', { name: 'Indicadores principales' })
+    for (const nombre of ['Usuarios registrados', 'Compradores', 'Almacenes aliados', 'Prendas publicadas', 'Playlists creadas', 'Donaciones del mes']) {
+      expect(within(indicadores).getByText(nombre)).toBeInTheDocument()
+    }
+    for (const total of ['920', '40', '1.420', '385', '42']) {
+      expect(await within(indicadores).findByText(total, {}, { timeout: 3000 })).toBeInTheDocument()
+    }
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument()
   })
 
-  it('tiene actividad diaria con tabla, ingresos, usuarios en vivo, meta sin «NaN» y cuentas por plan', async () => {
+  it('muestra las gráficas de ingresos y registros, con selector de mes y vista de tabla', async () => {
     const user = userEvent.setup()
     renderAdmin()
-    const dia = await screen.findByRole('listitem', { name: '13 sep: 1.220 búsquedas, 44 registros y 74 publicaciones' }, { timeout: 3000 })
-    await user.hover(dia)
-    expect(screen.getByRole('tooltip')).toHaveTextContent(/Búsquedas\s*1\.220/)
+    expect(await screen.findByRole('heading', { name: 'Ingresos por suscripciones' }, { timeout: 3000 })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Registros de usuarios por día' })).toBeInTheDocument()
+    expect(screen.getAllByRole('combobox', { name: 'Seleccionar mes de registros' }).length).toBeGreaterThan(0)
+    expect(await screen.findByRole('list', { name: 'Registros de usuarios por día' }, { timeout: 3000 })).toBeInTheDocument()
 
-    const actividad = screen.getByRole('region', { name: 'Actividad diaria · septiembre 2026' })
-    await user.click(within(actividad).getByRole('button', { name: 'Ver como tabla' }))
-    expect(within(screen.getByRole('table', { name: 'Detalle de actividad diaria' })).getAllByRole('row')).toHaveLength(25)
-
-    expect(screen.getByRole('listitem', { name: /^septiembre: Usuarios \(Radar\+\) \$44,7 mil, Tiendas aliadas \$178 mil$/ })).toBeInTheDocument()
-    const vivo = screen.getByRole('region', { name: 'Usuarios conectados ahora' })
-    expect(within(vivo).getByText('En vivo')).toBeInTheDocument()
-    expect(await within(vivo).findByText(/^\d{3}$/, {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'Avance de la meta de ingresos de septiembre: 22%' })).toBeInTheDocument()
-    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument()
-    const planes = screen.getByRole('list', { name: 'Cuentas por plan' })
-    expect(within(planes).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Radar (gratis)840 cuentas70%', 'Radar+300 cuentas25%', 'Tiendas aliadas63 cuentas5%'])
+    await user.click(screen.getAllByRole('button', { name: /tabla/i })[0])
+    expect(screen.getByRole('table', { name: 'Ingresos por suscripciones' })).toBeInTheDocument()
   })
 })
