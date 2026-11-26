@@ -133,13 +133,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. Perchero recomendado compacto */}
-      <section className="sr-inicio-bloque sr-inicio-rack-panel" aria-label="Recomendaciones según tu estilo">
-        <div className="sr-inicio-section-head">
-          <div>
-            <p className="sr-inicio-kicker">Selección destacada</p>
-            <h2 className="sr-inicio-section-title">Elegido para tu talla y estilo</h2>
-          </div>
+      {/* 2. Selección destacada estilo Featured Collection */}
+      <section className="sr-inicio-bloque sr-inicio-featured" aria-label="Recomendaciones según tu estilo">
+        <div className="sr-inicio-featured__head">
+          <p className="sr-inicio-kicker">Selección destacada</p>
+          <h2 className="sr-inicio-featured__title">ELEGIDO PARA TU TALLA</h2>
           <Link to="/catalogo" className="sr-inicio-enlace">
             Ver todo el catálogo →
           </Link>
@@ -150,11 +148,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. Probador Virtual */}
-      <ProbadorIntro />
-
-      {/* 4. Mapa cercano */}
-      <MapaCercano />
+      {/* 3. Probador y Mapa: dos cuadros a la par */}
+      <div className="sr-inicio-duo">
+        <ProbadorIntro />
+        <MapaCercano />
+      </div>
     </div>
   )
 }
