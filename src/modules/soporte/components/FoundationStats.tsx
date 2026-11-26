@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { guardarRetorno } from '@/modules/core/api/retorno'
-import { Button, Card } from '@/modules/core/design-system'
 import { useFoundationGarmentsReceived } from '../hooks/useStatistics'
+import { KpiCard } from './stats/KpiCard'
 
-/** Estadísticas de la fundación (/fundacion/estadisticas): vista minimalista conectada a ms-estadisticas. */
+/** Estadísticas de la fundación (/fundacion/estadisticas): tarjeta hero conectada a ms-estadisticas. */
 export function FoundationStatsView() {
   const navigate = useNavigate()
   const { data, loading, empty, error, status, retry } = useFoundationGarmentsReceived()
@@ -17,59 +17,32 @@ export function FoundationStatsView() {
   }, [status, navigate])
 
   return (
-    <section className="mx-auto max-w-4xl text-[var(--sr-text-primary,var(--color-text))]">
-      <header className="mb-6">
-        <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--sr-accent-text,var(--color-accent))]">
+    <section className="mx-auto max-w-4xl space-y-6 text-[var(--sr-text-primary,var(--color-text))]">
+      <header className="space-y-1">
+        <p className="text-xs font-bold uppercase tracking-[.16em] text-[var(--sr-accent-text,var(--color-violeta-claro))]">
           Resumen de impacto
         </p>
-        <h1 className="mt-1 text-2xl font-bold text-[var(--sr-text-primary,var(--color-text))]">Estadísticas de tu fundación</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Estadísticas de tu fundación
+        </h1>
+        <p className="text-sm text-[var(--sr-text-muted,var(--color-text-muted))]">
+          Conteo acumulado de donaciones confirmadas recibidas por tu fundación.
+        </p>
       </header>
 
-      <Card>
-        <h2 className="text-lg font-bold text-[var(--sr-text-primary,var(--color-text))]">Prendas recibidas</h2>
-
-        {loading && (
-          <p role="status" className="mt-4 text-sm text-[var(--sr-text-muted,var(--color-text-muted))]">
-            Cargando...
-          </p>
-        )}
-
-        {!loading && error && (
-          <div role="alert" className="mt-4 space-y-3">
-            <p className="text-sm text-[var(--sr-bad,var(--color-danger))]">{error}</p>
-            <div className="flex flex-wrap gap-2">
-              {status === 401 ? (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    guardarRetorno()
-                    navigate('/?login', { replace: true })
-                  }}
-                >
-                  Iniciar sesión
-                </Button>
-              ) : (
-                <Button type="button" onClick={retry}>
-                  Reintentar
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {!loading && !error && data && (
-          <div className="mt-4 space-y-2">
-            <p className="text-4xl font-extrabold tabular-nums text-[var(--sr-text-primary,var(--color-text))]">
-              {data.total.toLocaleString('es-CO')}
-            </p>
-            {empty && (
-              <p role="status" className="text-sm text-[var(--sr-text-muted,var(--color-text-muted))]">
-                Aún no registras prendas recibidas confirmadas
-              </p>
-            )}
-          </div>
-        )}
-      </Card>
+      <KpiCard
+        hero
+        label="Prendas recibidas históricamente"
+        value={(data?.total ?? 0).toLocaleString('es-CO')}
+        subtitle="Total acumulado de prendas confirmadas"
+        note="Dato calculado desde entregas confirmadas registradas en ms-estadisticas."
+        loading={loading}
+        empty={empty}
+        emptyText="Aún no registras prendas recibidas confirmadas"
+        error={error}
+        status={status}
+        onRetry={retry}
+      />
     </section>
   )
 }

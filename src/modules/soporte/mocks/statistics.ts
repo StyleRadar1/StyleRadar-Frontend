@@ -7,6 +7,7 @@ import type {
   StorePlanCategoryCode,
   TimeSeriesResponse,
 } from '../types/statistics.dto'
+import { monthRangeFromYearMonth } from '../utils/statsFormat'
 
 export type MockStatsEstado = 'NORMAL' | 'VACIO' | 'ERROR' | '401' | '403'
 
@@ -45,6 +46,54 @@ export const MOCK_FOUNDATION_GARMENTS_RECEIVED_EMPTY: MetricTotalResponse = {
   scopeType: 'FOUNDATION',
   scopeId: 'foundation-demo-1',
   period: null,
+  total: 0,
+}
+
+export const MOCK_PLATFORM_GARMENT_PUBLICATIONS: MetricTotalResponse = {
+  metricCode: 'PLATFORM_GARMENT_PUBLICATIONS',
+  scopeType: 'PLATFORM',
+  scopeId: null,
+  period: null,
+  total: 1420,
+}
+
+export const MOCK_PLATFORM_GARMENT_PUBLICATIONS_EMPTY: MetricTotalResponse = {
+  metricCode: 'PLATFORM_GARMENT_PUBLICATIONS',
+  scopeType: 'PLATFORM',
+  scopeId: null,
+  period: null,
+  total: 0,
+}
+
+export const MOCK_PLATFORM_PLAYLISTS_CREATED: MetricTotalResponse = {
+  metricCode: 'PLATFORM_PLAYLISTS_CREATED',
+  scopeType: 'PLATFORM',
+  scopeId: null,
+  period: null,
+  total: 385,
+}
+
+export const MOCK_PLATFORM_PLAYLISTS_CREATED_EMPTY: MetricTotalResponse = {
+  metricCode: 'PLATFORM_PLAYLISTS_CREATED',
+  scopeType: 'PLATFORM',
+  scopeId: null,
+  period: null,
+  total: 0,
+}
+
+export const MOCK_PLATFORM_MONTHLY_DONATIONS: MetricTotalResponse = {
+  metricCode: 'PLATFORM_MONTHLY_DONATIONS',
+  scopeType: 'PLATFORM',
+  scopeId: null,
+  period: { startDate: '2026-11-01', endDate: '2026-11-30' },
+  total: 42,
+}
+
+export const MOCK_PLATFORM_MONTHLY_DONATIONS_EMPTY: MetricTotalResponse = {
+  metricCode: 'PLATFORM_MONTHLY_DONATIONS',
+  scopeType: 'PLATFORM',
+  scopeId: null,
+  period: { startDate: '2026-11-01', endDate: '2026-11-30' },
   total: 0,
 }
 
@@ -120,34 +169,40 @@ export const MOCK_PLATFORM_SUBSCRIPTION_REVENUE_EMPTY: TimeSeriesResponse = {
   ],
 }
 
-const DAILY_REGISTRATIONS_SAMPLE = [
+const DAILY_REGISTRATIONS_PATTERN = [
   14, 18, 12, 9, 21, 24, 16, 19, 15, 22, 17, 28, 31, 20, 23,
-  18, 25, 29, 34, 27, 19, 21, 26, 22, 18, 24,
+  18, 25, 29, 34, 27, 19, 21, 26, 22, 18, 24, 20, 16, 23, 25, 19,
 ]
 
-export const MOCK_PLATFORM_USER_REGISTRATIONS: TimeSeriesResponse = {
-  metricCode: 'PLATFORM_USER_REGISTRATIONS',
-  scopeType: 'PLATFORM',
-  scopeId: null,
-  granularity: 'DAY',
-  period: { startDate: '2026-11-01', endDate: '2026-11-30' },
-  points: DAILY_REGISTRATIONS_SAMPLE.map((value, idx) => ({
-    date: `2026-11-${String(idx + 1).padStart(2, '0')}`,
-    value,
-  })),
+export function buildMockUserRegistrations(
+  yearMonth = '2026-11',
+  empty = false,
+): TimeSeriesResponse {
+  const { startDate, endDate } = monthRangeFromYearMonth(yearMonth)
+  const [yStr, mStr] = startDate.split('-')
+  const daysInMonth = Number(endDate.split('-')[2]) || 30
+  const seedOffset = Number(mStr) % 7
+  return {
+    metricCode: 'PLATFORM_USER_REGISTRATIONS',
+    scopeType: 'PLATFORM',
+    scopeId: null,
+    granularity: 'DAY',
+    period: { startDate, endDate },
+    points: Array.from({ length: daysInMonth }, (_, idx) => {
+      const base = DAILY_REGISTRATIONS_PATTERN[(idx + seedOffset) % DAILY_REGISTRATIONS_PATTERN.length]
+      return {
+        date: `${yStr}-${mStr}-${String(idx + 1).padStart(2, '0')}`,
+        value: empty ? 0 : base,
+      }
+    }),
+  }
 }
 
-export const MOCK_PLATFORM_USER_REGISTRATIONS_EMPTY: TimeSeriesResponse = {
-  metricCode: 'PLATFORM_USER_REGISTRATIONS',
-  scopeType: 'PLATFORM',
-  scopeId: null,
-  granularity: 'DAY',
-  period: { startDate: '2026-11-01', endDate: '2026-11-30' },
-  points: DAILY_REGISTRATIONS_SAMPLE.map((_, idx) => ({
-    date: `2026-11-${String(idx + 1).padStart(2, '0')}`,
-    value: 0,
-  })),
-}
+export const MOCK_PLATFORM_USER_REGISTRATIONS: TimeSeriesResponse =
+  buildMockUserRegistrations('2026-11', false)
+
+export const MOCK_PLATFORM_USER_REGISTRATIONS_EMPTY: TimeSeriesResponse =
+  buildMockUserRegistrations('2026-11', true)
 
 /**
  * Lee el parámetro de URL `?mockEstado=` en modo demostración (VITE_USE_MOCKS=true)

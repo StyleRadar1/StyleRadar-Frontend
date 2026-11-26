@@ -2,17 +2,22 @@ import { apiClient } from '@/modules/core/api/apiClient'
 import { mockDelay } from '@/modules/core/api/mock'
 import { env } from '@/configs/env'
 import {
+  buildMockUserRegistrations,
   getMockStatsEstado,
   MOCK_FOUNDATION_GARMENTS_RECEIVED,
   MOCK_FOUNDATION_GARMENTS_RECEIVED_EMPTY,
   MOCK_PLATFORM_BUYERS_BY_PLAN,
   MOCK_PLATFORM_BUYERS_BY_PLAN_EMPTY,
+  MOCK_PLATFORM_GARMENT_PUBLICATIONS,
+  MOCK_PLATFORM_GARMENT_PUBLICATIONS_EMPTY,
+  MOCK_PLATFORM_MONTHLY_DONATIONS,
+  MOCK_PLATFORM_MONTHLY_DONATIONS_EMPTY,
+  MOCK_PLATFORM_PLAYLISTS_CREATED,
+  MOCK_PLATFORM_PLAYLISTS_CREATED_EMPTY,
   MOCK_PLATFORM_STORES_BY_PLAN,
   MOCK_PLATFORM_STORES_BY_PLAN_EMPTY,
   MOCK_PLATFORM_SUBSCRIPTION_REVENUE,
   MOCK_PLATFORM_SUBSCRIPTION_REVENUE_EMPTY,
-  MOCK_PLATFORM_USER_REGISTRATIONS,
-  MOCK_PLATFORM_USER_REGISTRATIONS_EMPTY,
   MOCK_STORE_INVENTORY_BY_STATE,
   MOCK_STORE_INVENTORY_BY_STATE_EMPTY,
   throwIfMockStatsError,
@@ -41,12 +46,26 @@ export const statisticsService = {
     if (env.useMocks) {
       const estado = getMockStatsEstado()
       throwIfMockStatsError(estado)
+      const isEmpty = estado === 'VACIO'
       if (metricCode === 'FOUNDATION_GARMENTS_RECEIVED') {
-        const data =
-          estado === 'VACIO'
-            ? MOCK_FOUNDATION_GARMENTS_RECEIVED_EMPTY
-            : MOCK_FOUNDATION_GARMENTS_RECEIVED
-        return mockDelay(data)
+        return mockDelay(
+          isEmpty ? MOCK_FOUNDATION_GARMENTS_RECEIVED_EMPTY : MOCK_FOUNDATION_GARMENTS_RECEIVED,
+        )
+      }
+      if (metricCode === 'PLATFORM_GARMENT_PUBLICATIONS') {
+        return mockDelay(
+          isEmpty ? MOCK_PLATFORM_GARMENT_PUBLICATIONS_EMPTY : MOCK_PLATFORM_GARMENT_PUBLICATIONS,
+        )
+      }
+      if (metricCode === 'PLATFORM_PLAYLISTS_CREATED') {
+        return mockDelay(
+          isEmpty ? MOCK_PLATFORM_PLAYLISTS_CREATED_EMPTY : MOCK_PLATFORM_PLAYLISTS_CREATED,
+        )
+      }
+      if (metricCode === 'PLATFORM_MONTHLY_DONATIONS') {
+        return mockDelay(
+          isEmpty ? MOCK_PLATFORM_MONTHLY_DONATIONS_EMPTY : MOCK_PLATFORM_MONTHLY_DONATIONS,
+        )
       }
       return mockDelay({
         metricCode,
@@ -69,19 +88,15 @@ export const statisticsService = {
     if (env.useMocks) {
       const estado = getMockStatsEstado()
       throwIfMockStatsError(estado)
+      const isEmpty = estado === 'VACIO'
       if (metricCode === 'PLATFORM_SUBSCRIPTION_REVENUE') {
-        const data =
-          estado === 'VACIO'
-            ? MOCK_PLATFORM_SUBSCRIPTION_REVENUE_EMPTY
-            : MOCK_PLATFORM_SUBSCRIPTION_REVENUE
-        return mockDelay(data)
+        return mockDelay(
+          isEmpty ? MOCK_PLATFORM_SUBSCRIPTION_REVENUE_EMPTY : MOCK_PLATFORM_SUBSCRIPTION_REVENUE,
+        )
       }
       if (metricCode === 'PLATFORM_USER_REGISTRATIONS') {
-        const data =
-          estado === 'VACIO'
-            ? MOCK_PLATFORM_USER_REGISTRATIONS_EMPTY
-            : MOCK_PLATFORM_USER_REGISTRATIONS
-        return mockDelay(data)
+        const yearMonth = params?.startDate?.slice(0, 7) || '2026-11'
+        return mockDelay(buildMockUserRegistrations(yearMonth, isEmpty))
       }
       return mockDelay({
         metricCode,
@@ -107,26 +122,27 @@ export const statisticsService = {
     if (env.useMocks) {
       const estado = getMockStatsEstado()
       throwIfMockStatsError(estado)
+      const isEmpty = estado === 'VACIO'
       if (metricCode === 'STORE_INVENTORY_BY_STATE') {
-        const data =
-          estado === 'VACIO'
+        return mockDelay(
+          (isEmpty
             ? MOCK_STORE_INVENTORY_BY_STATE_EMPTY
-            : MOCK_STORE_INVENTORY_BY_STATE
-        return mockDelay(data as DistributionResponse<C>)
+            : MOCK_STORE_INVENTORY_BY_STATE) as DistributionResponse<C>,
+        )
       }
       if (metricCode === 'PLATFORM_BUYERS_BY_PLAN') {
-        const data =
-          estado === 'VACIO'
+        return mockDelay(
+          (isEmpty
             ? MOCK_PLATFORM_BUYERS_BY_PLAN_EMPTY
-            : MOCK_PLATFORM_BUYERS_BY_PLAN
-        return mockDelay(data as DistributionResponse<C>)
+            : MOCK_PLATFORM_BUYERS_BY_PLAN) as DistributionResponse<C>,
+        )
       }
       if (metricCode === 'PLATFORM_STORES_BY_PLAN') {
-        const data =
-          estado === 'VACIO'
+        return mockDelay(
+          (isEmpty
             ? MOCK_PLATFORM_STORES_BY_PLAN_EMPTY
-            : MOCK_PLATFORM_STORES_BY_PLAN
-        return mockDelay(data as DistributionResponse<C>)
+            : MOCK_PLATFORM_STORES_BY_PLAN) as DistributionResponse<C>,
+        )
       }
       return mockDelay({
         metricCode,
@@ -149,6 +165,21 @@ export const statisticsService = {
   /** Métrica de FUNDACIÓN (FOUNDATION_ADMIN): total de prendas recibidas confirmadas. */
   getFoundationGarmentsReceived(): Promise<MetricTotalResponse> {
     return this.getTotal('FOUNDATION_GARMENTS_RECEIVED')
+  },
+
+  /** Métrica de ADMIN: total acumulado de prendas publicadas en la plataforma. */
+  getPlatformGarmentPublications(): Promise<MetricTotalResponse> {
+    return this.getTotal('PLATFORM_GARMENT_PUBLICATIONS')
+  },
+
+  /** Métrica de ADMIN: total acumulado de playlists creadas en la plataforma. */
+  getPlatformPlaylistsCreated(): Promise<MetricTotalResponse> {
+    return this.getTotal('PLATFORM_PLAYLISTS_CREATED')
+  },
+
+  /** Métrica de ADMIN: total de donaciones del mes en curso. */
+  getPlatformMonthlyDonations(): Promise<MetricTotalResponse> {
+    return this.getTotal('PLATFORM_MONTHLY_DONATIONS')
   },
 
   /** Métrica de ADMIN: distribución de compradores por plan (devuelve entries completas). */
