@@ -447,13 +447,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {user && <RecomendadosTrail key={`trail-${user.id}`} userId={String(user.id)} />}
-
-      {/* 3. Probador y Mapa: dos cuadros a la par */}
+      {/* 2. Probador y Mapa: dos cuadros a la par */}
       <div className="sr-inicio-duo">
         <ProbadorIntro />
         <MapaCercano />
       </div>
+
+      {/* 3. Elegido para tu talla (rastro interactivo de recomendaciones) */}
+      {user && <RecomendadosTrail key={`trail-${user.id}`} userId={String(user.id)} />}
 
       {/* 4. Marco legal y soporte */}
       <section className="sr-inicio-bloque sr-inicio-legal" aria-label="Marco legal y soporte">

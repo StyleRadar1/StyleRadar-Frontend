@@ -5,6 +5,7 @@ import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
+import { recordRecentLocation } from '@/modules/mapa/utils/recentLocations'
 import { storePublicService, type StorePublicDto } from '../services/storePublicService'
 import './StorePage.css'
 
@@ -154,6 +155,10 @@ export default function StorePage() {
   const [reloadTick, setReloadTick] = useState(0)
 
   const reload = () => setReloadTick((t) => t + 1)
+
+  useEffect(() => {
+    if (store?.id) recordRecentLocation(String(store.id))
+  }, [store?.id])
 
   useEffect(() => {
     if (env.useMocks) {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { env } from '@/configs/env'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
+import { recordRecentLocation } from '@/modules/mapa/utils/recentLocations'
 import {
   foundationPublicService,
   type FoundationPublicDto,
@@ -113,6 +114,10 @@ export default function FoundationPublicPage() {
   const [reloadTick, setReloadTick] = useState(0)
 
   const reload = () => setReloadTick((t) => t + 1)
+
+  useEffect(() => {
+    if (foundation?.id) recordRecentLocation(String(foundation.id))
+  }, [foundation?.id])
 
   useEffect(() => {
     if (env.useMocks) {

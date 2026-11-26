@@ -12,6 +12,7 @@ import MapCard from '../components/MapCard'
 import BubbleColumn from '../components/BubbleColumn'
 import { CATEGORIAS_ALMACEN, type MapPinDto, type MapFilter } from '../types/map.dto'
 import { BARRIOS_BOGOTA, centroBarrio, filterPins, formatDistanciaKm, RADIO_KM, type Ubicacion } from '../utils/mapUtils'
+import { recordRecentLocation } from '../utils/recentLocations'
 
 const TEXTO_RADIO = `El radio va de ${RADIO_KM.min} a ${RADIO_KM.max} km.`
 
@@ -178,6 +179,7 @@ export default function MapPage() {
 
   const handleSelect = useCallback((pin: MapPinDto | null) => {
     setSelectedId(pin?.id ?? null)
+    if (pin?.id) recordRecentLocation(pin.id)
     if (!pin || !ubicacion || pin.tipo !== 'tienda') return
     mapService.distance(pin.id, ubicacion)
       .then((km) => setDistancias((d) => ({ ...d, [pin.id]: km })))

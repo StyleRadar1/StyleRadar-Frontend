@@ -5,6 +5,7 @@ import { useMapData } from '@/modules/mapa/hooks/useMapData'
 import MapaBogota from '@/modules/mapa/components/MapaBogota'
 import MapCard from '@/modules/mapa/components/MapCard'
 import type { MapFilter, MapPinDto } from '@/modules/mapa/types/map.dto'
+import { getRecentLocationIds, recordRecentLocation } from '@/modules/mapa/utils/recentLocations'
 
 const FILTROS: { id: MapFilter; label: string }[] = [
   { id: 'todos', label: 'Todo' },
@@ -12,18 +13,22 @@ const FILTROS: { id: MapFilter; label: string }[] = [
   { id: 'fundaciones', label: 'Fundaciones' },
 ]
 
-const MAX_LISTA = 6
+const MAX_LISTA = 5
 
 const distanciaKm = (pin: MapPinDto) => {
   const n = Number.parseFloat((pin.d ?? '').replace(',', '.'))
   return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY
 }
 
+const matchesRecent = (pin: MapPinDto, recentId: string) =>
+  pin.id === recentId || Boolean(pin.href && pin.href.endsWith(`/${recentId}`))
+
 export function MapaCercano() {
   const { data: pins, error, loading, reload } = useMapData()
   const [filtro, setFiltro] = useState<MapFilter>('todos')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [recentIds, setRecentIds] = useState<string[]>(() => getRecentLocationIds())
   const reducir = useReducedMotion()
 
   const visibles = useMemo(
@@ -34,14 +39,33 @@ export function MapaCercano() {
     [pins, filtro],
   )
 
+  const visitadas = useMemo(() => {
+    if (recentIds.length === 0) return []
+    const matched = visibles.filter((p) => recentIds.some((rid) => matchesRecent(p, rid)))
+    matched.sort((a, b) => {
+      const ia = recentIds.findIndex((rid) => matchesRecent(a, rid))
+      const ib = recentIds.findIndex((rid) => matchesRecent(b, rid))
+      return ia - ib
+    })
+    return matched.slice(0, MAX_LISTA)
+  }, [visibles, recentIds])
+
+  const mostrandoVisitadas = visitadas.length > 0
+
   const cercanos = useMemo(
-    () => [...visibles].sort((a, b) => distanciaKm(a) - distanciaKm(b)).slice(0, MAX_LISTA),
-    [visibles],
+    () =>
+      mostrandoVisitadas
+        ? visitadas
+        : [...visibles].sort((a, b) => distanciaKm(a) - distanciaKm(b)).slice(0, MAX_LISTA),
+    [mostrandoVisitadas, visitadas, visibles],
   )
 
   const seleccionado = pins.find((p) => p.id === selectedId) ?? null
 
-  const handleSelect = useCallback((pin: MapPinDto | null) => setSelectedId(pin?.id ?? null), [])
+  const handleSelect = useCallback((pin: MapPinDto | null) => {
+    setSelectedId(pin?.id ?? null)
+    if (pin?.id) setRecentIds(recordRecentLocation(pin.id))
+  }, [])
   const handleHover = useCallback((pin: MapPinDto | null) => setHoveredId(pin?.id ?? null), [])
 
   const animacion = reducir
@@ -107,13 +131,16 @@ export function MapaCercano() {
         ) : (
           <>
             <aside className="sr-inicio-mapa__lista" aria-label="Lugares más cercanos">
+              <p className="sr-inicio-lugar__meta px-3 pt-1 pb-2">
+                {mostrandoVisitadas ? 'Últimas 5 ubicaciones visitadas' : 'Lugares recomendados cerca de ti'}
+              </p>
               <ul>
                 {cercanos.map((pin) => (
                   <li key={pin.id}>
                     <button
                       type="button"
                       aria-pressed={selectedId === pin.id}
-                      onClick={() => setSelectedId(pin.id)}
+                      onClick={() => handleSelect(pin)}
                       onMouseEnter={() => setHoveredId(pin.id)}
                       onMouseLeave={() => setHoveredId(null)}
                       onFocus={() => setHoveredId(pin.id)}
