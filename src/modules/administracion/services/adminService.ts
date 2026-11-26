@@ -14,6 +14,30 @@ import { erroresFundacion } from '../utils/validation'
 /** Rutas del API Gateway para el administrador (/api/v1) */
 const API = { tiendas: '/api/v1/admin/stores', fundaciones: '/api/v1/admin/foundations', playlists: '/api/v1/admin/playlists' }
 
+/** ms-pagos (BUG-20): GET /api/v1/subscriptions/stores/up-to-date → { taxIds: [...] } con los NIT de las tiendas al día. */
+const SUSCRIPCIONES_AL_DIA = '/api/v1/subscriptions/stores/up-to-date'
+const soloDigitos = (v: unknown) => String(v ?? '').replace(/\D/g, '')
+
+/**
+ * NIT (solo dígitos, así «900.555.777-1» y «9005557771» coinciden) de las tiendas con la suscripción al día.
+ * Devuelve null si Pagos aún no ofrece la lista o falla: en ese caso la tienda sigue como «Sin suscripción» y no se inventa nada.
+ */
+export async function nitsConSuscripcionAlDia(): Promise<Set<string> | null> {
+  try {
+    const { data } = await apiClient.get<{ taxIds?: unknown }>(SUSCRIPCIONES_AL_DIA)
+    const ids = Array.isArray(data?.taxIds) ? data.taxIds : []
+    return new Set(ids.map(soloDigitos).filter(Boolean))
+  } catch {
+    return null
+  }
+}
+
+/** Marca «Activa» a la tienda cuyo NIT está en la lista de Pagos; el resto queda como estaba. */
+export function conSuscripcionAlDia(t: AdminStoreDto, alDia: Set<string> | null): AdminStoreDto {
+  if (!alDia || !alDia.has(soloDigitos(t.nit))) return t
+  return { ...t, suscripcion: { ...t.suscripcion, estado: 'Activa' } }
+}
+
 /** Se dispara cuando cambia algo que mueve las insignias de la barra lateral del admin. */
 export const ADMIN_CHANGED = 'sr:admin'
 const avisar = <T>(r: T) => { window.dispatchEvent(new Event(ADMIN_CHANGED)); return r }
@@ -61,7 +85,8 @@ export function errorDeMotivoRechazo(motivo?: string): string {
 
 /**
  * F-16: la verificación que manda ms-tiendas sobre la ficha de la pantalla.
- * Suscripción y catálogo son de otros servicios (pagos y catálogo): con el back real llegan vacíos hasta conectarlos.
+ * Suscripción y catálogo son de otros servicios (pagos y catálogo): aquí llegan vacíos y la suscripción se completa
+ * después con la lista de Pagos (nitsConSuscripcionAlDia / conSuscripcionAlDia).
  */
 export function aTiendaAdmin(v: StoreVerificationDto): AdminStoreDto {
   const nit = String(v.nit)
@@ -98,12 +123,17 @@ export const adminStoreService = {
       todas.push(...(r.data?.content ?? []))
       if (r.data?.last !== false) break
     }
-    return todas.map(aTiendaAdmin)
+    const alDia = await nitsConSuscripcionAlDia()
+    return todas.map((v) => conSuscripcionAlDia(aTiendaAdmin(v), alDia))
   },
   /** SR-RF-62: detalle con el RUT (GET /api/v1/admin/stores/{nit}/verification). */
   async get(id: string): Promise<AdminStoreDto> {
     if (env.useMocks) { failIfScenario(); return mockDelay(tienda(id)) }
-    return apiClient.get<StoreVerificationDto>(`${API.tiendas}/${encodeURIComponent(id)}/verification`).then((r) => aTiendaAdmin(r.data))
+    const [r, alDia] = await Promise.all([
+      apiClient.get<StoreVerificationDto>(`${API.tiendas}/${encodeURIComponent(id)}/verification`),
+      nitsConSuscripcionAlDia(),
+    ])
+    return conSuscripcionAlDia(aTiendaAdmin(r.data), alDia)
   },
   /** Aprobar, rechazar (con motivo) o retirar la verificación. Solo una tienda verificada aparece en el radar. */
   async setVerification(id: string, verificacion: Verificacion, motivo?: string): Promise<AdminStoreDto> {
@@ -128,12 +158,12 @@ export const adminStoreService = {
     const base = `${API.tiendas}/${encodeURIComponent(id)}/verification`
     // D14: «Retirar verificación» vuelve a PENDING con review-request; el PATCH solo decide APPROVED o REJECTED.
     if (verificacion === 'Pendiente') {
-      return apiClient.post<StoreVerificationDto>(`${base}/review-request`).then((r) => avisar(aTiendaAdmin(r.data)))
+      return apiClient.post<StoreVerificationDto>(`${base}/review-request`).then(async (r) => avisar(conSuscripcionAlDia(aTiendaAdmin(r.data), await nitsConSuscripcionAlDia())))
     }
     const body: VerificationDecisionRequestDto = verificacion === 'Verificada'
       ? { decision: 'APPROVED' }
       : { decision: 'REJECTED', reason: (motivo ?? '').trim() }
-    return apiClient.patch<StoreVerificationDto>(base, body).then((r) => avisar(aTiendaAdmin(r.data)))
+    return apiClient.patch<StoreVerificationDto>(base, body).then(async (r) => avisar(conSuscripcionAlDia(aTiendaAdmin(r.data), await nitsConSuscripcionAlDia())))
   },
 
   /** Anexo · F-24: administradores autorizados del almacén. */
