@@ -477,6 +477,15 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   }
 
   useEffect(() => {
+    if (!isOpen && !rendered) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isOpen, rendered])
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen && rendered) {
         // Si está abierto otro diálogo en portal (como el selector de Google), dejar que ese cierre primero
@@ -935,7 +944,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
         </div>
 
         {/* Tarjeta de vidrio */}
-        <div ref={cardRef} className="sr-auth-card" id={activeTab === 'login' ? 'authCard' : 'signCard'}>
+        <div
+          ref={cardRef}
+          className={`sr-auth-card${activeTab === 'register' ? ' is-register' : ''}`}
+          id={activeTab === 'login' ? 'authCard' : 'signCard'}
+        >
           {step === 'form' ? (
             <>
               <div className="sr-auth-tabs" role="tablist" aria-label="Cuenta">
@@ -1127,85 +1140,87 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                     </div>
                   </div>
 
-                  <div className="sr-field">
-                    <label htmlFor="suName">
-                      {role === 'STORE_ADMIN'
-                        ? 'Nombre de la tienda'
-                        : role === 'FOUNDATION_REPRESENTATIVE'
-                          ? 'Nombre de la fundación'
-                          : 'Nombre completo'}
-                    </label>
-                    <input
-                      id="suName"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      aria-invalid={!!camposReg.nombre}
-                      aria-describedby={camposReg.nombre ? 'suName-err' : undefined}
-                      placeholder={
-                        role === 'STORE_ADMIN'
-                          ? 'Ej. Luna Store'
+                  <div className="sr-auth-fields-grid">
+                    <div className="sr-field">
+                      <label htmlFor="suName">
+                        {role === 'STORE_ADMIN'
+                          ? 'Nombre de la tienda'
                           : role === 'FOUNDATION_REPRESENTATIVE'
-                            ? 'Ej. Fundación Abrigo Bogotá'
-                            : 'Ej. Valentina Rojas'
-                      }
-                    />
-                    {camposReg.nombre && <ErrorCampo id="suName">{camposReg.nombre}</ErrorCampo>}
-                  </div>
-
-                  <div className="sr-field">
-                    <label htmlFor="suEmail">Correo</label>
-                    <input
-                      id="suEmail"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="tucorreo@ejemplo.com"
-                      aria-invalid={!!camposReg.email}
-                      aria-describedby={camposReg.email ? 'suEmail-err' : undefined}
-                    />
-                    {camposReg.email && <ErrorCampo id="suEmail">{camposReg.email}</ErrorCampo>}
-                  </div>
-
-                  <div className="sr-field">
-                    <label htmlFor="suBarrio">Barrio (opcional)</label>
-                    <input
-                      id="suBarrio"
-                      type="text"
-                      value={barrio}
-                      maxLength={NEIGHBORHOOD_MAX}
-                      onChange={(e) => setBarrio(e.target.value)}
-                      placeholder="Ej. Chapinero"
-                      autoComplete="address-level3"
-                      aria-invalid={!!camposReg.barrio}
-                      aria-describedby={camposReg.barrio ? 'suBarrio-err' : undefined}
-                    />
-                    {camposReg.barrio && <ErrorCampo id="suBarrio">{camposReg.barrio}</ErrorCampo>}
-                  </div>
-
-                  <div className="sr-field">
-                    <label htmlFor="suPass">Contraseña</label>
-                    <div className="sr-pw">
+                            ? 'Nombre de la fundación'
+                            : 'Nombre completo'}
+                      </label>
                       <input
-                        id="suPass"
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="De 8 a 72 caracteres"
-                        maxLength={PASSWORD_MAX}
-                        aria-invalid={!!camposReg.password}
-                        aria-describedby={camposReg.password ? 'suPass-err' : 'suPass-hint'}
+                        id="suName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        aria-invalid={!!camposReg.nombre}
+                        aria-describedby={camposReg.nombre ? 'suName-err' : undefined}
+                        placeholder={
+                          role === 'STORE_ADMIN'
+                            ? 'Ej. Luna Store'
+                            : role === 'FOUNDATION_REPRESENTATIVE'
+                              ? 'Ej. Fundación Abrigo Bogotá'
+                              : 'Ej. Valentina Rojas'
+                        }
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? 'Ocultar' : 'Mostrar'}
-                      </button>
+                      {camposReg.nombre && <ErrorCampo id="suName">{camposReg.nombre}</ErrorCampo>}
                     </div>
-                    {camposReg.password
-                      ? <ErrorCampo id="suPass">{camposReg.password}</ErrorCampo>
-                      : <p id="suPass-hint" className="text-xs text-white/60">{TEXTO_REGLA_CLAVE}</p>}
+
+                    <div className="sr-field">
+                      <label htmlFor="suBarrio">Barrio (opcional)</label>
+                      <input
+                        id="suBarrio"
+                        type="text"
+                        value={barrio}
+                        maxLength={NEIGHBORHOOD_MAX}
+                        onChange={(e) => setBarrio(e.target.value)}
+                        placeholder="Ej. Chapinero"
+                        autoComplete="address-level3"
+                        aria-invalid={!!camposReg.barrio}
+                        aria-describedby={camposReg.barrio ? 'suBarrio-err' : undefined}
+                      />
+                      {camposReg.barrio && <ErrorCampo id="suBarrio">{camposReg.barrio}</ErrorCampo>}
+                    </div>
+
+                    <div className="sr-field">
+                      <label htmlFor="suEmail">Correo</label>
+                      <input
+                        id="suEmail"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="tucorreo@ejemplo.com"
+                        aria-invalid={!!camposReg.email}
+                        aria-describedby={camposReg.email ? 'suEmail-err' : undefined}
+                      />
+                      {camposReg.email && <ErrorCampo id="suEmail">{camposReg.email}</ErrorCampo>}
+                    </div>
+
+                    <div className="sr-field">
+                      <label htmlFor="suPass">Contraseña</label>
+                      <div className="sr-pw">
+                        <input
+                          id="suPass"
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="De 8 a 72 caracteres"
+                          maxLength={PASSWORD_MAX}
+                          aria-invalid={!!camposReg.password}
+                          aria-describedby={camposReg.password ? 'suPass-err' : 'suPass-hint'}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? 'Ocultar' : 'Mostrar'}
+                        </button>
+                      </div>
+                      {camposReg.password
+                        ? <ErrorCampo id="suPass">{camposReg.password}</ErrorCampo>
+                        : <p id="suPass-hint" className="text-[11px] leading-snug text-white/60">{TEXTO_REGLA_CLAVE}</p>}
+                    </div>
                   </div>
 
                   {/* Consentimientos legales normativos separados */}
