@@ -91,11 +91,13 @@ export interface CreateUserRequestDto {
   neighborhood?: string
   password: string
   dataPolicyAccepted: boolean
+  /** ms-usuarios: BUYER (por defecto) o STORE, que crea la cuenta como STORE_ADMIN. */
+  accountType: 'BUYER' | 'STORE'
 }
 
-/** Contraseña de 8 a 30 caracteres en registro e inicio de sesión (D7). */
+/** Contraseña de 8 a 72 caracteres en registro e inicio de sesión (regla de ms-usuarios). */
 export const PASSWORD_MIN = 8
-export const PASSWORD_MAX = 30
+export const PASSWORD_MAX = 72
 export const NAME_MIN = 2
 export const NAME_MAX = 100
 export const NEIGHBORHOOD_MAX = 100

@@ -47,6 +47,11 @@ export class ApiError extends Error {
   attemptsRemaining?: number
   /** Segundos de espera antes de reintentar (ProblemDetail.retryAfterSeconds o cabecera Retry-After en los 429). */
   retryAfterSeconds?: number
+  /**
+   * Texto del servidor (ProblemDetail.detail o message). Solo se muestra donde el equipo de back lo pidió
+   * (registro 409 EMAIL_ALREADY_REGISTERED y 400 INVALID_DATA); las demás pantallas siguen usando `message`.
+   */
+  detail?: string
   constructor(status: number, message: string, fieldsOrCode: CamposConError | string = {}, code?: string, timestamp?: string) {
     super(message)
     this.name = 'ApiError'
@@ -91,7 +96,7 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
     console.warn(`[api] ${status || 'sin respuesta'} ${error.config?.method?.toUpperCase() ?? ''} ${error.config?.url ?? ''}`, data ?? error.message)
   }
   const obj = typeof data === 'object' && data !== null
-    ? (data as { errorCode?: unknown; code?: unknown; timestamp?: unknown; attemptsRemaining?: unknown; retryAfterSeconds?: unknown })
+    ? (data as { errorCode?: unknown; code?: unknown; timestamp?: unknown; attemptsRemaining?: unknown; retryAfterSeconds?: unknown; detail?: unknown; message?: unknown })
     : undefined
   const code = typeof obj?.code === 'string' ? obj.code : typeof obj?.errorCode === 'string' ? obj.errorCode : undefined
   const timestamp = typeof obj?.timestamp === 'string' ? obj.timestamp : undefined
@@ -101,6 +106,8 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
   if (intentos !== undefined) apiError.attemptsRemaining = intentos
   const espera = numeroNoNegativo(obj?.retryAfterSeconds) ?? numeroNoNegativo(cabecera(error, 'retry-after'))
   if (espera !== undefined) apiError.retryAfterSeconds = espera
+  const detalle = [obj?.detail, obj?.message].find((x): x is string => typeof x === 'string' && x.trim() !== '')
+  if (detalle) apiError.detail = detalle.trim()
   return apiError
 }
 

@@ -1,14 +1,15 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind, errorMessage, fieldErrors, MENSAJES } from '@/modules/core/api/errors'
 import { Aviso } from '@/modules/core/components/errores'
-import { camposDeRegistro, TEXTOS_ACCESO } from '../utils/erroresAcceso'
+import { camposDeRegistro, CLAVE_NUEVA_RE, TEXTO_REGLA_CLAVE, TEXTOS_ACCESO } from '../utils/erroresAcceso'
 import { Badge, Button, Card } from '@/modules/core/design-system'
 import { ROLE_HOME } from '@/modules/core/types/roles'
 import { Campo, Opciones } from '../components/Campo'
 import { a11y, inputCls } from '../utils/campo'
 import { useAuth } from '../hooks/useAuth'
-import { NAME_MAX, NAME_MIN, NEIGHBORHOOD_MAX, PASSWORD_MAX, PASSWORD_MIN } from '../types/auth.dto'
+import { NAME_MAX, NAME_MIN, NEIGHBORHOOD_MAX } from '../types/auth.dto'
 import { MANIQUI_LABEL, type Maniqui } from '../types/usuario.dto'
 import { correoValido } from '../utils/formato'
 import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
@@ -40,7 +41,8 @@ export default function RegisterPage() {
   const [consentErrors, setConsentErrors] = useState<LegalConsentErrors>({})
   const [errores, setErrores] = useState<Errores>({})
   const [general, setGeneral] = useState('')
-  const [noSePudo, setNoSePudo] = useState(false)
+  /** 409: texto de ms-usuarios («El correo electrónico … ya se encuentra registrado») o el del plan. */
+  const [noSePudo, setNoSePudo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const inFlight = useRef(false)
 
@@ -53,8 +55,7 @@ export default function RegisterPage() {
     if (!correoValido(email))
       e.email = 'Escribe un correo válido, por ejemplo tucorreo@ejemplo.com.'
     if (barrio.trim().length > NEIGHBORHOOD_MAX) e.barrio = `El barrio no puede superar ${NEIGHBORHOOD_MAX} caracteres.`
-    if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX)
-      e.password = `La contraseña debe tener entre ${PASSWORD_MIN} y ${PASSWORD_MAX} caracteres.`
+    if (!CLAVE_NUEVA_RE.test(password)) e.password = TEXTO_REGLA_CLAVE
 
     if (!consentState.aceptaTerminos || !consentState.aceptaDatos) {
       cErr.terminos = 'Para crear la cuenta debes aceptar los términos y la política de datos.'
@@ -76,7 +77,7 @@ export default function RegisterPage() {
     setErrores(formErrors)
     setConsentErrors(legalErrors)
     setGeneral('')
-    setNoSePudo(false)
+    setNoSePudo(null)
 
     const primero = (['nombre', 'email', 'barrio', 'password'] as const).find((k) => formErrors[k])
     if (primero) {
@@ -125,8 +126,8 @@ export default function RegisterPage() {
         setErrores(campos)
         document.getElementById(`su-${primero}`)?.focus()
       } else if (kind === 'conflicto' || kind === 'datos') {
-        // 409 · 422 «el correo ya tiene cuenta»: nunca se confirma que el correo existe.
-        setNoSePudo(true)
+        // 409 EMAIL_ALREADY_REGISTERED (o 400/422 sin campos): el texto real de ms-usuarios, como pidió el back.
+        setNoSePudo((err instanceof ApiError ? err.detail : undefined) ?? TEXTOS_ACCESO.registro)
       } else {
         setGeneral(kind === 'servidor' ? MENSAJES.servidor : errorMessage(err, 'No se pudo crear la cuenta. Intenta de nuevo.'))
       }
@@ -213,7 +214,7 @@ export default function RegisterPage() {
               id="su-password"
               label="Contraseña"
               error={errores.password}
-              hint={`De ${PASSWORD_MIN} a ${PASSWORD_MAX} caracteres.`}
+              hint={TEXTO_REGLA_CLAVE}
             >
               <div className="relative">
                 <input
@@ -267,7 +268,7 @@ export default function RegisterPage() {
             {noSePudo && (
               <Aviso
                 tono="error"
-                titulo={TEXTOS_ACCESO.registro}
+                titulo={noSePudo}
                 accion={
                   <>
                     <Link
