@@ -135,7 +135,7 @@ export default function StoreStatsPage() {
           centerLabel="Referencias"
           rows={distributionRows}
           total={totalReferences}
-          note="Los porcentajes corresponden a la distribución actual de tus referencias registradas en ms-estadisticas."
+          note="Los porcentajes corresponden a la distribución actual de tus referencias registradas."
           loading={loading}
           empty={empty}
           emptyText="Aún no tienes prendas registradas en tu inventario."

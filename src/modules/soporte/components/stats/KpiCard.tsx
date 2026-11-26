@@ -6,7 +6,6 @@ export interface KpiCardProps {
   label: string
   value: string
   subtitle?: string
-  note?: string
   delta?: RealDelta | null
   accentColor?: string
   hero?: boolean
@@ -23,7 +22,6 @@ export function KpiCard({
   label,
   value,
   subtitle,
-  note,
   delta,
   accentColor,
   hero = false,
@@ -36,7 +34,7 @@ export function KpiCard({
   className = '',
 }: KpiCardProps) {
   return (
-    <Card className={`flex flex-col justify-between ${hero ? 'p-8 sm:p-10' : 'p-6'} ${className}`}>
+    <Card className={`flex flex-col ${hero ? 'p-8 sm:p-10' : 'p-6'} ${className}`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sr-text-muted,var(--color-text-muted))]">
           {label}
@@ -104,12 +102,6 @@ export function KpiCard({
           </>
         )}
       </div>
-
-      {note && !loading && !error && (
-        <p className="mt-4 border-t border-[var(--sr-border-subtle,var(--color-border))] pt-3 text-xs text-[var(--sr-text-muted,var(--color-text-muted))]">
-          {note}
-        </p>
-      )}
     </Card>
   )
 }

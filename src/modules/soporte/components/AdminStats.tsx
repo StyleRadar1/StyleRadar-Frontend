@@ -149,7 +149,6 @@ export function AdminStatsView() {
           label="Usuarios registrados"
           value={num(registeredTotal)}
           subtitle={regPeriodLabel}
-          note="Suma diaria del mes seleccionado (PLATFORM_USER_REGISTRATIONS)."
           loading={registrations.loading}
           empty={registrations.empty}
           emptyText={`Sin registros en ${regPeriodLabel}`}
@@ -161,7 +160,6 @@ export function AdminStatsView() {
           label="Compradores"
           value={num(buyersTotal)}
           subtitle="Total de cuentas registradas"
-          note="Total consolidado de compradores en la plataforma."
           loading={buyers.loading}
           empty={buyers.empty}
           emptyText="Aún no hay cuentas"
@@ -173,7 +171,6 @@ export function AdminStatsView() {
           label="Almacenes aliados"
           value={num(storesTotal)}
           subtitle="Total de tiendas registradas"
-          note="Total consolidado de almacenes aliados en la plataforma."
           loading={stores.loading}
           empty={stores.empty}
           emptyText="Aún no hay cuentas"
@@ -185,7 +182,6 @@ export function AdminStatsView() {
           label="Prendas publicadas"
           value={num(garments.data?.total ?? 0)}
           subtitle="Total acumulado en catálogo"
-          note="Publicaciones totales registradas en ms-estadisticas."
           loading={garments.loading}
           empty={garments.empty}
           emptyText="Aún no hay prendas publicadas"
@@ -197,7 +193,6 @@ export function AdminStatsView() {
           label="Playlists creadas"
           value={num(playlists.data?.total ?? 0)}
           subtitle="Total acumulado de colecciones"
-          note="Colecciones creadas por la comunidad."
           loading={playlists.loading}
           empty={playlists.empty}
           emptyText="Aún no hay playlists creadas"
@@ -209,7 +204,6 @@ export function AdminStatsView() {
           label="Donaciones del mes"
           value={num(donations.data?.total ?? 0)}
           subtitle={donationsPeriodLabel}
-          note="Donaciones registradas en el periodo reportado por el backend."
           loading={donations.loading}
           empty={donations.empty}
           emptyText="Aún no hay donaciones en este mes"
@@ -253,7 +247,7 @@ export function AdminStatsView() {
         points={registrationTrendPoints}
         variant="bars"
         headerControls={monthSelect}
-        note="Serie diaria de un solo mes calendario proveniente de PLATFORM_USER_REGISTRATIONS."
+        note="Serie diaria de nuevos registros del mes calendario seleccionado."
         loading={registrations.loading}
         emptyText={`Sin registros durante ${regPeriodLong}`}
         error={registrations.error}
