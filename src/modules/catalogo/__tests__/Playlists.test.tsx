@@ -116,4 +116,30 @@ describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
       expect(deleteSpy).toHaveBeenCalledWith('u-weekend')
     })
   })
+
+  it('alterna el like (toggle ON y OFF) de una playlist ajena llamando a playlistService.toggleLike', async () => {
+    const toggleLikeSpy = vi
+      .spyOn(playlistService, 'toggleLike')
+      .mockResolvedValueOnce({ likes: 13, liked: true })
+      .mockResolvedValueOnce({ likes: 12, liked: false })
+
+    const user = userEvent.setup()
+    renderAt('/playlists/3', routes)
+
+    const likeBtn = await screen.findByRole('button', { name: /^Me gusta$/i })
+    expect(likeBtn).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(likeBtn)
+    await waitFor(() => expect(toggleLikeSpy).toHaveBeenCalledTimes(1))
+    expect(toggleLikeSpy).toHaveBeenNthCalledWith(1, '3')
+    const unlikeBtn = screen.getByRole('button', { name: /Quitar me gusta/i })
+    expect(unlikeBtn).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Te gusta esta playlist.')).toBeInTheDocument()
+
+    await user.click(unlikeBtn)
+    await waitFor(() => expect(toggleLikeSpy).toHaveBeenCalledTimes(2))
+    expect(toggleLikeSpy).toHaveBeenNthCalledWith(2, '3')
+    expect(screen.getByRole('button', { name: /^Me gusta$/i })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByText('Ya no te gusta esta playlist.')).toBeInTheDocument()
+  })
 })
