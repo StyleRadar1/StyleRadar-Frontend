@@ -4,6 +4,7 @@ import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
 import { extractStockMapFromInventory } from './itemService'
+import { ordenarStockPorTalla } from '../utils/tallas'
 import { storeSettingsService } from './storeSettingsService'
 import type { Estilo, ItemResponseDto } from '../types/item.dto'
 import {
@@ -111,10 +112,12 @@ export function validatePrendaFields(data: {
 
 function normalizeBackendInventoryItem(
   prenda: Record<string, any>,
-  stockPorTalla: Record<string, number> = {},
+  stockSinOrden: Record<string, number> = {},
   sedeId = '',
   fallbackStoreName = ''
 ): InventoryItemDto {
+  // El back entrega las tallas en cualquier orden: se fijan en S, M, L, XL… para que no salten al subir o bajar el stock
+  const stockPorTalla = ordenarStockPorTalla(stockSinOrden)
   const fotos: string[] = Array.isArray(prenda.fotografias)
     ? prenda.fotografias
     : prenda.imagenUrl
