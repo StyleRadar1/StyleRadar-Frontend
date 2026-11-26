@@ -13,7 +13,7 @@
   z-index: 110;
   display: grid;
   place-items: center;
-  padding: clamp(10px, 2vw, 28px);
+  padding: clamp(16px, 3.2vh, 36px) clamp(16px, 3vw, 40px);
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
   color: #FFFFFF;
 }
@@ -48,8 +48,8 @@
 
 .sr-auth-stack {
   position: relative;
-  width: min(1020px, 100%);
-  height: min(700px, calc(100svh - 28px));
+  width: min(1040px, 100%);
+  height: min(690px, calc(100svh - 68px));
   display: grid;
   place-items: center;
   z-index: 1;
@@ -245,11 +245,12 @@
 .sr-auth-card {
   position: relative;
   z-index: 10;
-  width: min(420px, calc(100% - 24px));
-  max-height: calc(100% - 50px);
+  width: min(440px, calc(100% - 24px));
+  max-height: calc(100% - 42px);
   overflow-y: auto;
-  scrollbar-width: thin;
-  padding: clamp(20px, 2.4vh, 26px) clamp(20px, 2.4vw, 28px);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: clamp(16px, 2vh, 22px) clamp(18px, 2.2vw, 26px);
   background: rgba(22, 17, 30, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(24px) saturate(1.25);
@@ -259,8 +260,79 @@
   opacity: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 1.25vh, 13px);
+  gap: clamp(8px, 1vh, 11px);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px -10px rgba(72, 17, 154, 0.3);
+}
+
+.sr-auth-card::-webkit-scrollbar {
+  display: none;
+}
+
+.sr-auth-card.is-register {
+  width: min(660px, calc(100% - 24px));
+  padding: 12px 20px;
+  gap: 6px;
+  margin-top: 20px;
+  max-height: calc(100% - 36px);
+}
+
+.sr-auth-card.is-register h2 {
+  font-size: clamp(20px, 2vw, 24px);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.sr-auth-card.is-register .sr-sub {
+  font-size: 12px;
+  margin: 0;
+}
+
+.sr-auth-card.is-register .sr-auth-tabs button {
+  padding: 7px 10px;
+  font-size: 11px;
+}
+
+.sr-auth-card.is-register .sr-role-pick button {
+  padding: 7px 10px;
+}
+
+.sr-auth-card.is-register .sr-field {
+  gap: 3px;
+}
+
+.sr-auth-card.is-register .sr-field label,
+.sr-auth-card.is-register .sr-field .sr-lab {
+  font-size: 11px;
+}
+
+.sr-auth-card.is-register .sr-field input,
+.sr-auth-card.is-register .sr-field select {
+  padding: 7px 11px;
+  font-size: 13px;
+}
+
+.sr-auth-card.is-register .sr-auth-submit {
+  padding: 10px 16px;
+}
+
+.sr-auth-card.is-register label[for^="consent-"],
+.sr-auth-card.is-register .space-y-2,
+.sr-auth-card.is-register .space-y-2\.5 {
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.sr-auth-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  align-items: start;
+}
+
+@media (max-width: 600px) {
+  .sr-auth-fields-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .sr-auth-card > * {

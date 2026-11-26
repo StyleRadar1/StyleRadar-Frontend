@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
-import type { Role } from '@/modules/core/types/roles'
+import { ROLE_HOME, type Role } from '@/modules/core/types/roles'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { NotFound } from '@/modules/core/components/NotFound'
 import { SessionExpiredOverlay } from '@/modules/core/components/SessionExpiredOverlay'
 import { SinConexion } from '@/modules/core/components/SinConexion'
@@ -15,6 +16,7 @@ import { RouteErrorBoundary } from './RouteErrorBoundary'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 const LandingPage = lazy(() => import('@/modules/landing/pages/LandingPage'))
+const Home = lazy(() => import('@/modules/inicio/pages/HomePage'))
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
 const ResetPassword = lazy(() => import('@/modules/identidad/pages/ResetPasswordPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
@@ -78,6 +80,12 @@ const STORE: Role[] = ['STORE_ADMIN']
 const FOUND: Role[] = ['FOUNDATION_REPRESENTATIVE']
 const ANY: Role[] = ['BUYER', 'STORE_ADMIN', 'FOUNDATION_REPRESENTATIVE', 'STYLERADAR_ADMIN']
 
+function Portada() {
+  const { user } = useAuth()
+  if (user) return <Navigate to={ROLE_HOME[user.role]} replace />
+  return page(<LandingPage />)
+}
+
 /** Raíz: la bienvenida al iniciar sesión y el fondo aurora a nivel de layout (excepto en rutas excluidas). */
 function RootLayout() {
   const { pathname } = useLocation()
@@ -107,7 +115,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
     errorElement: <RouteErrorBoundary />,
     children: [
       // Públicas
-      { path: '/', element: page(<LandingPage />) },
+      { path: '/', element: <Portada /> },
       // Un solo inicio de sesion: el modal del landing (/?login). /login redirige ahi.
       { path: '/login', element: <Navigate to="/?login" replace /> },
       { path: '/registro', element: page(<Register />) },
@@ -132,6 +140,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
       { path: '/legal/centro-ayuda', element: page(<HelpCenter />) },
       { path: '/legal/:slug', element: page(<LegalDocument />) },
       // Usuario (comprador)
+      { path: '/inicio', element: only(USER, <Home />) },
       { path: '/perfil', element: only(USER, <Profile />) },
       { path: '/perfil/pagos', element: only(USER, <BuyerPayments />) },
       { path: '/probador', element: page(<ProbadorVirtual />) },

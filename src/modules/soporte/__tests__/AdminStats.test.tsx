@@ -18,7 +18,7 @@ const renderAdmin = (path = '/admin/estadisticas') => render(
             <Route path="/admin/usuarios" element={<p>Página de usuarios</p>} />
           </Route>
           <Route path="/" element={<p>Inicio del landing</p>} />
-          <Route path="/catalogo" element={<p>Catálogo</p>} />
+          <Route path="/inicio" element={<p>Inicio del comprador</p>} />
         </Routes>
       </MemoryRouter>
     </AuthProvider>
@@ -46,15 +46,18 @@ describe('módulo de administración', () => {
   it('solo entra el administrador', () => {
     loginAs('u-1', 'Valentina Rojas', 'BUYER')
     renderAdmin()
-    expect(screen.getByText('Catálogo')).toBeInTheDocument()
+    expect(screen.getByText('Inicio del comprador')).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Administración' })).not.toBeInTheDocument()
   })
 
-  it('pide confirmación para cerrar sesión', async () => {
+  it('cierra sesión desde el menú del administrador y pide confirmación', async () => {
     const user = userEvent.setup()
     loginAs('a-1', 'Mariana Bernal', 'STYLERADAR_ADMIN')
     renderAdmin('/admin/usuarios')
-    await user.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
+    expect(screen.queryByRole('link', { name: 'Volver al radar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cuenta de administrador: Mariana Bernal' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Cerrar sesión' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cerrar sesión' }))
     expect(await screen.findByText('Inicio del landing')).toBeInTheDocument()
   })

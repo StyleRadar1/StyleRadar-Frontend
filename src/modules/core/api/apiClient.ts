@@ -52,6 +52,8 @@ export class ApiError extends Error {
    * (registro 409 EMAIL_ALREADY_REGISTERED y 400 INVALID_DATA); las demás pantallas siguen usando `message`.
    */
   detail?: string
+  /** Identificador de trazabilidad devuelto en la cabecera HTTP X-Correlation-Id (solo diagnóstico en desarrollo). */
+  correlationId?: string
   constructor(status: number, message: string, fieldsOrCode: CamposConError | string = {}, code?: string, timestamp?: string) {
     super(message)
     this.name = 'ApiError'
@@ -108,6 +110,10 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
   if (espera !== undefined) apiError.retryAfterSeconds = espera
   const detalle = [obj?.detail, obj?.message].find((x): x is string => typeof x === 'string' && x.trim() !== '')
   if (detalle) apiError.detail = detalle.trim()
+  const correlationId = cabecera(error, 'x-correlation-id')
+  if (typeof correlationId === 'string' && correlationId.trim() !== '') {
+    apiError.correlationId = correlationId.trim()
+  }
   return apiError
 }
 

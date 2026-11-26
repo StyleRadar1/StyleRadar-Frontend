@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { ADMIN_CHANGED, adminStoreService } from '@/modules/administracion/services/adminService'
 import { moderationService } from '@/modules/catalogo/services/moderationService'
@@ -22,8 +22,7 @@ const ICONOS = {
   shield: ico(<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z" />),
   list: ico(<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />),
   card: ico(<><rect x="2.5" y="5" width="19" height="14" rx="2" /><path d="M2.5 10h19M6 15h4" /></>),
-  home: ico(<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9z" />),
-  out: ico(<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l4-4-4-4M14 12H3" />),
+  out:ico(<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l4-4-4-4M14 12H3" />),
 }
 
 /** Secciones del módulo de administración, en el orden del prototipo. Sin `to` = aún no existe en React. */
@@ -113,10 +112,6 @@ function AdminShell() {
             <span className="min-w-0"><b className="block truncate text-sm">{user.name}</b><span className="block text-[10px] font-bold uppercase tracking-[.16em] text-white/55">Administrador</span></span>
           </div>
           <nav aria-label="Administración" className="flex-1 space-y-1 overflow-y-auto p-3">{nav}</nav>
-          <div className="space-y-1 border-t border-white/10 p-3">
-            <Link to="/" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-blanco">{ICONOS.home}Volver al radar</Link>
-            <button type="button" onClick={() => setSalir(true)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-white/70 hover:bg-white/5 hover:text-blanco">{ICONOS.out}Cerrar sesión</button>
-          </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -129,12 +124,8 @@ function AdminShell() {
               </p>
               <div className="ml-auto flex items-center gap-2">
                 <AppearancePicker />
-                <span className="flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-3">
-                  <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-violeta text-[10px] font-bold text-blanco">{iniciales(user.name)}</span>
-                  <span className="text-[11px] font-bold uppercase tracking-[.14em]">Admin</span>
-                </span>
+                <AdminMenu name={user.name} email={user.email} onSalir={() => setSalir(true)} />
               </div>
-              <button type="button" onClick={() => setSalir(true)} className="rounded-lg px-2 py-1.5 text-sm text-white/70 hover:text-blanco lg:hidden">Cerrar sesión</button>
             </div>
             {/* En pantallas pequeñas las secciones van en una fila desplazable */}
             <nav aria-label="Administración (móvil)" className="flex gap-1 overflow-x-auto px-3 pb-2 lg:hidden [&>*]:shrink-0 [&>*]:py-2">{nav}</nav>
@@ -148,6 +139,59 @@ function AdminShell() {
         onConfirm={() => { setSalir(false); marcarSalidaVoluntaria(); navigate('/', { replace: true }); logout() }} onCancel={() => setSalir(false)}>
         Tendrás que volver a entrar con tu correo y contraseña.
       </ConfirmDialog>
+    </div>
+  )
+}
+
+/** Menú del administrador (arriba a la derecha): nombre, correo y cerrar sesión. */
+function AdminMenu({ name, email, onSalir }: { name: string; email: string; onSalir: () => void }) {
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const menuId = useId()
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); trigger.current?.focus() } }
+    document.addEventListener('pointerdown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+
+  return (
+    <div ref={box} className="relative">
+      <button
+        ref={trigger}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-label={`Cuenta de administrador: ${name}`}
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-2.5 hover:bg-white/10"
+      >
+        <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-violeta text-[10px] font-bold text-blanco">{iniciales(name)}</span>
+        <span aria-hidden="true" className="text-[11px] font-bold uppercase tracking-[.14em]">Admin</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" className={`text-white/60 transition ${open ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
+      </button>
+
+      {open && (
+        <div id={menuId} role="menu" aria-label="Cuenta de administrador" className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-white/15 bg-[#181520] p-1.5 shadow-2xl">
+          <div className="border-b border-white/10 px-3 pb-3 pt-2">
+            <p className="truncate text-sm font-semibold">{name}</p>
+            <p className="truncate text-xs text-white/70">{email}</p>
+          </div>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => { setOpen(false); onSalir() }}
+            className="mt-1.5 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[var(--sr-bad)] hover:bg-white/10 focus:bg-white/10"
+          >
+            {ICONOS.out}Cerrar sesión
+          </button>
+        </div>
+      )}
     </div>
   )
 }
