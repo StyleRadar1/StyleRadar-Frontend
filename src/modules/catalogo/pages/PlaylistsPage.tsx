@@ -17,17 +17,12 @@ import type { ItemResponseDto } from '../types/item.dto'
 import { ESTILOS_PLAYLIST, MAX_PLAYLIST_ITEMS, type PlaylistDto, type PlaylistEstilo, type PlaylistVisibility } from '../types/playlist.dto'
 import './PlaylistsPage.css'
 
-const FAVORITE_GARMENTS_KEY = 'sr_favorite_garments'
-
-function readFavoriteGarments(): Record<string, boolean> {
-  try {
-    const raw = localStorage.getItem(FAVORITE_GARMENTS_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
+function ShareArrowIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M13.5 4.25c-.41 0-.75.34-.75.75v3.52C7.05 9.1 3.7 13.05 2.55 18.85a.65.65 0 0 0 1.16.51c2.28-2.96 5.42-4.38 9.04-4.5v3.64c0 .65.77.99 1.25.55l7.25-6.5a.75.75 0 0 0 0-1.1L14 4.45a.75.75 0 0 0-.5-.2z" />
+    </svg>
+  )
 }
 
 export default function PlaylistsPage() {
@@ -105,14 +100,13 @@ export default function PlaylistsPage() {
   const [limiteAlcanzado, setLimiteAlcanzado] = useState(false)
   const [prendaParaAgregar, setPrendaParaAgregar] = useState<string>('')
 
-  // Like, guardado y favoritos locales
+  // Like, guardado y orden local
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({})
   const [userSaved, setUserSaved] = useState<Record<string, boolean>>((): Record<string, boolean> =>
     env.useMocks ? { '3': true, 'pl-2': true } : {}
   )
   const [pendingLikeId, setPendingLikeId] = useState<string | null>(null)
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null)
-  const [favoriteGarments, setFavoriteGarments] = useState<Record<string, boolean>>(readFavoriteGarments)
   const [shuffledOrder, setShuffledOrder] = useState<Record<string, string[]>>({})
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -539,21 +533,6 @@ export default function PlaylistsPage() {
     }
   }
 
-  const handleToggleFavoritoPrenda = (itemId: string) => {
-    setFavoriteGarments((prev) => {
-      const nextFav = !prev[itemId]
-      const updated = { ...prev, [itemId]: nextFav }
-      if (!nextFav) delete updated[itemId]
-      try {
-        localStorage.setItem(FAVORITE_GARMENTS_KEY, JSON.stringify(updated))
-      } catch {
-        // Ignora errores de almacenamiento local
-      }
-      showToast(nextFav ? 'Guardada en favoritos.' : 'Quitada de favoritos.')
-      return updated
-    })
-  }
-
   const handleMezclar = () => {
     if (!selectedPlaylist) return
     const shuffledIds = [...selectedPlaylist.prendas]
@@ -787,10 +766,10 @@ export default function PlaylistsPage() {
                         type="button"
                         onClick={handleCompartir}
                         aria-label="Compartir playlist"
-                        title="Compartir"
-                        className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white/70 flex items-center justify-center text-sm transition active:scale-95"
+                        title="Copiar enlace para compartir"
+                        className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:border-violeta-claro/60 hover:bg-violeta/25 hover:text-white text-white/75 flex items-center justify-center transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
                       >
-                        ···
+                        <ShareArrowIcon />
                       </button>
                     </>
                   ) : (
@@ -841,10 +820,10 @@ export default function PlaylistsPage() {
                         type="button"
                         onClick={handleCompartir}
                         aria-label="Compartir playlist"
-                        title="Compartir"
-                        className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white/70 flex items-center justify-center text-sm transition active:scale-95"
+                        title="Copiar enlace para compartir"
+                        className="h-10 w-10 rounded-full border border-white/20 bg-white/5 hover:border-violeta-claro/60 hover:bg-violeta/25 hover:text-white text-white/75 flex items-center justify-center transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
                       >
-                        ···
+                        <ShareArrowIcon />
                       </button>
                     </>
                   )}
@@ -881,8 +860,8 @@ export default function PlaylistsPage() {
                       <th className="py-3.5 px-4">Prenda</th>
                       <th className="py-3.5 px-4">Tienda</th>
                       <th className="py-3.5 px-4">Agregada por</th>
-                      <th className="py-3.5 px-4 text-right">Precio</th>
-                      <th className="py-3.5 pr-6 pl-2 w-12 text-right"></th>
+                      <th className={esMia ? 'py-3.5 px-4 text-right' : 'py-3.5 pl-4 pr-6 text-right'}>Precio</th>
+                      {esMia && <th className="py-3.5 pr-6 pl-2 w-12 text-right"></th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -947,7 +926,7 @@ export default function PlaylistsPage() {
                         </td>
 
                         {/* Precio */}
-                        <td className="py-3 px-4 text-right font-mono font-semibold text-white">
+                        <td className={esMia ? 'py-3 px-4 text-right font-mono font-semibold text-white' : 'py-3 pl-4 pr-6 text-right font-mono font-semibold text-white'}>
                           {p.noDisponible ? (
                             <s className="text-white/40">{formatCOP(p.precio)}</s>
                           ) : (
@@ -955,9 +934,9 @@ export default function PlaylistsPage() {
                           )}
                         </td>
 
-                        {/* Acción fila */}
-                        <td className="py-3 pr-6 pl-2 text-right" onClick={(e) => e.stopPropagation()}>
-                          {esMia ? (
+                        {/* Acción fila (solo en playlists propias) */}
+                        {esMia && (
+                          <td className="py-3 pr-6 pl-2 text-right" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={() => handleQuitarPrenda(p.id)}
@@ -967,39 +946,8 @@ export default function PlaylistsPage() {
                             >
                               ✕
                             </button>
-                          ) : (
-                            (() => {
-                              const isGarmentFav = Boolean(favoriteGarments[p.id])
-                              return (
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleFavoritoPrenda(p.id)}
-                                  aria-pressed={isGarmentFav}
-                                  aria-label={isGarmentFav ? `Quitar ${p.nombre} de favoritos` : `Guardar ${p.nombre} en favoritos`}
-                                  title={isGarmentFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-                                  className={
-                                    isGarmentFav
-                                      ? 'text-rose-500 hover:text-rose-400 p-1 text-sm transition scale-110'
-                                      : 'text-white/40 hover:text-rose-400 p-1 text-sm transition'
-                                  }
-                                >
-                                  <svg
-                                    viewBox="0 0 24 24"
-                                    className="h-4 w-4"
-                                    fill={isGarmentFav ? 'currentColor' : 'none'}
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    aria-hidden="true"
-                                  >
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                  </svg>
-                                </button>
-                              )
-                            })()
-                          )}
-                        </td>
+                          </td>
+                        )}
                       </tr>
                     )})}
                   </tbody>

@@ -20,6 +20,8 @@ describe('ItemDetailPage (RF-16, RF-22, RF-57)', () => {
       expect(screen.getAllByText(/Nómada Studio/i).length).toBeGreaterThan(0)
       expect(screen.getAllByText(/Usaquén/i).length).toBeGreaterThan(0)
       expect(screen.getByText(/Disponibilidad en tienda real/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Favorito/i })).not.toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /Ver tienda/i })).toHaveClass('w-full')
     })
   })
 

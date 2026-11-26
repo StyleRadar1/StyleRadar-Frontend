@@ -13,7 +13,6 @@ const routes = [
 
 describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
   afterEach(() => {
-    localStorage.removeItem('sr_favorite_garments')
     vi.restoreAllMocks()
   })
 
@@ -67,23 +66,19 @@ describe('PlaylistsPage (RNF-12 y RF-69 a RF-72)', () => {
     expect(screen.queryByText(/RNF-12/i)).not.toBeInTheDocument()
   })
 
-  it('alterna el corazón rojo de favoritos en prendas de playlist ajena y actualiza el mensaje', async () => {
+  it('no muestra corazón de favoritos en las filas de prendas de playlists ajenas y usa ícono de compartir', async () => {
     const user = userEvent.setup()
     renderAt('/playlists/3', routes)
 
-    const heartBtn = await screen.findByRole('button', { name: /Guardar Saco sastre negro en favoritos/i })
-    expect(heartBtn).toHaveAttribute('aria-pressed', 'false')
+    await screen.findByText(/Saco sastre negro/i)
+    expect(screen.queryByRole('button', { name: /Guardar Saco sastre negro en favoritos/i })).not.toBeInTheDocument()
 
-    await user.click(heartBtn)
-    const activeBtn = screen.getByRole('button', { name: /Quitar Saco sastre negro de favoritos/i })
-    expect(activeBtn).toHaveAttribute('aria-pressed', 'true')
-    expect(activeBtn.className).toContain('text-rose-500')
-    expect(screen.getByText('Guardada en favoritos.')).toBeInTheDocument()
+    const shareBtn = screen.getByRole('button', { name: /Compartir playlist/i })
+    expect(shareBtn).not.toHaveTextContent('···')
+    expect(shareBtn.querySelector('svg')).not.toBeNull()
 
-    await user.click(activeBtn)
-    const resetBtn = screen.getByRole('button', { name: /Guardar Saco sastre negro en favoritos/i })
-    expect(resetBtn).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByText('Quitada de favoritos.')).toBeInTheDocument()
+    await user.click(shareBtn)
+    expect(screen.getByText('Enlace copiado para compartir.')).toBeInTheDocument()
   })
 
   it('conecta editar y eliminar playlist con playlistService.update y playlistService.delete', async () => {
