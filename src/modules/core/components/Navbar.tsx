@@ -11,7 +11,7 @@ import { UserMenu } from './UserMenu'
 const LINKS: Record<Role | 'GUEST', [string, string][]> = {
   GUEST: [['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/segunda-mano', 'Segunda mano'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
   BUYER: [['/inicio', 'Inicio'], ['/catalogo', 'Catálogo'], ['/mapa', 'Mapa'], ['/probador', 'Probador'], ['/segunda-mano', 'Segunda mano'], ['/playlists', 'Playlists'], ['/planes', 'Planes']],
-  STORE_ADMIN: [['/mi-tienda', 'Mi tienda'], ['/tienda/inventario', 'Inventario'], ['/donar', 'Donaciones'], ['/tienda/estadisticas', 'Estadísticas'], ['/tienda/suscripcion', 'Suscripción']],
+  STORE_ADMIN: [['/mi-tienda', 'Mi tienda'], ['/tienda/inventario', 'Inventario'], ['/donar', 'Donaciones'], ['/tienda/suscripcion', 'Suscripción']],
   FOUNDATION_REPRESENTATIVE: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas']],
   STYLERADAR_ADMIN: [['/admin/usuarios', 'Usuarios'], ['/admin/moderacion', 'Moderación'], ['/admin/pagos', 'Pagos'], ['/admin/estadisticas', 'Estadísticas']],
 }

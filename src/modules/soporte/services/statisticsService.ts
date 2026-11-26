@@ -18,8 +18,6 @@ import {
   MOCK_PLATFORM_STORES_BY_PLAN_EMPTY,
   MOCK_PLATFORM_SUBSCRIPTION_REVENUE,
   MOCK_PLATFORM_SUBSCRIPTION_REVENUE_EMPTY,
-  MOCK_STORE_INVENTORY_BY_STATE,
-  MOCK_STORE_INVENTORY_BY_STATE_EMPTY,
   throwIfMockStatsError,
 } from '../mocks/statistics'
 import type {
@@ -27,7 +25,6 @@ import type {
   CategoryCode,
   DistributionMetricCode,
   DistributionResponse,
-  InventoryCategoryCode,
   MetricTotalResponse,
   StorePlanCategoryCode,
   TimeSeriesMetricCode,
@@ -123,13 +120,6 @@ export const statisticsService = {
       const estado = getMockStatsEstado()
       throwIfMockStatsError(estado)
       const isEmpty = estado === 'VACIO'
-      if (metricCode === 'STORE_INVENTORY_BY_STATE') {
-        return mockDelay(
-          (isEmpty
-            ? MOCK_STORE_INVENTORY_BY_STATE_EMPTY
-            : MOCK_STORE_INVENTORY_BY_STATE) as DistributionResponse<C>,
-        )
-      }
       if (metricCode === 'PLATFORM_BUYERS_BY_PLAN') {
         return mockDelay(
           (isEmpty
@@ -155,11 +145,6 @@ export const statisticsService = {
     return apiClient
       .get<DistributionResponse<C>>(`/api/v1/statistics/distributions/${metricCode}`)
       .then((r) => r.data)
-  },
-
-  /** Métrica de TIENDA (STORE_ADMIN): distribución de inventario por estado. */
-  getStoreInventoryByState(): Promise<DistributionResponse<InventoryCategoryCode>> {
-    return this.getDistribution<InventoryCategoryCode>('STORE_INVENTORY_BY_STATE')
   },
 
   /** Métrica de FUNDACIÓN (FOUNDATION_ADMIN): total de prendas recibidas confirmadas. */

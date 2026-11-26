@@ -2,7 +2,6 @@ import { ApiError } from '@/modules/core/api/apiClient'
 import type {
   BuyerPlanCategoryCode,
   DistributionResponse,
-  InventoryCategoryCode,
   MetricTotalResponse,
   StorePlanCategoryCode,
   TimeSeriesResponse,
@@ -10,28 +9,6 @@ import type {
 import { monthRangeFromYearMonth } from '../utils/statsFormat'
 
 export type MockStatsEstado = 'NORMAL' | 'VACIO' | 'ERROR' | '401' | '403'
-
-export const MOCK_STORE_INVENTORY_BY_STATE: DistributionResponse<InventoryCategoryCode> = {
-  metricCode: 'STORE_INVENTORY_BY_STATE',
-  scopeType: 'STORE',
-  scopeId: 'store-demo-1',
-  entries: [
-    { categoryCode: 'AVAILABLE', count: 45, percentage: 75.0 },
-    { categoryCode: 'LOW_STOCK', count: 9, percentage: 15.0 },
-    { categoryCode: 'OUT_OF_STOCK', count: 6, percentage: 10.0 },
-  ],
-}
-
-export const MOCK_STORE_INVENTORY_BY_STATE_EMPTY: DistributionResponse<InventoryCategoryCode> = {
-  metricCode: 'STORE_INVENTORY_BY_STATE',
-  scopeType: 'STORE',
-  scopeId: 'store-demo-1',
-  entries: [
-    { categoryCode: 'AVAILABLE', count: 0, percentage: 0.0 },
-    { categoryCode: 'LOW_STOCK', count: 0, percentage: 0.0 },
-    { categoryCode: 'OUT_OF_STOCK', count: 0, percentage: 0.0 },
-  ],
-}
 
 export const MOCK_FOUNDATION_GARMENTS_RECEIVED: MetricTotalResponse = {
   metricCode: 'FOUNDATION_GARMENTS_RECEIVED',
