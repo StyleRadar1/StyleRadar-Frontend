@@ -88,7 +88,7 @@ describe('menú según el rol', () => {
 
     loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     const { unmount: u2 } = renderNav()
-    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/catalogo')
+    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/inicio')
     u2()
 
     loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'STORE_ADMIN')

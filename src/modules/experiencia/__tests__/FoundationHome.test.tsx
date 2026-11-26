@@ -29,6 +29,10 @@ describe('Mi fundación (inicio de la fundación)', () => {
     expect(screen.getByText('Cl. 45 #13-40, Chapinero')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Ropa donada lista para entregar' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ver donaciones' })).toHaveAttribute('href', '/fundacion/donaciones')
+
+    const imgSrcs = Array.from(document.querySelectorAll('img')).map((img) => img.getAttribute('src'))
+    expect(imgSrcs).toHaveLength(5)
+    expect(new Set(imgSrcs).size).toBe(5)
   })
 
   it('si la cuenta no es de una fundación lo explica', async () => {

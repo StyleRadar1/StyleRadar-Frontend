@@ -96,9 +96,9 @@ function MailIcon({ className = 'h-5 w-5' }: { className?: string }) {
 }
 
 function renderDistintivoIcon(icono: 'shield' | 'pin' | 'heart') {
-  if (icono === 'pin') return <MapPinIcon className="h-4 w-4 text-violeta-claro" />
-  if (icono === 'heart') return <HeartIcon className="h-4 w-4 text-rose-400" />
-  return <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
+  if (icono === 'pin') return <MapPinIcon className="h-4 w-4 text-[var(--sr-accent-text)]" />
+  if (icono === 'heart') return <HeartIcon className="h-4 w-4 text-[var(--sr-bad)]" />
+  return <ShieldCheckIcon className="h-4 w-4 text-[var(--sr-ok)]" />
 }
 
 export default function FoundationPublicPage() {
@@ -165,7 +165,7 @@ export default function FoundationPublicPage() {
       <main className="sr-store-empty-wrap" role="main">
         <div className="sr-store-empty-card">
           <div className="sr-store-empty-icon" aria-hidden="true">
-            <HeartIcon className="h-7 w-7 text-rose-400" />
+            <HeartIcon className="h-7 w-7 text-[var(--sr-bad)]" />
           </div>
           <h1 className="sr-store-empty-title">Fundación no encontrada</h1>
           <p className="sr-store-empty-desc">
@@ -232,7 +232,7 @@ export default function FoundationPublicPage() {
                   <ArrowDownIcon className="h-4 w-4" />
                 </a>
                 <Link to={`/mapa?fundacion=${foundation.id}`} className="sr-store-btn sr-store-btn--outline">
-                  <MapPinIcon className="h-4 w-4 text-violeta-claro" />
+                  <MapPinIcon className="h-4 w-4 text-[var(--sr-accent-text)]" />
                   <span>Cómo llegar</span>
                 </Link>
               </div>
@@ -286,7 +286,7 @@ export default function FoundationPublicPage() {
           {foundation.queRecibimos.map((cat) => (
             <span
               key={cat}
-              className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--color-text)]"
+              className="rounded-full border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] px-4 py-2 text-sm font-semibold text-[var(--sr-text-primary)] shadow-xs"
             >
               ♥ {cat}
             </span>
@@ -298,20 +298,20 @@ export default function FoundationPublicPage() {
             {foundation.necesidades.map((nec) => (
               <article
                 key={nec.nombre}
-                className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm"
+                className="rounded-2xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface)] p-5 shadow-sm"
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-violeta-claro">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--sr-accent-text)]">
                     Meta mensual
                   </span>
-                  <span className="text-sm font-extrabold text-[var(--color-text)]">
+                  <span className="text-sm font-extrabold text-[var(--sr-text-primary)]">
                     {nec.avance}%
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-[var(--color-text)] mb-3">{nec.nombre}</h3>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                <h3 className="text-base font-bold text-[var(--sr-text-primary)] mb-3">{nec.nombre}</h3>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--sr-border-subtle)]">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-violeta to-emerald-400 transition-all"
+                    className="h-full rounded-full bg-gradient-to-r from-[var(--sr-accent)] to-[var(--sr-ok)] transition-all"
                     style={{ width: `${Math.min(100, Math.max(0, nec.avance))}%` }}
                   />
                 </div>
@@ -343,9 +343,9 @@ export default function FoundationPublicPage() {
                 <div key={idx} className="sr-store-editorial__feature-item">
                   <span className="sr-store-editorial__feature-icon" aria-hidden="true">
                     {idx % 2 === 0 ? (
-                      <SparklesIcon className="h-4 w-4 text-amber-300" />
+                      <SparklesIcon className="h-4 w-4 text-[var(--sr-warn)]" />
                     ) : (
-                      <LeafIcon className="h-4 w-4 text-emerald-400" />
+                      <LeafIcon className="h-4 w-4 text-[var(--sr-ok)]" />
                     )}
                   </span>
                   <div>
@@ -357,7 +357,7 @@ export default function FoundationPublicPage() {
 
               <div className="sr-store-editorial__feature-item">
                 <span className="sr-store-editorial__feature-icon" aria-hidden="true">
-                  <MapPinIcon className="h-4 w-4 text-violeta-claro" />
+                  <MapPinIcon className="h-4 w-4 text-[var(--sr-accent-text)]" />
                 </span>
                 <div>
                   <strong>Sede en {foundation.barrio}</strong>
@@ -459,7 +459,7 @@ export default function FoundationPublicPage() {
           <div className="sr-store-info-grid">
             <div className="sr-store-info-item">
               <span className="sr-store-info-icon" aria-hidden="true">
-                <MapPinIcon className="h-5 w-5 text-violeta-claro" />
+                <MapPinIcon className="h-5 w-5 text-[var(--sr-accent-text)]" />
               </span>
               <div>
                 <strong>Dirección principal</strong>
@@ -469,7 +469,7 @@ export default function FoundationPublicPage() {
 
             <div className="sr-store-info-item">
               <span className="sr-store-info-icon" aria-hidden="true">
-                <ClockIcon className="h-5 w-5 text-amber-300" />
+                <ClockIcon className="h-5 w-5 text-[var(--sr-warn)]" />
               </span>
               <div>
                 <strong>Horario de recepción</strong>
@@ -479,7 +479,7 @@ export default function FoundationPublicPage() {
 
             <div className="sr-store-info-item">
               <span className="sr-store-info-icon" aria-hidden="true">
-                <PhoneIcon className="h-5 w-5 text-emerald-400" />
+                <PhoneIcon className="h-5 w-5 text-[var(--sr-ok)]" />
               </span>
               <div>
                 <strong>Teléfono</strong>
@@ -489,7 +489,7 @@ export default function FoundationPublicPage() {
 
             <div className="sr-store-info-item">
               <span className="sr-store-info-icon" aria-hidden="true">
-                <MailIcon className="h-5 w-5 text-sky-400" />
+                <MailIcon className="h-5 w-5 text-[var(--sr-info)]" />
               </span>
               <div>
                 <strong>Correo</strong>
@@ -499,15 +499,15 @@ export default function FoundationPublicPage() {
           </div>
 
           {foundation.puntos.length > 0 && (
-            <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-white/5 p-4">
-              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[var(--color-text-muted)]">
+            <div className="mt-6 rounded-2xl border border-[var(--sr-border-subtle)] bg-[var(--sr-bg-2,var(--color-surface-muted))] p-4">
+              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[var(--sr-text-muted)]">
                 Puntos de acopio habilitados
               </p>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {foundation.puntos.map((pt) => (
-                  <li key={pt.id} className="text-sm text-[var(--color-text)]">
+                  <li key={pt.id} className="text-sm text-[var(--sr-text-primary)]">
                     <strong>{pt.nombre}:</strong>{' '}
-                    <span className="text-[var(--color-text-muted)]">{pt.direccion}</span>
+                    <span className="text-[var(--sr-text-secondary)]">{pt.direccion}</span>
                   </li>
                 ))}
               </ul>

@@ -1,29 +1,43 @@
 /* =============================================================
    StyleRadar · Módulo de Fundación (/fundacion y /fundacion/donaciones)
-   Rediseño visual editorial adaptado a la identidad de marca
+   Usa tokens semánticos oficiales (--sr-* y --color-*) para
+   Modo Oscuro, Modo Claro y Modo Daltónico (Okabe-Ito).
    ============================================================= */
 
 .fnd-dashboard,
 .fnd-donations {
-  --fnd-grafito: #262626;
-  --fnd-arena: #e8dccb;
-  --fnd-lavanda: #b9b9ca;
-  --fnd-violeta: #48119a;
-  --fnd-violeta-hover: #5a1fb8;
   --fnd-radius: 20px;
-  --fnd-shadow: 0 10px 30px rgba(38, 38, 38, 0.07), 0 2px 6px rgba(38, 38, 38, 0.04);
+  --fnd-btn-primary-bg: var(--color-violeta, #48119a);
+  --fnd-btn-primary-hover: var(--color-violeta-claro, #7b4dd8);
+  --fnd-hero-bg: var(--sr-hero-bg, #05030a);
+  --fnd-hero-shade:
+    linear-gradient(90deg, #09070f 0%, #09070f 36%, rgba(9, 7, 15, 0.88) 52%, rgba(9, 7, 15, 0.35) 76%, rgba(9, 7, 15, 0.12) 100%),
+    linear-gradient(0deg, rgba(9, 7, 15, 0.88) 0%, rgba(9, 7, 15, 0) 40%);
+  --fnd-hero-text: var(--sr-hero-text, #f4eee3);
+  --fnd-hero-muted: var(--sr-hero-text-muted, #cfc6e0);
+  --fnd-hero-sub: var(--sr-accent-text, #c084fc);
+  --fnd-hero-preview-bg: rgba(20, 16, 33, 0.72);
+  --fnd-hero-preview-border: var(--sr-border-subtle, rgba(255, 255, 255, 0.12));
+  --fnd-hero-title-shadow: 0 2px 22px rgba(0, 0, 0, 0.45);
+  --fnd-kpi-bg: rgba(20, 16, 33, 0.78);
+  --fnd-kpi-icon-bg: rgba(255, 255, 255, 0.10);
+  --fnd-kpi-icon-color: var(--sr-focus, #e8dccb);
+  --fnd-outline-bg: rgba(255, 255, 255, 0.08);
+  --fnd-outline-border: rgba(255, 255, 255, 0.32);
+  --fnd-outline-hover-bg: rgba(255, 255, 255, 0.16);
+  --fnd-outline-hover-border: rgba(255, 255, 255, 0.6);
 
   min-height: 100vh;
   padding-bottom: 72px;
-  background-color: #0d0a14;
+  background-color: var(--sr-bg, #09070f);
   background-image: url('/img/backgrounds/donaciones-noche.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
-  color: #f3eff9;
-  font-family: 'Poppins', system-ui, sans-serif;
+  color: var(--sr-text-primary, #f8fafc);
+  font-family: var(--font-sans, 'Poppins', system-ui, sans-serif);
   overflow-x: clip;
-  transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+  transition: background-image 0.5s ease-in-out, background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Modo claro */
@@ -33,17 +47,69 @@ html[data-theme='claro'] .fnd-dashboard,
 html[data-theme='claro'] .fnd-donations,
 html[data-tema='claro'] .fnd-dashboard,
 html[data-tema='claro'] .fnd-donations {
-  background-color: #f8f6fc;
+  --fnd-hero-bg: var(--sr-hero-bg, #f3f0f8);
+  --fnd-hero-shade:
+    linear-gradient(90deg, #f3f0f8 0%, #f3f0f8 36%, rgba(243, 240, 248, 0.90) 54%, rgba(243, 240, 248, 0.48) 76%, rgba(243, 240, 248, 0.18) 100%),
+    linear-gradient(0deg, rgba(243, 240, 248, 0.92) 0%, rgba(243, 240, 248, 0) 40%);
+  --fnd-hero-text: var(--sr-text-primary, #0f172a);
+  --fnd-hero-muted: var(--sr-text-secondary, #475569);
+  --fnd-hero-sub: var(--sr-accent-text, #48119a);
+  --fnd-hero-preview-bg: rgba(255, 255, 255, 0.88);
+  --fnd-hero-preview-border: var(--sr-border-subtle, #e2e8f0);
+  --fnd-hero-title-shadow: none;
+  --fnd-kpi-bg: rgba(255, 255, 255, 0.90);
+  --fnd-kpi-icon-bg: var(--color-accent-soft, #e9d5ff);
+  --fnd-kpi-icon-color: var(--sr-accent-text, #48119a);
+  --fnd-outline-bg: rgba(255, 255, 255, 0.85);
+  --fnd-outline-border: var(--sr-border-control, #94a3b8);
+  --fnd-outline-hover-bg: #ffffff;
+  --fnd-outline-hover-border: var(--sr-accent, #48119a);
+
+  background-color: var(--sr-bg, #f8f9fa);
   background-image: url('/img/backgrounds/donaciones-dia.jpg');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
-  color: var(--fnd-grafito);
+  color: var(--sr-text-primary, #0f172a);
+}
+
+/* Modo daltónico (Okabe-Ito) */
+html[data-theme='colorblind'] .fnd-dashboard,
+html[data-theme='colorblind'] .fnd-donations,
+html[data-theme='daltonico'] .fnd-dashboard,
+html[data-theme='daltonico'] .fnd-donations,
+html[data-tema='daltonico'] .fnd-dashboard,
+html[data-tema='daltonico'] .fnd-donations,
+html[data-cvd='on'] .fnd-dashboard,
+html[data-cvd='on'] .fnd-donations {
+  --fnd-btn-primary-bg: var(--sr-accent, #0072b2);
+  --fnd-btn-primary-hover: var(--sr-accent-text, #56b4e9);
+  --fnd-hero-bg: var(--sr-hero-bg, #1d1d1d);
+  --fnd-hero-shade:
+    linear-gradient(90deg, #1d1d1d 0%, #1d1d1d 36%, rgba(29, 29, 29, 0.90) 52%, rgba(29, 29, 29, 0.40) 76%, rgba(29, 29, 29, 0.14) 100%),
+    linear-gradient(0deg, rgba(29, 29, 29, 0.90) 0%, rgba(29, 29, 29, 0) 40%);
+  --fnd-hero-text: var(--sr-text-primary, #ffffff);
+  --fnd-hero-muted: var(--sr-text-secondary, #d6d6e2);
+  --fnd-hero-sub: var(--sr-accent-text, #56b4e9);
+  --fnd-hero-preview-bg: rgba(38, 38, 38, 0.88);
+  --fnd-hero-preview-border: var(--sr-border-subtle, rgba(255, 255, 255, 0.18));
+  --fnd-hero-title-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+  --fnd-kpi-bg: rgba(38, 38, 38, 0.92);
+  --fnd-kpi-icon-bg: rgba(86, 180, 233, 0.16);
+  --fnd-kpi-icon-color: var(--sr-focus, #f0e442);
+  --fnd-outline-bg: rgba(255, 255, 255, 0.08);
+  --fnd-outline-border: var(--sr-border-control, rgba(255, 255, 255, 0.45));
+  --fnd-outline-hover-bg: rgba(255, 255, 255, 0.16);
+  --fnd-outline-hover-border: var(--sr-accent-text, #56b4e9);
+
+  background-color: var(--sr-bg, #1d1d1d);
+  background-image: url('/img/backgrounds/donaciones-noche.jpg');
+  color: var(--sr-text-primary, #ffffff);
 }
 
 .fnd-dashboard :focus-visible,
 .fnd-donations :focus-visible {
-  outline: 2px solid var(--fnd-violeta);
+  outline: 2px solid var(--sr-focus);
   outline-offset: 3px;
 }
 
@@ -52,13 +118,15 @@ html[data-tema='claro'] .fnd-donations {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: #16121b;
-  color: #fff;
+  background: var(--fnd-hero-bg);
+  color: var(--fnd-hero-text);
+  border-bottom: 1px solid var(--sr-border-subtle);
   min-height: clamp(520px, 66vh, 680px);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   animation: fndFadeIn 0.35s ease-out;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 @keyframes fndFadeIn {
@@ -90,9 +158,7 @@ html[data-tema='claro'] .fnd-donations {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(90deg, #16121b 0%, #16121b 36%, rgba(22, 18, 27, 0.88) 52%, rgba(22, 18, 27, 0.35) 76%, rgba(22, 18, 27, 0.12) 100%),
-    linear-gradient(0deg, rgba(22, 18, 27, 0.85) 0%, rgba(22, 18, 27, 0) 38%);
+  background: var(--fnd-hero-shade);
 }
 
 .fnd-hero__inner {
@@ -106,7 +172,7 @@ html[data-tema='claro'] .fnd-donations {
   align-items: center;
   gap: 8px;
   margin-bottom: clamp(14px, 2.4vw, 24px);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--fnd-hero-muted);
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -121,8 +187,8 @@ html[data-tema='claro'] .fnd-donations {
   gap: 12px;
   margin-bottom: 20px;
   padding: 8px 16px;
-  background: rgba(38, 38, 38, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--fnd-hero-preview-bg);
+  border: 1px solid var(--fnd-hero-preview-border);
   border-radius: 999px;
   backdrop-filter: blur(8px);
 }
@@ -135,12 +201,12 @@ html[data-tema='claro'] .fnd-donations {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--fnd-hero-text);
 }
 
 .fnd-hero__eyebrow {
   display: block;
-  color: var(--fnd-lavanda);
+  color: var(--fnd-hero-sub);
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.24em;
@@ -153,23 +219,24 @@ html[data-tema='claro'] .fnd-donations {
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.03em;
-  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.45);
+  color: var(--fnd-hero-text);
+  text-shadow: var(--fnd-hero-title-shadow);
 }
 
 .fnd-hero__subtitle {
   display: block;
   margin: 4px 0 14px;
   font-size: clamp(14px, 1.6vw, 18px);
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: var(--fnd-lavanda);
+  color: var(--fnd-hero-sub);
 }
 
 .fnd-hero__lead {
   max-width: 48ch;
   margin: 0;
-  color: #d6d6e2;
+  color: var(--fnd-hero-muted);
   font-size: clamp(14px, 1.25vw, 16px);
   line-height: 1.5;
 }
@@ -202,19 +269,19 @@ html[data-tema='claro'] .fnd-donations {
   align-items: stretch;
   justify-content: space-between;
   border-radius: 20px;
-  background: #191422;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  background: var(--sr-surface);
+  border: 1px solid var(--sr-border-subtle);
+  box-shadow: var(--sr-shadow);
   overflow: hidden;
   min-height: 150px;
   height: 100%;
-  color: #fff;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  color: var(--sr-text-primary);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .fnd-hero-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.45);
+  border-color: var(--sr-border-control);
 }
 
 .fnd-hero-card__body {
@@ -231,14 +298,14 @@ html[data-tema='claro'] .fnd-donations {
   font-size: clamp(17px, 1.6vw, 20px);
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: #ffffff;
+  color: var(--sr-text-primary);
 }
 
 .fnd-hero-card__desc {
   margin: 0 0 14px;
   font-size: 13px;
   line-height: 1.5;
-  color: #c8c5d6;
+  color: var(--sr-text-secondary);
 }
 
 .fnd-hero-card__link {
@@ -247,14 +314,14 @@ html[data-tema='claro'] .fnd-donations {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--sr-accent-text);
   text-decoration: underline;
   text-underline-offset: 4px;
   transition: color 0.15s ease;
 }
 
 .fnd-hero-card__link:hover {
-  color: var(--fnd-arena);
+  color: var(--sr-text-primary);
 }
 
 .fnd-hero-card__media {
@@ -283,8 +350,8 @@ html[data-tema='claro'] .fnd-donations {
   width: 100px;
   height: 100px;
   border-radius: 22px;
-  background: linear-gradient(135deg, var(--fnd-violeta) 0%, #7038c7 100%);
-  box-shadow: 0 10px 28px rgba(72, 17, 154, 0.45);
+  background: linear-gradient(135deg, var(--fnd-btn-primary-bg) 0%, var(--fnd-btn-primary-hover) 100%);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--fnd-btn-primary-bg) 42%, transparent);
   z-index: -1;
   pointer-events: none;
 }
@@ -336,28 +403,28 @@ html[data-tema='claro'] .fnd-donations {
 }
 
 .fnd-btn--primary {
-  background: var(--fnd-violeta);
-  color: #fff;
-  border: 1px solid var(--fnd-violeta);
-  box-shadow: 0 4px 14px rgba(72, 17, 154, 0.35);
+  background: var(--fnd-btn-primary-bg);
+  color: #ffffff;
+  border: 1px solid var(--fnd-btn-primary-bg);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--fnd-btn-primary-bg) 35%, transparent);
 }
 
 .fnd-btn--primary:hover {
-  background: var(--fnd-violeta-hover);
-  border-color: var(--fnd-violeta-hover);
+  background: var(--fnd-btn-primary-hover);
+  border-color: var(--fnd-btn-primary-hover);
   transform: translateY(-1px);
 }
 
 .fnd-btn--outline {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: var(--fnd-outline-bg);
+  color: var(--fnd-hero-text);
+  border: 1px solid var(--fnd-outline-border);
   backdrop-filter: blur(4px);
 }
 
 .fnd-btn--outline:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: var(--fnd-outline-hover-bg);
+  border-color: var(--fnd-outline-hover-border);
   transform: translateY(-1px);
 }
 
@@ -375,10 +442,10 @@ html[data-tema='claro'] .fnd-donations {
   gap: 16px;
   padding: 16px 20px;
   border-radius: 18px;
-  background: rgba(38, 38, 38, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--fnd-kpi-bg);
+  border: 1px solid var(--sr-border-subtle);
   backdrop-filter: blur(14px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--sr-shadow);
 }
 
 .fnd-kpi-card__icon {
@@ -387,8 +454,8 @@ html[data-tema='claro'] .fnd-donations {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--fnd-arena);
+  background: var(--fnd-kpi-icon-bg);
+  color: var(--fnd-kpi-icon-color);
   flex-shrink: 0;
 }
 
@@ -397,13 +464,13 @@ html[data-tema='claro'] .fnd-donations {
   font-size: 24px;
   font-weight: 800;
   line-height: 1.1;
-  color: #fff;
+  color: var(--fnd-hero-text);
 }
 
 .fnd-kpi-card__label {
   display: block;
   font-size: 12px;
-  color: var(--fnd-lavanda);
+  color: var(--fnd-hero-muted);
   font-weight: 500;
 }
 
@@ -424,14 +491,10 @@ html[data-tema='claro'] .fnd-donations {
   margin-bottom: 24px;
   padding: 18px 24px;
   border-radius: var(--fnd-radius);
-  background: #ffffff;
-  border: 1px solid rgba(72, 17, 154, 0.18);
-  box-shadow: var(--fnd-shadow);
-}
-
-html[data-theme='dark'] .fnd-alert {
-  background: rgba(38, 32, 48, 0.85);
-  border-color: rgba(185, 185, 202, 0.18);
+  background: var(--sr-surface);
+  border: 1px solid var(--sr-border-subtle);
+  box-shadow: var(--sr-shadow);
+  color: var(--sr-text-primary);
 }
 
 .fnd-alert__left {
@@ -448,46 +511,33 @@ html[data-theme='dark'] .fnd-alert {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: rgba(72, 17, 154, 0.1);
-  color: var(--fnd-violeta);
+  background: color-mix(in srgb, var(--sr-accent) 14%, transparent);
+  color: var(--sr-accent-text);
   flex-shrink: 0;
-}
-
-html[data-theme='dark'] .fnd-alert__icon {
-  background: rgba(185, 185, 202, 0.15);
-  color: var(--fnd-lavanda);
 }
 
 .fnd-alert__title {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
+  color: var(--sr-text-primary);
 }
 
 .fnd-alert__desc {
   margin: 2px 0 0;
   font-size: 13px;
-  color: rgba(38, 38, 38, 0.7);
-}
-
-html[data-theme='dark'] .fnd-alert__desc {
-  color: rgba(243, 239, 249, 0.7);
+  color: var(--sr-text-secondary);
 }
 
 /* ── Tarjetas editoriales de la fundación ── */
 .fnd-card {
   padding: clamp(20px, 2.6vw, 28px);
   border-radius: var(--fnd-radius);
-  background: #ffffff;
-  border: 1px solid rgba(38, 38, 38, 0.08);
-  box-shadow: var(--fnd-shadow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-html[data-theme='dark'] .fnd-card {
-  background: rgba(32, 26, 40, 0.9);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  background: var(--sr-surface);
+  border: 1px solid var(--sr-border-subtle);
+  box-shadow: var(--sr-shadow);
+  color: var(--sr-text-primary);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .fnd-card__heading {
@@ -495,17 +545,14 @@ html[data-theme='dark'] .fnd-card {
   font-size: clamp(20px, 2.2vw, 24px);
   font-weight: 800;
   letter-spacing: -0.02em;
+  color: var(--sr-text-primary);
 }
 
 .fnd-card__text {
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
-  color: rgba(38, 38, 38, 0.85);
-}
-
-html[data-theme='dark'] .fnd-card__text {
-  color: rgba(243, 239, 249, 0.85);
+  color: var(--sr-text-secondary);
 }
 
 .fnd-card__eyebrow {
@@ -514,11 +561,7 @@ html[data-theme='dark'] .fnd-card__text {
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--fnd-violeta);
-}
-
-html[data-theme='dark'] .fnd-card__eyebrow {
-  color: var(--fnd-lavanda);
+  color: var(--sr-accent-text);
 }
 
 /* Listas con checkmark */
@@ -536,11 +579,7 @@ html[data-theme='dark'] .fnd-card__eyebrow {
   align-items: flex-start;
   gap: 10px;
   font-size: 13.5px;
-  color: rgba(38, 38, 38, 0.82);
-}
-
-html[data-theme='dark'] .fnd-check-list li {
-  color: rgba(243, 239, 249, 0.82);
+  color: var(--sr-text-secondary);
 }
 
 .fnd-check-list .fnd-check-icon {
@@ -549,17 +588,12 @@ html[data-theme='dark'] .fnd-check-list li {
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  background: rgba(72, 17, 154, 0.12);
-  color: var(--fnd-violeta);
+  background: color-mix(in srgb, var(--sr-accent) 16%, transparent);
+  color: var(--sr-accent-text);
   font-size: 11px;
   font-weight: 800;
   flex-shrink: 0;
   margin-top: 2px;
-}
-
-html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
-  background: rgba(185, 185, 202, 0.2);
-  color: #fff;
 }
 
 /* Fotos de la fundación */
@@ -568,8 +602,9 @@ html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
   min-height: 220px;
   border-radius: var(--fnd-radius);
   overflow: hidden;
-  box-shadow: var(--fnd-shadow);
-  border: 1px solid rgba(38, 38, 38, 0.08);
+  box-shadow: var(--sr-shadow);
+  border: 1px solid var(--sr-border-subtle);
+  background: var(--sr-surface);
 }
 
 .fnd-figure img {
@@ -591,14 +626,14 @@ html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
   left: 12px;
   padding: 5px 12px;
   border-radius: 999px;
-  background: rgba(38, 38, 38, 0.82);
+  background: rgba(15, 23, 42, 0.80);
   backdrop-filter: blur(6px);
-  color: #fff;
+  color: #ffffff;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 /* Píldoras de qué recibimos */
@@ -616,19 +651,13 @@ html[data-theme='dark'] .fnd-check-list .fnd-check-icon {
   align-items: center;
   padding: 6px 14px;
   border-radius: 999px;
-  background: #f4eee5;
-  border: 1px solid rgba(38, 38, 38, 0.12);
+  background: var(--sr-bg-2, var(--color-surface-muted));
+  border: 1px solid var(--sr-border-subtle);
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--fnd-grafito);
-}
-
-html[data-theme='dark'] .fnd-pill-tag {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #f3eff9;
+  color: var(--sr-text-primary);
 }
 
 /* Barras de progreso de necesidades */
@@ -646,23 +675,20 @@ html[data-theme='dark'] .fnd-pill-tag {
   font-size: 13.5px;
   font-weight: 600;
   margin-bottom: 6px;
+  color: var(--sr-text-primary);
 }
 
 .fnd-progress-bar {
   height: 8px;
   border-radius: 999px;
-  background: #eae2d6;
+  background: var(--sr-border-subtle);
   overflow: hidden;
-}
-
-html[data-theme='dark'] .fnd-progress-bar {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .fnd-progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--fnd-violeta) 0%, #7038c7 100%);
+  background: linear-gradient(90deg, var(--fnd-btn-primary-bg) 0%, var(--fnd-btn-primary-hover) 100%);
   transition: width 0.4s ease;
 }
 
@@ -675,12 +701,8 @@ html[data-theme='dark'] .fnd-progress-bar {
 }
 
 .fnd-contact-item {
-  border-bottom: 1px solid rgba(38, 38, 38, 0.08);
+  border-bottom: 1px solid var(--sr-border-subtle);
   padding-bottom: 8px;
-}
-
-html[data-theme='dark'] .fnd-contact-item {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .fnd-contact-item.full-width {
@@ -692,11 +714,7 @@ html[data-theme='dark'] .fnd-contact-item {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(38, 38, 38, 0.55);
-}
-
-html[data-theme='dark'] .fnd-contact-dt {
-  color: rgba(243, 239, 249, 0.55);
+  color: var(--sr-text-muted);
 }
 
 .fnd-contact-dd {
@@ -704,6 +722,7 @@ html[data-theme='dark'] .fnd-contact-dt {
   font-size: 13.5px;
   font-weight: 500;
   word-break: break-word;
+  color: var(--sr-text-primary);
 }
 
 /* ── Página de solicitudes de donación (/fundacion/donaciones) ── */
@@ -723,29 +742,24 @@ html[data-theme='dark'] .fnd-contact-dt {
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid rgba(38, 38, 38, 0.12);
-  background: #ffffff;
-  color: var(--fnd-grafito);
+  border: 1px solid var(--sr-border-subtle);
+  background: var(--sr-surface);
+  color: var(--sr-text-primary);
   cursor: pointer;
   transition: all 0.15s ease;
-}
-
-html[data-theme='dark'] .fnd-filter-btn {
-  background: rgba(38, 32, 48, 0.7);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #f3eff9;
+  box-shadow: 0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.04));
 }
 
 .fnd-filter-btn:hover {
-  border-color: var(--fnd-violeta);
+  border-color: var(--sr-accent);
   transform: translateY(-1px);
 }
 
 .fnd-filter-btn[aria-pressed='true'] {
-  background: var(--fnd-violeta);
-  border-color: var(--fnd-violeta);
+  background: var(--fnd-btn-primary-bg);
+  border-color: var(--fnd-btn-primary-bg);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(72, 17, 154, 0.28);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--fnd-btn-primary-bg) 32%, transparent);
 }
 
 .fnd-filter-badge {
@@ -754,11 +768,13 @@ html[data-theme='dark'] .fnd-filter-btn {
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  background: rgba(0, 0, 0, 0.08);
+  background: color-mix(in srgb, var(--sr-text-primary) 10%, transparent);
+  color: inherit;
 }
 
 .fnd-filter-btn[aria-pressed='true'] .fnd-filter-badge {
   background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
 }
 
 /* Lista de solicitudes */
@@ -777,15 +793,11 @@ html[data-theme='dark'] .fnd-filter-btn {
   gap: 20px;
   padding: 20px 24px;
   border-radius: var(--fnd-radius);
-  background: #ffffff;
-  border: 1px solid rgba(38, 38, 38, 0.08);
-  box-shadow: var(--fnd-shadow);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-html[data-theme='dark'] .fnd-donation-card {
-  background: rgba(32, 26, 40, 0.9);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--sr-surface);
+  border: 1px solid var(--sr-border-subtle);
+  box-shadow: var(--sr-shadow);
+  color: var(--sr-text-primary);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
 .fnd-donation-card__img {
@@ -793,7 +805,8 @@ html[data-theme='dark'] .fnd-donation-card {
   height: 104px;
   border-radius: 14px;
   object-fit: cover;
-  background: #e8dccb;
+  background: var(--sr-surface-raised);
+  border: 1px solid var(--sr-border-subtle);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
 }
@@ -815,29 +828,22 @@ html[data-theme='dark'] .fnd-donation-card {
   font-size: 17px;
   font-weight: 700;
   margin: 0;
+  color: var(--sr-text-primary);
 }
 
 .fnd-donation-card__meta {
   font-size: 13px;
-  color: rgba(38, 38, 38, 0.72);
+  color: var(--sr-text-secondary);
   margin: 3px 0;
-}
-
-html[data-theme='dark'] .fnd-donation-card__meta {
-  color: rgba(243, 239, 249, 0.72);
 }
 
 .fnd-donation-card__logistics {
   font-size: 13px;
-  color: rgba(38, 38, 38, 0.85);
+  color: var(--sr-text-secondary);
   margin: 4px 0;
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-html[data-theme='dark'] .fnd-donation-card__logistics {
-  color: rgba(243, 239, 249, 0.85);
 }
 
 .fnd-donation-card__actions {
@@ -852,8 +858,7 @@ html[data-theme='dark'] .fnd-donation-card__logistics {
   .fnd-donation-card__actions {
     align-items: flex-start;
     width: 100%;
-    border-top: 1px solid rgba(38, 38, 38, 0.08);
+    border-top: 1px solid var(--sr-border-subtle);
     padding-top: 14px;
   }
 }
-

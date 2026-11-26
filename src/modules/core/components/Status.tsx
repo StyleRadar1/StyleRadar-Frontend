@@ -9,8 +9,8 @@ import { ErrorScene, type SceneVariant } from './ErrorScene'
 /** Estado de carga accesible: los lectores de pantalla lo anuncian. */
 export function Loading({ label = 'Cargando…' }: { label?: string }) {
   return (
-    <div role="status" aria-live="polite" className="flex items-center gap-3 py-8 text-white/70">
-      <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-violeta-claro motion-reduce:animate-none" />
+    <div role="status" aria-live="polite" className="flex items-center gap-3 py-8 text-[var(--sr-text-secondary)]">
+      <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--sr-border-subtle)] border-t-[var(--sr-accent)] motion-reduce:animate-none" />
       <span>{label}</span>
     </div>
   )
@@ -84,13 +84,13 @@ export function ErrorState({
             <Icon className="h-3.5 w-3.5" aria-hidden="true" />
             <span>{meta.chip}{detectedCode ? ` · ${detectedCode}` : ''}</span>
           </span>
-          <p className="mt-3 text-lg font-bold text-blanco">{title}</p>
-          <p className="mt-1 text-sm text-white/80">{errorMessage(error)}</p>
+          <p className="mt-3 text-lg font-bold text-[var(--sr-text-primary)]">{title}</p>
+          <p className="mt-1 text-sm text-[var(--sr-text-secondary)]">{errorMessage(error)}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {kind === 'sesion' ? (
-              <Link to="/?login" className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold text-white">Iniciar sesión</Link>
+              <Link to="/?login" className="rounded-xl bg-[var(--sr-accent)] px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Iniciar sesión</Link>
             ) : onRetry && kind !== 'permiso' ? (
-              <button type="button" onClick={onRetry} className="rounded-xl bg-violeta px-4 py-2 text-sm font-semibold text-white">Reintentar</button>
+              <button type="button" onClick={onRetry} className="rounded-xl bg-[var(--sr-accent)] px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Reintentar</button>
             ) : null}
           </div>
         </div>
@@ -102,9 +102,9 @@ export function ErrorState({
 
 export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/20 p-8 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--sr-border-control)] bg-[var(--sr-surface)]/60 p-8 text-center text-[var(--sr-text-primary)]">
       <p className="text-lg font-semibold">{title}</p>
-      {children && <div className="mx-auto mt-2 max-w-md text-sm text-white/70">{children}</div>}
+      {children && <div className="mx-auto mt-2 max-w-md text-sm text-[var(--sr-text-secondary)]">{children}</div>}
       {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>
   )

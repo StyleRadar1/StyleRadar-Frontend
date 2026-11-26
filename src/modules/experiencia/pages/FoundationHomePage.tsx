@@ -49,9 +49,34 @@ export default function FoundationHomePage() {
     )
   }
 
-  const portadaSrc = f.fotos?.portada || '/img/fundaciones/abrigo-trabajo.jpg'
-  const trabajoSrc = f.fotos?.trabajo || '/img/fundaciones/abrigo-trabajo.jpg'
-  const donacionesSrc = f.fotos?.donaciones || '/img/fundaciones/abrigo-donaciones.jpg'
+  const usedFotos = new Set<string>()
+  const pickFoto = (preferred: string | undefined, fallback: string) => {
+    const clean = preferred?.trim()
+    if (clean && !usedFotos.has(clean)) {
+      usedFotos.add(clean)
+      return clean
+    }
+    if (!usedFotos.has(fallback)) {
+      usedFotos.add(fallback)
+      return fallback
+    }
+    const extra = [
+      '/img/fundaciones/abrigo-trabajo.jpg',
+      '/img/fundaciones/abrigo-donaciones.jpg',
+      '/img/fundaciones/abrigo-impacto.png',
+      '/img/fundaciones/abrigo-voluntarios.jpg',
+      '/img/fundaciones/abrigo-clasificacion.jpg',
+      '/img/fundaciones/abrigo-acopio.jpg',
+    ].find((url) => !usedFotos.has(url)) ?? fallback
+    usedFotos.add(extra)
+    return extra
+  }
+
+  const portadaSrc = pickFoto(f.fotos?.portada, '/img/fundaciones/abrigo-trabajo.jpg')
+  const solicitudesSrc = pickFoto(f.fotos?.solicitudes, '/img/fundaciones/abrigo-donaciones.jpg')
+  const impactoSrc = pickFoto(f.fotos?.impacto, '/img/fundaciones/abrigo-impacto.png')
+  const trabajoSrc = pickFoto(f.fotos?.trabajo, '/img/fundaciones/abrigo-voluntarios.jpg')
+  const donacionesSrc = pickFoto(f.fotos?.donaciones, '/img/fundaciones/abrigo-clasificacion.jpg')
   const nombreFundacion = f.nombre || 'Fundación'
 
   return (
@@ -81,7 +106,7 @@ export default function FoundationHomePage() {
               </svg>
               Así ven tu página las personas que quieren donar
             </span>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[.12em] ${f.activa ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'}`}>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[.12em] ${f.activa ? 'bg-[var(--sr-ok-bg)] text-[var(--sr-ok)] border border-[var(--sr-ok)]/35' : 'bg-[var(--sr-bad-bg)] text-[var(--sr-bad)] border border-[var(--sr-bad)]/35'}`}>
               <span aria-hidden="true">● </span>{f.activa ? 'Activa' : 'Inactiva'}
             </span>
           </div>
@@ -130,7 +155,7 @@ export default function FoundationHomePage() {
               </Link>
             </div>
             <div className="fnd-hero-card__media" aria-hidden="true">
-              <img src={donacionesSrc} alt="" loading="lazy" />
+              <img src={solicitudesSrc} alt="" loading="lazy" />
             </div>
           </div>
 
@@ -150,7 +175,7 @@ export default function FoundationHomePage() {
                 </Link>
               </div>
               <div className="fnd-hero-card__media" aria-hidden="true">
-                <img src={trabajoSrc} alt="" loading="lazy" />
+                <img src={impactoSrc} alt="" loading="lazy" />
               </div>
             </div>
           </div>
@@ -204,7 +229,7 @@ export default function FoundationHomePage() {
                 <div key={n.nombre} className="fnd-progress-item">
                   <div className="fnd-progress-header">
                     <span>{n.nombre}</span>
-                    <span className="text-violeta font-semibold">{n.avance}%</span>
+                    <span className="text-[var(--sr-accent-text)] font-semibold">{n.avance}%</span>
                   </div>
                   <div
                     role="progressbar"
