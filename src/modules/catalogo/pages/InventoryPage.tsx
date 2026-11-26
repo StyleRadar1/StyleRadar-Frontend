@@ -24,6 +24,7 @@ import {
   TIPOS_PRENDA_UNIFICADOS,
 } from '../types/item.dto'
 import './InventoryPage.css'
+import '@/styles/tienda-glass.css'
 
 const HERO_PHOTO = '/img/sesion/rol-tienda.jpg'
 const ITEMS_PER_PAGE = 8
@@ -690,7 +691,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="inv-page">
+    <div className="inv-page sr-tienda-glass">
       <StoreSuspendedBanner />
       {/* ── Cabecera compacta a todo el ancho bajo el navbar ── */}
       <header className="inv-hero" aria-labelledby="inv-heading">

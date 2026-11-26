@@ -15,6 +15,7 @@ import { storeSubscriptionService } from '../services/storeSubscriptionService'
 import type { CheckoutResultDto } from '../types/plan.dto'
 import { isSubscriptionAlreadyExistsError, SUBSCRIPTION_ALREADY_EXISTS_MSG } from '../utils/erroresPlan'
 import { isValidNit } from '../utils/validation'
+import '@/styles/tienda-glass.css'
 
 export const STORE_ALREADY_SUBSCRIBED_MSG = SUBSCRIPTION_ALREADY_EXISTS_MSG
 export const STORE_PENDING_PAYMENT_MSG =
@@ -95,17 +96,21 @@ export default function StoreActivateSubscriptionPage() {
 
   if (loading && !data) {
     return (
-      <section className="mx-auto max-w-2xl px-4 py-12">
-        <Loading label="Cargando suscripción del almacén…" />
-      </section>
+      <div className="sr-tienda-glass">
+        <section className="mx-auto max-w-2xl px-4 py-12">
+          <Loading label="Cargando suscripción del almacén…" />
+        </section>
+      </div>
     )
   }
 
   if (error && !data) {
     return (
-      <section className="mx-auto max-w-2xl px-4 py-12">
-        <ErrorState error={error} onRetry={reload} title="No pudimos cargar la suscripción del almacén" />
-      </section>
+      <div className="sr-tienda-glass">
+        <section className="mx-auto max-w-2xl px-4 py-12">
+          <ErrorState error={error} onRetry={reload} title="No pudimos cargar la suscripción del almacén" />
+        </section>
+      </div>
     )
   }
 
@@ -124,6 +129,7 @@ export default function StoreActivateSubscriptionPage() {
       !lastResult)
 
   return (
+    <div className="sr-tienda-glass">
     <section className="mx-auto max-w-2xl px-4 py-10 text-[var(--sr-text-primary,var(--color-text))]">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -148,7 +154,7 @@ export default function StoreActivateSubscriptionPage() {
         <div
           role="alert"
           aria-live="polite"
-          className="mb-6 rounded-2xl border border-[var(--sr-accent,var(--color-accent))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] p-4 text-sm"
+          className="sr-glass-card mb-6 rounded-2xl border border-[var(--sr-accent,var(--color-accent))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] p-4 text-sm"
         >
           <p className="font-semibold">Acceso restringido hasta activar tu suscripción</p>
           <p className="mt-1 text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
@@ -162,7 +168,7 @@ export default function StoreActivateSubscriptionPage() {
         <div
           role="alert"
           aria-live="assertive"
-          className="mb-6 rounded-2xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-5"
+          className="sr-glass-card mb-6 rounded-2xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-5"
         >
           <p className="text-base font-bold">{STORE_ALREADY_SUBSCRIBED_MSG}</p>
           <p className="mt-1 text-sm text-[var(--sr-text-secondary,var(--color-text-muted))]">
@@ -192,7 +198,7 @@ export default function StoreActivateSubscriptionPage() {
         <div
           role="status"
           aria-live="polite"
-          className="mb-6 rounded-2xl border border-[var(--sr-accent,var(--color-accent))]/50 bg-[var(--sr-surface,var(--color-surface))] p-5"
+          className="sr-glass-card mb-6 rounded-2xl border border-[var(--sr-accent,var(--color-accent))]/50 bg-[var(--sr-surface,var(--color-surface))] p-5"
         >
           <div className="flex items-center gap-2">
             <Badge tone="lavanda">PENDIENTE</Badge>
@@ -215,7 +221,7 @@ export default function StoreActivateSubscriptionPage() {
         <div
           role="status"
           aria-live="polite"
-          className="mb-6 rounded-2xl border border-[var(--sr-accent,var(--color-accent))] bg-[var(--sr-surface,var(--color-surface))] p-6"
+          className="sr-glass-card mb-6 rounded-2xl border border-[var(--sr-accent,var(--color-accent))] bg-[var(--sr-surface,var(--color-surface))] p-6"
         >
           <Badge tone="violeta">ACTIVA</Badge>
           <h2 className="mt-2 text-2xl font-extrabold">¡Suscripción activa!</h2>
@@ -250,7 +256,7 @@ export default function StoreActivateSubscriptionPage() {
 
       {/* Tarjeta de suscripción única de almacén + PayerEmailForm */}
       {!alreadyActiveOrPending && lastResult?.status !== 'aprobado' && (
-        <Card className="border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-6">
+        <Card className="sr-glass-card border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--sr-border,var(--color-border))] pb-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]">
@@ -340,5 +346,6 @@ export default function StoreActivateSubscriptionPage() {
         </Card>
       )}
     </section>
+    </div>
   )
 }

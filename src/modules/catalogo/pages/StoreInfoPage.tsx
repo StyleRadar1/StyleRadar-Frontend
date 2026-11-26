@@ -8,6 +8,7 @@ import { FieldError } from '@/modules/core/components/ErrorFeedback'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { storeSettingsService } from '../services/storeSettingsService'
 import './StoreInfoPage.css'
+import '@/styles/tienda-glass.css'
 
 type LegalStoreInfo = {
   legalName: string
@@ -116,7 +117,7 @@ export default function StoreInfoPage() {
 
   if (forbidden) {
     return (
-      <main className="store-info">
+      <main className="store-info sr-tienda-glass">
         <ErrorCard
           grande
           variant="etiqueta"
@@ -196,7 +197,7 @@ export default function StoreInfoPage() {
     setErrors((current) => ({ ...current, [key]: undefined }))
   }
 
-  return <main className="store-info">
+  return <main className="store-info sr-tienda-glass">
     <StoreSuspendedBanner />
     <div className="store-info__layout">
       <section className="store-info__main">
