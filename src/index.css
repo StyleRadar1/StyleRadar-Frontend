@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "./modules/core/theme/tokens.css";
-@custom-variant dark (&:where(html[data-theme="dark"] *, html[data-theme="oscuro"] *, html[data-tema="oscuro"] *));
+@custom-variant dark (&:where(html[data-theme="dark"] *, html[data-theme="oscuro"] *, html[data-tema="oscuro"] *, html[data-theme="colorblind"] *, html[data-theme="daltonico"] *, html[data-tema="daltonico"] *, html[data-cvd="on"] *));
 
 /* =====================================================================
    Paleta y tipografía del manual de identidad de StyleRadar.

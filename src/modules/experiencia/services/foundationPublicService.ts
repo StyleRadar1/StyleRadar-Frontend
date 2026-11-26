@@ -71,6 +71,41 @@ const DEFAULT_IMAGES: Record<string, string> = {
   dignidad: '/img/mapa/dignidad.jpg',
 }
 
+const FOUNDATION_GALLERY_POOL = [
+  '/img/fundaciones/abrigo-voluntarios.jpg',
+  '/img/fundaciones/abrigo-clasificacion.jpg',
+  '/img/fundaciones/abrigo-donaciones.jpg',
+  '/img/fundaciones/abrigo-impacto.png',
+  '/img/fundaciones/abrigo-acopio.jpg',
+  '/img/fundaciones/abrigo-trabajo.jpg',
+] as const
+
+function pickDistinctMedia(candidates: (string | undefined)[], used: Set<string>): string {
+  for (const candidate of candidates) {
+    const clean = candidate?.trim()
+    if (clean && !used.has(clean)) {
+      used.add(clean)
+      return clean
+    }
+  }
+  const fallback = FOUNDATION_GALLERY_POOL.find((url) => !used.has(url)) ?? FOUNDATION_GALLERY_POOL[0]
+  used.add(fallback)
+  return fallback
+}
+
+function buildDistinctGallery(
+  id: string,
+  used: Set<string>,
+  preferred: { url?: string; tag: string }[],
+): FoundationGalleryItem[] {
+  const result: FoundationGalleryItem[] = []
+  for (let i = 0; i < preferred.length; i++) {
+    const url = pickDistinctMedia([preferred[i].url, ...FOUNDATION_GALLERY_POOL], used)
+    result.push({ id: `${id}-g${i + 1}`, url, tag: preferred[i].tag })
+  }
+  return result
+}
+
 const DEFAULT_NECESIDADES: Record<string, NecesidadDto[]> = {
   abrigo: [
     { nombre: 'Chaquetas talla M y L', avance: 82 },
@@ -137,8 +172,18 @@ function buildFromMock(cleanId: string): FoundationPublicDto | null {
     profile?.descripcion ??
     mapPin?.desc ??
     'Organización social aliada a StyleRadar comprometida con el acceso digno a prendas en buen estado.'
-  const foto = profile?.fotos.portada ?? mapPin?.photo ?? DEFAULT_IMAGES[id] ?? '/img/fundaciones/abrigo-trabajo.jpg'
-  const fotoEditorial = profile?.fotos.donaciones ?? mapPin?.photo ?? foto
+  const usedMedia = new Set<string>()
+  const foto = pickDistinctMedia([profile?.fotos.portada, mapPin?.photo, DEFAULT_IMAGES[id]], usedMedia)
+  if (foto === '/img/mapa/abrigo.jpg') usedMedia.add('/img/fundaciones/abrigo-trabajo.jpg')
+  if (foto === '/img/fundaciones/abrigo-trabajo.jpg') usedMedia.add('/img/mapa/abrigo.jpg')
+  const fotoEditorial = pickDistinctMedia(
+    [profile?.fotos.trabajo, profile?.fotos.donaciones, mapPin?.photo],
+    usedMedia,
+  )
+  const fotosGaleria = buildDistinctGallery(id, usedMedia, [
+    { url: profile?.fotos.donaciones, tag: 'Trabajo comunitario' },
+    { url: profile?.fotos.impacto, tag: 'Punto de recepción' },
+  ])
   const queRecibimos = profile?.queRecibimos ?? mapPin?.accepts ?? secondHandFound?.categorias ?? ['Ropa en buen estado']
   const queHacemos = profile?.queHacemos ?? DEFAULT_QUE_HACEMOS[id] ?? [
     'Recepción y clasificación solidaria de prendas',
@@ -175,10 +220,7 @@ function buildFromMock(cleanId: string): FoundationPublicDto | null {
       : `Esta fundación tiene la recepción temporalmente pausada · ${horario}.`,
     foto,
     fotoEditorial,
-    fotosGaleria: [
-      { id: `${id}-g1`, url: foto, tag: 'Trabajo comunitario' },
-      { id: `${id}-g2`, url: fotoEditorial, tag: 'Punto de recepción' },
-    ],
+    fotosGaleria,
     queRecibimos,
     queHacemos,
     necesidades,
@@ -226,7 +268,24 @@ function mapBackendFoundation(raw: Record<string, any>, fallback?: FoundationPub
       : Array.isArray(raw.categorias) && raw.categorias.length
         ? raw.categorias
         : fallback?.queRecibimos ?? ['Ropa en buen estado', 'Calzado']
-  const foto = raw.photoUrl || raw.foto || raw.photo || fallback?.foto || '/img/fundaciones/abrigo-trabajo.jpg'
+  const usedMedia = new Set<string>()
+  const foto = pickDistinctMedia(
+    [raw.photoUrl, raw.foto, raw.photo, fallback?.foto, '/img/fundaciones/abrigo-trabajo.jpg'],
+    usedMedia,
+  )
+  if (foto === '/img/mapa/abrigo.jpg') usedMedia.add('/img/fundaciones/abrigo-trabajo.jpg')
+  if (foto === '/img/fundaciones/abrigo-trabajo.jpg') usedMedia.add('/img/mapa/abrigo.jpg')
+  const fotoEditorial = pickDistinctMedia([fallback?.fotoEditorial], usedMedia)
+  const fotosGaleria = buildDistinctGallery(
+    id,
+    usedMedia,
+    fallback?.fotosGaleria?.length
+      ? fallback.fotosGaleria.map((item) => ({ url: item.url, tag: item.tag }))
+      : [
+          { tag: 'Sede principal' },
+          { tag: 'Punto de recepción' },
+        ],
+  )
 
   return {
     id,
@@ -246,8 +305,8 @@ function mapBackendFoundation(raw: Record<string, any>, fallback?: FoundationPub
       ? `Recepción activa en ${barrio} · ${horario}.`
       : `Esta fundación tiene la recepción temporalmente pausada · ${horario}.`,
     foto,
-    fotoEditorial: fallback?.fotoEditorial ?? foto,
-    fotosGaleria: fallback?.fotosGaleria ?? [{ id: `${id}-g1`, url: foto, tag: 'Sede principal' }],
+    fotoEditorial,
+    fotosGaleria,
     queRecibimos,
     queHacemos: Array.isArray(raw.programs) && raw.programs.length ? raw.programs : (fallback?.queHacemos ?? [
       'Acopio y clasificación solidaria de prendas',

@@ -19,5 +19,11 @@ export interface FoundationProfileDto {
   queRecibimos: string[]
   necesidades: NecesidadDto[]
   contacto: { direccion: string; horario: string; telefono: string; correo: string; web?: string }
-  fotos: { portada: string; trabajo: string; donaciones: string }
+  fotos: {
+    portada: string
+    trabajo: string
+    donaciones: string
+    solicitudes?: string
+    impacto?: string
+  }
 }

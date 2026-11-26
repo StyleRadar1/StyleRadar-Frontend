@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Logo } from '@/modules/core/design-system'
-import { type Role } from '@/modules/core/types/roles'
+import { ROLE_HOME, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { ThemeSelect } from '@/modules/core/theme/ThemeSelect'
 import { MessagesLink } from '@/modules/soporte/components/MessagesLink'
@@ -21,6 +21,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const links = LINKS[user?.role ?? 'GUEST']
   const esAdmin = user?.role === 'STYLERADAR_ADMIN'
+  const homePath = user ? ROLE_HOME[user.role] : '/'
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     `whitespace-nowrap px-3.5 py-1.5 text-sm font-medium transition ${
       isActive

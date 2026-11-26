@@ -13,6 +13,12 @@ export const FOUNDATION_PROFILES: Record<string, FoundationProfileDto> = {
     queRecibimos: ['Chaquetas y abrigos', 'Suéteres y buzos', 'Calzado cerrado', 'Cobijas'],
     necesidades: [{ nombre: 'Chaquetas talla M y L', avance: 82 }, { nombre: 'Calzado 40 a 43', avance: 55 }, { nombre: 'Cobijas', avance: 34 }],
     contacto: { direccion: 'Cl. 45 #13-40, Chapinero', horario: 'Lun a vie · 8:00 a 17:00', telefono: '+57 601 555 0301', correo: 'abrigo@styleradar.co', web: 'abrigobogota.org' },
-    fotos: { portada: '/img/fundaciones/abrigo-trabajo.jpg', trabajo: '/img/fundaciones/abrigo-trabajo.jpg', donaciones: '/img/fundaciones/abrigo-donaciones.jpg' },
+    fotos: {
+      portada: '/img/fundaciones/abrigo-trabajo.jpg',
+      solicitudes: '/img/fundaciones/abrigo-donaciones.jpg',
+      impacto: '/img/fundaciones/abrigo-impacto.png',
+      trabajo: '/img/fundaciones/abrigo-voluntarios.jpg',
+      donaciones: '/img/fundaciones/abrigo-clasificacion.jpg',
+    },
   },
 }
