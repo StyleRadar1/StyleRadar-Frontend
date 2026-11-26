@@ -127,7 +127,7 @@ describe('Código OTP · errores del plan', () => {
     await user.click(screen.getByRole('tab', { name: /Crear cuenta/ }))
     fireEvent.change(await screen.findByLabelText(/Nombre/), { target: { value: 'Valentina Rojas' } })
     fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'valen@correo.com' } })
-    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'secreta1' } })
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'Secreta1*' } })
     fireEvent.submit(screen.getByLabelText('Correo').closest('form') as HTMLFormElement)
     await screen.findByText('Verifica que eres tú')
   }

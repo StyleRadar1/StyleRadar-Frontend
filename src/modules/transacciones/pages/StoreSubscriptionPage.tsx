@@ -1,4 +1,4 @@
-import { useCallback, useContext, useState } from 'react'
+import { useCallback, useContext, useMemo, useState, type FormEvent } from 'react'
 import { env } from '@/configs/env'
 import { Button } from '@/modules/core/design-system'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
@@ -15,6 +15,7 @@ import type { PaymentDto, PaymentStatus } from '../types/payment.dto'
 import type { CheckoutResultDto } from '../types/plan.dto'
 import type { StoreSubscriptionStatus } from '../types/storeSubscription.dto'
 import { isSubscriptionAlreadyExistsError, SUBSCRIPTION_ALREADY_EXISTS_MSG } from '../utils/erroresPlan'
+import { isValidNit, isValidPayerEmail } from '../utils/validation'
 import './StoreSubscriptionPage.css'
 
 const STATUS_LABEL: Record<StoreSubscriptionStatus, string> = {
@@ -38,41 +39,121 @@ const OUTCOME: Record<CheckoutResultDto['status'], { title: string; text: string
   rechazado: { title: 'Pago rechazado', text: 'El pago no fue aprobado. Puedes intentarlo nuevamente. La suscripción no se activó', alert: true },
 }
 
+type MockEstadoParam = 'PENDIENTE' | 'CANCELADA' | 'VENCIDA' | 'ACTIVA' | 'ACTIVA_SIN_RENOVACION'
+
+function applyMockEstado<T extends { status: StoreSubscriptionStatus; estado?: StoreSubscriptionStatus; renewalEnabled: boolean; autoRenovacion?: boolean; fechaInicio?: string | null; fechaFin?: string | null; periodEndsAt?: string | null }>(
+  sub: T,
+  rawParam: string | null,
+): T {
+  if (!env.useMocksPagos || !rawParam) return sub
+  const normalized = rawParam.trim().toUpperCase() as MockEstadoParam
+  const defaultStart = sub.fechaInicio ?? '2026-11-01'
+  const defaultEnd = sub.fechaFin ?? sub.periodEndsAt ?? '2026-12-01'
+  switch (normalized) {
+    case 'PENDIENTE':
+      return { ...sub, status: 'PENDIENTE', estado: 'PENDIENTE', renewalEnabled: false, autoRenovacion: false, fechaFin: null, periodEndsAt: null }
+    case 'CANCELADA':
+      return { ...sub, status: 'CANCELADA', estado: 'CANCELADA', renewalEnabled: false, autoRenovacion: false, fechaInicio: defaultStart, fechaFin: defaultEnd, periodEndsAt: defaultEnd }
+    case 'VENCIDA':
+      return { ...sub, status: 'VENCIDA', estado: 'VENCIDA', renewalEnabled: false, autoRenovacion: false, fechaInicio: defaultStart, fechaFin: '2026-10-01', periodEndsAt: '2026-10-01' }
+    case 'ACTIVA':
+      return { ...sub, status: 'ACTIVA', estado: 'ACTIVA', renewalEnabled: true, autoRenovacion: true, fechaInicio: defaultStart, fechaFin: defaultEnd, periodEndsAt: defaultEnd }
+    case 'ACTIVA_SIN_RENOVACION':
+      return { ...sub, status: 'ACTIVA', estado: 'ACTIVA', renewalEnabled: false, autoRenovacion: false, fechaInicio: defaultStart, fechaFin: defaultEnd, periodEndsAt: defaultEnd }
+    default:
+      return sub
+  }
+}
+
 export default function StoreSubscriptionPage() {
   const auth = useContext(AuthContext)
   const user = auth?.user ?? null
+  const searchParams = useMemo(() => {
+    try {
+      return typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+    } catch {
+      return new URLSearchParams()
+    }
+  }, [])
+  const returnedFromMp =
+    searchParams.has('status') ||
+    searchParams.has('collection_status') ||
+    searchParams.has('payment_id') ||
+    searchParams.has('external_reference')
   const { data, loading, error, reload } = useStoreSubscription()
   const [paying, setPaying] = useState(false)
   const [outcome, setOutcome] = useState<CheckoutResultDto | null>(null)
   const [payError, setPayError] = useState<unknown>(null)
   const [conflictMsg, setConflictMsg] = useState<string | null>(null)
+  const [simulatedNotice, setSimulatedNotice] = useState<string | null>(null)
+
+  // Formulario inline para iniciar pago (payerEmail + taxId)
+  const [showStartForm, setShowStartForm] = useState(false)
+  const [payerEmailInput, setPayerEmailInput] = useState('')
+  const [taxIdInput, setTaxIdInput] = useState('')
+  const [formValidationError, setFormValidationError] = useState<string | null>(null)
 
   // RF-96: Estado para reintento de pago rechazado con PayerEmailForm
   const [retryPaymentTarget, setRetryPaymentTarget] = useState<PaymentDto | null>(null)
   const [showRetryForm, setShowRetryForm] = useState(false)
   const [retryErrorMsg, setRetryErrorMsg] = useState<string | null>(null)
 
-  const pay = useCallback(async () => {
+  const openStartForm = useCallback((defaultEmail: string, defaultTaxId = '') => {
+    setPayerEmailInput(defaultEmail)
+    setTaxIdInput(defaultTaxId)
+    setFormValidationError(null)
+    setPayError(null)
+    setConflictMsg(null)
+    setSimulatedNotice(null)
+    setShowStartForm(true)
+  }, [])
+
+  const handleStartSubscriptionSubmit = useCallback(async (e: FormEvent) => {
+    e.preventDefault()
+    if (paying) return
+    const cleanEmail = payerEmailInput.trim()
+    const cleanTaxId = taxIdInput.trim()
+    if (!isValidPayerEmail(cleanEmail)) {
+      setFormValidationError('Ingresa un correo electrónico válido para realizar el pago')
+      return
+    }
+    if (!isValidNit(cleanTaxId)) {
+      setFormValidationError('El NIT debe contener exactamente 9 dígitos numéricos')
+      return
+    }
+
+    setFormValidationError(null)
     setPaying(true)
     setPayError(null)
     setConflictMsg(null)
     setOutcome(null)
+    setSimulatedNotice(null)
     try {
-      const r = await storeSubscriptionService.pay()
-      if (r.redirectTo) { window.location.assign(r.redirectTo); return }
-      setOutcome(r.result ?? null)
-      reload()
-    } catch (e) {
-      if (isSubscriptionAlreadyExistsError(e)) {
+      const res = await storeSubscriptionService.startStoreSubscription({
+        payerEmail: cleanEmail,
+        taxId: cleanTaxId,
+      })
+      if (res.simulated) {
+        setSimulatedNotice(
+          res.message ?? `Modo demostración: pago simulado con Mercado Pago (initPoint: ${res.initPoint}). No se redirige a un sitio externo.`,
+        )
+        setShowStartForm(false)
+        reload()
+        return
+      }
+      window.location.href = res.initPoint
+    } catch (err) {
+      if (isSubscriptionAlreadyExistsError(err)) {
         setConflictMsg(SUBSCRIPTION_ALREADY_EXISTS_MSG)
+        setShowStartForm(false)
         reload()
       } else {
-        setPayError(e)
+        setPayError(err)
       }
     } finally {
       setPaying(false)
     }
-  }, [reload])
+  }, [paying, payerEmailInput, taxIdInput, reload])
 
   const handleRetryPayment = useCallback(async (payerEmail: string) => {
     setPaying(true)
@@ -106,12 +187,14 @@ export default function StoreSubscriptionPage() {
     )
   }
 
-  const { subscription: sub, payments } = data
+  const { subscription: rawSub, payments, sinSuscripcion = false } = data
+  const mockEstadoParam = env.useMocksPagos ? searchParams.get('mockEstado') : null
+  const sub = applyMockEstado(rawSub, mockEstadoParam)
   const msg = outcome ? OUTCOME[outcome.status] : null
   const lastPayment = payments[0]
   const failedPayment = lastPayment?.status === 'rechazado' ? lastPayment : null
-  const nextCharge = (sub.fechaFin ?? sub.periodEndsAt) ? fecha(sub.fechaFin ?? sub.periodEndsAt) : '23 oct 2026'
-  const suscripcionId = sub.suscripcionId ?? 'SUB-ALM-1'
+  const nextCharge = (sub.fechaFin ?? sub.periodEndsAt) ? fecha(sub.fechaFin ?? sub.periodEndsAt) : 'Sin fecha programada'
+  const suscripcionId = sub.suscripcionId ?? 'Pendiente de asignación'
   const estado = sub.estado ?? sub.status
   const fechaInicio = sub.fechaInicio ?? null
   const fechaFin = sub.fechaFin ?? sub.periodEndsAt ?? null
@@ -123,24 +206,30 @@ export default function StoreSubscriptionPage() {
   const planCardBadgeText = sub.unknownStatus
     ? formatStatusLabel(STATUS_LABEL[derivedSub.status], sub.unknownStatus)
     : derivedSub.label
-  const isSuspendedOrExpired = derivedSub.status === 'SUSPENDIDA' || derivedSub.status === 'VENCIDA'
+  const isActive = !sinSuscripcion && derivedSub.status === 'ACTIVA'
+  const mostrarPagar = !isActive
+  const isRetryState =
+    !sinSuscripcion &&
+    (derivedSub.status === 'CANCELADA' || derivedSub.status === 'VENCIDA' || derivedSub.status === 'SUSPENDIDA')
+  const payButtonLabel = isRetryState ? 'Volver a pagar' : 'Pagar suscripción'
+  const defaultPayerEmail = sub.payerEmail ?? user?.email ?? ''
   const defaultRetryEmail =
     retryPaymentTarget?.userEmail ??
     failedPayment?.userEmail ??
     sub.payerEmail ??
     user?.email ??
-    'luna@styleradar.co'
+    ''
 
   return (
     <section className="store-subscription">
-      <StoreSuspendedBanner status={sub.status} onPayClick={() => { void pay() }} />
+      <StoreSuspendedBanner status={sub.status} onPayClick={() => openStartForm(defaultPayerEmail)} />
       <div className="store-subscription__main">
         <div className="store-subscription__title">
           <div className="flex flex-wrap items-center gap-3">
             <h2>Suscripción</h2>
             <span className="store-subscription__badge">
               <span aria-hidden="true">● </span>
-              <span>{statusBadgeText}</span>
+              <span>{sinSuscripcion ? 'Sin suscripción' : statusBadgeText}</span>
             </span>
           </div>
           <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días</p>
@@ -219,6 +308,20 @@ export default function StoreSubscriptionPage() {
           </div>
         )}
 
+        {returnedFromMp && (
+          <div role="status" className="store-subscription__notice">
+            <strong>Retorno desde Mercado Pago</strong>
+            <p>Consultamos el estado actualizado de tu suscripción en el servidor.</p>
+          </div>
+        )}
+
+        {simulatedNotice && (
+          <div role="status" className="store-subscription__notice">
+            <strong>Pago simulado (modo demostración)</strong>
+            <p>{simulatedNotice}</p>
+          </div>
+        )}
+
         {conflictMsg && (
           <div role="alert" className="store-subscription__notice is-error">
             <strong>{conflictMsg}</strong>
@@ -228,8 +331,15 @@ export default function StoreSubscriptionPage() {
 
         {!!payError && <div className="store-subscription__error"><ErrorState error={payError} title="No pudimos procesar el pago" /></div>}
 
+        {sinSuscripcion && (
+          <div role="status" className="store-subscription__notice">
+            <strong>Tu almacén todavía no tiene una suscripción</strong>
+            <p>Paga con Mercado Pago para mantener tu catálogo visible en el radar. Te pediremos el NIT del almacén y el correo del pagador</p>
+          </div>
+        )}
+
         <article className="store-subscription__plan">
-          <span className="store-subscription__badge">● {planCardBadgeText.toUpperCase()}</span>
+          <span className="store-subscription__badge">● {(sinSuscripcion ? 'Sin suscripción' : planCardBadgeText).toUpperCase()}</span>
           <h3>{sub.planName}</h3>
           <p className="store-subscription__price">{formatCOP(sub.amount || STORE_SUBSCRIPTION_PRICE)} <small>/ mes</small></p>
           <ul>
@@ -238,18 +348,22 @@ export default function StoreSubscriptionPage() {
             <li>Estadísticas de visitas y mensajes</li>
             <li>Avisos automáticos a quienes esperan una prenda</li>
           </ul>
-          <div className="store-subscription__metadata">
-            <span>suscripcionId: <b>{suscripcionId}</b></span>
-            <span>estado: <b>{estado}</b></span>
-            <span>fechaInicio: <b>{fechaInicio ?? '—'}</b></span>
-            <span>fechaFin: <b>{fechaFin ?? '—'}</b></span>
-            <span>autoRenovacion: <b>{autoRenovacion ? 'true' : 'false'}</b></span>
+          {!sinSuscripcion && <div className="store-subscription__metadata">
+            <span>ID de suscripción: <b>{suscripcionId}</b></span>
+            <span>Estado: <b>{estado}</b></span>
+            <span>Inicio: <b>{fechaInicio ? fecha(fechaInicio) : '—'}</b></span>
+            <span>Vencimiento: <b>{fechaFin ? fecha(fechaFin) : '—'}</b></span>
+            <span>Renovación automática: <b>{autoRenovacion ? 'Sí' : 'No'}</b></span>
             <span>Método: <b>{lastPayment?.method ?? 'Mercado Pago'}</b></span>
-          </div>
+          </div>}
           <div className="store-subscription__actions flex flex-wrap items-center gap-3">
-            {(!env.useMocksPagos ? isSuspendedOrExpired : sub.status !== 'ACTIVA') && (
-              <Button onClick={() => { void pay() }} disabled={paying}>
-                {paying ? 'Procesando pago…' : isSuspendedOrExpired ? 'Volver a suscribirme' : 'Pagar y activar suscripción'}
+            {mostrarPagar && !showStartForm && (
+              <Button
+                type="button"
+                onClick={() => openStartForm(defaultPayerEmail)}
+                disabled={paying}
+              >
+                {payButtonLabel}
               </Button>
             )}
             <CancelSubscriptionButton
@@ -260,6 +374,79 @@ export default function StoreSubscriptionPage() {
               onUpdated={reload}
             />
           </div>
+          {mostrarPagar && showStartForm && (
+            <form
+              onSubmit={(e) => { void handleStartSubscriptionSubmit(e) }}
+              noValidate
+              className="mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--sr-border,var(--color-border))] bg-black/20 p-4"
+            >
+              <div className="flex flex-col gap-1.5 text-left">
+                <label
+                  htmlFor="store-payer-email"
+                  className="text-xs font-semibold uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]"
+                >
+                  Correo del pagador
+                </label>
+                <input
+                  id="store-payer-email"
+                  type="email"
+                  value={payerEmailInput}
+                  onChange={(e) => {
+                    setPayerEmailInput(e.target.value)
+                    if (formValidationError) setFormValidationError(null)
+                  }}
+                  placeholder="pagos@mitienda.com"
+                  disabled={paying}
+                  required
+                  className="w-full rounded-xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] px-3.5 py-2.5 text-sm text-[var(--sr-text-primary,var(--color-text))] focus:outline-none focus:ring-2 focus:ring-violeta"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 text-left">
+                <label
+                  htmlFor="store-tax-id"
+                  className="text-xs font-semibold uppercase tracking-wider text-[var(--sr-text-secondary,var(--color-text-muted))]"
+                >
+                  NIT de la tienda (9 dígitos)
+                </label>
+                <input
+                  id="store-tax-id"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={9}
+                  value={taxIdInput}
+                  onChange={(e) => {
+                    setTaxIdInput(e.target.value.replace(/\D/g, '').slice(0, 9))
+                    if (formValidationError) setFormValidationError(null)
+                  }}
+                  placeholder="900123456"
+                  disabled={paying}
+                  required
+                  className="w-full rounded-xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] px-3.5 py-2.5 text-sm text-[var(--sr-text-primary,var(--color-text))] focus:outline-none focus:ring-2 focus:ring-violeta"
+                />
+              </div>
+              {formValidationError && (
+                <p role="alert" className="text-xs font-semibold text-red-400">
+                  {formValidationError}
+                </p>
+              )}
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <Button type="submit" disabled={paying}>
+                  {paying ? 'Procesando...' : payButtonLabel}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secundario"
+                  disabled={paying}
+                  onClick={() => {
+                    setShowStartForm(false)
+                    setFormValidationError(null)
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          )}
           <p className="mt-3 text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]/50 pt-2">
             El plan y la actividad comercial de tu tienda se rigen por las{' '}
             <a href="/legal/reglas-tiendas" className="font-semibold text-[var(--color-accent)] underline">

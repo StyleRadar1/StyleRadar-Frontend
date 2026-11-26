@@ -17,7 +17,7 @@ describe('registro contra ms-usuarios (F-06 · SR-RF-01)', () => {
       name: ' Ana Gómez ', email: 'Ana@Correo.com', password: 'secreta123', neighborhood: ' ', dataPolicyAccepted: true, aceptaTerminos: true, role: 'BUYER',
     })
     expect(post).toHaveBeenNthCalledWith(1, '/api/v1/users', {
-      name: 'Ana Gómez', email: 'ana@correo.com', password: 'secreta123', dataPolicyAccepted: true,
+      name: 'Ana Gómez', email: 'ana@correo.com', password: 'secreta123', dataPolicyAccepted: true, accountType: 'BUYER',
     })
     expect(post).toHaveBeenNthCalledWith(2, '/api/v1/auth/login', { email: 'ana@correo.com', password: 'secreta123' })
     expect(res.otpRequired).toBe(true)

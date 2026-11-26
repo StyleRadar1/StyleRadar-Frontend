@@ -47,11 +47,9 @@ html[data-cvd='on'] .sr-detail-hero-card {
 @keyframes sr-hero-enter-img {
   from {
     opacity: 0;
-    transform: translateY(0.75rem);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

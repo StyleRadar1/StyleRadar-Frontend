@@ -4,13 +4,13 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAccounts'
-import { ROLE_HOME, ROLE_LABEL } from '@/modules/core/types/roles'
+import { ROLE_HOME } from '@/modules/core/types/roles'
 import { authService } from '@/modules/identidad/services/authService'
 import { env } from '@/configs/env'
 import { tomarRetorno } from '@/modules/core/api/retorno'
 import { ErrorCampo } from '@/modules/core/components/errores'
 import { correoValido } from '@/modules/identidad/utils/formato'
-import { errorDeLogin, errorDeOtp } from '@/modules/identidad/utils/erroresAcceso'
+import { camposDeRegistro, CLAVE_NUEVA_RE, errorDeLogin, errorDeOtp, errorDeRegistro, TEXTO_REGLA_CLAVE } from '@/modules/identidad/utils/erroresAcceso'
 import { NAME_MAX, NAME_MIN, NEIGHBORHOOD_MAX, PASSWORD_MAX, PASSWORD_MIN, type UserSessionDto } from '@/modules/identidad/types/auth.dto'
 import { LegalConsentCheckboxes, type LegalConsentState, type LegalConsentErrors } from '@/modules/legal/components/LegalConsentCheckboxes'
 import { consentService } from '@/modules/legal/services/consentService'
@@ -152,6 +152,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   // Plan de errores: errores por campo, Reintentar (503) y bloqueo con cuenta regresiva (429).
   const [camposErr, setCamposErr] = useState<{ email?: string; password?: string; otp?: string }>({})
+  /** Errores de «Crear cuenta» debajo de cada campo (400 INVALID_DATA de ms-usuarios). */
+  const [camposReg, setCamposReg] = useState<ReturnType<typeof camposDeRegistro>>({})
   const [reintentar, setReintentar] = useState(false)
   const [otpFallos, setOtpFallos] = useState(0)
   const [otpAviso, setOtpAviso] = useState('')
@@ -542,17 +544,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     }
   }
 
-  const selectDemoAccount = (demoEmail: string) => {
-    const account = DEMO_ACCOUNTS.find((item) => item.email === demoEmail)
-    setEmail(demoEmail)
-    setPassword(DEMO_PASSWORD)
-    setError('')
-    setPreviewRole(account?.role ?? null)
-  }
-
   const handleRegisterSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    // SR-RF-01: nombre de 2 a 100, correo válido, contraseña de 8 a 30 y barrio de máximo 100.
+    // SR-RF-01: nombre de 2 a 100, correo válido, contraseña de 8 a 72 con mayúscula, minúscula, número y símbolo, y barrio de máximo 100.
+    setCamposReg({})
     const nombreLimpio = fullName.trim()
     if (!email || !nombreLimpio) {
       setError('Por favor completa todos los campos requeridos.')
@@ -566,8 +561,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       setError('Escribe un correo válido, por ejemplo nombre@correo.com.')
       return
     }
-    if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX) {
-      setError(`La contraseña debe tener entre ${PASSWORD_MIN} y ${PASSWORD_MAX} caracteres.`)
+    if (!CLAVE_NUEVA_RE.test(password)) {
+      setError('')
+      setCamposReg({ password: TEXTO_REGLA_CLAVE })
       return
     }
     if (barrio.trim().length > NEIGHBORHOOD_MAX) {
@@ -604,21 +600,21 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     setError('')
     setCamposErr({})
     setOtpFallos(0)
-
-    // Registrar consentimiento de formulario con fecha y versiones de políticas (mock backend)
-    await consentService.recordFormConsent({
-      email: email.trim(),
-      aceptaTerminos: consentState.aceptaTerminos,
-      aceptaDatos: consentState.aceptaDatos,
-      esMayorDeEdad: consentState.esMayorDeEdad,
-      aceptaPromociones: consentState.aceptaPromociones,
-      aceptaReglasTienda: consentState.aceptaReglasTienda,
-      aceptaReglasFundacion: consentState.aceptaReglasFundacion,
-      origen: `AUTH_MODAL_REGISTER_${role}`,
-    })
-
     setLoading(true)
+
     try {
+      // Registrar consentimiento de formulario con fecha y versiones de políticas
+      await consentService.recordFormConsent({
+        email: email.trim(),
+        aceptaTerminos: consentState.aceptaTerminos,
+        aceptaDatos: consentState.aceptaDatos,
+        esMayorDeEdad: consentState.esMayorDeEdad,
+        aceptaPromociones: consentState.aceptaPromociones,
+        aceptaReglasTienda: consentState.aceptaReglasTienda,
+        aceptaReglasFundacion: consentState.aceptaReglasFundacion,
+        origen: `AUTH_MODAL_REGISTER_${role}`,
+      })
+
       if (env.useMocks) {
         const emailLower = email.trim().toLowerCase()
         const isDemo = DEMO_ACCOUNTS.some((a) => a.email === emailLower)
@@ -658,8 +654,14 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         return
       }
     } catch (err) {
-      const r = errorDeLogin(err)
-      setError(r.mensaje || (err instanceof Error ? err.message : 'Error al registrar la cuenta.'))
+      // SR-RF-01: el mensaje sale del error de ms-usuarios (campo inválido, correo ya registrado…), no del login.
+      const r = errorDeRegistro(err)
+      const bajoCampos = camposDeRegistro(r.campos)
+      setCamposReg(bajoCampos)
+      // Lo que ya se muestra debajo de un campo no se repite arriba.
+      setError(Object.values(bajoCampos).includes(r.mensaje) ? '' : r.mensaje)
+      setReintentar(r.reintentar)
+      if (r.esperar) bloquear(r.esperar)
       return
     } finally {
       setLoading(false)
@@ -786,10 +788,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
   /** SR-RF-92 FA-07: pide un código nuevo (anula el anterior y da otros 3 intentos). */
   const pedirOtroCodigo = async () => {
-    if (espera > 0) return
+    if (loading || espera > 0) return
     const destino = email.trim()
     setError('')
     setCamposErr({})
+    setLoading(true)
     try {
       const res = await authService.resendOtp({ email: destino })
       setOtp(['', '', '', '', '', ''])
@@ -799,6 +802,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
       document.getElementById('otp-input-0')?.focus()
     } catch (err) {
       fallaDelCodigo(err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -1001,7 +1006,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Mínimo 4 caracteres"
+                        placeholder={`Mínimo ${LOGIN_MIN} caracteres`}
                         aria-invalid={!!camposErr.password}
                         aria-describedby={camposErr.password ? 'authPass-err' : undefined}
                       />
@@ -1035,6 +1040,19 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                   >
                     {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Entrando…' : 'Entrar'}
                   </button>
+
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose()
+                        navigate('/restablecer-contrasena')
+                      }}
+                      className="text-xs font-semibold text-white/65 hover:text-white underline underline-offset-2"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
 
                   {/* Solo en demostración: con ms-auth el código existe únicamente después de un inicio de sesión con el correo sin verificar. */}
                   {env.useMocks && (
@@ -1110,6 +1128,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                      aria-invalid={!!camposReg.nombre}
+                      aria-describedby={camposReg.nombre ? 'suName-err' : undefined}
                       placeholder={
                         role === 'STORE_ADMIN'
                           ? 'Ej. Luna Store'
@@ -1118,6 +1138,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                             : 'Ej. Valentina Rojas'
                       }
                     />
+                    {camposReg.nombre && <ErrorCampo id="suName">{camposReg.nombre}</ErrorCampo>}
                   </div>
 
                   <div className="sr-field">
@@ -1128,7 +1149,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="tucorreo@ejemplo.com"
+                      aria-invalid={!!camposReg.email}
+                      aria-describedby={camposReg.email ? 'suEmail-err' : undefined}
                     />
+                    {camposReg.email && <ErrorCampo id="suEmail">{camposReg.email}</ErrorCampo>}
                   </div>
 
                   <div className="sr-field">
@@ -1141,7 +1165,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                       onChange={(e) => setBarrio(e.target.value)}
                       placeholder="Ej. Chapinero"
                       autoComplete="address-level3"
+                      aria-invalid={!!camposReg.barrio}
+                      aria-describedby={camposReg.barrio ? 'suBarrio-err' : undefined}
                     />
+                    {camposReg.barrio && <ErrorCampo id="suBarrio">{camposReg.barrio}</ErrorCampo>}
                   </div>
 
                   <div className="sr-field">
@@ -1152,7 +1179,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                         type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="De 8 a 30 caracteres"
+                        placeholder="De 8 a 72 caracteres"
+                        maxLength={PASSWORD_MAX}
+                        aria-invalid={!!camposReg.password}
+                        aria-describedby={camposReg.password ? 'suPass-err' : 'suPass-hint'}
                       />
                       <button
                         type="button"
@@ -1161,6 +1191,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                         {showPassword ? 'Ocultar' : 'Mostrar'}
                       </button>
                     </div>
+                    {camposReg.password
+                      ? <ErrorCampo id="suPass">{camposReg.password}</ErrorCampo>
+                      : <p id="suPass-hint" className="text-xs text-white/60">{TEXTO_REGLA_CLAVE}</p>}
                   </div>
 
                   {/* Consentimientos legales normativos separados */}
@@ -1217,28 +1250,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                           : 'Crear cuenta'}
                   </button>
                 </form>
-              )}
-
-              {activeTab === 'login' && (
-                <div className="sr-auth-demo">
-                  <span className="sr-lbl">
-                    <span>Cuentas de prueba</span>
-                    <span>Clave: 1234</span>
-                  </span>
-                  <div className="sr-auth-demo-row">
-                    {DEMO_ACCOUNTS.map((acc) => (
-                      <button
-                        key={acc.email}
-                        type="button"
-                        disabled={loading}
-                        className={email === acc.email ? 'on' : ''}
-                        onClick={() => selectDemoAccount(acc.email)}
-                      >
-                        {ROLE_LABEL[acc.role]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               )}
 
               <p className="sr-auth-foot">
@@ -1347,10 +1358,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               <button
                 type="button"
                 onClick={pedirOtroCodigo}
-                disabled={espera > 0}
+                disabled={loading || espera > 0}
                 className="w-full text-center text-xs font-semibold text-arena underline underline-offset-4 disabled:opacity-50"
               >
-                {espera > 0 ? `Podrás pedir otro código en ${esperaTxt}` : 'Pedir otro código'}
+                {espera > 0 ? `Podrás pedir otro código en ${esperaTxt}` : loading ? 'Enviando código…' : 'Pedir otro código'}
               </button>
 
               <div className="flex items-center justify-between text-xs text-white/70 py-1">
@@ -1358,7 +1369,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
                 <button
                   type="button"
                   onClick={pedirOtroCodigo}
-                  disabled={espera > 0}
+                  disabled={loading || espera > 0}
                   className="font-semibold text-[#E8DCCB] hover:underline disabled:opacity-50"
                 >
                   Reenviar código

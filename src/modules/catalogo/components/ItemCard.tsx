@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
-import { tiendaContacto } from '@/modules/soporte/utils/contacts'
+import { nitDeTienda, tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
+import { isGarmentTryOnEligible } from '../utils/tryOnEligibility'
 
 const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
   maskImage:
@@ -16,7 +17,7 @@ const MAIN_PHOTO_MASK_STYLE: React.CSSProperties = {
 
 export function ItemCard({ item }: { item: ItemResponseDto }) {
   const storeName = item.tienda || item.marca || ''
-  const storeId = getStoreIdByName(storeName)
+  const storeRouteId = item.storeNit || item.almacenId || getStoreIdByName(storeName)
   const imgPrincipal = item.imagen || item.fotografias?.[0] || ''
 
   return (
@@ -71,7 +72,7 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
               <>
                 <span className="text-[var(--color-text-muted)]">·</span>
                 <Link
-                  to={`/tiendas/${item.almacenId || storeId}`}
+                  to={`/tiendas/${encodeURIComponent(storeRouteId)}`}
                   className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)] rounded"
                   title={`Ver tienda ${storeName}`}
                 >
@@ -123,21 +124,28 @@ export function ItemCard({ item }: { item: ItemResponseDto }) {
 
         {/* Acciones de la prenda: Probar en el maniquí (RF-7.2) y Escribir a la tienda */}
         <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-[var(--color-border)]/40">
-          <Link
-            to={`/probador/arma-tu-look?prenda=${item.id}&talla=${item.tallas?.[0] || 'M'}&color=${encodeURIComponent(item.color || 'default')}`}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition py-1"
-            title="Probar en el maniquí"
-            aria-label={`Probar ${item.nombre} en el maniquí`}
-          >
-            <span></span>
-            <span>Probar en el maniquí</span>
-          </Link>
+          {isGarmentTryOnEligible(item) ? (
+            <Link
+              to={`/probador/arma-tu-look?prenda=${item.id}&talla=${item.tallas?.[0] || 'M'}&color=${encodeURIComponent(item.color || 'default')}`}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition py-1"
+              title="Probar en el maniquí"
+              aria-label={`Probar ${item.nombre} en el maniquí`}
+            >
+              <span></span>
+              <span>Probar en el maniquí</span>
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)] py-1">
+              No admite prueba virtual
+            </span>
+          )}
 
           <ContactButton
             icon
             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
             label={`Escribir a ${storeName || 'la tienda'} sobre ${item.nombre}`}
             contacto={tiendaContacto(storeName || 'Tienda')}
+            nit={nitDeTienda(item)}
             asunto={item.nombre}
             referenciaId={item.id}
           />

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Logo } from '@/modules/core/design-system'
-import { ROLE_HOME, type Role } from '@/modules/core/types/roles'
+import { type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { ThemeSelect } from '@/modules/core/theme/ThemeSelect'
 import { MessagesLink } from '@/modules/soporte/components/MessagesLink'
@@ -21,7 +21,6 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const links = LINKS[user?.role ?? 'GUEST']
   const esAdmin = user?.role === 'STYLERADAR_ADMIN'
-  const homePath = user ? ROLE_HOME[user.role] : '/'
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     `whitespace-nowrap px-3.5 py-1.5 text-sm font-medium transition ${
       isActive
@@ -38,7 +37,7 @@ export function Navbar() {
         </p>
       )}
       <nav className="mx-auto flex h-[72px] max-w-6xl items-center gap-4 px-4" aria-label="Principal">
-        <Link to={homePath} className="flex items-center gap-2 text-lg font-bold text-[var(--sr-hero-text)]">
+        <Link to="/" className="flex items-center gap-2 text-lg font-bold text-[var(--sr-hero-text)]">
           <Logo className="h-8 w-auto" />StyleRadar
           {esAdmin && <span className="rounded-full bg-arena px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-grafito">Admin</span>}
         </Link>

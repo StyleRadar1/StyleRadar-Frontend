@@ -11,13 +11,13 @@ import MapaBogota from '../components/MapaBogota'
 import MapCard from '../components/MapCard'
 import BubbleColumn from '../components/BubbleColumn'
 import { CATEGORIAS_ALMACEN, type MapPinDto, type MapFilter } from '../types/map.dto'
-import { centroBarrio, filterPins, formatDistanciaKm, RADIO_KM, type Ubicacion } from '../utils/mapUtils'
+import { BARRIOS_BOGOTA, centroBarrio, filterPins, formatDistanciaKm, RADIO_KM, type Ubicacion } from '../utils/mapUtils'
 
 const TEXTO_RADIO = `El radio va de ${RADIO_KM.min} a ${RADIO_KM.max} km.`
 
 export default function MapPage() {
   const [searchParams] = useSearchParams()
-  const tiendaParam = searchParams.get('tienda')
+  const tiendaParam = searchParams.get('tienda') || searchParams.get('fundacion')
   const { data: pins, loading, error, reload } = useMapData()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -55,7 +55,13 @@ export default function MapPage() {
   }, [pins])
 
   const barrios = useMemo(
-    () => [...new Set(pins.map((p) => p.barrio).filter((b): b is string => Boolean(b)))].sort(),
+    () =>
+      [
+        ...new Set([
+          ...pins.map((p) => p.barrio).filter((b): b is string => Boolean(b)),
+          ...Object.keys(BARRIOS_BOGOTA),
+        ]),
+      ].sort(),
     [pins],
   )
   const vigentes = activePins.filter((p) => !retirados.includes(p.id))
@@ -96,16 +102,27 @@ export default function MapPage() {
   const buscar = useCallback(async (u: Ubicacion | null, km: number) => {
     setAviso(null); setRadioError('')
     try {
-      const ids = await mapService.nearby(u, km, categoriaId || undefined)
-      setCercanos(ids)
-      if (u && !env.useMocks) {
+      if (!u) {
+        setPideUbicacion(true)
+        return
+      }
+      if (km < RADIO_KM.min || km > RADIO_KM.max) {
+        setRadioError(TEXTO_RADIO)
+        setRadio(RADIO_KM.inicial)
+        return
+      }
+      if (env.useMocks) {
+        const ids = await mapService.nearby(u, km, categoriaId || undefined)
+        setCercanos(ids)
+      } else {
         const updated = await mapService.getAll({
           lat: u.lat,
           lng: u.lng,
           radioKm: km,
           categoriaId: categoriaId || undefined,
-        }).catch(() => null)
-        if (updated) setPinsFiltrados(updated)
+        })
+        setPinsFiltrados(updated)
+        setCercanos(updated.map((p) => p.id))
       }
       setPideUbicacion(false)
     } catch (e) {
@@ -237,14 +254,14 @@ export default function MapPage() {
           <Aviso tono="info" className="mb-4" titulo="¿Dónde estás?" onCerrar={() => setPideUbicacion(false)}
             acciones={<>
               <button type="button" onClick={usarMiUbicacion} className={BTN_PRINCIPAL}>Usar mi ubicación</button>
-              <label className="sr-only" htmlFor="barrio-mapa">Elegir barrio</label>
+              <label className="sr-only" htmlFor="barrio-mapa">Elegir localidad</label>
               <select id="barrio-mapa" defaultValue="" onChange={(e) => elegirBarrio(e.target.value)}
                 className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-[.12em] text-[var(--color-text)]">
-                <option value="" disabled>Elegir barrio</option>
+                <option value="" disabled>Elegir localidad</option>
                 {barrios.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </>}>
-            <p>Comparte tu ubicación o elige un barrio para ver las tiendas cercanas.</p>
+            <p>Comparte tu ubicación o elige una localidad para ver las tiendas cercanas.</p>
             {ubicacionError && <p className="mt-1 text-[var(--color-danger-text,#ff8a8a)]">{ubicacionError}</p>}
           </Aviso>
         )}

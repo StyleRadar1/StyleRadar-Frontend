@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { env } from '@/configs/env'
 import { formatCOP } from '@/modules/core/utils/format'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import type { TryOnJobStatusDto } from '../types/tryon.dto'
 
 const isExpired = (r: TryOnJobStatusDto) =>
@@ -37,6 +38,7 @@ export function ResultViewer({
   onOtherGarment: () => void
   onDeletePhoto?: () => void
 }) {
+  const user = useContext(AuthContext)?.user
   const [expired, setExpired] = useState(() => isExpired(result))
   const [broken, setBroken] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -93,21 +95,31 @@ export function ResultViewer({
 
   return (
     <figure className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-      <div className="relative bg-[var(--color-surface-subtle)]">
+      <div
+        className="relative select-none bg-[var(--color-surface-subtle)]"
+        onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
+      >
         {compareBefore && originalPhotoUrl ? (
           <div className="grid grid-cols-2 gap-1">
             <div className="relative">
-              <img src={originalPhotoUrl} alt="Tu foto original" className="mx-auto max-h-[520px] w-full object-contain" />
+              <img src={originalPhotoUrl} alt="Tu foto original" draggable={false} className="mx-auto max-h-[520px] w-full select-none object-contain" />
               <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[10px] font-bold text-white">Antes</span>
             </div>
             <div className="relative">
-              <img src={result.resultImageUrl || result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} onError={() => setBroken(true)} className="mx-auto max-h-[520px] w-full object-contain" />
+              <img src={result.resultImageUrl || result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} draggable={false} onError={() => setBroken(true)} className="mx-auto max-h-[520px] w-full select-none object-contain" />
               <span className="absolute bottom-2 right-2 rounded-full bg-[var(--color-accent)] px-2.5 py-0.5 text-[10px] font-bold text-white">Después</span>
             </div>
           </div>
         ) : (
-          <img src={result.resultImageUrl || result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} onError={() => setBroken(true)} className="mx-auto max-h-[520px] w-full object-contain" />
+          <img src={result.resultImageUrl || result.resultUrl} alt={`Resultado de la prueba con ${garmentName}`} draggable={false} onError={() => setBroken(true)} className="mx-auto max-h-[520px] w-full select-none object-contain" />
         )}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/45 px-2.5 py-0.5 text-[10px] font-semibold tracking-wider text-white/75 backdrop-blur-sm"
+        >
+          StyleRadar · Uso privado{user?.email ? ` · ${user.email}` : ''}
+        </span>
         {env.useMocks && (
           <span className="absolute left-3 top-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-3 py-1 text-[11px] font-bold text-[var(--color-text)] backdrop-blur-sm shadow-sm">
             Simulado: no es un resultado real del probador

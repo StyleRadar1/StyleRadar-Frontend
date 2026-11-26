@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { inventoryService } from '../services/inventoryService'
+import { computeInventorySummary, inventoryService } from '../services/inventoryService'
 import type { InventoryItemDto, InventorySummaryDto, CreateInventoryItemDto, UpdateInventoryItemDto } from '../types/inventory.dto'
 
 export function useInventory(tiendaId?: string) {
@@ -12,12 +12,9 @@ export function useInventory(tiendaId?: string) {
     setLoading(true)
     setError(null)
     try {
-      const [list, sum] = await Promise.all([
-        inventoryService.getStoreInventory(tiendaId),
-        inventoryService.getSummary(tiendaId),
-      ])
+      const list = await inventoryService.getStoreInventory(tiendaId)
       setItems(list)
-      setSummary(sum)
+      setSummary(computeInventorySummary(list))
     } catch (err) {
       setError(err)
     } finally {
@@ -32,17 +29,23 @@ export function useInventory(tiendaId?: string) {
   const updateStock = useCallback(
     async (prendaId: string, talla: string, nuevoStock: number) => {
       const updated = await inventoryService.updateStock({ prendaId, talla, nuevoStock })
-      setItems((prev) => prev.map((it) => (it.id === prendaId ? updated : it)))
-      const sum = await inventoryService.getSummary(tiendaId)
-      setSummary(sum)
+      setItems((prev) => {
+        const next = prev.map((it) => (it.id === prendaId ? updated : it))
+        setSummary(computeInventorySummary(next))
+        return next
+      })
     },
-    [tiendaId]
+    []
   )
 
   const updatePrice = useCallback(
     async (prendaId: string, nuevoPrecio: number) => {
       const updated = await inventoryService.updatePrice({ prendaId, nuevoPrecio })
-      setItems((prev) => prev.map((it) => (it.id === prendaId ? updated : it)))
+      setItems((prev) => {
+        const next = prev.map((it) => (it.id === prendaId ? updated : it))
+        setSummary(computeInventorySummary(next))
+        return next
+      })
     },
     []
   )
@@ -50,51 +53,62 @@ export function useInventory(tiendaId?: string) {
   const updateItem = useCallback(
     async (dto: UpdateInventoryItemDto) => {
       const updated = await inventoryService.updateItem(dto)
-      setItems((prev) => prev.map((it) => (it.id === dto.prendaId ? updated : it)))
-      const sum = await inventoryService.getSummary(tiendaId)
-      setSummary(sum)
+      setItems((prev) => {
+        const next = prev.map((it) => (it.id === dto.prendaId ? updated : it))
+        setSummary(computeInventorySummary(next))
+        return next
+      })
     },
-    [tiendaId]
+    []
   )
 
   const toggleActive = useCallback(
     async (prendaId: string) => {
       const updated = await inventoryService.toggleActive(prendaId)
-      setItems((prev) => prev.map((it) => (it.id === prendaId ? updated : it)))
-      const sum = await inventoryService.getSummary(tiendaId)
-      setSummary(sum)
+      setItems((prev) => {
+        const next = prev.map((it) => (it.id === prendaId ? updated : it))
+        setSummary(computeInventorySummary(next))
+        return next
+      })
     },
-    [tiendaId]
+    []
   )
 
   const removeSize = useCallback(
     async (prendaId: string, talla: string) => {
       const updated = await inventoryService.removeSize(prendaId, talla)
-      setItems((prev) => prev.map((it) => (it.id === prendaId ? updated : it)))
-      const sum = await inventoryService.getSummary(tiendaId)
-      setSummary(sum)
+      setItems((prev) => {
+        const next = prev.map((it) => (it.id === prendaId ? updated : it))
+        setSummary(computeInventorySummary(next))
+        return next
+      })
     },
-    [tiendaId]
+    []
   )
 
   const addItem = useCallback(
     async (dto: CreateInventoryItemDto) => {
       const created = await inventoryService.addItem(dto)
-      setItems((prev) => [created, ...prev])
-      const sum = await inventoryService.getSummary(tiendaId)
-      setSummary(sum)
+      setItems((prev) => {
+        const next = [created, ...prev]
+        setSummary(computeInventorySummary(next))
+        return next
+      })
+      return created
     },
-    [tiendaId]
+    []
   )
 
   const deleteItem = useCallback(
     async (prendaId: string) => {
       await inventoryService.deleteItem(prendaId)
-      setItems((prev) => prev.filter((it) => it.id !== prendaId))
-      const sum = await inventoryService.getSummary(tiendaId)
-      setSummary(sum)
+      setItems((prev) => {
+        const next = prev.filter((it) => it.id !== prendaId)
+        setSummary(computeInventorySummary(next))
+        return next
+      })
     },
-    [tiendaId]
+    []
   )
 
   return {

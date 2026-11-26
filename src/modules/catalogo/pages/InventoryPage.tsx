@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { Button } from '@/modules/core/design-system'
 import { Loading, EmptyState, ErrorState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
@@ -9,7 +11,10 @@ import { errorKind, errorMessage, errorMessageAjeno, fieldErrors } from '@/modul
 import { formatCOP } from '@/modules/core/utils/format'
 import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSuspendedBanner'
 import { useInventory } from '../hooks/useInventory'
-import { MAX_GARMENT_PHOTOS, MAX_GARMENT_PRICE, MAX_PHOTO_URL_LEN, validatePrendaFields } from '../services/inventoryService'
+import { inventoryService, MAX_GARMENT_PHOTOS, MAX_GARMENT_PRICE, MAX_PHOTO_URL_LEN, resolveStoreContext, validatePrendaFields } from '../services/inventoryService'
+import { PhotoUploadGuide } from '@/modules/experiencia/components/PhotoUploadGuide'
+import { GarmentMeasurementsEditor } from '../components/GarmentMeasurementsEditor'
+import type { GarmentSizeMeasurementDto } from '../types/garmentMeasurements.dto'
 import type { InventoryItemDto, InventoryItemStatus, TipoPrendaInventario } from '../types/inventory.dto'
 import {
   COLORES_UNIFICADOS,
@@ -19,9 +24,7 @@ import {
 } from '../types/item.dto'
 import './InventoryPage.css'
 
-/* Foto existente de la tienda (Luna Store) */
 const HERO_PHOTO = '/img/sesion/rol-tienda.jpg'
-const STORE_BRAND_NAME = 'Luna Store'
 const ITEMS_PER_PAGE = 8
 
 function defaultStockForTipoPrenda(tipo: TipoPrendaInventario): Record<string, number> {
@@ -87,6 +90,9 @@ export default function InventoryPage() {
   const [nuevoColor, setNuevoColor] = useState<string>(COLORES_UNIFICADOS[0])
   const [nuevoEstilo, setNuevoEstilo] = useState<string>(ESTILOS_UNIFICADOS[3])
   const [nuevoTipoPrenda, setNuevoTipoPrenda] = useState<TipoPrendaInventario>('ROPA')
+  const [createMeasurements, setCreateMeasurements] = useState<GarmentSizeMeasurementDto[]>([])
+  const [editMeasurements, setEditMeasurements] = useState<GarmentSizeMeasurementDto[]>([])
+  const [loadingEditMeasurements, setLoadingEditMeasurements] = useState(false)
   const [nuevoPrecio, setNuevoPrecio] = useState(120000)
   const [stockPorTallaForm, setStockPorTallaForm] = useState<Record<string, number>>(() => defaultStockForTipoPrenda('ROPA'))
   const [guardando, setGuardando] = useState(false)
@@ -385,7 +391,7 @@ export default function InventoryPage() {
     setGuardando(true)
     setCreateErrors({})
     try {
-      await addItem({
+      const created = await addItem({
         nombre: nuevoNombre.trim(),
         tipo: nuevoTipo,
         color: nuevoColor,
@@ -398,10 +404,14 @@ export default function InventoryPage() {
         fotografias: nuevasImagenes.length > 0 ? nuevasImagenes : undefined,
         stockPorTalla: stockPorTallaForm,
       })
+      if (created?.id && createMeasurements.length > 0) {
+        await inventoryService.saveGarmentMeasurements(created.id, createMeasurements).catch(() => undefined)
+      }
       setMostrarAgregar(false)
       setNuevoNombre('')
       setNuevaImagenUrlInput('')
       setNuevasImagenes([])
+      setCreateMeasurements([])
       setStockPorTallaForm(defaultStockForTipoPrenda(nuevoTipoPrenda))
       showToast('¡Prenda incorporada al inventario del almacén!')
     } catch (err) {
@@ -454,6 +464,12 @@ export default function InventoryPage() {
     )
     setEditFotoUrlInput('')
     setEditErrors({})
+    setEditMeasurements([])
+    setLoadingEditMeasurements(true)
+    void inventoryService
+      .getGarmentMeasurements(item.id)
+      .then((m) => setEditMeasurements(m))
+      .finally(() => setLoadingEditMeasurements(false))
   }
 
   const handleGuardarEdicion = async (e?: React.FormEvent) => {
@@ -487,6 +503,9 @@ export default function InventoryPage() {
         precio: editPrecio,
         fotografias: editFotos,
       })
+      if (editMeasurements.length > 0) {
+        await inventoryService.saveGarmentMeasurements(itemParaEditar.id, editMeasurements).catch(() => undefined)
+      }
       setItemParaEditar(null)
       showToast(
         estabaRechazada
@@ -622,13 +641,52 @@ export default function InventoryPage() {
     showToast(`Prenda «${nombrePrenda}» añadida a la colección «${coleccion}».`)
   }
 
+  const user = useContext(AuthContext)?.user ?? null
+  const [resolvedStoreName, setResolvedStoreName] = useState('')
+  useEffect(() => {
+    if (env.useMocks) return
+    let active = true
+    resolveStoreContext()
+      .then((ctx) => {
+        if (active && ctx.storeName) setResolvedStoreName(ctx.storeName)
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [user?.id])
+
+  const storeName = resolvedStoreName || items[0]?.tiendaNombre || user?.name || (env.useMocks ? 'Luna Store' : 'Tu tienda')
+
   // Métricas calculadas sobre los datos del inventario
   const totalPrendas = summary?.totalPrendas ?? items.length
   const disponibles = items.filter((x) => x.estado === 'DISPONIBLE' || x.estado === 'NUEVA_PRENDA').length
   const bajoStock = summary?.bajoStock ?? items.filter((x) => x.estado === 'ULTIMAS_UNIDADES').length
   const agotados = summary?.agotados ?? items.filter((x) => x.estado === 'AGOTADA').length
 
-  const nombreTienda = items[0]?.tiendaNombre?.toUpperCase() || 'LUNA STORE'
+  const nombreTienda = storeName.toUpperCase()
+
+  const handleExportCsv = () => {
+    const header = ['ID', 'Nombre', 'Tipo', 'Color', 'Estilo', 'Precio (COP)', 'Stock total', 'Tallas', 'Estado', 'Publicación']
+    const rows = itemsFiltrados.map((it) => [
+      it.id,
+      it.nombre,
+      it.tipo || it.categoria,
+      it.color || '',
+      it.estilo,
+      String(it.precio),
+      String(it.stockTotal),
+      Object.entries(it.stockPorTalla || {}).map(([t, q]) => `${t}:${q}`).join(' '),
+      it.estado,
+      it.estadoPublicacion || '',
+    ])
+    const csv = `\uFEFF${[header, ...rows].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(';')).join('\r\n')}`
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `styleradar-inventario-${new Date().toISOString().slice(0, 10)}.csv`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    showToast('Inventario exportado en formato CSV.')
+  }
 
   return (
     <div className="inv-page">
@@ -665,10 +723,11 @@ export default function InventoryPage() {
             </button>
             <button
               type="button"
-              disabled
+              disabled={itemsFiltrados.length === 0}
+              onClick={handleExportCsv}
               className="inv-btn inv-btn--ghost"
-              aria-label="Exportar inventario (función próximamente disponible)"
-              title="Exportar inventario (próximamente)"
+              aria-label="Exportar inventario a CSV"
+              title="Exportar inventario a CSV"
             >
               Exportar
             </button>
@@ -1422,7 +1481,7 @@ export default function InventoryPage() {
       >
         <form onSubmit={handleCrearPrenda} className="space-y-4">
           <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/70">
-            Marca asignada automáticamente según tu tienda: <strong className="text-white">{STORE_BRAND_NAME}</strong>
+            Marca asignada automáticamente según tu tienda: <strong className="text-white">{storeName}</strong>
           </p>
 
           <div>
@@ -1437,6 +1496,7 @@ export default function InventoryPage() {
             <p className="mt-0.5 text-[10px] text-white/50">
               La primera foto será la portada en el catálogo. Máximo {MAX_GARMENT_PHOTOS} fotos (URL de hasta {MAX_PHOTO_URL_LEN} caracteres).
             </p>
+            <PhotoUploadGuide variant="garment" darkSurface className="mt-2" />
 
             {/* Cuadrícula de hasta 5 fotos */}
             <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -1514,6 +1574,12 @@ export default function InventoryPage() {
             )}
             <FieldError id="fotosPrenda-err" message={createErrors.fotografias} />
           </div>
+
+          <GarmentMeasurementsEditor
+            sizes={Object.keys(stockPorTallaForm)}
+            value={createMeasurements}
+            onChange={setCreateMeasurements}
+          />
 
           <div>
             <label htmlFor="nombrePrenda" className="block text-xs font-semibold text-white/80">
@@ -1670,7 +1736,7 @@ export default function InventoryPage() {
         {itemParaEditar && (
           <form onSubmit={handleGuardarEdicion} className="space-y-4">
             <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/70">
-              Marca asignada: <strong className="text-white">{STORE_BRAND_NAME}</strong>
+              Marca asignada: <strong className="text-white">{storeName}</strong>
             </p>
             <div>
               <label htmlFor="editNombrePrenda" className="block text-xs font-semibold text-white/80">
@@ -1801,6 +1867,13 @@ export default function InventoryPage() {
               )}
               <FieldError id="editFotos-err" message={editErrors.fotografias} />
             </div>
+
+            <GarmentMeasurementsEditor
+              sizes={itemParaEditar.tallasDisponibles ?? []}
+              value={editMeasurements}
+              onChange={setEditMeasurements}
+              loading={loadingEditMeasurements}
+            />
             <FieldError id="editPrenda-err" message={editErrors._global} />
           </form>
         )}

@@ -1,10 +1,15 @@
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
-import { mockDelay } from '@/modules/core/api/mock'
+import { mockDelay, mockSessionUser } from '@/modules/core/api/mock'
 import { failIfScenario } from '@/modules/core/api/mockScenario'
 import { env } from '@/configs/env'
 import { INVENTORY_ITEMS } from '../mocks/inventory'
 import { extractStockMapFromInventory } from './itemService'
+import { storeSettingsService } from './storeSettingsService'
 import type { Estilo, ItemResponseDto } from '../types/item.dto'
+import {
+  normalizeMeasurementsPayload,
+  type GarmentSizeMeasurementDto,
+} from '../types/garmentMeasurements.dto'
 import type {
   InventoryItemDto,
   InventorySummaryDto,
@@ -25,10 +30,19 @@ export const MAX_GARMENT_PRICE = 10_000_000
 export const MAX_GARMENT_PHOTOS = 5
 export const MAX_PHOTO_URL_LEN = 300
 
+export interface StoreContextInfo {
+  storeId: string
+  storeName: string
+  nit: string
+  sedeId: string
+}
+
 // Copia mutable en memoria para persistencia local de la sesión de prueba
 let memoryInventory: InventoryItemDto[] = structuredClone(INVENTORY_ITEMS)
+const memoryGarmentMeasurements = new Map<string, GarmentSizeMeasurementDto[]>()
 export const resetInventoryMock = () => {
   memoryInventory = structuredClone(INVENTORY_ITEMS)
+  storeContextCache.clear()
 }
 
 function computeStatus(total: number, retired: boolean): InventoryItemDto['estado'] {
@@ -38,7 +52,7 @@ function computeStatus(total: number, retired: boolean): InventoryItemDto['estad
   return 'DISPONIBLE'
 }
 
-function computeSummary(items: InventoryItemDto[]): InventorySummaryDto {
+export function computeInventorySummary(items: InventoryItemDto[]): InventorySummaryDto {
   const activas = items.filter((x) => x.estado !== 'RETIRADO')
   const totalUnidades = activas.reduce((acc, curr) => acc + curr.stockTotal, 0)
   const bajoStock = activas.filter((x) => x.estado === 'ULTIMAS_UNIDADES').length
@@ -98,33 +112,37 @@ export function validatePrendaFields(data: {
 function normalizeBackendInventoryItem(
   prenda: Record<string, any>,
   stockPorTalla: Record<string, number> = {},
-  sedeId = DEFAULT_SEDE_ID
+  sedeId = '',
+  fallbackStoreName = ''
 ): InventoryItemDto {
   const fotos: string[] = Array.isArray(prenda.fotografias)
     ? prenda.fotografias
     : prenda.imagenUrl
       ? [prenda.imagenUrl]
-      : [DEFAULT_PHOTO]
+      : env.useMocks
+        ? [DEFAULT_PHOTO]
+        : []
   const total = Object.values(stockPorTalla).reduce((a, b) => a + b, 0)
   const retired = prenda.estado === 'RETIRADA' || prenda.estado === 'RETIRADO'
   const statusFromBack =
     prenda.estadoInventario === 'SUSPENDIDO' || prenda.estado === 'SUSPENDIDO'
       ? 'SUSPENDIDO'
       : computeStatus(total, retired)
+  const resolvedStoreName = String(prenda.marca ?? prenda.tiendaNombre ?? fallbackStoreName)
 
   return {
     id: String(prenda.id ?? ''),
-    tiendaId: String(prenda.almacenId ?? prenda.tiendaId ?? DEFAULT_STORE_ID),
-    tiendaNombre: String(prenda.marca ?? prenda.tiendaNombre ?? DEFAULT_STORE_NAME),
+    tiendaId: String(prenda.almacenId ?? prenda.tiendaId ?? ''),
+    tiendaNombre: resolvedStoreName,
     sedeId,
     nombre: String(prenda.nombre ?? ''),
     tipo: String(prenda.tipo ?? prenda.categoria ?? 'Chaqueta'),
     color: String(prenda.color ?? 'Negro'),
-    marca: String(prenda.marca ?? DEFAULT_STORE_NAME),
+    marca: resolvedStoreName,
     estilo: String(prenda.estilo ?? 'Casual'),
     categoria: String(prenda.tipo ?? prenda.categoria ?? 'Chaqueta'),
     precio: Number(prenda.precio ?? 0),
-    imagenUrl: fotos[0] || DEFAULT_PHOTO,
+    imagenUrl: fotos[0] || '',
     imagenes: fotos.slice(0, MAX_GARMENT_PHOTOS),
     fotografias: fotos.slice(0, MAX_GARMENT_PHOTOS),
     tallasDisponibles: Object.keys(stockPorTalla),
@@ -142,18 +160,82 @@ function normalizeBackendInventoryItem(
   }
 }
 
+const storeContextCache = new Map<string, StoreContextInfo>()
+
+export async function resolveStoreContext(tiendaId?: string, sedeId?: string): Promise<StoreContextInfo> {
+  const sessionUser = mockSessionUser()
+  if (env.useMocks) {
+    return {
+      storeId: tiendaId || DEFAULT_STORE_ID,
+      storeName: sessionUser?.name || DEFAULT_STORE_NAME,
+      nit: '901.482.337-1',
+      sedeId: sedeId || DEFAULT_SEDE_ID,
+    }
+  }
+  const userId = sessionUser?.id ? String(sessionUser.id) : ''
+  const explicitStore = tiendaId && tiendaId !== DEFAULT_STORE_ID ? tiendaId : ''
+  if (!userId) {
+    return {
+      storeId: explicitStore,
+      storeName: sessionUser?.name || '',
+      nit: explicitStore,
+      sedeId: sedeId || explicitStore,
+    }
+  }
+  const cached = storeContextCache.get(userId)
+  if (cached) {
+    return {
+      storeId: explicitStore || cached.storeId,
+      storeName: cached.storeName,
+      nit: cached.nit,
+      sedeId: sedeId || cached.sedeId,
+    }
+  }
+  const myStore = await storeSettingsService.getMyStore(userId)
+  const raw = myStore as unknown as Record<string, unknown>
+  const nit = String(myStore.nit ?? '').trim()
+  const rawAlmacenId = typeof raw.id === 'string' || typeof raw.id === 'number'
+    ? String(raw.id)
+    : typeof raw.almacenId === 'string' || typeof raw.almacenId === 'number'
+      ? String(raw.almacenId)
+      : ''
+  const storeId = explicitStore || rawAlmacenId || nit
+  const rawSedeId =
+    typeof raw.sedeId === 'string' || typeof raw.sedeId === 'number'
+      ? String(raw.sedeId)
+      : typeof raw.branchId === 'string' || typeof raw.branchId === 'number'
+        ? String(raw.branchId)
+        : Array.isArray(raw.sedes) && raw.sedes[0] && (raw.sedes[0] as { id?: unknown }).id != null
+          ? String((raw.sedes[0] as { id: unknown }).id)
+          : storeId
+  const ctx: StoreContextInfo = {
+    storeId,
+    storeName: String(myStore.tradeName || sessionUser?.name || '').trim(),
+    nit,
+    sedeId: sedeId || rawSedeId,
+  }
+  if (ctx.storeId) storeContextCache.set(userId, ctx)
+  return ctx
+}
+
 export const inventoryService = {
-  async getStoreInventory(tiendaId = DEFAULT_STORE_ID, sedeId = DEFAULT_SEDE_ID): Promise<InventoryItemDto[]> {
+  async getStoreInventory(tiendaId?: string, sedeId?: string): Promise<InventoryItemDto[]> {
     if (env.useMocks) {
       failIfScenario('sin-permiso')
-      const list = tiendaId && tiendaId !== DEFAULT_STORE_ID && tiendaId !== 't-1'
-        ? memoryInventory.filter((x) => x.tiendaId === tiendaId)
+      const resolved = tiendaId || DEFAULT_STORE_ID
+      const list = resolved !== DEFAULT_STORE_ID && resolved !== 't-1'
+        ? memoryInventory.filter((x) => x.tiendaId === resolved)
         : memoryInventory
       return mockDelay(list)
     }
+    const ctx = await resolveStoreContext(tiendaId, sedeId)
+    if (!ctx.storeId) return []
+    const resolvedSede = sedeId || ctx.sedeId || ctx.storeId
     const [catalogoRes, disponiblesRes] = await Promise.all([
-      apiClient.get<Record<string, any>[]>(`/api/v1/stores/${encodeURIComponent(tiendaId)}/catalog`),
-      apiClient.get<Record<string, any>[]>(`/api/v1/inventory/branches/${encodeURIComponent(sedeId)}/available`).catch(() => ({ data: [] as Record<string, any>[] })),
+      apiClient.get<Record<string, any>[]>(`/api/v1/stores/${encodeURIComponent(ctx.storeId)}/catalog`),
+      resolvedSede
+        ? apiClient.get<Record<string, any>[]>(`/api/v1/inventory/branches/${encodeURIComponent(resolvedSede)}/available`).catch(() => ({ data: [] as Record<string, any>[] }))
+        : Promise.resolve({ data: [] as Record<string, any>[] }),
     ])
     const prendas = Array.isArray(catalogoRes.data) ? catalogoRes.data : []
     const disponiblesMap = new Map<string, Record<string, number>>()
@@ -182,7 +264,7 @@ export const inventoryService = {
             stock = {}
           }
         }
-        return normalizeBackendInventoryItem(p, stock, sedeId)
+        return normalizeBackendInventoryItem(p, stock, resolvedSede, ctx.storeName)
       })
     )
     return items
@@ -191,13 +273,14 @@ export const inventoryService = {
   async getSummary(tiendaId?: string): Promise<InventorySummaryDto> {
     if (env.useMocks) {
       failIfScenario('sin-permiso')
-      const list = tiendaId && tiendaId !== DEFAULT_STORE_ID && tiendaId !== 't-1'
-        ? memoryInventory.filter((x) => x.tiendaId === tiendaId)
+      const resolved = tiendaId || DEFAULT_STORE_ID
+      const list = resolved !== DEFAULT_STORE_ID && resolved !== 't-1'
+        ? memoryInventory.filter((x) => x.tiendaId === resolved)
         : memoryInventory
-      return mockDelay(computeSummary(list))
+      return mockDelay(computeInventorySummary(list))
     }
-    const items = await this.getStoreInventory(tiendaId || DEFAULT_STORE_ID)
-    return computeSummary(items)
+    const items = await this.getStoreInventory(tiendaId)
+    return computeInventorySummary(items)
   },
 
   async updateStock(dto: UpdateStockDto): Promise<InventoryItemDto> {
@@ -232,7 +315,8 @@ export const inventoryService = {
       return mockDelay(updated)
     }
 
-    const sedeId = dto.sedeId || DEFAULT_SEDE_ID
+    const ctx = await resolveStoreContext(undefined, dto.sedeId)
+    const sedeId = dto.sedeId || ctx.sedeId || ctx.storeId
     const res = await apiClient
       .patch<Record<string, any>>(
         `/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}/branches/${encodeURIComponent(sedeId)}/sizes/${encodeURIComponent(dto.talla)}`,
@@ -247,7 +331,7 @@ export const inventoryService = {
     for (const entry of list) {
       if (entry?.talla) stockMap[String(entry.talla)] = Number(entry.cantidad ?? entry.unidades ?? 0)
     }
-    return normalizeBackendInventoryItem(prenda, stockMap, sedeId)
+    return normalizeBackendInventoryItem(prenda, stockMap, sedeId, ctx.storeName)
   },
 
   async removeSize(prendaId: string, talla: string): Promise<InventoryItemDto> {
@@ -314,19 +398,20 @@ export const inventoryService = {
       memoryInventory[idx] = updated
       return mockDelay(updated)
     }
+    const ctx = await resolveStoreContext()
     const current = await apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data)
     const body: PrendaRequestDto = {
-      almacenId: String(current.almacenId ?? DEFAULT_STORE_ID),
+      almacenId: String(current.almacenId ?? ctx.storeId),
       nombre: String(current.nombre ?? ''),
       tipo: String(current.tipo ?? 'Chaqueta'),
       color: String(current.color ?? 'Negro'),
-      marca: String(current.marca ?? DEFAULT_STORE_NAME),
+      marca: String(current.marca ?? ctx.storeName),
       estilo: String(current.estilo ?? 'Casual'),
       precio: dto.nuevoPrecio,
-      fotografias: Array.isArray(current.fotografias) && current.fotografias.length ? current.fotografias : [DEFAULT_PHOTO],
+      fotografias: Array.isArray(current.fotografias) && current.fotografias.length ? current.fotografias : [],
     }
     const updatedPrenda = await apiClient.put<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`, body).then((r) => r.data)
-    return normalizeBackendInventoryItem(updatedPrenda)
+    return normalizeBackendInventoryItem(updatedPrenda, {}, ctx.sedeId, ctx.storeName)
   },
 
   /** SR-RF-55: Editar prenda del catálogo (PUT /api/v1/garments/{id}). Si estaba RECHAZADA vuelve a PENDIENTE. */
@@ -379,11 +464,13 @@ export const inventoryService = {
       return mockDelay(updated)
     }
 
+    const ctx = await resolveStoreContext()
     const body: PrendaRequestDto = {
-      almacenId: DEFAULT_STORE_ID,
+      almacenId: ctx.storeId,
       nombre: dto.nombre.trim(),
       tipo: dto.tipo.trim(),
       color: dto.color.trim(),
+      ...(ctx.storeName ? { marca: ctx.storeName } : {}),
       estilo: dto.estilo.trim(),
       precio: dto.precio,
       fotografias: dto.fotografias.slice(0, MAX_GARMENT_PHOTOS),
@@ -391,7 +478,7 @@ export const inventoryService = {
     const updatedPrenda = await apiClient
       .put<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`, body)
       .then((r) => r.data)
-    return normalizeBackendInventoryItem(updatedPrenda)
+    return normalizeBackendInventoryItem(updatedPrenda, {}, ctx.sedeId, ctx.storeName)
   },
 
   /** SR-RF-58: Retirar prenda del catálogo con DELETE /api/v1/garments/{id}. */
@@ -474,11 +561,13 @@ export const inventoryService = {
       return mockDelay(newItem)
     }
 
+    const ctx = await resolveStoreContext(undefined, dto.sedeId)
     const prendaPayload: PrendaRequestDto = {
-      almacenId: DEFAULT_STORE_ID,
+      almacenId: ctx.storeId,
       nombre: dto.nombre.trim(),
       tipo,
       color,
+      ...(ctx.storeName ? { marca: ctx.storeName } : {}),
       estilo: dto.estilo.trim(),
       precio: dto.precio,
       fotografias: fotos.slice(0, MAX_GARMENT_PHOTOS),
@@ -487,7 +576,7 @@ export const inventoryService = {
 
     const lotePayload: InventarioLoteRequestDto = {
       prendaId: String(createdPrenda.id),
-      sedeId: dto.sedeId ?? DEFAULT_SEDE_ID,
+      sedeId: dto.sedeId || ctx.sedeId || ctx.storeId,
       tipoPrenda: dto.tipoPrenda ?? 'ROPA',
       tallas: Object.entries(dto.stockPorTalla).map(([talla, cantidad]) => ({ talla, cantidad })),
       fechaPublicacion:
@@ -497,7 +586,7 @@ export const inventoryService = {
     }
     await apiClient.post('/api/v1/inventory/batch', lotePayload)
 
-    return normalizeBackendInventoryItem(createdPrenda, dto.stockPorTalla, lotePayload.sedeId)
+    return normalizeBackendInventoryItem(createdPrenda, dto.stockPorTalla, lotePayload.sedeId, ctx.storeName)
   },
 
   async deleteItem(prendaId: string): Promise<void> {
@@ -506,6 +595,43 @@ export const inventoryService = {
       return mockDelay(undefined)
     }
     return apiClient.delete(`/api/v1/garments/${encodeURIComponent(prendaId)}`).then(() => undefined)
+  },
+
+  async getGarmentMeasurements(garmentId: string): Promise<GarmentSizeMeasurementDto[]> {
+    if (env.useMocks) {
+      return mockDelay(memoryGarmentMeasurements.get(garmentId) ?? [])
+    }
+    try {
+      const res = await apiClient.get<unknown>(
+        `/api/v1/garments/${encodeURIComponent(garmentId)}/measurements`,
+      )
+      return normalizeMeasurementsPayload(res.data)
+    } catch {
+      return []
+    }
+  },
+
+  async saveGarmentMeasurements(
+    garmentId: string,
+    measurements: GarmentSizeMeasurementDto[],
+  ): Promise<void> {
+    const clean = measurements.filter(
+      (m) =>
+        m.minChestCm != null ||
+        m.maxChestCm != null ||
+        m.minWaistCm != null ||
+        m.maxWaistCm != null ||
+        m.minHipCm != null ||
+        m.maxHipCm != null ||
+        m.lengthCm != null,
+    )
+    if (env.useMocks) {
+      memoryGarmentMeasurements.set(garmentId, clean)
+      return mockDelay(undefined)
+    }
+    await apiClient.put(`/api/v1/garments/${encodeURIComponent(garmentId)}/measurements`, {
+      measurements: clean,
+    })
   },
 }
 

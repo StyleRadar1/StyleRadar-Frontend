@@ -23,7 +23,7 @@ export function FoundationStatsView() {
   const meta = hasMeta ? Math.round((metaObj.recibidas / metaObj.objetivo) * 100) : null
   const metaTexto = hasMeta && meta !== null
     ? `${metaObj.recibidas} de ${metaObj.objetivo} prendas recibidas en ${metaObj.etiqueta} (${meta}%)`
-    : FOUNDATION_NO_MONTHLY_GOAL_MSG
+    : 'Seguimiento mensual de prendas recibidas'
   const metaEtiqueta = metaObj?.etiqueta ?? 'este mes'
   const recibidasAcumuladas = metaObj?.recibidas ?? stats.totalPrendasRecibidas
 

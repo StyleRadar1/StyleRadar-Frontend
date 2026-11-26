@@ -20,7 +20,39 @@ import { card, descargarCsv, SERIE, tope } from '../utils/charts'
 const BUSQ = 'var(--color-lavanda)'
 const num = (n: number) => n.toLocaleString('es-CO')
 const milesCOP = (n: number) => (n >= 1000 ? `$${num(Math.round(n / 100) / 10)} mil` : formatCOP(n))
-const MES_LARGO: Record<string, string> = { jun: 'junio', jul: 'julio', ago: 'agosto', sep: 'septiembre', oct: 'octubre', nov: 'noviembre' }
+const MES_LARGO: Record<string, string> = {
+  ene: 'enero',
+  feb: 'febrero',
+  mar: 'marzo',
+  abr: 'abril',
+  may: 'mayo',
+  jun: 'junio',
+  jul: 'julio',
+  ago: 'agosto',
+  sep: 'septiembre',
+  oct: 'octubre',
+  nov: 'noviembre',
+  dic: 'diciembre',
+}
+
+const MONTH_INDEX_NAME = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+]
+
+function formatAdminMonth(raw?: string | null): string {
+  if (!raw) return 'este mes'
+  const trimmed = raw.trim()
+  const isoMatch = /^(\d{4})-(\d{2})(?:-\d{2})?/.exec(trimmed)
+  if (isoMatch) {
+    const year = isoMatch[1]
+    const monthIdx = Number(isoMatch[2]) - 1
+    const monthName = MONTH_INDEX_NAME[monthIdx]
+    return monthName ? `${monthName} de ${year}` : trimmed
+  }
+  const lower = trimmed.toLowerCase()
+  return MES_LARGO[lower] ?? trimmed
+}
 
 /**
  * Estadísticas del administrador (RF-86 a 91):
@@ -37,8 +69,8 @@ export function AdminStatsView() {
   if (loading) return <Loading label="Cargando estadísticas de la plataforma…" />
   if (error) return <ErrorState error={error} onRetry={reload} />
   if (!ind) return <EmptyState title="Sin datos">No hay indicadores disponibles</EmptyState>
-  const mes = daily.data?.mes ?? 'este mes'
-  const mesCorto = income ? MES_LARGO[income.mesActual.mes] ?? income.mesActual.mes : 'este mes'
+  const mes = formatAdminMonth(daily.data?.mes)
+  const mesCorto = income ? formatAdminMonth(income.mesActual.mes) : 'este mes'
 
   return (
     <div className="text-[var(--color-text)]">

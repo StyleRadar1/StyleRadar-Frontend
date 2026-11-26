@@ -13,8 +13,13 @@ import { renovarSiHaceFalta } from './renovarSesion'
 export const apiClient = axios.create({
   baseURL: env.apiUrl,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
+  timeout: 25000,
 })
+
+let consecutiveNetworkFailures = 0
+export const resetNetworkFailureCount = () => {
+  consecutiveNetworkFailures = 0
+}
 
 apiClient.interceptors.request.use(async (config) => {
   await renovarSiHaceFalta(config.url)
@@ -42,6 +47,11 @@ export class ApiError extends Error {
   attemptsRemaining?: number
   /** Segundos de espera antes de reintentar (ProblemDetail.retryAfterSeconds o cabecera Retry-After en los 429). */
   retryAfterSeconds?: number
+  /**
+   * Texto del servidor (ProblemDetail.detail o message). Solo se muestra donde el equipo de back lo pidió
+   * (registro 409 EMAIL_ALREADY_REGISTERED y 400 INVALID_DATA); las demás pantallas siguen usando `message`.
+   */
+  detail?: string
   constructor(status: number, message: string, fieldsOrCode: CamposConError | string = {}, code?: string, timestamp?: string) {
     super(message)
     this.name = 'ApiError'
@@ -69,14 +79,24 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
     tokenStorage.clear()
     window.dispatchEvent(new Event('sr:sesion-expirada'))
   }
-  // La petición no llegó al servidor (sin internet o servidor caído sin respuesta): pantalla única de sin conexión.
-  if (!error.response && error.code !== 'ERR_CANCELED') avisarSinConexion()
+  // Si hay respuesta HTTP, el servidor está alcanzable: reiniciar contador de fallos de red.
+  if (error.response) {
+    consecutiveNetworkFailures = 0
+  } else if (error.code !== 'ERR_CANCELED') {
+    const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false
+    if (isOffline) {
+      avisarSinConexion()
+    } else if (error.code !== 'ECONNABORTED') {
+      consecutiveNetworkFailures += 1
+      if (consecutiveNetworkFailures >= 3) avisarSinConexion()
+    }
+  }
   // El detalle técnico solo se ve en la consola y solo en desarrollo.
   if (import.meta.env.DEV) {
     console.warn(`[api] ${status || 'sin respuesta'} ${error.config?.method?.toUpperCase() ?? ''} ${error.config?.url ?? ''}`, data ?? error.message)
   }
   const obj = typeof data === 'object' && data !== null
-    ? (data as { errorCode?: unknown; code?: unknown; timestamp?: unknown; attemptsRemaining?: unknown; retryAfterSeconds?: unknown })
+    ? (data as { errorCode?: unknown; code?: unknown; timestamp?: unknown; attemptsRemaining?: unknown; retryAfterSeconds?: unknown; detail?: unknown; message?: unknown })
     : undefined
   const code = typeof obj?.code === 'string' ? obj.code : typeof obj?.errorCode === 'string' ? obj.errorCode : undefined
   const timestamp = typeof obj?.timestamp === 'string' ? obj.timestamp : undefined
@@ -86,6 +106,8 @@ export function aApiError(error: AxiosError<unknown>): ApiError {
   if (intentos !== undefined) apiError.attemptsRemaining = intentos
   const espera = numeroNoNegativo(obj?.retryAfterSeconds) ?? numeroNoNegativo(cabecera(error, 'retry-after'))
   if (espera !== undefined) apiError.retryAfterSeconds = espera
+  const detalle = [obj?.detail, obj?.message].find((x): x is string => typeof x === 'string' && x.trim() !== '')
+  if (detalle) apiError.detail = detalle.trim()
   return apiError
 }
 
@@ -106,6 +128,9 @@ function cabecera(error: AxiosError<unknown>, nombre: string): unknown {
 }
 
 apiClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    consecutiveNetworkFailures = 0
+    return res
+  },
   (error: AxiosError<unknown>) => Promise.reject(aApiError(error)),
 )

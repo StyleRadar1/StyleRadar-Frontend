@@ -90,13 +90,12 @@ cd StyleRadar_Frontend
 # 2. Instalar dependencias
 npm install
 
-# 3. Configurar variables de entorno
-cp .env.example .env            # Linux / macOS
-# copy .env.example .env        # Windows (CMD / PowerShell)
-
-# 4. Levantar servidor de desarrollo en http://localhost:5173
+# 3. Levantar servidor de desarrollo en http://localhost:5173
 npm run dev
 ```
+
+> [!NOTE]
+> Los mocks y el mapa ya vienen activos por defecto con `.env.development` para `npm run dev`. Si quieres conectar tu entorno local a la API real, crea `.env.local` definiendo `VITE_USE_MOCKS=false` y `VITE_API_URL` (partiendo de `.env.example`).
 
 | Comando | Propósito |
 | :--- | :--- |

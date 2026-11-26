@@ -83,6 +83,8 @@ export type Estilo =
 export interface ItemResponseDto {
   id: string
   almacenId?: string
+  /** NIT de la tienda dueña, si el catálogo lo entrega; el chat con tiendas lo necesita. */
+  storeNit?: string
   nombre: string
   tienda: string
   marca?: string
@@ -114,6 +116,7 @@ export interface ItemResponseDto {
   esSegundaMano?: boolean
   sinTablaMedidas?: boolean
   noDisponibleEnProbador?: boolean
+  tryOnEligible?: boolean
   retirada?: boolean
 }
 

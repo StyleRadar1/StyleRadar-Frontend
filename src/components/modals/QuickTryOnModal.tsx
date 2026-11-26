@@ -1,9 +1,19 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import './QuickTryOnModal.css'
+import { env } from '@/configs/env'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { TryOnPrivacyShield } from '@/modules/experiencia/components/TryOnPrivacyShield'
+import {
+  classifyFitVeredict,
+  FitAnalysisPanel,
+  TechnicalCroquisSvg,
+} from '@/modules/experiencia/components/FitAnalysis2D'
 import { ITEMS } from '@/modules/catalogo/mocks/items'
+import type { GarmentSizeMeasurementDto } from '@/modules/catalogo/types/garmentMeasurements.dto'
 import { MOCK_PLAYLISTS } from '@/modules/catalogo/mocks/playlists'
+import { itemService } from '@/modules/catalogo/services/itemService'
+import { playlistService } from '@/modules/catalogo/services/playlistService'
 import type { ItemResponseDto } from '@/modules/catalogo/types/item.dto'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import {
@@ -18,6 +28,7 @@ import {
 import {
   clearLookFromStorage,
   evaluateGarmentFit,
+  evaluateGarmentFitWithMeasurements,
   evaluatePlaylistOutfit,
   getLayerForGarment,
   getRecommendedSize,
@@ -30,25 +41,12 @@ import {
 import {
   computeBodyDeformation,
   getBodyMeasurements,
+  hasSavedBodyMeasurements,
+  saveBodyMeasurements,
 } from '@/modules/experiencia/utils/bodyMeasurementsEngine'
+import { BodyMeasurementsWizardModal } from '@/modules/experiencia/components/BodyMeasurementsWizardModal'
+import type { BodyMeasurements } from '@/modules/experiencia/types/bodyMeasurements.dto'
 import { AuthModal } from './AuthModal'
-
-/* ---------- Filtros de color para capas del maniquí ---------- */
-const COLOR_FILTERS: Record<string, string> = {
-  blanco: 'none',
-  celeste: 'sepia(1) hue-rotate(160deg) saturate(2.4) brightness(.9)',
-  negro: 'brightness(.25) contrast(1.3)',
-  hueso: 'sepia(.5) brightness(1.05)',
-  carbon: 'brightness(.38)',
-  camel: 'sepia(.9) hue-rotate(20deg) saturate(2) brightness(.85)',
-  marino: 'sepia(1) hue-rotate(185deg) saturate(3) brightness(.55)',
-  oliva: 'sepia(1) hue-rotate(60deg) saturate(1.8) brightness(.65)',
-  cuero_negro: 'brightness(.3) contrast(1.4)',
-  cuero_cafe: 'sepia(1) hue-rotate(10deg) saturate(2.2) brightness(.55)',
-  gris: 'grayscale(1) brightness(.7)',
-  vino: 'sepia(1) hue-rotate(300deg) saturate(2.6) brightness(.55)',
-  default: 'none',
-}
 
 /* ---------- Rutas de capas del maniquí ---------- */
 const LAYER_PATHS: Record<string, string> = {
@@ -137,8 +135,29 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
   /* Medidas corporales desde el perfil y autenticación */
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const bodyMeasurements = useMemo(() => getBodyMeasurements(user?.id), [user?.id])
+  const [showMeasurementsWizard, setShowMeasurementsWizard] = useState(false)
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurements | null>(() => getBodyMeasurements(user?.id))
+  useEffect(() => {
+    setBodyMeasurements(getBodyMeasurements(user?.id))
+  }, [user?.id])
+  const hasMeasures = hasSavedBodyMeasurements(user?.id) && Boolean(bodyMeasurements)
   const [pendingDeepLinkGarment, setPendingDeepLinkGarment] = useState<{ id: string; talla?: string; color?: string } | null>(null)
+  const [catalogItems, setCatalogItems] = useState<ItemResponseDto[]>(() => (env.useMocks ? ITEMS : []))
+  const [availablePlaylists, setAvailablePlaylists] = useState<PlaylistDto[]>(() => (env.useMocks ? MOCK_PLAYLISTS : []))
+
+  useEffect(() => {
+    if (!isOpen || env.useMocks) return
+    let active = true
+    itemService
+      .search({})
+      .then((list) => { if (active) setCatalogItems(list) })
+      .catch(() => {})
+    playlistService
+      .getAll()
+      .then((pls) => { if (active) setAvailablePlaylists(pls) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [isOpen])
 
   const canvasRef = useRef<HTMLDivElement>(null)
 
@@ -206,11 +225,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     showToast('Look limpiado por completo')
   }, [wearing, pushState, showToast])
 
-  /* Poner prenda directamente en el maniquí */
+  /* Poner prenda directamente en el maniquí (usando guía de medidas real cuando exista) */
+  const sizeGuideCacheRef = useRef<Record<string, GarmentSizeMeasurementDto[]>>({})
+
   const wearGarment = useCallback((item: ItemResponseDto, talla: string, color: string) => {
     const slot = getSlotForGarment(item)
     const layer = getLayerForGarment(item, slot)
-    const fit = evaluateGarmentFit(item, talla)
+    const cachedGuide = sizeGuideCacheRef.current[item.id]
+    const fit = evaluateGarmentFitWithMeasurements(item, talla, bodyMeasurements, cachedGuide)
 
     const worn: WornItem = {
       item,
@@ -228,7 +250,25 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
     pushState(nextState)
     showToast(`${item.nombre} en talla ${talla} puesto en el maniquí`)
-  }, [wearing, pushState, showToast])
+
+    if (!cachedGuide) {
+      void itemService.getGarmentSizeGuide(item.id, item.tallas).then((guide) => {
+        if (!guide.length) return
+        sizeGuideCacheRef.current[item.id] = guide
+        const updatedFit = evaluateGarmentFitWithMeasurements(item, talla, bodyMeasurements, guide)
+        if (updatedFit.veredicto !== fit.veredicto) {
+          setWearing((prev) => {
+            const current = prev[slot]
+            if (!current || current.item.id !== item.id || current.talla !== talla) return prev
+            return {
+              ...prev,
+              [slot]: { ...current, veredicto: updatedFit.veredicto },
+            }
+          })
+        }
+      })
+    }
+  }, [wearing, bodyMeasurements, pushState, showToast])
 
   /* Carga de outfit desde Playlist */
   const applyPlaylist = useCallback((playlist: PlaylistDto, mode: 'replace' | 'merge') => {
@@ -272,39 +312,50 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
     const key = `${prendaId || ''}_${tallaParam || ''}_${colorParam || ''}_${playlistId || ''}_${user?.id || 'anon'}`
     if (processedDeepLinkRef.current === key) return
 
+    let active = true
+
+    const resolvePlaylist = async () => {
+      if (!playlistId) return
+      const localPl = (env.useMocks ? MOCK_PLAYLISTS : availablePlaylists).find((p) => p.id === playlistId)
+      const pl = localPl ?? (!env.useMocks ? await playlistService.getById(playlistId).catch(() => null) : null)
+      if (!active || !pl) return
+      processedDeepLinkRef.current = key
+      applyPlaylist(pl, 'replace')
+    }
+
+    const resolvePrenda = async () => {
+      if (!prendaId) return
+      const localItem = (env.useMocks ? ITEMS : catalogItems).find((it) => it.id === prendaId)
+      const item = localItem ?? (!env.useMocks ? await itemService.getById(prendaId).catch(() => null) : null)
+      if (!active || !item) return
+      // Verificar si el usuario tiene sesión
+      if (!user) {
+        setPendingDeepLinkGarment({ id: prendaId, talla: tallaParam || undefined, color: colorParam || undefined })
+        setShowAuthModal(true)
+        return
+      }
+      processedDeepLinkRef.current = key
+      const tallaFinal = tallaParam || getRecommendedSize(item, userMeasurements)
+      const colorFinal = colorParam || item.color || 'default'
+      wearGarment(item, tallaFinal, colorFinal)
+    }
+
     if (playlistId) {
-      const pl = MOCK_PLAYLISTS.find((p) => p.id === playlistId)
-      if (pl) {
-        processedDeepLinkRef.current = key
-        applyPlaylist(pl, 'replace')
-      }
-      return
+      void resolvePlaylist()
+    } else if (prendaId) {
+      void resolvePrenda()
     }
 
-    if (prendaId) {
-      const item = ITEMS.find((it) => it.id === prendaId)
-      if (item) {
-        // Verificar si el usuario tiene sesión
-        if (!user) {
-          setPendingDeepLinkGarment({ id: prendaId, talla: tallaParam || undefined, color: colorParam || undefined })
-          setShowAuthModal(true)
-          return
-        }
-
-        processedDeepLinkRef.current = key
-        const tallaFinal = tallaParam || getRecommendedSize(item, userMeasurements)
-        const colorFinal = colorParam || item.color || 'default'
-        wearGarment(item, tallaFinal, colorFinal)
-      }
-    }
-  }, [isOpen, searchParams, initialGarmentId, user, userMeasurements, wearGarment, applyPlaylist])
+    return () => { active = false }
+  }, [isOpen, searchParams, initialGarmentId, user, userMeasurements, wearGarment, applyPlaylist, catalogItems, availablePlaylists])
 
   /* Escuchar inicio de sesión exitoso para reanudar prenda pendiente */
   useEffect(() => {
-    const onLoginSuccess = () => {
+    const onLoginSuccess = async () => {
       setShowAuthModal(false)
       if (pendingDeepLinkGarment) {
-        const item = ITEMS.find((it) => it.id === pendingDeepLinkGarment.id)
+        const localItem = (env.useMocks ? ITEMS : catalogItems).find((it) => it.id === pendingDeepLinkGarment.id)
+        const item = localItem ?? (!env.useMocks ? await itemService.getById(pendingDeepLinkGarment.id).catch(() => null) : null)
         if (item) {
           const t = pendingDeepLinkGarment.talla || getRecommendedSize(item)
           wearGarment(item, t, pendingDeepLinkGarment.color || item.color || 'default')
@@ -312,9 +363,10 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
         }
       }
     }
-    window.addEventListener('sr:login-success', onLoginSuccess)
-    return () => window.removeEventListener('sr:login-success', onLoginSuccess)
-  }, [pendingDeepLinkGarment, wearGarment])
+    const handler = () => { void onLoginSuccess() }
+    window.addEventListener('sr:login-success', handler)
+    return () => window.removeEventListener('sr:login-success', handler)
+  }, [pendingDeepLinkGarment, wearGarment, catalogItems])
 
   /* Acciones principales del probador */
   const handlePickGarment = useCallback(() => {
@@ -404,58 +456,30 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   /* Lista de layers para renderizar ordenadas por Z */
   const activeLayers = wornList
     .map((w) => ({
+      slot: w.slot,
       layer: w.layer,
       color: (w.color || '').toLowerCase(),
+      fitLevel: classifyFitVeredict(w.veredicto).level,
       zIndex: LAYER_ORDER.indexOf(w.layer),
     }))
     .filter((l) => l.zIndex >= 0 && LAYER_PATHS[l.layer])
     .sort((a, b) => a.zIndex - b.zIndex)
 
+  const primaryFitLevel =
+    activeLayers.find((l) => l.slot === 'superior')?.fitLevel ??
+    activeLayers.find((l) => l.slot === 'abrigo')?.fitLevel ??
+    activeLayers[0]?.fitLevel ??
+    null
+
+  const inferiorFitLevel =
+    activeLayers.find((l) => l.slot === 'inferior')?.fitLevel ?? null
+
   /* Deformación y adaptación anatómica del maniquí */
   const deformation = useMemo(() => computeBodyDeformation(bodyMeasurements), [bodyMeasurements])
 
-  /* Selección de silueta y rotación según el ángulo de cámara activo (Frente, Lado, Espalda) */
-  const { currentSilhouette, currentRotationAngle, isFlipped, isBackView } = useMemo(() => {
-    const norm = ((rotationAngle % 360) + 360) % 360
-    if (norm >= 45 && norm < 135) {
-      // Vista Lateral derecha (Lado)
-      return {
-        currentSilhouette: deformation.silhouetteSideSrc || deformation.silhouetteSrc,
-        currentRotationAngle: (norm - 90) * 0.35,
-        isFlipped: false,
-        isBackView: false,
-      }
-    } else if (norm >= 135 && norm < 225) {
-      // Vista Posterior (Espalda)
-      return {
-        currentSilhouette: deformation.silhouetteBackSrc || deformation.silhouetteSrc,
-        currentRotationAngle: (norm - 180) * 0.35,
-        isFlipped: false,
-        isBackView: true,
-      }
-    } else if (norm >= 225 && norm < 315) {
-      // Vista Lateral izquierda (Lado opuesto)
-      return {
-        currentSilhouette: deformation.silhouetteSideSrc || deformation.silhouetteSrc,
-        currentRotationAngle: (norm - 270) * 0.35,
-        isFlipped: true,
-        isBackView: false,
-      }
-    } else {
-      // Vista Frontal (Frente)
-      const frontAngle = norm > 180 ? norm - 360 : norm
-      return {
-        currentSilhouette: deformation.silhouetteSrc,
-        currentRotationAngle: frontAngle * 0.35,
-        isFlipped: false,
-        isBackView: false,
-      }
-    }
-  }, [rotationAngle, deformation])
-
   /* Catálogo filtrado dentro del drawer */
   const filteredCatalog = useMemo(() => {
-    return ITEMS.filter((item) => {
+    return catalogItems.filter((item) => {
       if (catalogSearch.trim()) {
         const q = catalogSearch.toLowerCase()
         const matchName = item.nombre.toLowerCase().includes(q)
@@ -478,15 +502,16 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       }
       return true
     })
-  }, [catalogSearch, selectedSlotFilter, selectedStoreFilter, selectedStyleFilter, selectedSizeFilter])
+  }, [catalogItems, catalogSearch, selectedSlotFilter, selectedStoreFilter, selectedStyleFilter, selectedSizeFilter])
 
   /* Tiendas y estilos únicos para los filtros */
-  const tiendasDisponibles = useMemo(() => Array.from(new Set(ITEMS.map((i) => i.tienda))), [])
-  const estilosDisponibles = useMemo(() => Array.from(new Set(ITEMS.map((i) => i.estilo).filter(Boolean))), [])
+  const tiendasDisponibles = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.tienda).filter(Boolean))), [catalogItems])
+  const estilosDisponibles = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.estilo).filter(Boolean))), [catalogItems])
 
   if (!isOpen) return null
 
   return (
+    <TryOnPrivacyShield active={isOpen}>
     <div
       className="cz-fullscreen"
       role="dialog"
@@ -610,6 +635,43 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                 ↷
               </button>
             </div>
+          </div>
+
+          {/* Metodología del probador + acceso rápido a medidas */}
+          <div className="mb-3 rounded-2xl border border-white/12 bg-white/[0.04] p-3 text-xs text-white/85">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-violeta-claro">
+              ¿Cómo funciona?
+            </p>
+            <p className="mt-1 leading-snug text-white/75">
+              Aquí podrás ver y comprobar con las medidas de tu cuerpo y la ropa si una prenda te quedaría o no, para luego probarla en nuestro probador con IA.
+            </p>
+            {!hasMeasures ? (
+              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-2">
+                <span className="text-[11px] font-medium text-amber-200">
+                  Aún no has registrado tus medidas corporales.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowMeasurementsWizard(true)}
+                  className="rounded-lg bg-violeta px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-violeta-hover"
+                >
+                  Configurar mis medidas
+                </button>
+              </div>
+            ) : (
+              <div className="mt-2 flex items-center justify-between gap-2 border-t border-white/10 pt-2">
+                <span className="text-[11px] text-white/65">
+                  Medidas activas: <strong className="text-white">{bodyMeasurements?.estatura} cm</strong> · Talla <strong className="text-white">{bodyMeasurements?.tallaHabitual || 'M'}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowMeasurementsWizard(true)}
+                  className="text-[11px] font-semibold text-violeta-claro hover:underline"
+                >
+                  Editar medidas
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Tarjetas principales: Escoger prenda / Probar con tu foto IA */}
@@ -768,7 +830,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
           {/* Maniquí central interactivo */}
           <div
-            className="cz-mannequin-container"
+            className="cz-mannequin-container !max-w-none"
             ref={canvasRef}
             onPointerDown={handlePointerDownStage}
             onPointerMove={handlePointerMoveStage}
@@ -862,40 +924,61 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               </div>
             </div>
 
-            <div
-              className="cz-mannequin-3d-wrapper"
-              data-testid="mannequin-wrapper"
-              style={{
-                transform: `rotateY(${currentRotationAngle}deg) scaleY(${deformation.heightScale}) scaleX(${isFlipped ? -deformation.chestScale : deformation.chestScale})`,
-                transformOrigin: 'bottom center',
-                transition: isRotating.current ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
-            >
-              {/* Maniquí base adaptable según ángulo (frente, lado o espalda) */}
-              <img
-                src={currentSilhouette}
-                  alt="Maniquí anatómico base"
-                  className="cz-mannequin-base"
-                  data-testid="mannequin-base-img"
-                  draggable={false}
-                />
-
-                {/* Capas activas superpuestas */}
-                {activeLayers.map(({ layer, color }) => (
+            <div className="flex items-center justify-center gap-12 lg:gap-20 xl:gap-24 h-full w-full px-4">
+              <div className="flex flex-col items-center h-full justify-end">
+                <span className="mb-2 rounded-full border border-white/15 bg-black/40 px-3 py-0.5 text-[11px] font-semibold text-white/85 backdrop-blur-sm">
+                  Vista Frontal
+                </span>
+                <div
+                  className="cz-mannequin-3d-wrapper"
+                  data-testid="mannequin-wrapper"
+                  style={{
+                    transform: `scaleY(${deformation.heightScale}) scaleX(${deformation.chestScale})`,
+                    transformOrigin: 'bottom center',
+                    transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
                   <img
-                    key={layer}
-                    src={LAYER_PATHS[layer]}
-                    alt=""
-                    className="cz-mannequin-layer"
-                    style={{
-                      filter: (COLOR_FILTERS[color] || 'none') + (isBackView ? ' brightness(0.92)' : ''),
-                      zIndex: LAYER_ORDER.indexOf(layer) + 10,
-                      opacity: (rotationAngle === 90 || (rotationAngle >= 45 && rotationAngle < 135)) ? 0.35 : 1,
-                    }}
+                    src={deformation.silhouetteSrc}
+                    alt="Maniquí anatómico base"
+                    className="sr-only"
+                    data-testid="mannequin-base-img"
                     draggable={false}
                   />
-                ))}
+                  <TechnicalCroquisSvg
+                    view="front"
+                    female={bodyMeasurements?.cuerpoBase === 'femenino'}
+                    layers={activeLayers}
+                    primaryFitLevel={primaryFitLevel}
+                    inferiorFitLevel={inferiorFitLevel}
+                  />
+                </div>
               </div>
+
+              {/* Segundo modelo 2D simultáneo (Espalda) */}
+              <div className="hidden md:flex flex-col items-center h-full justify-end">
+                <span className="mb-2 rounded-full border border-white/15 bg-black/40 px-3 py-0.5 text-[11px] font-semibold text-white/85 backdrop-blur-sm">
+                  Vista Trasera
+                </span>
+                <div
+                  className="cz-mannequin-3d-wrapper"
+                  style={{
+                    transform: `scaleY(${deformation.heightScale}) scaleX(${deformation.chestScale})`,
+                    transformOrigin: 'bottom center',
+                  }}
+                >
+                  <TechnicalCroquisSvg
+                    view="back"
+                    female={bodyMeasurements?.cuerpoBase === 'femenino'}
+                    layers={activeLayers}
+                    primaryFitLevel={primaryFitLevel}
+                    inferiorFitLevel={inferiorFitLevel}
+                  />
+                </div>
+              </div>
+
+              <FitAnalysisPanel wornList={wornList} />
+            </div>
 
             <div className="cz-floor-shadow" aria-hidden="true" />
           </div>
@@ -909,30 +992,8 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             </span>
           </div>
 
-          {/* Controles de cámara y rotación */}
+          {/* Controles de zoom */}
           <div className="cz-camera-controls" role="toolbar" aria-label="Controles de cámara del maniquí">
-            <button
-              className={`cz-camera-angle-btn ${rotationAngle === 0 ? 'active' : ''}`}
-              onClick={() => setRotationAngle(0)}
-              title="Vista de frente"
-            >
-              Frente
-            </button>
-            <button
-              className={`cz-camera-angle-btn ${rotationAngle === 90 ? 'active' : ''}`}
-              onClick={() => setRotationAngle(90)}
-              title="Vista lateral"
-            >
-              Lado
-            </button>
-            <button
-              className={`cz-camera-angle-btn ${rotationAngle === 180 ? 'active' : ''}`}
-              onClick={() => setRotationAngle(180)}
-              title="Vista posterior"
-            >
-              Espalda
-            </button>
-            <span className="cz-camera-divider" />
             <button className="cz-camera-zoom-btn" onClick={zoomIn} title="Acercar">+</button>
             <button className="cz-camera-zoom-btn" onClick={zoomOut} title="Alejar">−</button>
             <button className="cz-camera-reset-btn" onClick={resetCamera} title="Restablecer vista">
@@ -1169,7 +1230,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             {drawerTab === 'playlists' && (
               <div className="cz-drawer-tab-content">
                 <div className="cz-playlists-list">
-                  {MOCK_PLAYLISTS.map((pl) => (
+                  {availablePlaylists.map((pl) => (
                     <div key={pl.id} className="cz-playlist-row-card">
                       <img
                         src={pl.portadaUrl || pl.prendas[0]?.imagen}
@@ -1408,6 +1469,20 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
           initialTab="login"
         />
       )}
+
+      {/* Asistente para registrar o editar medidas corporales */}
+      <BodyMeasurementsWizardModal
+        isOpen={showMeasurementsWizard}
+        onClose={() => setShowMeasurementsWizard(false)}
+        initialMeasurements={bodyMeasurements}
+        onSave={(measurements, persist) => {
+          saveBodyMeasurements(measurements, persist, user?.id)
+          setBodyMeasurements(measurements)
+          setShowMeasurementsWizard(false)
+          showToast('Medidas guardadas. El maniquí y las tallas se actualizaron.')
+        }}
+      />
     </div>
+    </TryOnPrivacyShield>
   )
 }

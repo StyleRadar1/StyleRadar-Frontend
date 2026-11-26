@@ -119,7 +119,7 @@ export default function StoreActivateSubscriptionPage() {
   const alreadyActiveOrPending =
     conflictError ||
     ((sub?.status === 'ACTIVA' ||
-      (!env.useMocksPagos && sub?.status === 'PENDIENTE') ||
+      (!env.useMocksPagos && sub?.status === 'PENDIENTE' && !data?.sinSuscripcion) ||
       payments.some((p) => p.status === 'pendiente')) &&
       !lastResult)
 

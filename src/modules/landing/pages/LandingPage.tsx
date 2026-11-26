@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { ROLE_HOME } from '@/modules/core/types/roles'
 import { CustomCursor, NoiseGrain } from '@/components/ui'
 import { LandingHeader, LandingMobileMenu, LandingFooter } from '@/components/layout'
 import {
@@ -21,27 +20,27 @@ export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   // /?login abre el inicio de sesión (lo usan el botón «Iniciar sesión» del menú de la app y «Cerrar sesión»).
   const [params, setParams] = useSearchParams()
-  const [isAuthOpen, setIsAuthOpen] = useState(() => params.has('login'))
+  const [isAuthOpen, setIsAuthOpen] = useState(() => !user && params.has('login'))
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
 
   useEffect(() => {
-    if (params.has('login')) {
+    if (!user && params.has('login')) {
       setAuthTab('login')
       setIsAuthOpen(true)
+    } else if (user && isAuthOpen) {
+      setIsAuthOpen(false)
     }
-  }, [params])
-
-  if (user) {
-    return <Navigate to={ROLE_HOME[user.role]} replace />
-  }
+  }, [params, user, isAuthOpen])
 
   const handleOpenLogin = () => {
+    if (user) return
     setAuthTab('login')
     setIsAuthOpen(true)
   }
 
   const handleOpenRegister = () => {
+    if (user) return
     setAuthTab('register')
     setIsAuthOpen(true)
   }

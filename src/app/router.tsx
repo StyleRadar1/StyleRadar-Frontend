@@ -11,10 +11,12 @@ import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 import { RequireRole } from './RequireRole'
 import { RequireStoreActiveSub } from './RequireStoreActiveSub'
+import { RouteErrorBoundary } from './RouteErrorBoundary'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 import LandingPage from '@/modules/landing/pages/LandingPage'
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
+const ResetPassword = lazy(() => import('@/modules/identidad/pages/ResetPasswordPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
 const AdminUsers = lazy(() => import('@/modules/identidad/pages/AdminUsersPage'))
 const AdminUserDetail = lazy(() => import('@/modules/identidad/pages/AdminUserDetailPage'))
@@ -22,6 +24,7 @@ const Catalog = lazy(() => import('@/modules/catalogo/pages/CatalogPage'))
 const ItemDetail = lazy(() => import('@/modules/catalogo/pages/ItemDetailPage'))
 const MapPage = lazy(() => import('@/modules/mapa/pages/MapPage'))
 const Store = lazy(() => import('@/modules/catalogo/pages/StorePage'))
+const FoundationPublic = lazy(() => import('@/modules/experiencia/pages/FoundationPublicPage'))
 const Inventory = lazy(() => import('@/modules/catalogo/pages/InventoryPage'))
 const MyStore = lazy(() => import('@/modules/catalogo/pages/MiTiendaPage'))
 const StoreInfo = lazy(() => import('@/modules/catalogo/pages/StoreInfoPage'))
@@ -45,6 +48,7 @@ const AdminPayments = lazy(() => import('@/modules/transacciones/pages/AdminPaym
 const Alerts = lazy(() => import('@/modules/soporte/pages/AlertsPage'))
 const Messages = lazy(() => import('@/modules/soporte/pages/MessagesPage'))
 const AvisosPreferencias = lazy(() => import('@/modules/soporte/pages/PreferencesPage'))
+const AvisosBandeja = lazy(() => import('@/modules/soporte/pages/NotificationsPage'))
 const Stats = lazy(() => import('@/modules/soporte/pages/StatsPage'))
 const AdminStores = lazy(() => import('@/modules/administracion/pages/AdminStoresPage'))
 const AdminStoreDetail = lazy(() => import('@/modules/administracion/pages/AdminStoreDetailPage'))
@@ -97,20 +101,24 @@ function RootLayout() {
   )
 }
 
-export const router = createBrowserRouter([{ element: <RootLayout />, children: [
+export const router = createBrowserRouter([{ element: <RootLayout />, errorElement: <RouteErrorBoundary />, children: [
   {
     element: <AppLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       // Públicas
       { path: '/', element: <LandingPage /> },
       // Un solo inicio de sesion: el modal del landing (/?login). /login redirige ahi.
       { path: '/login', element: <Navigate to="/?login" replace /> },
       { path: '/registro', element: page(<Register />) },
+      { path: '/restablecer-contrasena', element: page(<ResetPassword />) },
       { path: '/catalogo', element: page(<Catalog />) },
       { path: '/catalogo/:id', element: page(<ItemDetail />) },
       { path: '/mapa', element: page(<MapPage />) },
       { path: '/tiendas/:id', element: page(<Store />) },
       { path: '/tienda/:id', element: page(<Store />) },
+      { path: '/fundaciones/:id', element: page(<FoundationPublic />) },
+      { path: '/fundacion/:id', element: page(<FoundationPublic />) },
       { path: '/playlists', element: page(<Playlists />) },
       { path: '/playlists/:id', element: page(<Playlists />) },
       { path: '/playlist/:id', element: page(<Playlists />) },
@@ -135,6 +143,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
       { path: '/donar', element: only(USER_OR_STORE, <Donate />) },
       { path: '/alertas', element: only(USER, <Alerts />) },
       { path: '/mensajes', element: only(ANY, <Messages />) },
+      { path: '/avisos', element: only(['BUYER', 'STORE_ADMIN', 'FOUNDATION_REPRESENTATIVE'], <AvisosBandeja />) },
       { path: '/avisos/preferencias', element: only(['BUYER', 'STORE_ADMIN', 'FOUNDATION_REPRESENTATIVE'], <AvisosPreferencias />) },
       // Tienda (rutas de gestión y publicación protegidas por RequireStoreActiveSub; suscripción siempre accesible)
       { path: '/mi-tienda', element: onlyStoreActive(<MyStore />) },
@@ -156,6 +165,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, children: 
   // Administrador: módulo propio con barra lateral (el layout ya exige el rol)
   {
     element: <AdminLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { path: '/admin', element: <Navigate to="/admin/estadisticas" replace /> },
       { path: '/admin/estadisticas', element: page(<Stats />) },

@@ -1,19 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { env } from '@/configs/env'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { formatCOP } from '@/modules/core/utils/format'
+import { AuthContext } from '@/modules/identidad/states/authContext'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { MyListings } from '../components/MyListings'
 import { donationService } from '../services/donationService'
+import { foundationProfileService } from '../services/foundationProfileService'
 import { secondHandService } from '../services/secondHandService'
 import {
   CATEGORIAS,
   CONSERVACIONES,
   CONSERVACION_LABEL,
   LOCALIDADES_BOGOTA,
+  TALLA_LABEL,
   TALLAS,
   type Conservacion,
+  type ConservationStatus,
   type ListingDto,
   type LocalidadEnum,
 } from '../types/secondhand.dto'
@@ -43,7 +48,7 @@ export default function SecondHandPage() {
               to="/segunda-mano/publicar"
               className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm"
             >
-              Publicar para vender ($ COP)
+              Publicar prenda
             </Link>
             <Link
               to="/donar"
@@ -65,11 +70,10 @@ export default function SecondHandPage() {
               type="button"
               aria-selected={vista === v}
               onClick={() => setVista(v)}
-              className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] ${
-                vista === v
-                  ? 'border-[var(--color-accent)] text-[var(--color-text)]'
-                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
+              className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] ${vista === v
+                ? 'border-[var(--color-accent)] text-[var(--color-text)]'
+                : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                }`}
             >
               {label}
             </button>
@@ -79,7 +83,7 @@ export default function SecondHandPage() {
           {vista === 'mias' ? (
             <MyListings />
           ) : (
-            <Explore esDonacionTab={vista === 'donaciones'} />
+            <Explore key={vista} esDonacionTab={vista === 'donaciones'} />
           )}
         </div>
       </section>
@@ -108,8 +112,11 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
   const [claimBusy, setClaimBusy] = useState(false)
   const [claimFeedback, setClaimFeedback] = useState<{ ok: boolean; text: string } | null>(null)
 
-  const user = mockSessionUser()
-  const isFoundationOrAdmin = user?.id === 'f-1' || user?.id?.startsWith('admin') || true
+  const auth = useContext(AuthContext)
+  const user = auth?.user ?? (env.useMocks ? mockSessionUser() : null)
+  const userRole = (user as { role?: string } | null)?.role
+  const isFoundationOrAdmin =
+    userRole === 'FOUNDATION_REPRESENTATIVE' || userRole === 'STYLERADAR_ADMIN'
 
   const nMin = Number(min || 0)
   const nMax = Number(max || 0)
@@ -125,6 +132,7 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
       texto: texto || undefined,
       searchTerm: texto || undefined,
       conservacion: cons,
+      conservationStatus: cons.length ? (cons as ConservationStatus[]) : undefined,
       talla: talla || undefined,
       size: talla || undefined,
       type: tipo || undefined,
@@ -143,6 +151,7 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
     if (priceError) return
     setLoading(true)
     setError(null)
+    setList([])
     secondHandService
       .search(filters)
       .then(setList)
@@ -175,9 +184,20 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
     setClaimBusy(true)
     setClaimFeedback(null)
     try {
+      const profile = await foundationProfileService.mine().catch(() => null)
+      const resolvedFoundationId = profile?.id
+        ? String(profile.id)
+        : await donationService.getMyFoundationId().catch(() => (env.useMocks ? 'abrigo' : ''))
+      if (!resolvedFoundationId) {
+        setClaimFeedback({
+          ok: false,
+          text: 'No se pudo identificar tu fundación verificada. Completa tu perfil de fundación primero.',
+        })
+        return
+      }
       await donationService.claim({
         publicationId: claimingItem.id,
-        foundationId: 'abrigo',
+        foundationId: resolvedFoundationId,
         message: claimMessage.trim() || undefined,
       })
       setClaimFeedback({
@@ -227,11 +247,10 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
                 type="button"
                 aria-pressed={cons.includes(c)}
                 onClick={() => toggle(c)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] ${
-                  cons.includes(c)
-                    ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] ring-2 ring-[var(--color-focus-ring)]'
-                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-accent)]'
-                }`}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] ${cons.includes(c)
+                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] ring-2 ring-[var(--color-focus-ring)]'
+                  : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-accent)]'
+                  }`}
               >
                 {CONSERVACION_LABEL[c]}
               </button>
@@ -265,7 +284,9 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
           <select id="sh-t" className={inputCls} value={talla} onChange={(e) => setTalla(e.target.value)}>
             <option value="">Todas</option>
             {TALLAS.map((t) => (
-              <option key={t}>{t}</option>
+              <option key={t} value={t}>
+                {TALLA_LABEL[t] ?? t}
+              </option>
             ))}
           </select>
         </div>
@@ -364,11 +385,10 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
         {claimFeedback && (
           <div
             role={claimFeedback.ok ? 'status' : 'alert'}
-            className={`mb-4 flex items-center gap-2 rounded-xl p-4 text-sm font-semibold border ${
-              claimFeedback.ok
-                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
-                : 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20'
-            }`}
+            className={`mb-4 flex items-center gap-2 rounded-xl p-4 text-sm font-semibold border ${claimFeedback.ok
+              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
+              : 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20'
+              }`}
           >
             <span>{claimFeedback.text}</span>
           </div>

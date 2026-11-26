@@ -158,6 +158,90 @@ function requireSessionSubscriberId(): string {
   return u.id
 }
 
+export interface StartSubscriptionPayload {
+  subscriberType: 'USER' | 'STORE' | 'FOUNDATION' | (string & {})
+  payerEmail: string
+  planId: number
+  taxId?: string
+  [key: string]: unknown
+}
+
+export interface StartSubscriptionResult {
+  subscriptionId?: number
+  orderId?: number
+  status: string
+  initPoint: string
+  message?: string
+  simulated?: boolean
+}
+
+/**
+ * Obtiene el `id` del plan STORE desde `GET /api/v1/plans` sin dejarlo fijo en el código.
+ * En modo demostración (`env.useMocksPagos`) devuelve un id simulado si el catálogo mock no incluye STORE.
+ */
+export async function resolveStorePlanId(): Promise<number> {
+  const plans = await planService.getPlans()
+  const storePlan = plans.find((p) => p.id === 'store' && typeof p.backendPlanId === 'number')
+  if (storePlan?.backendPlanId !== undefined) {
+    return storePlan.backendPlanId
+  }
+  if (env.useMocksPagos) {
+    return 2
+  }
+  throw new ApiError(500, 'No encontramos un plan activo para tiendas en el catálogo')
+}
+
+/**
+ * Función reutilizable para iniciar suscripciones (`POST /api/v1/subscriptions/start`).
+ * Sirve para tiendas (`STORE`), fundaciones (`FOUNDATION`) u otros suscriptores variando `subscriberType` y el payload.
+ * Usa `apiClient` para enviar `Authorization: Bearer <token>` como el resto de llamadas.
+ */
+export async function startSubscription(payload: StartSubscriptionPayload): Promise<StartSubscriptionResult> {
+  const cleanEmail = payload.payerEmail?.trim() ?? ''
+  if (!isValidPayerEmail(cleanEmail)) {
+    throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
+  }
+  if (payload.taxId !== undefined && !isValidNit(payload.taxId)) {
+    throw new ApiError(400, 'El NIT debe tener exactamente 9 dígitos numéricos')
+  }
+
+  if (env.useMocksPagos) {
+    try {
+      failIfScenario()
+    } catch {
+      throw new ApiError(503, 'No fue posible iniciar el pago en este momento. Inténtalo nuevamente')
+    }
+    await mockDelay(MOCK_CHECKOUT_RESPONSE, 300)
+    return {
+      subscriptionId: 1001,
+      orderId: 9001,
+      status: 'PENDING',
+      initPoint: MOCK_CHECKOUT_RESPONSE.initPoint,
+      message: 'Modo demostración: pago simulado con Mercado Pago (sin redirección externa)',
+      simulated: true,
+    }
+  }
+
+  const body: StartSubscriptionPayload = {
+    ...payload,
+    payerEmail: cleanEmail,
+    ...(payload.taxId !== undefined ? { taxId: payload.taxId.trim() } : {}),
+  }
+  const { data } = await apiClient.post<ApiStartSubscriptionResponse>('/api/v1/subscriptions/start', body)
+  const initPoint = typeof data?.initPoint === 'string' ? data.initPoint.trim() : ''
+  if (!initPoint) {
+    throw new ApiError(502, 'El servidor no devolvió el enlace de pago (initPoint). Inténtalo nuevamente')
+  }
+  return {
+    subscriptionId: data.subscriptionId,
+    orderId: data.orderId,
+    status: data.status ?? 'PENDING',
+    initPoint,
+    message: data.message,
+    simulated: false,
+  }
+}
+
 export const storeSubscriptionService = {
   /** Suscripción vigente (`GET /api/v1/subscriptions/{subscriberId}`) y su historial de pagos (`GET /api/v1/payments/history`). */
   async get(): Promise<StoreSubscriptionStateDto> {
@@ -166,12 +250,14 @@ export const storeSubscriptionService = {
       return mockDelay(readMockStoreSubscription(), 250)
     }
     const subscriberId = requireSessionSubscriberId()
+    let sinSuscripcion = false
     const [subscription, rawPayments] = await Promise.all([
       apiClient
         .get<ApiSubscriptionResponse>(`/api/v1/subscriptions/${encodeURIComponent(subscriberId)}`)
         .then((r) => mapSubscriptionToStoreDto(r.data))
         .catch((err) => {
           if (err instanceof ApiError && err.status === 404) {
+            sinSuscripcion = true
             return SEED().subscription
           }
           throw err
@@ -183,7 +269,29 @@ export const storeSubscriptionService = {
     const payments = rawPayments
       .map((item) => mapPaymentResponse(item))
       .sort((a, b) => b.date.localeCompare(a.date))
-    return { subscription, payments }
+    return sinSuscripcion ? { subscription, payments, sinSuscripcion } : { subscription, payments }
+  },
+
+  /**
+   * Inicia el pago de la suscripción de tienda obteniendo el `planId` STORE desde `GET /api/v1/plans`
+   * y enviando `{ subscriberType: "STORE", payerEmail, planId, taxId }` a `POST /api/v1/subscriptions/start` (sin `storeId`).
+   */
+  async startStoreSubscription(params: { payerEmail: string; taxId: string }): Promise<StartSubscriptionResult> {
+    const cleanEmail = params.payerEmail.trim()
+    const cleanTaxId = params.taxId.trim()
+    if (!isValidPayerEmail(cleanEmail)) {
+      throw new ApiError(400, 'Ingresa un correo electrónico válido para realizar el pago')
+    }
+    if (!isValidNit(cleanTaxId)) {
+      throw new ApiError(400, 'El NIT debe tener exactamente 9 dígitos numéricos')
+    }
+    const planId = await resolveStorePlanId()
+    return startSubscription({
+      subscriberType: 'STORE',
+      payerEmail: cleanEmail,
+      planId,
+      taxId: cleanTaxId,
+    })
   },
 
   /**

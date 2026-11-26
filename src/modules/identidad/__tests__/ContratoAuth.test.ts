@@ -2,7 +2,7 @@ import { AxiosError, AxiosHeaders } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { aApiError, ApiError } from '@/modules/core/api/apiClient'
 import { aResultado, aSesion } from '../services/authService'
-import { errorDeLogin, errorDeOtp, TEXTOS_ACCESO } from '../utils/erroresAcceso'
+import { errorDeLogin, errorDeOtp, errorDeRegistro, TEXTOS_ACCESO } from '../utils/erroresAcceso'
 
 const conCodigo = (status: number, code: string, extra: Partial<Pick<ApiError, 'attemptsRemaining' | 'retryAfterSeconds'>> = {}) =>
   Object.assign(new ApiError(status, '', code), extra)
@@ -75,5 +75,34 @@ describe('401 sin sesión (contraseña mala, código equivocado)', () => {
     window.removeEventListener('sr:sesion-expirada', aviso)
     expect(aviso).toHaveBeenCalledTimes(1)
     expect(localStorage.getItem('sr_token')).toBeNull()
+  })
+})
+
+describe('errores de Crear cuenta (SR-RF-01)', () => {
+  const invalido = (errors: Record<string, string>) => new ApiError(400, 'La solicitud contiene datos inválidos', errors, 'INVALID_DATA')
+
+  it('muestra el mensaje de ms-usuarios del campo inválido, no uno genérico ni el del login', () => {
+    expect(errorDeRegistro(invalido({ email: 'El formato del email es inválido' })).mensaje).toBe('El formato del email es inválido')
+    expect(errorDeRegistro(invalido({ email: 'El dominio del correo no es válido' })).mensaje).toBe('El dominio del correo no es válido')
+    expect(errorDeRegistro(invalido({ password: 'La contraseña debe tener entre 8 y 30 caracteres', name: 'El nombre es obligatorio' })).mensaje).toBe('El nombre es obligatorio')
+    expect(errorDeRegistro(new ApiError(400, '', 'INVALID_DATA')).mensaje).not.toBe(TEXTOS_ACCESO.credenciales)
+  })
+
+  it('el correo ya registrado (409) no dice que el servicio está caído ni confirma que el correo existe', () => {
+    const r = errorDeRegistro(new ApiError(409, 'El correo electrónico laura@ejemplo.com ya se encuentra registrado', 'EMAIL_ALREADY_REGISTERED'))
+    expect(r.mensaje).toBe(TEXTOS_ACCESO.registro)
+    expect(r.mensaje).not.toContain('@')
+  })
+
+  it('lee el ProblemDetail de ms-usuarios tal como llega (code y errors.email)', () => {
+    const config = { headers: new AxiosHeaders(), url: '/api/v1/users', method: 'post' }
+    const ax = new AxiosError('fallo', 'ERR', config, null, { status: 400, statusText: '', headers: {}, config,
+      data: { type: 'https://api.styleradar.com/errors/invalid-data', title: 'Bad Request', status: 400, detail: 'La solicitud contiene datos inválidos', code: 'INVALID_DATA', errors: { email: 'El formato del email es inválido' } } })
+    expect(errorDeRegistro(aApiError(ax)).mensaje).toBe('El formato del email es inválido')
+  })
+
+  it('si falla el login que sigue al registro, usa los mensajes del login', () => {
+    expect(errorDeRegistro(conCodigo(401, 'INVALID_CREDENTIALS')).mensaje).toBe(TEXTOS_ACCESO.credenciales)
+    expect(errorDeRegistro(conCodigo(503, 'SERVICE_UNAVAILABLE')).reintentar).toBe(true)
   })
 })

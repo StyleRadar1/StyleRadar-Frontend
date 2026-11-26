@@ -44,12 +44,15 @@ Todas las variables son validadas al arranque por `resolveEnv()` en [`src/config
 
 <br>
 
-**Desarrollo local (`.env`, partiendo de [`.env.example`](../../.env.example)):**
+**Desarrollo local ([`.env.development`](../../.env.development) activo por defecto y `.env.local` opcional desde [`.env.example`](../../.env.example)):**
+
+- Al correr `npm run dev`, `.env.development` activa mocks y Mapbox automáticamente sin pasos extra.
+- Para conectarse al API Gateway real en local, crea `.env.local` con `VITE_USE_MOCKS=false` y `VITE_API_URL`:
 
 ```dotenv
 VITE_APP_ENV=local
 VITE_API_URL=http://localhost:8080
-VITE_USE_MOCKS=true
+VITE_USE_MOCKS=false
 # VITE_USE_MOCKS_PAGOS=false
 VITE_MAPBOX_TOKEN=<tu-token-publico-pk>
 # VITE_GOOGLE_CLIENT_ID=<tu-client-id-google-oauth>

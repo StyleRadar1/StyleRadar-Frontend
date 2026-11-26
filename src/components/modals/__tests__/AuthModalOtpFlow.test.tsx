@@ -71,7 +71,7 @@ describe('AuthModal - Flujo OTP y usabilidad', () => {
     // Llenar formulario de registro con cuenta demo
     fireEvent.change(screen.getByLabelText(/Nombre completo/i), { target: { value: 'Nueva Usuaria' } })
     fireEvent.change(screen.getByLabelText(/^Correo/i), { target: { value: 'valen@correo.com' } })
-    fireEvent.change(screen.getByLabelText(/^Contraseña/i), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText(/^Contraseña/i), { target: { value: 'Password123*' } })
 
     // Marcar consentimientos legales obligatorios
     const checkboxes = screen.getAllByRole('checkbox')
