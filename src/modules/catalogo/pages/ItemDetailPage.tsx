@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useContext } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { Loading } from '@/modules/core/components/Status'
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
 import { env } from '@/configs/env'
@@ -50,7 +50,6 @@ function general(e: unknown, titulo: string, accion?: Accion): AvisoPrenda {
 
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
   const auth = useContext(AuthContext)
   const isBuyer = auth?.user?.role === 'BUYER'
 
@@ -107,16 +106,16 @@ export default function ItemDetailPage() {
   const prenda = data.prenda
   const similares = data.similares
 
-  // Accesibilidad: cerrar con tecla Escape
+  // Accesibilidad: Escape solo cierra el zoom si está activo, sin sacar al usuario del detalle
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        navigate('/catalogo')
+      if (e.key === 'Escape' && zoomActivo) {
+        setZoomActivo(false)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [navigate])
+  }, [zoomActivo])
 
   // 403 y 404 se ven igual: la prenda no existe o no está disponible para esta persona
   const noExiste = !!error && (errorKind(error) === 'no-existe' || errorKind(error) === 'permiso')

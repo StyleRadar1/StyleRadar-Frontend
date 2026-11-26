@@ -67,8 +67,10 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
   const storeNit = [r.storeNit, r.nitAlmacen, r.nit].find((v): v is string => typeof v === 'string' && v.length > 0)
   const tienda =
     (typeof r.tienda === 'string' && r.tienda) ||
+    (typeof r.nombreTienda === 'string' && r.nombreTienda) ||
+    (typeof r.almacenNombre === 'string' && r.almacenNombre) ||
+    (env.useMocks && almacenId ? ALMACEN_NOMBRE_POR_ID[almacenId.toLowerCase()] : undefined) ||
     (typeof r.marca === 'string' && r.marca) ||
-    (almacenId ? ALMACEN_NOMBRE_POR_ID[almacenId.toLowerCase()] ?? almacenId : '') ||
     ''
 
   return {

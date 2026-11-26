@@ -49,14 +49,19 @@ export default function FoundationHomePage() {
     )
   }
 
+  const portadaSrc = f.fotos?.portada || '/img/fundaciones/abrigo-trabajo.jpg'
+  const trabajoSrc = f.fotos?.trabajo || '/img/fundaciones/abrigo-trabajo.jpg'
+  const donacionesSrc = f.fotos?.donaciones || '/img/fundaciones/abrigo-donaciones.jpg'
+  const nombreFundacion = f.nombre || 'Fundación'
+
   return (
     <div className="fnd-dashboard">
       {/* ── Hero a todo el ancho bajo el navbar (60-70vh en escritorio) ── */}
       <section className="fnd-hero" aria-label="Cabecera de la fundación">
         <div className="fnd-hero__media" aria-hidden="true">
           <img
-            src={f.fotos.portada}
-            alt={`Personas de ${f.nombre.replace(/^Fundación /, '')} en una jornada de entrega de ropa`}
+            src={portadaSrc}
+            alt={`Personas de ${nombreFundacion.replace(/^Fundación /, '')} en una jornada de entrega de ropa`}
           />
         </div>
         <div className="fnd-hero__shade" aria-hidden="true" />
@@ -125,7 +130,7 @@ export default function FoundationHomePage() {
               </Link>
             </div>
             <div className="fnd-hero-card__media" aria-hidden="true">
-              <img src={f.fotos.donaciones} alt="" loading="lazy" />
+              <img src={donacionesSrc} alt="" loading="lazy" />
             </div>
           </div>
 
@@ -145,7 +150,7 @@ export default function FoundationHomePage() {
                 </Link>
               </div>
               <div className="fnd-hero-card__media" aria-hidden="true">
-                <img src={f.fotos.trabajo} alt="" loading="lazy" />
+                <img src={trabajoSrc} alt="" loading="lazy" />
               </div>
             </div>
           </div>
@@ -159,7 +164,7 @@ export default function FoundationHomePage() {
 
             <p className="fnd-card__eyebrow">Qué hacemos</p>
             <ul className="fnd-check-list">
-              {f.queHacemos.map((q) => (
+              {(f.queHacemos ?? []).map((q) => (
                 <li key={q}>
                   <span className="fnd-check-icon" aria-hidden="true">✓</span>
                   <span>{q}</span>
@@ -169,12 +174,12 @@ export default function FoundationHomePage() {
           </div>
 
           <figure className="fnd-figure">
-            <img src={f.fotos.trabajo} alt="Actividad de la fundación" loading="lazy" />
+            <img src={trabajoSrc} alt="Actividad de la fundación" loading="lazy" />
             <figcaption className="fnd-figure__cap">Nuestro trabajo</figcaption>
           </figure>
 
           <figure className="fnd-figure">
-            <img src={f.fotos.donaciones} alt="Ropa donada lista para entregar" loading="lazy" />
+            <img src={donacionesSrc} alt="Ropa donada lista para entregar" loading="lazy" />
             <figcaption className="fnd-figure__cap">Así llegan tus donaciones</figcaption>
           </figure>
         </div>
@@ -184,7 +189,7 @@ export default function FoundationHomePage() {
           <div className="fnd-card">
             <h2 className="fnd-card__heading">Qué recibimos</h2>
             <ul className="fnd-pill-list" aria-label="Qué recibimos">
-              {f.queRecibimos.map((q) => (
+              {(f.queRecibimos ?? []).map((q) => (
                 <li key={q} className="fnd-pill-tag">
                   {q}
                 </li>
@@ -195,7 +200,7 @@ export default function FoundationHomePage() {
           <div className="fnd-card">
             <h2 className="fnd-card__heading">Lo que más necesitamos</h2>
             <div>
-              {f.necesidades.map((n) => (
+              {(f.necesidades ?? []).map((n) => (
                 <div key={n.nombre} className="fnd-progress-item">
                   <div className="fnd-progress-header">
                     <span>{n.nombre}</span>
@@ -223,11 +228,11 @@ export default function FoundationHomePage() {
             <h2 className="fnd-card__heading">Contacto</h2>
             <dl className="fnd-contact-dl">
               {([
-                ['Dirección', f.contacto.direccion],
-                ['Horario', f.contacto.horario],
-                ['Teléfono', f.contacto.telefono],
-                ['Web', f.contacto.web],
-                ['Correo', f.contacto.correo],
+                ['Dirección', f.contacto?.direccion],
+                ['Horario', f.contacto?.horario],
+                ['Teléfono', f.contacto?.telefono],
+                ['Web', f.contacto?.web],
+                ['Correo', f.contacto?.correo],
               ] as const)
                 .filter(([, v]) => v)
                 .map(([k, v]) => (

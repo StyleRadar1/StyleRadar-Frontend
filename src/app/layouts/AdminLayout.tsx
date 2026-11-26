@@ -93,6 +93,12 @@ function AdminShell() {
 
   return (
     <div className="sr-verdelo-shell flex min-h-screen flex-col">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-violeta focus:px-4 focus:py-2.5 focus:text-sm focus:font-bold focus:text-white focus:shadow-lg"
+      >
+        Saltar al contenido principal
+      </a>
       {env.useMocks && <MockBanner />}
       {env.appEnvironment === 'qa' && <EnvironmentBanner environment="qa" />}
       <div className="flex flex-1">
@@ -134,7 +140,7 @@ function AdminShell() {
             <nav aria-label="Administración (móvil)" className="flex gap-1 overflow-x-auto px-3 pb-2 lg:hidden [&>*]:shrink-0 [&>*]:py-2">{nav}</nav>
           </header>
 
-          <main className="flex-1 px-4 py-8 md:px-8"><div className="mx-auto max-w-6xl"><Outlet /></div></main>
+          <main id="main-content" className="flex-1 px-4 py-8 md:px-8"><div className="mx-auto max-w-6xl"><Outlet /></div></main>
         </div>
       </div>
 

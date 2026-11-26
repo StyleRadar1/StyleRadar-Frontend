@@ -7,6 +7,7 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAcco
 import { ROLE_HOME } from '@/modules/core/types/roles'
 import { authService } from '@/modules/identidad/services/authService'
 import { env } from '@/configs/env'
+import { useFocusTrap } from '@/modules/core/hooks/useFocusTrap'
 import { tomarRetorno } from '@/modules/core/api/retorno'
 import { ErrorCampo } from '@/modules/core/components/errores'
 import { correoValido } from '@/modules/identidad/utils/formato'
@@ -181,6 +182,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   const capRef = useRef<HTMLDivElement>(null)
   const metaRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const authRootRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(authRootRef, isOpen && rendered && !showMeasurementsWizard)
   const busyRef = useRef(false)
   const swappingRef = useRef(false)
   const prevSrcRef = useRef<string>('')
@@ -878,6 +881,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
 
   return (
     <div
+      ref={authRootRef}
       className="sr-auth"
       id="auth"
       data-pic={picKey}

@@ -23,7 +23,7 @@ export default function MapaLanding() {
   const hasError = Boolean(error)
 
   return (
-    <section className="sr-map-landing-section text-[var(--sr-hero-text)] px-4 py-12 sm:px-6 md:py-16" aria-labelledby="lmTitle">
+    <section id="pe-mapa" className="sr-map-landing-section scroll-mt-20 text-[var(--sr-hero-text)] px-4 py-12 sm:px-6 md:py-16" aria-labelledby="lmTitle">
       <div className="mx-auto max-w-6xl">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <div>

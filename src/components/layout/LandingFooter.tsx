@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { PROVIDER_INFO } from '@/modules/legal/config/legalConfig'
 
 interface LandingFooterProps {
   onOpenLogin?: () => void
@@ -167,10 +168,10 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
                 Información del Proveedor
               </p>
               <div className="space-y-1 text-[11px]">
-                <p><strong className="text-[var(--sr-hero-text)]">[RAZÓN SOCIAL DE LA EMPRESA OPERADORA S.A.S.]</strong></p>
-                <p>NIT [NIT: XXXXXXXXX-X]</p>
-                <p>[DIRECCIÓN COMERCIAL, BOGOTÁ D.C.]</p>
-                <p>Canal Habeas Data: <a href="mailto:privacidad@styleradar.co" className="text-[var(--sr-accent)] underline">[CORREO_DATOS]</a></p>
+                <p><strong className="text-[var(--sr-hero-text)]">{PROVIDER_INFO.razonSocial}</strong></p>
+                <p>NIT {PROVIDER_INFO.nit}</p>
+                <p>{PROVIDER_INFO.direccion}</p>
+                <p>Canal Habeas Data: <a href={`mailto:${PROVIDER_INFO.correoDatos}`} className="text-[var(--sr-accent)] underline">{PROVIDER_INFO.correoDatos}</a></p>
                 <p className="pt-1">
                   <a
                     href="https://www.sic.gov.co"

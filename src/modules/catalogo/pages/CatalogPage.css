@@ -105,10 +105,15 @@ html[data-tema="claro"] .sr-rack-section {
   cursor: grabbing;
 }
 
-.sr-rack-viewport:focus,
-.sr-rack-viewport:focus-visible {
+.sr-rack-viewport:focus {
   outline: none;
   box-shadow: none;
+}
+
+.sr-rack-viewport:focus-visible {
+  outline: 2px solid var(--sr-focus, #a855f7);
+  outline-offset: 4px;
+  border-radius: 1rem;
 }
 
 /* Barra metálica horizontal fina de lado a lado con brillo sutil y topes en los extremos */

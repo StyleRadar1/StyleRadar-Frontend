@@ -747,10 +747,9 @@ export default function MiTiendaPage() {
                   <img src={photo.url} alt={`Foto ${index + 1} de ${legalInfo.legalName}`} loading="lazy" />
                   <span className="msd-collection__shade" aria-hidden="true" />
                   <span className="msd-collection__name">{photo.cover ? 'Portada' : `Foto ${index + 1}`}</span>
-                  <span className="msd-collection__meta">
-                    <button type="button" disabled={photosBusy || index === 0} onClick={() => moverFoto(index, -1)} aria-label={`Mover foto ${index + 1} antes`} title="Mover antes">←</button>
-                    {' '}
-                    <button type="button" disabled={photosBusy || index === storeGallery.length - 1} onClick={() => moverFoto(index, 1)} aria-label={`Mover foto ${index + 1} después`} title="Mover después">→</button>
+                  <span className="msd-collection__meta flex items-center gap-1.5">
+                    <button type="button" className="inline-grid min-h-7 min-w-7 place-items-center rounded-md" disabled={photosBusy || index === 0} onClick={() => moverFoto(index, -1)} aria-label={`Mover foto ${index + 1} antes`} title="Mover antes">←</button>
+                    <button type="button" className="inline-grid min-h-7 min-w-7 place-items-center rounded-md" disabled={photosBusy || index === storeGallery.length - 1} onClick={() => moverFoto(index, 1)} aria-label={`Mover foto ${index + 1} después`} title="Mover después">→</button>
                   </span>
                   <button
                     type="button"
