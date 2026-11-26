@@ -1,9 +1,7 @@
-import { lazy, Suspense, useState, type ReactNode } from 'react'
-import { createBrowserRouter, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
+import { lazy, Suspense, type ReactNode } from 'react'
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { ROLE_HOME, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { hasSeenLanding } from '@/modules/landing/landingSeen'
-import { salidaVoluntariaReciente } from '@/modules/identidad/states/salida'
 import { NotFound } from '@/modules/core/components/NotFound'
 import { SessionExpiredOverlay } from '@/modules/core/components/SessionExpiredOverlay'
 import { SinConexion } from '@/modules/core/components/SinConexion'
@@ -83,16 +81,11 @@ const ANY: Role[] = ['BUYER', 'STORE_ADMIN', 'FOUNDATION_REPRESENTATIVE', 'STYLE
 
 function Portada() {
   const { user } = useAuth()
-  const [params] = useSearchParams()
-  // Se decide una sola vez al entrar a la portada. No se puede recalcular
-  // durante la visita porque LandingPage marca `landing_seen` al montar y
-  // un re-render de Portada expulsaría al usuario a /catalogo.
-  const [showLanding] = useState(
-    () => !hasSeenLanding() || params.has('login') || salidaVoluntariaReciente(),
-  )
 
   if (user) return <Navigate to={ROLE_HOME[user.role]} replace />
-  if (!showLanding) return <Navigate to="/catalogo" replace />
+  // Sin sesión, la portada siempre es el landing. La marca de "landing visto"
+  // ya no debe expulsar a /catalogo: el catálogo se abre explícitamente desde
+  // los enlaces del landing.
   return page(<LandingPage />)
 }
 
