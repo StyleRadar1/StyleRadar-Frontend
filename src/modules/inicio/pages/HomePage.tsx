@@ -154,6 +154,21 @@ export default function HomePage() {
         <ProbadorIntro />
         <MapaCercano />
       </div>
+
+      {/* 4. Marco legal y soporte */}
+      <section className="sr-inicio-bloque sr-inicio-legal" aria-label="Marco legal y soporte">
+        <div className="sr-inicio-legal__info">
+          <p className="sr-inicio-kicker">Transparencia y respaldo</p>
+          <h2 className="sr-inicio-legal__title">Marco legal y derechos del usuario</h2>
+        </div>
+        <nav className="sr-inicio-legal__links" aria-label="Documentos legales">
+          <Link to="/legal" className="sr-inicio-legal__pill">Marco legal</Link>
+          <Link to="/legal/terminos" className="sr-inicio-legal__pill">Términos y condiciones</Link>
+          <Link to="/legal/datos-personales" className="sr-inicio-legal__pill">Habeas Data</Link>
+          <Link to="/legal/pqrs" className="sr-inicio-legal__pill">PQRS</Link>
+          <Link to="/legal/centro-ayuda" className="sr-inicio-legal__pill">Centro de ayuda</Link>
+        </nav>
+      </section>
     </div>
   )
 }
