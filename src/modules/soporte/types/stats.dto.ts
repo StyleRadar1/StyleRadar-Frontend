@@ -134,8 +134,6 @@ export interface AdminIncomeDto {
   mesActual: {
     mes: string
     ingresosNetos: number
-    meta: number | null
-    porcentajeAvance: number
   }
   historico: { mes: string; usuarios: number; tiendas: number; total: number }[]
 }
@@ -147,12 +145,7 @@ export interface AdminAccountsByPlanDto {
   resumen: { plan: string; cuentas: number }[]
 }
 
-/** RF-88.1, 88.2 y 88.3: series del mes en curso con un elemento por día. */
-export interface BusquedasPorDiaDto {
-  fecha: string
-  busquedas: number
-}
-
+/** RF-88.2 y 88.3: series del mes en curso con un elemento por día. */
 export interface PublicacionesPorDiaDto {
   fecha: string
   publicaciones: number
@@ -166,8 +159,7 @@ export interface RegistrosPorDiaDto {
 /** Actividad diaria de la plataforma (RF-88): un registro por día del mes. */
 export interface AdminDailyDto {
   mes: string
-  dias: { etiqueta: string; fecha?: string; busquedas: number; registros: number; publicaciones: number }[]
-  busquedasPorDia?: BusquedasPorDiaDto[]
+  dias: { etiqueta: string; fecha?: string; registros: number; publicaciones: number }[]
   publicacionesPorDia?: PublicacionesPorDiaDto[]
   registrosPorDia?: RegistrosPorDiaDto[]
 }

@@ -2,10 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { statisticsService } from '../services/statisticsService'
 import type {
+  BuyerPlanCategoryCode,
   DistributionResponse,
   InventoryCategoryCode,
   MetricTotalResponse,
+  StorePlanCategoryCode,
+  TimeSeriesResponse,
 } from '../types/statistics.dto'
+import { getCurrentYearMonth, monthRangeFromYearMonth } from '../utils/statsFormat'
 
 export interface StatisticState<T> {
   data: T | null
@@ -17,7 +21,7 @@ export interface StatisticState<T> {
 }
 
 interface QueryResult<T> {
-  attempt: number
+  key: string
   data: T | null
   error: string | null
   status: number | null
@@ -45,10 +49,12 @@ function mapStatisticError(err: unknown): { message: string; status: number } {
 function useMetricQuery<T>(
   fetcher: () => Promise<T>,
   isEmpty: (data: T) => boolean,
+  depKey = 'default',
 ): StatisticState<T> {
   const [attempt, setAttempt] = useState(0)
+  const requestKey = `${depKey}:${attempt}`
   const [result, setResult] = useState<QueryResult<T>>({
-    attempt: -1,
+    key: '',
     data: null,
     error: null,
     status: null,
@@ -64,20 +70,20 @@ function useMetricQuery<T>(
     fetcher()
       .then((res) => {
         if (!active) return
-        setResult({ attempt, data: res, error: null, status: null })
+        setResult({ key: requestKey, data: res, error: null, status: null })
       })
       .catch((err: unknown) => {
         if (!active) return
         const mapped = mapStatisticError(err)
-        setResult({ attempt, data: null, error: mapped.message, status: mapped.status })
+        setResult({ key: requestKey, data: null, error: mapped.message, status: mapped.status })
       })
 
     return () => {
       active = false
     }
-  }, [fetcher, attempt])
+  }, [fetcher, requestKey])
 
-  const loading = result.attempt !== attempt
+  const loading = result.key !== requestKey
   const data = loading ? null : result.data
   const error = loading ? null : result.error
   const status = loading ? null : result.status
@@ -85,6 +91,8 @@ function useMetricQuery<T>(
 
   return { data, loading, empty, error, status, retry }
 }
+
+const isTotalEmpty = (res: MetricTotalResponse) => res.total === 0
 
 const fetchStoreInventory = () => statisticsService.getStoreInventoryByState()
 const isInventoryEmpty = (res: DistributionResponse<InventoryCategoryCode>) =>
@@ -97,8 +105,73 @@ export function useStoreInventoryByState(): StatisticState<
 }
 
 const fetchFoundationGarments = () => statisticsService.getFoundationGarmentsReceived()
-const isFoundationEmpty = (res: MetricTotalResponse) => res.total === 0
 
 export function useFoundationGarmentsReceived(): StatisticState<MetricTotalResponse> {
-  return useMetricQuery(fetchFoundationGarments, isFoundationEmpty)
+  return useMetricQuery(fetchFoundationGarments, isTotalEmpty)
+}
+
+const fetchGarmentPublications = () => statisticsService.getPlatformGarmentPublications()
+
+export function usePlatformGarmentPublications(): StatisticState<MetricTotalResponse> {
+  return useMetricQuery(fetchGarmentPublications, isTotalEmpty)
+}
+
+const fetchPlaylistsCreated = () => statisticsService.getPlatformPlaylistsCreated()
+
+export function usePlatformPlaylistsCreated(): StatisticState<MetricTotalResponse> {
+  return useMetricQuery(fetchPlaylistsCreated, isTotalEmpty)
+}
+
+const fetchMonthlyDonations = () => statisticsService.getPlatformMonthlyDonations()
+
+export function usePlatformMonthlyDonations(): StatisticState<MetricTotalResponse> {
+  return useMetricQuery(fetchMonthlyDonations, isTotalEmpty)
+}
+
+const fetchPlatformBuyers = () => statisticsService.getPlatformBuyersByPlan()
+const isBuyersEmpty = (res: DistributionResponse<BuyerPlanCategoryCode>) =>
+  (res.entries ?? []).reduce((sum, entry) => sum + entry.count, 0) === 0
+
+export function usePlatformBuyersByPlan(): StatisticState<
+  DistributionResponse<BuyerPlanCategoryCode>
+> {
+  return useMetricQuery(fetchPlatformBuyers, isBuyersEmpty)
+}
+
+const fetchPlatformStores = () => statisticsService.getPlatformStoresByPlan()
+const isStoresEmpty = (res: DistributionResponse<StorePlanCategoryCode>) =>
+  (res.entries ?? []).reduce((sum, entry) => sum + entry.count, 0) === 0
+
+export function usePlatformStoresByPlan(): StatisticState<
+  DistributionResponse<StorePlanCategoryCode>
+> {
+  return useMetricQuery(fetchPlatformStores, isStoresEmpty)
+}
+
+const fetchPlatformRevenue = () =>
+  statisticsService.getPlatformSubscriptionRevenue({ granularity: 'MONTH' })
+const isRevenueEmpty = (res: TimeSeriesResponse) =>
+  (res.points ?? []).every((point) => point.value === 0)
+
+export function usePlatformSubscriptionRevenue(): StatisticState<TimeSeriesResponse> {
+  return useMetricQuery(fetchPlatformRevenue, isRevenueEmpty)
+}
+
+const isRegistrationsEmpty = (res: TimeSeriesResponse) =>
+  (res.points ?? []).every((point) => point.value === 0)
+
+export function usePlatformUserRegistrations(
+  yearMonth?: string,
+): StatisticState<TimeSeriesResponse> {
+  const targetMonth = yearMonth || getCurrentYearMonth()
+  const fetcher = useCallback(() => {
+    const { startDate, endDate } = monthRangeFromYearMonth(targetMonth)
+    return statisticsService.getPlatformUserRegistrations({
+      startDate,
+      endDate,
+      granularity: 'DAY',
+    })
+  }, [targetMonth])
+
+  return useMetricQuery(fetcher, isRegistrationsEmpty, targetMonth)
 }

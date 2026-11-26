@@ -140,36 +140,31 @@ export const MOCK_ADMIN_INDICATORS: AdminIndicatorsDto = {
   ],
 }
 
-const DIAS: [number, number, number][] = [
-  [890, 32, 30], [760, 32, 32], [760, 24, 43], [730, 16, 50], [1050, 24, 56], [1020, 24, 63], [770, 20, 32], [930, 20, 51],
-  [810, 20, 45], [800, 32, 47], [730, 20, 43], [980, 52, 57], [1220, 44, 74], [810, 28, 46], [850, 36, 45], [850, 24, 41],
-  [950, 24, 42], [960, 40, 58], [1370, 52, 73], [1270, 44, 82], [860, 32, 44], [880, 36, 56], [850, 44, 62], [890, 36, 50],
+const DIAS: [number, number][] = [
+  [32, 30], [32, 32], [24, 43], [16, 50], [24, 56], [24, 63], [20, 32], [20, 51],
+  [20, 45], [32, 47], [20, 43], [52, 57], [44, 74], [28, 46], [36, 45], [24, 41],
+  [24, 42], [40, 58], [52, 73], [44, 82], [32, 44], [36, 56], [44, 62], [36, 50],
 ]
 export const MOCK_ADMIN_DAILY: AdminDailyDto = {
   mes: 'septiembre 2026',
-  dias: DIAS.map(([busquedas, registros, publicaciones], i) => ({
+  dias: DIAS.map(([registros, publicaciones], i) => ({
     etiqueta: `${i + 1} sep`,
     fecha: `2026-09-${String(i + 1).padStart(2, '0')}`,
-    busquedas,
     registros,
     publicaciones,
   })),
-  busquedasPorDia: DIAS.map(([busquedas], i) => ({
-    fecha: `2026-09-${String(i + 1).padStart(2, '0')}`,
-    busquedas,
-  })),
-  publicacionesPorDia: DIAS.map(([, , publicaciones], i) => ({
+  publicacionesPorDia: DIAS.map(([, publicaciones], i) => ({
     fecha: `2026-09-${String(i + 1).padStart(2, '0')}`,
     publicaciones,
   })),
-  registrosPorDia: DIAS.map(([, registros], i) => ({
+  registrosPorDia: DIAS.map(([registros], i) => ({
     fecha: `2026-09-${String(i + 1).padStart(2, '0')}`,
     registros,
   })),
 }
 
 export const MOCK_ADMIN_INCOME: AdminIncomeDto = {
-  mesActual: { mes: 'sep', ingresosNetos: 222_700, meta: 1_000_000, porcentajeAvance: 22 },
+  mesActual: { mes: 'sep', ingresosNetos: 222_700 },
   historico: [
     { mes: 'jun', usuarios: 89_400, tiendas: 356_000, total: 445_400 },
     { mes: 'jul', usuarios: 74_500, tiendas: 356_000, total: 430_500 },

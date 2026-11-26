@@ -1,346 +1,265 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ErrorState, EmptyState, Loading } from '@/modules/core/components/Status'
-import { useResource } from '@/modules/core/hooks/useResource'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { guardarRetorno } from '@/modules/core/api/retorno'
 import { formatCOP } from '@/modules/core/utils/format'
-import { useAdminAccounts, useAdminIncome, useAdminIndicators } from '../hooks/useStats'
-import { statsService } from '../services/statsService'
-import type {
-  AdminAccountsByPlanDto,
-  AdminDailyDto,
-  AdminIncomeDto,
-  AdminIndicatorsDto,
-  DecisionModeracion,
-  PendientePorGrupoDto,
-  ResultadoModeracion,
-} from '../types/stats.dto'
-import { DataTable, Donut, Gauge, GroupedBars, Kpi, Panel, Swatch, TableToggle } from './charts'
-import { card, descargarCsv, SERIE, tope } from '../utils/charts'
+import {
+  usePlatformBuyersByPlan,
+  usePlatformGarmentPublications,
+  usePlatformMonthlyDonations,
+  usePlatformPlaylistsCreated,
+  usePlatformStoresByPlan,
+  usePlatformSubscriptionRevenue,
+  usePlatformUserRegistrations,
+} from '../hooks/useStatistics'
+import type { CategoryCode, DistributionResponse } from '../types/statistics.dto'
+import {
+  calcRealDelta,
+  formatDayShort,
+  formatMonthLong,
+  formatMonthShort,
+  getCurrentYearMonth,
+  getRecentMonthOptions,
+} from '../utils/statsFormat'
+import { KpiCard } from './stats/KpiCard'
+import { TrendChart, type TrendPoint } from './stats/TrendChart'
 
-/** Búsquedas va en otro gráfico y con línea: su color no se cruza con las barras. */
-const BUSQ = 'var(--color-lavanda)'
 const num = (n: number) => n.toLocaleString('es-CO')
-const milesCOP = (n: number) => (n >= 1000 ? `$${num(Math.round(n / 100) / 10)} mil` : formatCOP(n))
-const MES_LARGO: Record<string, string> = {
-  ene: 'enero',
-  feb: 'febrero',
-  mar: 'marzo',
-  abr: 'abril',
-  may: 'mayo',
-  jun: 'junio',
-  jul: 'julio',
-  ago: 'agosto',
-  sep: 'septiembre',
-  oct: 'octubre',
-  nov: 'noviembre',
-  dic: 'diciembre',
-}
 
-const MONTH_INDEX_NAME = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
-]
-
-function formatAdminMonth(raw?: string | null): string {
-  if (!raw) return 'este mes'
-  const trimmed = raw.trim()
-  const isoMatch = /^(\d{4})-(\d{2})(?:-\d{2})?/.exec(trimmed)
-  if (isoMatch) {
-    const year = isoMatch[1]
-    const monthIdx = Number(isoMatch[2]) - 1
-    const monthName = MONTH_INDEX_NAME[monthIdx]
-    return monthName ? `${monthName} de ${year}` : trimmed
-  }
-  const lower = trimmed.toLowerCase()
-  return MES_LARGO[lower] ?? trimmed
+function sumEntries<C extends CategoryCode>(res: DistributionResponse<C> | null): number {
+  if (!res) return 0
+  return (res.entries ?? []).reduce((sum, entry) => sum + entry.count, 0)
 }
 
 /**
- * Estadísticas del administrador (RF-86 a 91):
- * indicadores globales (RF-86), publicaciones pendientes por grupo (RF-87), actividad diaria (RF-88),
- * ingresos y meta de ingresos (RF-89), usuarios conectados en vivo (RF-90) y cuentas por plan (RF-91).
+ * Estadísticas del administrador (/admin/estadisticas):
+ * muestra exclusivamente las métricas reales de ms-estadisticas con totales y tendencias.
  */
 export function AdminStatsView() {
-  const { data: ind, loading, error, reload } = useAdminIndicators()
-  const { data: income } = useAdminIncome()
-  const { data: accounts } = useAdminAccounts()
-  const dailyLoader = useCallback(() => statsService.getAdminDaily(), [])
-  const daily = useResource<AdminDailyDto | null>(dailyLoader, null)
+  const navigate = useNavigate()
+  const monthOptions = useMemo(() => getRecentMonthOptions(6), [])
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => getCurrentYearMonth())
 
-  if (loading) return <Loading label="Cargando estadísticas de la plataforma…" />
-  if (error) return <ErrorState error={error} onRetry={reload} />
-  if (!ind) return <EmptyState title="Sin datos">No hay indicadores disponibles</EmptyState>
-  const mes = formatAdminMonth(daily.data?.mes)
-  const mesCorto = income ? formatAdminMonth(income.mesActual.mes) : 'este mes'
+  const registrations = usePlatformUserRegistrations(selectedMonth)
+  const buyers = usePlatformBuyersByPlan()
+  const stores = usePlatformStoresByPlan()
+  const garments = usePlatformGarmentPublications()
+  const playlists = usePlatformPlaylistsCreated()
+  const donations = usePlatformMonthlyDonations()
+  const revenue = usePlatformSubscriptionRevenue()
 
-  return (
-    <div className="text-[var(--color-text)]">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-text-muted)]">Resumen general · {mes}</p>
-          <h1 className="mt-1 text-5xl font-extrabold tracking-tight md:text-7xl text-[var(--color-text)]">Estadísticas</h1>
-        </div>
-        <p aria-hidden="true" className="text-right text-xl font-extrabold leading-none">StyleRadar<sup className="text-[10px]">®</sup><span className="mt-1 block border-t border-[var(--color-border)] pt-1 text-[10px] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)]">Bogotá</span></p>
-      </div>
-
-      <div className="mt-10 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--color-text)]">Estadísticas generales</h2>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Indicadores globales de StyleRadar · {mes}</p>
-        </div>
-        <button type="button" onClick={() => exportar(ind, daily.data, income, accounts)} className="rounded-xl border border-[var(--color-border)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface)] text-[var(--color-text)]">Exportar a Excel</button>
-      </div>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Usuarios activos" value={num(ind.usuariosActivos)}
-          delta={{ pct: ind.variacionUsuarios.pct, up: ind.variacionUsuarios.direccion !== 'down', vs: ind.variacionUsuarios.vsMesAnterior ?? 'el mes anterior' }} />
-        <Kpi label="Tiendas verificadas" value={num(ind.tiendas.verificadas)} hint={`${ind.tiendas.pendientes} pendiente${ind.tiendas.pendientes === 1 ? '' : 's'} de verificación`} />
-        <Kpi label="Fundaciones activas" value={num(ind.fundacionesActivas)} hint="Recibiendo donaciones" />
-        <Kpi label={`Ingresos de ${mesCorto}`} value={formatCOP(ind.ingresosMes)}
-          delta={{ pct: ind.variacionIngresos.pct, up: ind.variacionIngresos.direccion !== 'down', vs: ind.variacionUsuarios.vsMesAnterior ?? 'el mes anterior' }} />
-        <Kpi label="Prendas publicadas" value={num(ind.prendasPublicadas)} hint="En catálogo activo" />
-        <Kpi label="Playlists creadas" value={num(ind.playlistsCreadas)} hint="Colecciones de usuarios" />
-        <Kpi label="Donaciones este mes" value={num(ind.donacionesMes)} hint="Solicitudes registradas" />
-      </div>
-
-      {/* RF-87: Publicaciones pendientes de moderación por grupo */}
-      <div className="mt-4">
-        <PendingModerationGroups initialGroups={ind.pendientesPorGrupo ?? []} />
-      </div>
-
-      <div className="mt-4">
-        {daily.loading ? <div className={card}><Loading label="Cargando la actividad diaria…" /></div>
-          : daily.error || !daily.data ? <div className={card}><ErrorState error={daily.error} onRetry={daily.reload} title="No pudimos cargar la actividad diaria" /></div>
-          : <DailyActivity data={daily.data} />}
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        {income && <Income data={income} />}
-        <LiveUsers />
-        {income && (
-          <Panel
-            title="Meta de ingresos"
-            text={
-              income.mesActual.meta && income.mesActual.meta > 0
-                ? `${formatCOP(income.mesActual.ingresosNetos)} de ${formatCOP(income.mesActual.meta)} (${income.mesActual.porcentajeAvance}% de la meta de ${income.mesActual.mes})`
-                : `${formatCOP(income.mesActual.ingresosNetos)} · sin meta definida`
-            }
-          >
-            {income.mesActual.meta && income.mesActual.meta > 0 ? (
-              <Gauge value={income.mesActual.porcentajeAvance} label={`Avance de la meta de ingresos de ${mesCorto}: ${income.mesActual.porcentajeAvance}%`} caption={`de la meta de ingresos de ${mesCorto}`} />
-            ) : (
-              <p role="status" className="py-6 text-center text-sm font-semibold text-[var(--color-text-muted)]">sin meta definida</p>
-            )}
-          </Panel>
-        )}
-        {accounts && (
-          <Panel title="Cuentas por plan" text="Compradores (Radar y Radar+) y almacenes aliados">
-            <Donut label="Cuentas por plan" data={accounts.resumen.map((r) => ({ nombre: r.plan, valor: r.cuentas }))} detalle={(v) => `${num(v)} cuentas`} />
-          </Panel>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ─── RF-87: Publicaciones pendientes por grupo ─── */
-
-function PendingModerationGroups({ initialGroups }: { initialGroups: PendientePorGrupoDto[] }) {
-  const [groups, setGroups] = useState<PendientePorGrupoDto[]>(initialGroups)
-  const [lastDecision, setLastDecision] = useState<{ publicadorId: string; resultado: ResultadoModeracion } | null>(null)
-
-  const handleDecision = (publicadorId: string, decision: DecisionModeracion) => {
-    const resultado: ResultadoModeracion = decision === 'APROBAR' ? 'APROBADA' : 'RECHAZADA'
-    setGroups((prev) => prev.filter((g) => g.publicadorId !== publicadorId))
-    setLastDecision({ publicadorId, resultado })
-  }
-
-  return (
-    <Panel
-      title="Publicaciones pendientes de moderación"
-      text="Agrupadas por tipo de publicador (TIENDA o USUARIO)"
-    >
-      {lastDecision && (
-        <p role="status" className="mb-3 text-xs font-semibold text-arena">
-          Grupo {lastDecision.publicadorId}: decisión aplicada ({lastDecision.resultado})
-        </p>
-      )}
-      {groups.length === 0 ? (
-        <p role="status" className="text-sm text-[var(--color-text-muted)]">
-          No hay publicaciones pendientes de moderación
-        </p>
-      ) : (
-        <ul className="divide-y divide-[var(--color-border)] text-sm">
-          {groups.map((g) => (
-            <li key={`${g.tipoPublicador}-${g.publicadorId}`} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
-              <div>
-                <span className="font-semibold">{g.tipoPublicador}</span>
-                {' · '}
-                <span className="font-mono text-xs">{g.publicadorId}</span>
-                {' · '}
-                <span className="text-[var(--color-text-muted)]">{g.cantidad} pendientes</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleDecision(g.publicadorId, 'APROBAR')}
-                  className="rounded-lg bg-violeta px-3 py-1 text-xs font-semibold text-blanco"
-                >
-                  Aprobar grupo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDecision(g.publicadorId, 'RECHAZAR')}
-                  className="rounded-lg border border-[var(--color-border)] px-3 py-1 text-xs font-semibold"
-                >
-                  Rechazar grupo
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
-  )
-}
-
-/* ─── Actividad diaria: dos gráficos con el mismo eje de días (no un gráfico con dos escalas) ─── */
-
-function DailyActivity({ data }: { data: AdminDailyDto }) {
-  const [tabla, setTabla] = useState(false)
-  const [hover, setHover] = useState<number | null>(null)
-  const dias = data.dias
-  const n = dias.length
-  const maxB = tope(Math.max(...dias.map((d) => d.busquedas)))
-  const maxRP = tope(Math.max(...dias.flatMap((d) => [d.registros, d.publicaciones])))
-  // Puntos del área de búsquedas, centrados en cada columna
-  const pts = dias.map((d, i) => [((i + 0.5) / n) * 1000, 120 - (d.busquedas / maxB) * 112] as const)
-  const linea = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('')
-  const area = `${linea}L${pts[n - 1][0].toFixed(1)} 120L${pts[0][0].toFixed(1)} 120Z`
-
-  return (
-    <Panel title={`Actividad diaria · ${data.mes}`} text="Búsquedas realizadas, nuevos registros y prendas publicadas por día" action={<TableToggle on={tabla} onChange={setTabla} />}>
-      {tabla ? (
-        <DataTable caption="Detalle de actividad diaria" head={['Día', 'Búsquedas', 'Registros', 'Publicaciones']} rows={dias.map((d) => [d.etiqueta, num(d.busquedas), d.registros, d.publicaciones])} />
-      ) : (
-        <div className="relative grid grid-cols-[2.75rem_1fr] gap-x-2">
-          {/* Búsquedas */}
-          <div aria-hidden="true" className="flex h-32 flex-col justify-between text-right text-[10px] tabular-nums text-white/45"><span>{num(maxB)}</span><span>{num(maxB / 2)}</span><span>0</span></div>
-          <div className="relative h-32">
-            <p className="absolute left-2 top-0 z-[1] flex items-center gap-1.5 text-[11px] font-semibold text-white/70"><i aria-hidden="true" className="h-0.5 w-3 shrink-0 rounded-full" style={{ background: BUSQ }} />Búsquedas</p>
-            <svg viewBox="0 0 1000 120" preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
-              <defs>
-                <linearGradient id="srDailyAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#7B4DD8" stopOpacity="0.45" />
-                  <stop offset="65%" stopColor="#B9B9CA" stopOpacity="0.16" />
-                  <stop offset="100%" stopColor="#48119A" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              <line x1="0" x2="1000" y1="64" y2="64" stroke="currentColor" strokeOpacity={0.1} strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
-              <path d={area} fill="url(#srDailyAreaGrad)" />
-              <path d={linea} fill="none" stroke={BUSQ} strokeWidth={2.4} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-              {hover !== null && <line x1={pts[hover][0]} x2={pts[hover][0]} y1="0" y2="120" stroke="currentColor" strokeOpacity={0.35} vectorEffect="non-scaling-stroke" />}
-            </svg>
-          </div>
-          {/* Registros y publicaciones */}
-          <div aria-hidden="true" className="mt-3 flex h-24 flex-col justify-between text-right text-[10px] tabular-nums text-white/45"><span>{maxRP}</span><span>{maxRP / 2}</span><span>0</span></div>
-          <div className="relative mt-3 h-24">
-            <ul className="absolute left-2 top-0 z-[1] flex gap-3 text-[11px] font-semibold text-white/70"><li className="flex items-center gap-1.5"><Swatch i={1} />Registros</li><li className="flex items-center gap-1.5"><Swatch i={0} />Publicaciones</li></ul>
-            <div aria-hidden="true" className="flex h-full items-end border-b border-white/25">
-              {dias.map((d, i) => (
-                <div key={d.etiqueta} className={`flex h-full flex-1 items-end justify-center gap-[2px] ${hover === i ? 'bg-white/[.04]' : ''}`}>
-                  <span className="w-[30%] max-w-2 rounded-t-[3px]" style={{ height: `${(d.registros / maxRP) * 100}%`, background: SERIE[1] }} />
-                  <span className="w-[30%] max-w-2 rounded-t-[3px]" style={{ height: `${(d.publicaciones / maxRP) * 100}%`, background: SERIE[0] }} />
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Eje de días */}
-          <span />
-          <div aria-hidden="true" className="flex pt-1 text-[10px] text-white/55">
-            {dias.map((d, i) => <span key={d.etiqueta} className="flex-1 text-center">{i % 3 === 0 ? d.etiqueta : ''}</span>)}
-          </div>
-          {/* Zona de interacción: una columna por día, cubre los dos gráficos */}
-          <ol className="absolute bottom-5 left-[calc(2.75rem+.5rem)] right-0 top-0 flex" aria-label="Actividad por día">
-            {dias.map((d, i) => (
-              <li key={d.etiqueta} tabIndex={0} className="relative flex-1 outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
-                aria-label={`${d.etiqueta}: ${num(d.busquedas)} búsquedas, ${d.registros} registros y ${d.publicaciones} publicaciones`}
-                onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(i)} onBlur={() => setHover(null)}>
-                {hover === i && (
-                  <span role="tooltip" className={`pointer-events-none absolute top-6 z-10 whitespace-nowrap rounded-lg border border-white/15 bg-grafito px-3 py-2 text-xs shadow-lg ${i > n / 2 ? 'right-full mr-1' : 'left-full ml-1'}`}>
-                    <b className="block">{d.etiqueta}</b>
-                    <span className="flex items-center gap-1.5"><i aria-hidden="true" className="h-0.5 w-3 shrink-0 rounded-full" style={{ background: BUSQ }} />Búsquedas <b className="ml-auto pl-3 tabular-nums">{num(d.busquedas)}</b></span>
-                    <span className="flex items-center gap-1.5"><Swatch i={1} />Registros <b className="ml-auto pl-3 tabular-nums">{d.registros}</b></span>
-                    <span className="flex items-center gap-1.5"><Swatch i={0} />Publicaciones <b className="ml-auto pl-3 tabular-nums">{d.publicaciones}</b></span>
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-    </Panel>
-  )
-}
-
-function Income({ data }: { data: AdminIncomeDto }) {
-  const [tabla, setTabla] = useState(false)
-  return (
-    <Panel title="Ingresos por suscripciones" text="Pagos aprobados por mes" action={<TableToggle on={tabla} onChange={setTabla} />}>
-      {tabla
-        ? <DataTable caption="Ingresos por suscripciones por mes" head={['Mes', 'Usuarios (Radar+)', 'Tiendas aliadas', 'Total']} rows={data.historico.map((h) => [MES_LARGO[h.mes] ?? h.mes, formatCOP(h.usuarios), formatCOP(h.tiendas), formatCOP(h.total)])} />
-        : <GroupedBars label="Ingresos por suscripciones" series={['Usuarios (Radar+)', 'Tiendas aliadas']} fmt={milesCOP}
-            grupos={data.historico.map((h) => ({ key: h.mes, eje: h.mes, titulo: MES_LARGO[h.mes] ?? h.mes, valores: [h.usuarios, h.tiendas] }))} />}
-    </Panel>
-  )
-}
-
-/** Sesiones abiertas: se consulta cada 15 s solo con la pestaña visible, como en el prototipo. */
-function LiveUsers() {
-  const [sesiones, setSesiones] = useState<number | null>(null)
-  const [error, setError] = useState(false)
+  const has401 =
+    registrations.status === 401 ||
+    buyers.status === 401 ||
+    stores.status === 401 ||
+    garments.status === 401 ||
+    playlists.status === 401 ||
+    donations.status === 401 ||
+    revenue.status === 401
 
   useEffect(() => {
-    let activo = true
-    const cargar = () => {
-      if (document.visibilityState !== 'visible') return
-      statsService.getAdminLive()
-        .then((r) => { if (activo) { setSesiones(r.sesionesAbiertas); setError(false) } })
-        .catch(() => { if (activo) setError(true) })
+    if (has401) {
+      guardarRetorno()
+      navigate('/?login', { replace: true })
     }
-    cargar()
-    const t = window.setInterval(cargar, 15_000)
-    document.addEventListener('visibilitychange', cargar)
-    return () => { activo = false; window.clearInterval(t); document.removeEventListener('visibilitychange', cargar) }
-  }, [])
+  }, [has401, navigate])
+
+  const regPoints = registrations.data?.points ?? []
+  const registeredTotal = regPoints.reduce((sum, point) => sum + point.value, 0)
+  const regPeriodLabel =
+    formatMonthShort(registrations.data?.period?.startDate ?? `${selectedMonth}-01`) || selectedMonth
+  const regPeriodLong =
+    formatMonthLong(registrations.data?.period?.startDate ?? `${selectedMonth}-01`) || regPeriodLabel
+
+  const buyersTotal = sumEntries(buyers.data)
+  const storesTotal = sumEntries(stores.data)
+
+  const donationsPeriodLabel =
+    formatMonthShort(donations.data?.period?.startDate) || 'Mes en curso'
+
+  const revenueRawPoints = revenue.data?.points ?? []
+  const revenueTrendPoints: TrendPoint[] = revenueRawPoints.map((point) => {
+    const label = formatMonthShort(point.date)
+    return {
+      key: point.date,
+      axisLabel: label,
+      fullLabel: label,
+      value: point.value,
+    }
+  })
+
+  const revenueDelta =
+    revenueRawPoints.length >= 2
+      ? calcRealDelta(
+          revenueRawPoints[revenueRawPoints.length - 1].value,
+          revenueRawPoints[revenueRawPoints.length - 2].value,
+          formatMonthShort(revenueRawPoints[revenueRawPoints.length - 2].date),
+        )
+      : null
+
+  const registrationTrendPoints: TrendPoint[] = regPoints.map((point) => {
+    const label = formatDayShort(point.date)
+    return {
+      key: point.date,
+      axisLabel: label,
+      fullLabel: label,
+      value: point.value,
+    }
+  })
+
+  const monthSelect = (
+    <label className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--sr-text-muted,var(--color-text-muted))]">
+      <span>Mes</span>
+      <select
+        aria-label="Seleccionar mes de registros"
+        value={selectedMonth}
+        onChange={(e) => setSelectedMonth(e.target.value)}
+        className="rounded-lg border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] px-3 py-1.5 text-xs font-semibold text-[var(--sr-text-primary,var(--color-text))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-violeta-claro,#7C3AED)]"
+      >
+        {monthOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
 
   return (
-    <Panel title="Usuarios conectados ahora" text="Sesiones activas en la plataforma en tiempo real"
-      action={<span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#9be3b4]/40 px-2.5 py-1 text-[11px] font-semibold text-[#9be3b4]"><i aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full bg-[#9be3b4] motion-reduce:animate-none" />En vivo</span>}>
-      {error && sesiones === null ? <p role="alert" className="text-sm text-[#ffb4b4]">No pudimos consultar las sesiones abiertas</p> : (
-        <>
-          <p className="text-4xl font-extrabold tabular-nums" aria-live="polite">{sesiones === null ? '—' : num(sesiones)}</p>
-          <p className="mt-2 text-[11px] font-bold uppercase tracking-[.14em] text-white/60">Actualizado cada 15 s · Se pausa automáticamente en segundo plano</p>
-        </>
-      )}
-    </Panel>
-  )
-}
+    <div className="space-y-8 text-[var(--sr-text-primary,var(--color-text))]">
+      {/* Encabezado: título grande, subtítulo corto y selector de periodo a la derecha */}
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-xs font-bold uppercase tracking-[.16em] text-[var(--sr-accent-text,var(--color-violeta-claro))]">
+            Analítica de plataforma
+          </p>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl">Estadísticas</h1>
+          <p className="text-sm text-[var(--sr-text-muted,var(--color-text-muted))]">
+            Indicadores reales de StyleRadar · registros de {regPeriodLong}
+          </p>
+        </div>
+        {monthSelect}
+      </header>
 
-function exportar(ind: AdminIndicatorsDto, daily: AdminDailyDto | null, income: AdminIncomeDto | null, accounts: AdminAccountsByPlanDto | null) {
-  descargarCsv('estadisticas-styleradar', [
-    ['Estadísticas generales de StyleRadar'],
-    [],
-    ['Indicador', 'Valor'],
-    ['Usuarios activos', ind.usuariosActivos],
-    ['Tiendas verificadas', ind.tiendas.verificadas],
-    ['Tiendas pendientes de verificación', ind.tiendas.pendientes],
-    ['Fundaciones activas', ind.fundacionesActivas],
-    ['Ingresos del mes', ind.ingresosMes],
-    ['Prendas publicadas', ind.prendasPublicadas],
-    ['Playlists creadas', ind.playlistsCreadas],
-    ['Donaciones este mes', ind.donacionesMes],
-    ...(daily ? [[], ['Día', 'Búsquedas', 'Registros', 'Publicaciones'], ...daily.dias.map((d) => [d.etiqueta, d.busquedas, d.registros, d.publicaciones])] : []),
-    ...(income ? [[], ['Mes', 'Usuarios (Radar+)', 'Tiendas aliadas', 'Total'], ...income.historico.map((h) => [h.mes, h.usuarios, h.tiendas, h.total])] : []),
-    ...(accounts ? [[], ['Plan', 'Cuentas'], ...accounts.resumen.map((r) => [r.plan, r.cuentas])] : []),
-  ])
+      {/* Fila de tarjetas KPI: 6 totales reales de ms-estadisticas */}
+      <section
+        aria-label="Indicadores principales"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <KpiCard
+          label="Usuarios registrados"
+          value={num(registeredTotal)}
+          subtitle={regPeriodLabel}
+          note="Suma diaria del mes seleccionado (PLATFORM_USER_REGISTRATIONS)."
+          loading={registrations.loading}
+          empty={registrations.empty}
+          emptyText={`Sin registros en ${regPeriodLabel}`}
+          error={registrations.error}
+          status={registrations.status}
+          onRetry={registrations.retry}
+        />
+        <KpiCard
+          label="Compradores"
+          value={num(buyersTotal)}
+          subtitle="Total de cuentas registradas"
+          note="Total consolidado de compradores en la plataforma."
+          loading={buyers.loading}
+          empty={buyers.empty}
+          emptyText="Aún no hay cuentas"
+          error={buyers.error}
+          status={buyers.status}
+          onRetry={buyers.retry}
+        />
+        <KpiCard
+          label="Almacenes aliados"
+          value={num(storesTotal)}
+          subtitle="Total de tiendas registradas"
+          note="Total consolidado de almacenes aliados en la plataforma."
+          loading={stores.loading}
+          empty={stores.empty}
+          emptyText="Aún no hay cuentas"
+          error={stores.error}
+          status={stores.status}
+          onRetry={stores.retry}
+        />
+        <KpiCard
+          label="Prendas publicadas"
+          value={num(garments.data?.total ?? 0)}
+          subtitle="Total acumulado en catálogo"
+          note="Publicaciones totales registradas en ms-estadisticas."
+          loading={garments.loading}
+          empty={garments.empty}
+          emptyText="Aún no hay prendas publicadas"
+          error={garments.error}
+          status={garments.status}
+          onRetry={garments.retry}
+        />
+        <KpiCard
+          label="Playlists creadas"
+          value={num(playlists.data?.total ?? 0)}
+          subtitle="Total acumulado de colecciones"
+          note="Colecciones creadas por la comunidad."
+          loading={playlists.loading}
+          empty={playlists.empty}
+          emptyText="Aún no hay playlists creadas"
+          error={playlists.error}
+          status={playlists.status}
+          onRetry={playlists.retry}
+        />
+        <KpiCard
+          label="Donaciones del mes"
+          value={num(donations.data?.total ?? 0)}
+          subtitle={donationsPeriodLabel}
+          note="Donaciones registradas en el periodo reportado por el backend."
+          loading={donations.loading}
+          empty={donations.empty}
+          emptyText="Aún no hay donaciones en este mes"
+          error={donations.error}
+          status={donations.status}
+          onRetry={donations.retry}
+        />
+      </section>
+
+      {/* Gráfica de tendencia 1: Ingresos por suscripciones (mensual, COP) */}
+      <TrendChart
+        title="Ingresos por suscripciones"
+        subtitle="Evolución mensual del total recaudado en pesos colombianos"
+        seriesLabel="Total en COP"
+        tableColumnLabel="Total"
+        tableDateHeader="Mes"
+        points={revenueTrendPoints}
+        variant="area"
+        formatValue={formatCOP}
+        delta={revenueDelta}
+        headerControls={
+          <span className="rounded-lg border border-[var(--sr-border-subtle,var(--color-border))] px-2.5 py-1 text-xs font-semibold text-[var(--sr-text-muted,var(--color-text-muted))]">
+            Mensual
+          </span>
+        }
+        note="La variación porcentual compara el último mes con el mes inmediatamente anterior de la misma serie."
+        loading={revenue.loading}
+        emptyText="Sin ingresos en el periodo"
+        error={revenue.error}
+        status={revenue.status}
+        onRetry={revenue.retry}
+      />
+
+      {/* Gráfica de tendencia 2: Registros de usuarios por día (un mes calendario) */}
+      <TrendChart
+        title="Registros de usuarios por día"
+        subtitle={`Nuevas cuentas registradas durante ${regPeriodLong}`}
+        seriesLabel="Registros"
+        tableColumnLabel="Registros"
+        tableDateHeader="Día"
+        points={registrationTrendPoints}
+        variant="bars"
+        headerControls={monthSelect}
+        note="Serie diaria de un solo mes calendario proveniente de PLATFORM_USER_REGISTRATIONS."
+        loading={registrations.loading}
+        emptyText={`Sin registros durante ${regPeriodLong}`}
+        error={registrations.error}
+        status={registrations.status}
+        onRetry={registrations.retry}
+      />
+    </div>
+  )
 }
