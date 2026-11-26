@@ -13,7 +13,7 @@
   z-index: 110;
   display: grid;
   place-items: center;
-  padding: clamp(10px, 2vw, 28px);
+  padding: clamp(8px, 1.2vw, 18px);
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
   color: #FFFFFF;
 }
@@ -269,13 +269,63 @@
 }
 
 .sr-auth-card.is-register {
-  width: min(640px, calc(100% - 24px));
+  width: min(670px, calc(100% - 24px));
+  padding: 14px 22px;
+  gap: 7px;
+  margin-top: 22px;
+  max-height: calc(100% - 44px);
+}
+
+.sr-auth-card.is-register h2 {
+  font-size: clamp(20px, 2vw, 24px);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.sr-auth-card.is-register .sr-sub {
+  font-size: 12px;
+  margin: 0;
+}
+
+.sr-auth-card.is-register .sr-auth-tabs button {
+  padding: 7px 10px;
+  font-size: 11px;
+}
+
+.sr-auth-card.is-register .sr-role-pick button {
+  padding: 7px 10px;
+}
+
+.sr-auth-card.is-register .sr-field {
+  gap: 3px;
+}
+
+.sr-auth-card.is-register .sr-field label,
+.sr-auth-card.is-register .sr-field .sr-lab {
+  font-size: 11px;
+}
+
+.sr-auth-card.is-register .sr-field input,
+.sr-auth-card.is-register .sr-field select {
+  padding: 7px 11px;
+  font-size: 13px;
+}
+
+.sr-auth-card.is-register .sr-auth-submit {
+  padding: 10px 16px;
+}
+
+.sr-auth-card.is-register label[for^="consent-"],
+.sr-auth-card.is-register .space-y-2,
+.sr-auth-card.is-register .space-y-2\.5 {
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 .sr-auth-fields-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
+  gap: 8px 12px;
   align-items: start;
 }
 
