@@ -21,14 +21,14 @@ const pago = (over: Partial<PaymentDto>): PaymentDto =>
     ...over,
   }) as PaymentDto
 
-describe('AdminPaymentsPage - balance consolidado', () => {
+describe('AdminPaymentsPage - monedero del balance consolidado', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('reparte el balance por plan y muestra los últimos pagos aprobados', async () => {
+  it('llena el espacio del balance con el monedero y los aprobados de cada plan', async () => {
     vi.spyOn(paymentService, 'list').mockResolvedValue([
-      pago({ id: '1', userName: 'Valentina Rojas', amount: 14900, date: '2026-11-20T10:00:00Z' }),
-      pago({ id: '2', userName: 'Luna Store', planId: 'store', planName: 'Tienda', amount: 45100, date: '2026-11-25T10:00:00Z' }),
-      pago({ id: '3', userName: 'Pendiente', status: 'pendiente', amount: 9000 }),
+      pago({ id: '1', amount: 14900 }),
+      pago({ id: '2', planId: 'store', planName: 'Store Basic', amount: 89000 }),
+      pago({ id: '3', status: 'pendiente', amount: 9000 }),
     ])
 
     render(
@@ -37,20 +37,13 @@ describe('AdminPaymentsPage - balance consolidado', () => {
       </MemoryRouter>,
     )
 
-    const reparto = await screen.findByLabelText('Ingresos aprobados por plan')
-    expect(reparto).toHaveTextContent(cop(60000))
-    expect(reparto).toHaveTextContent(`Radar+ · ${cop(14900)} (25%)`)
-    expect(reparto).toHaveTextContent(`Tiendas · ${cop(45100)} (75%)`)
-
-    const lista = screen.getByText('Últimos pagos aprobados').parentElement as HTMLElement
-    const filas = within(lista).getAllByRole('listitem')
-    expect(filas).toHaveLength(2)
-    expect(filas[0]).toHaveTextContent('Luna Store')
-    expect(filas[1]).toHaveTextContent('Valentina Rojas')
-    expect(within(lista).queryByText(/Pendiente/)).not.toBeInTheDocument()
+    const monedero = await screen.findByRole('figure', { name: 'Monedero de pagos aprobados' })
+    expect(within(monedero).getByText('Radar+').parentElement).toHaveTextContent(cop(14900))
+    expect(within(monedero).getByText('Tiendas').parentElement).toHaveTextContent(cop(89000))
+    expect(within(monedero).getByText('Total aprobado').parentElement).toHaveTextContent(cop(103900))
   })
 
-  it('sin pagos aprobados lo dice en lugar de dejar la caja vacía', async () => {
+  it('sin pagos aprobados el monedero muestra todo en cero', async () => {
     vi.spyOn(paymentService, 'list').mockResolvedValue([pago({ id: '9', status: 'pendiente' })])
 
     render(
@@ -59,6 +52,7 @@ describe('AdminPaymentsPage - balance consolidado', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText('Todavía no hay pagos aprobados.')).toBeInTheDocument()
+    const monedero = await screen.findByRole('figure', { name: 'Monedero de pagos aprobados' })
+    expect(within(monedero).getByText('Total aprobado').parentElement).toHaveTextContent(cop(0))
   })
 })

@@ -7,6 +7,7 @@ import { errorKind } from '@/modules/core/api/errors'
 import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
+import { BalanceWallet } from '../components/BalanceWallet'
 import { buildPaymentsCsv, formatStatusLabel } from '../mappers/paymentsMappers'
 import { calcRevenue, filterPayments, paymentService } from '../services/paymentService'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
@@ -120,11 +121,7 @@ export default function AdminPaymentsPage() {
     const pendingSum = pending.reduce((acc, p) => acc + p.amount, 0)
     const plusSum = approved.filter((p) => p.planId === 'plus').reduce((acc, p) => acc + p.amount, 0)
     const storeSum = approved.filter((p) => p.planId === 'store').reduce((acc, p) => acc + p.amount, 0)
-    const recentApproved = [...approved]
-      .sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0))
-      .slice(0, 3)
     return {
-      recentApproved,
       approvedCount: approved.length,
       rejectedCount: rejected.length,
       pendingCount: pending.length,
@@ -184,15 +181,6 @@ export default function AdminPaymentsPage() {
     activeAmount > 0 ? Math.min(100, Math.max(12, Math.round((activeAmount / activeCard.targetAmount) * 100))) : 0
   const displayBalance = revenue
   const pendingLabel = `${statsSummary.pendingCount} ${statsSummary.pendingCount === 1 ? 'pago' : 'pagos'}`
-  const totalPorPlan = statsSummary.plusSum + statsSummary.storeSum
-  const porcentajePlus = totalPorPlan > 0 ? Math.round((statsSummary.plusSum / totalPorPlan) * 100) : 0
-  const porcentajeTiendas = totalPorPlan > 0 ? 100 - porcentajePlus : 0
-  const fechaCorta = (valor: string) => {
-    const fecha = new Date(valor)
-    return Number.isNaN(fecha.getTime())
-      ? '—'
-      : fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
-  }
 
 
   return (
@@ -423,52 +411,7 @@ export default function AdminPaymentsPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-5" aria-label="Ingresos aprobados por plan">
-              <div className="flex items-center justify-between text-[11px] text-lavanda">
-                <span>Ingresos por plan</span>
-                <span className="tabular-nums">{formatCOP(totalPorPlan)}</span>
-              </div>
-              <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-white/10">
-                {totalPorPlan > 0 && (
-                  <>
-                    <span className="h-full bg-[#9d5cff]" style={{ width: `${porcentajePlus}%` }} />
-                    <span className="h-full bg-[#9be3b4]" style={{ width: `${porcentajeTiendas}%` }} />
-                  </>
-                )}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-white/75">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#9d5cff]" aria-hidden="true" />
-                  Radar+ · {formatCOP(statsSummary.plusSum)} ({porcentajePlus}%)
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#9be3b4]" aria-hidden="true" />
-                  Tiendas · {formatCOP(statsSummary.storeSum)} ({porcentajeTiendas}%)
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <p className="text-[11px] text-lavanda">Últimos pagos aprobados</p>
-              {statsSummary.recentApproved.length === 0 ? (
-                <p className="mt-2 text-xs text-white/60">Todavía no hay pagos aprobados.</p>
-              ) : (
-                <ul className="mt-2 divide-y divide-white/10">
-                  {statsSummary.recentApproved.map((p) => (
-                    <li key={p.pagoId ?? p.id} className="flex items-center justify-between gap-3 py-2 text-xs">
-                      <span className="min-w-0 truncate text-blanco">
-                        {p.userName || p.userEmail || p.planName}
-                        <span className="text-white/55"> · {p.planName}</span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-3 tabular-nums">
-                        <span className="text-white/55">{fechaCorta(p.date)}</span>
-                        <span className="font-bold text-blanco">{formatCOP(p.amount)}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <BalanceWallet total={displayBalance} plusSum={statsSummary.plusSum} storeSum={statsSummary.storeSum} />
 
             <div className="mt-auto border-t border-white/10 pt-4 text-xs text-lavanda/70">
               <p>El balance suma únicamente pagos aprobados.</p>
