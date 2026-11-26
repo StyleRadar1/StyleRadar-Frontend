@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router-dom'
 
 function isChunkLoadError(err: unknown): boolean {
@@ -11,6 +12,12 @@ export function RouteErrorBoundary() {
   const error = useRouteError()
   const chunkError = isChunkLoadError(error)
   const status = isRouteErrorResponse(error) ? error.status : undefined
+  const devMessage =
+    import.meta.env.DEV && error instanceof Error ? error.message : null
+
+  useEffect(() => {
+    console.error('[RouteErrorBoundary]', error)
+  }, [error])
 
   return (
     <main
@@ -29,6 +36,11 @@ export function RouteErrorBoundary() {
             ? 'Hay una versión más reciente disponible en este momento. Recarga la página para cargar los archivos actualizados.'
             : 'Ocurrió un inconveniente inesperado al cargar la vista. Puedes recargar o volver al inicio.'}
         </p>
+        {devMessage && (
+          <p className="mt-2 rounded-lg bg-black/40 px-3 py-2 font-mono text-[11px] text-rose-300">
+            {devMessage}
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
