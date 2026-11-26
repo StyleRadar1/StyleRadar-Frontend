@@ -144,13 +144,22 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   const [pendingDeepLinkGarment, setPendingDeepLinkGarment] = useState<{ id: string; talla?: string; color?: string } | null>(null)
   const [catalogItems, setCatalogItems] = useState<ItemResponseDto[]>(() => (env.useMocks ? ITEMS : []))
   const [availablePlaylists, setAvailablePlaylists] = useState<PlaylistDto[]>(() => (env.useMocks ? MOCK_PLAYLISTS : []))
+  const [selectedViewAngle, setSelectedViewAngle] = useState<'frente' | 'lado' | 'espalda'>('frente')
 
   useEffect(() => {
     if (!isOpen || env.useMocks) return
     let active = true
     itemService
       .search({})
-      .then((list) => { if (active) setCatalogItems(list) })
+      .then((list) => {
+        if (active) {
+          const itemsWithTallas = list.map((it) => ({
+            ...it,
+            tallas: it.tallas?.length ? it.tallas : ['S', 'M', 'L'],
+          }))
+          setCatalogItems(itemsWithTallas)
+        }
+      })
       .catch(() => {})
     playlistService
       .getAll()
@@ -476,6 +485,11 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
   /* Deformación y adaptación anatómica del maniquí */
   const deformation = useMemo(() => computeBodyDeformation(bodyMeasurements), [bodyMeasurements])
+  const currentSilhouetteSrc = useMemo(() => {
+    if (selectedViewAngle === 'lado') return deformation.silhouetteSideSrc
+    if (selectedViewAngle === 'espalda') return deformation.silhouetteBackSrc
+    return deformation.silhouetteSrc
+  }, [selectedViewAngle, deformation])
 
   /* Catálogo filtrado dentro del drawer */
   const filteredCatalog = useMemo(() => {
@@ -679,6 +693,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             <button
               type="button"
               className="cz-action-card"
+              aria-label="Escoger prenda para probar"
               onClick={handlePickGarment}
             >
               <span className="cz-action-card-icon" aria-hidden="true">
@@ -750,10 +765,16 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   {worn ? (
                     <div className="cz-worn-item-body">
                       <img
-                        src={worn.item.imagen}
+                        src={worn.item.imagen || '/img/productos/blazer-oversize.jpg'}
                         alt={worn.item.nombre}
                         className="cz-worn-item-thumb"
                         loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          if (!target.src.endsWith('/img/productos/blazer-oversize.jpg')) {
+                            target.src = '/img/productos/blazer-oversize.jpg'
+                          }
+                        }}
                       />
                       <div className="cz-worn-item-details">
                         <span className="cz-worn-item-store">{worn.item.tienda}</span>
@@ -939,7 +960,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   }}
                 >
                   <img
-                    src={deformation.silhouetteSrc}
+                    src={currentSilhouetteSrc}
                     alt="Maniquí anatómico base"
                     className="sr-only"
                     data-testid="mannequin-base-img"
@@ -998,6 +1019,33 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             <button className="cz-camera-zoom-btn" onClick={zoomOut} title="Alejar">−</button>
             <button className="cz-camera-reset-btn" onClick={resetCamera} title="Restablecer vista">
               Restablecer
+            </button>
+            <button
+              type="button"
+              className={`cz-camera-zoom-btn ml-2 ${selectedViewAngle === 'frente' ? 'font-bold underline' : ''}`}
+              onClick={() => setSelectedViewAngle('frente')}
+              aria-label="Vista de frente"
+              title="Vista de frente"
+            >
+              Frente
+            </button>
+            <button
+              type="button"
+              className={`cz-camera-zoom-btn ${selectedViewAngle === 'lado' ? 'font-bold underline' : ''}`}
+              onClick={() => setSelectedViewAngle('lado')}
+              aria-label="Vista lateral"
+              title="Vista lateral"
+            >
+              Lado
+            </button>
+            <button
+              type="button"
+              className={`cz-camera-zoom-btn ${selectedViewAngle === 'espalda' ? 'font-bold underline' : ''}`}
+              onClick={() => setSelectedViewAngle('espalda')}
+              aria-label="Vista posterior"
+              title="Vista posterior"
+            >
+              Espalda
             </button>
           </div>
 
@@ -1179,7 +1227,17 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                           className={`cz-catalog-card ${!fittable ? 'cz-card-unfittable' : ''} ${isWorn ? 'cz-card-worn' : ''}`}
                         >
                           <div className="cz-card-img-wrap">
-                            <img src={item.imagen} alt={item.nombre} loading="lazy" />
+                            <img
+                              src={item.imagen || '/img/productos/blazer-oversize.jpg'}
+                              alt={item.nombre}
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.currentTarget
+                                if (!target.src.endsWith('/img/productos/blazer-oversize.jpg')) {
+                                  target.src = '/img/productos/blazer-oversize.jpg'
+                                }
+                              }}
+                            />
                             {!fittable && (
                               <span className="cz-unfittable-badge">
                                 No disponible en el probador
@@ -1233,9 +1291,15 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   {availablePlaylists.map((pl) => (
                     <div key={pl.id} className="cz-playlist-row-card">
                       <img
-                        src={pl.portadaUrl || pl.prendas[0]?.imagen}
+                        src={pl.portadaUrl || pl.prendas[0]?.imagen || '/img/productos/blazer-oversize.jpg'}
                         alt={pl.nombre}
                         className="cz-playlist-row-thumb"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          if (!target.src.endsWith('/img/productos/blazer-oversize.jpg')) {
+                            target.src = '/img/productos/blazer-oversize.jpg'
+                          }
+                        }}
                       />
                       <div className="cz-playlist-row-info">
                         <h4 className="cz-playlist-row-title">{pl.nombre}</h4>
