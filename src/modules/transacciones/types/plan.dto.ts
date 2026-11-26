@@ -99,7 +99,7 @@ export const PLANES: PlanInfo[] = [
   { id: 'RADAR_PLUS', para: 'Personas', nombre: 'Radar+', precio: RADAR_PLUS_PRICE, periodo: 'al mes', nota: 'Para probarte la ropa sobre ti y no perderte nada', destacado: true,
     incluye: ['Probador con maniquí', `Probador con foto propia (hasta ${PLAN_LIMITS.RADAR_PLUS.probadorFoto} usos/mes)`, 'Alertas de disponibilidad'] },
   { id: 'TIENDA', para: 'Tiendas', nombre: 'Tienda aliada', precio: STORE_SUBSCRIPTION_PRICE, periodo: 'al mes', nota: 'Los primeros 30 días son gratis',
-    incluye: ['Tu catálogo visible en el radar y en el mapa', 'Publica en 3 pasos, con inventario por talla', 'Distintivos automáticos: Nueva llegada y Últimas unidades', 'Estadísticas de visitas y mensajes', 'Cancela la renovación cuando quieras'] },
+    incluye: ['Tu catálogo visible en el radar y en el mapa', 'Publica en 3 pasos, con inventario por talla', 'Distintivos automáticos: Nueva llegada y Últimas unidades', 'Cancela la renovación cuando quieras'] },
   { id: 'FUNDACION', para: 'Fundaciones', nombre: 'Fundación aliada', precio: 0, periodo: 'siempre', nota: 'Sin costo para las fundaciones verificadas',
     incluye: ['Recibe solicitudes de donación de personas y tiendas', 'Acepta, rechaza y coordina la entrega por mensajes', 'Tu página con misión, horario y lo que más necesitas', 'Estadísticas de lo que llega cada mes'] },
 ]

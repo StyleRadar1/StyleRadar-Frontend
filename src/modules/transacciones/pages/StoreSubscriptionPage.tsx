@@ -346,7 +346,6 @@ export default function StoreSubscriptionPage() {
           <ul>
             <li>Catálogo ilimitado visible en el radar y en el mapa</li>
             <li>Colecciones y playlists de tienda</li>
-            <li>Estadísticas de visitas y mensajes</li>
             <li>Avisos automáticos a quienes esperan una prenda</li>
           </ul>
           {!sinSuscripcion && <div className="store-subscription__metadata">

@@ -36,7 +36,6 @@ export const STORE_PLAN: PlanDto = {
   period: 'mensual',
   features: [
     'Catálogo visible en el radar',
-    'Estadísticas de tu tienda',
     'Colecciones y playlists',
     'Soporte dedicado',
   ],
