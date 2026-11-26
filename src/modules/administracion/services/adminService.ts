@@ -26,15 +26,27 @@ export async function nitsConSuscripcionAlDia(): Promise<Set<string> | null> {
   try {
     const { data } = await apiClient.get<{ taxIds?: unknown }>(SUSCRIPCIONES_AL_DIA)
     const ids = Array.isArray(data?.taxIds) ? data.taxIds : []
-    return new Set(ids.map(soloDigitos).filter(Boolean))
+    // Pagos manda el NIT sin dígito de verificación («900555777»); si alguno llegara con guion, se le quita
+    return new Set(ids.map((x) => soloDigitos(String(x ?? '').split('-')[0])).filter(Boolean))
   } catch {
     return null
   }
 }
 
+/**
+ * Formas en que puede aparecer el NIT de una tienda para compararlo con la lista de Pagos, que lo trae SIN dígito de
+ * verificación: «900555777-1» → «900555777»; sin guion («9005557771») se prueba también sin el último dígito.
+ */
+export function clavesDeNit(nit: unknown): string[] {
+  const s = String(nit ?? '').trim()
+  const completo = soloDigitos(s)
+  const base = s.includes('-') ? soloDigitos(s.split('-')[0]) : completo.length === 10 ? completo.slice(0, -1) : ''
+  return [...new Set([base, completo].filter(Boolean))]
+}
+
 /** Marca «Activa» a la tienda cuyo NIT está en la lista de Pagos; el resto queda como estaba. */
 export function conSuscripcionAlDia(t: AdminStoreDto, alDia: Set<string> | null): AdminStoreDto {
-  if (!alDia || !alDia.has(soloDigitos(t.nit))) return t
+  if (!alDia || !clavesDeNit(t.nit).some((k) => alDia.has(k))) return t
   return { ...t, suscripcion: { ...t.suscripcion, estado: 'Activa' } }
 }
 

@@ -3,11 +3,15 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import './mapa.css'
 import type { MapFilter, MapPinDto } from '../types/map.dto'
-import { filterPins, calcBounds } from '../utils/mapUtils'
+import { filterPins, calcBounds, agruparPines } from '../utils/mapUtils'
+import { crearListaGrupo, crearNombresGrupo, crearPinGrupo } from '../utils/clusterDom'
 import { MAPBOX_TOKEN } from '../config'
 
 /* ── Token ── */
 const hasToken = !!MAPBOX_TOKEN
+
+/** Al encuadrar, margen de abajo: el recuadro «Mostrar en el mapa» tapa unos 114 px del borde inferior; sin este margen un pin quedaba debajo (BUG-20). */
+const MARGEN_INFERIOR_PX = 140
 
 type ViewMode = 'normal' | '3d'
 
@@ -106,6 +110,8 @@ export default function MapaBogota({
   const mapLoadedRef = useRef(false)
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
   const popupRef = useRef<mapboxgl.Popup | null>(null)
+  /** Lista abierta de los lugares de un pin agrupado (al hacer clic). */
+  const listaRef = useRef<mapboxgl.Popup | null>(null)
 
   const [internalFilter, setInternalFilter] = useState<MapFilter>(filter ?? 'todos')
   const [legendExpanded, setLegendExpanded] = useState(false)
@@ -151,6 +157,8 @@ export default function MapaBogota({
   )
 
   const visiblePins = useMemo(() => filterPins(pins, activeFilter), [pins, activeFilter])
+  /** Los lugares a 15 m o menos entre sí se ven como un solo pin con número. */
+  const grupos = useMemo(() => agruparPines(visiblePins), [visiblePins])
 
   /* ── Encuadrar todos los puntos visibles ("Ver toda Bogotá") ── */
   const fitAllVisiblePins = useCallback(
@@ -161,7 +169,7 @@ export default function MapaBogota({
       if (!targetList.length) return
       const bounds = calcBounds(targetList)
       map.fitBounds(bounds as [[number, number], [number, number]], {
-        padding: { top: 64, bottom: 95, left: 68, right: 68 },
+        padding: { top: 64, bottom: MARGEN_INFERIOR_PX, left: 68, right: 68 },
         maxZoom: 13.2,
         pitch: 0,
         bearing: 0,
@@ -269,7 +277,7 @@ export default function MapaBogota({
       if (pins.length) {
         const bounds = calcBounds(pins)
         map.fitBounds(bounds as [[number, number], [number, number]], {
-          padding: { top: 64, bottom: 95, left: 68, right: 68 },
+          padding: { top: 64, bottom: MARGEN_INFERIOR_PX, left: 68, right: 68 },
           maxZoom: 13.2,
           duration: 0,
         })
@@ -304,7 +312,7 @@ export default function MapaBogota({
     const map = mapRef.current
     if (!map) return
 
-    const currentIds = new Set(visiblePins.map((p) => p.id))
+    const currentIds = new Set(grupos.map((g) => g.id))
     const existing = markersRef.current
 
     existing.forEach((marker, id) => {
@@ -314,9 +322,69 @@ export default function MapaBogota({
       }
     })
 
-    for (const pin of visiblePins) {
-      if (existing.has(pin.id)) continue
+    for (const grupo of grupos) {
+      if (existing.has(grupo.id)) continue
 
+      /* Varios lugares en el mismo sitio (a 15 m o menos): un solo pin con el número (BUG-20) */
+      if (grupo.pins.length > 1) {
+        const elGrupo = crearPinGrupo(grupo)
+
+        elGrupo.addEventListener('mouseenter', () => {
+          if (listaRef.current) return // con la lista abierta, no se encima el cuadro de nombres
+          if (popupRef.current) popupRef.current.remove()
+          popupRef.current = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: [0, -34],
+            className: 'sr-mb-mini-popup',
+            maxWidth: '280px',
+          })
+            .setLngLat(grupo.lngLat)
+            .setDOMContent(crearNombresGrupo(grupo))
+            .addTo(map)
+        })
+
+        elGrupo.addEventListener('mouseleave', () => {
+          if (popupRef.current) {
+            popupRef.current.remove()
+            popupRef.current = null
+          }
+        })
+
+        elGrupo.addEventListener('click', (e) => {
+          e.stopPropagation()
+          if (popupRef.current) {
+            popupRef.current.remove()
+            popupRef.current = null
+          }
+          if (listaRef.current) listaRef.current.remove()
+          const elegir = (p: MapPinDto) => {
+            listaRef.current?.remove()
+            onSelect?.(p)
+            map.flyTo({ center: p.lngLat, zoom: 14.5, pitch: pitchFor(viewModeRef.current), duration: 800 })
+          }
+          const lista = new mapboxgl.Popup({
+            closeButton: true,
+            closeOnClick: true,
+            offset: [0, -34],
+            className: 'sr-mb-mini-popup sr-mb-cluster-popup',
+            maxWidth: '300px',
+          })
+            .setLngLat(grupo.lngLat)
+            .setDOMContent(crearListaGrupo(grupo, elegir))
+            .addTo(map)
+          listaRef.current = lista
+          lista.on('close', () => {
+            if (listaRef.current === lista) listaRef.current = null
+          })
+          lista.getElement()?.querySelector<HTMLButtonElement>('.sr-cluster-item')?.focus()
+        })
+
+        existing.set(grupo.id, new mapboxgl.Marker({ element: elGrupo, anchor: 'bottom' }).setLngLat(grupo.lngLat).addTo(map))
+        continue
+      }
+
+      const pin = grupo.pins[0]
       const el = createPinEl(pin)
 
       el.addEventListener('mouseenter', () => {
@@ -349,6 +417,7 @@ export default function MapaBogota({
           popupRef.current.remove()
           popupRef.current = null
         }
+        listaRef.current?.remove()
         onSelect?.(pin)
         map.flyTo({
           center: pin.lngLat,
@@ -362,25 +431,23 @@ export default function MapaBogota({
         .setLngLat(pin.lngLat)
         .addTo(map)
 
-      existing.set(pin.id, marker)
+      existing.set(grupo.id, marker)
     }
-  }, [visiblePins, createPinEl, miniCardHTML, onSelect, onHover])
+  }, [grupos, createPinEl, miniCardHTML, onSelect, onHover])
 
-  /* ── Highlight del pin seleccionado ── */
+  /* ── Highlight del pin seleccionado (también si es uno de los lugares de un pin agrupado) ── */
   useEffect(() => {
-    markersRef.current.forEach((marker, id) => {
-      const el = marker.getElement()
-      el.classList.toggle('is-selected', id === selectedId)
+    grupos.forEach((g) => {
+      markersRef.current.get(g.id)?.getElement().classList.toggle('is-selected', !!selectedId && g.pins.some((p) => p.id === selectedId))
     })
-  }, [selectedId])
+  }, [selectedId, grupos])
 
   /* ── Highlight del pin en hover (desde burbujas) ── */
   useEffect(() => {
-    markersRef.current.forEach((marker, id) => {
-      const el = marker.getElement()
-      el.classList.toggle('is-hovered', id === hoveredId)
+    grupos.forEach((g) => {
+      markersRef.current.get(g.id)?.getElement().classList.toggle('is-hovered', !!hoveredId && g.pins.some((p) => p.id === hoveredId))
     })
-  }, [hoveredId])
+  }, [hoveredId, grupos])
 
   /* ── FlyTo desde selección externa ── */
   useEffect(() => {
@@ -402,7 +469,7 @@ export default function MapaBogota({
     if (!map || !visiblePins.length) return
     const bounds = calcBounds(visiblePins)
     map.fitBounds(bounds as [[number, number], [number, number]], {
-      padding: { top: 64, bottom: 95, left: 68, right: 68 },
+      padding: { top: 64, bottom: MARGEN_INFERIOR_PX, left: 68, right: 68 },
       maxZoom: 13.2,
       duration: 600,
     })
@@ -411,7 +478,10 @@ export default function MapaBogota({
   /* ── Escape cierra selección ── */
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onSelect?.(null)
+      if (e.key === 'Escape') {
+        listaRef.current?.remove() // primero se cierra la lista de lugares de un pin agrupado
+        onSelect?.(null)
+      }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
