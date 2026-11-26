@@ -264,3 +264,13 @@ export const LEGAL_DOCS_REGISTRY: Record<string, LegalDocMeta> = {
     bracketedPlaceholders: [],
   },
 }
+
+/**
+ * Perfiles oficiales de Style Radar. El pie de página solo muestra las redes que tengan URL:
+ * mientras no exista el perfil oficial se deja vacío para no enviar a la página genérica de la red.
+ */
+export const REDES_SOCIALES = {
+  instagram: 'https://www.instagram.com/stylreradaroficial',
+  tiktok: 'https://www.tiktok.com/@stylreradaroficial',
+  youtube: '',
+}

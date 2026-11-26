@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { ScrollAlInicio } from './ScrollAlInicio'
 import { ROLE_HOME, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { NotFound } from '@/modules/core/components/NotFound'
@@ -93,6 +94,7 @@ function RootLayout() {
 
   return (
     <div className="relative min-h-screen">
+      <ScrollAlInicio />
       {!excluded && (
         <AuroraBackground
           fixed

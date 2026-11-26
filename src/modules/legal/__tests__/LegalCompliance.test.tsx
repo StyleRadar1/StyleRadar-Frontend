@@ -5,7 +5,7 @@ import { consentService } from '../services/consentService'
 import { pqrsService } from '../services/pqrsService'
 import { CookieBanner } from '../components/CookieBanner'
 import { LegalFooter } from '../components/LegalFooter'
-import { LEGAL_VERSIONS, PROVIDER_INFO } from '../config/legalConfig'
+import { LEGAL_VERSIONS, PROVIDER_INFO, REDES_SOCIALES } from '../config/legalConfig'
 
 describe('Cumplimiento Legal y Consentimiento de Cookies (Colombia)', () => {
   beforeEach(() => {
@@ -164,5 +164,37 @@ describe('Cumplimiento Legal y Consentimiento de Cookies (Colombia)', () => {
 
     // Enlace a derecho de retracto
     expect(screen.getAllByText(/Retracto legal|Derecho de Retracto/i).length).toBeGreaterThan(0)
+  })
+
+  it('LegalFooter: muestra solo las redes con perfil oficial, con contraste y enlace a la cuenta', () => {
+    render(
+      <MemoryRouter>
+        <LegalFooter />
+      </MemoryRouter>
+    )
+
+    const instagram = screen.getByRole('link', { name: 'Instagram de Style Radar (se abre en nueva ventana)' })
+    expect(instagram).toHaveAttribute('href', REDES_SOCIALES.instagram)
+    expect(instagram).toHaveAttribute('target', '_blank')
+    expect(instagram.querySelector('svg')).toHaveClass('fill-current')
+    expect(screen.getByRole('link', { name: 'TikTok de Style Radar (se abre en nueva ventana)' })).toHaveAttribute('href', REDES_SOCIALES.tiktok)
+    // Sin perfil de YouTube no se muestra el ícono (antes llevaba a la página genérica de la red)
+    expect(screen.queryByRole('link', { name: /YouTube/ })).not.toBeInTheDocument()
+  })
+
+  it('LegalFooter: sin ningún perfil oficial no muestra la sección de redes', () => {
+    const originales = { ...REDES_SOCIALES }
+    Object.assign(REDES_SOCIALES, { instagram: '', tiktok: '', youtube: '' })
+    try {
+      render(
+        <MemoryRouter>
+          <LegalFooter />
+        </MemoryRouter>
+      )
+      expect(screen.queryByText('Comunidad en redes')).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: /Instagram|TikTok|YouTube/ })).not.toBeInTheDocument()
+    } finally {
+      Object.assign(REDES_SOCIALES, originales)
+    }
   })
 })
