@@ -52,30 +52,30 @@ export default function HomePage() {
         </div>
 
         <div className="sr-inicio-bento__grid">
-          {/* Columna izquierda: Catálogo */}
+          {/* Columna izquierda: Estrenos y curaduría en tu talla */}
           <Link to="/catalogo" className="sr-bento-card sr-bento-card--tall">
             <img
               src="/img/representantes/C2.png"
-              alt="Explorar catálogo de moda local"
+              alt="Novedades de moda local en tu talla"
               className="sr-bento-card__img"
             />
             <div className="sr-bento-card__shade" />
             <div className="sr-bento-card__body">
-              <span className="sr-bento-pill">01 · Catálogo</span>
-              <strong className="sr-bento-card__title">Prendas locales en tu talla</strong>
-              <span className="sr-bento-card__sub">Filtra por estilo, color, precio y tienda</span>
+              <span className="sr-bento-pill">Novedades</span>
+              <strong className="sr-bento-card__title">Estrenos en tu talla hoy</strong>
+              <span className="sr-bento-card__sub">Prendas recién publicadas en Bogotá</span>
             </div>
           </Link>
 
-          {/* Columna central: CTAs principales + Playlists / Alertas */}
+          {/* Columna central: Acciones de intención + Looks / Perfil / Alertas */}
           <div className="sr-bento-center">
             <div className="sr-bento-ctas">
               <Link to="/catalogo" className="sr-bento-cta sr-bento-cta--primary">
-                <span>Explorar catálogo</span>
+                <span>Ver prendas en mi talla</span>
                 <span aria-hidden="true">→</span>
               </Link>
               <Link to="/probador" className="sr-bento-cta sr-bento-cta--outline">
-                <span>Probarme en maniquí o IA</span>
+                <span>Probarme un look ahora</span>
               </Link>
             </div>
 
@@ -83,14 +83,14 @@ export default function HomePage() {
               <Link to="/playlists" className="sr-bento-card sr-bento-card--mid">
                 <img
                   src="/img/representantes/C1.png"
-                  alt="Playlists de outfits"
+                  alt="Looks de la comunidad"
                   className="sr-bento-card__img"
                 />
                 <div className="sr-bento-card__shade" />
                 <div className="sr-bento-card__body">
-                  <span className="sr-bento-pill">02 · Playlists</span>
-                  <strong className="sr-bento-card__title">Arma y guarda tus looks</strong>
-                  <span className="sr-bento-card__sub">Outfits de varias tiendas</span>
+                  <span className="sr-bento-pill">Inspiración</span>
+                  <strong className="sr-bento-card__title">Looks de la comunidad</strong>
+                  <span className="sr-bento-card__sub">Combinaciones listas para probar</span>
                 </div>
               </Link>
 
@@ -109,26 +109,26 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Columna derecha: Segunda mano + Mapa */}
+          {/* Columna derecha: Hallazgos circulares + Donar */}
           <div className="sr-bento-right">
             <Link to="/segunda-mano" className="sr-bento-card sr-bento-card--medium">
               <img
                 src="/img/representantes/C5.png"
-                alt="Moda circular y segunda mano"
+                alt="Hallazgos de segunda mano"
                 className="sr-bento-card__img"
               />
               <div className="sr-bento-card__shade" />
               <div className="sr-bento-card__body">
-                <span className="sr-bento-pill">03 · Circular</span>
-                <strong className="sr-bento-card__title">Segunda mano y donar</strong>
-                <span className="sr-bento-card__sub">Compra, vende o dona a fundaciones</span>
+                <span className="sr-bento-pill">Circular</span>
+                <strong className="sr-bento-card__title">Hallazgos de segunda mano</strong>
+                <span className="sr-bento-card__sub">Piezas únicas a mejor precio</span>
               </div>
             </Link>
 
-            <Link to="/mapa" className="sr-bento-mini sr-bento-mini--accent">
-              <span className="sr-bento-mini__tag">04 · Mapa Bogotá</span>
-              <strong>Tiendas y fundaciones cerca ↗</strong>
-              <span>Explora puntos aliados por barrio</span>
+            <Link to="/donar" className="sr-bento-mini sr-bento-mini--accent">
+              <span className="sr-bento-mini__tag">Impacto social</span>
+              <strong>Donar ropa a fundaciones ↗</strong>
+              <span>Dale una segunda vida a tus prendas</span>
             </Link>
           </div>
         </div>

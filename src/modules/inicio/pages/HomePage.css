@@ -346,41 +346,122 @@ html[data-tema='claro'] .sr-inicio-fondo {
 }
 
 .sr-inicio-rack-compact .sr-rack-section {
-  --garment-h: clamp(10rem, 16vw, 12.5rem);
-  padding: 0.75rem 0 1rem;
+  --garment-h: clamp(8rem, 12.5vw, 10.5rem);
+  padding: 0.25rem 0 0.75rem;
   background: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
   border: 0 !important;
+  overflow: visible;
 }
 
-.sr-inicio-rack-compact .sr-rack-section::before {
+.sr-inicio-rack-compact .sr-rack-section::before,
+.sr-inicio-rack-compact .sr-rack-bar,
+.sr-inicio-rack-compact .sr-rack-stage--back,
+.sr-inicio-rack-compact .sr-rack-hanger,
+.sr-inicio-rack-compact .sr-rack-clips {
   display: none !important;
 }
 
+.sr-inicio-rack-compact .sr-rack-header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .sr-inicio-rack-compact .sr-rack-viewport {
-  height: clamp(14.5rem, 24vw, 18rem);
+  height: clamp(11.5rem, 18vw, 14.25rem);
+}
+
+.sr-inicio-rack-compact .sr-rack-sway,
+.sr-inicio-rack-compact .sr-rack-sway-inner {
+  animation: none !important;
+  transform: none !important;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sr-inicio-rack-compact .sr-rack-garment-cutout,
+.sr-inicio-rack-compact .sr-rack-garment-card {
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sr-inicio-rack-compact .sr-rack-cutout-img,
+.sr-inicio-rack-compact .sr-rack-garment-card img {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 1rem;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
 }
 
 .sr-inicio-rack-compact .sr-rack-item {
-  border-radius: 1.35rem;
+  top: 1.5rem;
+  width: clamp(8.5rem, 13.5vw, 11.25rem);
+  height: clamp(8.5rem, 13.5vw, 11.25rem);
+  border-radius: 1.65rem;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.15) 0%, rgba(157, 92, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 100%);
-  backdrop-filter: blur(22px) saturate(1.4);
-  -webkit-backdrop-filter: blur(22px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  padding: 0.65rem 0.65rem 0.85rem;
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16) 0%, rgba(139, 92, 246, 0.14) 55%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(22px) saturate(1.45);
+  -webkit-backdrop-filter: blur(22px) saturate(1.45);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  padding: 0.75rem;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
     inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 40px rgba(0, 0, 0, 0.38);
+    0 18px 38px rgba(0, 0, 0, 0.38);
 }
 
 .sr-inicio-rack-compact .sr-rack-item[data-offset='0'] {
-  border-color: rgba(255, 255, 255, 0.45);
+  z-index: 5;
+  transform: translate3d(-50%, -0.4rem, 0) scale(1.13);
+  border: 2px solid rgba(216, 180, 254, 0.85);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.48),
-    0 24px 52px rgba(72, 17, 154, 0.38);
+    0 0 38px rgba(139, 92, 246, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.sr-inicio-rack-compact .sr-rack-item[data-offset='-1'] {
+  z-index: 4;
+  opacity: 0.92;
+  transform: translate3d(calc(-50% - clamp(9.5rem, 15vw, 12.6rem)), 0.15rem, 0) scale(0.95);
+}
+
+.sr-inicio-rack-compact .sr-rack-item[data-offset='1'] {
+  z-index: 4;
+  opacity: 0.92;
+  transform: translate3d(calc(-50% + clamp(9.5rem, 15vw, 12.6rem)), 0.15rem, 0) scale(0.95);
+}
+
+.sr-inicio-rack-compact .sr-rack-item[data-offset='-2'] {
+  z-index: 3;
+  opacity: 0.72;
+  transform: translate3d(calc(-50% - clamp(18rem, 28.5vw, 24rem)), 0.5rem, 0) scale(0.84);
+}
+
+.sr-inicio-rack-compact .sr-rack-item[data-offset='2'] {
+  z-index: 3;
+  opacity: 0.72;
+  transform: translate3d(calc(-50% + clamp(18rem, 28.5vw, 24rem)), 0.5rem, 0) scale(0.84);
 }
 
 /* ── 3. Probador y Mapa: dos cuadros compactos a la par con Glassmorphism ── */
