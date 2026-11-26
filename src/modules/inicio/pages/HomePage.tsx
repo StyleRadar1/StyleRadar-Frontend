@@ -4,6 +4,7 @@ import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { RecommendedHangingRack } from '@/modules/catalogo/components/RecommendedHangingRack'
 import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
+import { RecomendadosTrail } from '../components/RecomendadosTrail'
 import './HomePage.css'
 
 export default function HomePage() {
@@ -148,6 +149,8 @@ export default function HomePage() {
           {user && <RecommendedHangingRack key={user.id} userId={String(user.id)} />}
         </div>
       </section>
+
+      {user && <RecomendadosTrail key={`trail-${user.id}`} userId={String(user.id)} />}
 
       {/* 3. Probador y Mapa: dos cuadros a la par */}
       <div className="sr-inicio-duo">
