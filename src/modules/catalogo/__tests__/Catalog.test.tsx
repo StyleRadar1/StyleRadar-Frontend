@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -168,7 +168,6 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
 
     expect(await screen.findByRole('heading', { level: 3, name: /Aún no hay prendas en el catálogo/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Quitar filtros/i })).not.toBeInTheDocument()
-    expect(document.querySelector('.sr-rack-collapse')).toHaveClass('sr-rack-collapse--hidden')
   })
 
   it('muestra estado vacío de filtros con botón Quitar filtros cuando la búsqueda no arroja resultados', async () => {
@@ -187,7 +186,7 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
     expect(screen.getByRole('button', { name: /Quitar filtros/i })).toBeInTheDocument()
   })
 
-  it('para comprador autenticado muestra el Perchero con Recomendado para ti arriba y pestañas Todas las prendas / Para ti abajo', async () => {
+  it('para comprador autenticado muestra las pestañas Todas las prendas / Para ti sin el perchero de recomendados', async () => {
     const user = userEvent.setup()
     vi.spyOn(feedService, 'getRecommendations').mockResolvedValue({
       content: [
@@ -261,12 +260,10 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
       </AuthContext.Provider>,
     )
 
-    // Bloque 1: Perchero arriba con "Recomendado para ti" (SR-RF-06) y sin "RELEVANTE"
-    const rack = await screen.findByRole('region', { name: 'Recomendado para ti' })
-    expect(within(rack).getAllByText('Blazer lino arena').length).toBeGreaterThanOrEqual(1)
-    expect(within(rack).getByText(/Por qué: Tu estilo Formal y tu talla M/i)).toBeInTheDocument()
-    expect(within(rack).getByRole('link', { name: 'Ver prenda' })).toHaveAttribute('href', '/catalogo/rec-1')
-    expect(screen.queryByText(/^RELEVANTE$/i)).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /Todas las prendas/i })).toBeInTheDocument()
+    })
+    expect(screen.queryByRole('region', { name: /prendas recomendadas/i })).not.toBeInTheDocument()
 
     // Bloque 2: Pestañas "Todas las prendas" (activa) y "Para ti"
     const tabTodas = screen.getByRole('tab', { name: /Todas las prendas/i })
@@ -278,10 +275,8 @@ describe('CatalogPage - Filtros unificados y Ordenar alineado con el back', () =
     expect(await screen.findByText('Jean recto talla M')).toBeInTheDocument()
     expect(feedSpy).toHaveBeenCalledWith('u-1', { page: 0, size: 8 })
 
-    // Al buscar/filtrar se pliega el perchero y vuelve automáticamente al catálogo filtrado
     await user.type(screen.getByRole('textbox', { name: /Buscar prendas/i }), 'prenda-sin-resultados')
     await user.click(screen.getByRole('button', { name: /^Buscar$/i }))
-    expect(document.querySelector('.sr-rack-collapse')).toHaveClass('sr-rack-collapse--hidden')
     expect(await screen.findByRole('heading', { level: 3, name: /No encontramos prendas con esos filtros/i })).toBeInTheDocument()
   })
 })

@@ -22,7 +22,7 @@ describe('roles en inglés (F-27)', () => {
   })
 
   it('cada rol tiene pantalla de inicio', () => {
-    expect(ROLE_HOME.BUYER).toBe('/catalogo')
+    expect(ROLE_HOME.BUYER).toBe('/inicio')
     expect(ROLE_HOME.STYLERADAR_ADMIN).toBe('/admin/estadisticas')
   })
 })
