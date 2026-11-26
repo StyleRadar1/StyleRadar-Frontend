@@ -309,7 +309,6 @@ export const pricingPlans: PlanItem[] = [
       'Primeros 30 días gratis',
       'Catálogo visible en radar y mapa',
       'Inventario por talla',
-      'Estadísticas de visitas y mensajes',
       'Colecciones propias',
     ],
     action: 'Registrar mi tienda',

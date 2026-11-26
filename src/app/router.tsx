@@ -33,7 +33,6 @@ const Inventory = lazy(() => import('@/modules/catalogo/pages/InventoryPage'))
 const MyStore = lazy(() => import('@/modules/catalogo/pages/MiTiendaPage'))
 const StoreInfo = lazy(() => import('@/modules/catalogo/pages/StoreInfoPage'))
 const StoreRegister = lazy(() => import('@/modules/catalogo/pages/StoreRegisterPage'))
-const StoreStats = lazy(() => import('@/modules/catalogo/pages/StoreStatsPage'))
 const Playlists = lazy(() => import('@/modules/catalogo/pages/PlaylistsPage'))
 const Moderation = lazy(() => import('@/modules/catalogo/pages/ModerationPage'))
 const TryOn = lazy(() => import('@/modules/experiencia/pages/TryOnPage'))
@@ -168,7 +167,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
       { path: '/tienda/informacion', element: onlyStoreActive(<StoreInfo />) },
       // F-21: registrar el almacén no exige suscripción (una tienda nueva todavía no la tiene).
       { path: '/tienda/registro', element: only(STORE, <StoreRegister />) },
-      { path: '/tienda/estadisticas', element: onlyStoreActive(<StoreStats />) },
+      { path: '/tienda/estadisticas', element: <Navigate to="/mi-tienda" replace /> },
       { path: '/tienda/suscripcion', element: only(STORE, <StoreSubscription />) },
       { path: '/tienda/suscripcion/activar', element: only(STORE, <StoreActivateSubscription />) },
       // Fundación

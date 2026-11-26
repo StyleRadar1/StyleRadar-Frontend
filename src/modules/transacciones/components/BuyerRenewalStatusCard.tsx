@@ -5,16 +5,33 @@ import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CancelSubscriptionButton } from './CancelSubscriptionButton'
 import { RADAR_PLUS_PRICE } from '../constants/plansByRole'
 import { useUserPlan } from '../hooks/useUserPlan'
-import { deriveSubscriptionStatus, formatSubscriptionDate } from '../mappers/paymentsMappers'
+import { deriveSubscriptionStatus } from '../mappers/paymentsMappers'
 import { getTryOnPhotoUses } from '../services/userPlanService'
 import { PLAN_LIMITS } from '../types/plan.dto'
 
-const formatFechaCobro = (iso?: string | null) =>
-  formatSubscriptionDate(iso, '9 de diciembre de 2026')
+/**
+ * Formatea YYYY-MM-DD en español sin usar `new Date("YYYY-MM-DD")` para evitar
+ * desfases de zona horaria. Si no hay fecha válida, devuelve null.
+ */
+function formatFechaEsCO(raw?: string | null): string | null {
+  if (!raw) return null
+  const parts = raw.trim().slice(0, 10).split('-')
+  if (parts.length !== 3) return null
+  const year = Number(parts[0])
+  const month = Number(parts[1])
+  const day = Number(parts[2])
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null
+  return new Date(year, month - 1, day).toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
 
 /**
- * RF-95, RF-100, RF-102: Muestra en /planes y /perfil para el comprador:
- * suscripcionId, estado, fechaInicio, fechaFin, autoRenovacion, límite aplicado del probador con foto propia y el botón "Cancelar suscripción" (solo en estado ACTIVA).
+ * RF-95, RF-100, RF-102 (BUG-15): Muestra en /planes y /perfil para el comprador
+ * el estado claro de su suscripción, fechas en español, límite del probador con foto propia
+ * y el botón "Cancelar suscripción" (solo en estado ACTIVA).
  */
 export function BuyerRenewalStatusCard() {
   const { user } = useAuth()
@@ -62,12 +79,17 @@ export function BuyerRenewalStatusCard() {
 
   const renewalActive = details?.renewalEnabled !== false
   const estado = details?.estado ?? 'ACTIVA'
-  const suscripcionId = details?.suscripcionId ?? `SUB-USR-${user?.id ?? 'u-1'}`
-  const fechaInicio = details?.fechaInicio ?? '2026-11-09'
-  const fechaFinRaw = details?.fechaFin ?? details?.proximoCobro ?? details?.periodEndsAt ?? '2026-12-09'
-  const fechaTexto = formatFechaCobro(fechaFinRaw)
+  const fechaInicioRaw = details?.fechaInicio ?? null
+  const fechaFinRaw = details?.fechaFin ?? details?.proximoCobro ?? details?.periodEndsAt ?? null
+  const fechaInicioTexto = formatFechaEsCO(fechaInicioRaw)
+  const fechaFinTexto = formatFechaEsCO(fechaFinRaw)
   const valorTexto = formatCOP(RADAR_PLUS_PRICE)
-  const derived = deriveSubscriptionStatus(estado, { autoRenewal: renewalActive, endDate: fechaFinRaw })
+  const derived = deriveSubscriptionStatus(estado, {
+    autoRenewal: renewalActive,
+    endDate: fechaFinRaw,
+  })
+  const badgeTone =
+    derived.status === 'ACTIVA' ? (renewalActive ? 'violeta' : 'arena') : 'lavanda'
 
   return (
     <div
@@ -79,27 +101,56 @@ export function BuyerRenewalStatusCard() {
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-bold">Renovación automática:</span>
-            <Badge tone={renewalActive ? 'violeta' : 'arena'}>
-              {renewalActive ? 'Activa' : 'Activa sin renovación'}
-            </Badge>
-            <Badge tone={estado === 'ACTIVA' ? 'violeta' : 'lavanda'}>{derived.label}</Badge>
+            <Badge tone={badgeTone}>{derived.label}</Badge>
           </div>
-          <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-            <span>suscripcionId: <b className="font-mono">{suscripcionId}</b></span>
-            {' · '}
-            <span>estado: <b>{estado}</b></span>
-            {' · '}
-            <span>fechaInicio: <b className="font-mono">{fechaInicio}</b></span>
-            {' · '}
-            <span>fechaFin: <b className="font-mono">{fechaFinRaw}</b></span>
-            {' · '}
-            <span>autoRenovacion: <b>{renewalActive ? 'true' : 'false'}</b></span>
-          </p>
-          <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-            {renewalActive
-              ? `Próximo cobro: ${fechaTexto} · ${valorTexto}`
-              : `Tu plan sigue activo hasta ${fechaTexto}`}
-          </p>
+
+          {derived.status === 'PENDIENTE' ? (
+            <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+              Plan Radar+ · suscripción pendiente de confirmación.
+            </p>
+          ) : (
+            <>
+              {fechaInicioTexto && (
+                <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                  Plan Radar+ · activo desde el {fechaInicioTexto}
+                </p>
+              )}
+
+              {derived.status === 'CANCELADA' || derived.status === 'VENCIDA' ? (
+                fechaFinTexto && (
+                  <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                    Finalizó el {fechaFinTexto}
+                  </p>
+                )
+              ) : derived.status === 'ACTIVA' && renewalActive ? (
+                fechaFinTexto && (
+                  <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                    Vigente hasta el {fechaFinTexto} · Se renovará el {fechaFinTexto} ({valorTexto})
+                  </p>
+                )
+              ) : derived.status === 'ACTIVA' && !renewalActive ? (
+                <>
+                  {fechaFinTexto && (
+                    <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                      Vigente hasta el {fechaFinTexto}
+                    </p>
+                  )}
+                  <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                    {fechaFinTexto
+                      ? `Tu plan sigue activo hasta el ${fechaFinTexto}. No se renovará al finalizar el periodo.`
+                      : 'Tu plan sigue activo. No se renovará al finalizar el periodo.'}
+                  </p>
+                </>
+              ) : (
+                fechaFinTexto && (
+                  <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
+                    Vigente hasta el {fechaFinTexto}
+                  </p>
+                )
+              )}
+            </>
+          )}
+
           <p className="text-xs font-semibold text-arena">
             Usos disponibles del probador con foto propia: {disponibles} de {PLAN_LIMITS.probadorFoto} ({uses} usados)
           </p>
@@ -109,7 +160,7 @@ export function BuyerRenewalStatusCard() {
           tipo="comprador"
           status={estado}
           renewalEnabled={renewalActive}
-          fechaFin={fechaTexto}
+          fechaFin={fechaFinTexto ?? undefined}
         />
       </div>
     </div>

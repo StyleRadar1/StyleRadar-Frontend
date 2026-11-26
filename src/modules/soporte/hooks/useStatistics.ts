@@ -4,7 +4,6 @@ import { statisticsService } from '../services/statisticsService'
 import type {
   BuyerPlanCategoryCode,
   DistributionResponse,
-  InventoryCategoryCode,
   MetricTotalResponse,
   StorePlanCategoryCode,
   TimeSeriesResponse,
@@ -93,16 +92,6 @@ function useMetricQuery<T>(
 }
 
 const isTotalEmpty = (res: MetricTotalResponse) => res.total === 0
-
-const fetchStoreInventory = () => statisticsService.getStoreInventoryByState()
-const isInventoryEmpty = (res: DistributionResponse<InventoryCategoryCode>) =>
-  res.entries.reduce((sum, entry) => sum + entry.count, 0) === 0
-
-export function useStoreInventoryByState(): StatisticState<
-  DistributionResponse<InventoryCategoryCode>
-> {
-  return useMetricQuery(fetchStoreInventory, isInventoryEmpty)
-}
 
 const fetchFoundationGarments = () => statisticsService.getFoundationGarmentsReceived()
 

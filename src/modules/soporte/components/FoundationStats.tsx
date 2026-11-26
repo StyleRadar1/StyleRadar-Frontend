@@ -35,7 +35,6 @@ export function FoundationStatsView() {
         label="Prendas recibidas históricamente"
         value={(data?.total ?? 0).toLocaleString('es-CO')}
         subtitle="Total acumulado de prendas confirmadas"
-        note="Dato calculado desde entregas confirmadas registradas en ms-estadisticas."
         loading={loading}
         empty={empty}
         emptyText="Aún no registras prendas recibidas confirmadas"

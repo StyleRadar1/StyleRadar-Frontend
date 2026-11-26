@@ -139,14 +139,6 @@ const ITEMS: StoreItem[] = [
 
 const HERO_PHOTO = '/img/sesion/rol-tienda.jpg'
 
-const WEEK_VISITS = [
-  { label: '4 nov', visits: 38 }, { label: '5 nov', visits: 45 }, { label: '6 nov', visits: 62 },
-  { label: '7 nov', visits: 75 }, { label: '8 nov', visits: 59 }, { label: '9 nov', visits: 64 },
-  { label: '10 nov', visits: 51 },
-]
-const WEEKLY_VISITS = 445
-const WEEKLY_GOAL = 500
-
 export default function MiTiendaPage() {
   const user = useContext(AuthContext)?.user ?? null
   const [searchParams] = useSearchParams()
@@ -277,8 +269,6 @@ export default function MiTiendaPage() {
   /* Resumen del panel */
   const activeCount = items.filter((item) => item.status === 'Publicadas' && item.stock > 0).length
   const lowStockCount = items.filter((item) => item.status !== 'Retiradas' && item.stock > 0 && item.stock <= lastUnitsLimit).length
-  const visitorsToday = env.useMocks ? WEEK_VISITS[WEEK_VISITS.length - 1].visits : '—'
-  const weeklyProgress = env.useMocks ? Math.min(100, Math.round((WEEKLY_VISITS / WEEKLY_GOAL) * 100)) : 0
 
   /* Guardar / descartar información de tienda */
   const saveLegalInfo = (event: FormEvent<HTMLFormElement>) => {
@@ -525,7 +515,6 @@ export default function MiTiendaPage() {
             {verificationStatus !== 'VERIFICADA' && (
               <button className="msd-btn msd-btn--ghost" type="button" onClick={requestVerification}>Solicitar verificación</button>
             )}
-            <Link className="msd-btn msd-btn--ghost" to="/tienda/estadisticas">Ver estadísticas</Link>
           </div>
 
           <ul className="msd-kpis" aria-label="Resumen de la tienda">
@@ -536,18 +525,6 @@ export default function MiTiendaPage() {
             <li className="msd-kpi">
               <span className="msd-kpi__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Zm0 6v5m0 3v.5" /></svg></span>
               <div><b>{lowStockCount}</b><span>Stock bajo</span></div>
-            </li>
-            <li className="msd-kpi">
-              <span className="msd-kpi__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg></span>
-              <div><b>{visitorsToday}</b><span>Visitantes hoy</span></div>
-            </li>
-            <li className="msd-kpi msd-kpi--goal">
-              <span className="msd-kpi__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8m0 0h-5m5 0v5" /></svg></span>
-              <div className="msd-kpi__goal">
-                <span>Meta semanal</span>
-                <b>{weeklyProgress}%</b>
-                <span className="msd-progress" role="progressbar" aria-label="Meta semanal de visitas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={weeklyProgress}><i style={{ width: `${weeklyProgress}%` }} /></span>
-              </div>
             </li>
           </ul>
         </div>
