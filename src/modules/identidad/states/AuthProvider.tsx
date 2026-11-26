@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { tokenStorage } from '@/modules/core/api/tokenStorage'
 import { resetLandingSeen } from '@/modules/landing/landingSeen'
-import { salidaVoluntariaReciente } from './salida'
 import { aRol } from '@/modules/core/types/roles'
 import { env } from '@/configs/env'
 import { aResultado, aSesion, authService } from '../services/authService'
@@ -34,9 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authService.logout(tokenStorage.get()).catch(() => {})
     tokenStorage.clear()
     try { localStorage.removeItem(USER_KEY) } catch { /* sin almacenamiento */ }
-    // Un cierre de sesión voluntario debe volver a mostrar el landing,
-    // aunque ya se hubiera visto antes en este navegador.
-    if (salidaVoluntariaReciente()) resetLandingSeen()
+    // Cualquier cierre de sesión (voluntario o expirado) debe volver a mostrar
+    // el landing, aunque ya se hubiera visto antes en este navegador.
+    resetLandingSeen()
     setUser(null)
   }, [])
 

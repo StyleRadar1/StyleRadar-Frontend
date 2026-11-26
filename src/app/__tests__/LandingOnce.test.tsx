@@ -31,6 +31,21 @@ function LogoutHarness() {
   )
 }
 
+function ExpireHarness() {
+  const navigate = useNavigate()
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        window.dispatchEvent(new Event('sr:sesion-expirada'))
+        navigate('/?login', { replace: true })
+      }}
+    >
+      Expirar sesión
+    </button>
+  )
+}
+
 function PortadaPrueba() {
   const [params] = useSearchParams()
   const [seenOnEntry] = useState(() => hasSeenLanding())
@@ -91,6 +106,30 @@ describe('Landing una sola vez, /login y enlace StyleRadar', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+    expect(screen.getByTestId('landing')).toHaveTextContent('LandingPage')
+    expect(localStorage.getItem(LANDING_SEEN_KEY)).toBe('true')
+  })
+
+  it('vuelve al landing cuando la sesión expira aunque ya se hubiera visto', () => {
+    localStorage.setItem(LANDING_SEEN_KEY, 'true')
+    localStorage.setItem('sr_token', 'jwt-test')
+    localStorage.setItem(
+      'sr_user',
+      JSON.stringify({ id: 'u-1', name: 'Valentina Rojas', email: 'usuario@styleradar.co', role: 'BUYER' }),
+    )
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/catalogo']}>
+          <Routes>
+            <Route path="/" element={<PortadaPrueba />} />
+            <Route path="/catalogo" element={<ExpireHarness />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expirar sesión' }))
     expect(screen.getByTestId('landing')).toHaveTextContent('LandingPage')
     expect(localStorage.getItem(LANDING_SEEN_KEY)).toBe('true')
   })
