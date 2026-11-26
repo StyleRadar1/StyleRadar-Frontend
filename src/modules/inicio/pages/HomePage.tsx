@@ -6,8 +6,11 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { playlistService, resolvePlaylistCreatorName } from '@/modules/catalogo/services/playlistService'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import { alertService } from '@/modules/soporte/services/alertService'
-import { getUserMeasurements, loadLookFromStorage } from '@/modules/experiencia/utils/lookEngine'
-import { SLOT_LABELS, type WornItem } from '@/modules/experiencia/types/look.dto'
+import { chatService } from '@/modules/soporte/services/chatService'
+import type { ConversacionDto } from '@/modules/soporte/types/chat.dto'
+import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
+import { PLAN_LABEL } from '@/modules/transacciones/types/plan.dto'
+import { getUserMeasurements } from '@/modules/experiencia/utils/lookEngine'
 import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
 import { RecomendadosTrail } from '../components/RecomendadosTrail'
@@ -36,15 +39,25 @@ export default function HomePage() {
   const [busyLikeId, setBusyLikeId] = useState<string | null>(null)
   const [busySaveId, setBusySaveId] = useState<string | null>(null)
   const [alertStats, setAlertStats] = useState<{ alertas: number; busquedas: number } | null>(null)
+  const [chats, setChats] = useState<ConversacionDto[]>([])
+  const { plan: planActual, details: planDetails } = useUserPlan(Boolean(user))
+
+  const planResuelto = planActual ?? 'RADAR'
+  const planNombre = PLAN_LABEL[planResuelto]
+  const fechaLimiteStr = planDetails?.periodEndsAt || planDetails?.fechaFin || planDetails?.proximoCobro
+  const tiempoRestante = useMemo(() => {
+    if (planResuelto !== 'RADAR_PLUS') return 'Plan gratuito · Sin vencimiento'
+    if (!fechaLimiteStr) return 'Suscripción activa'
+    const endMs = new Date(fechaLimiteStr).getTime()
+    if (!Number.isFinite(endMs)) return 'Suscripción activa'
+    const diffDias = Math.max(0, Math.ceil((endMs - Date.now()) / 86_400_000))
+    const fechaTxt = new Date(endMs).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
+    if (diffDias === 0) return `Último día de tu periodo (${fechaTxt})`
+    return `Te quedan ${diffDias} día${diffDias === 1 ? '' : 's'} (hasta el ${fechaTxt})`
+  }, [planResuelto, fechaLimiteStr])
 
   const nombreUsuario = user?.name?.trim() || 'de nuevo'
   const medidas = getUserMeasurements()
-  const lookGuardado = loadLookFromStorage()
-  const prendasLook = useMemo(
-    () => Object.values(lookGuardado).filter((x): x is WornItem => Boolean(x)),
-    [lookGuardado],
-  )
-  const prendasEnLook = prendasLook.length
 
   useEffect(() => {
     let activo = true
@@ -74,6 +87,13 @@ export default function HomePage() {
               busquedas: res.busquedas.length,
             })
           }
+        })
+        .catch(() => {})
+
+      chatService
+        .conversations()
+        .then((list) => {
+          if (activo) setChats(list.slice(0, 3))
         })
         .catch(() => {})
     }
@@ -377,41 +397,54 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Columna derecha: Look en vivo + Tallas/Alertas + Accesos */}
+          {/* Columna derecha: Últimos chats + Tallas/Alertas + Plan */}
           <div className="sr-personal-col">
             <div className="sr-personal-card">
               <div className="sr-personal-card__head">
                 <div>
-                  <span className="sr-bento-mini__tag">Probador</span>
-                  <h2 className="sr-personal-card__title">Tu look actual</h2>
+                  <span className="sr-bento-mini__tag">Tus mensajes</span>
+                  <h2 className="sr-personal-card__title">Mis últimos chats</h2>
                 </div>
-                <span className="sr-personal-badge">
-                  {prendasEnLook > 0 ? `${prendasEnLook} puesta${prendasEnLook === 1 ? '' : 's'}` : 'Disponible'}
-                </span>
+                <Link to="/mensajes" className="sr-inicio-enlace">Ir a mensajes →</Link>
               </div>
 
-              {prendasEnLook > 0 ? (
-                <div className="sr-look-preview-list">
-                  {prendasLook.slice(0, 3).map((w) => (
-                    <Link key={w.slot} to={`/catalogo/${w.item.id}`} className="sr-look-preview-item">
-                      <img src={w.item.imagen || '/img/productos/blazer-oversize.jpg'} alt={w.item.nombre} />
-                      <div className="sr-look-preview-meta">
-                        <span>{SLOT_LABELS[w.slot]} · Talla {w.talla}</span>
-                        <strong>{w.item.nombre}</strong>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+              {chats.length > 0 ? (
+                <ul className="sr-personal-chats">
+                  {chats.map((c) => {
+                    const iniciales = c.contacto.nombre
+                      .trim()
+                      .split(/\s+/)
+                      .map((w) => w.charAt(0).toUpperCase())
+                      .join('')
+                      .slice(0, 2) || 'SR'
+                    return (
+                      <li key={c.id}>
+                        <Link to={`/mensajes?c=${encodeURIComponent(c.id)}`} className="sr-personal-chat-item">
+                          <span className="sr-personal-chat-avatar" aria-hidden="true">{iniciales}</span>
+                          <div className="sr-personal-chat-meta">
+                            <strong>{c.contacto.nombre}</strong>
+                            <span>{c.ultimoMensaje || c.asunto}</span>
+                          </div>
+                          {c.noLeidos > 0 ? (
+                            <span className="sr-personal-chat-unread" aria-label={`${c.noLeidos} sin leer`}>
+                              {c.noLeidos}
+                            </span>
+                          ) : (
+                            <span aria-hidden="true" className="sr-personal-playlist-go">↗</span>
+                          )}
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
               ) : (
-                <p className="sr-personal-card__desc">
-                  Arma un outfit en el maniquí o pruébate prendas con tu foto usando IA.
-                </p>
+                <div className="sr-personal-empty">
+                  <p>Aún no tienes conversaciones recientes.</p>
+                  <Link to="/mensajes" className="sr-pl-action-pill">
+                    Abrir mensajes →
+                  </Link>
+                </div>
               )}
-
-              <Link to="/probador" className="sr-bento-cta sr-bento-cta--primary">
-                <span>{prendasEnLook > 0 ? 'Seguir probando' : 'Abrir probador'}</span>
-                <span aria-hidden="true">→</span>
-              </Link>
             </div>
 
             <div className="sr-personal-duo-mini">
@@ -431,17 +464,21 @@ export default function HomePage() {
 
             <div className="sr-personal-card sr-personal-card--quick">
               <div className="sr-personal-card__head">
-                <span className="sr-bento-mini__tag">Tus accesos</span>
-                <Link to="/playlists" className="sr-inicio-enlace">Todas las playlists →</Link>
+                <div>
+                  <span className="sr-bento-mini__tag">Tu suscripción</span>
+                  <h2 className="sr-personal-card__title">
+                    Mi plan actual: <span className="sr-inicio-acento">{planNombre}</span>
+                  </h2>
+                </div>
+                <span className={`sr-personal-badge ${planResuelto === 'RADAR_PLUS' ? 'sr-plan-badge--plus' : ''}`}>
+                  {planNombre}
+                </span>
               </div>
-              <div className="sr-personal-quick-grid sr-personal-quick-grid--3">
-                <Link to="/perfil/pagos" className="sr-personal-quick-btn">Mis pagos ↗</Link>
-                <Link to="/mensajes" className="sr-personal-quick-btn">Mensajes ↗</Link>
-                <Link to="/segunda-mano/publicar" className="sr-personal-quick-btn">Vender ↗</Link>
-                <Link to="/donar" className="sr-personal-quick-btn">Donar ↗</Link>
-                <Link to="/segunda-mano" className="sr-personal-quick-btn">Circular ↗</Link>
-                <Link to="/planes" className="sr-personal-quick-btn">Planes ↗</Link>
-              </div>
+              <p className="sr-personal-card__desc">{tiempoRestante}</p>
+              <Link to="/planes" className="sr-bento-cta sr-bento-cta--primary">
+                <span>{planResuelto === 'RADAR_PLUS' ? 'Administrar o renovar plan' : 'Actualizar plan'}</span>
+                <span aria-hidden="true">→</span>
+              </Link>
             </div>
           </div>
         </div>
@@ -455,21 +492,6 @@ export default function HomePage() {
 
       {/* 3. Elegido para tu talla (rastro interactivo de recomendaciones) */}
       {user && <RecomendadosTrail key={`trail-${user.id}`} userId={String(user.id)} />}
-
-      {/* 4. Marco legal y soporte */}
-      <section className="sr-inicio-bloque sr-inicio-legal" aria-label="Marco legal y soporte">
-        <div className="sr-inicio-legal__info">
-          <p className="sr-inicio-kicker">Transparencia y respaldo</p>
-          <h2 className="sr-inicio-legal__title">Marco legal y derechos del usuario</h2>
-        </div>
-        <nav className="sr-inicio-legal__links" aria-label="Documentos legales">
-          <Link to="/legal" className="sr-inicio-legal__pill">Marco legal</Link>
-          <Link to="/legal/terminos" className="sr-inicio-legal__pill">Términos y condiciones</Link>
-          <Link to="/legal/datos-personales" className="sr-inicio-legal__pill">Habeas Data</Link>
-          <Link to="/legal/pqrs" className="sr-inicio-legal__pill">PQRS</Link>
-          <Link to="/legal/centro-ayuda" className="sr-inicio-legal__pill">Centro de ayuda</Link>
-        </nav>
-      </section>
     </div>
   )
 }

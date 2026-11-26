@@ -416,7 +416,7 @@ body {
   min-height: 100vh;
   background-color: var(--sr-bg);
   color: var(--sr-text-primary);
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Halos de luz ambiental de fondo para efecto frosted glass */
