@@ -4,6 +4,7 @@ import './VideoReels.css'
 
 interface VideoReelsProps {
   onOpenTryOn?: () => void
+  isAuthenticated?: boolean
 }
 
 function formatTime(s: number): string {
@@ -13,7 +14,7 @@ function formatTime(s: number): string {
   return `${mins}:${secs}`
 }
 
-export function VideoReels({ onOpenTryOn }: VideoReelsProps = {}) {
+export function VideoReels({ onOpenTryOn, isAuthenticated = false }: VideoReelsProps = {}) {
   const [cur, setCur] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -481,7 +482,7 @@ export function VideoReels({ onOpenTryOn }: VideoReelsProps = {}) {
 
             {onOpenTryOn && (
               <button type="button" className="vc-tryon-btn" onClick={onOpenTryOn}>
-                Pruébate una prenda
+                {isAuthenticated ? 'Pruébate una prenda' : 'Inicia sesión para usar el probador virtual'}
                 <span aria-hidden="true">↗</span>
               </button>
             )}
