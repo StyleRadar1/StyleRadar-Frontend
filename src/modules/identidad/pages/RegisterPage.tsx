@@ -25,7 +25,8 @@ export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const tipoParam = params.get('tipo')?.toLowerCase()
+  // Los enlaces del landing usan ?rol= y los de planes ?tipo=: se aceptan ambos para tienda y fundación.
+  const tipoParam = (params.get('tipo') ?? params.get('rol'))?.toLowerCase()
   const registerRole: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE' =
     tipoParam === 'tienda'
       ? 'STORE_ADMIN'
@@ -128,7 +129,8 @@ export default function RegisterPage() {
       })
       // Correo sin verificar (SR-RF-01): el código OTP se ingresa en el modal de inicio de sesión.
       if (r.kind === 'otp') { navigate('/?login', { replace: true }); return }
-      const target = r.user.role === 'STORE_ADMIN' ? '/tienda/suscripcion/activar' : ROLE_HOME[r.user.role]
+      // Una tienda recién creada aún no tiene almacén en ms-tiendas: primero lo registra (NIT y RUT) y luego paga.
+      const target = r.user.role === 'STORE_ADMIN' ? '/tienda/registro' : ROLE_HOME[r.user.role]
       navigate(target, { replace: true })
     } catch (err) {
       const kind = errorKind(err)

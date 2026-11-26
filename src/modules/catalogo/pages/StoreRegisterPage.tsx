@@ -65,8 +65,10 @@ export default function StoreRegisterPage() {
           <p className="store-info__notice mt-6" role="status">
             {estado === 'PENDING' ? TEXTOS_REGISTRO.enviado : 'Tu cuenta ya tiene un almacén registrado.'}
           </p>
-          <div className="mt-6 flex gap-3">
-            <Link className="store-info__button store-info__button--primary inline-flex items-center justify-center" to="/mi-tienda">Ir a mi tienda</Link>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {/* Siguiente paso del alta de la tienda: activar la suscripción con Mercado Pago. */}
+            <Link className="store-info__button store-info__button--primary inline-flex items-center justify-center" to="/tienda/suscripcion/activar">Activar suscripción</Link>
+            <Link className="store-info__button inline-flex items-center justify-center" to="/mi-tienda">Ir a mi tienda</Link>
           </div>
         </div>
       </main>
