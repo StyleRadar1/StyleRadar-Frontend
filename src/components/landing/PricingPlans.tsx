@@ -6,7 +6,8 @@ import { RADAR_PLUS_PRICE, STORE_SUBSCRIPTION_PRICE } from '@/modules/transaccio
 import { PLAN_COMPARISON_ROWS } from '@/modules/transacciones/types/plan.dto'
 
 interface PricingPlansProps {
-  onOpenRegister?: () => void
+  /** Abre «Crear cuenta» con el tipo de cuenta del plan (?tipo=tienda → STORE_ADMIN). */
+  onOpenRegister?: (rol?: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE') => void
 }
 
 export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
@@ -146,10 +147,10 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
 
                 {/* Botón de acción */}
                 <div className="pt-8">
-                  {onOpenRegister && plan.to === '/registro' ? (
+                  {onOpenRegister && (plan.to === '/registro' || plan.to === '/registro?tipo=tienda') ? (
                     <button
                       type="button"
-                      onClick={onOpenRegister}
+                      onClick={() => onOpenRegister(plan.to === '/registro?tipo=tienda' ? 'STORE_ADMIN' : 'BUYER')}
                       className={`w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-wider transition-all text-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                         isFeatured
                           ? 'bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-[#ffffff] shadow-[0_4px_20px_rgba(139,92,246,0.5)] border border-white/20'
