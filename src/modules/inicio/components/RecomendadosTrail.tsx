@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -11,6 +11,7 @@ const ALTO = 200
 const DISTANCIA = 60
 const VISIBLE_MS = 500
 const MAX_IMAGENES = 14
+const MARGEN_TEXTO = 24
 
 interface Huella {
   id: number
@@ -39,6 +40,8 @@ export function RecomendadosTrail({ userId }: { userId: string }) {
   const reducir = useReducedMotion()
 
   const zonaRef = useRef<HTMLDivElement>(null)
+  const textoRef = useRef<HTMLDivElement>(null)
+  const cursor = useRef<{ x: number; y: number } | null>(null)
   const ultimoPunto = useRef<{ x: number; y: number } | null>(null)
   const siguiente = useRef(0)
   const contador = useRef(0)
@@ -95,11 +98,28 @@ export function RecomendadosTrail({ userId }: { userId: string }) {
     }
   }, [retirar])
 
-  const handleMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+  const sobreTexto = (clientX: number, clientY: number) => {
+    const r = textoRef.current?.getBoundingClientRect()
+    if (!r) return false
+    return (
+      clientX >= r.left - MARGEN_TEXTO &&
+      clientX <= r.right + MARGEN_TEXTO &&
+      clientY >= r.top - MARGEN_TEXTO &&
+      clientY <= r.bottom + MARGEN_TEXTO
+    )
+  }
+
+  const dejarHuella = (clientX: number, clientY: number) => {
     if (abierta || prendas.length === 0 || !zonaRef.current) return
     const rect = zonaRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return
+    if (sobreTexto(clientX, clientY)) {
+      ultimoPunto.current = null
+      soltarUltima()
+      return
+    }
+    const x = clientX - rect.left
+    const y = clientY - rect.top
     const previo = ultimoPunto.current
     if (previo && Math.hypot(x - previo.x, y - previo.y) < DISTANCIA) return
     ultimoPunto.current = { x, y }
@@ -116,6 +136,26 @@ export function RecomendadosTrail({ userId }: { userId: string }) {
       return nuevas.length > MAX_IMAGENES ? nuevas.slice(nuevas.length - MAX_IMAGENES) : nuevas
     })
   }
+
+  const dejarHuellaRef = useRef(dejarHuella)
+  useEffect(() => {
+    dejarHuellaRef.current = dejarHuella
+  })
+
+  useEffect(() => {
+    const alMover = (e: PointerEvent) => {
+      cursor.current = { x: e.clientX, y: e.clientY }
+    }
+    const alDesplazar = () => {
+      if (cursor.current) dejarHuellaRef.current(cursor.current.x, cursor.current.y)
+    }
+    window.addEventListener('pointermove', alMover, { passive: true })
+    window.addEventListener('scroll', alDesplazar, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', alMover)
+      window.removeEventListener('scroll', alDesplazar)
+    }
+  }, [])
 
   const handleLeave = () => {
     if (abierta) return
@@ -141,7 +181,7 @@ export function RecomendadosTrail({ userId }: { userId: string }) {
   const infoALaIzquierda = abierta ? abierta.x + ANCHO / 2 + 300 > anchoZona : false
 
   const encabezado = (
-    <div className="sr-trail-texto">
+    <div ref={textoRef} className="sr-trail-texto">
       <p className="sr-inicio-kicker">Selección destacada</p>
       <h2 id="trail-titulo" className="sr-inicio-featured__title">ELEGIDO PARA TU TALLA</h2>
       <Link to="/catalogo" className="sr-inicio-enlace sr-trail-enlace">
@@ -179,9 +219,9 @@ export function RecomendadosTrail({ userId }: { userId: string }) {
       <div
         ref={zonaRef}
         className="sr-trail-zona"
-        onPointerMove={handleMove}
+        onPointerMove={(e) => dejarHuella(e.clientX, e.clientY)}
         onPointerDown={(e) => {
-          if (e.pointerType !== 'mouse') handleMove(e)
+          if (e.pointerType !== 'mouse') dejarHuella(e.clientX, e.clientY)
         }}
         onPointerLeave={handleLeave}
       >

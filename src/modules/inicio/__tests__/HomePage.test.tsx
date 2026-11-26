@@ -95,10 +95,8 @@ describe('HomePage - inicio del comprador', () => {
 
     renderInicio()
 
-    const rack = await screen.findByRole('region', { name: /prendas recomendadas para ti/i })
-    expect(within(rack).getAllByText('Blazer lino arena').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText(/Por qué: Tu estilo Formal y tu talla M/i)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ver prenda' })).toHaveAttribute('href', '/catalogo/rec-1')
+    expect(await screen.findByText(TEXTOS_FEED.conPerfil)).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: /prendas recomendadas para ti/i })).not.toBeInTheDocument()
     expect(recSpy).toHaveBeenCalledWith('u-1', expect.objectContaining({ page: 0 }))
 
     expect(screen.getByRole('heading', { name: /Pruébatelo antes de salir/i })).toBeInTheDocument()
@@ -175,9 +173,18 @@ describe('HomePage - inicio del comprador', () => {
     const seccion = await screen.findByRole('region', { name: 'ELEGIDO PARA TU TALLA' })
     const zona = seccion.querySelector('.sr-trail-zona') as HTMLElement
     await within(zona).findByText(TEXTOS_FEED.conPerfil)
+    const caja = (left: number, top: number, width: number, height: number) =>
+      ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) }) as DOMRect
+    vi.spyOn(zona, 'getBoundingClientRect').mockReturnValue(caja(0, 0, 1000, 800))
+    const texto = zona.querySelector('.sr-trail-texto') as HTMLElement
+    vi.spyOn(texto, 'getBoundingClientRect').mockReturnValue(caja(350, 300, 300, 200))
+
+    fireEvent.pointerMove(zona, { clientX: 500, clientY: 400 })
+    expect(within(zona).queryByRole('button', { name: /Ver información de/ })).not.toBeInTheDocument()
+    expect(within(zona).getByRole('link', { name: 'Ver todo el catálogo →' })).toHaveAttribute('href', '/catalogo')
 
     fireEvent.pointerMove(zona, { clientX: 100, clientY: 100 })
-    fireEvent.pointerMove(zona, { clientX: 300, clientY: 120 })
+    fireEvent.pointerMove(zona, { clientX: 100, clientY: 600 })
 
     const prendas = within(zona).getAllByRole('button', { name: 'Ver información de Blazer lino arena' })
     expect(prendas.length).toBeGreaterThanOrEqual(1)
