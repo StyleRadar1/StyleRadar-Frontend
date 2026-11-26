@@ -49,7 +49,11 @@ function measureAverageBrightness(source: CanvasImageSource): number | null {
 }
 
 async function checkImageBrightness(url: string): Promise<number | null> {
-  if (typeof Image === 'undefined' || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') || import.meta.env?.MODE === 'test') {
+  const isTest =
+    typeof Image === 'undefined' ||
+    import.meta.env?.MODE === 'test' ||
+    Boolean((globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV === 'test')
+  if (isTest) {
     return null
   }
   return new Promise((resolve) => {
