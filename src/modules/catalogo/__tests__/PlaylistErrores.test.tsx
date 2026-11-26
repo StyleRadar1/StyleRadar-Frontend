@@ -265,22 +265,94 @@ describe('Playlists · errores del plan (Cristian)', () => {
     }
   })
 
-  it('en modo API toggleLike y toggleSave llaman a /likes y /saves', async () => {
+  it('en modo API toggleLike y toggleSave hacen toggle contra /likes y /saves devolviendo liked y saved', async () => {
     const prevUseMocks = env.useMocks
     env.useMocks = false
-    const postSpy = vi.spyOn(apiClient, 'post').mockResolvedValue({
-      data: { likes: 7, esGuardada: true, guardados: 4 },
-    } as never)
+    const postSpy = vi
+      .spyOn(apiClient, 'post')
+      .mockResolvedValueOnce({ data: { id: 'pl-1', likes: 7, liked: true, guardados: 3, saved: false } } as never)
+      .mockResolvedValueOnce({ data: { id: 'pl-1', likes: 6, liked: false, guardados: 3, saved: false } } as never)
+      .mockResolvedValueOnce({ data: { id: 'pl-1', likes: 6, liked: false, guardados: 4, saved: true } } as never)
+      .mockResolvedValueOnce({ data: { id: 'pl-1', likes: 6, liked: false, guardados: 3, saved: false } } as never)
     try {
-      const liked = await playlistService.toggleLike('pl-1')
-      expect(liked).toEqual({ likes: 7 })
-      expect(postSpy).toHaveBeenCalledWith('/api/v1/playlists/pl-1/likes')
+      const likedOn = await playlistService.toggleLike('pl-1')
+      expect(likedOn).toEqual({ likes: 7, liked: true })
+      const likedOff = await playlistService.toggleLike('pl-1')
+      expect(likedOff).toEqual({ likes: 6, liked: false })
+      expect(postSpy).toHaveBeenNthCalledWith(1, '/api/v1/playlists/pl-1/likes')
+      expect(postSpy).toHaveBeenNthCalledWith(2, '/api/v1/playlists/pl-1/likes')
 
-      const saved = await playlistService.toggleSave('pl-1')
-      expect(saved).toEqual({ esGuardada: true, guardados: 4 })
-      expect(postSpy).toHaveBeenCalledWith('/api/v1/playlists/pl-1/saves')
+      const savedOn = await playlistService.toggleSave('pl-1')
+      expect(savedOn).toEqual({ saved: true, esGuardada: true, guardados: 4 })
+      const savedOff = await playlistService.toggleSave('pl-1')
+      expect(savedOff).toEqual({ saved: false, esGuardada: false, guardados: 3 })
+      expect(postSpy).toHaveBeenNthCalledWith(3, '/api/v1/playlists/pl-1/saves')
+      expect(postSpy).toHaveBeenNthCalledWith(4, '/api/v1/playlists/pl-1/saves')
     } finally {
       env.useMocks = prevUseMocks
+    }
+  })
+
+  it('en modo API mapea liked/saved desde GET y resuelve nombre de sesión o Usuario #<id>', async () => {
+    const prevUseMocks = env.useMocks
+    const prevUser = localStorage.getItem('sr_user')
+    env.useMocks = false
+    tokenStorage.set('jwt-qa-test')
+    localStorage.setItem('sr_user', JSON.stringify({ id: '42', name: 'Carlos Sánchez', email: 'carlos@styleradar.co', role: 'BUYER' }))
+
+    const plAjena = {
+      id: 'pl-ext-15',
+      nombre: 'Look Ajeno QA',
+      descripcion: 'Playlist de otro usuario',
+      visibilidad: 'PUBLICA',
+      estilo: 'URBANO',
+      usuarioId: 15,
+      prendas: [],
+      likes: 3,
+      guardados: 2,
+      liked: true,
+      saved: true,
+      fechaCreacion: '2026-11-25',
+    }
+    const plPropia = {
+      id: 'pl-own-42',
+      nombre: 'Mi Colección QA',
+      descripcion: 'Playlist propia sin creadorNombre',
+      visibilidad: 'PUBLICA',
+      estilo: 'CASUAL',
+      usuarioId: 42,
+      prendas: [],
+      likes: 1,
+      guardados: 0,
+      liked: false,
+      saved: false,
+      fechaCreacion: '2026-11-25',
+    }
+
+    vi.spyOn(apiClient, 'get').mockImplementation((url) => {
+      if (url === '/api/v1/playlists') return Promise.resolve({ data: [plAjena, plPropia] } as never)
+      if (url === '/api/v1/playlists/users/42') return Promise.resolve({ data: [plPropia] } as never)
+      if (url === '/api/v1/playlists/users/42/saved') return Promise.resolve({ data: [plAjena] } as never)
+      if (url === '/api/v1/playlists/featured') return Promise.resolve({ data: [] } as never)
+      return Promise.reject(new Error(`Unexpected URL ${url}`))
+    })
+
+    try {
+      const { unmount } = renderAt('/playlists/pl-ext-15', routes)
+      expect(await screen.findByRole('heading', { level: 1, name: /Look Ajeno QA/i })).toBeInTheDocument()
+      expect(screen.getByText('Usuario #15')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Quitar me gusta/i })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: /Guardada/i })).toHaveAttribute('aria-pressed', 'true')
+      unmount()
+
+      renderAt('/playlists/pl-own-42', routes)
+      expect(await screen.findByRole('heading', { level: 1, name: /Mi Colección QA/i })).toBeInTheDocument()
+      expect(screen.getByText('Carlos Sánchez')).toBeInTheDocument()
+    } finally {
+      env.useMocks = prevUseMocks
+      tokenStorage.clear()
+      if (prevUser === null) localStorage.removeItem('sr_user')
+      else localStorage.setItem('sr_user', prevUser)
     }
   })
 })

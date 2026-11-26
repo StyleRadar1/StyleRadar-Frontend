@@ -10,7 +10,7 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { mockSessionUser } from '@/modules/core/api/mock'
 import { usePlaylists } from '../hooks/usePlaylists'
-import { PLAYLIST_COVER_FALLBACKS } from '../services/playlistService'
+import { PLAYLIST_COVER_FALLBACKS, getCreatorInitials, resolvePlaylistCreatorName } from '../services/playlistService'
 import { itemService } from '../services/itemService'
 import { ITEMS } from '../mocks/items'
 import type { ItemResponseDto } from '../types/item.dto'
@@ -110,6 +110,8 @@ export default function PlaylistsPage() {
   const [userSaved, setUserSaved] = useState<Record<string, boolean>>((): Record<string, boolean> =>
     env.useMocks ? { '3': true, 'pl-2': true } : {}
   )
+  const [pendingLikeId, setPendingLikeId] = useState<string | null>(null)
+  const [pendingSaveId, setPendingSaveId] = useState<string | null>(null)
   const [favoriteGarments, setFavoriteGarments] = useState<Record<string, boolean>>(readFavoriteGarments)
   const [shuffledOrder, setShuffledOrder] = useState<Record<string, string[]>>({})
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -223,7 +225,10 @@ export default function PlaylistsPage() {
       byId.set(p.id, p)
     }
     for (const p of allUniquePlaylists) {
-      if (userSaved[p.id] === true && !byId.has(p.id)) {
+      const markedSaved =
+        userSaved[p.id] === true ||
+        (userSaved[p.id] === undefined && Boolean(p.saved ?? p.esGuardada))
+      if (markedSaved && !byId.has(p.id)) {
         byId.set(p.id, p)
       }
     }
@@ -482,35 +487,55 @@ export default function PlaylistsPage() {
     }
   }
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!selectedPlaylist) return
-    const cur = userLikes[selectedPlaylist.id]
-    setUserLikes((prev) => ({ ...prev, [selectedPlaylist.id]: !cur }))
-    if (!cur) {
-      selectedPlaylist.likes += 1
-      like(selectedPlaylist.id)
-      showToast('Te gusta esta playlist.')
-    } else {
-      selectedPlaylist.likes = Math.max(0, selectedPlaylist.likes - 1)
-      showToast('Ya no te gusta esta playlist.')
+    const pid = selectedPlaylist.id
+    if (pendingLikeId === pid) return
+    const curLiked = userLikes[pid] !== undefined ? userLikes[pid] : Boolean(selectedPlaylist.liked)
+    const nextLiked = !curLiked
+    setErrorAccion(null)
+    setPendingLikeId(pid)
+    setUserLikes((prev) => ({ ...prev, [pid]: nextLiked }))
+    try {
+      const res = await like(pid)
+      const finalLiked = typeof res.liked === 'boolean' ? res.liked : nextLiked
+      setUserLikes((prev) => ({ ...prev, [pid]: finalLiked }))
+      showToast(finalLiked ? 'Te gusta esta playlist.' : 'Ya no te gusta esta playlist.')
+    } catch (er: unknown) {
+      setUserLikes((prev) => ({ ...prev, [pid]: curLiked }))
+      setErrorAccion(errorDeCrear(er).general ?? 'No pudimos actualizar tu me gusta.')
+    } finally {
+      setPendingLikeId((prev) => (prev === pid ? null : prev))
     }
   }
 
   const handleGuardar = async () => {
     if (!selectedPlaylist) return
+    const pid = selectedPlaylist.id
+    if (pendingSaveId === pid) return
     const curSaved =
-      userSaved[selectedPlaylist.id] !== undefined
-        ? userSaved[selectedPlaylist.id]
-        : Boolean(selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === selectedPlaylist.id))
+      userSaved[pid] !== undefined
+        ? userSaved[pid]
+        : Boolean(selectedPlaylist.saved || selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === pid))
     const nextSaved = !curSaved
-    setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: nextSaved }))
+    setErrorAccion(null)
+    setPendingSaveId(pid)
+    setUserSaved((prev) => ({ ...prev, [pid]: nextSaved }))
     try {
-      const res = await save(selectedPlaylist.id)
-      setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: res.esGuardada }))
-      showToast(res.esGuardada ? 'Guardada en Mis playlists.' : 'Quitada de tu perfil.')
+      const res = await save(pid)
+      const finalSaved =
+        typeof res.saved === 'boolean'
+          ? res.saved
+          : typeof res.esGuardada === 'boolean'
+            ? res.esGuardada
+            : nextSaved
+      setUserSaved((prev) => ({ ...prev, [pid]: finalSaved }))
+      showToast(finalSaved ? 'Guardada en Mis playlists.' : 'Quitada de tu perfil.')
     } catch (er: unknown) {
-      setUserSaved((prev) => ({ ...prev, [selectedPlaylist.id]: !nextSaved }))
+      setUserSaved((prev) => ({ ...prev, [pid]: curSaved }))
       setErrorAccion(errorDeCrear(er).general ?? 'No pudimos actualizar tu playlist guardada.')
+    } finally {
+      setPendingSaveId((prev) => (prev === pid ? null : prev))
     }
   }
 
@@ -575,11 +600,16 @@ export default function PlaylistsPage() {
     const noDisponibles = prendas.filter((p) => p.noDisponible)
     const totalDisponible = disponibles.reduce((acc, p) => acc + p.precio, 0)
     const tiendasUnicas = Array.from(new Set(prendas.map((p) => p.tienda).filter(Boolean)))
-    const isLiked = userLikes[selectedPlaylist.id]
+    const isLiked =
+      userLikes[selectedPlaylist.id] !== undefined
+        ? userLikes[selectedPlaylist.id]
+        : Boolean(selectedPlaylist.liked)
     const isSaved =
       userSaved[selectedPlaylist.id] !== undefined
         ? userSaved[selectedPlaylist.id]
-        : Boolean(selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === selectedPlaylist.id))
+        : Boolean(selectedPlaylist.saved || selectedPlaylist.esGuardada || savedPlaylists.some((p) => p.id === selectedPlaylist.id))
+    const creatorDisplayName = resolvePlaylistCreatorName(selectedPlaylist, usuarioActual, esMia)
+    const creatorInitials = getCreatorInitials(creatorDisplayName)
 
     return (
       <section
@@ -622,6 +652,11 @@ export default function PlaylistsPage() {
           {mensajeExito && (
             <div role="status" className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 backdrop-blur-md">
               {mensajeExito}
+            </div>
+          )}
+          {errorAccion && !mostrarAgregarPrenda && !mostrarEditar && !mostrarEliminar && (
+            <div className="mb-6">
+              <Aviso tono="error" titulo={errorAccion} />
             </div>
           )}
 
@@ -674,14 +709,10 @@ export default function PlaylistsPage() {
                 {/* Creador / Curador */}
                 <div className="flex items-center gap-2.5 text-sm font-semibold text-white/80 mb-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violeta text-[11px] font-bold text-white shadow-sm">
-                    {selectedPlaylist.creador.nombre
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .slice(0, 2) || 'VR'}
+                    {creatorInitials}
                   </span>
                   <span>
-                    {selectedPlaylist.creador.nombre}
+                    {creatorDisplayName}
                     {esMia && <span className="text-white/40 font-normal"> · tú</span>}
                   </span>
                 </div>
@@ -774,9 +805,11 @@ export default function PlaylistsPage() {
                       <button
                         type="button"
                         onClick={handleLike}
-                        aria-label="Me gusta"
-                        title="Me gusta"
-                        className={`h-10 w-10 rounded-full border flex items-center justify-center text-sm transition active:scale-95 ${
+                        disabled={pendingLikeId === selectedPlaylist.id}
+                        aria-pressed={isLiked}
+                        aria-label={isLiked ? 'Quitar me gusta' : 'Me gusta'}
+                        title={isLiked ? 'Quitar me gusta' : 'Me gusta'}
+                        className={`h-10 w-10 rounded-full border flex items-center justify-center text-sm transition active:scale-95 disabled:opacity-60 ${
                           isLiked
                             ? 'bg-violeta border-violeta text-white'
                             : 'border-white/20 bg-white/5 hover:bg-white/10 text-white/70'
@@ -798,7 +831,9 @@ export default function PlaylistsPage() {
                       <button
                         type="button"
                         onClick={handleGuardar}
-                        className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold px-5 py-2.5 transition active:scale-95"
+                        disabled={pendingSaveId === selectedPlaylist.id}
+                        aria-pressed={isSaved}
+                        className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold px-5 py-2.5 transition active:scale-95 disabled:opacity-60"
                       >
                         {isSaved ? '✓ Guardada' : '+ Guardar en mi perfil'}
                       </button>
@@ -852,16 +887,13 @@ export default function PlaylistsPage() {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {prendas.map((p, idx) => {
-                      const autorRaw = p.agregadaPor || selectedPlaylist.creador.nombre
-                      const autorLabel = /^\d+$/.test(autorRaw.trim())
-                        ? (esMia ? usuarioActual.name : `Usuario #${autorRaw.trim()}`)
-                        : autorRaw
-                      const autorIniciales = autorLabel
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase() || 'SR'
+                      const autorRaw = (p.agregadaPor ?? '').trim()
+                      const autorEsGenerico =
+                        !autorRaw ||
+                        /^\d+$/.test(autorRaw) ||
+                        /^(Usuario|Curador)(\s*#?\S*)?$/i.test(autorRaw)
+                      const autorLabel = autorEsGenerico ? creatorDisplayName : autorRaw
+                      const autorIniciales = getCreatorInitials(autorLabel)
 
                       return (
                       <tr
@@ -1015,7 +1047,7 @@ export default function PlaylistsPage() {
                       {pl.nombre}
                     </span>
                     <span className="text-[11px] text-white/50 truncate w-full mt-0.5">
-                      {pl.creador.nombre} · {pl.likes.toLocaleString('es-CO')} me gusta
+                      {resolvePlaylistCreatorName(pl, usuarioActual)} · {pl.likes.toLocaleString('es-CO')} me gusta
                     </span>
                   </button>
                 ))}
@@ -1481,7 +1513,7 @@ export default function PlaylistsPage() {
                         {currentVinylPlaylist.prendas.length === 1 ? 'prenda' : 'prendas'}
                       </span>
                       <span>·</span>
-                      <span>Por {currentVinylPlaylist.creador?.nombre || 'Curador StyleRadar'}</span>
+                      <span>Por {resolvePlaylistCreatorName(currentVinylPlaylist, usuarioActual)}</span>
                       <span className="sr-vinyl-active-meta__chip">
                         {currentVinylPlaylist.visibilidad === 'PRIVADA' ? 'Privada' : 'Pública'}
                       </span>
