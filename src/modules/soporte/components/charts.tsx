@@ -62,18 +62,35 @@ export function TableToggle({ on, onChange }: { on: boolean; onChange: (v: boole
 
 export function DataTable({ caption, head, rows }: { caption: string; head: string[]; rows: (string | number)[][] }) {
   return (
-    <div className="max-h-80 overflow-auto">
+    <div className="max-h-80 overflow-auto pr-2 [scrollbar-gutter:stable]">
       <table className="w-full text-left text-sm text-[var(--color-text)]">
         <caption className="sr-only">{caption}</caption>
         <thead className="sticky top-0 bg-[var(--color-surface)] text-[11px] uppercase tracking-[.12em] text-[var(--color-text-muted)]">
-          <tr>{head.map((h, i) => <th key={h} scope="col" className={`py-2 font-bold ${i ? 'text-right' : ''}`}>{h}</th>)}</tr>
+          <tr>
+            {head.map((h, i) => (
+              <th
+                key={h}
+                scope="col"
+                className={`py-2 font-bold ${i ? 'text-right' : ''} ${i === head.length - 1 ? 'pr-6' : 'pr-3'}`}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={String(r[0])} className="border-t border-[var(--color-border)]">
               {r.map((c, i) => i === 0
-                ? <th key={i} scope="row" className="py-2 font-semibold">{c}</th>
-                : <td key={i} className="py-2 text-right tabular-nums">{c}</td>)}
+                ? <th key={i} scope="row" className="py-2 pr-3 font-semibold">{c}</th>
+                : (
+                  <td
+                    key={i}
+                    className={`py-2 text-right tabular-nums ${i === r.length - 1 ? 'pr-6' : 'pr-3'}`}
+                  >
+                    {c}
+                  </td>
+                ))}
             </tr>
           ))}
         </tbody>
