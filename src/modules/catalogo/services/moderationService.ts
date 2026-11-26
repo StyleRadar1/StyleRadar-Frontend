@@ -22,6 +22,13 @@ export interface ModerationBatchDecisionDto {
 }
 
 
+/** NIT de la tienda, venga como venga (`storeNit`, `nitAlmacen` o `nit`); undefined si no hay. */
+const nitDe = (r: Record<string, any> | ModerationPendingGroupDto): string | undefined => {
+  const g = r as Record<string, unknown>
+  const v = [g.storeNit, g.nitAlmacen, g.nit].find((x): x is string => typeof x === 'string' && x.trim().length > 0)
+  return v?.trim()
+}
+
 function mapPendingGroups(data: ModerationPendingResponseDto | ModerationItemDto[]): ModerationItemDto[] {
   if (Array.isArray(data)) return data
   const grupos: ModerationPendingGroupDto[] = Array.isArray(data?.grupos) ? data.grupos : []
@@ -30,10 +37,13 @@ function mapPendingGroups(data: ModerationPendingResponseDto | ModerationItemDto
 
   for (const grupo of grupos) {
     const almacenId = grupo.almacenId ? String(grupo.almacenId) : undefined
-    const publicador = grupo.nombreAlmacen || grupo.publicador || almacenId || 'Almacén'
     const tipoPubRaw = grupo.tipoPublicador ?? data?.tipoPublicador ?? ''
     const isPersona = String(tipoPubRaw).toUpperCase().includes('PERSONA') || String(tipoPubRaw).toUpperCase().includes('SEGUNDA')
     const publicaciones = grupo.prendas ?? grupo.publicaciones ?? []
+    // ms-item-catalogo manda el nombre de la tienda en `almacen` y el NIT en cada prenda (`storeNit`); el id (UUID) no sirve para mostrarlo
+    const nitDelGrupo = nitDe(grupo) ?? publicaciones.map(nitDe).find(Boolean)
+    const marcaDelGrupo = typeof publicaciones[0]?.marca === 'string' ? publicaciones[0].marca : undefined
+    const publicador = grupo.almacen || grupo.nombreAlmacen || grupo.publicador || marcaDelGrupo || (nitDelGrupo ? `NIT ${nitDelGrupo}` : 'Tienda sin nombre')
 
     for (const p of publicaciones) {
       flat.push({
@@ -41,6 +51,7 @@ function mapPendingGroups(data: ModerationPendingResponseDto | ModerationItemDto
         almacenId: p.almacenId ? String(p.almacenId) : almacenId,
         titulo: p.titulo || p.nombre || '',
         publicador: p.publicador || publicador,
+        publicadorNit: isPersona ? undefined : nitDe(p) ?? nitDelGrupo,
         tipoPublicador: p.tipoPublicador === 'Persona' || isPersona ? 'Persona' : 'Tienda',
         tipo: p.tipo === 'Segunda mano' || isPersona ? 'Segunda mano' : tipoGrupo,
         precio: Number(p.precio ?? 0),
