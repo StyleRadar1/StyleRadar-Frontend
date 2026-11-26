@@ -1,9 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ROLE_HOME } from '@/modules/core/types/roles'
 import FoundationHomePage from '../pages/FoundationHomePage'
-import { resetDonationMock } from '../services/donationService'
+import { donationService, normalizeDonation, resetDonationMock } from '../services/donationService'
 
 const loginAs = (id: string) => localStorage.setItem('sr_user', JSON.stringify({ id, name: 'Fundación Abrigo Bogotá', email: 'abrigo@styleradar.co', role: 'FOUNDATION_REPRESENTATIVE' }))
 const renderPage = () => render(<MemoryRouter><FoundationHomePage /></MemoryRouter>)
@@ -39,5 +39,23 @@ describe('Mi fundación (inicio de la fundación)', () => {
     loginAs('u-1')
     renderPage()
     expect(await screen.findByText('No pudimos cargar tu fundación', {}, { timeout: 3000 })).toBeInTheDocument()
+  })
+
+  it('BUG-12: cuenta pendientes y entregadas aun con estados PENDING/SOLICITADA/DELIVERED', async () => {
+    loginAs('f-1')
+    const spy = vi.spyOn(donationService, 'forMyFoundation').mockResolvedValueOnce([
+      normalizeDonation({ id: 1, status: 'PENDING' }),
+      normalizeDonation({ id: 2, status: 'DELIVERED' }),
+      normalizeDonation({ id: 3, status: 'DELIVERED' }),
+      normalizeDonation({ id: 4, status: 'DELIVERED' }),
+    ])
+    try {
+      renderPage()
+      expect(await screen.findByRole('heading', { level: 1, name: 'Fundación Abrigo Bogotá' }, { timeout: 3000 })).toBeInTheDocument()
+      expect(screen.getByRole('status')).toHaveTextContent('Tienes 1 donación pendiente')
+      expect(screen.getByText(/3 prendas recibidas en 3 entregas confirmadas/)).toBeInTheDocument()
+    } finally {
+      spy.mockRestore()
+    }
   })
 })

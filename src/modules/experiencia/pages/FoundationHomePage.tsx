@@ -4,6 +4,7 @@ import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
 import { donationService } from '../services/donationService'
 import { foundationProfileService } from '../services/foundationProfileService'
+import { normalizeDonationStatus } from '../types/donation.dto'
 import type { FoundationProfileDto } from '../types/foundationProfile.dto'
 import './FoundationDashboard.css'
 
@@ -20,11 +21,11 @@ export default function FoundationHomePage() {
       fid && fid.toLowerCase() !== 'mine'
         ? await donationService.forMyFoundation(fid).catch(() => [])
         : []
-    const entregadas = solicitudes.filter((d) => d.estado === 'ENTREGADA')
+    const entregadas = solicitudes.filter((d) => normalizeDonationStatus(d.estado || d.status) === 'ENTREGADA')
     const totalPrendas = entregadas.reduce((sum, d) => sum + (d.prenda?.cantidad || 1), 0)
     return {
       perfil,
-      pendientes: solicitudes.filter((d) => d.estado === 'PENDIENTE').length,
+      pendientes: solicitudes.filter((d) => normalizeDonationStatus(d.estado || d.status) === 'PENDIENTE').length,
       entregadas: entregadas.length,
       totalPrendas,
     }
