@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DonatePage from '../pages/DonatePage'
 import FoundationPage from '../pages/FoundationPage'
-import { resetDonationMock } from '../services/donationService'
+import { donationService, normalizeDonation, resetDonationMock } from '../services/donationService'
 import { isoDay } from '../utils/dates'
 import { loginAs, png, renderAt } from './helpers'
 
@@ -144,5 +144,29 @@ describe('panel de fundación (RF-46, 47 y 49)', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Aceptar' }))
     expect(await screen.findByText('Otra fundación ya la reclamó')).toBeInTheDocument()
     expect(screen.getByText('Actualizamos la lista.')).toBeInTheDocument()
+  })
+
+  it('BUG-12: normaliza y suma solicitudes PENDING/SOLICITADA/DELIVERED en KPIs y filtros', async () => {
+    loginAs('f-1', 'Fundación Abrigo Bogotá')
+    const sample = [
+      normalizeDonation({ id: 101, status: 'PENDING', foundationId: 1, publication: { photos: [] } }),
+      normalizeDonation({ id: 102, status: 'DELIVERED', foundationId: 1, publication: { photos: [] } }),
+      normalizeDonation({ id: 103, status: 'delivered', foundationId: 1, publication: { photos: [] } }),
+      normalizeDonation({ id: 104, estado: 'SOLICITADA', foundationId: 1, publication: { photos: [] } }),
+    ]
+    const spy = vi.spyOn(donationService, 'forMyFoundation').mockResolvedValueOnce(sample)
+    try {
+      open()
+      const list = await screen.findByRole('list', { name: 'Solicitudes' }, { timeout: 3000 })
+      const kpis = screen.getByLabelText('Resumen de donaciones')
+      expect(within(kpis).getByText('Total solicitudes').previousElementSibling).toHaveTextContent('4')
+      expect(within(kpis).getByText('Pendientes').previousElementSibling).toHaveTextContent('2')
+      expect(within(kpis).getByText('Entregadas').previousElementSibling).toHaveTextContent('2')
+      expect(within(list).getAllByRole('listitem')).toHaveLength(2)
+      expect(screen.getByRole('button', { name: /Pendiente/ })).toHaveTextContent('2')
+      expect(screen.getByRole('button', { name: /Entregada/ })).toHaveTextContent('2')
+    } finally {
+      spy.mockRestore()
+    }
   })
 })

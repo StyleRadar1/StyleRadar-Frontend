@@ -6,6 +6,7 @@ import { FOUNDATIONS, seedDonations } from '../mocks/secondHand'
 import { isoDay } from '../utils/dates'
 import { secondHandService } from './secondHandService'
 import {
+  normalizeDonationStatus,
   SIGUIENTE,
   type ClaimDonationRequestDto,
   type ConfirmDonationRequestDto,
@@ -28,7 +29,7 @@ const MOCK_FOUNDATION_OF: Record<string, string> = { 'f-1': 'abrigo' }
 
 export const normalizeDonation = (raw: any): DonationDto => {
   if (!raw) return raw
-  const estado = raw.status || raw.estado || 'PENDIENTE'
+  const estado = normalizeDonationStatus(raw.status || raw.estado || 'PENDIENTE')
   const logistica = raw.logistica || {
     modalidad: raw.deliveryMode === 'HOME_PICKUP' ? 'RECOGIDA' : 'ENTREGA_EN_PUNTO',
     fecha: raw.slotStart ? raw.slotStart.split('T')[0] : isoDay(),
@@ -41,7 +42,7 @@ export const normalizeDonation = (raw: any): DonationDto => {
     id: String(raw.id),
     publicationId: raw.publicationId,
     donorId: raw.donorId,
-    estado: estado === 'DELIVERED' ? 'ENTREGADA' : (estado === 'APPROVED' ? 'APROBADA' : (estado === 'REJECTED' ? 'RECHAZADA' : (estado === 'IN_PICKUP' ? 'EN_RECOGIDA' : estado))),
+    estado,
     status: raw.status || estado,
     justificacion: raw.rejectionReason || raw.justificacion,
     rejectionReason: raw.rejectionReason || raw.justificacion,
@@ -127,7 +128,7 @@ export const donationService = {
       const f = FOUNDATIONS.find((x) => x.id === data.fundacionId)
       if (!f || !f.activa) throw new ApiError(422, 'Esa fundación no está recibiendo donaciones.')
       if (data.prenda && !f.categorias.includes(data.prenda.categoria)) throw new ApiError(422, `${f.nombre} no recibe ${data.prenda.categoria.toLowerCase()}.`)
-      const dup = db().find((d) => d.donante.id === u.id && d.fundacion.id === f.id && d.prenda.titulo === data.prenda.titulo && d.estado === 'PENDIENTE')
+      const dup = db().find((d) => d.donante.id === u.id && d.fundacion.id === f.id && d.prenda.titulo === data.prenda.titulo && normalizeDonationStatus(d.estado || d.status) === 'PENDIENTE')
       if (dup) throw new ApiError(409, 'Ya enviaste esta misma donación a esa fundación y sigue pendiente.')
       const d: DonationDto = {
         id: `d-${Date.now().toString(36)}`,
@@ -304,7 +305,7 @@ export const donationService = {
       failIfScenario('sin-permiso')
       const fid = foundationId || MOCK_FOUNDATION_OF[mockSessionUser()?.id ?? '']
       if (!fid) throw new ApiError(403, 'Tu cuenta no representa a ninguna fundación.')
-      return mockDelay(db().filter((d) => d.fundacion.id === fid))
+      return mockDelay(db().filter((d) => d.fundacion.id === fid).map(normalizeDonation))
     }
     const fid = foundationId || (await this.getMyFoundationId())
     if (!fid || fid.toLowerCase() === 'mine') {
@@ -322,12 +323,14 @@ export const donationService = {
       const d = db().find((x) => x.id === id)
       if (!d) throw new ApiError(404, 'Esa solicitud ya no existe.')
       if (d.fundacion.id !== MOCK_FOUNDATION_OF[mockSessionUser()?.id ?? '']) throw new ApiError(403, 'Esta solicitud es de otra fundación.')
-      if (!SIGUIENTE[d.estado].includes(body.estado)) throw new ApiError(409, `No se puede pasar de ${d.estado} a ${body.estado}.`)
-      if (body.estado === 'RECHAZADA' && (body.justificacion ?? '').trim().length < 10) throw new ApiError(422, 'Escribe por qué la rechazas (mínimo 10 caracteres).')
-      if (body.estado === 'ENTREGADA' && d.logistica.fecha > isoDay()) throw new ApiError(409, 'Aún no llega la fecha acordada para la entrega.')
-      d.estado = body.estado as EstadoDonacion
+      const curEstado = normalizeDonationStatus(d.estado || d.status)
+      const nextEstado = normalizeDonationStatus(body.estado)
+      if (!(SIGUIENTE[curEstado] ?? []).includes(nextEstado)) throw new ApiError(409, `No se puede pasar de ${d.estado} a ${body.estado}.`)
+      if (nextEstado === 'RECHAZADA' && (body.justificacion ?? '').trim().length < 10) throw new ApiError(422, 'Escribe por qué la rechazas (mínimo 10 caracteres).')
+      if (nextEstado === 'ENTREGADA' && d.logistica.fecha > isoDay()) throw new ApiError(409, 'Aún no llega la fecha acordada para la entrega.')
+      d.estado = nextEstado
       if (body.justificacion) d.justificacion = body.justificacion.trim()
-      if (body.estado === 'ENTREGADA') d.comprobante = { codigo: `SR-DON-${id.replace(/\W/g, '').slice(-4).toUpperCase().padStart(4, '0')}`, emitidoEn: isoDay() }
+      if (nextEstado === 'ENTREGADA') d.comprobante = { codigo: `SR-DON-${id.replace(/\W/g, '').slice(-4).toUpperCase().padStart(4, '0')}`, emitidoEn: isoDay() }
       return mockDelay({ ...d }, 500)
     }
     const foundationId = await this.getMyFoundationId()

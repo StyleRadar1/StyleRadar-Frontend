@@ -100,32 +100,88 @@ export interface DonationRequestDto {
   message?: string
 }
 
-export type EstadoDonacion = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'EN_RECOGIDA' | 'ENTREGADA' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'IN_PICKUP' | 'DELIVERED'
+export type EstadoDonacionCanonico = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'EN_RECOGIDA' | 'ENTREGADA'
+
+export type EstadoDonacion =
+  | EstadoDonacionCanonico
+  | 'PENDING'
+  | 'SOLICITADA'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'IN_PICKUP'
+  | 'SCHEDULED'
+  | 'DELIVERED'
+  | 'CONFIRMED'
+
+const ESTADO_DONACION_MAP: Record<string, EstadoDonacionCanonico> = {
+  PENDIENTE: 'PENDIENTE',
+  PENDING: 'PENDIENTE',
+  SOLICITADA: 'PENDIENTE',
+  SOLICITADO: 'PENDIENTE',
+  REQUESTED: 'PENDIENTE',
+  CREADA: 'PENDIENTE',
+  CREATED: 'PENDIENTE',
+  APROBADA: 'APROBADA',
+  APPROVED: 'APROBADA',
+  ACEPTADA: 'APROBADA',
+  ACCEPTED: 'APROBADA',
+  RECHAZADA: 'RECHAZADA',
+  REJECTED: 'RECHAZADA',
+  DECLINED: 'RECHAZADA',
+  EN_RECOGIDA: 'EN_RECOGIDA',
+  IN_PICKUP: 'EN_RECOGIDA',
+  PICKUP: 'EN_RECOGIDA',
+  PICKUP_SCHEDULED: 'EN_RECOGIDA',
+  SCHEDULED: 'EN_RECOGIDA',
+  RECOGIDA: 'EN_RECOGIDA',
+  ENTREGADA: 'ENTREGADA',
+  DELIVERED: 'ENTREGADA',
+  CONFIRMED: 'ENTREGADA',
+  CONFIRMADA: 'ENTREGADA',
+  COMPLETED: 'ENTREGADA',
+  COMPLETADA: 'ENTREGADA',
+  RECIBIDA: 'ENTREGADA',
+  RECEIVED: 'ENTREGADA',
+}
+
+/** Normaliza variantes de estado (español/inglés, sinónimos, mayúsculas/minúsculas) al enum canónico. */
+export function normalizeDonationStatus(status: unknown): EstadoDonacionCanonico {
+  if (typeof status !== 'string') return 'PENDIENTE'
+  const key = status.trim().toUpperCase().replace(/[\s-]+/g, '_')
+  if (!key) return 'PENDIENTE'
+  return ESTADO_DONACION_MAP[key] ?? (key as EstadoDonacionCanonico)
+}
 
 export const ESTADO_DONACION_LABEL: Record<string, string> = {
   PENDIENTE: 'Pendiente',
   PENDING: 'Pendiente',
+  SOLICITADA: 'Pendiente',
   APROBADA: 'Aprobada',
   APPROVED: 'Aprobada',
   RECHAZADA: 'Rechazada',
   REJECTED: 'Rechazada',
   EN_RECOGIDA: 'En recogida',
   IN_PICKUP: 'En recogida',
+  SCHEDULED: 'En recogida',
   ENTREGADA: 'Entregada',
   DELIVERED: 'Entregada',
+  CONFIRMED: 'Entregada',
 }
 
 export const SIGUIENTE: Record<string, EstadoDonacion[]> = {
   PENDIENTE: ['APROBADA', 'RECHAZADA'],
   PENDING: ['APROBADA', 'RECHAZADA'],
+  SOLICITADA: ['APROBADA', 'RECHAZADA'],
   APROBADA: ['EN_RECOGIDA'],
   APPROVED: ['EN_RECOGIDA'],
   EN_RECOGIDA: ['ENTREGADA'],
   IN_PICKUP: ['ENTREGADA'],
+  SCHEDULED: ['ENTREGADA'],
   RECHAZADA: [],
   REJECTED: [],
   ENTREGADA: [],
   DELIVERED: [],
+  CONFIRMED: [],
 }
 
 export interface DonationDto {

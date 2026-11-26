@@ -7,7 +7,13 @@ import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Statu
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { donationService } from '../services/donationService'
 import { foundationProfileService } from '../services/foundationProfileService'
-import { ESTADO_DONACION_LABEL, SIGUIENTE, type DonationDto, type EstadoDonacion } from '../types/donation.dto'
+import {
+  ESTADO_DONACION_LABEL,
+  normalizeDonationStatus,
+  SIGUIENTE,
+  type DonationDto,
+  type EstadoDonacion,
+} from '../types/donation.dto'
 import { CONSERVACION_LABEL } from '../types/secondhand.dto'
 import { formatDay, isoDay } from '../utils/dates'
 import './FoundationDashboard.css'
@@ -86,12 +92,13 @@ export default function FoundationPage() {
         justificacion: pending.to === 'RECHAZADA' || pending.to === 'REJECTED' ? just.trim() : undefined,
       })
       setList((l) => l.map((x) => (x.id === upd.id ? upd : x)))
+      const updEst = normalizeDonationStatus(upd.estado || upd.status)
       setMsg({
         tone: 'ok',
         text:
-          upd.estado === 'ENTREGADA'
+          updEst === 'ENTREGADA'
             ? `Recepción confirmada. Comprobante ${upd.comprobante?.codigo}.`
-            : `«${upd.prenda.titulo}» ahora está ${ESTADO_DONACION_LABEL[upd.estado].toLowerCase()}.`,
+            : `«${upd.prenda.titulo}» ahora está ${(ESTADO_DONACION_LABEL[updEst] ?? updEst).toLowerCase()}.`,
       })
       setPending(null)
     } catch (e) {
@@ -115,8 +122,14 @@ export default function FoundationPage() {
 
   const isLoadPermError = !!error && errorKind(error) === 'permiso'
 
-  const count = (f: EstadoDonacion | 'TODAS') => (f === 'TODAS' ? list.length : list.filter((d) => d.estado === f).length)
-  const shown = list.filter((d) => filtro === 'TODAS' || d.estado === filtro)
+  const getEstado = (d: DonationDto) => normalizeDonationStatus(d.estado || d.status)
+
+  const count = (f: EstadoDonacion | 'TODAS') => {
+    if (f === 'TODAS') return list.length
+    const target = normalizeDonationStatus(f)
+    return list.filter((d) => getEstado(d) === target).length
+  }
+  const shown = list.filter((d) => filtro === 'TODAS' || getEstado(d) === normalizeDonationStatus(filtro))
 
   return (
     <div className="fnd-donations">
@@ -252,7 +265,10 @@ export default function FoundationPage() {
               </EmptyState>
             ) : (
               <ul className="fnd-donation-list" aria-label="Solicitudes">
-                {shown.map((d) => (
+                {shown.map((d) => {
+                  const est = getEstado(d)
+                  const nextActions = SIGUIENTE[est] ?? []
+                  return (
                   <li key={d.id} className="fnd-donation-card">
                     <img
                       src={d.fotos[0]}
@@ -266,8 +282,8 @@ export default function FoundationPage() {
                           {d.prenda.cantidad > 1 ? `${d.prenda.cantidad} × ` : ''}
                           {d.prenda.titulo}
                         </p>
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${TONE[d.estado]}`}>
-                          {ESTADO_DONACION_LABEL[d.estado]}
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${TONE[est] ?? TONE.PENDIENTE}`}>
+                          {ESTADO_DONACION_LABEL[est] ?? est}
                         </span>
                       </div>
 
@@ -305,7 +321,7 @@ export default function FoundationPage() {
                     </div>
 
                     <div className="fnd-donation-card__actions">
-                      {SIGUIENTE[d.estado].map((to) => {
+                      {nextActions.map((to) => {
                         const why = blockedReason(d, to)
                         const isDanger = to === 'RECHAZADA'
                         const isPrimary = to === 'APROBADA' || to === 'ENTREGADA'
@@ -335,12 +351,12 @@ export default function FoundationPage() {
                         )
                       })}
 
-                      {!SIGUIENTE[d.estado].length && (
+                      {!nextActions.length && (
                         <span className="text-xs text-[var(--sr-text-muted)]">Sin acciones</span>
                       )}
 
                       {/* RF-41: coordinar la entrega con quien dona, sin publicar la dirección */}
-                      {(d.estado === 'APROBADA' || d.estado === 'EN_RECOGIDA') && (
+                      {(est === 'APROBADA' || est === 'EN_RECOGIDA') && (
                         <ContactButton
                           label="Escribir a quien dona"
                           contacto={{ ...d.donante, tipo: 'DONANTE' }}
@@ -350,7 +366,8 @@ export default function FoundationPage() {
                       )}
                     </div>
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             )}
           </>
