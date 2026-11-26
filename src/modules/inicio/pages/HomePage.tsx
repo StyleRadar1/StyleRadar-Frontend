@@ -1,40 +1,67 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { playlistService } from '@/modules/catalogo/services/playlistService'
+import { formatCOP } from '@/modules/core/utils/format'
+import { playlistService, resolvePlaylistCreatorName } from '@/modules/catalogo/services/playlistService'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import { alertService } from '@/modules/soporte/services/alertService'
 import { getUserMeasurements, loadLookFromStorage } from '@/modules/experiencia/utils/lookEngine'
+import { SLOT_LABELS, type WornItem } from '@/modules/experiencia/types/look.dto'
 import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
 import { RecomendadosTrail } from '../components/RecomendadosTrail'
 import './HomePage.css'
 
+type PlaylistTab = 'mine' | 'saved' | 'explore'
+
+const ESTILOS_RAPIDOS = [
+  { label: 'Urbano', to: '/catalogo?estilo=URBANO' },
+  { label: 'Casual', to: '/catalogo?estilo=CASUAL' },
+  { label: 'Formal', to: '/catalogo?estilo=FORMAL' },
+  { label: 'Vintage', to: '/catalogo?estilo=VINTAGE' },
+  { label: 'Segunda mano', to: '/segunda-mano' },
+] as const
+
 export default function HomePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const reducir = useReducedMotion()
   const [busqueda, setBusqueda] = useState('')
-  const [playlists, setPlaylists] = useState<PlaylistDto[]>([])
+  const [tab, setTab] = useState<PlaylistTab>('mine')
+  const [minePlaylists, setMinePlaylists] = useState<PlaylistDto[]>([])
+  const [savedPlaylists, setSavedPlaylists] = useState<PlaylistDto[]>([])
+  const [explorePlaylists, setExplorePlaylists] = useState<PlaylistDto[]>([])
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [busyLikeId, setBusyLikeId] = useState<string | null>(null)
+  const [busySaveId, setBusySaveId] = useState<string | null>(null)
   const [alertStats, setAlertStats] = useState<{ alertas: number; busquedas: number } | null>(null)
 
   const nombreUsuario = user?.name?.trim() || 'de nuevo'
   const medidas = getUserMeasurements()
   const lookGuardado = loadLookFromStorage()
-  const prendasEnLook = Object.values(lookGuardado).filter(Boolean).length
+  const prendasLook = useMemo(
+    () => Object.values(lookGuardado).filter((x): x is WornItem => Boolean(x)),
+    [lookGuardado],
+  )
+  const prendasEnLook = prendasLook.length
 
   useEffect(() => {
     let activo = true
     if (user?.id) {
-      playlistService
-        .getMine(String(user.id))
-        .then(async (mine) => {
-          if (mine.length > 0) return mine
-          const saved = await playlistService.getSaved(String(user.id)).catch(() => [])
-          if (saved.length > 0) return saved
-          return playlistService.getAll().catch(() => [])
-        })
-        .then((list) => {
-          if (activo) setPlaylists(list.slice(0, 3))
+      const uid = String(user.id)
+      Promise.all([
+        playlistService.getMine(uid).catch(() => []),
+        playlistService.getSaved(uid).catch(() => []),
+        playlistService.getAll().catch(() => []),
+      ])
+        .then(([mine, saved, all]) => {
+          if (!activo) return
+          setMinePlaylists(mine)
+          setSavedPlaylists(saved)
+          setExplorePlaylists(all)
+          if (mine.length === 0 && saved.length > 0) setTab('saved')
+          else if (mine.length === 0 && saved.length === 0 && all.length > 0) setTab('explore')
         })
         .catch(() => {})
 
@@ -55,6 +82,61 @@ export default function HomePage() {
     }
   }, [user?.id])
 
+  const listaActual = tab === 'mine' ? minePlaylists : tab === 'saved' ? savedPlaylists : explorePlaylists
+  const safeIndex = listaActual.length > 0 ? activeIndex % listaActual.length : 0
+  const playlistActiva = listaActual[safeIndex] ?? null
+
+  const cambiarTab = (next: PlaylistTab) => {
+    setTab(next)
+    setActiveIndex(0)
+  }
+
+  const moverPlaylist = (delta: number) => {
+    if (listaActual.length <= 1) return
+    setActiveIndex((prev) => (prev + delta + listaActual.length) % listaActual.length)
+  }
+
+  const updatePlaylistEnListas = (id: string, patch: Partial<PlaylistDto>) => {
+    const mapFn = (list: PlaylistDto[]) => list.map((p) => (p.id === id ? { ...p, ...patch } : p))
+    setMinePlaylists(mapFn)
+    setSavedPlaylists(mapFn)
+    setExplorePlaylists(mapFn)
+  }
+
+  const handleToggleLike = async (pl: PlaylistDto) => {
+    if (busyLikeId === pl.id) return
+    setBusyLikeId(pl.id)
+    try {
+      const res = await playlistService.toggleLike(pl.id)
+      updatePlaylistEnListas(pl.id, {
+        likes: res.likes,
+        liked: res.liked ?? !pl.liked,
+      })
+    } catch {
+      // Silencioso si no hay sesión o falla red
+    } finally {
+      setBusyLikeId(null)
+    }
+  }
+
+  const handleToggleSave = async (pl: PlaylistDto) => {
+    if (busySaveId === pl.id) return
+    setBusySaveId(pl.id)
+    try {
+      const res = await playlistService.toggleSave(pl.id)
+      const nextSaved = res.saved ?? res.esGuardada ?? !(pl.saved ?? pl.esGuardada)
+      updatePlaylistEnListas(pl.id, {
+        guardados: res.guardados,
+        saved: nextSaved,
+        esGuardada: nextSaved,
+      })
+    } catch {
+      // Silencioso
+    } finally {
+      setBusySaveId(null)
+    }
+  }
+
   const handleBuscar = (e: FormEvent) => {
     e.preventDefault()
     const q = busqueda.trim()
@@ -64,7 +146,7 @@ export default function HomePage() {
   return (
     <div className="sr-inicio">
       <div className="sr-inicio-fondo" aria-hidden="true" />
-      {/* 1. Home personal: saludo con nombre de usuario + tus playlists, look, tallas y alertas */}
+      {/* 1. Home personal interactivo: saludo, playlists interactivas, look actual, tallas y alertas */}
       <section className="sr-inicio-bento" aria-labelledby="inicioSaludo">
         <div className="sr-inicio-bento__header">
           <div className="sr-inicio-bento__headline">
@@ -72,12 +154,20 @@ export default function HomePage() {
             <h1 id="inicioSaludo" className="sr-inicio-bento__title">
               Hola, <span className="sr-inicio-acento">{nombreUsuario}</span>
             </h1>
+            <div className="sr-personal-stats" aria-label="Resumen de tu cuenta">
+              <Link to="/perfil" className="sr-personal-stat-pill">
+                Tallas {medidas.superior} · {medidas.inferior} · {medidas.calzado}
+              </Link>
+              <Link to="/playlists" className="sr-personal-stat-pill">
+                {minePlaylists.length} playlists · {savedPlaylists.length} guardadas
+              </Link>
+              <Link to="/alertas" className="sr-personal-stat-pill">
+                {alertStats ? `${alertStats.alertas} alertas activas` : 'Mis alertas'}
+              </Link>
+            </div>
           </div>
 
           <div className="sr-inicio-bento__aside">
-            <p className="sr-inicio-bento__lead">
-              Aquí tienes tus playlists recientes, tu look en el probador, tus tallas y tus alertas.
-            </p>
             <form onSubmit={handleBuscar} className="sr-inicio-search" role="search" aria-label="Buscar en el catálogo">
               <input
                 type="search"
@@ -91,51 +181,203 @@ export default function HomePage() {
                 Buscar
               </button>
             </form>
+            <div className="sr-personal-chips" aria-label="Explorar por estilo">
+              {ESTILOS_RAPIDOS.map((item) => (
+                <Link key={item.label} to={item.to} className="sr-personal-chip">
+                  {item.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="sr-inicio-personal-grid">
-          {/* Columna izquierda: Últimas playlists */}
+        <div className="sr-inicio-personal-grid sr-inicio-personal-grid--interactive">
+          {/* Columna izquierda: Deck interactivo de Playlists */}
           <div className="sr-personal-card sr-personal-card--playlists">
             <div className="sr-personal-card__head">
               <div>
                 <span className="sr-bento-mini__tag">Tus colecciones</span>
-                <h2 className="sr-personal-card__title">Últimas playlists</h2>
+                <h2 className="sr-personal-card__title">Playlists y looks</h2>
               </div>
-              <Link to="/playlists" className="sr-inicio-enlace">
-                Ver todas →
-              </Link>
+              <div className="sr-personal-tabs" role="tablist" aria-label="Filtrar playlists">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'mine'}
+                  onClick={() => cambiarTab('mine')}
+                  className={`sr-personal-tab ${tab === 'mine' ? 'is-active' : ''}`}
+                >
+                  Mías ({minePlaylists.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'saved'}
+                  onClick={() => cambiarTab('saved')}
+                  className={`sr-personal-tab ${tab === 'saved' ? 'is-active' : ''}`}
+                >
+                  Guardadas ({savedPlaylists.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'explore'}
+                  onClick={() => cambiarTab('explore')}
+                  className={`sr-personal-tab ${tab === 'explore' ? 'is-active' : ''}`}
+                >
+                  Explorar ({explorePlaylists.length})
+                </button>
+              </div>
             </div>
 
-            {playlists.length > 0 ? (
-              <ul className="sr-personal-playlists">
-                {playlists.map((pl) => {
-                  const thumb = pl.portadaUrl || pl.prendas?.[0]?.imagen || '/img/productos/blazer-oversize.jpg'
-                  return (
-                    <li key={pl.id}>
-                      <Link to={`/playlists/${pl.id}`} className="sr-personal-playlist-item">
-                        <img src={thumb} alt="" className="sr-personal-playlist-img" />
-                        <div className="sr-personal-playlist-meta">
-                          <strong>{pl.nombre}</strong>
-                          <span>{pl.prendas?.length ?? 0} prendas · {pl.visibilidad === 'PUBLICA' ? 'Pública' : 'Privada'}</span>
-                        </div>
-                        <span aria-hidden="true" className="sr-personal-playlist-go">↗</span>
+            {playlistActiva ? (
+              <>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${tab}-${playlistActiva.id}`}
+                    initial={reducir ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reducir ? undefined : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="sr-pl-spotlight"
+                  >
+                    <div className="sr-pl-spotlight__top">
+                      <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-spotlight__cover">
+                        <img
+                          src={
+                            playlistActiva.portadaUrl ||
+                            playlistActiva.prendas?.[0]?.imagen ||
+                            '/img/productos/blazer-oversize.jpg'
+                          }
+                          alt={playlistActiva.nombre}
+                        />
+                        {playlistActiva.estilo && (
+                          <span className="sr-pl-spotlight__estilo">{playlistActiva.estilo}</span>
+                        )}
                       </Link>
-                    </li>
-                  )
-                })}
-              </ul>
+
+                      <div className="sr-pl-spotlight__info">
+                        <div className="sr-pl-spotlight__meta-row">
+                          <span>{resolvePlaylistCreatorName(playlistActiva, user, tab === 'mine')}</span>
+                          <span>·</span>
+                          <span>{playlistActiva.visibilidad === 'PUBLICA' ? 'Pública' : 'Privada'}</span>
+                          <span>·</span>
+                          <span>{playlistActiva.prendas?.length ?? 0} prendas</span>
+                        </div>
+                        <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-spotlight__name">
+                          {playlistActiva.nombre}
+                        </Link>
+                        {playlistActiva.descripcion && (
+                          <p className="sr-pl-spotlight__desc">{playlistActiva.descripcion}</p>
+                        )}
+
+                        <div className="sr-pl-spotlight__actions">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleLike(playlistActiva)}
+                            disabled={busyLikeId === playlistActiva.id}
+                            aria-pressed={Boolean(playlistActiva.liked)}
+                            className={`sr-pl-react-btn ${playlistActiva.liked ? 'is-liked' : ''}`}
+                          >
+                            <span aria-hidden="true">{playlistActiva.liked ? '♥' : '♡'}</span>
+                            <span>{playlistActiva.likes}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSave(playlistActiva)}
+                            disabled={busySaveId === playlistActiva.id}
+                            aria-pressed={Boolean(playlistActiva.saved ?? playlistActiva.esGuardada)}
+                            className={`sr-pl-react-btn ${(playlistActiva.saved ?? playlistActiva.esGuardada) ? 'is-saved' : ''}`}
+                          >
+                            <span aria-hidden="true">{(playlistActiva.saved ?? playlistActiva.esGuardada) ? '★' : '☆'}</span>
+                            <span>{playlistActiva.guardados}</span>
+                          </button>
+                          <Link to={`/probador?playlist=${playlistActiva.id}`} className="sr-pl-action-pill">
+                            Probar look
+                          </Link>
+                          <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-action-pill sr-pl-action-pill--primary">
+                            Abrir →
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+
+                    {playlistActiva.prendas && playlistActiva.prendas.length > 0 && (
+                      <div className="sr-pl-garments" aria-label={`Prendas de ${playlistActiva.nombre}`}>
+                        {playlistActiva.prendas.slice(0, 4).map((prenda) => (
+                          <Link
+                            key={prenda.id}
+                            to={`/catalogo/${prenda.id}`}
+                            className="sr-pl-garment-card"
+                          >
+                            <img src={prenda.imagen || '/img/productos/blazer-oversize.jpg'} alt={prenda.nombre} />
+                            <div className="sr-pl-garment-card__body">
+                              <strong>{prenda.nombre}</strong>
+                              <span>{formatCOP(prenda.precio)}</span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+
+                <div className="sr-pl-switcher">
+                  <div className="sr-pl-switcher__pills">
+                    {listaActual.slice(0, 5).map((pl, idx) => (
+                      <button
+                        key={pl.id}
+                        type="button"
+                        onClick={() => setActiveIndex(idx)}
+                        className={`sr-pl-switcher__pill ${idx === safeIndex ? 'is-active' : ''}`}
+                      >
+                        {pl.nombre}
+                      </button>
+                    ))}
+                  </div>
+                  {listaActual.length > 1 && (
+                    <div className="sr-pl-switcher__arrows">
+                      <button
+                        type="button"
+                        onClick={() => moverPlaylist(-1)}
+                        aria-label="Playlist anterior"
+                        className="sr-pl-arrow-btn"
+                      >
+                        ‹
+                      </button>
+                      <span className="sr-pl-counter">
+                        {safeIndex + 1}/{listaActual.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => moverPlaylist(1)}
+                        aria-label="Siguiente playlist"
+                        className="sr-pl-arrow-btn"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <div className="sr-personal-empty">
-                <p>Todavía no tienes playlists guardadas.</p>
-                <Link to="/playlists" className="sr-bento-cta sr-bento-cta--outline">
-                  Crear mi primera playlist →
-                </Link>
+                <p>No hay playlists en esta pestaña todavía.</p>
+                <div className="sr-personal-empty__actions">
+                  {explorePlaylists.length > 0 && tab !== 'explore' && (
+                    <button type="button" onClick={() => cambiarTab('explore')} className="sr-pl-action-pill">
+                      Ver playlists de la comunidad
+                    </button>
+                  )}
+                  <Link to="/playlists" className="sr-pl-action-pill sr-pl-action-pill--primary">
+                    Crear playlist →
+                  </Link>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Columna central: Look guardado + Perfil y tallas */}
+          {/* Columna derecha: Look en vivo + Tallas/Alertas + Accesos */}
           <div className="sr-personal-col">
             <div className="sr-personal-card">
               <div className="sr-personal-card__head">
@@ -147,43 +389,58 @@ export default function HomePage() {
                   {prendasEnLook > 0 ? `${prendasEnLook} puesta${prendasEnLook === 1 ? '' : 's'}` : 'Disponible'}
                 </span>
               </div>
-              <p className="sr-personal-card__desc">
-                {prendasEnLook > 0
-                  ? 'Tienes prendas cargadas en tu maniquí listas para seguir combinando.'
-                  : 'Arma un outfit en el maniquí o pruébate prendas con tu foto.'}
-              </p>
+
+              {prendasEnLook > 0 ? (
+                <div className="sr-look-preview-list">
+                  {prendasLook.slice(0, 3).map((w) => (
+                    <Link key={w.slot} to={`/catalogo/${w.item.id}`} className="sr-look-preview-item">
+                      <img src={w.item.imagen || '/img/productos/blazer-oversize.jpg'} alt={w.item.nombre} />
+                      <div className="sr-look-preview-meta">
+                        <span>{SLOT_LABELS[w.slot]} · Talla {w.talla}</span>
+                        <strong>{w.item.nombre}</strong>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="sr-personal-card__desc">
+                  Arma un outfit en el maniquí o pruébate prendas con tu foto usando IA.
+                </p>
+              )}
+
               <Link to="/probador" className="sr-bento-cta sr-bento-cta--primary">
                 <span>{prendasEnLook > 0 ? 'Seguir probando' : 'Abrir probador'}</span>
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
 
-            <Link to="/perfil" className="sr-bento-mini">
-              <span className="sr-bento-mini__tag">Tu perfil y tallas</span>
-              <strong>Superior {medidas.superior} · Pantalón {medidas.inferior} · Calzado {medidas.calzado} ↗</strong>
-              <span>Ajusta tus medidas corporales y preferencias de estilo</span>
-            </Link>
-          </div>
-
-          {/* Columna derecha: Alertas + Accesos de cuenta */}
-          <div className="sr-personal-col">
-            <Link to="/alertas" className="sr-bento-mini sr-bento-mini--accent">
-              <span className="sr-bento-mini__tag">Seguimiento</span>
-              <strong>
-                {alertStats
-                  ? `${alertStats.alertas} alerta${alertStats.alertas === 1 ? '' : 's'} activa${alertStats.alertas === 1 ? '' : 's'} · ${alertStats.busquedas} búsqueda${alertStats.busquedas === 1 ? '' : 's'} ↗`
-                  : 'Mis alertas y búsquedas ↗'}
-              </strong>
-              <span>Te avisamos cuando vuelva tu talla o baje un precio</span>
-            </Link>
+            <div className="sr-personal-duo-mini">
+              <Link to="/perfil" className="sr-bento-mini">
+                <span className="sr-bento-mini__tag">Mis tallas</span>
+                <strong>{medidas.superior} · {medidas.inferior} · {medidas.calzado} ↗</strong>
+                <span>Editar medidas</span>
+              </Link>
+              <Link to="/alertas" className="sr-bento-mini sr-bento-mini--accent">
+                <span className="sr-bento-mini__tag">Seguimiento</span>
+                <strong>
+                  {alertStats ? `${alertStats.alertas} alertas ↗` : 'Mis alertas ↗'}
+                </strong>
+                <span>{alertStats ? `${alertStats.busquedas} búsquedas` : 'Tallas y precios'}</span>
+              </Link>
+            </div>
 
             <div className="sr-personal-card sr-personal-card--quick">
-              <span className="sr-bento-mini__tag">Tus accesos</span>
-              <div className="sr-personal-quick-grid">
+              <div className="sr-personal-card__head">
+                <span className="sr-bento-mini__tag">Tus accesos</span>
+                <Link to="/playlists" className="sr-inicio-enlace">Todas las playlists →</Link>
+              </div>
+              <div className="sr-personal-quick-grid sr-personal-quick-grid--3">
                 <Link to="/perfil/pagos" className="sr-personal-quick-btn">Mis pagos ↗</Link>
                 <Link to="/mensajes" className="sr-personal-quick-btn">Mensajes ↗</Link>
-                <Link to="/segunda-mano/publicar" className="sr-personal-quick-btn">Vender ropa ↗</Link>
-                <Link to="/donar" className="sr-personal-quick-btn">Donar ropa ↗</Link>
+                <Link to="/segunda-mano/publicar" className="sr-personal-quick-btn">Vender ↗</Link>
+                <Link to="/donar" className="sr-personal-quick-btn">Donar ↗</Link>
+                <Link to="/segunda-mano" className="sr-personal-quick-btn">Circular ↗</Link>
+                <Link to="/planes" className="sr-personal-quick-btn">Planes ↗</Link>
               </div>
             </div>
           </div>
