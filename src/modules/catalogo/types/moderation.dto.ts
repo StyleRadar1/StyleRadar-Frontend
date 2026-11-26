@@ -22,7 +22,10 @@ export interface ModerationItemDto {
   id: string
   almacenId?: string
   titulo: string
+  /** Nombre de la tienda (o de la persona que publica). */
   publicador: string
+  /** NIT de la tienda; las publicaciones de personas no lo tienen. */
+  publicadorNit?: string
   tipoPublicador: 'Tienda' | 'Persona'
   tipo: ModerationType
   precio: number
@@ -51,6 +54,12 @@ export interface BackendModerationRequestDto {
 
 export interface ModerationPendingGroupDto {
   almacenId?: string
+  /** Nombre de la tienda, como lo manda ms-item-catalogo (GET /garments/pending). */
+  almacen?: string
+  /** Cantidad de prendas pendientes de la tienda. */
+  pendientes?: number
+  nit?: string
+  storeNit?: string
   nombreAlmacen?: string
   publicador?: string
   tipoPublicador?: string
@@ -69,6 +78,7 @@ export interface ModerationHistoryItemDto {
   itemId: string
   titulo: string
   publicador: string
+  publicadorNit?: string
   aprobado: boolean
   motivo?: string
   fecha: string
