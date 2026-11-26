@@ -131,7 +131,7 @@ export function MockBanner() {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 border-b border-arena/30 bg-arena/10 px-4 py-2 text-center text-xs text-arena">
+    <div className="relative z-20 flex flex-wrap items-center justify-center gap-2 border-b border-arena/30 bg-arena/10 px-4 py-2 text-center text-xs text-arena">
       <span>Modo demostración: los datos son simulados (VITE_USE_MOCKS=true). Nada se envía al API Gateway.</span>
       {active.length > 0 && (
         <span className="inline-flex items-center gap-2 rounded-full border border-[var(--sr-warn)]/40 bg-[var(--sr-warn)]/15 px-2.5 py-0.5 font-semibold text-[var(--sr-warn)]">
@@ -153,7 +153,7 @@ export function MockBanner() {
 export function EnvironmentBanner({ environment }: { environment: 'qa' | 'production' }) {
   if (environment === 'production') return null
   return (
-    <div role="status" className="border-b border-[var(--sr-warn)]/35 bg-[var(--sr-warn)]/10 px-4 py-2 text-center text-xs text-[var(--sr-warn)]">
+    <div role="status" className="relative z-20 border-b border-[var(--sr-warn)]/35 bg-[var(--sr-warn)]/10 px-4 py-2 text-center text-xs text-[var(--sr-warn)]">
       Ambiente de QA: esta versión es de pruebas; confirma el aviso de datos simulados antes de validar una integración.
     </div>
   )
