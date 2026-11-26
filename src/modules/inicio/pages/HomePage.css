@@ -7,6 +7,31 @@
   gap: clamp(3rem, 7vw, 5.5rem);
   color: var(--sr-hero-text);
   font-family: 'Poppins', sans-serif;
+  position: relative;
+  isolation: isolate;
+}
+
+.sr-inicio-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(180deg, rgba(8, 5, 14, 0.4) 0%, rgba(8, 5, 14, 0.6) 55%, rgba(8, 5, 14, 0.82) 100%),
+    url('/img/backgrounds/inicio-ciudad.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(3px);
+  transform: scale(1.04);
+}
+
+html[data-theme='light'] .sr-inicio-fondo,
+html[data-theme='claro'] .sr-inicio-fondo,
+html[data-tema='claro'] .sr-inicio-fondo {
+  background-image:
+    linear-gradient(180deg, rgba(248, 245, 240, 0.72) 0%, rgba(248, 245, 240, 0.82) 55%, rgba(248, 245, 240, 0.92) 100%),
+    url('/img/backgrounds/inicio-ciudad.jpg');
 }
 
 .sr-inicio-bloque {
