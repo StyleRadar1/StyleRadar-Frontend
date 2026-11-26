@@ -11,10 +11,7 @@
 
 /* ── Tokens ── */
 .sr-tienda-glass {
-  --tg-veil: linear-gradient(180deg, rgba(11, 8, 19, 0.22) 0%, rgba(11, 8, 19, 0.48) 100%);
-  --tg-glow-1: rgba(123, 77, 216, 0.16);
-  --tg-glow-2: rgba(72, 17, 154, 0.14);
-  --tg-glow-3: rgba(232, 220, 203, 0.10);
+  --tg-veil: linear-gradient(180deg, rgba(8, 5, 14, 0.4) 0%, rgba(8, 5, 14, 0.6) 55%, rgba(8, 5, 14, 0.82) 100%);
   --tg-photo: url('/img/backgrounds/tienda-calle.jpg');
   --tg-base: #0d0a14;
 
@@ -30,10 +27,7 @@
 html[data-theme="light"] .sr-tienda-glass,
 html[data-theme="claro"] .sr-tienda-glass,
 html[data-tema="claro"] .sr-tienda-glass {
-  --tg-veil: linear-gradient(180deg, rgba(248, 246, 252, 0.55) 0%, rgba(244, 239, 231, 0.68) 100%);
-  --tg-glow-1: rgba(123, 77, 216, 0.22);
-  --tg-glow-2: rgba(72, 17, 154, 0.12);
-  --tg-glow-3: rgba(232, 220, 203, 0.55);
+  --tg-veil: linear-gradient(180deg, rgba(248, 245, 240, 0.72) 0%, rgba(248, 245, 240, 0.82) 55%, rgba(248, 245, 240, 0.92) 100%);
   --tg-photo: url('/img/backgrounds/tienda-calle.jpg');
   --tg-base: #f8f6fc;
 
@@ -46,7 +40,7 @@ html[data-tema="claro"] .sr-tienda-glass {
   --tg-blur: blur(20px) saturate(1.5);
 }
 
-/* ── Fondo común: foto de calle nocturna difuminada + velo + halos del manual ──
+/* ── Fondo común: foto de calle nocturna difuminada + velo, igual que el inicio del comprador ──
    Es el mismo fondo para todas las páginas de tienda. Se usa :root y !important
    porque .inv-page y .store-subscription traen su foto con !important en index.css.
    Donar conserva su foto propia. */
@@ -54,9 +48,6 @@ html[data-tema="claro"] .sr-tienda-glass {
   min-height: calc(100vh - 72px);
   background-color: var(--tg-base) !important;
   background-image:
-    radial-gradient(55vw 45vh at 88% 8%, var(--tg-glow-1), transparent 70%),
-    radial-gradient(45vw 45vh at 6% 92%, var(--tg-glow-3), transparent 70%),
-    radial-gradient(40vw 40vh at 40% 55%, var(--tg-glow-2), transparent 75%),
     var(--tg-veil),
     var(--tg-photo) !important;
   background-size: cover !important;
@@ -70,6 +61,36 @@ html[data-tema="claro"] .sr-tienda-glass {
   background: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+/* El hero de Mi tienda e Inventario ya no lleva su foto propia: se ve el mismo
+   fondo de calle, como en el inicio del comprador. El texto y los botones quedan igual. */
+.sr-tienda-glass .msd-hero__media,
+.sr-tienda-glass .msd-hero__shade,
+.sr-tienda-glass .inv-hero__media,
+.sr-tienda-glass .inv-hero__shade {
+  display: none;
+}
+
+:root .sr-tienda-glass .msd-hero,
+:root .sr-tienda-glass .inv-hero {
+  background: transparent;
+}
+
+/* Sin la foto oscura detrás, en modo claro las etiquetas y botones con borde del
+   hero pasan a texto grafito para que se lean sobre el velo claro */
+html[data-theme="light"] .sr-tienda-glass .msd-btn--ghost,
+html[data-tema="claro"] .sr-tienda-glass .msd-btn--ghost {
+  border-color: rgba(72, 17, 154, 0.45);
+  color: var(--sr-text-primary, #262626);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme="light"] .sr-tienda-glass .msd-pill--glass,
+html[data-tema="claro"] .sr-tienda-glass .msd-pill--glass {
+  border-color: rgba(72, 17, 154, 0.25);
+  color: var(--sr-text-primary, #262626);
+  background: rgba(255, 255, 255, 0.55);
 }
 
 /* ── Variables locales de cada página → vidrio ── */
