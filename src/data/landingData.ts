@@ -313,7 +313,7 @@ export const pricingPlans: PlanItem[] = [
       'Colecciones propias',
     ],
     action: 'Registrar mi tienda',
-    to: '/registro',
+    to: '/registro?tipo=tienda',
   },
   {
     audience: 'Fundaciones',

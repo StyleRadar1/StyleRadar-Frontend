@@ -104,13 +104,17 @@ function resetCard(card: HTMLElement | null) {
 /** Mínimo de la contraseña al iniciar sesión: 8 con el back real; 4 en demostración, donde las cuentas usan 1234. */
 const LOGIN_MIN = env.useMocks ? DEMO_PASSWORD.length : PASSWORD_MIN
 
+type RolRegistro = 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'
+
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
   initialTab?: 'login' | 'register'
+  /** Tipo de cuenta con el que abre «Crear cuenta» (p. ej. STORE_ADMIN desde «Registrar mi tienda»). */
+  initialRole?: RolRegistro
 }
 
-export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole = 'BUYER' }: AuthModalProps) {
   const { login, register: authRegister, verifyOtp } = useAuth()
   const navigate = useNavigate()
 
@@ -126,7 +130,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   // Campos para registro
   const [fullName, setFullName] = useState('')
   const [barrio, setBarrio] = useState('')
-  const [role, setRole] = useState<'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'>('BUYER')
+  const [role, setRole] = useState<RolRegistro>(initialRole)
   const [previewRole, setPreviewRole] = useState<DemoAccountRole | null>(null)
 
   // OTP 6 dígitos
@@ -260,12 +264,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab)
+      setRole(initialRole)
       setStep('form')
       setError('')
-      setPreviewRole(null)
+      setPreviewRole(initialTab === 'register' && initialRole !== 'BUYER' ? initialRole : null)
       setRendered(true)
     }
-  }, [initialTab, isOpen])
+  }, [initialTab, initialRole, isOpen])
 
   useEffect(() => {
     if (!rendered || !isOpen) return
@@ -670,10 +675,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     irAlCodigo()
   }
 
-  /** Después de crear la cuenta: tienda a activar su plan, fundación a su panel y comprador al asistente de medidas. */
+  /**
+   * Después de crear la cuenta: la tienda registra primero su almacén en ms-tiendas (NIT y RUT) y desde ahí
+   * pasa a activar su plan; fundación a su panel y comprador al asistente de medidas.
+   */
   const despuesDeRegistrarse = (user: UserSessionDto) => {
     if (user.role === 'STORE_ADMIN') {
-      finishAuthAndNavigate('/tienda/suscripcion/activar')
+      finishAuthAndNavigate('/tienda/registro')
       return
     }
     if (user.role === 'FOUNDATION_REPRESENTATIVE') {

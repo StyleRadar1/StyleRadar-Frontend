@@ -22,6 +22,7 @@ export default function LandingPage() {
   const [params, setParams] = useSearchParams()
   const [isAuthOpen, setIsAuthOpen] = useState(() => !user && params.has('login'))
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
+  const [authRole, setAuthRole] = useState<'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'>('BUYER')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
 
   useEffect(() => {
@@ -39,8 +40,9 @@ export default function LandingPage() {
     setIsAuthOpen(true)
   }
 
-  const handleOpenRegister = () => {
+  const handleOpenRegister = (rol: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE' = 'BUYER') => {
     if (user) return
+    setAuthRole(rol)
     setAuthTab('register')
     setIsAuthOpen(true)
   }
@@ -100,6 +102,7 @@ export default function LandingPage() {
           if (params.has('login')) setParams({}, { replace: true })
         }}
         initialTab={authTab}
+        initialRole={authRole}
       />
 
       {/* Modal del Probador Virtual premium (Quick Try-On) */}
