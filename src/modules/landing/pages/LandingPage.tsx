@@ -49,6 +49,15 @@ export default function LandingPage() {
     setIsAuthOpen(true)
   }
 
+  const handleOpenTryOn = () => {
+    if (!user) {
+      setAuthTab('login')
+      setIsAuthOpen(true)
+      return
+    }
+    setIsTryOnOpen(true)
+  }
+
   const handleOpenRegister = (rol: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE' = 'BUYER') => {
     if (user) return
     setAuthRole(rol)
@@ -88,7 +97,7 @@ export default function LandingPage() {
         <CategoriesGrid />
 
         {/* 4. Videos de uso y acceso al probador virtual */}
-        <VideoReels onOpenTryOn={() => setIsTryOnOpen(true)} />
+        <VideoReels onOpenTryOn={handleOpenTryOn} isAuthenticated={Boolean(user)} />
 
         {/* 5. Ciclo de la ropa y economía circular */}
         <ClothingCycle />
