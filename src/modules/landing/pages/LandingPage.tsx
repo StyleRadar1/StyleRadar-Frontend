@@ -63,7 +63,7 @@ export default function LandingPage() {
   const loginRequested = params.has('login')
   const [isAuthOpen, setIsAuthOpen] = useState(() => !user && loginRequested)
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
-  const [authRole, setAuthRole] = useState<'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'>('BUYER')
+  const [authRole, setAuthRole] = useState<'BUYER' | 'STORE_ADMIN'>('BUYER')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function LandingPage() {
     setIsTryOnOpen(true)
   }
 
-  const handleOpenRegister = (rol: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE' = 'BUYER') => {
+  const handleOpenRegister = (rol: 'BUYER' | 'STORE_ADMIN' = 'BUYER') => {
     if (user) return
     setAuthRole(rol)
     setAuthTab('register')

@@ -15,7 +15,7 @@ const REGISTRO: Record<string, [string, string]> = {
   RADAR: ['/registro', 'Crear cuenta gratis'],
   RADAR_PLUS: ['/registro?plan=radar-plus', 'Empezar con Radar+'],
   TIENDA: ['/registro?tipo=tienda', 'Registrar mi tienda'],
-  FUNDACION: ['/registro?tipo=fundacion', 'Registrar mi fundación'],
+  FUNDACION: ['/registro?tipo=fundacion', 'Solicitar vinculación'],
 }
 
 /** P7 · Planes: lo que ofrece StyleRadar y lo que incluye cada plan (RF-100 y RF-101 para el comprador). */

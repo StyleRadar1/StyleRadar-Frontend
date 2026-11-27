@@ -7,7 +7,7 @@ import { PLAN_COMPARISON_ROWS } from '@/modules/transacciones/types/plan.dto'
 
 interface PricingPlansProps {
   /** Abre «Crear cuenta» con el tipo de cuenta del plan (?tipo=tienda → STORE_ADMIN). */
-  onOpenRegister?: (rol?: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE') => void
+  onOpenRegister?: (rol?: 'BUYER' | 'STORE_ADMIN') => void
 }
 
 export function PricingPlans({ onOpenRegister }: PricingPlansProps) {

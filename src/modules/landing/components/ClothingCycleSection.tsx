@@ -1,4 +1,4 @@
-﻿import { useState, type KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge, Button } from '@/modules/core/design-system'
 
@@ -116,7 +116,7 @@ const PHASES: PhaseData[] = [
       { value: '100%', label: 'Trazabilidad directa a comunidades vulnerables' },
       { value: '3', label: 'Fundaciones aliadas con puntos de recogida' },
     ],
-    primaryAction: { label: 'Registrar fundación', to: '/registro?rol=fundacion' },
+    primaryAction: { label: 'Vincular fundación', to: '/registro?rol=fundacion' },
     secondaryAction: { label: 'Donar una prenda', to: '/donar' },
     previewCards: [
       {

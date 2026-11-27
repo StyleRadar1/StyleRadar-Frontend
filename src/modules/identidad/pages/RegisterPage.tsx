@@ -25,16 +25,12 @@ export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  // Los enlaces del landing usan ?rol= y los de planes ?tipo=: se aceptan ambos para tienda y fundación.
+  // Los enlaces del landing usan ?rol= y los de planes ?tipo=: solo BUYER y STORE_ADMIN son registros públicos.
+  // Las fundaciones (SR-RF-63) solo las crea el administrador de StyleRadar tras validar el certificado ESAL.
   const tipoParam = (params.get('tipo') ?? params.get('rol'))?.toLowerCase()
-  const registerRole: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE' =
-    tipoParam === 'tienda'
-      ? 'STORE_ADMIN'
-      : tipoParam === 'fundacion'
-        ? 'FOUNDATION_REPRESENTATIVE'
-        : 'BUYER'
+  const registerRole: 'BUYER' | 'STORE_ADMIN' = tipoParam === 'tienda' ? 'STORE_ADMIN' : 'BUYER'
   const esTienda = registerRole === 'STORE_ADMIN'
-  const esFundacion = registerRole === 'FOUNDATION_REPRESENTATIVE'
+  const vieneDeFundacion = tipoParam === 'fundacion'
   const esComprador = registerRole === 'BUYER'
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
@@ -109,11 +105,7 @@ export default function RegisterPage() {
       aceptaDatos: consentState.aceptaDatos,
       esMayorDeEdad: consentState.esMayorDeEdad,
       aceptaPromociones: consentState.aceptaPromociones,
-      origen: esFundacion
-        ? 'REGISTER_PAGE_FUNDACION'
-        : esTienda
-          ? 'REGISTER_PAGE_TIENDA'
-          : 'REGISTER_PAGE_COMPRADOR',
+      origen: esTienda ? 'REGISTER_PAGE_TIENDA' : 'REGISTER_PAGE_COMPRADOR',
     })
 
     try {
@@ -179,11 +171,7 @@ export default function RegisterPage() {
             aria-labelledby="su-titulo"
           >
             <h2 id="su-titulo" className="text-3xl font-extrabold text-[var(--color-text)]">
-              {esFundacion
-                ? 'Registra tu fundación'
-                : esTienda
-                  ? 'Registra tu tienda'
-                  : 'Crea tu cuenta'}
+              {esTienda ? 'Registra tu tienda' : 'Crea tu cuenta'}
             </h2>
             <p className="-mt-2 text-sm text-[var(--color-text-muted)]">
               ¿Ya tienes cuenta?{' '}
@@ -194,16 +182,21 @@ export default function RegisterPage() {
                 Inicia sesión
               </Link>
             </p>
+            {vieneDeFundacion && (
+              <div
+                role="status"
+                className="rounded-xl border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 p-3 text-xs leading-relaxed text-[var(--color-text)]"
+              >
+                <p className="font-semibold">Alta de fundaciones aliadas</p>
+                <p className="mt-1 text-[var(--color-text-muted)]">
+                  Las fundaciones son registradas únicamente por el administrador de StyleRadar tras verificar el certificado de personería jurídica ESAL. Crea aquí primero tu cuenta personal de usuario para que el administrador pueda asociarte como representante.
+                </p>
+              </div>
+            )}
 
             <Campo
               id="su-nombre"
-              label={
-                esFundacion
-                  ? 'Nombre de la fundación'
-                  : esTienda
-                    ? 'Nombre de la tienda'
-                    : 'Nombre completo'
-              }
+              label={esTienda ? 'Nombre de la tienda' : 'Nombre completo'}
               error={errores.nombre}
             >
               <input
@@ -212,13 +205,7 @@ export default function RegisterPage() {
                 onChange={(e) => setNombre(e.target.value)}
                 autoComplete={esComprador ? 'name' : 'organization'}
                 maxLength={60}
-                placeholder={
-                  esFundacion
-                    ? 'Ej. Fundación Abrigo Bogotá'
-                    : esTienda
-                      ? 'Ej. Taller Chapinero'
-                      : 'Ej. Valentina Rojas'
-                }
+                placeholder={esTienda ? 'Ej. Taller Chapinero' : 'Ej. Valentina Rojas'}
                 className={inputCls}
               />
             </Campo>
@@ -344,15 +331,14 @@ export default function RegisterPage() {
               {loading ? 'Creando cuenta…' : 'Crear cuenta'}
             </Button>
             <p className="text-xs text-[var(--color-text-muted)]">
-              ¿Tienes una tienda o una fundación? Se unen a StyleRadar como aliadas, no con este
-              formulario. Mira los{' '}
+              ¿Tienes una tienda? Mira los{' '}
               <Link
                 to="/planes"
                 className="font-semibold text-[var(--color-accent)] underline underline-offset-4"
               >
                 planes para comercios
               </Link>
-              .
+              . Las fundaciones aliadas son registradas directamente por el administrador de StyleRadar.
             </p>
           </form>
         </Card>
