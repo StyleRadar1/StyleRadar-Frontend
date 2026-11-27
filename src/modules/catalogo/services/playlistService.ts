@@ -98,15 +98,15 @@ function normalizePlaylist(raw: any): PlaylistDto {
     const id = String(item?.prendaId ?? item?.id ?? '')
     const nombre = String(item?.nombrePrenda ?? item?.nombre ?? '')
     const normNombre = nombre.trim().toLowerCase()
-    const match = env.useMocks
-      ? ITEMS.find(
-          (it) => it.id === id || (normNombre && it.nombre.trim().toLowerCase() === normNombre),
-        )
-      : undefined
+    const catalogMatch = ITEMS.find(
+      (it) => it.id === id || (normNombre && it.nombre.trim().toLowerCase() === normNombre),
+    )
+    const match = catalogMatch
     const rawImg =
       item?.imagen ||
       (Array.isArray(item?.fotografias) && item.fotografias[0]) ||
       item?.imagenUrl ||
+      item?.fotoUrl ||
       ''
     const resolvedReal = rawImg || match?.imagen || ''
     if (idx === 0 && resolvedReal) firstRealImg = resolvedReal
