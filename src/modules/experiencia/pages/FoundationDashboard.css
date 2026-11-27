@@ -438,6 +438,15 @@ html[data-cvd='on'] .fnd-donations {
   mask-image: var(--fnd-hero-fade);
 }
 
+.fnd-hero__media,
+.fnd-hero__shade {
+  display: none;
+}
+
+.fnd-hero {
+  background: transparent !important;
+}
+
 .fnd-hero__inner {
   width: min(100% - 2 * clamp(16px, 4vw, 48px), 1320px);
   margin: 0 auto;

@@ -172,25 +172,35 @@ export default function FoundationHomePage() {
               </div>
 
               {fndTab === 'necesidades' ? (
-                <div className="fnd-bento-needs">
-                  {(f.necesidades ?? []).slice(0, 3).map((n) => (
-                    <div key={n.nombre} className="fnd-bento-need">
-                      <div className="fnd-bento-need__row">
-                        <span>{n.nombre}</span>
-                        <strong>{n.avance}%</strong>
+                (f.necesidades ?? []).length > 0 ? (
+                  <div className="fnd-bento-needs">
+                    {(f.necesidades ?? []).slice(0, 3).map((n) => (
+                      <div key={n.nombre} className="fnd-bento-need">
+                        <div className="fnd-bento-need__row">
+                          <span>{n.nombre}</span>
+                          <strong>{n.avance}%</strong>
+                        </div>
+                        <div className="fnd-bento-need__bar">
+                          <span style={{ width: `${Math.min(100, Math.max(0, n.avance))}%` }} />
+                        </div>
                       </div>
-                      <div className="fnd-bento-need__bar">
-                        <span style={{ width: `${Math.min(100, Math.max(0, n.avance))}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
+                    ))}
+                  </div>
+                ) : (
+                  <p className="fnd-bento-empty">
+                    Aún no has registrado necesidades prioritarias. Prioriza abrigo, calzado o ropa infantil según tu inventario.
+                  </p>
+                )
+              ) : (f.queRecibimos ?? []).length > 0 ? (
                 <div className="fnd-bento-tags">
                   {(f.queRecibimos ?? []).map((q) => (
                     <span key={q} className="fnd-bento-pill">{q}</span>
                   ))}
                 </div>
+              ) : (
+                <p className="fnd-bento-empty">
+                  Aún no has configurado las categorías que recibes en tu perfil de fundación.
+                </p>
               )}
             </div>
 
@@ -203,8 +213,8 @@ export default function FoundationHomePage() {
                 </Link>
                 <Link to="/fundacion/estadisticas" className="fnd-bento-mini">
                   <span className="fnd-bento-tag">Recibidas</span>
-                  <strong>{data.totalPrendas} prendas ↗</strong>
-                  <span>{data.entregadas} entregas confirmadas</span>
+                  <strong>{data.totalPrendas} {data.totalPrendas === 1 ? 'prenda' : 'prendas'} ↗</strong>
+                  <span>{data.entregadas} {data.entregadas === 1 ? 'entrega confirmada' : 'entregas confirmadas'}</span>
                 </Link>
               </div>
 
