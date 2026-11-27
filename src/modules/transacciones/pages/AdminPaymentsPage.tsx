@@ -23,6 +23,12 @@ const STATUS_TONES: Record<PaymentStatus, 'violeta' | 'arena' | 'lavanda'> = {
   pendiente: 'lavanda',
 }
 
+const COMPACT_BADGE_TONES: Record<'violeta' | 'arena' | 'lavanda', string> = {
+  violeta: 'bg-violeta text-blanco',
+  arena: 'bg-arena text-grafito',
+  lavanda: 'bg-lavanda text-grafito',
+}
+
 const STATUS_LABELS: Record<PaymentStatus, string> = {
   aprobado: 'APROBADO',
   rechazado: 'RECHAZADO',
@@ -501,65 +507,67 @@ export default function AdminPaymentsPage() {
       ) : payments.length === 0 ? (
         <div className="mt-6"><EmptyState title="No hay pagos de suscripciones registrados">Ajusta los filtros o revisa más tarde</EmptyState></div>
       ) : (
-        <div className="sr-verdelo-panel mt-6 overflow-x-auto rounded-3xl p-5">
-          <table className="w-full text-left text-sm">
+        <div className="sr-verdelo-panel mt-6 overflow-x-auto rounded-3xl p-5 lg:overflow-x-visible">
+          <table className="w-full table-fixed text-left text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-[.16em] text-arena">
-                <th className="pb-3 pr-4">Referencia de pago</th>
-                <th className="pb-3 pr-4">ID de suscripción</th>
-                <th className="min-w-[12rem] pb-3 pr-4">Suscriptor</th>
-                <th className="pb-3 pr-4">Plan</th>
-                <th className="pb-3 pr-4 text-right">Valor (COP)</th>
-                <th className="pb-3 pr-4">Estado</th>
-                <th className="w-28 whitespace-nowrap pb-3 pr-4">Fecha</th>
-                <th className="pb-3">Referencia</th>
+              <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-[.14em] text-arena">
+                <th className="w-[38%] px-3 pb-3 text-left lg:w-[34%]">Suscriptor</th>
+                <th className="w-[16%] px-3 pb-3 text-left lg:w-[13%]">Plan</th>
+                <th className="w-[14%] px-3 pb-3 text-right lg:w-[12%]">Valor (COP)</th>
+                <th className="w-[16%] px-3 pb-3 text-center lg:w-[13%]">Estado</th>
+                <th className="w-[16%] px-3 pb-3 text-center lg:w-[12%]">Fecha</th>
+                <th className="hidden px-3 pb-3 text-left lg:table-cell lg:w-[16%]">Referencia</th>
               </tr>
             </thead>
             <tbody>
               {payments.map((p) => {
                 const pagoId = p.pagoId ?? p.id
-                const suscripcionId = p.suscripcionId ?? `SUB-${p.id}`
                 const sub = getSubscriber(p)
                 const valor = p.valor ?? p.amount
                 const rawDate = p.fecha ?? p.date
                 const fechaCorta = formatDateNumeric(rawDate)
                 const fechaLarga = formatDateLongSpanish(rawDate)
                 const referencia = p.referencia ?? p.mpReference ?? pagoId
+                const subTitle = sub.kind === 'resolved'
+                  ? (sub.email ? `${sub.typeLabel} · ${sub.email}` : sub.typeLabel)
+                  : undefined
                 return (
                   <tr
                     key={pagoId}
                     className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.06]"
                     onClick={() => handleSelectPayment(p)}
                   >
-                    <td className="py-3.5 pr-4 font-mono text-[11px] text-white/55">{pagoId}</td>
-                    <td className="py-3.5 pr-4 font-mono text-[11px] text-white/55">{suscripcionId}</td>
-                    <td className="py-3.5 pr-4">
+                    <td className="px-3 py-3.5 text-left">
                       {sub.kind === 'loading' ? (
                         <span className="text-xs text-white/50">Cargando…</span>
                       ) : sub.kind === 'resolved' ? (
                         <span className="block min-w-0">
-                          <b className="block truncate text-sm text-blanco">{sub.name}</b>
-                          <span className="block truncate text-xs text-white/55">
-                            {sub.typeLabel}{sub.email ? ` · ${sub.email}` : ''}
+                          <b className="block truncate text-sm text-blanco" title={sub.name}>{sub.name}</b>
+                          <span className="block truncate text-xs text-white/55" title={subTitle}>
+                            {subTitle}
                           </span>
                         </span>
                       ) : (
-                        <span className="text-sm text-white/55" title="No se pudo cargar el nombre">
+                        <span className="block truncate text-sm text-white/55" title="No se pudo cargar el nombre">
                           {sub.label}
                         </span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap py-3.5 pr-4 text-white/85">{p.planName || '—'}</td>
-                    <td className="whitespace-nowrap py-3.5 pr-4 text-right font-mono font-bold text-arena">
+                    <td className="truncate px-3 py-3.5 text-left text-white/85" title={p.planName || '—'}>{p.planName || '—'}</td>
+                    <td className="whitespace-nowrap px-3 py-3.5 text-right font-mono font-bold text-arena">
                       {formatCOP(valor)}
                     </td>
-                    <td className="py-3.5 pr-4">
-                      <Badge tone={STATUS_TONES[p.status]}>{formatStatusLabel(p.estado ?? STATUS_LABELS[p.status], p.unknownStatus)}</Badge>
+                    <td className="px-3 py-3.5 text-center">
+                      <span className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.1em] ${COMPACT_BADGE_TONES[STATUS_TONES[p.status]]}`}>
+                        {formatStatusLabel(p.estado ?? STATUS_LABELS[p.status], p.unknownStatus)}
+                      </span>
                     </td>
-                    <td className="w-28 whitespace-nowrap py-3.5 pr-4 tabular-nums text-white/75" title={fechaLarga} aria-label={fechaLarga}>
+                    <td className="whitespace-nowrap px-3 py-3.5 text-center tabular-nums text-white/75" title={fechaLarga} aria-label={fechaLarga}>
                       {fechaCorta}
                     </td>
-                    <td className="py-3.5 font-mono text-[11px] text-white/55">{referencia}</td>
+                    <td className="hidden truncate px-3 py-3.5 text-left font-mono text-[11px] text-white/55 lg:table-cell" title={referencia}>
+                      {referencia}
+                    </td>
                   </tr>
                 )
               })}
