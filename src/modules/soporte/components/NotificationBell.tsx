@@ -1,4 +1,6 @@
-import { useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import type { CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { AuthContext } from '@/modules/identidad/states/authContext'
@@ -8,8 +10,22 @@ import { abrirCampana } from '../services/notificationStream'
 import type { NotificacionDto } from '../types/notification.dto'
 import { INFO_AVISO } from '../utils/tiposAviso'
 import { IconoAviso } from './IconoAviso'
+import './NotificationBell.css'
 
 const hora = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+
+const FOCO = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sr-focus)]'
+/** Botón secundario del manual: borde redondeado, sin relleno. */
+const SECUNDARIO = 'inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--sr-border-control)] px-2 text-center text-xs font-semibold text-[var(--sr-text-primary)] transition hover:bg-[var(--sr-surface)]'
+
+/** Campana de línea de 1,6 px (manual de identidad). */
+function IconoCampana({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0" />
+    </svg>
+  )
+}
 
 /** RF-31: campana del menú con el contador de avisos sin leer y el panel de los más recientes. */
 export function NotificationBell() {
@@ -22,9 +38,26 @@ export function NotificationBell() {
   const rol = useContext(AuthContext)?.user?.role
   const [error, setError] = useState('')
   const [aviso, setAviso] = useState('')
+  const [intento, setIntento] = useState(0)
   const box = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const panelId = useId()
   const navigate = useNavigate()
+  // El panel se pinta fuera del encabezado (que tiene `backdrop-blur` y atraparía un elemento fijo) y se coloca bajo la campana.
+  // En celular ocupa el ancho de la pantalla; antes se salía por el borde izquierdo y los avisos no se podían leer.
+  const [pos, setPos] = useState({ top: 64, right: 12 })
+  useLayoutEffect(() => {
+    if (!open) return
+    const colocar = () => {
+      const r = box.current?.getBoundingClientRect()
+      // clientWidth y no innerWidth: así no cuenta la barra de desplazamiento y el panel queda alineado con el ícono
+      if (r) setPos({ top: Math.round(r.bottom + 8), right: Math.max(12, Math.round(document.documentElement.clientWidth - r.right)) })
+    }
+    colocar()
+    window.addEventListener('resize', colocar)
+    window.addEventListener('scroll', colocar, true)
+    return () => { window.removeEventListener('resize', colocar); window.removeEventListener('scroll', colocar, true) }
+  }, [open])
 
   // Tiempo real: cada aviso nuevo sube el contador y, si la campana ya cargó, entra arriba sin repetirse
   useEffect(() => abrirCampana((n) => {
@@ -39,11 +72,14 @@ export function NotificationBell() {
       .then((p) => { if (active) { setList(p.items); setPagina(0); setHayMas(p.hasNext); setError('') } })
       .catch(() => { if (active) setError('No pudimos cargar tus avisos. Intenta en unos minutos.') })
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    const onClick = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false) }
+    const onClick = (e: MouseEvent) => {
+      const dentro = e.target as Node
+      if (!box.current?.contains(dentro) && !panelRef.current?.contains(dentro)) setOpen(false)
+    }
     document.addEventListener('keydown', onKey)
     document.addEventListener('mousedown', onClick)
     return () => { active = false; document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onClick) }
-  }, [open])
+  }, [open, intento])
 
   // Al llegar al final de la lista se piden más avisos, sin botón
   const cargarMas = useCallback(async () => {
@@ -72,6 +108,9 @@ export function NotificationBell() {
     }
     if (n.enlace) navigate(n.enlace)
   }
+  // Mientras la lista carga se usa el contador general; si tampoco ha llegado, no se afirma nada (nunca «al día» sin saberlo)
+  const sinLeer = list ? list.filter((n) => !n.leida).length : count
+  const subtitulo = sinLeer > 0 ? `${sinLeer} sin leer` : list ? 'Estás al día' : 'Buscando tus avisos…'
   const readAll = async () => {
     try {
       await notificationService.markAllRead()
@@ -83,8 +122,8 @@ export function NotificationBell() {
     <div ref={box} className="relative">
       <button type="button" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((o) => !o)}
         aria-label={count ? `Notificaciones, ${count} sin leer` : 'Notificaciones'}
-        className="relative grid h-10 w-10 place-items-center rounded-lg border border-white/20 hover:bg-white/10">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-5 w-5">
+        className="relative grid h-11 w-11 place-items-center rounded-lg border border-white/20 hover:bg-white/10">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="h-5 w-5">
           <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0" />
         </svg>
         {count > 0 && (
@@ -94,39 +133,99 @@ export function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div id={panelId} role="region" aria-label="Notificaciones" className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-grafito p-3 shadow-2xl">
-          <div className="flex items-center justify-between gap-2 px-1 pb-2">
-            <p className="font-semibold">Notificaciones</p>
-            {!!list?.some((n) => !n.leida) && <button type="button" onClick={readAll} className="text-xs font-semibold underline">Marcar todo como leído</button>}
+      {open && createPortal(
+        <div
+          ref={panelRef}
+          id={panelId}
+          role="region"
+          aria-label="Notificaciones"
+          style={{ top: pos.top, '--campana-der': `${pos.right}px` } as CSSProperties}
+          className="sr-campana inset-x-3 z-50 max-h-[calc(100dvh-5.5rem)] sm:inset-x-auto sm:right-[var(--campana-der)] sm:w-[24rem]"
+        >
+          <span aria-hidden="true" className="sr-campana-pico" />
+
+          <div className="sr-campana-cab">
+            <span aria-hidden="true" className="sr-campana-icono"><IconoCampana className="h-[18px] w-[18px]" /></span>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-bold leading-tight text-[var(--sr-text-primary)]">Notificaciones</p>
+              <p className={`text-xs ${sinLeer ? 'font-semibold text-[var(--sr-accent-text)]' : 'text-[var(--sr-text-secondary)]'}`}>
+                {subtitulo}
+              </p>
+            </div>
+            {sinLeer > 0 && (
+              <button type="button" onClick={readAll} className={`min-h-11 shrink-0 rounded-full px-3 text-xs font-semibold text-[var(--sr-accent-text)] underline-offset-2 hover:underline ${FOCO}`}>
+                Marcar todo como leído
+              </button>
+            )}
           </div>
-          {aviso && <p role="status" className="mb-2 rounded-lg bg-white/5 px-2 py-1.5 text-xs text-white/75">{aviso}</p>}
-          {error ? <p role="alert" className="px-1 py-3 text-sm text-[#ffb4b4]">{error}</p>
-            : !list ? <p role="status" className="px-1 py-3 text-sm text-white/60">Cargando…</p>
-            : !list.length ? <p className="px-1 py-3 text-sm text-white/70">Sin notificaciones. Aquí te avisaremos cuando vuelva una prenda o llegue algo que buscas.</p>
-            : (
-              <ul className="max-h-80 space-y-1 overflow-y-auto" onScroll={(e) => { const t = e.currentTarget; if (t.scrollTop + t.clientHeight >= t.scrollHeight - 48) void cargarMas() }}>
+
+          <div className="sr-campana-cuerpo" onScroll={(e) => { const t = e.currentTarget; if (t.scrollTop + t.clientHeight >= t.scrollHeight - 48) void cargarMas() }}>
+            {aviso && <p role="status" className="mb-2 rounded-xl bg-[var(--sr-info-bg)] px-3 py-2 text-xs text-[var(--sr-text-primary)]">{aviso}</p>}
+
+            {error ? (
+              <div role="alert" className="m-1 flex flex-col items-start gap-2 rounded-2xl bg-[var(--sr-bad-bg)] p-3 text-sm text-[var(--sr-text-primary)]">
+                <p>{error}</p>
+                <button type="button" onClick={() => { setError(''); setList(null); setIntento((n) => n + 1) }}
+                  className={`inline-flex min-h-11 items-center rounded-full border border-[var(--sr-border-control)] px-4 text-xs font-semibold ${FOCO}`}>
+                  Reintentar
+                </button>
+              </div>
+            ) : !list ? (
+              <div role="status" aria-label="Cargando notificaciones" className="space-y-3 p-2">
+                <span className="sr-only">Cargando…</span>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} aria-hidden="true" className="flex items-start gap-3">
+                    <span className="sr-campana-esqueleto h-9 w-9 shrink-0 !rounded-full" />
+                    <div className="flex-1 space-y-2 pt-1">
+                      <div className="sr-campana-esqueleto h-3 w-3/4" />
+                      <div className="sr-campana-esqueleto h-3 w-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !list.length ? (
+              <div className="flex flex-col items-center gap-2 px-6 py-8 text-center">
+                <span aria-hidden="true" className="sr-campana-icono sr-campana-icono--grande"><IconoCampana className="h-6 w-6" /></span>
+                <p className="font-bold text-[var(--sr-text-primary)]">Sin notificaciones</p>
+                <p className="text-sm text-[var(--sr-text-secondary)]">Aquí te avisaremos cuando vuelva una prenda o llegue algo que buscas.</p>
+              </div>
+            ) : (
+              <ul className="space-y-1">
                 {list.map((n) => (
                   <li key={n.id}>
                     <button type="button" onClick={() => openItem(n)} disabled={!n.enlace && n.leida}
-                      className={`w-full rounded-xl p-3 text-left disabled:cursor-default ${n.enlace || !n.leida ? 'hover:bg-white/5' : ''} ${n.leida ? 'text-white/65' : ''}`}>
-                      <span className="flex items-center gap-2 text-sm font-semibold">
-                        {!n.leida && <i aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-violeta-claro" />}
-                        <span title={INFO_AVISO[n.tipo].titulo} className="shrink-0 text-white/70"><IconoAviso tipo={n.tipo} /></span>
-                        {n.titulo}{!n.leida && <span className="sr-only"> (sin leer)</span>}
+                      data-sin-leer={n.leida ? undefined : ''}
+                      className={`sr-campana-fila ${FOCO}`}>
+                      <span title={INFO_AVISO[n.tipo].titulo} aria-hidden="true" className="sr-campana-chip"><IconoAviso tipo={n.tipo} className="h-[18px] w-[18px]" /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className={`block text-sm leading-snug ${n.leida ? 'font-medium text-[var(--sr-text-secondary)]' : 'font-bold text-[var(--sr-text-primary)]'}`}>
+                          {n.titulo}{!n.leida && <span className="sr-only"> (sin leer)</span>}
+                        </span>
+                        <span className="mt-0.5 line-clamp-2 block text-xs text-[var(--sr-text-secondary)]">{n.detalle}</span>
+                        <span className="mt-1 block text-xs text-[var(--sr-text-muted)]">{hora.format(new Date(n.creadaEn))}</span>
                       </span>
-                      <span className="mt-0.5 block text-xs text-white/70">{n.detalle}</span>
-                      <span className="mt-1 block text-[11px] text-white/45">{hora.format(new Date(n.creadaEn))}</span>
+                      {!n.leida && <i aria-hidden="true" className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--sr-accent)]" />}
                     </button>
                   </li>
                 ))}
-                {cargandoMas && <li role="status" className="px-3 py-2 text-center text-xs text-white/60">Cargando más…</li>}
+                {cargandoMas && <li role="status" className="px-3 py-2 text-center text-xs text-[var(--sr-text-muted)]">Cargando más…</li>}
               </ul>
             )}
-          <Link to="/avisos" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Ver todas las notificaciones</Link>
-          {rol === 'BUYER' && <Link to="/alertas" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Ver búsquedas y alertas</Link>}
-          <Link to="/avisos/preferencias" onClick={() => setOpen(false)} className="mt-2 block rounded-xl border border-white/15 px-3 py-2 text-center text-sm font-semibold">Preferencias de avisos</Link>
-        </div>
+          </div>
+
+          <div className="sr-campana-pie">
+            <Link to="/avisos" onClick={() => setOpen(false)}
+              className={`inline-flex h-11 items-center justify-center gap-2 rounded-full bg-violeta px-4 text-sm font-semibold text-white transition hover:bg-violeta-claro ${FOCO}`}>
+              Ver todas las notificaciones
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </Link>
+            <div className={`grid gap-2 ${rol === 'BUYER' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {rol === 'BUYER' && <Link to="/alertas" onClick={() => setOpen(false)} className={`${SECUNDARIO} ${FOCO}`}>Ver búsquedas y alertas</Link>}
+              <Link to="/avisos/preferencias" onClick={() => setOpen(false)} className={`${SECUNDARIO} ${FOCO}`}>Preferencias de avisos</Link>
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

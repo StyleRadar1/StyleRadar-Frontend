@@ -63,7 +63,7 @@ export default function PreferencesPage() {
                       aria-label={`Recibir por correo: ${info.titulo}`}
                       disabled={busy === p.tipo}
                       onClick={() => cambiar(p.tipo, !correo)}
-                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${correo ? 'border-arena bg-arena text-grafito' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]'}`}
+                      className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold disabled:opacity-60 sm:min-h-9 sm:px-3 ${correo ? 'border-arena bg-arena text-grafito' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]'}`}
                     >
                       <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${correo ? 'bg-grafito' : 'bg-[var(--color-text-muted)]'}`} />
                       {correo ? 'Correo y plataforma' : 'Solo plataforma'}

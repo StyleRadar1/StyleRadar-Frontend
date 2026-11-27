@@ -142,9 +142,9 @@ export default function AlertsPage() {
                       <p className="text-sm text-[var(--color-text-muted)]">{s.descripcion} · guardada el {dia(s.creadaEn)}</p>
                       {s.coincidenciasNuevas > 0 && <span className="mt-1 inline-block rounded-full bg-[var(--color-sand)]/20 px-2.5 py-0.5 text-xs font-semibold text-[var(--color-sand)]">{s.coincidenciasNuevas} prendas nuevas</span>}
                     </div>
-                    <Link to={`/catalogo?q=${encodeURIComponent(s.nombre)}`} className="rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm font-semibold hover:bg-[var(--color-surface-muted)] text-[var(--color-text)]">Ver resultados</Link>
+                    <Link to={`/catalogo?q=${encodeURIComponent(s.nombre)}`} className="inline-flex min-h-11 items-center rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm font-semibold hover:bg-[var(--color-surface-muted)] text-[var(--color-text)] sm:min-h-0">Ver resultados</Link>
                     <Toggle label={`Alerta para ${s.nombre}`} on={!esRadar && s.alerta} locked={esRadar} busy={busy === s.id} onChange={(v) => toggle('busqueda', s.id, v, s.nombre)} />
-                    <button type="button" disabled={busy === s.id} onClick={() => setRemove({ kind: 'busqueda', id: s.id, nombre: s.nombre })} className="rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-danger)]" aria-label={`Eliminar ${s.nombre}`}>Eliminar</button>
+                    <button type="button" disabled={busy === s.id} onClick={() => setRemove({ kind: 'busqueda', id: s.id, nombre: s.nombre })} className="inline-flex min-h-11 items-center rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-danger)] sm:min-h-0" aria-label={`Eliminar ${s.nombre}`}>Eliminar</button>
                   </li>
                 ))}
               </ul>
@@ -167,7 +167,7 @@ export default function AlertsPage() {
                     </div>
                     <Toggle label={`Alerta para ${a.prenda}`} on={!esRadar && a.activa} locked={esRadar} busy={busy === a.id} onChange={(v) => toggle('alerta', a.id, v, a.prenda)} />
                     {!esRadar && a.activa && (
-                      <button type="button" disabled={busy === a.id} onClick={() => setRemove({ kind: 'alerta', id: a.id, nombre: a.prenda })} className="rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-danger)]" aria-label={`Cancelar seguimiento de ${a.prenda}`}>Cancelar seguimiento</button>
+                      <button type="button" disabled={busy === a.id} onClick={() => setRemove({ kind: 'alerta', id: a.id, nombre: a.prenda })} className="inline-flex min-h-11 items-center rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-danger)] sm:min-h-0" aria-label={`Cancelar seguimiento de ${a.prenda}`}>Cancelar seguimiento</button>
                     )}
                   </li>
                 ))}
@@ -190,7 +190,7 @@ export default function AlertsPage() {
 function Toggle({ label, on, locked, busy, onChange }: { label: string; on: boolean; locked: boolean; busy: boolean; onChange: (v: boolean) => void }) {
   return (
     <button type="button" role="switch" aria-checked={on} aria-label={locked ? `${label} (requiere Radar+)` : label} disabled={busy} onClick={() => onChange(!on)}
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${on ? 'border-arena bg-arena text-grafito' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]'}`}>
+      className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold disabled:opacity-60 sm:min-h-9 sm:px-3 ${on ? 'border-arena bg-arena text-grafito' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]'}`}>
       {locked ? <LockIcon className="h-3.5 w-3.5" /> : <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${on ? 'bg-grafito' : 'bg-[var(--color-text-muted)]'}`} />}
       {on ? 'Alerta activa' : locked ? 'Radar+' : 'Alerta apagada'}
     </button>
