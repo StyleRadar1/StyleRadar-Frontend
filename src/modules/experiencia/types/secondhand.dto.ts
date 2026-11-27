@@ -91,6 +91,20 @@ export const LOCALIDADES_BOGOTA: { id: LocalidadEnum; nombre: string }[] = [
   { id: 'SUMAPAZ', nombre: 'Sumapaz' },
 ]
 
+/** Nombre legible de la localidad: «CIUDAD_BOLIVAR» → «Ciudad Bolívar». Si llega un valor
+ *  que no está en la lista (o un barrio escrito a mano) se muestra sin guiones bajos. */
+export function nombreLocalidad(valor?: string | null): string {
+  if (!valor) return ''
+  const conocida = LOCALIDADES_BOGOTA.find((l) => l.id === valor)
+  if (conocida) return conocida.nombre
+  if (!valor.includes('_')) return valor
+  return valor
+    .split('_')
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join(' ')
+}
+
 /** Estados de conservación oficiales del backend */
 export type Conservacion = ConservationStatus | 'COMO_NUEVO' | 'MUY_BUENO' | 'BUENO'
 export const CONSERVACIONES: Conservacion[] = ['NEW_WITH_TAGS', 'LIKE_NEW', 'GOOD_CONDITION', 'ACCEPTABLE']

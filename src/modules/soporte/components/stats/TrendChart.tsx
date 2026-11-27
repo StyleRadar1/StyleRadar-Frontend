@@ -26,6 +26,9 @@ export interface TrendChartProps {
   seriesLabel: string
   tableColumnLabel?: string
   tableDateHeader?: string
+  splitTable?: boolean
+  tableNote?: string
+  highlightTableActivity?: boolean
   points: TrendPoint[]
   variant?: 'area' | 'bars'
   views?: readonly TrendView[]
@@ -50,6 +53,9 @@ export function TrendChart({
   seriesLabel,
   tableColumnLabel = 'Total',
   tableDateHeader = 'Periodo',
+  splitTable = false,
+  tableNote,
+  highlightTableActivity = false,
   points,
   variant = 'area',
   views,
@@ -155,7 +161,18 @@ export function TrendChart({
           <DataTable
             caption={title}
             head={[tableDateHeader, tableColumnLabel]}
-            rows={points.map((p) => [p.fullLabel, formatValue(p.value)])}
+            split={splitTable}
+            note={tableNote}
+            rows={points.map((p) => ({
+              key: p.key,
+              cells: [p.tableLabel ?? p.fullLabel, formatValue(p.value)],
+              rowAriaLabel: p.tableAriaLabel ?? p.fullLabel,
+              tone: highlightTableActivity
+                ? p.value > 0
+                  ? 'active'
+                  : 'muted'
+                : 'default',
+            }))}
           />
         ) : view === 'heatmap' ? (
           <CalendarHeatmap

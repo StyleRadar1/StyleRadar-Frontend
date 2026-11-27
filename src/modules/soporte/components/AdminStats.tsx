@@ -30,9 +30,12 @@ import {
   formatFullDateSpanish,
   formatMonthAbbr,
   formatMonthLong,
+  formatMonthOnly,
   formatMonthShort,
+  formatWeekdayDay,
   getCurrentYearMonth,
   getRecentMonthOptions,
+  getYearFromIso,
 } from '../utils/statsFormat'
 import { DistributionCard, type DistributionRow } from './stats/DistributionCard'
 import { KpiCard } from './stats/KpiCard'
@@ -118,12 +121,35 @@ export function AdminStatsView() {
     formatMonthShort(donations.data?.period?.startDate) || 'Mes en curso'
 
   const revenueRawPoints = revenue.data?.points ?? []
-  const revenueTrendPoints: TrendPoint[] = revenueRawPoints.map((point) => {
+  const revenueYears = Array.from(
+    new Set(
+      revenueRawPoints
+        .map((p) => getYearFromIso(p.date))
+        .filter((y): y is number => y !== null),
+    ),
+  )
+  const revenueTableNote =
+    revenueYears.length === 1
+      ? `Año ${revenueYears[0]}`
+      : revenueYears.length > 1
+        ? `Periodo: ${revenueYears[0]} – ${revenueYears[revenueYears.length - 1]}`
+        : undefined
+
+  const revenueTrendPoints: TrendPoint[] = revenueRawPoints.map((point, idx) => {
     const fullLabel = formatMonthShort(point.date)
+    const monthOnly = formatMonthOnly(point.date)
+    const yr = getYearFromIso(point.date)
+    const prevYr = idx > 0 ? getYearFromIso(revenueRawPoints[idx - 1].date) : null
+    const tableLabel =
+      revenueYears.length > 1 && yr !== null && (idx === 0 || yr !== prevYr)
+        ? `${monthOnly} ${yr}`
+        : monthOnly
     return {
       key: point.date,
       axisLabel: formatMonthAbbr(point.date),
       fullLabel,
+      tableLabel,
+      tableAriaLabel: fullLabel,
       value: point.value,
     }
   })
@@ -141,6 +167,8 @@ export function AdminStatsView() {
     key: point.date,
     axisLabel: formatDayShort(point.date),
     fullLabel: formatFullDateSpanish(point.date),
+    tableLabel: formatWeekdayDay(point.date),
+    tableAriaLabel: formatFullDateSpanish(point.date),
     value: point.value,
   }))
 
@@ -265,6 +293,57 @@ export function AdminStatsView() {
         />
       </section>
 
+      {/* Gráfica de tendencia 1: Ingresos por suscripciones (mensual, COP) */}
+      <TrendChart
+        title="Ingresos por suscripciones"
+        subtitle="Evolución mensual del total recaudado en pesos colombianos"
+        seriesLabel="Total en COP"
+        tableColumnLabel="Total"
+        tableDateHeader="Mes"
+        tableNote={revenueTableNote}
+        points={revenueTrendPoints}
+        variant="area"
+        views={['area', 'bars', 'table']}
+        storageKey="sr_admin_revenue_view"
+        highlightPeaks
+        enableAverageToggle
+        formatValue={formatCOP}
+        delta={revenueDelta}
+        headerControls={
+          <span className="glass-pill px-2.5 py-1 text-xs font-semibold">
+            Mensual
+          </span>
+        }
+        note="La variación porcentual compara el último mes con el mes inmediatamente anterior de la misma serie."
+        loading={revenue.loading}
+        emptyText="Sin ingresos en el periodo"
+        error={revenue.error}
+        status={revenue.status}
+        onRetry={revenue.retry}
+      />
+
+      {/* Gráfica de tendencia 2: Registros de usuarios por día (un mes calendario) */}
+      <TrendChart
+        title="Registros de usuarios por día"
+        subtitle={`Nuevas cuentas registradas durante ${regPeriodLong}`}
+        seriesLabel="Registros"
+        tableColumnLabel="Registros"
+        tableDateHeader="Día"
+        splitTable
+        highlightTableActivity
+        points={registrationTrendPoints}
+        variant="bars"
+        views={['activity', 'heatmap', 'area', 'table']}
+        storageKey="sr_admin_registrations_view"
+        headerControls={monthSelect}
+        note="Serie diaria de nuevos registros del mes calendario seleccionado."
+        loading={registrations.loading}
+        emptyText={`Sin registros durante ${regPeriodLong}`}
+        error={registrations.error}
+        status={registrations.status}
+        onRetry={registrations.retry}
+      />
+
       {/* Distribuciones por plan: Compradores y Tiendas */}
       <section
         aria-label="Distribuciones por plan"
@@ -301,54 +380,6 @@ export function AdminStatsView() {
           onRetry={stores.retry}
         />
       </section>
-
-      {/* Gráfica de tendencia 1: Ingresos por suscripciones (mensual, COP) */}
-      <TrendChart
-        title="Ingresos por suscripciones"
-        subtitle="Evolución mensual del total recaudado en pesos colombianos"
-        seriesLabel="Total en COP"
-        tableColumnLabel="Total"
-        tableDateHeader="Mes"
-        points={revenueTrendPoints}
-        variant="area"
-        views={['area', 'bars', 'table']}
-        storageKey="sr_admin_revenue_view"
-        highlightPeaks
-        enableAverageToggle
-        formatValue={formatCOP}
-        delta={revenueDelta}
-        headerControls={
-          <span className="glass-pill px-2.5 py-1 text-xs font-semibold">
-            Mensual
-          </span>
-        }
-        note="La variación porcentual compara el último mes con el mes inmediatamente anterior de la misma serie."
-        loading={revenue.loading}
-        emptyText="Sin ingresos en el periodo"
-        error={revenue.error}
-        status={revenue.status}
-        onRetry={revenue.retry}
-      />
-
-      {/* Gráfica de tendencia 2: Registros de usuarios por día (un mes calendario) */}
-      <TrendChart
-        title="Registros de usuarios por día"
-        subtitle={`Nuevas cuentas registradas durante ${regPeriodLong}`}
-        seriesLabel="Registros"
-        tableColumnLabel="Registros"
-        tableDateHeader="Día"
-        points={registrationTrendPoints}
-        variant="bars"
-        views={['activity', 'heatmap', 'area', 'table']}
-        storageKey="sr_admin_registrations_view"
-        headerControls={monthSelect}
-        note="Serie diaria de nuevos registros del mes calendario seleccionado."
-        loading={registrations.loading}
-        emptyText={`Sin registros durante ${regPeriodLong}`}
-        error={registrations.error}
-        status={registrations.status}
-        onRetry={registrations.retry}
-      />
     </div>
   )
 }
