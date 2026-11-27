@@ -82,7 +82,7 @@ export function KpiCard({
       className={`glass-card flex flex-col ${hero ? 'p-8 sm:p-10' : 'p-6'} ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sr-text-muted,var(--color-text-muted))]">
+        <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sr-text-primary,#ffffff)]">
           {label}
         </p>
         {icon ? (

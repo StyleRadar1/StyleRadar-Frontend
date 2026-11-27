@@ -67,16 +67,16 @@ export function TableToggle({ on, onChange }: { on: boolean; onChange: (v: boole
 
 export function DataTable({ caption, head, rows }: { caption: string; head: string[]; rows: (string | number)[][] }) {
   return (
-    <div className="max-h-80 overflow-auto rounded-xl border border-white/10 bg-white/[.02] px-3 py-1 pr-2 [scrollbar-gutter:stable]">
-      <table className="w-full text-left text-sm text-[var(--sr-text-primary,var(--color-text))]">
+    <div className="max-h-80 w-full overflow-y-auto overflow-x-auto rounded-2xl border border-white/15 bg-white/[.02] [scrollbar-gutter:stable]">
+      <table className="w-full border-collapse text-left text-sm text-[var(--sr-text-primary,var(--color-text))]">
         <caption className="sr-only">{caption}</caption>
-        <thead className="sticky top-0 bg-[var(--sr-surface,#141021)]/95 text-[11px] uppercase tracking-[.12em] text-[var(--sr-text-muted,var(--color-text-muted))]">
+        <thead className="glass-table-head sticky top-0 z-10 text-[11px] uppercase tracking-[.12em] text-[var(--sr-text-primary,#f8fafc)]">
           <tr>
             {head.map((h, i) => (
               <th
                 key={h}
                 scope="col"
-                className={`py-2.5 font-bold ${i ? 'text-right' : ''} ${i === head.length - 1 ? 'pr-4' : 'pr-3'}`}
+                className={`px-4 py-3 font-bold sm:px-5 ${i ? 'text-right' : 'text-left'}`}
               >
                 {h}
               </th>
@@ -87,11 +87,11 @@ export function DataTable({ caption, head, rows }: { caption: string; head: stri
           {rows.map((r) => (
             <tr key={String(r[0])} className="border-t border-white/10 transition-colors hover:bg-white/[.04]">
               {r.map((c, i) => i === 0
-                ? <th key={i} scope="row" className="py-2 pr-3 font-semibold">{c}</th>
+                ? <th key={i} scope="row" className="px-4 py-2.5 text-left font-semibold sm:px-5">{c}</th>
                 : (
                   <td
                     key={i}
-                    className={`py-2 text-right tabular-nums ${i === r.length - 1 ? 'pr-4' : 'pr-3'}`}
+                    className="px-4 py-2.5 text-right tabular-nums sm:px-5"
                   >
                     {c}
                   </td>

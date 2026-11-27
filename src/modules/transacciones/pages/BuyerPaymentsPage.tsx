@@ -274,10 +274,6 @@ export function BuyerPaymentsSection() {
               <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">Método</dt>
               <dd>{selectedReceipt.method || 'Mercado Pago'}</dd>
             </div>
-            <div>
-              <dt className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">suscripcionId</dt>
-              <dd className="font-mono">{selectedReceipt.suscripcionId ?? 'SUB-USR-001'}</dd>
-            </div>
           </dl>
         </Card>
       )}

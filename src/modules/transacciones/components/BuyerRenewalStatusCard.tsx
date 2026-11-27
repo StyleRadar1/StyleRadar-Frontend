@@ -3,6 +3,8 @@ import { Badge } from '@/modules/core/design-system'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CancelSubscriptionButton } from './CancelSubscriptionButton'
+import { SubscriptionSummary } from './SubscriptionSummary'
+import { getSubscriptionBadgeClass } from '../utils/subscriptionBadge'
 import { RADAR_PLUS_PRICE } from '../constants/plansByRole'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { deriveSubscriptionStatus } from '../mappers/paymentsMappers'
@@ -88,8 +90,7 @@ export function BuyerRenewalStatusCard() {
     autoRenewal: renewalActive,
     endDate: fechaFinRaw,
   })
-  const badgeTone =
-    derived.status === 'ACTIVA' ? (renewalActive ? 'violeta' : 'arena') : 'lavanda'
+  const badgeClass = getSubscriptionBadgeClass(derived.status, renewalActive)
 
   return (
     <div
@@ -98,60 +99,32 @@ export function BuyerRenewalStatusCard() {
       className="mt-4 rounded-2xl border border-[var(--sr-border,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] p-4 text-sm text-[var(--sr-text-primary,var(--color-text))]"
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-bold">Renovación automática:</span>
-            <Badge tone={badgeTone}>{derived.label}</Badge>
+        <div className="flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="font-bold">Plan Radar+</span>
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${badgeClass}`}>
+              <span aria-hidden="true">●</span>
+              <span>{derived.label}</span>
+            </span>
           </div>
 
           {derived.status === 'PENDIENTE' ? (
             <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-              Plan Radar+ · suscripción pendiente de confirmación.
+              Suscripción pendiente de confirmación.
             </p>
           ) : (
-            <>
-              {fechaInicioTexto && (
-                <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                  Plan Radar+ · activo desde el {fechaInicioTexto}
-                </p>
-              )}
-
-              {derived.status === 'CANCELADA' || derived.status === 'VENCIDA' ? (
-                fechaFinTexto && (
-                  <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                    Finalizó el {fechaFinTexto}
-                  </p>
-                )
-              ) : derived.status === 'ACTIVA' && renewalActive ? (
-                <>
-                  {fechaFinTexto && (
-                    <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                      Vigente hasta el {fechaFinTexto}
-                    </p>
-                  )}
-                  <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                    Se renovará automáticamente ({valorTexto}).
-                  </p>
-                </>
-              ) : derived.status === 'ACTIVA' && !renewalActive ? (
-                <>
-                  {fechaFinTexto && (
-                    <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                      Vigente hasta el {fechaFinTexto}
-                    </p>
-                  )}
-                  <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                    No se renovará al finalizar el período.
-                  </p>
-                </>
-              ) : (
-                fechaFinTexto && (
-                  <p className="text-xs text-[var(--sr-text-secondary,var(--color-text-muted))]">
-                    Vigente hasta el {fechaFinTexto}
-                  </p>
-                )
-              )}
-            </>
+            <SubscriptionSummary
+              startDate={fechaInicioTexto}
+              endDate={fechaFinTexto}
+              endLabel={derived.status === 'CANCELADA' || derived.status === 'VENCIDA' ? 'Finalizó el' : 'Vigente hasta'}
+              renewalText={
+                derived.status === 'ACTIVA'
+                  ? renewalActive
+                    ? `Se renovará automáticamente (${valorTexto}).`
+                    : 'No se renovará al finalizar el período.'
+                  : undefined
+              }
+            />
           )}
 
           <p className="text-xs font-semibold text-arena">

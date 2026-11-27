@@ -1,4 +1,5 @@
 import { useCallback, useContext, useMemo, useState, type FormEvent } from 'react'
+import { Check } from 'lucide-react'
 import { env } from '@/configs/env'
 import { Button } from '@/modules/core/design-system'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
@@ -7,6 +8,8 @@ import { AuthContext } from '@/modules/identidad/states/authContext'
 import { CancelSubscriptionButton } from '../components/CancelSubscriptionButton'
 import { PayerEmailForm } from '../components/PayerEmailForm'
 import { StoreSuspendedBanner } from '../components/StoreSuspendedBanner'
+import { SubscriptionSummary } from '../components/SubscriptionSummary'
+import { getSubscriptionBadgeClass } from '../utils/subscriptionBadge'
 import { STORE_SUBSCRIPTION_PRICE } from '../constants/plansByRole'
 import { useStoreSubscription } from '../hooks/useStoreSubscription'
 import { deriveSubscriptionStatus, formatStatusLabel, formatSubscriptionDate } from '../mappers/paymentsMappers'
@@ -195,18 +198,21 @@ export default function StoreSubscriptionPage() {
   const lastPayment = payments[0]
   const failedPayment = lastPayment?.status === 'rechazado' ? lastPayment : null
   const nextCharge = (sub.fechaFin ?? sub.periodEndsAt) ? fecha(sub.fechaFin ?? sub.periodEndsAt) : 'Sin fecha programada'
-  const suscripcionId = sub.suscripcionId ?? 'Pendiente de asignación'
-  const estado = sub.estado ?? sub.status
   const fechaInicio = sub.fechaInicio ?? null
   const fechaFin = sub.fechaFin ?? sub.periodEndsAt ?? null
   const autoRenovacion = sub.autoRenovacion ?? sub.renewalEnabled
   const derivedSub = deriveSubscriptionStatus(sub.status, { autoRenewal: autoRenovacion, endDate: fechaFin })
-  const statusBadgeText = sub.unknownStatus
-    ? formatStatusLabel(STATUS_LABEL[derivedSub.status], sub.unknownStatus)
-    : STATUS_LABEL[derivedSub.status]
-  const planCardBadgeText = sub.unknownStatus
-    ? formatStatusLabel(STATUS_LABEL[derivedSub.status], sub.unknownStatus)
-    : derivedSub.label
+  const cardBadgeLabel = sinSuscripcion
+    ? 'Sin suscripción'
+    : sub.unknownStatus
+      ? formatStatusLabel(STATUS_LABEL[derivedSub.status], sub.unknownStatus)
+      : derivedSub.status === 'ACTIVA' && !autoRenovacion
+        ? 'Activa sin renovación'
+        : STATUS_LABEL[derivedSub.status]
+  const badgeToneClass = getSubscriptionBadgeClass(
+    sinSuscripcion ? 'SIN_SUSCRIPCION' : derivedSub.status,
+    Boolean(autoRenovacion),
+  )
   const isActive = !sinSuscripcion && derivedSub.status === 'ACTIVA'
   const mostrarPagar = !isActive
   const isRetryState =
@@ -226,13 +232,7 @@ export default function StoreSubscriptionPage() {
       <StoreSuspendedBanner status={sub.status} onPayClick={() => openStartForm(defaultPayerEmail)} />
       <div className="store-subscription__main">
         <div className="store-subscription__title">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2>Suscripción</h2>
-            <span className="store-subscription__badge">
-              <span aria-hidden="true">● </span>
-              <span>{sinSuscripcion ? 'Sin suscripción' : statusBadgeText}</span>
-            </span>
-          </div>
+          <h2>Suscripción</h2>
           <p>La suscripción mantiene tu catálogo visible en el radar después del<br className="desktop-break" /> periodo gratuito de 30 días</p>
         </div>
 
@@ -340,22 +340,45 @@ export default function StoreSubscriptionPage() {
         )}
 
         <article className="store-subscription__plan">
-          <span className="store-subscription__badge">● {(sinSuscripcion ? 'Sin suscripción' : planCardBadgeText).toUpperCase()}</span>
-          <h3>{sub.planName}</h3>
-          <p className="store-subscription__price">{formatCOP(sub.amount || STORE_SUBSCRIPTION_PRICE)} <small>/ mes</small></p>
-          <ul>
-            <li>Catálogo ilimitado visible en el radar y en el mapa</li>
-            <li>Colecciones y playlists de tienda</li>
-            <li>Avisos automáticos a quienes esperan una prenda</li>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="!m-0">{sub.planName}</h3>
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold tracking-wide ${badgeToneClass}`}>
+              <span aria-hidden="true">●</span>
+              <span>{cardBadgeLabel}</span>
+            </span>
+          </div>
+          <p className="mt-3 mb-5 flex items-baseline gap-1.5 text-4xl font-extrabold tabular-nums tracking-tight">
+            <span>{formatCOP(sub.amount || STORE_SUBSCRIPTION_PRICE)}</span>
+            <small className="text-sm font-medium text-[var(--sr-text-muted,#b9b9ca)]">/ mes</small>
+          </p>
+          <ul className="!m-0 !list-none space-y-2.5 !p-0">
+            <li className="flex items-center gap-2.5">
+              <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--sr-ok,#4ade80)]" />
+              <span>Catálogo ilimitado visible en el radar y en el mapa</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--sr-ok,#4ade80)]" />
+              <span>Colecciones y playlists de tienda</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--sr-ok,#4ade80)]" />
+              <span>Avisos automáticos a quienes esperan una prenda</span>
+            </li>
           </ul>
-          {!sinSuscripcion && <div className="store-subscription__metadata">
-            <span>ID de suscripción: <b>{suscripcionId}</b></span>
-            <span>Estado: <b>{estado}</b></span>
-            <span>Inicio: <b>{fechaInicio ? fecha(fechaInicio) : '—'}</b></span>
-            <span>Vencimiento: <b>{fechaFin ? fecha(fechaFin) : '—'}</b></span>
-            <span>Renovación automática: <b>{autoRenovacion ? 'Sí' : 'No'}</b></span>
-            <span>Método: <b>{lastPayment?.method ?? 'Mercado Pago'}</b></span>
-          </div>}
+          {!sinSuscripcion && (
+            <SubscriptionSummary
+              className="my-6"
+              startDate={fechaInicio ? fecha(fechaInicio) : null}
+              endDate={fechaFin ? fecha(fechaFin) : null}
+              renewalText={
+                derivedSub.status === 'ACTIVA'
+                  ? autoRenovacion
+                    ? 'Se renueva automáticamente'
+                    : 'No se renovará al finalizar el período'
+                  : undefined
+              }
+            />
+          )}
           <div className="store-subscription__actions flex flex-wrap items-center gap-3">
             {mostrarPagar && !showStartForm && (
               <Button
