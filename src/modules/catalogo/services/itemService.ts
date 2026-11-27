@@ -88,7 +88,13 @@ export function normalizeBackendItem(raw: Record<string, unknown>): ItemResponse
     tipo: String(r.tipo ?? ''),
     color: String(r.color ?? ''),
     coloresDisponibles: Array.isArray(r.coloresDisponibles) ? r.coloresDisponibles : undefined,
-    tallas: Array.isArray(r.tallas) ? r.tallas : [],
+    tallas: Array.isArray(r.tallas)
+      ? r.tallas
+      : Array.isArray(r.availableSizes)
+        ? r.availableSizes
+        : Array.isArray(r.sizes)
+          ? r.sizes
+          : [],
     imagen,
     imagenSecundaria: typeof r.imagenSecundaria === 'string' ? r.imagenSecundaria : undefined,
     imagenes,
