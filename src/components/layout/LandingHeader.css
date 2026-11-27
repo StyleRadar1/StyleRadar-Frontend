@@ -359,3 +359,41 @@ html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-tema > button {
 .sr-landing .pe-brand-text {
   font-size: 1.2rem;
 }
+
+@media (max-width: 680px) {
+  .sr-landing .pe-header-left {
+    overflow: visible;
+    gap: 8px;
+  }
+  .sr-landing .pe-brand {
+    gap: 7px;
+  }
+  .sr-landing .pe-logo {
+    width: 18px;
+    height: 29px;
+  }
+  .sr-landing .pe-brand-text {
+    font-size: 0.95rem;
+  }
+  .sr-landing .pe-explore-btn {
+    padding: 7px 11px;
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 380px) {
+  .sr-landing .pe-header,
+  .sr-landing .pe-header.is-scrolled {
+    padding: 10px 10px;
+    gap: 6px;
+  }
+  .sr-landing .pe-brand-text {
+    font-size: 0.88rem;
+  }
+  .sr-landing .pe-explore-btn {
+    padding: 6px 9px;
+    font-size: 0.6rem;
+  }
+}

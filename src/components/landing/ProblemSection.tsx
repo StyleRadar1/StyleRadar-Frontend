@@ -62,7 +62,7 @@ export function ProblemSection() {
           <p className="text-lg md:text-xl font-medium text-[var(--sr-hero-text)] leading-relaxed">
             <strong className="text-[var(--sr-hero-text)] font-extrabold font-sans">StyleRadar</strong> junta el
             inventario de las marcas y tiendas independientes en un solo mapa:{' '}
-            <span className="text-[var(--sr-accent-text)] font-semibold">lo que hay hoy, en tu talla y cerca de tu barrio.</span>
+            <span className="text-[#3b0764] font-bold">lo que hay hoy, en tu talla y cerca de tu barrio.</span>
           </p>
         </div>
 

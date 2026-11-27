@@ -480,11 +480,45 @@ html[data-tema="claro"] body::after {
   background: radial-gradient(circle, rgba(192, 132, 252, 0.13) 0%, rgba(124, 58, 237, 0.06) 45%, transparent 70%);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  .grain {
+    display: none !important;
+  }
   body::before,
   body::after {
-    filter: blur(56px);
-    opacity: 0.65;
+    filter: blur(44px);
+    opacity: 0.5;
+  }
+  .sr-aurora-blob {
+    filter: blur(48px) !important;
+    animation: none !important;
+  }
+  .sr-glass-card,
+  html[data-theme="light"] .sr-glass-card,
+  html[data-theme="claro"] .sr-glass-card,
+  html[data-tema="claro"] .sr-glass-card,
+  .glass-card {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .sr-probador-page,
+  .sr-donaciones-page,
+  .sr-playlist-page,
+  .sr-planes-page,
+  .sr-tienda-page,
+  .inv-page,
+  .store-subscription,
+  .sr-mensajes-page,
+  .sr-perfil-page,
+  .sr-catalog-page,
+  .sr-rack-section,
+  .sr-map-page-shell,
+  .sr-map-landing-section,
+  .fnd-dashboard,
+  .fnd-donations,
+  .sr-landing,
+  .sr-verdelo-shell {
+    background-attachment: scroll !important;
   }
 }
 
