@@ -39,7 +39,7 @@ async function todas(ruta: string, size: number): Promise<Record<string, unknown
 /**
  * ms-chat no guarda nombres: se piden a ms-usuarios por id (GET /api/v1/users/{id}, SR-RF-114) y se recuerdan.
  * Esa ruta solo deja ver el perfil propio, o cualquiera si es el administrador: con otra cuenta responde 403.
- * Si falla, queda «Usuario #id» y no se vuelve a pedir en esta sesión.
+ * Si falla, se muestra el papel de la persona y no se vuelve a pedir en esta sesión.
  */
 const nombresConocidos = new Map<string, string>()
 const sinNombre = new Set<string>()
