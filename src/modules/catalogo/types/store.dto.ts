@@ -24,6 +24,7 @@ export interface StoreResponseDto {
   rating?: number | null
   categories?: string[] | null
   verificationStatus?: VerificationStatus | null
+  representative?: string | null
 }
 
 /** Página de almacenes (content[] y paginación), igual que las demás búsquedas de los micros. */

@@ -14,7 +14,7 @@ import { erroresDeConfiguracion, storeSettingsService } from '../services/storeS
 import { errorDeFoto, ordenadas, storePhotoService, TEXTOS_FOTOS } from '../services/storePhotoService'
 import {
   ALLOWED_STORE_PHOTO_TYPES, LOW_STOCK_DEFAULT, LOW_STOCK_MAX, LOW_STOCK_MIN, MAX_STORE_PHOTOS, NEW_ARRIVAL_DEFAULT,
-  NEW_ARRIVAL_OPTIONS, type StorePhotoDto, type StoreResponseDto,
+  NEW_ARRIVAL_OPTIONS, STORE_CATEGORY_TEXT, type StoreCategory, type StorePhotoDto, type StoreResponseDto,
 } from '../types/store.dto'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
@@ -90,10 +90,28 @@ function readCollections(): StoreCollection[] {
   }
 }
 
+function representanteDesdeServidor(rep?: string | null): string {
+  const limpio = (rep ?? '').trim()
+  if (!limpio || /^Usuario\s*#\d+$/i.test(limpio)) return '—'
+  return limpio
+}
+
+function categoriasDesdeServidor(categories?: string[] | null): string {
+  const lista = (categories ?? [])
+    .map((c) => {
+      const t = (c ?? '').trim()
+      if (!t) return ''
+      return (STORE_CATEGORY_TEXT[t.toUpperCase() as StoreCategory] ?? t).toUpperCase()
+    })
+    .filter(Boolean)
+  return lista.join(' & ')
+}
+
 /** F-19: lo que trae ms-tiendas del almacén de la Tienda; lo que no trae se queda como estaba. */
 function legalDesdeServidor(store: StoreResponseDto): Partial<LegalStoreInfo> {
   return {
     nit: store.nit,
+    representative: representanteDesdeServidor(store.representative),
     ...(store.tradeName ? { legalName: store.tradeName } : {}),
     ...(store.phone ? { phone: store.phone } : {}),
     ...(store.contactEmail ? { email: store.contactEmail } : {}),
@@ -108,7 +126,7 @@ function readLegalInfo(fallbackName = '', fallbackEmail = ''): LegalStoreInfo {
     return {
       legalName: fallbackName,
       nit: '',
-      representative: fallbackName,
+      representative: '—',
       phone: '',
       email: fallbackEmail,
       payoutAccount: '',
@@ -156,6 +174,7 @@ export default function MiTiendaPage() {
   /* F-19: el NIT del almacén sale de ms-tiendas (GET /api/v1/users/{userId}/store). Con datos de prueba se usa el guardado. */
   const [storeError, setStoreError] = useState('')
   const [storeNit, setStoreNit] = useState(() => (env.useMocks ? INITIAL_LEGAL_INFO.nit : ''))
+  const [categoriesLabel, setCategoriesLabel] = useState(() => (env.useMocks ? 'DEPORTIVO & URBANO' : ''))
   const [subStatusLabel, setSubStatusLabel] = useState(() => (env.useMocks ? 'Suscripción activa' : 'Consultando suscripción…'))
   const [rejectedSubAlert, setRejectedSubAlert] = useState(false)
   const userId = user?.id ? String(user.id) : ''
@@ -169,6 +188,7 @@ export default function MiTiendaPage() {
         setLegalInfo((li) => ({ ...li, ...desdeServidor }))
         setLegalDraft((li) => ({ ...li, ...desdeServidor }))
         setStoreNit(store.nit)
+        setCategoriesLabel(categoriasDesdeServidor(store.categories))
         if (store.verificationStatus === 'APPROVED') setVerificationStatus('VERIFICADA')
         else if (store.verificationStatus === 'PENDING') setVerificationStatus('EN_REVISION')
         else setVerificationStatus('SIN_VERIFICAR')
@@ -514,7 +534,7 @@ export default function MiTiendaPage() {
           <p className="msd-hero__lead">Administra tu inventario, tus colecciones y tu información en un solo lugar.</p>
           <div className="msd-hero__pills">
             <span className="msd-pill msd-pill--glass">◉ Así te ven tus clientes · Las herramientas de edición solo las ves tú</span>
-            <span className="msd-pill msd-pill--glass">DEPORTIVO & URBANO</span>
+            {categoriesLabel ? <span className="msd-pill msd-pill--glass">{categoriesLabel}</span> : null}
             <span className="msd-pill msd-pill--verified">{verificationStatus === 'VERIFICADA' ? 'Verificada' : verificationStatus === 'EN_REVISION' ? 'En revisión' : 'Sin verificar'}</span>
             <span className="msd-pill msd-pill--glass">{subStatusLabel}</span>
           </div>
@@ -620,11 +640,6 @@ export default function MiTiendaPage() {
 
             <div className="msd-bento-col">
               <div className="msd-bento-duo">
-                <Link to="/tienda/estadisticas" className="msd-bento-mini">
-                  <span className="msd-bento-tag">Rendimiento</span>
-                  <strong>Estadísticas ↗</strong>
-                  <span>Visitas, clics y prendas</span>
-                </Link>
                 <Link to="/tienda/suscripcion" className="msd-bento-mini msd-bento-mini--accent">
                   <span className="msd-bento-tag">Tu plan</span>
                   <strong>{subStatusLabel} ↗</strong>
