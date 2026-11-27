@@ -122,10 +122,29 @@
 }
 
 .glass-table-head {
-  background: rgba(157, 92, 255, 0.11);
+  background: rgba(157, 92, 255, 0.12);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.glass-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(192, 132, 252, 0.35) transparent;
+}
+
+.glass-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.glass-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgba(192, 132, 252, 0.35);
+}
+
+.glass-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* Modo claro */

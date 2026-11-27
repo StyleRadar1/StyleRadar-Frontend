@@ -66,6 +66,26 @@ export function formatFullDateSpanish(raw?: string | null): string {
   return `${weekday} ${date.getDate()} de ${month} de ${date.getFullYear()}`
 }
 
+/** Formatea YYYY-MM-DD como "Domingo 1" (solo día de semana capitalizado y número, sin mes ni año). */
+export function formatWeekdayDay(raw?: string | null): string {
+  const date = parseIsoDateLocal(raw)
+  if (!date) return raw ?? ''
+  return `${DIAS_SEMANA_LARGO[date.getDay()]} ${date.getDate()}`
+}
+
+/** Formatea YYYY-MM-DD como "Noviembre" (solo nombre del mes capitalizado). */
+export function formatMonthOnly(raw?: string | null): string {
+  const date = parseIsoDateLocal(raw)
+  if (!date) return raw ?? ''
+  return MESES_LARGO[date.getMonth()]
+}
+
+/** Devuelve el año numérico de YYYY-MM-DD en hora local, o null si no es válido. */
+export function getYearFromIso(raw?: string | null): number | null {
+  const date = parseIsoDateLocal(raw)
+  return date ? date.getFullYear() : null
+}
+
 /** Devuelve "YYYY-MM" del mes calendario actual en hora local. */
 export function getCurrentYearMonth(): string {
   const now = new Date()
