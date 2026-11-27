@@ -708,8 +708,15 @@
 /* Selector de rol en Crear cuenta */
 .sr-role-pick {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.sr-role-note {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .sr-role-pick button {

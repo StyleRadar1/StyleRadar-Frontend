@@ -48,7 +48,7 @@ describe('ClothingCycleSection (P6)', () => {
     expect(onSelect).toHaveBeenCalledWith('fundaciones')
     expect(screen.getByText('Donar · Impacto social')).toBeInTheDocument()
     expect(screen.getByText('Impacto social directo sin intermediarios')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Registrar fundación/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Vincular fundación/i })).toBeInTheDocument()
   })
 })
 

@@ -105,7 +105,7 @@ function resetCard(card: HTMLElement | null) {
 /** Mínimo de la contraseña al iniciar sesión: 8 con el back real; 4 en demostración, donde las cuentas usan 1234. */
 const LOGIN_MIN = env.useMocks ? DEMO_PASSWORD.length : PASSWORD_MIN
 
-type RolRegistro = 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'
+type RolRegistro = 'BUYER' | 'STORE_ADMIN'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -144,7 +144,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
     esMayorDeEdad: false,
     aceptaPromociones: false,
     aceptaReglasTienda: false,
-    aceptaReglasFundacion: false,
   })
   const [consentErrors, setConsentErrors] = useState<LegalConsentErrors>({})
 
@@ -601,9 +600,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
     if (role === 'STORE_ADMIN' && !consentState.aceptaReglasTienda) {
       cErr.reglasTienda = 'Debes aceptar las Reglas para Tiendas y Marcas Aliadas.'
     }
-    if (role === 'FOUNDATION_REPRESENTATIVE' && !consentState.aceptaReglasFundacion) {
-      cErr.reglasFundacion = 'Debes aceptar las Reglas para Fundaciones y Donaciones.'
-    }
 
     // Atajo de las pruebas de demostración; con el back real el consentimiento es obligatorio (dataPolicyAccepted).
     const isTestEmail = env.useMocks && email.trim().toLowerCase() === 'valen@correo.com'
@@ -628,7 +624,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
         esMayorDeEdad: consentState.esMayorDeEdad,
         aceptaPromociones: consentState.aceptaPromociones,
         aceptaReglasTienda: consentState.aceptaReglasTienda,
-        aceptaReglasFundacion: consentState.aceptaReglasFundacion,
         origen: `AUTH_MODAL_REGISTER_${role}`,
       })
 
@@ -1125,29 +1120,16 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         <b>Tienda</b>
                         <span>Publico mi catálogo</span>
                       </button>
-                      <button
-                        type="button"
-                        role="radio"
-                        aria-checked={role === 'FOUNDATION_REPRESENTATIVE'}
-                        onClick={() => {
-                          setRole('FOUNDATION_REPRESENTATIVE')
-                          setPreviewRole('FOUNDATION_REPRESENTATIVE')
-                        }}
-                      >
-                        <b>Fundación</b>
-                        <span>Recibo donaciones</span>
-                      </button>
                     </div>
+                    <p className="sr-role-note">
+                      ¿Representas una fundación? Crea tu cuenta como Usuario y solicita el registro al administrador de StyleRadar con tu certificado ESAL.
+                    </p>
                   </div>
 
                   <div className="sr-auth-fields-grid">
                     <div className="sr-field">
                       <label htmlFor="suName">
-                        {role === 'STORE_ADMIN'
-                          ? 'Nombre de la tienda'
-                          : role === 'FOUNDATION_REPRESENTATIVE'
-                            ? 'Nombre de la fundación'
-                            : 'Nombre completo'}
+                        {role === 'STORE_ADMIN' ? 'Nombre de la tienda' : 'Nombre completo'}
                       </label>
                       <input
                         id="suName"
@@ -1156,13 +1138,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         onChange={(e) => setFullName(e.target.value)}
                         aria-invalid={!!camposReg.nombre}
                         aria-describedby={camposReg.nombre ? 'suName-err' : undefined}
-                        placeholder={
-                          role === 'STORE_ADMIN'
-                            ? 'Ej. Luna Store'
-                            : role === 'FOUNDATION_REPRESENTATIVE'
-                              ? 'Ej. Fundación Abrigo Bogotá'
-                              : 'Ej. Valentina Rojas'
-                        }
+                        placeholder={role === 'STORE_ADMIN' ? 'Ej. Luna Store' : 'Ej. Valentina Rojas'}
                       />
                       {camposReg.nombre && <ErrorCampo id="suName">{camposReg.nombre}</ErrorCampo>}
                     </div>
@@ -1234,7 +1210,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         if (updates.aceptaDatos) delete copy.datos
                         if (updates.esMayorDeEdad) delete copy.edad
                         if (updates.aceptaReglasTienda) delete copy.reglasTienda
-                        if (updates.aceptaReglasFundacion) delete copy.reglasFundacion
                         return copy
                       })
                     }}
@@ -1272,9 +1247,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       ? 'Creando cuenta…'
                       : role === 'STORE_ADMIN'
                         ? 'Registrar mi tienda'
-                        : role === 'FOUNDATION_REPRESENTATIVE'
-                          ? 'Registrar mi fundación'
-                          : 'Crear cuenta'}
+                        : 'Crear cuenta'}
                   </button>
                 </form>
               )}

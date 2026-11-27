@@ -149,7 +149,8 @@ export const authService = {
           detail: `El correo electrónico ${email} ya se encuentra registrado`,
         })
       }
-      const role = payload.role ?? 'BUYER'
+      // Igual que ms-usuarios: el registro público solo admite BUYER o STORE_ADMIN.
+      const role = payload.role === 'STORE_ADMIN' ? 'STORE_ADMIN' : 'BUYER'
       const user: UserSessionDto = { id: `u-n${registradas.length + 1}`, name: payload.name.trim(), email, role }
       registradas.push({ ...user, password: payload.password, verificado: false })
       agregarUsuarioMock({

@@ -326,8 +326,8 @@ export const pricingPlans: PlanItem[] = [
       'Publica misión y necesidades',
       'Estadísticas mensuales',
     ],
-    action: 'Registrar mi fundación',
-    to: '/registro',
+    action: 'Solicitar vinculación',
+    to: '/registro?tipo=fundacion',
   },
 ]
 
