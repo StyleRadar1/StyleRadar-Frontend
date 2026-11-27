@@ -45,12 +45,12 @@ export function Navbar() {
             {esAdmin && <span className="rounded-full bg-arena px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-grafito">Admin</span>}
           </Link>
         )}
-        <div className="ml-auto hidden items-center gap-1 md:flex">
+        <div className="ml-auto hidden items-center gap-1 xl:flex">
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls}>{label}</NavLink>)}
         </div>
-        <div className="ml-auto flex items-center gap-2 md:ml-2">
+        <div className="ml-auto flex items-center gap-2 xl:ml-2">
           {/* Con sesión, el tema está en el menú de cuenta; para tienda y fundación se muestra directo en barra */}
-          {(!user || user.role === 'STORE_ADMIN' || user.role === 'FOUNDATION_REPRESENTATIVE') && <ThemeSelect className="max-md:hidden" />}
+          {(!user || user.role === 'STORE_ADMIN' || user.role === 'FOUNDATION_REPRESENTATIVE') && <ThemeSelect className="max-xl:hidden" />}
           {user ? (
             <>
               {/* RF-73: la tienda (y quien compra o la fundación) responde desde el ícono de mensajes */}
@@ -62,11 +62,11 @@ export function Navbar() {
           ) : (
             <Link to="/?login" className="rounded-lg bg-violeta px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Iniciar sesión</Link>
           )}
-          <button className="rounded-lg border border-[var(--sr-border-control)] text-[var(--sr-hero-text)] px-3 py-2 md:hidden" aria-expanded={open} aria-label="Abrir menú" onClick={() => setOpen(!open)}>☰</button>
+          <button className="rounded-lg border border-[var(--sr-border-control)] text-[var(--sr-hero-text)] px-3 py-2 xl:hidden" aria-expanded={open} aria-label="Abrir menú" onClick={() => setOpen(!open)}>☰</button>
         </div>
       </nav>
       {open && (
-        <div className="flex flex-col gap-1 border-t border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/95 px-4 py-3 md:hidden">
+        <div className="flex flex-col gap-1 border-t border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/95 px-4 py-3 xl:hidden">
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls} onClick={() => setOpen(false)}>{label}</NavLink>)}
           {(!user || user.role === 'STORE_ADMIN' || user.role === 'FOUNDATION_REPRESENTATIVE') && <ThemeSelect className="px-3 py-2" />}
         </div>
