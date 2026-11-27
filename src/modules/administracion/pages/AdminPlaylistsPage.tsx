@@ -7,12 +7,14 @@ import { useResource } from '@/modules/core/hooks/useResource'
 import { AdminHeader, AdminTable, type Columna } from '../components/AdminUi'
 import { adminPlaylistService } from '../services/adminService'
 import { interaccion, MAX_DESTACADAS, type AdminPlaylistDto } from '../types/admin.dto'
+import { usePlaylistCreators } from '../utils/playlistCreators'
 
 const num = (n: number) => n.toLocaleString('es-CO')
 
 /** Admin › Playlists: las de mayor interacción y cuáles se destacan en el inicio (máximo 3, RNF-12). */
 export default function AdminPlaylistsPage() {
   const { data, loading, error, reload, setData } = useResource(adminPlaylistService.list, [] as AdminPlaylistDto[])
+  const { getCreator, getSortKey, getSearchText } = usePlaylistCreators(data)
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ tone: 'ok' | 'warn' | 'bad'; text: string } | null>(null)
   const ranking = [...data].sort((a, b) => interaccion(b) - interaccion(a)).map((p) => p.id)
@@ -38,10 +40,33 @@ export default function AdminPlaylistsPage() {
     finally { setBusy(null) }
   }
 
+  const renderCreador = (creador: string) => {
+    const info = getCreator(creador)
+    switch (info.kind) {
+      case 'literal':
+        return <b className="block truncate text-sm">{info.name}</b>
+      case 'loading':
+        return <span className="inline-block text-xs text-white/50">Cargando…</span>
+      case 'resolved':
+        return (
+          <span className="block min-w-0">
+            <b className="block truncate text-sm">{info.name}</b>
+            {info.email && <span className="block truncate text-xs text-white/55">{info.email}</span>}
+          </span>
+        )
+      case 'fallback':
+        return (
+          <span className="text-sm text-white/55" title="No se pudo cargar el nombre">
+            {info.label}
+          </span>
+        )
+    }
+  }
+
   const columnas: Columna<AdminPlaylistDto>[] = [
     { label: '#', render: (p) => ranking.indexOf(p.id) + 1, sort: (p) => -interaccion(p), num: true },
     { label: 'Playlist', render: (p) => <b>{p.nombre}</b>, sort: (p) => p.nombre },
-    { label: 'Creada por', render: (p) => p.creador, sort: (p) => p.creador },
+    { label: 'Creada por', render: (p) => renderCreador(p.creador), sort: (p) => getSortKey(p.creador) },
     { label: 'Me gusta', render: (p) => num(p.meGusta), sort: (p) => p.meGusta, num: true },
     { label: 'Guardados', render: (p) => num(p.guardados), sort: (p) => p.guardados, num: true },
     { label: 'Prendas', render: (p) => `${p.prendas}/15`, sort: (p) => p.prendas, num: true, secundaria: true },
@@ -64,7 +89,7 @@ export default function AdminPlaylistsPage() {
       />
       {loading && !data.length ? <Loading label="Cargando playlists…" /> : error ? <ErrorState error={error} onRetry={reload} title="No pudimos cargar las playlists" /> : (
         <AdminTable rows={data} columnas={columnas} keyOf={(p) => p.id} titulo={(p) => p.nombre} vacio="No hay playlists públicas con esa búsqueda."
-          buscar={{ placeholder: 'Buscar playlist o creador', texto: (p) => `${p.nombre} ${p.creador}` }}
+          buscar={{ placeholder: 'Buscar playlist o creador', texto: (p) => `${p.nombre} ${getSearchText(p.creador)}` }}
           acciones={(p) => (
             <button type="button" aria-pressed={p.destacada} disabled={busy === p.id} onClick={() => alternar(p)} aria-label={`${p.destacada ? 'Quitar de destacadas' : 'Destacar'}: ${p.nombre}`}
               className={`rounded-xl px-3 py-2 text-sm font-semibold disabled:opacity-60 ${p.destacada ? 'bg-violeta' : 'border border-white/20 hover:bg-white/10'}`}>
