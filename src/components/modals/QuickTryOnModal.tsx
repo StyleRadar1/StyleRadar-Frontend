@@ -165,12 +165,23 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       .search({})
       .then((list) => { if (active) setCatalogItems(list) })
       .catch(() => {})
-    playlistService
-      .getAll()
-      .then((pls) => { if (active) setAvailablePlaylists(pls) })
+    const uid = user?.id ? String(user.id) : null
+    Promise.all([
+      uid ? playlistService.getMine(uid).catch(() => []) : Promise.resolve([]),
+      uid ? playlistService.getSaved(uid).catch(() => []) : Promise.resolve([]),
+      playlistService.getAll().catch(() => []),
+    ])
+      .then(([mine, saved, all]) => {
+        if (!active) return
+        const byId = new Map<string, PlaylistDto>()
+        for (const pl of [...mine, ...saved, ...all]) {
+          if (!byId.has(pl.id)) byId.set(pl.id, pl)
+        }
+        setAvailablePlaylists(Array.from(byId.values()))
+      })
       .catch(() => {})
     return () => { active = false }
-  }, [isOpen])
+  }, [isOpen, user?.id])
 
   const canvasRef = useRef<HTMLDivElement>(null)
 
@@ -178,8 +189,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   const isRotating = useRef(false)
   const rotateStart = useRef(0)
 
-  /* Medidas del usuario */
-  const userMeasurements = useMemo<UserMeasurements>(() => getUserMeasurements(), [])
+  /* Medidas del usuario sincronizadas */
+  const [userMeasurements, setUserMeasurements] = useState<UserMeasurements>(() => getUserMeasurements())
+  useEffect(() => {
+    const sync = () => setUserMeasurements(getUserMeasurements())
+    sync()
+    window.addEventListener('sr:profile-sizes-updated', sync)
+    return () => window.removeEventListener('sr:profile-sizes-updated', sync)
+  }, [isOpen, bodyMeasurements])
 
   useEffect(() => {
     if (!garmentPickerItem || garmentPickerItem.tallas.length > 0 || env.useMocks) return
@@ -505,9 +522,13 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   /* Deformación y adaptación anatómica del maniquí */
   const deformation = useMemo(() => computeBodyDeformation(bodyMeasurements), [bodyMeasurements])
 
-  /* Catálogo filtrado dentro del drawer */
+  /* Catálogo filtrado dentro del drawer (excluye prendas agotadas/vendidas/retiradas) */
   const filteredCatalog = useMemo(() => {
     return catalogItems.filter((item) => {
+      if (item.disponible === false || item.retirada === true) return false
+      if (item.estado && ['AGOTADA', 'VENDIDA', 'RETIRADA', 'RECHAZADA', 'PENDIENTE', 'SUSPENDIDO'].includes(item.estado.toUpperCase())) {
+        return false
+      }
       if (catalogSearch.trim()) {
         const q = catalogSearch.toLowerCase()
         const matchName = item.nombre.toLowerCase().includes(q)
@@ -1302,17 +1323,39 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                           Por {pl.creador.nombre} · {pl.prendas.length} prendas
                         </span>
 
-                        {/* Muestra prendas de la playlist */}
+                        {/* Prendas interactivas de la playlist: clic para probar individualmente */}
                         <div className="cz-playlist-items-preview">
-                          {pl.prendas.map((pr) => (
-                            <span
-                              key={pr.id}
-                              className={`cz-mini-item-pill ${pr.noDisponible || pr.retirada ? 'cz-mini-item-retired' : ''}`}
-                            >
-                              {pr.nombre}
-                              {pr.noDisponible || pr.retirada ? ' (Ya no está disponible)' : ''}
-                            </span>
-                          ))}
+                          {pl.prendas.map((pr) => {
+                            const enriched = catalogItems.find((c) => c.id === pr.id)
+                            const resolvedItem: ItemResponseDto = enriched
+                              ? { ...pr, ...enriched, imagen: enriched.imagen || pr.imagen }
+                              : pr
+                            const unavailable =
+                              pr.noDisponible ||
+                              pr.retirada ||
+                              resolvedItem.disponible === false ||
+                              resolvedItem.retirada === true ||
+                              !isGarmentFittable(resolvedItem)
+                            return (
+                              <button
+                                key={pr.id}
+                                type="button"
+                                disabled={unavailable}
+                                onClick={() => {
+                                  if (unavailable) return
+                                  const rec = getRecommendedSize(resolvedItem, userMeasurements)
+                                  setGarmentPickerItem(resolvedItem)
+                                  setPickerSelectedSize(rec || resolvedItem.tallas?.[0] || 'M')
+                                  setPickerSelectedColor(resolvedItem.color || 'default')
+                                }}
+                                title={unavailable ? 'Prenda no disponible' : `Probar ${resolvedItem.nombre} en el maniquí`}
+                                className={`cz-mini-item-pill ${unavailable ? 'cz-mini-item-retired cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-purple-400 hover:bg-purple-500/20'}`}
+                              >
+                                {resolvedItem.nombre}
+                                {unavailable ? ' (No disponible)' : ''}
+                              </button>
+                            )
+                          })}
                         </div>
                       </div>
 

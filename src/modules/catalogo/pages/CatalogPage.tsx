@@ -503,8 +503,20 @@ export default function CatalogPage() {
 
   const guardar = async () => {
     const nombre = texto.trim() || 'Catálogo completo'
+    const filtros: Record<string, unknown> = {}
+    if (texto.trim()) filtros.query = texto.trim()
+    if (filtroTipo !== 'Todos') filtros.tipo = filtroTipo
+    if (filtroColor !== 'Todos') filtros.color = filtroColor
+    if (filtroTalla !== 'Todas') filtros.talla = filtroTalla
+    if (filtroMarca !== 'Todas') filtros.marca = filtroMarca
+    if (filtroEstilo !== 'Todos') filtros.estilo = filtroEstilo
+    if (precioMinCustom != null) filtros.precioMin = precioMinCustom
+    if (precioMaxCustom != null) filtros.precioMax = precioMaxCustom
     try {
-      const b = busqueda?.nombre === nombre ? busqueda : await alertService.saveSearch(nombre, `${filtrosActivosCount} filtros · orden ${orden}`)
+      const b =
+        busqueda?.nombre === nombre
+          ? busqueda
+          : await alertService.saveSearch(nombre, `${filtrosActivosCount} filtros · orden ${orden}`, filtros)
       setBusqueda(b)
       await activarAlerta(b)
     } catch (e) {

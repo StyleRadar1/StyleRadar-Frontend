@@ -12,6 +12,7 @@ import { AuthContext } from '@/modules/identidad/states/authContext'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { nitDeTienda, tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { ItemCard } from '../components/ItemCard'
+import { SaveToPlaylistModal } from '../components/SaveToPlaylistModal'
 import { SizeGuideModal } from '../components/SizeGuideModal'
 import { itemService } from '../services/itemService'
 import { ordenarTallas, tallasDeInventario } from '../utils/tallas'
@@ -57,6 +58,7 @@ export default function ItemDetailPage() {
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string>('')
   const [guiaTallasAbierta, setGuiaTallasAbierta] = useState(false)
   const [guardadoPlaylist, setGuardadoPlaylist] = useState(false)
+  const [modalPlaylistAbierto, setModalPlaylistAbierto] = useState(false)
   const [mensajeFeedback, setMensajeFeedback] = useState<string | null>(null)
   const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null)
   const [indiceImagen, setIndiceImagen] = useState(0)
@@ -194,11 +196,7 @@ export default function ItemDetailPage() {
   }
 
   const handleGuardarPlaylist = () => {
-    setGuardadoPlaylist((prev) => !prev)
-    setMensajeFeedback(
-      guardadoPlaylist ? 'Prenda retirada de tu playlist.' : '¡Prenda guardada en tu playlist de estilo!'
-    )
-    setTimeout(() => setMensajeFeedback(null), 3000)
+    setModalPlaylistAbierto(true)
   }
 
   // Navegación entre prendas del catálogo
@@ -868,6 +866,17 @@ export default function ItemDetailPage() {
             isOpen={guiaTallasAbierta}
             onClose={() => setGuiaTallasAbierta(false)}
             tipoPrenda={prenda.tipo}
+          />
+          {/* Modal para seleccionar o crear playlist al guardar prenda */}
+          <SaveToPlaylistModal
+            isOpen={modalPlaylistAbierto}
+            item={{ id: prenda.id, nombre: prenda.nombre, imagen: prenda.imagen }}
+            onClose={() => setModalPlaylistAbierto(false)}
+            onSaved={(pl) => {
+              setGuardadoPlaylist(true)
+              setMensajeFeedback(`¡Prenda guardada en «${pl.nombre}»!`)
+              setTimeout(() => setMensajeFeedback(null), 3500)
+            }}
           />
         </div>
       )}

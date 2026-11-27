@@ -152,6 +152,20 @@ export default function TryOnPage() {
 
   const garment = garments.find((g) => g.id === garmentId)
 
+  // Hidratar tallas reales desde catálogo/inventario para evitar 400 TRYON_SIZE_UNAVAILABLE
+  useEffect(() => {
+    if (!garmentId || env.useMocks) return
+    let active = true
+    import('@/modules/catalogo/services/itemService')
+      .then(({ itemService }) => itemService.getAvailableSizes(garmentId))
+      .then((realSizes) => {
+        if (!active || realSizes.length === 0) return
+        setSelectedSize((curr) => (curr && realSizes.includes(curr) ? curr : realSizes[0]))
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [garmentId])
+
   // Validación de compatibilidad anatómica (RF-24)
   useEffect(() => {
     if (!garmentId) {

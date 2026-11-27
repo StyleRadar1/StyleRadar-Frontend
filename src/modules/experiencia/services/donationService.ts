@@ -153,7 +153,10 @@ export const donationService = {
         donorId,
         message: data.prenda?.descripcion || data.message,
         deliveryMode: data.logistica?.modalidad,
-        deliveryPoint: data.logistica?.direccion || 'Sede Fundación',
+        deliveryPoint:
+          data.logistica?.modalidad === 'ENTREGA_EN_PUNTO'
+            ? data.logistica?.puntoId || data.logistica?.direccion || 'Sede Fundación'
+            : data.logistica?.direccion || 'Sede Fundación',
         pickupWindowStart: win.start,
         pickupWindowEnd: win.end,
       })

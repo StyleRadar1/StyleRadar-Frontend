@@ -18,25 +18,37 @@ import type {
 
 function mapTipoToZona(tipo?: string, noDisponible?: boolean): ZonaPrenda {
   if (noDisponible) return 'NO_COMPATIBLE'
-  const t = (tipo || '').trim().toUpperCase()
+  const t = (tipo || '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
   if (
-    t === 'OUTERWEAR' ||
     t === 'FOOTWEAR' ||
     t === 'ACCESSORIES' ||
-    /^(CHAQUETA|ABRIGO|GABARDINA|SACO|BLAZER|CALZADO|TENIS|ZAPATOS|BOTAS|ACCESORIO|CINTURON|CINTURÓN|BUFANDA|BOLSO|GORRA|GAFAS)$/i.test(t)
+    /^(CALZADO|TENIS|SNEAKER|SNEAKERS|ZAPATO|ZAPATOS|BOTA|BOTAS|SANDALIA|SANDALIAS|ACCESORIO|ACCESORIOS|CINTURON|CINTURONES|BUFANDA|BUFANDAS|BOLSO|BOLSOS|GORRA|GORRAS|SOMBRERO|SOMBREROS|GAFAS|CORBATA|GUANTES|JOYERIA)$/i.test(t)
   ) {
     return 'NO_COMPATIBLE'
   }
-  if (t === 'ONE_PIECE' || /^(VESTIDO|ENTERIZO|OVEROL|CONJUNTO)$/i.test(t)) {
+  if (t === 'ONE_PIECE' || /^(VESTIDO|VESTIDOS|ENTERIZO|ENTERIZOS|OVEROL|OVEROLES|CONJUNTO|CONJUNTOS|JUMPSUIT|JUMPSUITS)$/i.test(t)) {
     return 'CUERPO_COMPLETO'
   }
-  if (t === 'BOTTOM' || /^(PANTALON|PANTALÓN|JEAN|FALDA|SHORT|BERMUDA|LEGGING|SUDADERA)$/i.test(t)) {
+  if (t === 'BOTTOM' || /^(PANTALON|PANTALONES|JEAN|JEANS|FALDA|FALDAS|SHORT|SHORTS|BERMUDA|BERMUDAS|LEGGING|LEGGINGS|SUDADERA|SUDADERAS)$/i.test(t)) {
     return 'INFERIOR'
   }
-  if (t === 'TOP' || /^(CAMISA|CAMISETA|BLUSA|POLO|BUZO|HOODIE|SUETER|SUÉTER|TOP|CHALECO)$/i.test(t)) {
+  if (
+    t === 'TOP' ||
+    t === 'OUTERWEAR' ||
+    /^(CAMISA|CAMISAS|CAMISETA|CAMISETAS|BLUSA|BLUSAS|POLO|POLOS|BUZO|BUZOS|BUSO|BUSOS|HOODIE|HOODIES|SUETER|SUETERES|SWEATER|SWEATERS|TOP|CHALECO|CHALECOS|SACO|SACOS|BLAZER|BLAZERS|CHAQUETA|CHAQUETAS|ABRIGO|ABRIGOS|GABARDINA|GABARDINAS|PONCHO|PONCHOS|BOMBER|BOMBERS)$/i.test(t)
+  ) {
     return 'SUPERIOR'
   }
   return 'NO_COMPATIBLE'
+}
+
+function defaultTallasPorZona(zona: ZonaPrenda): string[] {
+  if (zona === 'INFERIOR') return ['28', '30', '32', '34']
+  return ['S', 'M', 'L']
 }
 
 /* ---- estado del backend simulado (solo en memoria; nunca guarda la imagen) ---- */
@@ -63,16 +75,25 @@ export const tryOnService = {
       return mockDelay(hasScenario('catalogo-vacio') ? [] : TRYON_GARMENTS)
     }
     const items = await itemService.search({})
-    return items.map((item) => ({
-      id: String(item.id),
-      nombre: item.nombre || 'Prenda',
-      tienda: item.tienda || 'StyleRadar Store',
-      imagen: item.imagen || '',
-      zona: mapTipoToZona(item.tipo, item.noDisponibleEnProbador),
-      tallas: item.tallas?.length ? item.tallas : ['S', 'M', 'L'],
-      disponible: !item.sinTablaMedidas && !item.noDisponibleEnProbador,
-      precio: item.precio,
-    }))
+    return items.map((item) => {
+      const disponible =
+        item.disponible !== false &&
+        !item.retirada &&
+        !item.sinTablaMedidas &&
+        !item.noDisponibleEnProbador &&
+        (!item.estado || item.estado.toUpperCase() === 'APROBADA')
+      const zona = mapTipoToZona(item.tipo, !disponible)
+      return {
+        id: String(item.id),
+        nombre: item.nombre || 'Prenda',
+        tienda: item.tienda || 'StyleRadar Store',
+        imagen: item.imagen || '',
+        zona,
+        tallas: item.tallas?.length ? item.tallas : defaultTallasPorZona(zona),
+        disponible,
+        precio: item.precio,
+      }
+    })
   },
 
   /** RF-24: validación de compatibilidad de prenda y talla con medidas */
