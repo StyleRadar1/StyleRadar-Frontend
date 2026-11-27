@@ -1,11 +1,13 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useContext, useRef, useState } from 'react'
 import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
 import { useToasts } from '@/modules/core/components/errores'
+import { AuthContext } from '../states/authContext'
 import {
   ACCOUNT_STATUS_LABEL, REASON_MAX,
   type AccountStatus, type AdminUserDto, type ChangeStatusRequestDto,
 } from '../types/usuario.dto'
 import { TEXTOS_ADMIN_USUARIOS } from '../utils/erroresAdmin'
+import { isSameAccount } from '../utils/formato'
 
 export type Cambio = { user: AdminUserDto; to: AccountStatus }
 type Deshacer = Cambio & { reason?: string }
@@ -31,6 +33,7 @@ export function errorDeMotivo(to: AccountStatus, motivo: string): string | null 
  * Lo usan la lista y el detalle de Admin · Usuarios.
  */
 export function useCambioEstado({ setStatus, onNoExiste, onConflicto }: Opciones) {
+  const sessionEmail = useContext(AuthContext)?.user?.email
   const [cambio, setCambio] = useState<Cambio | null>(null)
   const [motivo, setMotivo] = useState('')
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null)
@@ -41,14 +44,23 @@ export function useCambioEstado({ setStatus, onNoExiste, onConflicto }: Opciones
 
   // Funciones estables: el diálogo vuelve a poner el foco al inicio si cambian sus manejadores.
   const abrir = useCallback((user: AdminUserDto) => {
+    if (isSameAccount(user.email, sessionEmail)) {
+      setAviso({ ok: false, text: 'No puedes cambiar el estado de tu propia cuenta.' })
+      return
+    }
     setCambio({ user, to: user.accountStatus === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED' })
     setMotivo(''); setErrorMotivo(null)
-  }, [])
+  }, [sessionEmail])
   const elegir = useCallback((to: AccountStatus) => { setCambio((c) => (c ? { ...c, to } : c)); setErrorMotivo(null) }, [])
   const escribir = useCallback((m: string) => { setMotivo(m); setErrorMotivo(null) }, [])
   const cancelar = useCallback(() => { if (!inFlight.current) setCambio(null) }, [])
 
   const enviar = async (c: Cambio, reason: string, esDeshacer: boolean) => {
+    if (isSameAccount(c.user.email, sessionEmail)) {
+      setAviso({ ok: false, text: 'No puedes cambiar el estado de tu propia cuenta.' })
+      setCambio(null)
+      return
+    }
     if (inFlight.current) return
     inFlight.current = true; setBusy(true); setAviso(null)
     const antes = c.user

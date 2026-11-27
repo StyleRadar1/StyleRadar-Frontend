@@ -31,3 +31,13 @@ export const telefonoValido = (s: string) => {
 export const celularValido = (s: string) => /^(\+?57)?3\d{9}$/.test(s.replace(/[\s-]/g, ''))
 
 export const correoValido = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim())
+
+/**
+ * Compara dos correos electrónicos normalizando espacios y mayúsculas/minúsculas,
+ * conservando subdirecciones con "+". Devuelve false si falta cualquiera de los dos.
+ */
+export function isSameAccount(a?: string | null, b?: string | null): boolean {
+  const left = typeof a === 'string' ? a.trim().toLowerCase() : ''
+  const right = typeof b === 'string' ? b.trim().toLowerCase() : ''
+  return left !== '' && right !== '' && left === right
+}

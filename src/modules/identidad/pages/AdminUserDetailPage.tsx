@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from 'react'
+import { useCallback, useContext, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { errorKind } from '@/modules/core/api/errors'
 import { Toasts } from '@/modules/core/components/errores'
@@ -6,12 +6,13 @@ import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Statu
 import { useResource } from '@/modules/core/hooks/useResource'
 import { ROLE_LABEL } from '@/modules/core/types/roles'
 import { EliminarRegistro } from '@/modules/administracion/components/EliminarRegistro'
+import { AuthContext } from '../states/authContext'
 import { CambioEstadoDialog } from '../components/CambioEstadoDialog'
 import { EstadoCuentaPill } from '../components/EstadoCuentaPill'
 import { useCambioEstado } from '../hooks/useCambioEstado'
 import { usuarioService } from '../services/usuarioService'
 import type { AdminUserDto, ChangeStatusRequestDto } from '../types/usuario.dto'
-import { fechaHora, mesAnio } from '../utils/formato'
+import { fechaHora, isSameAccount, mesAnio } from '../utils/formato'
 
 const volver = <Link to="/admin/usuarios" className="inline-block text-[11px] font-bold uppercase tracking-[.16em] text-white/65 hover:text-blanco"><span aria-hidden="true">← </span>Volver a usuarios</Link>
 
@@ -22,6 +23,7 @@ function Dato({ k, children }: { k: string; children: ReactNode }) {
 /** SR-RF-66 · F-14: detalle de una cuenta (GET /api/v1/admin/users/{id}) con la auditoría del último cambio de estado. */
 export default function AdminUserDetailPage() {
   const { id = '' } = useParams()
+  const sessionEmail = useContext(AuthContext)?.user?.email
   const loader = useCallback(() => usuarioService.getAdmin(id), [id])
   const { data: u, loading, error, reload, setData } = useResource<AdminUserDto | null>(loader, null)
 
@@ -45,9 +47,18 @@ export default function AdminUserDetailPage() {
             <h1 className="break-words text-4xl font-extrabold tracking-tight md:text-5xl">{u.name}</h1>
             <p className="mt-1 break-all text-sm text-white/65">{u.email}</p>
           </div>
-          <div className="flex flex-wrap items-start gap-2">
-            <button type="button" disabled={ce.busy} onClick={() => ce.abrir(u)}
-              className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10">Cambiar estado</button>
+          <div className="flex flex-wrap items-center gap-2">
+            {isSameAccount(u.email, sessionEmail) ? (
+              <span
+                aria-label="Tu cuenta (no puedes cambiar su estado)"
+                className="inline-flex items-center rounded-full border border-white/15 bg-white/[.05] px-3 py-1.5 text-xs font-medium text-white/65"
+              >
+                Tu cuenta
+              </span>
+            ) : (
+              <button type="button" disabled={ce.busy} onClick={() => ce.abrir(u)}
+                className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10">Cambiar estado</button>
+            )}
             {/* SR-RF-115: para suspenderla sin perder sus datos se usa el cambio de estado. */}
             <div>
               <EliminarRegistro boton="Eliminar cuenta" titulo={`¿Eliminar la cuenta de ${u.name}?`}
