@@ -6,7 +6,7 @@ import { Aviso } from '@/modules/core/components/errores'
 import { errorKind } from '@/modules/core/api/errors'
 import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
-import { formatDateLongSpanish } from '@/modules/soporte/utils/statsFormat'
+import { formatDateLongSpanish, formatDateNumeric } from '@/modules/soporte/utils/statsFormat'
 import { GlassChipGroup, type GlassChipOption } from '@/modules/administracion/components/GlassChipGroup'
 import { GlassDateRange } from '@/modules/administracion/components/GlassDateRange'
 import { usePayments } from '../hooks/usePayments'
@@ -507,11 +507,11 @@ export default function AdminPaymentsPage() {
               <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-[.16em] text-arena">
                 <th className="pb-3 pr-4">Referencia de pago</th>
                 <th className="pb-3 pr-4">ID de suscripción</th>
-                <th className="pb-3 pr-4">Suscriptor</th>
+                <th className="min-w-[12rem] pb-3 pr-4">Suscriptor</th>
                 <th className="pb-3 pr-4">Plan</th>
                 <th className="pb-3 pr-4 text-right">Valor (COP)</th>
                 <th className="pb-3 pr-4">Estado</th>
-                <th className="pb-3 pr-4">Fecha</th>
+                <th className="w-28 whitespace-nowrap pb-3 pr-4">Fecha</th>
                 <th className="pb-3">Referencia</th>
               </tr>
             </thead>
@@ -521,7 +521,9 @@ export default function AdminPaymentsPage() {
                 const suscripcionId = p.suscripcionId ?? `SUB-${p.id}`
                 const sub = getSubscriber(p)
                 const valor = p.valor ?? p.amount
-                const fecha = formatDateLongSpanish(p.fecha ?? p.date)
+                const rawDate = p.fecha ?? p.date
+                const fechaCorta = formatDateNumeric(rawDate)
+                const fechaLarga = formatDateLongSpanish(rawDate)
                 const referencia = p.referencia ?? p.mpReference ?? pagoId
                 return (
                   <tr
@@ -554,7 +556,9 @@ export default function AdminPaymentsPage() {
                     <td className="py-3.5 pr-4">
                       <Badge tone={STATUS_TONES[p.status]}>{formatStatusLabel(p.estado ?? STATUS_LABELS[p.status], p.unknownStatus)}</Badge>
                     </td>
-                    <td className="whitespace-nowrap py-3.5 pr-4 text-white/75">{fecha}</td>
+                    <td className="w-28 whitespace-nowrap py-3.5 pr-4 tabular-nums text-white/75" title={fechaLarga} aria-label={fechaLarga}>
+                      {fechaCorta}
+                    </td>
                     <td className="py-3.5 font-mono text-[11px] text-white/55">{referencia}</td>
                   </tr>
                 )
@@ -599,7 +603,12 @@ export default function AdminPaymentsPage() {
                 </div>
                 <div><dt className="text-white/50">Plan</dt><dd>{selected.planName || '—'}</dd></div>
                 <div><dt className="text-white/50">Valor (COP)</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.valor ?? selected.amount)}</dd></div>
-                <div><dt className="text-white/50">Fecha</dt><dd>{formatDateLongSpanish(selected.fecha ?? selected.date)}</dd></div>
+                <div>
+                  <dt className="text-white/50">Fecha</dt>
+                  <dd className="tabular-nums" title={formatDateLongSpanish(selected.fecha ?? selected.date)} aria-label={formatDateLongSpanish(selected.fecha ?? selected.date)}>
+                    {formatDateNumeric(selected.fecha ?? selected.date)}
+                  </dd>
+                </div>
                 <div><dt className="text-white/50">Referencia</dt><dd className="font-mono text-xs text-white/70">{selected.referencia ?? selected.mpReference ?? selected.id}</dd></div>
               </dl>
             </div>

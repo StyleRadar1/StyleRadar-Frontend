@@ -64,6 +64,15 @@ export function formatDateLongSpanish(raw?: string | null): string {
   return `${date.getDate()} de ${MESES_LARGO[date.getMonth()]} de ${date.getFullYear()}`
 }
 
+/** Formatea YYYY-MM-DD como "27/11/2026" (DD/MM/AAAA con ceros). */
+export function formatDateNumeric(raw?: string | null): string {
+  const date = parseIsoDateLocal(raw)
+  if (!date) return raw?.trim() || '—'
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${day}/${month}/${date.getFullYear()}`
+}
+
 /** Formatea YYYY-MM-DD como "Martes 25 de Noviembre de 2026" (día y mes capitalizados). */
 export function formatFullDateSpanish(raw?: string | null): string {
   const date = parseIsoDateLocal(raw)
