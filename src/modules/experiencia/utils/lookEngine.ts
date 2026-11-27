@@ -72,9 +72,8 @@ export function getLayerForGarment(item: ItemResponseDto, slot: LookSlot): strin
  * Las prendas sin tabla de medidas se marcan como "No disponible en el probador" y no se pueden seleccionar.
  */
 export function isGarmentFittable(item: ItemResponseDto): boolean {
-  if (item.sinTablaMedidas || item.noDisponibleEnProbador) return false
+  if (item.sinTablaMedidas || item.noDisponibleEnProbador || item.tryOnEligible === false) return false
   if (item.retirada) return false
-  if (!item.tallas || item.tallas.length === 0) return false
   return true
 }
 
