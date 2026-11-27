@@ -16,6 +16,7 @@ import {
   CONSERVACIONES,
   CONSERVACION_LABEL,
   LOCALIDADES_BOGOTA,
+  nombreLocalidad,
   TALLA_LABEL,
   TALLAS,
   type Conservacion,
@@ -112,6 +113,22 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
   const [claimMessage, setClaimMessage] = useState('')
   const [claimBusy, setClaimBusy] = useState(false)
   const [claimFeedback, setClaimFeedback] = useState<{ ok: boolean; text: string } | null>(null)
+
+  // Con un modal abierto (detalle o reclamar donación) la página de atrás no se desplaza:
+  // la rueda o el dedo solo mueven el contenido del modal.
+  const modalAbierto = detailItem !== null || claimingItem !== null
+  useEffect(() => {
+    if (!modalAbierto) return
+    const html = document.documentElement
+    const prevHtml = html.style.overflow
+    const prevBody = document.body.style.overflow
+    html.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'
+    return () => {
+      html.style.overflow = prevHtml
+      document.body.style.overflow = prevBody
+    }
+  }, [modalAbierto])
 
   const auth = useContext(AuthContext)
   const user = auth?.user ?? (env.useMocks ? mockSessionUser() : null)
@@ -470,7 +487,7 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
                       </p>
                       <h3 className="mt-1 font-semibold text-[var(--color-text)]">{l.garmentName || l.titulo}</h3>
                       <p className="text-xs text-[var(--color-text-muted)]">
-                        {l.brand || l.marca} · {l.vendedor?.nombre} · {l.localidad || l.barrio}
+                        {l.brand || l.marca} · {l.vendedor?.nombre} · {nombreLocalidad(l.localidad || l.barrio)}
                       </p>
                       <p className="mt-2 font-bold text-[var(--color-text)]">
                         {l.esDonacion ? '$0 COP' : formatCOP(l.price ?? l.precio)}
@@ -525,7 +542,7 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
           className="fixed inset-0 z-[90] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
           onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null) }}
         >
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto overscroll-contain rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--color-accent)]">
@@ -570,7 +587,7 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
               </p>
               <p>
                 <strong className="text-[var(--color-text)]">Vendedor:</strong> {detailItem.vendedor?.nombre} ·{' '}
-                <strong className="text-[var(--color-text)]">Localidad:</strong> {detailItem.localidad || detailItem.barrio}
+                <strong className="text-[var(--color-text)]">Localidad:</strong> {nombreLocalidad(detailItem.localidad || detailItem.barrio)}
               </p>
               {detailItem.description || detailItem.descripcion ? (
                 <p className="pt-1 text-[var(--color-text)]">{detailItem.description || detailItem.descripcion}</p>
