@@ -103,6 +103,8 @@ export default function StoreSubscriptionPage() {
   const [retryErrorMsg, setRetryErrorMsg] = useState<string | null>(null)
 
   const openStartForm = useCallback((defaultEmail: string, defaultTaxId = '') => {
+    setShowRetryForm(false)
+    setRetryPaymentTarget(null)
     setPayerEmailInput(defaultEmail)
     setTaxIdInput(defaultTaxId)
     setFormValidationError(null)
@@ -110,6 +112,13 @@ export default function StoreSubscriptionPage() {
     setConflictMsg(null)
     setSimulatedNotice(null)
     setShowStartForm(true)
+  }, [])
+
+  const openRetryForm = useCallback((payment: PaymentDto | null) => {
+    setRetryPaymentTarget(payment)
+    setShowRetryForm(true)
+    setShowStartForm(false)
+    setRetryErrorMsg(null)
   }, [])
 
   const handleStartSubscriptionSubmit = useCallback(async (e: FormEvent) => {
@@ -229,7 +238,11 @@ export default function StoreSubscriptionPage() {
 
   return (
     <section className="store-subscription sr-tienda-glass">
-      <StoreSuspendedBanner status={sub.status} onPayClick={() => openStartForm(defaultPayerEmail)} />
+      <StoreSuspendedBanner
+        status={sub.status}
+        onPayClick={() => openStartForm(defaultPayerEmail)}
+        showAction={false}
+      />
       <div className="store-subscription__main">
         <div className="store-subscription__title">
           <h2>Suscripción</h2>
@@ -247,18 +260,16 @@ export default function StoreSubscriptionPage() {
                 Genera un nuevo intento indicando el correo del pagador para activar tu suscripción
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => {
-                  setRetryPaymentTarget(failedPayment)
-                  setShowRetryForm(true)
-                  setRetryErrorMsg(null)
-                }}
-                disabled={paying}
-              >
-                Reintentar pago
-              </Button>
-            </div>
+            {!showRetryForm && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() => openRetryForm(failedPayment)}
+                  disabled={paying}
+                >
+                  Reintentar pago
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -266,7 +277,7 @@ export default function StoreSubscriptionPage() {
           <div role={msg.alert ? 'alert' : 'status'} className={`store-subscription__notice ${msg.alert ? 'is-error' : ''}`}>
             <strong>{msg.title}</strong>
             <p>{msg.text}</p>
-            {outcome?.status === 'rechazado' && !showRetryForm && (
+            {outcome?.status === 'rechazado' && !showRetryForm && !failedPayment && (
               <div className="mt-3">
                 <Button
                   type="button"
@@ -380,15 +391,18 @@ export default function StoreSubscriptionPage() {
             />
           )}
           <div className="store-subscription__actions flex flex-wrap items-center gap-3">
-            {mostrarPagar && !showStartForm && (
-              <Button
-                type="button"
-                onClick={() => openStartForm(defaultPayerEmail)}
-                disabled={paying}
-              >
-                {payButtonLabel}
-              </Button>
-            )}
+            {mostrarPagar &&
+              !showStartForm &&
+              !showRetryForm &&
+              !failedPayment && (
+                <Button
+                  type="button"
+                  onClick={() => openStartForm(defaultPayerEmail)}
+                  disabled={paying}
+                >
+                  {payButtonLabel}
+                </Button>
+              )}
             <CancelSubscriptionButton
               tipo="tienda"
               status={sub.status}
@@ -517,16 +531,12 @@ export default function StoreSubscriptionPage() {
                             Comprobante
                           </button>
                         )}
-                        {p.status === 'rechazado' && sub.status !== 'ACTIVA' && (
+                        {p.status === 'rechazado' && sub.status !== 'ACTIVA' && !failedPayment && (
                           <button
                             type="button"
                             disabled={paying}
                             className="rounded-lg bg-violeta px-3 py-1.5 text-xs font-bold text-blanco hover:bg-violeta-claro shadow-sm disabled:opacity-50"
-                            onClick={() => {
-                              setRetryPaymentTarget(p)
-                              setShowRetryForm(true)
-                              setRetryErrorMsg(null)
-                            }}
+                            onClick={() => openRetryForm(p)}
                           >
                             Reintentar pago
                           </button>
