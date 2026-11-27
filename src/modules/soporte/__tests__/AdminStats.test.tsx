@@ -25,7 +25,23 @@ const renderAdmin = (path = '/admin/estadisticas') => render(
   </ThemeProvider>,
 )
 
-beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
+beforeEach(() => {
+  localStorage.clear()
+  sessionStorage.clear()
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  })
+})
 
 describe('módulo de administración', () => {
   it('tiene la barra lateral con todas las secciones del prototipo y sus insignias', async () => {
@@ -87,7 +103,8 @@ describe('estadísticas del administrador (RF-86 a 91)', () => {
     expect(screen.getAllByRole('combobox', { name: 'Seleccionar mes de registros' }).length).toBeGreaterThan(0)
     expect(await screen.findByRole('list', { name: 'Registros de usuarios por día' }, { timeout: 3000 })).toBeInTheDocument()
 
-    await user.click(screen.getAllByRole('button', { name: /tabla/i })[0])
+    const revenueGroup = screen.getByRole('group', { name: 'Tipo de gráfico para Ingresos por suscripciones' })
+    await user.click(within(revenueGroup).getByRole('button', { name: /tabla/i }))
     expect(screen.getByRole('table', { name: 'Ingresos por suscripciones' })).toBeInTheDocument()
   })
 })
