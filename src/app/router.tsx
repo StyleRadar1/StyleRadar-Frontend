@@ -1,8 +1,7 @@
-import { lazy, Suspense, useState, type ReactNode } from 'react'
-import { createBrowserRouter, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
+import { lazy, Suspense, useEffect, type ReactNode } from 'react'
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { ROLE_HOME, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { hasSeenLanding } from '@/modules/landing/landingSeen'
 import { NotFound } from '@/modules/core/components/NotFound'
 import { SessionExpiredOverlay } from '@/modules/core/components/SessionExpiredOverlay'
 import { SinConexion } from '@/modules/core/components/SinConexion'
@@ -17,7 +16,6 @@ import { RouteErrorBoundary } from './RouteErrorBoundary'
 
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 const LandingPage = lazy(() => import('@/modules/landing/pages/LandingPage'))
-const Login = lazy(() => import('@/modules/identidad/pages/LoginPage'))
 const Home = lazy(() => import('@/modules/inicio/pages/HomePage'))
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
 const ResetPassword = lazy(() => import('@/modules/identidad/pages/ResetPasswordPage'))
@@ -83,13 +81,11 @@ const ANY: Role[] = ['BUYER', 'STORE_ADMIN', 'FOUNDATION_REPRESENTATIVE', 'STYLE
 
 function Portada() {
   const { user } = useAuth()
-  const [params] = useSearchParams()
-  const [seenOnEntry] = useState(() => hasSeenLanding())
 
   if (user) return <Navigate to={ROLE_HOME[user.role]} replace />
-  if (seenOnEntry) {
-    return <Navigate to={params.has('login') ? '/login' : '/catalogo'} replace />
-  }
+  // Sin sesión, la portada siempre es el landing. La marca de "landing visto"
+  // ya no debe expulsar a /catalogo: el catálogo se abre explícitamente desde
+  // los enlaces del landing.
   return page(<LandingPage />)
 }
 
@@ -97,6 +93,10 @@ function Portada() {
 function RootLayout() {
   const { pathname } = useLocation()
   const excluded = isAuroraExcluded(pathname)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [pathname])
 
   return (
     <div className="relative min-h-screen">
@@ -124,7 +124,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
       // Públicas
       { path: '/', element: <Portada /> },
       // En visitas posteriores a la primera entrada, /?login redirige aquí para iniciar sesión sin reabrir el landing.
-      { path: '/login', element: page(<Login />) },
+      { path: '/login', element: <Navigate to="/?login" replace /> },
       { path: '/registro', element: page(<Register />) },
       { path: '/restablecer-contrasena', element: page(<ResetPassword />) },
       { path: '/catalogo', element: page(<Catalog />) },
@@ -150,8 +150,8 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
       { path: '/inicio', element: only(USER, <Home />) },
       { path: '/perfil', element: only(USER, <Profile />) },
       { path: '/perfil/pagos', element: only(USER, <BuyerPayments />) },
-      { path: '/probador', element: page(<ProbadorVirtual />) },
-      { path: '/probador/arma-tu-look', element: page(<ProbadorVirtual />) },
+      { path: '/probador', element: only(ANY, <ProbadorVirtual />) },
+      { path: '/probador/arma-tu-look', element: only(ANY, <ProbadorVirtual />) },
       { path: '/probador/avanzado', element: only(USER, <TryOn />) },
       { path: '/segunda-mano', element: page(<SecondHand />) },
       { path: '/segunda-mano/publicar', element: only(USER_OR_STORE, <PublishListing />) },
@@ -173,7 +173,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
       // Fundación
       { path: '/fundacion', element: only(FOUND, <FoundationHome />) },
       { path: '/fundacion/donaciones', element: only(FOUND, <Foundation />) },
-      { path: '/fundacion/estadisticas', element: only(FOUND, <Stats />) },
+      { path: '/fundacion/estadisticas', element: <Navigate to="/fundacion" replace /> },
       ...(ErroresDemo ? [{ path: '/dev/errores', element: page(<ErroresDemo />) }] : []),
       { path: '*', element: <NotFound /> },
     ],

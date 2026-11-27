@@ -12,7 +12,7 @@ import { ROLE_DOT, avatarCls } from './roleTone'
 const ITEMS: Record<Role, [string, string][]> = {
   BUYER: [['/perfil', 'Mi cuenta'], ['/playlists', 'Mis playlists'], ['/segunda-mano', 'Mis publicaciones (Segunda mano)'], ['/donar', 'Donar a fundación'], ['/alertas', 'Mis búsquedas y alertas'], ['/avisos/preferencias', 'Preferencias de avisos'], ['/planes', 'Mi plan']],
   STORE_ADMIN: [['/tienda/inventario', 'Mi tienda'], ['/donar', 'Donar a fundación'], ['/tienda/suscripcion', 'Mi suscripción'], ['/avisos/preferencias', 'Preferencias de avisos']],
-  FOUNDATION_REPRESENTATIVE: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/fundacion/estadisticas', 'Estadísticas'], ['/avisos/preferencias', 'Preferencias de avisos']],
+  FOUNDATION_REPRESENTATIVE: [['/fundacion', 'Mi fundación'], ['/fundacion/donaciones', 'Donaciones'], ['/avisos/preferencias', 'Preferencias de avisos']],
   STYLERADAR_ADMIN: [['/admin/estadisticas', 'Estadísticas'], ['/admin/usuarios', 'Usuarios'], ['/admin/pagos', 'Pagos']],
 }
 
@@ -93,7 +93,7 @@ export function UserMenu() {
           title="¿Cerrar sesión?"
           confirmLabel="Cerrar sesión"
           cancelLabel="Seguir aquí"
-          onConfirm={() => { setAskLogout(false); marcarSalidaVoluntaria(); navigate('/', { replace: true }); logout() }}
+          onConfirm={() => { setAskLogout(false); marcarSalidaVoluntaria(); logout(); navigate('/', { replace: true }) }}
           onCancel={() => setAskLogout(false)}
         >
           Tendrás que volver a entrar con tu correo y contraseña.

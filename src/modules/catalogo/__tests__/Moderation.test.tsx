@@ -73,6 +73,32 @@ describe('ModerationPage (RF-61)', () => {
     })
   })
 
+  it('exige comentario cuando el motivo es «Otro» (BUG-14)', async () => {
+    const user = userEvent.setup()
+    renderAt('/admin/moderacion', routes)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Chaqueta bomber vintage café/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getAllByRole('button', { name: /^Rechazar$/i })[0])
+    await user.selectOptions(screen.getByLabelText(/Motivo de rechazo/i), 'Otro')
+    await user.click(screen.getByRole('button', { name: /Rechazar con motivo/i }))
+
+    expect(await screen.findByText(/Escribe el motivo real del rechazo/i)).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    await user.type(
+      screen.getByLabelText(/Comentario del rechazo/i),
+      'La prenda no corresponde con la publicación',
+    )
+    await user.click(screen.getByRole('button', { name: /Rechazar con motivo/i }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+  })
+
   it('si alguien ya moderó la prenda (422) muestra aviso y recarga la lista', async () => {
     const user = userEvent.setup()
     renderAt('/admin/moderacion', routes)

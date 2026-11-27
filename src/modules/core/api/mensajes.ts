@@ -46,6 +46,7 @@ export const MENSAJES_POR_CODIGO: Record<string, string> = {
   RADIO_INVALIDO: 'La distancia del radio de búsqueda no puede ser negativa ni salir del rango permitido.',
   INVENTARIO_NO_ENCONTRADO: 'Esta prenda todavía no tiene tallas disponibles.',
   ALMACEN_SUSPENDIDO: 'El almacén está suspendido y no puede publicar prendas.',
+  PRENDA_DUPLICADA: 'Esta prenda ya existe en tu tienda. En vez de crearla otra vez, ajusta sus unidades.',
   FOTOGRAFIAS_EXCEDIDAS: 'La prenda puede tener máximo 5 fotografías.',
   TALLA_INVALIDA: 'La talla seleccionada no corresponde al tipo de prenda.',
   CANTIDAD_INVALIDA: 'La cantidad de unidades no puede ser negativa.',

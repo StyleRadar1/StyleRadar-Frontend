@@ -139,12 +139,6 @@ export default function FoundationHomePage() {
               </svg>
               <span>Ver donaciones</span>
             </Link>
-            <Link to="/fundacion/estadisticas" className="fnd-btn fnd-btn--outline">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current fill-none stroke-[2]" aria-hidden="true">
-                <path d="M18 20V10M12 20V4M6 20v-6" />
-              </svg>
-              <span>Ver estadísticas</span>
-            </Link>
           </div>
 
           {/* ── Bento interactivo de Fundación (métricas, necesidades y chats) ── */}
@@ -281,12 +275,9 @@ export default function FoundationHomePage() {
                 <h2 className="fnd-hero-card__title">Impacto y donaciones</h2>
                 <p className="fnd-hero-card__desc">
                   {data.totalPrendas > 0
-                    ? `${data.totalPrendas} ${data.totalPrendas === 1 ? 'prenda recibida' : 'prendas recibidas'} en ${data.entregadas} ${data.entregadas === 1 ? 'entrega confirmada' : 'entregas confirmadas'}. Consulta el detalle mensual en estadísticas.`
+                    ? `${data.totalPrendas} ${data.totalPrendas === 1 ? 'prenda recibida' : 'prendas recibidas'} en ${data.entregadas} ${data.entregadas === 1 ? 'entrega confirmada' : 'entregas confirmadas'}.`
                     : 'Consulta el historial de entregas confirmadas, el origen de tus donaciones y las métricas de impacto de tu fundación.'}
                 </p>
-                <Link to="/fundacion/estadisticas" className="fnd-hero-card__link">
-                  VER REPORTE
-                </Link>
               </div>
               <div className="fnd-hero-card__media" aria-hidden="true">
                 <img src={impactoSrc} alt="" loading="lazy" />

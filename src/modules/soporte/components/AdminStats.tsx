@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  HeartHandshake,
+  ListMusic,
+  Shirt,
+  ShoppingBag,
+  Store,
+  Users,
+} from 'lucide-react'
 import { guardarRetorno } from '@/modules/core/api/retorno'
 import { formatCOP } from '@/modules/core/utils/format'
 import {
@@ -11,7 +19,11 @@ import {
   usePlatformSubscriptionRevenue,
   usePlatformUserRegistrations,
 } from '../hooks/useStatistics'
-import type { CategoryCode, DistributionResponse } from '../types/statistics.dto'
+import {
+  CATEGORY_UI_LABELS,
+  type CategoryCode,
+  type DistributionResponse,
+} from '../types/statistics.dto'
 import {
   calcRealDelta,
   formatDayShort,
@@ -20,14 +32,39 @@ import {
   getCurrentYearMonth,
   getRecentMonthOptions,
 } from '../utils/statsFormat'
+import { DistributionCard, type DistributionRow } from './stats/DistributionCard'
 import { KpiCard } from './stats/KpiCard'
 import { TrendChart, type TrendPoint } from './stats/TrendChart'
+import './stats/statsGlass.css'
 
 const num = (n: number) => n.toLocaleString('es-CO')
+
+const CATEGORY_COLORS: Record<CategoryCode, string> = {
+  PLAN_RADAR: '#8b86a4',
+  PLAN_RADAR_PLUS: '#9d5cff',
+  PLAN_STORE_MONTHLY: '#9d5cff',
+  SUSPENDED: '#fbbf24',
+  AVAILABLE: '#4ade80',
+  LOW_STOCK: '#fbbf24',
+  OUT_OF_STOCK: '#f87171',
+}
 
 function sumEntries<C extends CategoryCode>(res: DistributionResponse<C> | null): number {
   if (!res) return 0
   return (res.entries ?? []).reduce((sum, entry) => sum + entry.count, 0)
+}
+
+function toDistributionRows<C extends CategoryCode>(
+  res: DistributionResponse<C> | null,
+): DistributionRow[] {
+  if (!res) return []
+  return (res.entries ?? []).map((entry) => ({
+    key: entry.categoryCode,
+    label: CATEGORY_UI_LABELS[entry.categoryCode] ?? 'Otra categoría',
+    count: entry.count,
+    percentage: entry.percentage,
+    color: CATEGORY_COLORS[entry.categoryCode] ?? '#9d5cff',
+  }))
 }
 
 /**
@@ -72,6 +109,8 @@ export function AdminStatsView() {
 
   const buyersTotal = sumEntries(buyers.data)
   const storesTotal = sumEntries(stores.data)
+  const buyersRows = toDistributionRows(buyers.data)
+  const storesRows = toDistributionRows(stores.data)
 
   const donationsPeriodLabel =
     formatMonthShort(donations.data?.period?.startDate) || 'Mes en curso'
@@ -107,16 +146,16 @@ export function AdminStatsView() {
   })
 
   const monthSelect = (
-    <label className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--sr-text-muted,var(--color-text-muted))]">
+    <label className="glass-pill inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold text-[var(--sr-text-muted,var(--color-text-muted))]">
       <span>Mes</span>
       <select
         aria-label="Seleccionar mes de registros"
         value={selectedMonth}
         onChange={(e) => setSelectedMonth(e.target.value)}
-        className="rounded-lg border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface,var(--color-surface))] px-3 py-1.5 text-xs font-semibold text-[var(--sr-text-primary,var(--color-text))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-violeta-claro,#7C3AED)]"
+        className="cursor-pointer bg-transparent text-xs font-semibold text-[var(--sr-text-primary,var(--color-text))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-violeta-claro,#7C3AED)]"
       >
         {monthOptions.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+          <option key={opt.value} value={opt.value} className="bg-[#141021] text-[#f8fafc]">
             {opt.label}
           </option>
         ))}
@@ -125,7 +164,9 @@ export function AdminStatsView() {
   )
 
   return (
-    <div className="space-y-8 text-[var(--sr-text-primary,var(--color-text))]">
+    <div className="stats-glass-backdrop space-y-8 text-[var(--sr-text-primary,var(--color-text))]">
+      <span aria-hidden="true" className="stats-glass-glow" />
+
       {/* Encabezado: título grande, subtítulo corto y selector de periodo a la derecha */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
@@ -148,7 +189,9 @@ export function AdminStatsView() {
         <KpiCard
           label="Usuarios registrados"
           value={num(registeredTotal)}
+          numericValue={registeredTotal}
           subtitle={regPeriodLabel}
+          icon={<Users className="h-4 w-4" />}
           loading={registrations.loading}
           empty={registrations.empty}
           emptyText={`Sin registros en ${regPeriodLabel}`}
@@ -159,7 +202,9 @@ export function AdminStatsView() {
         <KpiCard
           label="Compradores"
           value={num(buyersTotal)}
+          numericValue={buyersTotal}
           subtitle="Total de cuentas registradas"
+          icon={<ShoppingBag className="h-4 w-4" />}
           loading={buyers.loading}
           empty={buyers.empty}
           emptyText="Aún no hay cuentas"
@@ -170,7 +215,9 @@ export function AdminStatsView() {
         <KpiCard
           label="Almacenes aliados"
           value={num(storesTotal)}
+          numericValue={storesTotal}
           subtitle="Total de tiendas registradas"
+          icon={<Store className="h-4 w-4" />}
           loading={stores.loading}
           empty={stores.empty}
           emptyText="Aún no hay cuentas"
@@ -181,7 +228,9 @@ export function AdminStatsView() {
         <KpiCard
           label="Prendas publicadas"
           value={num(garments.data?.total ?? 0)}
+          numericValue={garments.data?.total ?? 0}
           subtitle="Total acumulado en catálogo"
+          icon={<Shirt className="h-4 w-4" />}
           loading={garments.loading}
           empty={garments.empty}
           emptyText="Aún no hay prendas publicadas"
@@ -192,7 +241,9 @@ export function AdminStatsView() {
         <KpiCard
           label="Playlists creadas"
           value={num(playlists.data?.total ?? 0)}
+          numericValue={playlists.data?.total ?? 0}
           subtitle="Total acumulado de colecciones"
+          icon={<ListMusic className="h-4 w-4" />}
           loading={playlists.loading}
           empty={playlists.empty}
           emptyText="Aún no hay playlists creadas"
@@ -203,13 +254,52 @@ export function AdminStatsView() {
         <KpiCard
           label="Donaciones del mes"
           value={num(donations.data?.total ?? 0)}
+          numericValue={donations.data?.total ?? 0}
           subtitle={donationsPeriodLabel}
+          icon={<HeartHandshake className="h-4 w-4" />}
           loading={donations.loading}
           empty={donations.empty}
           emptyText="Aún no hay donaciones en este mes"
           error={donations.error}
           status={donations.status}
           onRetry={donations.retry}
+        />
+      </section>
+
+      {/* Distribuciones por plan: Compradores y Tiendas */}
+      <section
+        aria-label="Distribuciones por plan"
+        className="grid grid-cols-1 gap-6 xl:grid-cols-2"
+      >
+        <DistributionCard
+          title="Compradores por plan"
+          subtitle="Distribución de cuentas de comprador según su plan actual"
+          centerLabel="Compradores"
+          rows={buyersRows}
+          total={buyersTotal}
+          storageKey="sr_admin_buyers_plan_view"
+          note="Haz clic en un plan de la leyenda para ocultarlo o mostrarlo."
+          loading={buyers.loading}
+          empty={buyers.empty}
+          emptyText="Aún no hay compradores registrados por plan"
+          error={buyers.error}
+          status={buyers.status}
+          onRetry={buyers.retry}
+        />
+        <DistributionCard
+          title="Tiendas por plan"
+          subtitle="Estado actual de las suscripciones de almacenes aliados"
+          centerLabel="Almacenes"
+          rows={storesRows}
+          total={storesTotal}
+          storageKey="sr_admin_stores_plan_view"
+          note="Haz clic en una categoría de la leyenda para ocultarla o mostrarla."
+          loading={stores.loading}
+          empty={stores.empty}
+          emptyText="Aún no hay tiendas registradas por plan"
+          error={stores.error}
+          status={stores.status}
+          onRetry={stores.retry}
         />
       </section>
 
@@ -222,10 +312,14 @@ export function AdminStatsView() {
         tableDateHeader="Mes"
         points={revenueTrendPoints}
         variant="area"
+        views={['area', 'bars', 'line', 'table']}
+        storageKey="sr_admin_revenue_view"
+        highlightPeaks
+        enableAverageToggle
         formatValue={formatCOP}
         delta={revenueDelta}
         headerControls={
-          <span className="rounded-lg border border-[var(--sr-border-subtle,var(--color-border))] px-2.5 py-1 text-xs font-semibold text-[var(--sr-text-muted,var(--color-text-muted))]">
+          <span className="glass-pill px-2.5 py-1 text-xs font-semibold">
             Mensual
           </span>
         }
@@ -246,6 +340,8 @@ export function AdminStatsView() {
         tableDateHeader="Día"
         points={registrationTrendPoints}
         variant="bars"
+        views={['activity', 'heatmap', 'line', 'table']}
+        storageKey="sr_admin_registrations_view"
         headerControls={monthSelect}
         note="Serie diaria de nuevos registros del mes calendario seleccionado."
         loading={registrations.loading}

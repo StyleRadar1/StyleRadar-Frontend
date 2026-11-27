@@ -1,10 +1,12 @@
-import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AuthProvider } from '@/modules/identidad/states/AuthProvider'
+import { useAuth } from '@/modules/identidad/hooks/useAuth'
+import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
 import { LegalFooter } from '@/modules/legal/components/LegalFooter'
-import { hasSeenLanding, LANDING_SEEN_KEY, markLandingSeen } from '@/modules/landing/landingSeen'
+import { LANDING_SEEN_KEY, markLandingSeen } from '@/modules/landing/landingSeen'
 import LoginPage from '@/modules/identidad/pages/LoginPage'
 
 function RutaActual() {
@@ -12,25 +14,52 @@ function RutaActual() {
   return <p data-testid="ruta">{pathname + search}</p>
 }
 
+function LogoutHarness() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        marcarSalidaVoluntaria()
+        logout()
+        navigate('/', { replace: true })
+      }}
+    >
+      Cerrar sesión
+    </button>
+  )
+}
+
+function ExpireHarness() {
+  const navigate = useNavigate()
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        window.dispatchEvent(new Event('sr:sesion-expirada'))
+        navigate('/?login', { replace: true })
+      }}
+    >
+      Expirar sesión
+    </button>
+  )
+}
+
 function PortadaPrueba() {
-  const [params] = useSearchParams()
-  const [seenOnEntry] = useState(() => hasSeenLanding())
   useEffect(() => {
-    if (!seenOnEntry) markLandingSeen()
-  }, [seenOnEntry])
-  if (seenOnEntry) {
-    return <p data-testid="redir">{params.has('login') ? '/login' : '/catalogo'}</p>
-  }
+    markLandingSeen()
+  }, [])
   return <p data-testid="landing">LandingPage</p>
 }
 
-describe('Landing una sola vez, /login y enlace StyleRadar', () => {
+describe('Landing, /login y enlace StyleRadar', () => {
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.clear()
   })
 
-  it('muestra LandingPage en la primera visita sin expulsar y marca localStorage para las siguientes', async () => {
+  it('muestra LandingPage en cada visita sin sesión, aunque ya se haya visto', async () => {
     const { unmount } = render(
       <MemoryRouter initialEntries={['/']}>
         <PortadaPrueba />
@@ -41,7 +70,6 @@ describe('Landing una sola vez, /login y enlace StyleRadar', () => {
     await waitFor(() => {
       expect(localStorage.getItem(LANDING_SEEN_KEY)).toBe('true')
     })
-    expect(screen.getByTestId('landing')).toBeInTheDocument()
     unmount()
 
     render(
@@ -49,7 +77,55 @@ describe('Landing una sola vez, /login y enlace StyleRadar', () => {
         <PortadaPrueba />
       </MemoryRouter>,
     )
-    expect(screen.getByTestId('redir')).toHaveTextContent('/catalogo')
+    expect(screen.getByTestId('landing')).toBeInTheDocument()
+  })
+
+  it('vuelve al landing después de un logout voluntario aunque ya se hubiera visto', async () => {
+    localStorage.setItem(LANDING_SEEN_KEY, 'true')
+    localStorage.setItem('sr_token', 'jwt-test')
+    localStorage.setItem(
+      'sr_user',
+      JSON.stringify({ id: 'u-1', name: 'Valentina Rojas', email: 'usuario@styleradar.co', role: 'BUYER' }),
+    )
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/catalogo']}>
+          <Routes>
+            <Route path="/" element={<PortadaPrueba />} />
+            <Route path="/catalogo" element={<LogoutHarness />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+    expect(screen.getByTestId('landing')).toHaveTextContent('LandingPage')
+    expect(localStorage.getItem(LANDING_SEEN_KEY)).toBe('true')
+  })
+
+  it('vuelve al landing cuando la sesión expira aunque ya se hubiera visto', () => {
+    localStorage.setItem(LANDING_SEEN_KEY, 'true')
+    localStorage.setItem('sr_token', 'jwt-test')
+    localStorage.setItem(
+      'sr_user',
+      JSON.stringify({ id: 'u-1', name: 'Valentina Rojas', email: 'usuario@styleradar.co', role: 'BUYER' }),
+    )
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/catalogo']}>
+          <Routes>
+            <Route path="/" element={<PortadaPrueba />} />
+            <Route path="/catalogo" element={<ExpireHarness />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expirar sesión' }))
+    expect(screen.getByTestId('landing')).toHaveTextContent('LandingPage')
+    expect(localStorage.getItem(LANDING_SEEN_KEY)).toBe('true')
   })
 
   it('redirige /?login a /login cuando la landing ya fue vista y LoginPage abre AuthModal sin LandingPage', () => {

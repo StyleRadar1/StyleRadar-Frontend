@@ -7,8 +7,9 @@ import { errorKind } from '@/modules/core/api/errors'
 import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
 import { usePayments } from '../hooks/usePayments'
+import { BalanceWallet } from '../components/BalanceWallet'
 import { buildPaymentsCsv, formatStatusLabel } from '../mappers/paymentsMappers'
-import { calcRevenue, paymentService } from '../services/paymentService'
+import { calcRevenue, filterPayments, paymentService } from '../services/paymentService'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
 import '@/styles/verdelo-dashboard.css'
 
@@ -96,32 +97,13 @@ const RADAR_CARDS: RadarCardItem[] = [
   },
 ]
 
-const BALANCE_SERIES = [
-  { mes: 'Abr', real: 1120000, proyeccion: null as number | null },
-  { mes: 'May', real: 1340000, proyeccion: null as number | null },
-  { mes: 'Jun', real: 1290000, proyeccion: null as number | null },
-  { mes: 'Jul', real: 1680000, proyeccion: null as number | null },
-  { mes: 'Ago', real: 1940000, proyeccion: null as number | null },
-  { mes: 'Sep', real: 2227000, proyeccion: 2227000 },
-  { mes: 'Oct', real: null as number | null, proyeccion: 2490000 },
-  { mes: 'Nov', real: null as number | null, proyeccion: 2780000 },
-]
 
-const FLOW_BARS = [
-  { mes: 'Abr', entradas: 1240000, pendientes: 120000 },
-  { mes: 'May', entradas: 1490000, pendientes: 150000 },
-  { mes: 'Jun', entradas: 1420000, pendientes: 130000 },
-  { mes: 'Jul', entradas: 1850000, pendientes: 170000 },
-  { mes: 'Ago', entradas: 2120000, pendientes: 180000 },
-  { mes: 'Sep', entradas: 2380000, pendientes: 153000 },
-]
+const NO_FILTERS: PaymentFiltersDto = {}
 
 export default function AdminPaymentsPage() {
   const [filters, setFilters] = useState<PaymentFiltersDto>({})
-  const stableFilters = useMemo(() => filters, [filters])
-  const emptyFilters = useMemo<PaymentFiltersDto>(() => ({}), [])
-  const { data: allPayments } = usePayments(emptyFilters)
-  const { data: payments, loading, error, reload } = usePayments(stableFilters)
+  const { data: allPayments, loading, error, reload } = usePayments(NO_FILTERS)
+  const payments = useMemo(() => filterPayments(allPayments, filters), [allPayments, filters])
   const [selected, setSelected] = useState<PaymentDto | null>(null)
   /** Aviso de la página: 403 u otro error de permisos. */
   const [avisoPagos] = useState<{ permiso: boolean; texto?: string } | null>(null)
@@ -129,7 +111,6 @@ export default function AdminPaymentsPage() {
   // Estado de las tarjetas 3D apiladas estilo Verdelo
   const [activeCardIdx, setActiveCardIdx] = useState(0)
   const [flippedCardId, setFlippedCardId] = useState<string | null>(null)
-  const [hoverPoint, setHoverPoint] = useState<number | null>(null)
 
   const revenue = useMemo(() => calcRevenue(allPayments), [allPayments])
 
@@ -137,7 +118,6 @@ export default function AdminPaymentsPage() {
     const approved = allPayments.filter((p) => p.status === 'aprobado')
     const rejected = allPayments.filter((p) => p.status === 'rechazado')
     const pending = allPayments.filter((p) => p.status === 'pendiente')
-    const approvedSum = approved.reduce((acc, p) => acc + p.amount, 0)
     const pendingSum = pending.reduce((acc, p) => acc + p.amount, 0)
     const plusSum = approved.filter((p) => p.planId === 'plus').reduce((acc, p) => acc + p.amount, 0)
     const storeSum = approved.filter((p) => p.planId === 'store').reduce((acc, p) => acc + p.amount, 0)
@@ -145,7 +125,6 @@ export default function AdminPaymentsPage() {
       approvedCount: approved.length,
       rejectedCount: rejected.length,
       pendingCount: pending.length,
-      approvedSum,
       pendingSum,
       plusSum,
       storeSum,
@@ -200,22 +179,9 @@ export default function AdminPaymentsPage() {
   const activeAmount = getCardAmount(activeCard)
   const activeProgress =
     activeAmount > 0 ? Math.min(100, Math.max(12, Math.round((activeAmount / activeCard.targetAmount) * 100))) : 0
-  const displayBalance = env.useMocksPagos ? (revenue || 2227000) : revenue
+  const displayBalance = revenue
   const pendingLabel = `${statsSummary.pendingCount} ${statsSummary.pendingCount === 1 ? 'pago' : 'pagos'}`
 
-  // Coordenadas para la curva suave de balance estilo Verdelo
-  const maxBalance = 3000000
-  const chartPoints = BALANCE_SERIES.map((item, idx) => {
-    const x = (idx / (BALANCE_SERIES.length - 1)) * 640
-    const val = item.real ?? item.proyeccion ?? 0
-    const y = 148 - (val / maxBalance) * 118
-    return { ...item, x, y, val }
-  })
-  const realPts = chartPoints.filter((p) => p.real !== null)
-  const forecastPts = chartPoints.filter((p) => p.proyeccion !== null)
-  const realLine = realPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-  const realArea = `${realLine} L${realPts[realPts.length - 1].x.toFixed(1)},160 L${realPts[0].x.toFixed(1)},160 Z`
-  const forecastLine = forecastPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
 
   return (
     <section className="sr-verdelo-page mx-auto max-w-6xl px-2 py-4 md:px-4 md:py-6">
@@ -228,19 +194,14 @@ export default function AdminPaymentsPage() {
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight md:text-5xl">Pagos</h1>
           <p className="mt-1 text-sm text-white/70">Estado de los pagos de suscripciones de almacenes y compradores</p>
         </div>
-        <Card className="sr-verdelo-panel text-right">
-          <p className="text-[11px] font-bold uppercase tracking-[.16em] text-arena">Ingresos aprobados</p>
-          <p className="mt-1 text-2xl font-extrabold tabular-nums">{formatCOP(revenue)}</p>
-          <p className="text-xs text-white/55">Solo pagos aprobados</p>
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            disabled={payments.length === 0}
-            className="mt-3 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blanco transition hover:bg-white/20 disabled:opacity-40"
-          >
-            Exportar CSV
-          </button>
-        </Card>
+        <button
+          type="button"
+          onClick={handleExportCsv}
+          disabled={payments.length === 0}
+          className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blanco transition hover:bg-white/20 disabled:opacity-40"
+        >
+          Exportar CSV
+        </button>
       </div>
 
       {/* ─── Hero Grid inspirado en Verdelo (Tarjetas 3D + Balance Conjunto + Flujo de Caja) ─── */}
@@ -249,15 +210,15 @@ export default function AdminPaymentsPage() {
         <div className="sr-verdelo-panel sr-verdelo-panel--glow flex flex-col justify-between rounded-3xl p-6 lg:col-span-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-blanco">Tarjetas y canales</h2>
+              <h2 className="text-lg font-bold tracking-tight text-blanco">Recaudos y metas</h2>
               <p className="mt-0.5 text-xs text-lavanda/80">
-                Cambia de tarjeta con las flechas o tócala para girarla y ver el reverso.
+                Consulta el recaudo por canal y el avance de la meta mensual.
               </p>
             </div>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                aria-label="Tarjeta anterior"
+                aria-label="Recaudo anterior"
                 onClick={() => cycleCard(-1)}
                 className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-white/5 text-sm text-white/80 transition hover:border-arena/50 hover:bg-white/10 hover:text-blanco"
               >
@@ -265,7 +226,7 @@ export default function AdminPaymentsPage() {
               </button>
               <button
                 type="button"
-                aria-label="Siguiente tarjeta"
+                aria-label="Siguiente recaudo"
                 onClick={() => cycleCard(1)}
                 className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-white/5 text-sm text-white/80 transition hover:border-arena/50 hover:bg-white/10 hover:text-blanco"
               >
@@ -407,242 +368,55 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
 
-        {/* Columna derecha: Balance Conjunto (arriba) + Cobros aprobados y pendientes (abajo) */}
+        {/* Balance consolidado: único resumen de ingresos */}
         <div className="flex flex-col gap-5 lg:col-span-7">
-          {/* Panel superior: Balance conjunto con curva brillante y proyección */}
-          <div className="sr-verdelo-panel rounded-3xl p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-lg font-bold text-blanco">Balance consolidado</h2>
-                  {env.useMocksPagos && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-[#9be3b4]/35 bg-[#9be3b4]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#9be3b4]">
-                      ▲ 14.8%
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 text-3xl font-extrabold tabular-nums tracking-tight text-blanco md:text-4xl">
-                  {formatCOP(displayBalance)}
-                </p>
-              </div>
-              {env.useMocksPagos && (
-                <div className="flex items-center gap-4 text-xs text-lavanda">
-                  <span className="flex items-center gap-1.5">
-                    <i aria-hidden="true" className="h-2 w-2 rounded-full bg-arena shadow-[0_0_8px_#E8DCCB]" />
-                    Balance real
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <i aria-hidden="true" className="h-0.5 w-3 border-t-2 border-dashed border-violeta-claro" />
-                    Proyección
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Píldoras de resumen por periodo */}
-            {env.useMocksPagos ? (
-              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                {[
-                  { label: 'Hoy', val: formatCOP(Math.round(displayBalance * 0.08)), delta: '+4.2%', up: true },
-                  { label: 'Esta semana', val: formatCOP(Math.round(displayBalance * 0.32)), delta: '+9.1%', up: true },
-                  { label: 'Este mes', val: formatCOP(displayBalance), delta: '+14.8%', up: true },
-                  { label: 'Pendientes', val: formatCOP(statsSummary.pendingSum), delta: pendingLabel, up: false },
-                ].map((pill) => (
-                  <div
-                    key={pill.label}
-                    className="rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 transition hover:border-white/20 hover:bg-white/[0.05]"
-                  >
-                    <div className="flex items-center justify-between text-[11px] text-lavanda">
-                      <span>{pill.label}</span>
-                      <span className={pill.up ? 'font-bold text-[#9be3b4]' : 'font-bold text-arena'}>
-                        {pill.delta}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm font-extrabold tabular-nums text-blanco">{pill.val}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                {[
-                  {
-                    label: 'Aprobados',
-                    val: formatCOP(statsSummary.approvedSum),
-                    delta: `${statsSummary.approvedCount} ${statsSummary.approvedCount === 1 ? 'pago' : 'pagos'}`,
-                    up: true,
-                  },
-                  { label: 'Pendientes', val: formatCOP(statsSummary.pendingSum), delta: pendingLabel, up: false },
-                  {
-                    label: 'Rechazados',
-                    val: `${statsSummary.rejectedCount}`,
-                    delta: statsSummary.rejectedCount === 1 ? 'intento' : 'intentos',
-                    up: false,
-                  },
-                ].map((pill) => (
-                  <div
-                    key={pill.label}
-                    className="rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5"
-                  >
-                    <div className="flex items-center justify-between text-[11px] text-lavanda">
-                      <span>{pill.label}</span>
-                      <span className={pill.up ? 'font-bold text-[#9be3b4]' : 'font-bold text-arena'}>
-                        {pill.delta}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm font-extrabold tabular-nums text-blanco">{pill.val}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Gráfico de área brillante con línea punteada de proyección (solo en modo mock) */}
-            {env.useMocksPagos && (
-            <div className="relative mt-5 h-40 w-full">
-              <svg viewBox="0 0 640 165" className="h-full w-full overflow-visible" aria-label="Evolución y proyección de ingresos">
-                <defs>
-                  <linearGradient id="srBalanceArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#7B4DD8" stopOpacity="0.48" />
-                    <stop offset="55%" stopColor="#48119A" stopOpacity="0.18" />
-                    <stop offset="100%" stopColor="#48119A" stopOpacity="0.0" />
-                  </linearGradient>
-                  <linearGradient id="srBalanceStroke" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#B9B9CA" />
-                    <stop offset="55%" stopColor="#7B4DD8" />
-                    <stop offset="100%" stopColor="#E8DCCB" />
-                  </linearGradient>
-                </defs>
-                {/* Líneas guía horizontales */}
-                <line x1="0" x2="640" y1="35" y2="35" stroke="rgba(255,255,255,0.07)" strokeDasharray="4 4" />
-                <line x1="0" x2="640" y1="95" y2="95" stroke="rgba(255,255,255,0.07)" strokeDasharray="4 4" />
-                <line x1="0" x2="640" y1="155" y2="155" stroke="rgba(255,255,255,0.12)" />
-
-                {/* Área bajo la curva real */}
-                <path d={realArea} fill="url(#srBalanceArea)" />
-                {/* Línea real brillante */}
-                <path
-                  d={realLine}
-                  fill="none"
-                  stroke="url(#srBalanceStroke)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                {/* Línea punteada de proyección */}
-                <path
-                  d={forecastLine}
-                  fill="none"
-                  stroke="#E8DCCB"
-                  strokeWidth="2.5"
-                  strokeDasharray="6 6"
-                  strokeLinecap="round"
-                />
-
-                {/* Puntos interactivos */}
-                {chartPoints.map((pt, idx) => (
-                  <g
-                    key={pt.mes}
-                    className="cursor-pointer"
-                    onMouseEnter={() => setHoverPoint(idx)}
-                    onMouseLeave={() => setHoverPoint(null)}
-                  >
-                    <circle cx={pt.x} cy={pt.y} r="14" fill="transparent" />
-                    <circle
-                      cx={pt.x}
-                      cy={pt.y}
-                      r={hoverPoint === idx ? 6 : 4}
-                      fill={pt.real !== null ? '#E8DCCB' : '#7B4DD8'}
-                      stroke="#141218"
-                      strokeWidth="2"
-                    />
-                  </g>
-                ))}
-              </svg>
-
-              {/* Tooltip flotante del punto activo */}
-              {hoverPoint !== null && (
-                <div
-                  className="pointer-events-none absolute -top-2 z-10 rounded-xl border border-white/15 bg-[#16131d]/95 px-3 py-1.5 text-xs shadow-xl"
-                  style={{
-                    left: `${Math.min(82, Math.max(8, (hoverPoint / (chartPoints.length - 1)) * 100))}%`,
-                    transform: 'translateX(-50%)',
-                  }}
-                >
-                  <p className="font-bold text-arena">
-                    {chartPoints[hoverPoint].mes} · {chartPoints[hoverPoint].real !== null ? 'Real' : 'Proyección'}
-                  </p>
-                  <p className="font-mono font-extrabold text-blanco">{formatCOP(chartPoints[hoverPoint].val)}</p>
-                </div>
-              )}
-
-              <div className="mt-1 flex justify-between text-[11px] font-semibold text-white/50">
-                {BALANCE_SERIES.map((b) => (
-                  <span key={b.mes}>{b.mes}</span>
-                ))}
-              </div>
-              <ul className="sr-only" aria-label="Resumen textual de evolución de ingresos">
-                {BALANCE_SERIES.map((b) => (
-                  <li key={b.mes}>
-                    {b.mes}: {formatCOP(b.real ?? b.proyeccion ?? 0)} ({b.real !== null ? 'Real' : 'Proyección'})
-                  </li>
-                ))}
-              </ul>
-            </div>
-            )}
-          </div>
-
-          {/* Panel inferior: Cobros aprobados y pendientes */}
-          <div className="sr-verdelo-panel rounded-3xl p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="text-base font-bold text-blanco">Cobros aprobados y pendientes</h2>
-                <p className="text-xs text-lavanda/75">Comparativa mensual de suscripciones aprobadas y en espera</p>
-              </div>
-              <div className="flex items-center gap-4 text-xs text-lavanda">
-                <span className="flex items-center gap-1.5">
-                  <i aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-violeta-claro" />
-                  Cobros aprobados ({statsSummary.approvedCount})
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <i aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-arena" />
-                  Pendientes ({statsSummary.pendingCount})
-                </span>
-              </div>
-            </div>
-
-            {env.useMocksPagos ? (
-              <div className="mt-4 grid grid-cols-6 gap-3">
-                {FLOW_BARS.map((bar) => {
-                  const inPct = Math.round((bar.entradas / 2500000) * 100)
-                  const pendingPct = Math.max(12, Math.round((bar.pendientes / 600000) * 100))
-                  return (
-                    <div key={bar.mes} className="flex flex-col items-center">
-                      <div className="flex h-24 w-full items-end justify-center gap-1.5 rounded-2xl bg-white/[0.03] px-2 py-2">
-                        <div className="flex h-full w-3 items-end rounded-full bg-white/[0.06] sm:w-3.5">
-                          <span
-                            className="w-full rounded-full bg-gradient-to-t from-violeta to-violeta-claro shadow-[0_0_12px_rgba(123,77,216,0.45)]"
-                            style={{ height: `${inPct}%` }}
-                            title={`Entradas ${bar.mes}: ${formatCOP(bar.entradas)}`}
-                          />
-                        </div>
-                        <div className="flex h-full w-3 items-end rounded-full bg-white/[0.06] sm:w-3.5">
-                          <span
-                            className="w-full rounded-full bg-gradient-to-t from-arena/60 to-arena"
-                            style={{ height: `${pendingPct}%` }}
-                            title={`Pendientes ${bar.mes}: ${formatCOP(bar.pendientes)}`}
-                          />
-                        </div>
-                      </div>
-                      <span className="mt-1.5 text-[11px] font-semibold text-white/60">{bar.mes}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-white/65">
-                Resumen calculado en tiempo real con {payments.length}{' '}
-                {payments.length === 1 ? 'transacción consultada' : 'transacciones consultadas'}.
+          <div className="sr-verdelo-panel flex h-full flex-col rounded-3xl p-6">
+            <div>
+              <h2 className="text-lg font-bold text-blanco">Balance consolidado</h2>
+              <p className="mt-1 text-3xl font-extrabold tabular-nums tracking-tight text-blanco md:text-4xl">
+                {formatCOP(displayBalance)}
               </p>
-            )}
+              <p className="mt-2 text-xs text-lavanda/75">
+                Total global de pagos aprobados. Los filtros solo afectan la tabla.
+              </p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {[
+                {
+                  label: 'Aprobados',
+                  val: `${statsSummary.approvedCount} ${statsSummary.approvedCount === 1 ? 'pago' : 'pagos'}`,
+                  delta: 'Global',
+                  up: true,
+                },
+                { label: 'Pendientes', val: formatCOP(statsSummary.pendingSum), delta: pendingLabel, up: false },
+                {
+                  label: 'Rechazados',
+                  val: `${statsSummary.rejectedCount}`,
+                  delta: statsSummary.rejectedCount === 1 ? 'intento' : 'intentos',
+                  up: false,
+                },
+              ].map((pill) => (
+                <div
+                  key={pill.label}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5"
+                >
+                  <div className="flex items-center justify-between text-[11px] text-lavanda">
+                    <span>{pill.label}</span>
+                    <span className={pill.up ? 'font-bold text-[#9be3b4]' : 'font-bold text-arena'}>
+                      {pill.delta}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm font-extrabold tabular-nums text-blanco">{pill.val}</p>
+                </div>
+              ))}
+            </div>
+            <BalanceWallet total={displayBalance} plusSum={statsSummary.plusSum} storeSum={statsSummary.storeSum} />
+
+            <div className="mt-auto border-t border-white/10 pt-4 text-xs text-lavanda/70">
+              <p>El balance suma únicamente pagos aprobados.</p>
+              <p className="mt-1">Los filtros no modifican este valor global.</p>
+            </div>
           </div>
         </div>
       </div>

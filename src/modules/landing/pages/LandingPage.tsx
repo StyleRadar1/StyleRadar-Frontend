@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CustomCursor, NoiseGrain } from '@/components/ui'
@@ -21,7 +21,8 @@ export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   // /?login abre el inicio de sesión (lo usan el botón «Iniciar sesión» del menú de la app y «Cerrar sesión»).
   const [params, setParams] = useSearchParams()
-  const [isAuthOpen, setIsAuthOpen] = useState(() => !user && params.has('login'))
+  const loginRequested = params.has('login')
+  const [isAuthOpen, setIsAuthOpen] = useState(() => !user && loginRequested)
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
   const [authRole, setAuthRole] = useState<'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE'>('BUYER')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
@@ -30,19 +31,31 @@ export default function LandingPage() {
     markLandingSeen()
   }, [])
 
+  // Abrir solo cuando se pasa de / a /?login. No reabrir durante el cierre:
+  // el cambio de URL y el cierre del modal pueden ocurrir en renders distintos.
+  const previousLoginRequested = useRef(loginRequested)
   useEffect(() => {
-    if (!user && params.has('login')) {
+    if (!user && loginRequested && !previousLoginRequested.current) {
       setAuthTab('login')
       setIsAuthOpen(true)
-    } else if (user && isAuthOpen) {
-      setIsAuthOpen(false)
     }
-  }, [params, user, isAuthOpen])
+    if (user && isAuthOpen) setIsAuthOpen(false)
+    previousLoginRequested.current = loginRequested
+  }, [loginRequested, user, isAuthOpen])
 
   const handleOpenLogin = () => {
     if (user) return
     setAuthTab('login')
     setIsAuthOpen(true)
+  }
+
+  const handleOpenTryOn = () => {
+    if (!user) {
+      setAuthTab('login')
+      setIsAuthOpen(true)
+      return
+    }
+    setIsTryOnOpen(true)
   }
 
   const handleOpenRegister = (rol: 'BUYER' | 'STORE_ADMIN' | 'FOUNDATION_REPRESENTATIVE' = 'BUYER') => {
@@ -84,7 +97,7 @@ export default function LandingPage() {
         <CategoriesGrid />
 
         {/* 4. Videos de uso y acceso al probador virtual */}
-        <VideoReels onOpenTryOn={() => setIsTryOnOpen(true)} />
+        <VideoReels onOpenTryOn={handleOpenTryOn} isAuthenticated={Boolean(user)} />
 
         {/* 5. Ciclo de la ropa y economía circular */}
         <ClothingCycle />

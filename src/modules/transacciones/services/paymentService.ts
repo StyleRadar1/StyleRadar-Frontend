@@ -6,7 +6,7 @@ import { mapPaymentResponse, toApiPaymentStatusFilter, type ApiPaymentResponse }
 import { MOCK_PAYMENTS } from '../mocks/payments'
 import type { PaymentDto, PaymentFiltersDto } from '../types/payment.dto'
 
-function applyFilters(payments: PaymentDto[], f: PaymentFiltersDto): PaymentDto[] {
+export function filterPayments(payments: PaymentDto[], f: PaymentFiltersDto): PaymentDto[] {
   return payments.filter((p) => {
     if (f.status && p.status !== f.status) return false
     if (f.planId && p.planId !== f.planId) return false
@@ -26,14 +26,14 @@ export const paymentService = {
   async list(filters: PaymentFiltersDto): Promise<PaymentDto[]> {
     if (env.useMocksPagos) {
       failIfScenario()
-      return mockDelay(applyFilters(MOCK_PAYMENTS, filters))
+      return mockDelay(filterPayments(MOCK_PAYMENTS, filters))
     }
     const status = toApiPaymentStatusFilter(filters.status)
     const { data } = await apiClient.get<ApiPaymentResponse[]>('/api/v1/admin/payments', {
       params: status ? { status } : undefined,
     })
     const mapped = (Array.isArray(data) ? data : []).map((item) => mapPaymentResponse(item))
-    return applyFilters(mapped, filters)
+    return filterPayments(mapped, filters)
   },
 
   async getById(id: string): Promise<PaymentDto> {

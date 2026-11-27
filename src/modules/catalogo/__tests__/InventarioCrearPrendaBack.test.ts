@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/configs/env', () => ({ env: { appEnvironment: 'qa', apiUrl: 'http://gateway.test', useMocks: false } }))
 
-import { apiClient } from '@/modules/core/api/apiClient'
+import { ApiError, apiClient } from '@/modules/core/api/apiClient'
+import { errorMessage } from '@/modules/core/api/errors'
 import { inventoryService } from '../services/inventoryService'
 import { aInstanteUtc } from '../utils/instante'
 
@@ -45,5 +46,25 @@ describe('crear una prenda desde el perfil de tienda: el stock inicial no se rec
     expect(aInstanteUtc(undefined)).toMatch(/Z$/)
     expect(aInstanteUtc('  ')).toMatch(/Z$/)
     expect(aInstanteUtc(123)).toMatch(/Z$/)
+  })
+})
+
+describe('crear una prenda no deja copias repetidas', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('si falla el stock, retira la prenda recién creada y propaga el error', async () => {
+    const falla = new ApiError(400, 'x', 'DATOS_INVALIDOS')
+    vi.spyOn(apiClient, 'post').mockResolvedValueOnce({ data: PRENDA_CREADA } as never).mockRejectedValueOnce(falla)
+    const borrar = vi.spyOn(apiClient, 'delete').mockResolvedValue({ data: {} } as never)
+    await expect(inventoryService.addItem(DTO)).rejects.toBe(falla)
+    expect(borrar).toHaveBeenCalledWith(`/api/v1/garments/${PRENDA_CREADA.id}`)
+  })
+
+  it('si la tienda ya la tiene, lo dice y no intenta guardar stock', async () => {
+    const duplicada = new ApiError(422, 'x', 'PRENDA_DUPLICADA')
+    const post = vi.spyOn(apiClient, 'post').mockRejectedValueOnce(duplicada)
+    await expect(inventoryService.addItem(DTO)).rejects.toBe(duplicada)
+    expect(post).toHaveBeenCalledOnce()
+    expect(errorMessage(duplicada)).toContain('ya existe en tu tienda')
   })
 })

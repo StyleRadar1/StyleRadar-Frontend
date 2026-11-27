@@ -16,16 +16,6 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
       className="relative overflow-hidden py-24 px-6 md:px-16 bg-transparent text-[var(--sr-hero-text)] border-t border-[var(--sr-border-subtle)]"
       aria-labelledby="peFinalTitle"
     >
-      {/* Imagen de fondo sutil integrada sin tapar la aurora */}
-      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
-        <img
-          src="/prototipo/assets/img/categorias/casual.jpg"
-          alt=""
-          loading="lazy"
-          className="w-full h-full object-cover filter grayscale contrast-125"
-        />
-      </div>
-
       <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-start gap-8">
         <div className="space-y-4 max-w-2xl">
           <p className="text-xs font-extrabold tracking-widest uppercase text-[var(--sr-accent)]">
