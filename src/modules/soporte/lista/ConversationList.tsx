@@ -80,7 +80,7 @@ export function ConversationList({ conversations, selectedId, onSelect, classNam
                 type="button"
                 aria-pressed={activo}
                 onClick={() => setFiltro(f.id)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sr-focus)] ${
+                className={`min-h-11 rounded-full px-4 py-1.5 text-xs font-semibold transition sm:min-h-9 sm:px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sr-focus)] ${
                   activo
                     ? 'bg-violeta text-white'
                     : 'border border-[var(--sr-border-control)] text-[var(--sr-text-secondary)] hover:bg-[var(--sr-surface-raised)]'

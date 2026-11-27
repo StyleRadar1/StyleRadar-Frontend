@@ -16,7 +16,7 @@ const TRAZOS: Record<InfoAviso['icono'], string> = {
 /** Dibujo de cada tipo de aviso. Es decorativo: el texto del aviso ya dice de qué se trata. */
 export function IconoAviso({ tipo, className = 'h-4 w-4' }: { tipo: TipoNotificacion; className?: string }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d={TRAZOS[INFO_AVISO[tipo].icono]} />
     </svg>
   )

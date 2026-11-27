@@ -1,0 +1,163 @@
+/*
+ * Panel de la campana (manual de identidad V3): superficie con profundidad en vez de gris plano.
+ * Todo sale de los colores del sistema de diseño (--sr-*), así se adapta a los temas Oscuro, Claro y Daltónico.
+ * Violeta = lo activo (no leído, botón principal); lavanda/secundario = texto de apoyo; arena = foco.
+ */
+
+.sr-campana {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  color: var(--sr-text-primary);
+  background: var(--sr-surface);
+  border: 1px solid var(--sr-border-subtle);
+  border-radius: 1.5rem;
+  box-shadow: var(--sr-shadow);
+  transform-origin: top right;
+  animation: sr-campana-entra 0.18s ease-out both;
+}
+
+/* Piquito que apunta a la campana (solo cuando el panel cuelga de ella: tableta y escritorio) */
+.sr-campana-pico {
+  display: none;
+  position: absolute;
+  top: -7px;
+  right: 15px;
+  width: 14px;
+  height: 14px;
+  transform: rotate(45deg);
+  background: color-mix(in srgb, var(--sr-accent) 18%, var(--sr-surface));
+  border-top: 1px solid var(--sr-border-subtle);
+  border-left: 1px solid var(--sr-border-subtle);
+  border-top-left-radius: 3px;
+}
+
+@media (min-width: 640px) {
+  .sr-campana-pico { display: block; }
+}
+
+/* Encabezado: un velo violeta que baja hasta la superficie */
+.sr-campana-cab {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sr-accent) 18%, var(--sr-surface)), var(--sr-surface));
+  border-bottom: 1px solid var(--sr-border-subtle);
+}
+
+.sr-campana-icono {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  color: var(--sr-accent-text);
+  background: color-mix(in srgb, var(--sr-accent) 16%, transparent);
+}
+
+.sr-campana-icono--grande {
+  width: 3.25rem;
+  height: 3.25rem;
+}
+
+.sr-campana-cuerpo {
+  min-height: 0;
+  flex: 1 1 auto;
+  max-height: min(22rem, 52dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem;
+}
+
+/* Cada aviso */
+.sr-campana-fila {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  text-align: left;
+  border-radius: 1rem;
+  transition: background-color 0.15s ease;
+}
+
+.sr-campana-fila:not(:disabled):hover {
+  background: var(--sr-surface-raised);
+}
+
+.sr-campana-fila:disabled {
+  cursor: default;
+}
+
+/* No leído: acento a la izquierda y un tinte violeta suave */
+.sr-campana-fila[data-sin-leer] {
+  background: color-mix(in srgb, var(--sr-accent) 10%, transparent);
+  box-shadow: inset 3px 0 0 var(--sr-accent);
+}
+
+.sr-campana-fila[data-sin-leer]:hover {
+  background: color-mix(in srgb, var(--sr-accent) 16%, transparent);
+}
+
+.sr-campana-chip {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  color: var(--sr-accent-text);
+  background: color-mix(in srgb, var(--sr-accent) 14%, transparent);
+}
+
+.sr-campana-fila[data-sin-leer] .sr-campana-chip {
+  color: #ffffff;
+  background: var(--color-violeta, #48119a);
+}
+
+.sr-campana-pie {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--sr-border-subtle);
+  background: var(--sr-surface-raised);
+}
+
+/* Carga: esqueletos en lugar de un «Cargando…» suelto */
+.sr-campana-esqueleto {
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--sr-text-muted) 24%, transparent);
+  animation: sr-campana-pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes sr-campana-entra {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes sr-campana-pulso {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-campana,
+  .sr-campana-esqueleto {
+    animation: none;
+  }
+  .sr-campana-fila {
+    transition: none;
+  }
+}
+
+/* Tema Daltónico: el acento del tema es azul; el ícono de los no leídos lo sigue para no mezclar dos colores de énfasis */
+html[data-theme='colorblind'] .sr-campana-fila[data-sin-leer] .sr-campana-chip,
+html[data-theme='daltonico'] .sr-campana-fila[data-sin-leer] .sr-campana-chip,
+html[data-tema='daltonico'] .sr-campana-fila[data-sin-leer] .sr-campana-chip,
+html[data-cvd='on'] .sr-campana-fila[data-sin-leer] .sr-campana-chip {
+  background: var(--sr-accent);
+}

@@ -88,7 +88,7 @@ export function ChatPanel({ conv, me, onClose, onRead, onSent, className = '' }:
           type="button"
           onClick={onClose}
           aria-label="Volver a las conversaciones"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--sr-text-primary)] hover:bg-[var(--sr-surface-raised)] md:hidden"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--sr-text-primary)] hover:bg-[var(--sr-surface-raised)] md:hidden"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
         </button>
@@ -96,7 +96,7 @@ export function ChatPanel({ conv, me, onClose, onRead, onSent, className = '' }:
         <div className="min-w-0 flex-1">
           <b className="block truncate text-[15px] text-[var(--sr-text-primary)]">{conv.contacto.nombre}</b>
           <span className="block truncate text-xs text-[var(--sr-text-secondary)]">
-            {CONTACTO_LABEL[conv.contacto.tipo]} · #{conv.contacto.id}{conv.asunto ? ` · ${conv.asunto}` : ''}
+            {CONTACTO_LABEL[conv.contacto.tipo]}{conv.asunto ? ` · ${conv.asunto}` : ''}
           </span>
         </div>
       </header>

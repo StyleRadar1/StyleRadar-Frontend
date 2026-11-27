@@ -174,20 +174,20 @@ export default function NotificationsPage() {
           <div role="status" aria-live="polite" className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
             <span className="font-semibold">{marcadas} {marcadas === 1 ? 'seleccionada' : 'seleccionadas'}</span>
             <button type="button" disabled={!marcadas} onClick={() => programar([...seleccion], marcadas === 1 ? 'Notificación eliminada' : `${marcadas} notificaciones eliminadas`)}
-              className="font-semibold text-[var(--color-danger)] underline-offset-2 hover:underline disabled:opacity-40">Eliminar</button>
-            <button type="button" onClick={() => setSeleccion(null)} className="font-semibold underline-offset-2 hover:underline">Cancelar</button>
-            <span className="ml-auto flex gap-3 text-xs text-[var(--color-text-muted)]">
-              <button type="button" onClick={() => setSeleccion(new Set(visibles.map((n) => n.id)))} className="underline-offset-2 hover:underline">Seleccionar todas las de esta página</button>
-              <button type="button" onClick={() => setSeleccion(new Set(visibles.filter((n) => n.leida).map((n) => n.id)))} className="underline-offset-2 hover:underline">Seleccionar leídas</button>
+              className="inline-flex min-h-11 items-center font-semibold text-[var(--color-danger)] underline-offset-2 hover:underline disabled:opacity-40">Eliminar</button>
+            <button type="button" onClick={() => setSeleccion(null)} className="inline-flex min-h-11 items-center font-semibold underline-offset-2 hover:underline">Cancelar</button>
+            <span className="ml-auto flex flex-wrap gap-x-4 text-xs text-[var(--color-text-muted)]">
+              <button type="button" onClick={() => setSeleccion(new Set(visibles.map((n) => n.id)))} className="inline-flex min-h-11 items-center underline-offset-2 hover:underline">Seleccionar todas las de esta página</button>
+              <button type="button" onClick={() => setSeleccion(new Set(visibles.filter((n) => n.leida).map((n) => n.id)))} className="inline-flex min-h-11 items-center underline-offset-2 hover:underline">Seleccionar leídas</button>
             </span>
           </div>
         ) : (
           <>
             <p className="text-[var(--color-text-muted)]">{visibles.length ? 'Tus avisos más recientes primero.' : ''}</p>
             <div className="relative flex items-center gap-3">
-              <button type="button" disabled={!visibles.length} onClick={() => setSeleccion(new Set())} className="text-xs font-semibold underline-offset-2 hover:underline disabled:opacity-40">Seleccionar</button>
+              <button type="button" disabled={!visibles.length} onClick={() => setSeleccion(new Set())} className="inline-flex min-h-11 items-center px-2 text-xs font-semibold underline-offset-2 hover:underline disabled:opacity-40">Seleccionar</button>
               <button type="button" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}
-                className="grid h-9 w-9 place-items-center rounded-lg text-lg leading-none hover:bg-[var(--color-surface)]">⋯</button>
+                className="grid h-11 w-11 place-items-center rounded-lg text-lg leading-none hover:bg-[var(--color-surface)]">⋯</button>
               {menu && (
                 <div role="menu" className="absolute right-0 top-10 z-20 w-56 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-xl">
                   <button type="button" role="menuitem" disabled={!hayLeidas} onClick={() => { setMenu(false); setConfirmar(true) }}
