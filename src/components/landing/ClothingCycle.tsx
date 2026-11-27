@@ -122,6 +122,8 @@ export function ClothingCycle() {
             <img
               src={currentPillar.image}
               alt={currentPillar.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />

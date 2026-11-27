@@ -2,9 +2,9 @@ import { urbanProblems } from '@/data/landingData'
 
 export function ProblemSection() {
   const audiences = [
-    { image: '/img/representantes/Q1.png', label: 'Personas' },
-    { image: '/img/representantes/Q2.png', label: 'Tiendas locales' },
-    { image: '/img/representantes/Q3.png', label: 'Fundaciones' },
+    { image: '/img/representantes/Q1.webp', label: 'Personas' },
+    { image: '/img/representantes/Q2.webp', label: 'Tiendas locales' },
+    { image: '/img/representantes/Q3.webp', label: 'Fundaciones' },
   ]
 
   return (

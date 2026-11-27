@@ -39,6 +39,8 @@ export function HowItWorks() {
             <img
               src="/prototipo/assets/img/paginas/imagen-5.jpg"
               alt="Moda urbana en las calles de Bogotá"
+              loading="lazy"
+              decoding="async"
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#15121b]/90 via-[#15121b]/20 to-transparent" />
