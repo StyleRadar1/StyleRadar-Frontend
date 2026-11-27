@@ -430,6 +430,10 @@ html[data-tema="claro"] .sr-landing .sr-category-tabs button[aria-selected="true
   html[data-tema="claro"] .sr-landing {
     background-attachment: scroll;
   }
+  .sr-landing main > section:not(#inicio) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 520px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -408,6 +408,7 @@ html[data-tema="claro"] :is(.bg-violeta, .bg-violeta-claro, [class*="bg-violeta/
 html {
   background: var(--sr-bg);
   color: var(--sr-text-primary);
+  touch-action: manipulation;
 }
 
 body {
