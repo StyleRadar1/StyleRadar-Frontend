@@ -67,13 +67,39 @@ export function getLayerForGarment(item: ItemResponseDto, slot: LookSlot): strin
   return 'camisa'
 }
 
+const UNAVAILABLE_STATES = new Set([
+  'AGOTADA',
+  'VENDIDA',
+  'RETIRADA',
+  'RECHAZADA',
+  'PENDIENTE',
+  'SUSPENDIDO',
+  'SOLD',
+  'RETIRED',
+  'DONATED',
+])
+
 /**
- * Verifica si la prenda tiene tabla de medidas disponible para el probador.
- * Las prendas sin tabla de medidas se marcan como "No disponible en el probador" y no se pueden seleccionar.
+ * Determina si una prenda está realmente disponible (no agotada, vendida, retirada ni suspendida).
+ */
+export function isItemAvailable(item?: ItemResponseDto & { noDisponible?: boolean }): boolean {
+  if (!item) return false
+  if (item.retirada === true) return false
+  if (item.disponible === false) return false
+  if (item.noDisponible === true) return false
+  if (typeof item.estado === 'string' && item.estado.trim()) {
+    const estadoNorm = item.estado.trim().toUpperCase()
+    if (UNAVAILABLE_STATES.has(estadoNorm)) return false
+  }
+  return true
+}
+
+/**
+ * Verifica si la prenda está disponible y tiene tabla de medidas disponible para el probador.
  */
 export function isGarmentFittable(item: ItemResponseDto): boolean {
+  if (!isItemAvailable(item)) return false
   if (item.sinTablaMedidas || item.noDisponibleEnProbador || item.tryOnEligible === false) return false
-  if (item.retirada) return false
   return true
 }
 
@@ -164,8 +190,8 @@ export function evaluateGarmentFit(
   talla: string,
   measurements?: UserMeasurements,
 ): FitEvaluation {
-  if (item.retirada) {
-    return { apta: false, veredicto: 'Retirada', motivo: 'Ya no está disponible' }
+  if (!isItemAvailable(item)) {
+    return { apta: false, veredicto: 'No disponible', motivo: 'Prenda agotada o no disponible' }
   }
   if (item.sinTablaMedidas || item.noDisponibleEnProbador) {
     return { apta: false, veredicto: 'No disponible', motivo: 'Sin tabla de medidas disponible' }
@@ -235,7 +261,7 @@ export function evaluatePlaylistOutfit(
 
   for (const entry of items) {
     const item = entry.item
-    if (!item || item.retirada) {
+    if (!item || !isItemAvailable(item)) {
       fallidas.push({
         item: item || ({ id: 'unknown', nombre: 'Prenda retirada' } as ItemResponseDto),
         motivo: 'Ya no está disponible',

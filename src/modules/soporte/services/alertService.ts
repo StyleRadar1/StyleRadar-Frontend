@@ -173,14 +173,30 @@ export const alertService = {
       return mockDelay(s, 250)
     }
     if (id.startsWith(PREFIJO_GUARDADA)) {
-      // Primera vez: la alerta nace con la búsqueda guardada
+      // Primera vez: la alerta nace con la búsqueda guardada (reintento breve ante latencia RabbitMQ 422)
       if (!alerta) throw new ApiError(404, 'Esa búsqueda todavía no tiene alerta.')
       const guardada = id.slice(PREFIJO_GUARDADA.length)
       const nombre = nombreGuardada.get(id) ?? ultima?.busquedas.find((x) => x.id === id)?.nombre ?? 'Búsqueda guardada'
-      const { data } = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(alertasUrl(), {
-        tipoAlerta: 'BUSQUEDA_GUARDADA', busquedaGuardadaId: Number(guardada) || guardada, nombreBusqueda: nombre, canal: 'IN_APP',
-      })
-      const nuevo = String(data.id ?? data.alertaId ?? '')
+      const payload = {
+        tipoAlerta: 'BUSQUEDA_GUARDADA',
+        busquedaGuardadaId: Number(guardada) || guardada,
+        nombreBusqueda: nombre,
+        canal: 'IN_APP',
+      }
+      const delays = [400, 900, 1500]
+      let data: { id?: string | number; alertaId?: string | number } | undefined
+      for (let intento = 0; intento <= delays.length; intento++) {
+        try {
+          const res = await apiClient.post<{ id?: string | number; alertaId?: string | number }>(alertasUrl(), payload)
+          data = res.data
+          break
+        } catch (err) {
+          const is422 = err instanceof ApiError && err.status === 422
+          if (!is422 || intento === delays.length) throw err
+          await new Promise((resolve) => setTimeout(resolve, delays[intento]))
+        }
+      }
+      const nuevo = String(data?.id ?? data?.alertaId ?? '')
       guardadaDeAlerta.set(nuevo, guardada)
       return { id: nuevo, nombre, descripcion: 'Te avisamos cuando llegue algo que coincida', alerta: true, coincidenciasNuevas: 0, creadaEn: new Date().toISOString() }
     }
@@ -206,7 +222,11 @@ export const alertService = {
   },
 
   /** RF-28: guarda la búsqueda del catálogo (la guarda ms-usuarios; la alerta va aparte). */
-  async saveSearch(nombre: string, descripcion: string): Promise<BusquedaGuardadaDto> {
+  async saveSearch(
+    nombre: string,
+    descripcion: string,
+    filtros?: Record<string, unknown>,
+  ): Promise<BusquedaGuardadaDto> {
     if (env.useMocks) {
       failIfScenario()
       const r = mine()
@@ -216,7 +236,7 @@ export const alertService = {
       r.busquedas.unshift(nueva)
       return mockDelay(nueva, 250)
     }
-    const guardada = await savedSearchService.save(idSesion(), { name: nombre })
+    const guardada = await savedSearchService.save(idSesion(), { name: nombre, ...(filtros ?? {}) })
     nombreGuardada.set(`${PREFIJO_GUARDADA}${guardada.id}`, nombre)
     return { id: `${PREFIJO_GUARDADA}${guardada.id}`, nombre, descripcion, alerta: false, coincidenciasNuevas: 0, creadaEn: fechaUtc(guardada.createdAt) ?? new Date().toISOString() }
   },

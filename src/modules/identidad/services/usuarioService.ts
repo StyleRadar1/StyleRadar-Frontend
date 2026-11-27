@@ -234,6 +234,7 @@ export const usuarioService = {
       p.usualSizes = sizes.TOP ?? []
       const fila = usuarios.find((x) => x.id === p.id)
       if (fila) { fila.name = p.name; fila.neighborhood = p.neighborhood }
+      syncMeasurementsFromSizes(sizes)
       return mockDelay(p, 400)
     }
 
@@ -250,11 +251,29 @@ export const usuarioService = {
     if (cambiaEstilos) {
       perfil = await apiClient.put<UserProfileDto>(`${base}/style-preferences`, { styles: body.stylePreferences }).then((r) => aPerfil(r.data))
     }
-    if (cambiaTallas && Object.keys(sizes).length) {
+    if (cambiaTallas) {
       perfil = await apiClient.put<UserProfileDto>(`${base}/sizes`, { sizesByGarmentType: sizes }).then((r) => aPerfil(r.data))
     }
     guardarManiqui(id, body.maniqui)
     const final = perfil ?? (antes ? { ...antes } : await this.get(id))
+    syncMeasurementsFromSizes(final.sizesByGarmentType)
     return { ...final, maniqui: body.maniqui }
   },
+}
+
+function syncMeasurementsFromSizes(sizes?: Record<string, string[] | undefined>) {
+  if (!sizes || typeof window === 'undefined') return
+  try {
+    const raw = localStorage.getItem('sr_user_measurements')
+    const current = raw ? JSON.parse(raw) : { superior: 'M', inferior: '30', calzado: '38' }
+    const next = {
+      superior: sizes.TOP?.[0] || current.superior || 'M',
+      inferior: sizes.BOTTOM?.[0] || current.inferior || '30',
+      calzado: sizes.FOOTWEAR?.[0] || current.calzado || '38',
+    }
+    localStorage.setItem('sr_user_measurements', JSON.stringify(next))
+    window.dispatchEvent(new CustomEvent('sr:profile-sizes-updated', { detail: next }))
+  } catch {
+    /* ignore storage errors */
+  }
 }

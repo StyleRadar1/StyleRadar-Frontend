@@ -91,7 +91,14 @@ export default function DonatePage() {
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2"><Field id="dtit" label="¿Qué donas?" error={errors.titulo}><input {...a11y('dtit', errors.titulo)} className={inputCls} value={form.titulo} onChange={(e) => set('titulo', e.target.value)} placeholder="Ej. Suéter de lana" /></Field></div>
             <Field id="dcat" label="Categoría" error={errors.categoria}><select {...a11y('dcat', errors.categoria)} className={inputCls} value={form.categoria} onChange={(e) => set('categoria', e.target.value)}><option value="">Elige una</option>{CATEGORIAS.map((c) => <option key={c}>{c}</option>)}</select></Field>
-            <Field id="dtal" label="Talla" error={errors.talla}><input {...a11y('dtal', errors.talla)} className={inputCls} value={form.talla} onChange={(e) => set('talla', e.target.value)} placeholder="Ej. M o S a XL" /></Field>
+            <Field id="dtal" label="Talla" error={errors.talla}>
+              <select {...a11y('dtal', errors.talla)} className={inputCls} value={form.talla} onChange={(e) => set('talla', e.target.value)}>
+                <option value="">Elige una talla</option>
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL', '28', '30', '32', '34', '36', '38', '40', '42', 'UNICA'].map((t) => (
+                  <option key={t} value={t}>{t === 'UNICA' ? 'Talla única' : t}</option>
+                ))}
+              </select>
+            </Field>
             <Field id="dcan" label="Cantidad" error={errors.cantidad}><input {...a11y('dcan', errors.cantidad)} inputMode="numeric" className={inputCls} value={form.cantidad} onChange={(e) => set('cantidad', e.target.value.trim())} /></Field>
             <div className="sm:col-span-2"><ChoiceGroup label="Estado" options={CONSERVACIONES} labels={CONSERVACION_LABEL} value={form.conservacion} onChange={(v) => set('conservacion', v)} error={errors.conservacion} /></div>
             <div className="sm:col-span-2"><Field id="ddes" label="Descripción" error={errors.descripcion}><textarea {...a11y('ddes', errors.descripcion)} className={`${inputCls} min-h-24`} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} /></Field></div>
@@ -146,7 +153,9 @@ export default function DonatePage() {
             </ErrorBanner>
           ) : (
             <ErrorBanner tone="warn" icon="warn" title="No pudimos registrar la donación">
-              Revisa los datos. La donación debe ir a una fundación, no a tu propia cuenta.
+              {sendError instanceof Error && sendError.message
+                ? sendError.message
+                : 'Revisa los datos. La donación debe ir a una fundación, no a tu propia cuenta.'}
             </ErrorBanner>
           )
         )}

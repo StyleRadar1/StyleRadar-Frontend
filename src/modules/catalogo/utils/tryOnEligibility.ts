@@ -1,7 +1,7 @@
 import type { ItemResponseDto } from '../types/item.dto'
 
 const INELIGIBLE_TYPES_PATTERN =
-  /^(Calzado|Tenis|Zapatos|Botas|Accesorio|Cintur[oó]n|Bufanda|Bolso|Gorra|Gafas|Chaqueta|Abrigo|Gabardina)$/i
+  /^(Calzado|Tenis|Zapatos|Botas|Accesorio|Accesorios|Cintur[oó]n|Cinturones|Bufanda|Bufandas|Bolso|Bolsos|Gorra|Gorras|Gafas|Sombrero|Sombreros|Corbata|Guantes|Joyer[ií]a)$/i
 
 export function isGarmentTryOnEligible(
   item: Pick<ItemResponseDto, 'noDisponibleEnProbador' | 'tryOnEligible' | 'tipo' | 'retirada' | 'disponible'>,

@@ -78,7 +78,18 @@ export const normalizePublication = (raw: any): ListingDto => {
     photos,
     fotos: photos,
     status: raw.status || raw.estado || 'AVAILABLE',
-    estado: raw.status === 'AVAILABLE' ? 'DISPONIBLE' : (raw.status === 'SOLD' ? 'VENDIDA' : (raw.status === 'RETIRED' ? 'RETIRADA' : raw.estado || 'DISPONIBLE')),
+    estado:
+      raw.status === 'AVAILABLE'
+        ? 'DISPONIBLE'
+        : raw.status === 'SOLD'
+          ? 'VENDIDA'
+          : raw.status === 'RETIRED'
+            ? 'RETIRADA'
+            : raw.status === 'IN_DONATION'
+              ? 'EN_DONACION'
+              : raw.status === 'DONATED'
+                ? 'DONADA'
+                : raw.estado || 'DISPONIBLE',
     vendedor: raw.vendedor || { id: userIdStr, nombre: `Vendedor #${userIdStr}` },
     creadaEn: raw.publicationDate ? raw.publicationDate.split('T')[0] : (raw.creadaEn || isoDay()),
     publicationDate: raw.publicationDate,

@@ -11,6 +11,7 @@ import type { ConversacionDto } from '@/modules/soporte/types/chat.dto'
 import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
 import { PLAN_LABEL } from '@/modules/transacciones/types/plan.dto'
 import { getUserMeasurements } from '@/modules/experiencia/utils/lookEngine'
+import { usuarioService } from '@/modules/identidad/services/usuarioService'
 import { ProbadorIntro } from '../components/ProbadorIntro'
 import { MapaCercano } from '../components/MapaCercano'
 import { RecomendadosTrail } from '../components/RecomendadosTrail'
@@ -57,7 +58,32 @@ export default function HomePage() {
   }, [planResuelto, fechaLimiteStr])
 
   const nombreUsuario = user?.name?.trim() || 'de nuevo'
-  const medidas = getUserMeasurements()
+  const [medidas, setMedidas] = useState(() => getUserMeasurements())
+
+  useEffect(() => {
+    const onSizesUpdated = () => setMedidas(getUserMeasurements())
+    window.addEventListener('sr:profile-sizes-updated', onSizesUpdated)
+    let activo = true
+    if (user?.id && user.role === 'BUYER') {
+      usuarioService
+        .me()
+        .then((perfil) => {
+          if (!activo || !perfil?.sizesByGarmentType) return
+          const s = perfil.sizesByGarmentType
+          const base = getUserMeasurements()
+          setMedidas({
+            superior: s.TOP?.[0] || base.superior,
+            inferior: s.BOTTOM?.[0] || base.inferior,
+            calzado: s.FOOTWEAR?.[0] || base.calzado,
+          })
+        })
+        .catch(() => {})
+    }
+    return () => {
+      activo = false
+      window.removeEventListener('sr:profile-sizes-updated', onSizesUpdated)
+    }
+  }, [user?.id, user?.role])
 
   useEffect(() => {
     let activo = true
