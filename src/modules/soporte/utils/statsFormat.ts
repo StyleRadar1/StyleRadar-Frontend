@@ -1,16 +1,20 @@
 /**
  * Utilidades de formateo de fechas y cálculo de variaciones para ms-estadisticas.
- * Nunca usa `new Date("YYYY-MM-DD")` para evitar desfases de zona horaria.
+ * Nunca usa `new Date("YYYY-MM-DD")` ni `toLocaleDateString` para evitar desfases de zona horaria.
  */
 
 const MESES_CORTO = [
-  'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-  'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
 ] as const
 
 const MESES_LARGO = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+] as const
+
+const DIAS_SEMANA_LARGO = [
+  'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado',
 ] as const
 
 export function parseIsoDateLocal(raw?: string | null): Date | null {
@@ -24,26 +28,42 @@ export function parseIsoDateLocal(raw?: string | null): Date | null {
   return new Date(year, month - 1, day)
 }
 
-/** Formatea YYYY-MM-DD como "nov 2026". */
+/** Formatea YYYY-MM-DD como "Noviembre 2026" (mes completo capitalizado). */
 export function formatMonthShort(raw?: string | null): string {
   const date = parseIsoDateLocal(raw)
   if (!date) return raw ?? ''
-  return `${MESES_CORTO[date.getMonth()]} ${date.getFullYear()}`
+  return `${MESES_LARGO[date.getMonth()]} ${date.getFullYear()}`
 }
 
-/** Formatea YYYY-MM-DD como "noviembre de 2026". */
+/** Formatea YYYY-MM-DD como "Noviembre de 2026" (mes completo capitalizado). */
 export function formatMonthLong(raw?: string | null): string {
   const date = parseIsoDateLocal(raw)
   if (!date) return ''
   return `${MESES_LARGO[date.getMonth()]} de ${date.getFullYear()}`
 }
 
-/** Formatea YYYY-MM-DD como "01 nov". */
+/** Abreviatura capitalizada para ticks densos del eje X mensual ("Nov"). */
+export function formatMonthAbbr(raw?: string | null): string {
+  const date = parseIsoDateLocal(raw)
+  if (!date) return raw ?? ''
+  return MESES_CORTO[date.getMonth()]
+}
+
+/** Formatea YYYY-MM-DD como "01 Nov" para ticks densos del eje X diario. */
 export function formatDayShort(raw?: string | null): string {
   const date = parseIsoDateLocal(raw)
   if (!date) return raw ?? ''
   const day = String(date.getDate()).padStart(2, '0')
   return `${day} ${MESES_CORTO[date.getMonth()]}`
+}
+
+/** Formatea YYYY-MM-DD como "Martes 25 de Noviembre de 2026" (día y mes capitalizados). */
+export function formatFullDateSpanish(raw?: string | null): string {
+  const date = parseIsoDateLocal(raw)
+  if (!date) return raw ?? ''
+  const weekday = DIAS_SEMANA_LARGO[date.getDay()]
+  const month = MESES_LARGO[date.getMonth()]
+  return `${weekday} ${date.getDate()} de ${month} de ${date.getFullYear()}`
 }
 
 /** Devuelve "YYYY-MM" del mes calendario actual en hora local. */
@@ -68,13 +88,13 @@ export function monthRangeFromYearMonth(yearMonth: string): { startDate: string;
   }
 }
 
-/** Genera los últimos `count` meses calendario como opciones `{ value: 'YYYY-MM', label: 'nov 2026' }`. */
+/** Genera los últimos `count` meses calendario como opciones `{ value: 'YYYY-MM', label: 'Noviembre 2026' }`. */
 export function getRecentMonthOptions(count = 6): { value: string; label: string }[] {
   const now = new Date()
   return Array.from({ length: count }, (_, idx) => {
     const d = new Date(now.getFullYear(), now.getMonth() - idx, 1)
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const label = `${MESES_CORTO[d.getMonth()]} ${d.getFullYear()}`
+    const label = `${MESES_LARGO[d.getMonth()]} ${d.getFullYear()}`
     return { value, label }
   })
 }

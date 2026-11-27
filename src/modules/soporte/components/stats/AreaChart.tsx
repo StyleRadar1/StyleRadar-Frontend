@@ -14,7 +14,6 @@ export interface AreaChartProps {
   seriesLabel: string
   points: SeriesPoint[]
   axisMax: number
-  mode?: 'area' | 'line'
   formatValue: (v: number) => string
   highlightPeaks?: boolean
   showAverage?: boolean
@@ -25,7 +24,6 @@ export function AreaChart({
   seriesLabel,
   points,
   axisMax,
-  mode = 'area',
   formatValue,
   highlightPeaks = false,
   showAverage = false,
@@ -81,7 +79,7 @@ export function AreaChart({
         <span>{formatValue(0)}</span>
       </div>
 
-      {/* Área de dibujo */}
+      {/* Área de dibujo: línea punteada fusionada con degradado translúcido */}
       <div className="relative h-52 border-b border-[var(--sr-border-subtle,rgba(255,255,255,0.12))]">
         <div
           aria-hidden="true"
@@ -103,7 +101,7 @@ export function AreaChart({
         >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#9d5cff" stopOpacity="0.45" />
+              <stop offset="0%" stopColor="#9d5cff" stopOpacity="0.44" />
               <stop offset="100%" stopColor="#9d5cff" stopOpacity="0.02" />
             </linearGradient>
             <filter id={glowId} x="-10%" y="-20%" width="120%" height="140%">
@@ -111,9 +109,7 @@ export function AreaChart({
             </filter>
           </defs>
 
-          {mode === 'area' && areaPath && (
-            <path d={areaPath} fill={`url(#${gradId})`} />
-          )}
+          {areaPath && <path d={areaPath} fill={`url(#${gradId})`} />}
 
           {linePath && (
             <path
@@ -121,6 +117,7 @@ export function AreaChart({
               fill="none"
               stroke="var(--sr-accent-text, #c084fc)"
               strokeWidth="2.8"
+              strokeDasharray="6 4"
               strokeLinejoin="round"
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke"
@@ -157,13 +154,11 @@ export function AreaChart({
           )}
         </motion.svg>
 
-        {/* Puntos interactivos y resaltado */}
+        {/* Puntos de datos visibles y resaltado */}
         {coords.map(([x, y], i) => {
           const isHover = hoverIdx === i
           const isPeak = i === maxIdx
           const isLast = i === lastIdx
-          const showDot = mode === 'line' || isHover || isPeak || isLast
-          if (!showDot) return null
           const dimmed = hoverIdx !== null && !isHover
           return (
             <span

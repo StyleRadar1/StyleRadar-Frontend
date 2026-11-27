@@ -27,6 +27,8 @@ import {
 import {
   calcRealDelta,
   formatDayShort,
+  formatFullDateSpanish,
+  formatMonthAbbr,
   formatMonthLong,
   formatMonthShort,
   getCurrentYearMonth,
@@ -117,11 +119,11 @@ export function AdminStatsView() {
 
   const revenueRawPoints = revenue.data?.points ?? []
   const revenueTrendPoints: TrendPoint[] = revenueRawPoints.map((point) => {
-    const label = formatMonthShort(point.date)
+    const fullLabel = formatMonthShort(point.date)
     return {
       key: point.date,
-      axisLabel: label,
-      fullLabel: label,
+      axisLabel: formatMonthAbbr(point.date),
+      fullLabel,
       value: point.value,
     }
   })
@@ -135,15 +137,12 @@ export function AdminStatsView() {
         )
       : null
 
-  const registrationTrendPoints: TrendPoint[] = regPoints.map((point) => {
-    const label = formatDayShort(point.date)
-    return {
-      key: point.date,
-      axisLabel: label,
-      fullLabel: label,
-      value: point.value,
-    }
-  })
+  const registrationTrendPoints: TrendPoint[] = regPoints.map((point) => ({
+    key: point.date,
+    axisLabel: formatDayShort(point.date),
+    fullLabel: formatFullDateSpanish(point.date),
+    value: point.value,
+  }))
 
   const monthSelect = (
     <label className="glass-pill inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold text-[var(--sr-text-muted,var(--color-text-muted))]">
@@ -312,7 +311,7 @@ export function AdminStatsView() {
         tableDateHeader="Mes"
         points={revenueTrendPoints}
         variant="area"
-        views={['area', 'bars', 'line', 'table']}
+        views={['area', 'bars', 'table']}
         storageKey="sr_admin_revenue_view"
         highlightPeaks
         enableAverageToggle
@@ -340,7 +339,7 @@ export function AdminStatsView() {
         tableDateHeader="Día"
         points={registrationTrendPoints}
         variant="bars"
-        views={['activity', 'heatmap', 'line', 'table']}
+        views={['activity', 'heatmap', 'area', 'table']}
         storageKey="sr_admin_registrations_view"
         headerControls={monthSelect}
         note="Serie diaria de nuevos registros del mes calendario seleccionado."

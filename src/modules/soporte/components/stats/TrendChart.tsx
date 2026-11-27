@@ -10,13 +10,12 @@ import { usePersistedView } from './usePersistedView'
 import { ViewSelector, type ViewOption } from './ViewSelector'
 
 export type TrendPoint = SeriesPoint
-export type TrendView = 'area' | 'bars' | 'activity' | 'line' | 'heatmap' | 'table'
+export type TrendView = 'area' | 'bars' | 'activity' | 'heatmap' | 'table'
 
 const VIEW_LABELS: Record<TrendView, string> = {
   area: 'Área',
   bars: 'Barras',
   activity: 'Actividad',
-  line: 'Línea',
   heatmap: 'Calendario',
   table: 'Tabla',
 }
@@ -69,7 +68,7 @@ export function TrendChart({
   className = '',
 }: TrendChartProps) {
   const defaultViews: readonly TrendView[] =
-    views ?? (variant === 'area' ? ['area', 'bars', 'line', 'table'] : ['activity', 'heatmap', 'line', 'table'])
+    views ?? (variant === 'area' ? ['area', 'bars', 'table'] : ['activity', 'heatmap', 'area', 'table'])
   const [view, setView] = usePersistedView<TrendView>(storageKey, defaultViews[0], defaultViews)
   const [showAverage, setShowAverage] = useState(false)
 
@@ -182,7 +181,6 @@ export function TrendChart({
             seriesLabel={seriesLabel}
             points={points}
             axisMax={axisMax}
-            mode={view === 'line' ? 'line' : 'area'}
             formatValue={formatValue}
             highlightPeaks={highlightPeaks}
             showAverage={showAverage}

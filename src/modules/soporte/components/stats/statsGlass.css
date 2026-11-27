@@ -114,6 +114,20 @@
   color: var(--sr-text-primary, #f8fafc);
 }
 
+.glass-subpanel {
+  border-radius: 16px;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.025));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.glass-table-head {
+  background: rgba(157, 92, 255, 0.11);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
 /* Modo claro */
 html[data-theme="light"] .stats-glass-backdrop::before,
 html[data-theme="claro"] .stats-glass-backdrop::before,
@@ -170,6 +184,20 @@ html[data-tema="claro"] .glass-tooltip {
   border-color: rgba(72, 17, 154, 0.2);
   color: var(--sr-text-primary, #1f1b2e);
   box-shadow: 0 12px 28px -8px rgba(38, 38, 38, 0.2);
+}
+
+html[data-theme="light"] .glass-subpanel,
+html[data-theme="claro"] .glass-subpanel,
+html[data-tema="claro"] .glass-subpanel {
+  background: rgba(255, 255, 255, 0.56);
+  border-color: rgba(72, 17, 154, 0.14);
+}
+
+html[data-theme="light"] .glass-table-head,
+html[data-theme="claro"] .glass-table-head,
+html[data-tema="claro"] .glass-table-head {
+  background: rgba(123, 77, 216, 0.12);
+  border-bottom-color: rgba(72, 17, 154, 0.18);
 }
 
 /* Fallback sin backdrop-filter */
