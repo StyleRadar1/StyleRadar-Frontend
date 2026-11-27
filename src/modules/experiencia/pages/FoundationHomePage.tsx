@@ -318,15 +318,23 @@ export default function FoundationHomePage() {
             )}
           </div>
 
-          <figure className="fnd-figure">
+          <Link
+            to={f.id ? `/fundaciones/${encodeURIComponent(f.id)}` : '/fundacion/donaciones'}
+            className="fnd-figure"
+            aria-label="Nuestro trabajo: ver página pública de la fundación"
+          >
             <img src={trabajoSrc} alt="Actividad de la fundación" loading="lazy" />
-            <figcaption className="fnd-figure__cap">Nuestro trabajo</figcaption>
-          </figure>
+            <span className="fnd-figure__cap">Nuestro trabajo ↗</span>
+          </Link>
 
-          <figure className="fnd-figure">
+          <Link
+            to="/fundacion/donaciones"
+            className="fnd-figure"
+            aria-label="Así llegan tus donaciones: gestionar solicitudes"
+          >
             <img src={donacionesSrc} alt="Ropa donada lista para entregar" loading="lazy" />
-            <figcaption className="fnd-figure__cap">Así llegan tus donaciones</figcaption>
-          </figure>
+            <span className="fnd-figure__cap">Así llegan tus donaciones ↗</span>
+          </Link>
         </div>
 
         {/* Fila 2: Qué recibimos + Lo que más necesitamos + Contacto */}

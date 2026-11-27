@@ -876,6 +876,7 @@ html[data-cvd='on'] .fnd-donations {
 
 /* Fotos de la fundación */
 .fnd-figure {
+  display: block;
   position: relative;
   min-height: 220px;
   border-radius: var(--fnd-radius);
@@ -883,6 +884,13 @@ html[data-cvd='on'] .fnd-donations {
   box-shadow: var(--sr-shadow);
   border: 1px solid var(--sr-border-subtle);
   background: var(--sr-surface);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.fnd-figure:hover {
+  border-color: rgba(192, 132, 252, 0.5);
 }
 
 .fnd-figure img {
