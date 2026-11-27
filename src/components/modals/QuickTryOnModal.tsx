@@ -861,9 +861,20 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
           <div
             className="cz-mannequin-container !max-w-none"
             ref={canvasRef}
+            tabIndex={0}
+            aria-label="Maniquí interactivo. Usa las flechas izquierda y derecha para rotar la vista."
             onPointerDown={handlePointerDownStage}
             onPointerMove={handlePointerMoveStage}
             onPointerUp={handlePointerUpStage}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                e.preventDefault()
+                setRotationAngle((a) => Math.max(-180, a - 15))
+              } else if (e.key === 'ArrowRight') {
+                e.preventDefault()
+                setRotationAngle((a) => Math.min(180, a + 15))
+              }
+            }}
             style={{
               transform: `scale(${zoomLevel})`,
               cursor: isRotating.current ? 'grabbing' : 'grab',
@@ -1021,11 +1032,29 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             </span>
           </div>
 
-          {/* Controles de zoom */}
+          {/* Controles de cámara y rotación accesible (WCAG 2.5.7 / 2.1.1) */}
           <div className="cz-camera-controls" role="toolbar" aria-label="Controles de cámara del maniquí">
-            <button className="cz-camera-zoom-btn" onClick={zoomIn} title="Acercar">+</button>
-            <button className="cz-camera-zoom-btn" onClick={zoomOut} title="Alejar">−</button>
-            <button className="cz-camera-reset-btn" onClick={resetCamera} title="Restablecer vista">
+            <button
+              type="button"
+              className="cz-camera-zoom-btn"
+              onClick={() => setRotationAngle((a) => Math.max(-180, a - 15))}
+              aria-label="Rotar maniquí a la izquierda"
+              title="Rotar izquierda"
+            >
+              ↺
+            </button>
+            <button
+              type="button"
+              className="cz-camera-zoom-btn"
+              onClick={() => setRotationAngle((a) => Math.min(180, a + 15))}
+              aria-label="Rotar maniquí a la derecha"
+              title="Rotar derecha"
+            >
+              ↻
+            </button>
+            <button type="button" className="cz-camera-zoom-btn" onClick={zoomIn} aria-label="Acercar maniquí" title="Acercar">+</button>
+            <button type="button" className="cz-camera-zoom-btn" onClick={zoomOut} aria-label="Alejar maniquí" title="Alejar">−</button>
+            <button type="button" className="cz-camera-reset-btn" onClick={resetCamera} title="Restablecer vista">
               Restablecer
             </button>
           </div>
@@ -1330,6 +1359,11 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
             <div className="cz-submodal-section">
               <label className="cz-submodal-label">Selecciona tu talla:</label>
+              {garmentPickerItem.tallas.length === 0 && (
+                <p style={{ fontSize: '0.72rem', opacity: 0.78, marginBottom: '0.45rem' }}>
+                  Tallas de referencia (sin stock verificado en inventario).
+                </p>
+              )}
               <div className="cz-sizes-picker-grid">
                 {getAvailableSizesForItem(garmentPickerItem).map((t) => {
                   const rec = getRecommendedSize(garmentPickerItem, userMeasurements)
