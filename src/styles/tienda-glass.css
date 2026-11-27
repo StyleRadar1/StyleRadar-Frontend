@@ -10,7 +10,7 @@
 /* ── Tokens ── */
 .sr-tienda-glass {
   --tg-veil: linear-gradient(180deg, rgba(8, 5, 14, 0.4) 0%, rgba(8, 5, 14, 0.6) 55%, rgba(8, 5, 14, 0.82) 100%);
-  --tg-photo: url('/img/backgrounds/tienda-calle.jpg');
+  --tg-photo: url('/img/backgrounds/inicio-ciudad.jpg');
   --tg-base: #0d0a14;
 }
 
