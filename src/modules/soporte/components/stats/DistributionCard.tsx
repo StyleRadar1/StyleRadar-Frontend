@@ -1,21 +1,17 @@
 import { useMemo, useState } from 'react'
 import { DataTable } from '../charts'
 import { DonutChart, type DistributionChartItem } from './DonutChart'
-import { HorizontalBars } from './HorizontalBars'
 import { MetricError, MetricSkeleton } from './MetricState'
 import { StackedBar } from './StackedBar'
 import { usePersistedView } from './usePersistedView'
 import { ViewSelector, type ViewOption } from './ViewSelector'
-import { WaffleChart } from './WaffleChart'
 
 export type DistributionRow = DistributionChartItem
-export type DistributionView = 'donut' | 'horizontal' | 'stacked' | 'waffle' | 'table'
+export type DistributionView = 'donut' | 'stacked' | 'table'
 
 const DISTRIBUTION_VIEW_OPTIONS: readonly ViewOption<DistributionView>[] = [
   { id: 'donut', label: 'Dona' },
-  { id: 'horizontal', label: 'Barras' },
   { id: 'stacked', label: 'Apilada' },
-  { id: 'waffle', label: 'Waffle' },
   { id: 'table', label: 'Tabla' },
 ]
 
@@ -55,7 +51,7 @@ export function DistributionCard({
   const [view, setView] = usePersistedView<DistributionView>(
     storageKey,
     'donut',
-    ['donut', 'horizontal', 'stacked', 'waffle', 'table'],
+    ['donut', 'stacked', 'table'],
   )
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const [hiddenKeys, setHiddenKeys] = useState<string[]>([])
@@ -174,20 +170,8 @@ export function DistributionCard({
                   })}
                 </ul>
               </div>
-            ) : view === 'horizontal' ? (
-              <HorizontalBars
-                rows={visibleRows}
-                hoverKey={hoverKey}
-                onHoverKey={setHoverKey}
-              />
-            ) : view === 'stacked' ? (
-              <StackedBar
-                rows={visibleRows}
-                hoverKey={hoverKey}
-                onHoverKey={setHoverKey}
-              />
             ) : (
-              <WaffleChart
+              <StackedBar
                 rows={visibleRows}
                 hoverKey={hoverKey}
                 onHoverKey={setHoverKey}
