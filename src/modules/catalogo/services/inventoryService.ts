@@ -626,7 +626,13 @@ export const inventoryService = {
       // Catálogo la entrega sin zona (LocalDateTime) e Inventario pide un instante con «Z»: sin ella responde 400
       fechaPublicacion: aInstanteUtc(createdPrenda.fechaPublicacion),
     }
-    await apiClient.post('/api/v1/inventory/batch', lotePayload)
+    try {
+      await apiClient.post('/api/v1/inventory/batch', lotePayload)
+    } catch (e) {
+      // Si el stock no se guarda, la prenda recién creada se retira: de lo contrario cada reintento deja una copia
+      await apiClient.delete(`/api/v1/garments/${encodeURIComponent(String(createdPrenda.id))}`).catch(() => undefined)
+      throw e
+    }
 
     return normalizeBackendInventoryItem(createdPrenda, dto.stockPorTalla, lotePayload.sedeId, ctx.storeName)
   },
