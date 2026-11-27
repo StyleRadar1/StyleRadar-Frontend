@@ -119,6 +119,8 @@ const FLOW_BARS = [
 export default function AdminPaymentsPage() {
   const [filters, setFilters] = useState<PaymentFiltersDto>({})
   const stableFilters = useMemo(() => filters, [filters])
+  const emptyFilters = useMemo<PaymentFiltersDto>(() => ({}), [])
+  const { data: allPayments } = usePayments(emptyFilters)
   const { data: payments, loading, error, reload } = usePayments(stableFilters)
   const [selected, setSelected] = useState<PaymentDto | null>(null)
   /** Aviso de la página: 403 u otro error de permisos. */
@@ -129,12 +131,12 @@ export default function AdminPaymentsPage() {
   const [flippedCardId, setFlippedCardId] = useState<string | null>(null)
   const [hoverPoint, setHoverPoint] = useState<number | null>(null)
 
-  const revenue = useMemo(() => calcRevenue(payments), [payments])
+  const revenue = useMemo(() => calcRevenue(allPayments), [allPayments])
 
   const statsSummary = useMemo(() => {
-    const approved = payments.filter((p) => p.status === 'aprobado')
-    const rejected = payments.filter((p) => p.status === 'rechazado')
-    const pending = payments.filter((p) => p.status === 'pendiente')
+    const approved = allPayments.filter((p) => p.status === 'aprobado')
+    const rejected = allPayments.filter((p) => p.status === 'rechazado')
+    const pending = allPayments.filter((p) => p.status === 'pendiente')
     const approvedSum = approved.reduce((acc, p) => acc + p.amount, 0)
     const pendingSum = pending.reduce((acc, p) => acc + p.amount, 0)
     const plusSum = approved.filter((p) => p.planId === 'plus').reduce((acc, p) => acc + p.amount, 0)
@@ -148,7 +150,7 @@ export default function AdminPaymentsPage() {
       plusSum,
       storeSum,
     }
-  }, [payments])
+  }, [allPayments])
 
   const handleFilter = useCallback((key: keyof PaymentFiltersDto, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value || undefined }))

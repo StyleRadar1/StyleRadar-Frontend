@@ -17,6 +17,9 @@ import {
   NEW_ARRIVAL_OPTIONS, type StorePhotoDto, type StoreResponseDto,
 } from '../types/store.dto'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { formatCOP } from '@/modules/core/utils/format'
+import { chatService } from '@/modules/soporte/services/chatService'
+import type { ConversacionDto } from '@/modules/soporte/types/chat.dto'
 import './MiTiendaPage.css'
 import './MiTiendaDashboard.css'
 import '@/styles/tienda-glass.css'
@@ -267,8 +270,21 @@ export default function MiTiendaPage() {
   }, [storeNit])
 
   /* Resumen del panel */
-  const activeCount = items.filter((item) => item.status === 'Publicadas' && item.stock > 0).length
-  const lowStockCount = items.filter((item) => item.status !== 'Retiradas' && item.stock > 0 && item.stock <= lastUnitsLimit).length
+  const [tiendaTab, setTiendaTab] = useState<'activas' | 'bajo' | 'colecciones'>('activas')
+  const [chats, setChats] = useState<ConversacionDto[]>([])
+  useEffect(() => {
+    if (!userId) return
+    let active = true
+    chatService.conversations()
+      .then((list) => { if (active) setChats(list.slice(0, 3)) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [userId])
+
+  const activeItems = items.filter((item) => item.status === 'Publicadas' && item.stock > 0)
+  const lowStockItems = items.filter((item) => item.status !== 'Retiradas' && item.stock > 0 && item.stock <= lastUnitsLimit)
+  const activeCount = activeItems.length
+  const lowStockCount = lowStockItems.length
 
   /* Guardar / descartar información de tienda */
   const saveLegalInfo = (event: FormEvent<HTMLFormElement>) => {
@@ -527,6 +543,127 @@ export default function MiTiendaPage() {
               <div><b>{lowStockCount}</b><span>Stock bajo</span></div>
             </li>
           </ul>
+
+          {/* ── Bento interactivo de tienda (métricas, inventario rápido y chats) ── */}
+          <div className="msd-bento-grid">
+            <div className="msd-bento-card">
+              <div className="msd-bento-card__head">
+                <div>
+                  <span className="msd-bento-tag">Tu vitrina</span>
+                  <h2 className="msd-bento-title">Resumen rápido</h2>
+                </div>
+                <div className="msd-bento-tabs" role="tablist" aria-label="Resumen de inventario y colecciones">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tiendaTab === 'activas'}
+                    onClick={() => setTiendaTab('activas')}
+                    className={`msd-bento-tab ${tiendaTab === 'activas' ? 'is-active' : ''}`}
+                  >
+                    Activas ({activeCount})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tiendaTab === 'bajo'}
+                    onClick={() => setTiendaTab('bajo')}
+                    className={`msd-bento-tab ${tiendaTab === 'bajo' ? 'is-active' : ''}`}
+                  >
+                    Stock bajo ({lowStockCount})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tiendaTab === 'colecciones'}
+                    onClick={() => setTiendaTab('colecciones')}
+                    className={`msd-bento-tab ${tiendaTab === 'colecciones' ? 'is-active' : ''}`}
+                  >
+                    Colecciones ({collections.length})
+                  </button>
+                </div>
+              </div>
+
+              {tiendaTab === 'colecciones' ? (
+                collections.length > 0 ? (
+                  <div className="msd-bento-items">
+                    {collections.slice(0, 4).map((col) => (
+                      <a key={col.id} href="#colecciones-tienda" className="msd-bento-item">
+                        <img src={col.image || '/img/productos/blazer-oversize.jpg'} alt={col.title} />
+                        <div className="msd-bento-item__body">
+                          <strong>{col.title}</strong>
+                          <span>{col.items} prendas · {col.visibility}</span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="msd-bento-empty">Aún no tienes colecciones creadas.</p>
+                )
+              ) : (tiendaTab === 'activas' ? activeItems : lowStockItems).length > 0 ? (
+                <div className="msd-bento-items">
+                  {(tiendaTab === 'activas' ? activeItems : lowStockItems).slice(0, 4).map((it) => (
+                    <Link key={it.id} to="/tienda/inventario" className="msd-bento-item">
+                      <img src={it.image || '/img/productos/blazer-oversize.jpg'} alt={it.name} />
+                      <div className="msd-bento-item__body">
+                        <strong>{it.name}</strong>
+                        <span>{formatCOP(it.price)} · {it.stock} uds</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="msd-bento-empty">
+                  {tiendaTab === 'bajo' ? 'No tienes prendas con stock bajo.' : 'Aún no hay prendas publicadas.'}
+                </p>
+              )}
+            </div>
+
+            <div className="msd-bento-col">
+              <div className="msd-bento-duo">
+                <Link to="/tienda/estadisticas" className="msd-bento-mini">
+                  <span className="msd-bento-tag">Rendimiento</span>
+                  <strong>Estadísticas ↗</strong>
+                  <span>Visitas, clics y prendas</span>
+                </Link>
+                <Link to="/tienda/suscripcion" className="msd-bento-mini msd-bento-mini--accent">
+                  <span className="msd-bento-tag">Tu plan</span>
+                  <strong>{subStatusLabel} ↗</strong>
+                  <span>Gestionar suscripción</span>
+                </Link>
+              </div>
+
+              <div className="msd-bento-card">
+                <div className="msd-bento-card__head">
+                  <div>
+                    <span className="msd-bento-tag">Clientes</span>
+                    <h2 className="msd-bento-title">Últimos chats</h2>
+                  </div>
+                  <Link to="/mensajes" className="msd-bento-link">Ir a mensajes →</Link>
+                </div>
+                {chats.length > 0 ? (
+                  <ul className="msd-bento-chats">
+                    {chats.map((c) => {
+                      const ini = c.contacto.nombre.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase()).join('').slice(0, 2) || 'SR'
+                      return (
+                        <li key={c.id}>
+                          <Link to={`/mensajes?c=${encodeURIComponent(c.id)}`} className="msd-bento-chat">
+                            <span className="msd-bento-chat__av" aria-hidden="true">{ini}</span>
+                            <span className="msd-bento-chat__meta">
+                              <strong>{c.contacto.nombre}</strong>
+                              <span>{c.ultimoMensaje || c.asunto}</span>
+                            </span>
+                            {c.noLeidos > 0 && <span className="msd-bento-chat__badge">{c.noLeidos}</span>}
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                ) : (
+                  <p className="msd-bento-empty">Aún no tienes mensajes recientes.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

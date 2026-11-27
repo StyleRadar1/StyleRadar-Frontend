@@ -60,6 +60,7 @@ export default function ModerationPage() {
   const [motivoRechazo, setMotivoRechazo] = useState<string>('')
   const [detalleRechazo, setDetalleRechazo] = useState<string>('')
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null)
+  const [errorDetalle, setErrorDetalle] = useState<string | null>(null)
 
   // Diálogos de lote por publicador
   const [loteParaAprobar, setLoteParaAprobar] = useState<{ publicador: string; count: number } | null>(null)
@@ -130,14 +131,20 @@ export default function ModerationPage() {
       window.setTimeout(() => document.getElementById('motivoRechazo')?.focus(), 0)
       return
     }
+    if (motivoRechazo === 'Otro' && !detalleRechazo.trim()) {
+      setErrorDetalle('Escribe el comentario del motivo cuando seleccionas «Otro».')
+      window.setTimeout(() => document.getElementById('detalleRechazo')?.focus(), 0)
+      return
+    }
     const titulo = itemParaRechazar.titulo
-    const motivoFinal = motivoRechazo === 'Otro' && detalleRechazo.trim() ? detalleRechazo.trim() : motivoRechazo
+    const motivoFinal = motivoRechazo === 'Otro' ? detalleRechazo.trim() : motivoRechazo
     try {
       await reject(itemParaRechazar.id, motivoFinal, detalleRechazo)
       setItemParaRechazar(null)
       setMotivoRechazo('')
       setDetalleRechazo('')
       setErrorMotivo(null)
+      setErrorDetalle(null)
       setToast({ tone: 'ok', text: `«${titulo}» fue rechazada. Se notificó al publicador.` })
     } catch (err) {
       if (!handleModerationError(err, 'motivoRechazo')) setItemParaRechazar(null)
@@ -163,14 +170,20 @@ export default function ModerationPage() {
       window.setTimeout(() => document.getElementById('motivoLote')?.focus(), 0)
       return
     }
+    if (motivoRechazo === 'Otro' && !detalleRechazo.trim()) {
+      setErrorDetalle('Escribe el comentario del motivo cuando seleccionas «Otro».')
+      window.setTimeout(() => document.getElementById('detalleLote')?.focus(), 0)
+      return
+    }
     const pub = loteParaRechazar.publicador
-    const motivoFinal = motivoRechazo === 'Otro' && detalleRechazo.trim() ? detalleRechazo.trim() : motivoRechazo
+    const motivoFinal = motivoRechazo === 'Otro' ? detalleRechazo.trim() : motivoRechazo
     try {
       await rejectPublisher(pub, motivoFinal)
       setLoteParaRechazar(null)
       setMotivoRechazo('')
       setDetalleRechazo('')
       setErrorMotivo(null)
+      setErrorDetalle(null)
       setToast({ tone: 'ok', text: `Se rechazaron las publicaciones de ${pub}.` })
     } catch (err) {
       if (!handleModerationError(err, 'motivoLote')) setLoteParaRechazar(null)
@@ -516,16 +529,24 @@ export default function ModerationPage() {
 
           <div>
             <label htmlFor="detalleRechazo" className="block text-xs font-semibold text-white/80">
-              Observaciones adicionales (opcional)
+              {motivoRechazo === 'Otro'
+                ? <>Comentario del motivo <span className="text-rose-400">*</span></>
+                : 'Observaciones adicionales (opcional)'}
             </label>
             <textarea
               id="detalleRechazo"
               rows={2}
               value={detalleRechazo}
-              onChange={(e) => setDetalleRechazo(e.target.value)}
+              onChange={(e) => {
+                setDetalleRechazo(e.target.value)
+                setErrorDetalle(null)
+              }}
+              aria-invalid={Boolean(errorDetalle)}
+              aria-describedby={errorDetalle ? 'detalleRechazo-err' : undefined}
               placeholder="Instrucciones para corregir la publicación..."
               className="mt-1.5 w-full rounded-xl border border-white/20 bg-grafito px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
             />
+            <FieldError id="detalleRechazo-err" message={errorDetalle ?? undefined} />
           </div>
         </div>
       </ConfirmDialog>
@@ -581,6 +602,27 @@ export default function ModerationPage() {
             </select>
             <FieldError id="motivoLote-err" message={errorMotivo ?? undefined} />
           </div>
+          {motivoRechazo === 'Otro' && (
+            <div>
+              <label htmlFor="detalleLote" className="block text-xs font-semibold text-white/80">
+                Comentario del motivo <span className="text-rose-400">*</span>
+              </label>
+              <textarea
+                id="detalleLote"
+                rows={2}
+                value={detalleRechazo}
+                onChange={(e) => {
+                  setDetalleRechazo(e.target.value)
+                  setErrorDetalle(null)
+                }}
+                aria-invalid={Boolean(errorDetalle)}
+                aria-describedby={errorDetalle ? 'detalleLote-err' : undefined}
+                placeholder="Describe el motivo del rechazo..."
+                className="mt-1.5 w-full rounded-xl border border-white/20 bg-grafito px-3 py-2 text-sm text-white outline-none focus:border-violeta-claro"
+              />
+              <FieldError id="detalleLote-err" message={errorDetalle ?? undefined} />
+            </div>
+          )}
         </div>
       </ConfirmDialog>
     </section>

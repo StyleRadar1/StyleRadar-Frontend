@@ -1,7 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
 import { useResource } from '@/modules/core/hooks/useResource'
+import { chatService } from '@/modules/soporte/services/chatService'
+import type { ConversacionDto } from '@/modules/soporte/types/chat.dto'
 import { donationService } from '../services/donationService'
 import { foundationProfileService } from '../services/foundationProfileService'
 import { normalizeDonationStatus } from '../types/donation.dto'
@@ -40,6 +42,17 @@ export default function FoundationHomePage() {
     { perfil: null, pendientes: 0, entregadas: 0, totalPrendas: 0 }
   )
   const f = data.perfil
+  const [fndTab, setFndTab] = useState<'necesidades' | 'recibimos'>('necesidades')
+  const [chats, setChats] = useState<ConversacionDto[]>([])
+
+  useEffect(() => {
+    if (!f?.id) return
+    let active = true
+    chatService.conversations()
+      .then((list) => { if (active) setChats(list.slice(0, 3)) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [f?.id])
 
   if (loading && !f) return <Loading label="Cargando tu fundación…" />
   if (error || !f) {
@@ -132,6 +145,106 @@ export default function FoundationHomePage() {
               </svg>
               <span>Ver estadísticas</span>
             </Link>
+          </div>
+
+          {/* ── Bento interactivo de Fundación (métricas, necesidades y chats) ── */}
+          <div className="fnd-bento-grid">
+            <div className="fnd-bento-card">
+              <div className="fnd-bento-card__head">
+                <div>
+                  <span className="fnd-bento-tag">Tu impacto</span>
+                  <h2 className="fnd-bento-title">Panorama de la fundación</h2>
+                </div>
+                <div className="fnd-bento-tabs" role="tablist" aria-label="Resumen de fundación">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={fndTab === 'necesidades'}
+                    onClick={() => setFndTab('necesidades')}
+                    className={`fnd-bento-tab ${fndTab === 'necesidades' ? 'is-active' : ''}`}
+                  >
+                    Necesidades ({(f.necesidades ?? []).length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={fndTab === 'recibimos'}
+                    onClick={() => setFndTab('recibimos')}
+                    className={`fnd-bento-tab ${fndTab === 'recibimos' ? 'is-active' : ''}`}
+                  >
+                    Qué recibimos ({(f.queRecibimos ?? []).length})
+                  </button>
+                </div>
+              </div>
+
+              {fndTab === 'necesidades' ? (
+                <div className="fnd-bento-needs">
+                  {(f.necesidades ?? []).slice(0, 3).map((n) => (
+                    <div key={n.nombre} className="fnd-bento-need">
+                      <div className="fnd-bento-need__row">
+                        <span>{n.nombre}</span>
+                        <strong>{n.avance}%</strong>
+                      </div>
+                      <div className="fnd-bento-need__bar">
+                        <span style={{ width: `${Math.min(100, Math.max(0, n.avance))}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="fnd-bento-tags">
+                  {(f.queRecibimos ?? []).map((q) => (
+                    <span key={q} className="fnd-bento-pill">{q}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="fnd-bento-col">
+              <div className="fnd-bento-duo">
+                <Link to="/fundacion/donaciones" className="fnd-bento-mini fnd-bento-mini--accent">
+                  <span className="fnd-bento-tag">Pendientes</span>
+                  <strong>{data.pendientes} solicitud{data.pendientes === 1 ? '' : 'es'} ↗</strong>
+                  <span>Gestionar entregas</span>
+                </Link>
+                <Link to="/fundacion/estadisticas" className="fnd-bento-mini">
+                  <span className="fnd-bento-tag">Recibidas</span>
+                  <strong>{data.totalPrendas} prendas ↗</strong>
+                  <span>{data.entregadas} entregas confirmadas</span>
+                </Link>
+              </div>
+
+              <div className="fnd-bento-card">
+                <div className="fnd-bento-card__head">
+                  <div>
+                    <span className="fnd-bento-tag">Donantes y tiendas</span>
+                    <h2 className="fnd-bento-title">Últimos chats</h2>
+                  </div>
+                  <Link to="/mensajes" className="fnd-bento-link">Ir a mensajes →</Link>
+                </div>
+                {chats.length > 0 ? (
+                  <ul className="fnd-bento-chats">
+                    {chats.map((c) => {
+                      const ini = c.contacto.nombre.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase()).join('').slice(0, 2) || 'SR'
+                      return (
+                        <li key={c.id}>
+                          <Link to={`/mensajes?c=${encodeURIComponent(c.id)}`} className="fnd-bento-chat">
+                            <span className="fnd-bento-chat__av" aria-hidden="true">{ini}</span>
+                            <span className="fnd-bento-chat__meta">
+                              <strong>{c.contacto.nombre}</strong>
+                              <span>{c.ultimoMensaje || c.asunto}</span>
+                            </span>
+                            {c.noLeidos > 0 && <span className="fnd-bento-chat__badge">{c.noLeidos}</span>}
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                ) : (
+                  <p className="fnd-bento-empty">Aún no tienes mensajes recientes.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
