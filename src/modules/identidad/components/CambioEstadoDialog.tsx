@@ -1,8 +1,10 @@
-import { useId } from 'react'
+import { useContext, useId } from 'react'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
+import { AuthContext } from '../states/authContext'
 import { inputCls } from '../utils/campo'
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_HELP, ACCOUNT_STATUS_LABEL, REASON_MAX, type AccountStatus } from '../types/usuario.dto'
 import type { Cambio } from '../hooks/useCambioEstado'
+import { isSameAccount } from '../utils/formato'
 
 interface Props {
   cambio: Cambio | null
@@ -18,13 +20,19 @@ interface Props {
 /** SR-RF-66: elegir el nuevo estado y escribir el motivo (obligatorio al bloquear, máximo 1000 caracteres). */
 export function CambioEstadoDialog({ cambio, motivo, errorMotivo, busy, onElegir, onMotivo, onCancel, onConfirm }: Props) {
   const id = useId()
+  const sessionEmail = useContext(AuthContext)?.user?.email
+  const esPropia = isSameAccount(cambio?.user.email, sessionEmail)
   const bloquear = cambio?.to === 'BLOCKED'
   return (
-    <ConfirmDialog open={!!cambio} busy={busy} danger={bloquear}
+    <ConfirmDialog open={!!cambio} busy={busy || esPropia} danger={bloquear}
       title={cambio ? `Estado de ${cambio.user.name}` : ''}
       confirmLabel={cambio ? `Cambiar a ${ACCOUNT_STATUS_LABEL[cambio.to]}` : ''}
-      onCancel={onCancel} onConfirm={onConfirm}>
-      {cambio && (
+      onCancel={onCancel} onConfirm={esPropia ? onCancel : onConfirm}>
+      {cambio && esPropia ? (
+        <p role="alert" className="text-sm font-medium text-[var(--sr-bad,#ffb4b4)]">
+          No puedes cambiar el estado de tu propia cuenta.
+        </p>
+      ) : cambio && (
         <>
           <fieldset>
             <legend className="text-white/75">Hoy está {ACCOUNT_STATUS_LABEL[cambio.user.accountStatus]}. Elige el nuevo estado:</legend>

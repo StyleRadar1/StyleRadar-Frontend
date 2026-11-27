@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AdminUsersPage from '../pages/AdminUsersPage'
 import { usuarioService } from '../services/usuarioService'
+import { isSameAccount } from '../utils/formato'
 import { reiniciarDatos, renderConSesion, sesionComo } from './helpers'
 
 const routes = [{ path: '/admin/usuarios', element: <AdminUsersPage /> }]
@@ -129,5 +130,14 @@ describe('AdminUsersPage (SR-RF-66)', () => {
     abrir()
     expect(await screen.findByText('No pudimos cargar las cuentas')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument()
+  })
+})
+
+describe('isSameAccount', () => {
+  it('compara correos normalizando espacios y mayúsculas sin quitar +subdirección', () => {
+    expect(isSameAccount(' StyleRadar1+Admin.QA@gmail.com ', 'styleradar1+admin.qa@gmail.com')).toBe(true)
+    expect(isSameAccount('styleradar1+admin.qa@gmail.com', 'styleradar1+otro@gmail.com')).toBe(false)
+    expect(isSameAccount('styleradar1+admin.qa@gmail.com', undefined)).toBe(false)
+    expect(isSameAccount('', '')).toBe(false)
   })
 })

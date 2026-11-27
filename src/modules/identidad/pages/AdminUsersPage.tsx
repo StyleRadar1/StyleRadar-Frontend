@@ -1,16 +1,17 @@
-import { useEffect, useId, useState } from 'react'
+import { useContext, useEffect, useId, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AvisoEliminado } from '@/modules/administracion/components/EliminarRegistro'
 import { Toasts } from '@/modules/core/components/errores'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
+import { AuthContext } from '../states/authContext'
 import { CambioEstadoDialog } from '../components/CambioEstadoDialog'
 import { EstadoCuentaPill } from '../components/EstadoCuentaPill'
 import { inputCls } from '../utils/campo'
 import { useAdminUsers } from '../hooks/useAdminUsers'
 import { useCambioEstado } from '../hooks/useCambioEstado'
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_LABEL, ADMIN_Q_MAX, type AccountStatus } from '../types/usuario.dto'
-import { mesAnio } from '../utils/formato'
+import { isSameAccount, mesAnio } from '../utils/formato'
 
 type FiltroEstado = AccountStatus | 'TODOS'
 type FiltroRol = Role | 'TODOS'
@@ -29,6 +30,7 @@ const tdCls = 'px-4 py-3 align-middle max-md:flex max-md:items-center max-md:jus
 
 /** SR-RF-66: el administrador busca cuentas por estado, rol, nombre o correo y las pasa a Activa, Inactiva o Bloqueada. */
 export default function AdminUsersPage() {
+  const sessionEmail = useContext(AuthContext)?.user?.email
   const [texto, setTexto] = useState('')
   const [q, setQ] = useState('')
   const [estado, setEstado] = useState<FiltroEstado>('TODOS')
@@ -113,7 +115,9 @@ export default function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody className="max-md:flex max-md:flex-col max-md:gap-3">
-                  {users.map((u) => (
+                  {users.map((u) => {
+                    const esPropia = isSameAccount(u.email, sessionEmail)
+                    return (
                     <tr key={u.id} className="border-b border-white/10 max-md:block max-md:rounded-2xl max-md:border max-md:bg-white/[.04] max-md:p-4">
                       <td className="px-4 py-3 max-md:block max-md:px-0 max-md:pt-0">
                         <Link to={`/admin/usuarios/${encodeURIComponent(u.id)}`} className="font-semibold underline-offset-4 hover:underline">{u.name}</Link>
@@ -124,14 +128,24 @@ export default function AdminUsersPage() {
                       <td data-label="Barrio" className={tdCls}>{u.neighborhood || '—'}</td>
                       <td data-label="Miembro desde" className={tdCls}>{mesAnio(u.registeredAt)}</td>
                       <td className="px-4 py-3 text-right max-md:block max-md:px-0 max-md:pb-0 max-md:pt-3">
-                        <button type="button" disabled={ce.busy} onClick={() => ce.abrir(u)}
-                          aria-label={`Cambiar estado de ${u.name}`}
-                          className="whitespace-nowrap rounded-xl border border-white/20 px-3 py-2 text-sm font-semibold hover:bg-white/10 max-md:w-full">
-                          Cambiar estado
-                        </button>
+                        {esPropia ? (
+                          <span
+                            aria-label="Tu cuenta (no puedes cambiar su estado)"
+                            className="inline-flex items-center rounded-full border border-white/15 bg-white/[.05] px-3 py-1 text-xs font-medium text-white/65"
+                          >
+                            Tu cuenta
+                          </span>
+                        ) : (
+                          <button type="button" disabled={ce.busy} onClick={() => ce.abrir(u)}
+                            aria-label={`Cambiar estado de ${u.name}`}
+                            className="whitespace-nowrap rounded-xl border border-white/20 px-3 py-2 text-sm font-semibold hover:bg-white/10 max-md:w-full">
+                            Cambiar estado
+                          </button>
+                        )}
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
               {page.totalPages > 1 && (
