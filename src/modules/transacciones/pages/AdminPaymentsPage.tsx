@@ -6,10 +6,14 @@ import { Aviso } from '@/modules/core/components/errores'
 import { errorKind } from '@/modules/core/api/errors'
 import { TEXTOS_PAGOS } from '../utils/erroresPagos'
 import { formatCOP } from '@/modules/core/utils/format'
+import { formatDateLongSpanish } from '@/modules/soporte/utils/statsFormat'
+import { GlassChipGroup, type GlassChipOption } from '@/modules/administracion/components/GlassChipGroup'
+import { GlassDateRange } from '@/modules/administracion/components/GlassDateRange'
 import { usePayments } from '../hooks/usePayments'
 import { BalanceWallet } from '../components/BalanceWallet'
 import { buildPaymentsCsv, formatStatusLabel } from '../mappers/paymentsMappers'
 import { calcRevenue, filterPayments, paymentService } from '../services/paymentService'
+import { usePaymentSubscribers } from '../utils/paymentSubscribers'
 import type { PaymentDto, PaymentFiltersDto, PaymentStatus } from '../types/payment.dto'
 import '@/styles/verdelo-dashboard.css'
 
@@ -25,18 +29,12 @@ const STATUS_LABELS: Record<PaymentStatus, string> = {
   pendiente: 'PENDIENTE',
 }
 
-const PAYMENT_DATE_FMT = new Intl.DateTimeFormat('es-CO', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-})
-
-function formatPaymentDate(raw?: string | null): string {
-  if (!raw) return '—'
-  const d = new Date(raw)
-  if (Number.isNaN(d.getTime())) return raw
-  return PAYMENT_DATE_FMT.format(d).replace(/([a-záéíóúñ]+)/i, (m) => `${m[0].toUpperCase()}${m.slice(1)}`)
-}
+const STATUS_OPTIONS: GlassChipOption[] = [
+  { value: '', label: 'Todos' },
+  { value: 'pendiente', label: 'Pendiente', dotClassName: 'bg-lavanda' },
+  { value: 'aprobado', label: 'Aprobado', dotClassName: 'bg-violeta-claro' },
+  { value: 'rechazado', label: 'Rechazado', dotClassName: 'bg-arena' },
+]
 
 interface RadarCardItem {
   id: string
@@ -104,7 +102,31 @@ const NO_FILTERS: PaymentFiltersDto = {}
 export default function AdminPaymentsPage() {
   const [filters, setFilters] = useState<PaymentFiltersDto>({})
   const { data: allPayments, loading, error, reload } = usePayments(NO_FILTERS)
-  const payments = useMemo(() => filterPayments(allPayments, filters), [allPayments, filters])
+  const { getSubscriber, getSearchText } = usePaymentSubscribers(allPayments)
+
+  const planOptions = useMemo<GlassChipOption[]>(() => {
+    const map = new Map<string, string>()
+    for (const p of allPayments) {
+      if (p.planId && !map.has(p.planId)) {
+        map.set(p.planId, p.planName && p.planName !== '—' ? p.planName : p.planId)
+      }
+    }
+    return [
+      { value: '', label: 'Todos' },
+      ...Array.from(map.entries()).map(([value, label]) => ({ value, label })),
+    ]
+  }, [allPayments])
+
+  const payments = useMemo(() => {
+    const base = filterPayments(allPayments, { ...filters, search: undefined })
+    const q = filters.search?.trim().toLowerCase()
+    if (!q) return base
+    return base.filter((p) => {
+      const refText = `${p.pagoId ?? p.id} ${p.suscripcionId ?? ''} ${p.referencia ?? p.mpReference ?? ''} ${p.planName ?? ''}`.toLowerCase()
+      return refText.includes(q) || getSearchText(p).toLowerCase().includes(q)
+    })
+  }, [allPayments, filters, getSearchText])
+
   const [selected, setSelected] = useState<PaymentDto | null>(null)
   /** Aviso de la página: 403 u otro error de permisos. */
   const [avisoPagos] = useState<{ permiso: boolean; texto?: string } | null>(null)
@@ -422,47 +444,43 @@ export default function AdminPaymentsPage() {
         </div>
       </div>
 
-      {/* Filtros (RF-75: filtro opcional por estado PENDIENTE, APROBADO, RECHAZADO) */}
-      <Card className="sr-verdelo-panel mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <input
-          type="search"
-          placeholder="Buscar por referencia de pago, ID de suscripción o suscriptor…"
-          className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/40 focus:border-violeta-claro"
-          onChange={(e) => handleFilter('search', e.target.value)}
-        />
-        <select
-          aria-label="Filtrar por estado"
-          className="rounded-xl border border-white/15 bg-[#1b1824] px-3 py-2 text-sm text-blanco"
-          onChange={(e) => handleFilter('status', e.target.value)}
-          defaultValue=""
-        >
-          <option value="">Todos los estados</option>
-          <option value="pendiente">PENDIENTE</option>
-          <option value="aprobado">APROBADO</option>
-          <option value="rechazado">RECHAZADO</option>
-        </select>
-        <select
-          aria-label="Filtrar por plan"
-          className="rounded-xl border border-white/15 bg-[#1b1824] px-3 py-2 text-sm text-blanco"
-          onChange={(e) => handleFilter('planId', e.target.value)}
-          defaultValue=""
-        >
-          <option value="">Todos los planes</option>
-          <option value="plus">Radar+</option>
-          <option value="store">Tienda aliada</option>
-        </select>
-        <input
-          type="date"
-          className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm"
-          onChange={(e) => handleFilter('dateFrom', e.target.value)}
-          aria-label="Desde"
-        />
-        <input
-          type="date"
-          className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm"
-          onChange={(e) => handleFilter('dateTo', e.target.value)}
-          aria-label="Hasta"
-        />
+      {/* Filtros en glass: buscador amplio + chips de estado y plan + rango de fechas */}
+      <Card className="sr-verdelo-panel mt-6 space-y-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <input
+            type="search"
+            aria-label="Buscar por referencia o suscriptor"
+            placeholder="Buscar por referencia o suscriptor"
+            value={filters.search ?? ''}
+            className="min-w-0 flex-1 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-sm outline-none placeholder:text-white/45 focus:border-violeta-claro"
+            onChange={(e) => handleFilter('search', e.target.value)}
+          />
+          <GlassDateRange
+            from={filters.dateFrom}
+            to={filters.dateTo}
+            onChange={({ from, to }) => setFilters((prev) => ({ ...prev, dateFrom: from, dateTo: to }))}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-[.12em] text-white/55">Estado</span>
+            <GlassChipGroup
+              label="Filtrar por estado"
+              options={STATUS_OPTIONS}
+              value={filters.status ?? ''}
+              onChange={(val) => handleFilter('status', val)}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-[.12em] text-white/55">Plan</span>
+            <GlassChipGroup
+              label="Filtrar por plan"
+              options={planOptions}
+              value={filters.planId ?? ''}
+              onChange={(val) => handleFilter('planId', val)}
+            />
+          </div>
+        </div>
       </Card>
 
       {avisoPagos && (
@@ -489,22 +507,21 @@ export default function AdminPaymentsPage() {
               <tr className="border-b border-white/10 text-[11px] font-bold uppercase tracking-[.16em] text-arena">
                 <th className="pb-3 pr-4">Referencia de pago</th>
                 <th className="pb-3 pr-4">ID de suscripción</th>
-                <th className="pb-3 pr-4">ID de suscriptor</th>
+                <th className="pb-3 pr-4">Suscriptor</th>
                 <th className="pb-3 pr-4">Plan</th>
                 <th className="pb-3 pr-4 text-right">Valor (COP)</th>
                 <th className="pb-3 pr-4">Estado</th>
                 <th className="pb-3 pr-4">Fecha</th>
-                <th className="pb-3 pr-4">Referencia</th>
-                <th className="pb-3">Método</th>
+                <th className="pb-3">Referencia</th>
               </tr>
             </thead>
             <tbody>
               {payments.map((p) => {
                 const pagoId = p.pagoId ?? p.id
                 const suscripcionId = p.suscripcionId ?? `SUB-${p.id}`
-                const suscriptorId = p.suscriptorId ?? p.userId
+                const sub = getSubscriber(p)
                 const valor = p.valor ?? p.amount
-                const fecha = formatPaymentDate(p.fecha ?? p.date)
+                const fecha = formatDateLongSpanish(p.fecha ?? p.date)
                 const referencia = p.referencia ?? p.mpReference ?? pagoId
                 return (
                   <tr
@@ -512,19 +529,33 @@ export default function AdminPaymentsPage() {
                     className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.06]"
                     onClick={() => handleSelectPayment(p)}
                   >
-                    <td className="py-3.5 pr-4 font-mono text-xs text-lavanda">{pagoId}</td>
-                    <td className="py-3.5 pr-4 font-mono text-xs text-white/80">{suscripcionId}</td>
-                    <td className="py-3.5 pr-4 font-mono text-xs font-semibold text-blanco">{suscriptorId}</td>
-                    <td className="py-3.5 pr-4 text-white/85">{p.planName || '—'}</td>
-                    <td className="py-3.5 pr-4 text-right font-mono font-bold text-arena">
-                      {formatCOP(valor)} COP
+                    <td className="py-3.5 pr-4 font-mono text-[11px] text-white/55">{pagoId}</td>
+                    <td className="py-3.5 pr-4 font-mono text-[11px] text-white/55">{suscripcionId}</td>
+                    <td className="py-3.5 pr-4">
+                      {sub.kind === 'loading' ? (
+                        <span className="text-xs text-white/50">Cargando…</span>
+                      ) : sub.kind === 'resolved' ? (
+                        <span className="block min-w-0">
+                          <b className="block truncate text-sm text-blanco">{sub.name}</b>
+                          <span className="block truncate text-xs text-white/55">
+                            {sub.typeLabel}{sub.email ? ` · ${sub.email}` : ''}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-sm text-white/55" title="No se pudo cargar el nombre">
+                          {sub.label}
+                        </span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap py-3.5 pr-4 text-white/85">{p.planName || '—'}</td>
+                    <td className="whitespace-nowrap py-3.5 pr-4 text-right font-mono font-bold text-arena">
+                      {formatCOP(valor)}
                     </td>
                     <td className="py-3.5 pr-4">
                       <Badge tone={STATUS_TONES[p.status]}>{formatStatusLabel(p.estado ?? STATUS_LABELS[p.status], p.unknownStatus)}</Badge>
                     </td>
-                    <td className="py-3.5 pr-4 text-white/70">{fecha}</td>
-                    <td className="py-3.5 pr-4 font-mono text-xs text-white/75">{referencia}</td>
-                    <td className="py-3.5 text-white/75">Mercado Pago</td>
+                    <td className="whitespace-nowrap py-3.5 pr-4 text-white/75">{fecha}</td>
+                    <td className="py-3.5 font-mono text-[11px] text-white/55">{referencia}</td>
                   </tr>
                 )
               })}
@@ -533,35 +564,48 @@ export default function AdminPaymentsPage() {
         </div>
       )}
 
-      {/* Detalle del pago (panel lateral, sin correos ni nombres del suscriptor según RF-75) */}
-      {selected && (
-        <div className="fixed inset-0 z-40 flex justify-end bg-black/60 backdrop-blur-sm" onClick={() => setSelected(null)}>
-          <div className="sr-verdelo-panel h-full w-full max-w-md overflow-y-auto p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between">
-              <h2 className="text-xl font-bold">Pago {selected.pagoId ?? selected.id}</h2>
-              <button type="button" className="text-2xl text-white/50 hover:text-white" onClick={() => setSelected(null)}>×</button>
-            </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <Badge tone={STATUS_TONES[selected.status]}>{selected.estado ?? STATUS_LABELS[selected.status]}</Badge>
-            </div>
-            <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div><dt className="text-white/50">Referencia de pago</dt><dd className="font-mono font-semibold">{selected.pagoId ?? selected.id}</dd></div>
-              <div><dt className="text-white/50">ID de suscripción</dt><dd className="font-mono">{selected.suscripcionId ?? `SUB-${selected.id}`}</dd></div>
-              <div><dt className="text-white/50">ID de suscriptor</dt><dd className="font-mono font-semibold">{selected.suscriptorId ?? selected.userId}</dd></div>
-              <div>
-                <dt className="text-white/50">Tipo de suscriptor</dt>
-                <dd>{selected.subscriberRoleLabel ?? (selected.userRole === 'STORE_ADMIN' ? 'Tienda' : selected.userRole === 'BUYER' ? 'Comprador' : '—')}</dd>
+      {/* Detalle del pago (panel lateral) */}
+      {selected && (() => {
+        const selectedSub = getSubscriber(selected)
+        return (
+          <div className="fixed inset-0 z-40 flex justify-end bg-black/60 backdrop-blur-sm" onClick={() => setSelected(null)}>
+            <div className="sr-verdelo-panel h-full w-full max-w-md overflow-y-auto p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between">
+                <h2 className="text-xl font-bold">Pago {selected.pagoId ?? selected.id}</h2>
+                <button type="button" aria-label="Cerrar detalle" className="text-2xl text-white/50 hover:text-white" onClick={() => setSelected(null)}>×</button>
               </div>
-              <div><dt className="text-white/50">Plan</dt><dd>{selected.planName || '—'}</dd></div>
-              <div><dt className="text-white/50">Valor (COP)</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.valor ?? selected.amount)} COP</dd></div>
-              <div><dt className="text-white/50">Estado</dt><dd>{selected.estado ?? STATUS_LABELS[selected.status]}</dd></div>
-              <div><dt className="text-white/50">Fecha</dt><dd>{formatPaymentDate(selected.fecha ?? selected.date)}</dd></div>
-              <div><dt className="text-white/50">Referencia</dt><dd className="font-mono">{selected.referencia ?? selected.mpReference ?? selected.id}</dd></div>
-              <div><dt className="text-white/50">Método</dt><dd>Mercado Pago</dd></div>
-            </dl>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <Badge tone={STATUS_TONES[selected.status]}>{formatStatusLabel(selected.estado ?? STATUS_LABELS[selected.status], selected.unknownStatus)}</Badge>
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div><dt className="text-white/50">Referencia de pago</dt><dd className="font-mono text-xs text-white/70">{selected.pagoId ?? selected.id}</dd></div>
+                <div><dt className="text-white/50">ID de suscripción</dt><dd className="font-mono text-xs text-white/70">{selected.suscripcionId ?? `SUB-${selected.id}`}</dd></div>
+                <div className="col-span-2">
+                  <dt className="text-white/50">Suscriptor</dt>
+                  <dd>
+                    {selectedSub.kind === 'loading' ? (
+                      <span className="text-xs text-white/50">Cargando…</span>
+                    ) : selectedSub.kind === 'resolved' ? (
+                      <span>
+                        <b className="block text-blanco">{selectedSub.name}</b>
+                        <span className="block text-xs text-white/55">
+                          {selectedSub.typeLabel}{selectedSub.email ? ` · ${selectedSub.email}` : ''}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-white/55" title="No se pudo cargar el nombre">{selectedSub.label}</span>
+                    )}
+                  </dd>
+                </div>
+                <div><dt className="text-white/50">Plan</dt><dd>{selected.planName || '—'}</dd></div>
+                <div><dt className="text-white/50">Valor (COP)</dt><dd className="font-mono font-bold text-arena">{formatCOP(selected.valor ?? selected.amount)}</dd></div>
+                <div><dt className="text-white/50">Fecha</dt><dd>{formatDateLongSpanish(selected.fecha ?? selected.date)}</dd></div>
+                <div><dt className="text-white/50">Referencia</dt><dd className="font-mono text-xs text-white/70">{selected.referencia ?? selected.mpReference ?? selected.id}</dd></div>
+              </dl>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
     </section>
   )
