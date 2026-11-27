@@ -63,8 +63,9 @@ export function aConversacion(raw: Record<string, unknown>, ctx: ContextoChat, n
   let asunto: string
   if (esTienda(tipo)) {
     asunto = 'Consulta a la tienda'
+    const comprador = id(raw.buyerId) || otro
     contacto = ctx.rol === 'STORE_ADMIN'
-      ? { id: otro, nombre: nombreOtro('Contacto de tienda'), tipo: 'COMPRADOR' }
+      ? { id: comprador, nombre: ctx.nombres.get(comprador) ?? (comprador ? `Comprador #${comprador}` : 'Contacto de tienda'), tipo: 'COMPRADOR' }
       : { id: id(raw.storeNit), nombre: texto(raw.storeName) ?? directo ?? 'Contacto de tienda', tipo: 'TIENDA' }
   } else if (esDonacion(tipo)) {
     asunto = `Donación #${id(raw.donationId)}`

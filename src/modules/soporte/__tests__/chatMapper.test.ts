@@ -49,6 +49,20 @@ describe('conversación con una tienda', () => {
   it('acepta el nombre en inglés del tipo', () => {
     expect(aConversacion({ ...raw, type: 'STORE' }, ctx('1', 'BUYER')).contacto.tipo).toBe('TIENDA')
   })
+
+  it('muestra Comprador #<buyerId> cuando mira la tienda aunque la fila traiga participantDisplayName de la tienda, sin cambiar la vista del comprador', () => {
+    const filaConNombreTienda = { ...raw, buyerId: 36, participantDisplayName: 'Atelier Urbano Chapinero' }
+    expect(aConversacion(filaConNombreTienda, ctx('3', 'STORE_ADMIN')).contacto).toEqual({
+      id: '36',
+      nombre: 'Comprador #36',
+      tipo: 'COMPRADOR',
+    })
+    expect(aConversacion(filaConNombreTienda, ctx('36', 'BUYER')).contacto).toEqual({
+      id: '900123456-1',
+      nombre: 'Atelier Urbano Chapinero',
+      tipo: 'TIENDA',
+    })
+  })
 })
 
 describe('conversación de una donación', () => {
