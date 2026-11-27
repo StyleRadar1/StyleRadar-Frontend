@@ -12,7 +12,7 @@ import { EstadoCuentaPill } from '../components/EstadoCuentaPill'
 import { useCambioEstado } from '../hooks/useCambioEstado'
 import { usuarioService } from '../services/usuarioService'
 import type { AdminUserDto, ChangeStatusRequestDto } from '../types/usuario.dto'
-import { fechaHora, isSameAccount, mesAnio } from '../utils/formato'
+import { fechaHora, isSameAccount, mesAnioCapitalizado } from '../utils/formato'
 
 const volver = <Link to="/admin/usuarios" className="inline-block text-[11px] font-bold uppercase tracking-[.16em] text-white/65 hover:text-blanco"><span aria-hidden="true">← </span>Volver a usuarios</Link>
 
@@ -84,7 +84,7 @@ export default function AdminUserDetailPage() {
               <Dato k="Estado"><EstadoCuentaPill estado={u.accountStatus} /></Dato>
               <Dato k="Rol">{u.roles[0] ? ROLE_LABEL[u.roles[0]] : '—'}</Dato>
               <Dato k="Barrio">{u.neighborhood || '—'}</Dato>
-              <Dato k="Miembro desde">{mesAnio(u.registeredAt)}</Dato>
+              <Dato k="Miembro desde">{mesAnioCapitalizado(u.registeredAt)}</Dato>
             </dl>
           </section>
           <section aria-label="Último cambio de estado" className="rounded-2xl border border-white/10 bg-white/[.03] p-5">

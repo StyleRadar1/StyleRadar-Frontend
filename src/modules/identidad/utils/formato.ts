@@ -6,6 +6,13 @@ export function mesAnio(iso: string): string {
   return y && m ? `${MESES[m - 1]} ${y}` : '—'
 }
 
+/** «2025-03-04» → «Marzo 2025» (para vistas de administrador, sin usar new Date). */
+export function mesAnioCapitalizado(iso: string): string {
+  const [y, m] = iso.slice(0, 10).split('-').map(Number)
+  const mes = y && m ? MESES[m - 1] : ''
+  return mes ? `${mes[0].toUpperCase()}${mes.slice(1)} ${y}` : '—'
+}
+
 /** Fecha y hora de Bogotá para la auditoría: «2 mar 2026, 10:20 a. m.». Vacío o inválido → «—». */
 export function fechaHora(iso?: string | null): string {
   const d = iso ? new Date(iso) : null
