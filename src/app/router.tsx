@@ -79,10 +79,13 @@ const STORE: Role[] = ['STORE_ADMIN']
 const FOUND: Role[] = ['FOUNDATION_REPRESENTATIVE']
 const ANY: Role[] = ['BUYER', 'STORE_ADMIN', 'FOUNDATION_REPRESENTATIVE', 'STYLERADAR_ADMIN']
 
-function Portada() {
+export function Portada() {
   const { user } = useAuth()
+  const { search } = useLocation()
 
-  if (user) return <Navigate to={ROLE_HOME[user.role]} replace />
+  // Durante el inicio de sesión (/?login) el modal lleva a la página guardada o al inicio del rol.
+  // Si aquí se redirigiera, esta redirección llegaría después y se perdería la página original.
+  if (user && !new URLSearchParams(search).has('login')) return <Navigate to={ROLE_HOME[user.role]} replace />
   // Sin sesión, la portada siempre es el landing. La marca de "landing visto"
   // ya no debe expulsar a /catalogo: el catálogo se abre explícitamente desde
   // los enlaces del landing.
