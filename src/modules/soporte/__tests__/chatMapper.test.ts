@@ -19,7 +19,7 @@ describe('conversación de segunda mano', () => {
     expect(idDelOtro(raw, '2')).toBe('1')
     const c = aConversacion(raw, ctx('2', 'BUYER'))
     expect(c).toMatchObject({ id: '2', asunto: 'Chaqueta Denim Vintage QA', referenciaId: '1', actualizadaEn: '2026-11-21T10:00:00Z', noLeidos: 0 })
-    expect(c.contacto).toEqual({ id: '1', nombre: 'Usuario #1', tipo: 'COMPRADOR' })
+    expect(c.contacto).toEqual({ id: '1', nombre: 'Comprador interesado', tipo: 'COMPRADOR' })
   })
 
   it('usa el nombre que ms-usuarios devolvió y, si el usuario compra, el otro es quien vende', () => {
@@ -57,6 +57,27 @@ describe('conversación de una donación', () => {
     expect(aConversacion(raw, ctx('1', 'BUYER')).contacto.tipo).toBe('FUNDACION')
     expect(aConversacion(raw, ctx('5', 'FOUNDATION_REPRESENTATIVE')).contacto.tipo).toBe('DONANTE')
     expect(aConversacion(raw, ctx('1', 'BUYER')).asunto).toBe('Donación #5')
+  })
+})
+
+describe('sin ids a la vista', () => {
+  const base = { id: 2, type: 'SEGUNDA_MANO', garmentName: 'Chaqueta', buyerId: 1, sellerId: 2, createdAt: '2026-11-21T10:00:00Z' }
+  it('ignora «Usuario #N» que manda ms-chat y usa el papel de la persona', () => {
+    const vende = aConversacion({ ...base, participantDisplayName: 'Usuario #2' }, ctx('2', 'BUYER'))
+    expect(vende.contacto.nombre).toBe('Comprador interesado')
+    const compra = aConversacion({ ...base, participantDisplayName: 'Usuario #2' }, ctx('1', 'BUYER'))
+    expect(compra.contacto.nombre).toBe('Vendedor')
+  })
+  it('si ms-chat manda un nombre real, lo muestra', () => {
+    expect(aConversacion({ ...base, participantDisplayName: 'Sofía L.' }, ctx('1', 'BUYER')).contacto.nombre).toBe('Sofía L.')
+  })
+  it('en donaciones usa «Persona que dona» y no «Donación #N»', () => {
+    const c = aConversacion({ id: 9, type: 'DONACION', donationId: 5, buyerId: 1, sellerId: 5, participantDisplayName: 'Donación #5' }, ctx('5', 'FOUNDATION_REPRESENTATIVE'))
+    expect(c.contacto.nombre).toBe('Persona que dona')
+  })
+  it('ninguna etiqueta lleva un número de usuario', () => {
+    const c = aConversacion(base, ctx('2', 'BUYER'))
+    expect(JSON.stringify(c.contacto)).not.toMatch(/#\d/)
   })
 })
 

@@ -293,7 +293,7 @@ describe('Playlists · errores del plan (Cristian)', () => {
     }
   })
 
-  it('en modo API mapea liked/saved desde GET y resuelve nombre de sesión o Usuario #<id>', async () => {
+  it('en modo API mapea liked/saved desde GET y resuelve nombre de sesión o «Usuario StyleRadar» sin mostrar el id', async () => {
     const prevUseMocks = env.useMocks
     const prevUser = localStorage.getItem('sr_user')
     env.useMocks = false
@@ -340,7 +340,7 @@ describe('Playlists · errores del plan (Cristian)', () => {
     try {
       const { unmount } = renderAt('/playlists/pl-ext-15', routes)
       expect(await screen.findByRole('heading', { level: 1, name: /Look Ajeno QA/i })).toBeInTheDocument()
-      expect(screen.getByText('Usuario #15')).toBeInTheDocument()
+      expect(screen.getByText('Usuario StyleRadar')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Quitar me gusta/i })).toHaveAttribute('aria-pressed', 'true')
       expect(screen.getByRole('button', { name: /Guardada/i })).toHaveAttribute('aria-pressed', 'true')
       unmount()

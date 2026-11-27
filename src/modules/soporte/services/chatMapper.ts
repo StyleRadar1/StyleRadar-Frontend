@@ -17,13 +17,13 @@ export interface ContextoChat {
 const texto = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
 const id = (v: unknown) => (v === null || v === undefined ? '' : String(v))
 
+/** Textos de relleno que ms-chat armaba con un id («Usuario #7», «Donación #5»): no son un nombre y no se muestran. */
+const esRelleno = (t: string) => /^(usuario|donaci[oó]n|conversaci[oó]n)\s*#?\s*\d+$/i.test(t)
+
 /** Nombre de la contraparte incluido directamente por ms-chat (evita llamadas extra a ms-usuarios). */
 export function nombreEnFila(raw: Record<string, unknown>): string | undefined {
-  return (
-    texto(raw.participantDisplayName) ??
-    texto(raw.otherParticipantName) ??
-    texto(raw.contactName)
-  )
+  const nombre = texto(raw.participantDisplayName) ?? texto(raw.otherParticipantName) ?? texto(raw.contactName)
+  return nombre && !esRelleno(nombre) ? nombre : undefined
 }
 
 /** Las listas de ms-chat vienen como { content, page, size, totalElements, totalPages }; por si acaso, también un arreglo. */
@@ -55,8 +55,8 @@ export function aConversacion(raw: Record<string, unknown>, ctx: ContextoChat, n
   const otro = idDelOtro(raw, ctx.me)
   const convId = id(raw.id)
   const directo = nombreEnFila(raw)
-  const nombreOtro = (fallback: string) =>
-    directo ?? ctx.nombres.get(otro) ?? (otro ? `Usuario #${otro}` : convId ? `Conversación #${convId}` : fallback)
+  // Sin nombre real se usa el papel de la persona; nunca su número de usuario
+  const nombreOtro = (papel: string) => directo ?? ctx.nombres.get(otro) ?? papel
   const vendo = id(raw.sellerId) === ctx.me
 
   let contacto: { id: string; nombre: string; tipo: TipoContacto }
@@ -64,16 +64,16 @@ export function aConversacion(raw: Record<string, unknown>, ctx: ContextoChat, n
   if (esTienda(tipo)) {
     asunto = 'Consulta a la tienda'
     contacto = ctx.rol === 'STORE_ADMIN'
-      ? { id: otro, nombre: nombreOtro('Contacto de tienda'), tipo: 'COMPRADOR' }
+      ? { id: otro, nombre: nombreOtro('Comprador interesado'), tipo: 'COMPRADOR' }
       : { id: id(raw.storeNit), nombre: texto(raw.storeName) ?? directo ?? 'Contacto de tienda', tipo: 'TIENDA' }
   } else if (esDonacion(tipo)) {
     asunto = `Donación #${id(raw.donationId)}`
     contacto = ctx.rol === 'FOUNDATION_REPRESENTATIVE'
-      ? { id: otro, nombre: nombreOtro('Donante'), tipo: 'DONANTE' }
+      ? { id: otro, nombre: nombreOtro('Persona que dona'), tipo: 'DONANTE' }
       : { id: otro, nombre: nombreOtro('Fundación'), tipo: 'FUNDACION' }
   } else {
     asunto = texto(raw.garmentName) ?? 'Segunda mano'
-    contacto = { id: otro, nombre: nombreOtro('Usuario'), tipo: vendo ? 'COMPRADOR' : 'VENDEDOR' }
+    contacto = { id: otro, nombre: nombreOtro(vendo ? 'Comprador interesado' : 'Vendedor'), tipo: vendo ? 'COMPRADOR' : 'VENDEDOR' }
   }
 
   return {

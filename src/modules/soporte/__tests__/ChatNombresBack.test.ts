@@ -23,14 +23,14 @@ describe('nombres del chat desde ms-usuarios (SR-RF-114)', () => {
     expect(c.contacto.nombre).toBe('Mateo P.')
   })
 
-  it('con 403 (perfil de otra cuenta) muestra «Usuario #id» y no lo vuelve a pedir', async () => {
+  it('con 403 (perfil de otra cuenta) muestra su papel («Comprador interesado») y no lo vuelve a pedir', async () => {
     const get = vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
       if (url === '/api/v1/users/conversations') return { data: { content: [CONV], totalPages: 1 } }
       if (url === '/api/v1/users/1') throw new ApiError(403, 'No tiene permisos para esta acción', 'ACCESS_DENIED')
       return { data: { content: [], totalPages: 1 } }
     })
     const [c] = await chatService.conversations()
-    expect(c.contacto.nombre).toBe('Usuario #1')
+    expect(c.contacto.nombre).toBe('Comprador interesado')
     await chatService.conversations()
     expect(get.mock.calls.filter(([u]) => u === '/api/v1/users/1')).toHaveLength(1)
   })

@@ -57,9 +57,7 @@ export function resolvePlaylistCreatorName(
   if (esNombreReal) {
     return rawNombre
   }
-  if (uid) {
-    return /^\d+$/.test(uid) ? `Usuario #${uid}` : `Usuario ${uid}`
-  }
+  // Sin nombre real no se muestra el número de usuario
   return 'Usuario StyleRadar'
 }
 
