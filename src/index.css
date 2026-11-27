@@ -480,6 +480,14 @@ html[data-tema="claro"] body::after {
   background: radial-gradient(circle, rgba(192, 132, 252, 0.13) 0%, rgba(124, 58, 237, 0.06) 45%, transparent 70%);
 }
 
+@media (max-width: 768px) {
+  body::before,
+  body::after {
+    filter: blur(56px);
+    opacity: 0.65;
+  }
+}
+
 /* =====================================================================
    Superficies Glassmorphism globales (modo oscuro y claro)
    ===================================================================== */

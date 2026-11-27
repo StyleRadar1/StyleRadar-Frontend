@@ -423,6 +423,15 @@ html[data-tema="claro"] .sr-landing .sr-category-tabs button[aria-selected="true
   .sr-footer { flex-direction: column; align-items: flex-start; }
   .sr-footer p { line-height: 1.5; }
 }
+@media (max-width: 768px) {
+  .sr-landing,
+  html[data-theme="light"] .sr-landing,
+  html[data-theme="claro"] .sr-landing,
+  html[data-tema="claro"] .sr-landing {
+    background-attachment: scroll;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sr-landing *, .sr-landing *::before, .sr-landing *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

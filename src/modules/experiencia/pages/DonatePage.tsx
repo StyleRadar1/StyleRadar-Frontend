@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 import { useResource } from '@/modules/core/hooks/useResource'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { errorKind, fieldErrors } from '@/modules/core/api/errors'
 import { ErrorBanner, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { ErrorState, Loading } from '@/modules/core/components/Status'
@@ -21,6 +21,7 @@ const MODALIDAD_LABEL: Record<Modalidad, string> = { RECOGIDA: 'Que la recojan',
 
 /** RF-42 y RF-44 (fundación) y RF-45 y RF-48 (solicitud con logística) en 3 pantallas. */
 export default function DonatePage() {
+  const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<DonationForm>(emptyDonation)
   const [errors, setErrors] = useState<DonationErrors>({})
@@ -151,7 +152,17 @@ export default function DonatePage() {
         )}
 
         <div className="flex flex-wrap justify-between gap-2 border-t border-[var(--color-border)] pt-5">
-          {step > 0 ? <button type="button" onClick={() => { setErrors({}); setStep((s) => s - 1) }} disabled={sending} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Atrás</button> : <span />}
+          {step > 0 ? (
+            <button type="button" onClick={() => { setErrors({}); setStep((s) => s - 1) }} disabled={sending} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]">Atrás</button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(user?.role === 'STORE_ADMIN' ? '/mi-tienda' : '/segunda-mano'))}
+              className="rounded-xl px-5 py-3 text-sm text-[var(--color-text-muted)] underline hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]"
+            >
+              Cancelar
+            </button>
+          )}
           <button type="submit" disabled={sending || (step === 1 && (fLoading || !!fError))} className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-6 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-60 transition-all shadow-sm">
             {step < 2 ? 'Continuar' : sending ? 'Enviando…' : 'Enviar solicitud'}</button>
         </div>

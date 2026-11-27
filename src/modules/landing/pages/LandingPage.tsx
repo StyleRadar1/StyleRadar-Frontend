@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CustomCursor, NoiseGrain } from '@/components/ui'
@@ -11,10 +11,49 @@ import {
   ClothingCycle,
   PricingPlans,
 } from '@/components/landing'
-import MapaLanding from '@/modules/mapa/components/MapaLanding'
-import { AuthModal, QuickTryOnModal } from '@/components/modals'
 import { markLandingSeen } from '../landingSeen'
 import './LandingPage.css'
+
+const MapaLanding = lazy(() => import('@/modules/mapa/components/MapaLanding'))
+const AuthModal = lazy(() => import('@/components/modals/AuthModal').then((m) => ({ default: m.AuthModal })))
+const QuickTryOnModal = lazy(() => import('@/components/modals/QuickTryOnModal').then((m) => ({ default: m.QuickTryOnModal })))
+
+function DeferredMapSection() {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [shouldLoad, setShouldLoad] = useState(
+    () => typeof IntersectionObserver === 'undefined',
+  )
+
+  useEffect(() => {
+    if (shouldLoad) return
+    const node = hostRef.current
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setShouldLoad(true)
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShouldLoad(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '450px 0px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [shouldLoad])
+
+  return (
+    <div ref={hostRef} className="min-h-[420px]">
+      {shouldLoad ? (
+        <Suspense fallback={<div className="py-20 text-center text-sm text-[var(--sr-muted)]">Cargando mapa de tiendas…</div>}>
+          <MapaLanding />
+        </Suspense>
+      ) : null}
+    </div>
+  )
+}
 
 export default function LandingPage() {
   const { user } = useAuth()
@@ -105,29 +144,37 @@ export default function LandingPage() {
         {/* 6. Planes de membresía */}
         <PricingPlans onOpenRegister={handleOpenRegister} />
 
-        {/* 7. Mapa interactivo de tiendas y fundaciones (Mapbox) */}
-        <MapaLanding />
+        {/* 7. Mapa interactivo de tiendas y fundaciones (Mapbox, carga diferida al hacer scroll) */}
+        <DeferredMapSection />
       </main>
 
       {/* Cierre editorial del landing */}
       <LandingFooter onOpenLogin={handleOpenLogin} />
 
       {/* Modal unificado de Autenticación (Login, Registro, OTP de 2 pasos y cuentas demo) */}
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => {
-          setIsAuthOpen(false)
-          if (params.has('login')) setParams({}, { replace: true })
-        }}
-        initialTab={authTab}
-        initialRole={authRole}
-      />
+      {isAuthOpen && (
+        <Suspense fallback={null}>
+          <AuthModal
+            isOpen={isAuthOpen}
+            onClose={() => {
+              setIsAuthOpen(false)
+              if (params.has('login')) setParams({}, { replace: true })
+            }}
+            initialTab={authTab}
+            initialRole={authRole}
+          />
+        </Suspense>
+      )}
 
       {/* Modal del Probador Virtual premium (Quick Try-On) */}
-      <QuickTryOnModal
-        isOpen={isTryOnOpen}
-        onClose={() => setIsTryOnOpen(false)}
-      />
+      {isTryOnOpen && (
+        <Suspense fallback={null}>
+          <QuickTryOnModal
+            isOpen={isTryOnOpen}
+            onClose={() => setIsTryOnOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }
