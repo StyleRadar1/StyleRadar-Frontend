@@ -54,7 +54,12 @@ export function Legend({ items }: { items: string[] }) {
 
 export function TableToggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button type="button" aria-pressed={on} onClick={() => onChange(!on)} className="shrink-0 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--color-surface)] text-[var(--color-text)]">
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={() => onChange(!on)}
+      className={`glass-pill shrink-0 cursor-pointer px-3 py-1.5 text-xs font-semibold ${on ? 'is-active' : ''}`}
+    >
       {on ? 'Ver como gráfico' : 'Ver como tabla'}
     </button>
   )
@@ -62,16 +67,16 @@ export function TableToggle({ on, onChange }: { on: boolean; onChange: (v: boole
 
 export function DataTable({ caption, head, rows }: { caption: string; head: string[]; rows: (string | number)[][] }) {
   return (
-    <div className="max-h-80 overflow-auto pr-2 [scrollbar-gutter:stable]">
-      <table className="w-full text-left text-sm text-[var(--color-text)]">
+    <div className="max-h-80 overflow-auto rounded-xl border border-white/10 bg-white/[.02] px-3 py-1 pr-2 [scrollbar-gutter:stable]">
+      <table className="w-full text-left text-sm text-[var(--sr-text-primary,var(--color-text))]">
         <caption className="sr-only">{caption}</caption>
-        <thead className="sticky top-0 bg-[var(--color-surface)] text-[11px] uppercase tracking-[.12em] text-[var(--color-text-muted)]">
+        <thead className="sticky top-0 bg-[var(--sr-surface,#141021)]/95 text-[11px] uppercase tracking-[.12em] text-[var(--sr-text-muted,var(--color-text-muted))]">
           <tr>
             {head.map((h, i) => (
               <th
                 key={h}
                 scope="col"
-                className={`py-2 font-bold ${i ? 'text-right' : ''} ${i === head.length - 1 ? 'pr-6' : 'pr-3'}`}
+                className={`py-2.5 font-bold ${i ? 'text-right' : ''} ${i === head.length - 1 ? 'pr-4' : 'pr-3'}`}
               >
                 {h}
               </th>
@@ -80,13 +85,13 @@ export function DataTable({ caption, head, rows }: { caption: string; head: stri
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={String(r[0])} className="border-t border-[var(--color-border)]">
+            <tr key={String(r[0])} className="border-t border-white/10 transition-colors hover:bg-white/[.04]">
               {r.map((c, i) => i === 0
                 ? <th key={i} scope="row" className="py-2 pr-3 font-semibold">{c}</th>
                 : (
                   <td
                     key={i}
-                    className={`py-2 text-right tabular-nums ${i === r.length - 1 ? 'pr-6' : 'pr-3'}`}
+                    className={`py-2 text-right tabular-nums ${i === r.length - 1 ? 'pr-4' : 'pr-3'}`}
                   >
                     {c}
                   </td>
