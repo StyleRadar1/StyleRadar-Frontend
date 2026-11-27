@@ -129,4 +129,36 @@ describe('ms-tiendas: perfil público y almacén de la Tienda (F-19 · F-22)', (
     renderConSesion('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
     expect(await screen.findByText(/Tu cuenta todavía no tiene un almacén asociado/)).toBeInTheDocument()
   })
+
+  it('STORE-04: Mi tienda pinta categorías reales de la API, «—» si representative es «Usuario #N» o vacío y omite Estadísticas', async () => {
+    porRuta({
+      '/api/v1/users/t-1/store': {
+        ...LUNA,
+        categories: ['FORMAL', 'CASUAL'],
+        representative: 'Usuario #3',
+      },
+    })
+    sesionComo('luna@styleradar.co')
+    renderConSesion('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
+
+    expect(await screen.findByText('FORMAL & CASUAL')).toBeInTheDocument()
+    expect(screen.queryByText('DEPORTIVO & URBANO')).not.toBeInTheDocument()
+    expect(screen.getByText('—')).toBeInTheDocument()
+    expect(screen.queryByText(/Estadísticas/)).not.toBeInTheDocument()
+  })
+
+  it('STORE-04: Mi tienda muestra el nombre real de representative cuando el back lo entrega', async () => {
+    porRuta({
+      '/api/v1/users/t-1/store': {
+        ...LUNA,
+        categories: ['SPORTY'],
+        representative: 'Daniela Luna',
+      },
+    })
+    sesionComo('luna@styleradar.co')
+    renderConSesion('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
+
+    expect(await screen.findByText('DEPORTIVO')).toBeInTheDocument()
+    expect(screen.getByText('Daniela Luna')).toBeInTheDocument()
+  })
 })
