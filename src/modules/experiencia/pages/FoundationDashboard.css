@@ -42,6 +42,13 @@
   transition: background-image 0.5s ease-in-out, background-color 0.3s ease, color 0.3s ease;
 }
 
+.fnd-dashboard::before,
+.fnd-donations::before {
+  background: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* ── Bento interactivo de Fundación ── */
 .fnd-bento-grid {
   display: grid;
@@ -789,9 +796,15 @@ html[data-cvd='on'] .fnd-donations {
 .fnd-card {
   padding: clamp(20px, 2.6vw, 28px);
   border-radius: var(--fnd-radius);
-  background: var(--sr-surface);
-  border: 1px solid var(--sr-border-subtle);
-  box-shadow: var(--sr-shadow);
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--sr-surface) 74%, transparent) 0%,
+    color-mix(in srgb, var(--sr-surface) 54%, transparent) 100%
+  );
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), var(--sr-shadow);
   color: var(--sr-text-primary);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }

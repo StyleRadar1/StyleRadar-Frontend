@@ -289,17 +289,23 @@ export default function FoundationHomePage() {
         <div className="grid gap-6 md:grid-cols-[1.35fr_1fr_1fr]">
           <div className="fnd-card">
             <h2 className="fnd-card__heading">A quién ayudamos</h2>
-            <p className="fnd-card__text">{f.aQuienAyudamos}</p>
+            <p className="fnd-card__text">
+              {f.aQuienAyudamos || 'Comunidad en situación de vulnerabilidad acompañada con entregas de ropa en Bogotá.'}
+            </p>
 
             <p className="fnd-card__eyebrow">Qué hacemos</p>
-            <ul className="fnd-check-list">
-              {(f.queHacemos ?? []).map((q) => (
-                <li key={q}>
-                  <span className="fnd-check-icon" aria-hidden="true">✓</span>
-                  <span>{q}</span>
-                </li>
-              ))}
-            </ul>
+            {(f.queHacemos ?? []).length > 0 ? (
+              <ul className="fnd-check-list">
+                {(f.queHacemos ?? []).map((q) => (
+                  <li key={q}>
+                    <span className="fnd-check-icon" aria-hidden="true">✓</span>
+                    <span>{q}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="fnd-card__text">Recibimos, clasificamos y entregamos prendas en buen estado a quienes más las necesitan.</p>
+            )}
           </div>
 
           <figure className="fnd-figure">
@@ -317,60 +323,73 @@ export default function FoundationHomePage() {
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           <div className="fnd-card">
             <h2 className="fnd-card__heading">Qué recibimos</h2>
-            <ul className="fnd-pill-list" aria-label="Qué recibimos">
-              {(f.queRecibimos ?? []).map((q) => (
-                <li key={q} className="fnd-pill-tag">
-                  {q}
-                </li>
-              ))}
-            </ul>
+            {(f.queRecibimos ?? []).length > 0 ? (
+              <ul className="fnd-pill-list" aria-label="Qué recibimos">
+                {(f.queRecibimos ?? []).map((q) => (
+                  <li key={q} className="fnd-pill-tag">
+                    {q}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="fnd-card__text">Chaquetas, abrigos, suéteres, pantalones, calzado y cobijas en buen estado.</p>
+            )}
           </div>
 
           <div className="fnd-card">
             <h2 className="fnd-card__heading">Lo que más necesitamos</h2>
-            <div>
-              {(f.necesidades ?? []).map((n) => (
-                <div key={n.nombre} className="fnd-progress-item">
-                  <div className="fnd-progress-header">
-                    <span>{n.nombre}</span>
-                    <span className="text-[var(--sr-accent-text)] font-semibold">{n.avance}%</span>
-                  </div>
-                  <div
-                    role="progressbar"
-                    aria-label={n.nombre}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={n.avance}
-                    className="fnd-progress-bar"
-                  >
+            {(f.necesidades ?? []).length > 0 ? (
+              <div>
+                {(f.necesidades ?? []).map((n) => (
+                  <div key={n.nombre} className="fnd-progress-item">
+                    <div className="fnd-progress-header">
+                      <span>{n.nombre}</span>
+                      <span className="text-[var(--sr-accent-text)] font-semibold">{n.avance}%</span>
+                    </div>
                     <div
-                      className="fnd-progress-fill"
-                      style={{ width: `${Math.min(100, Math.max(0, n.avance))}%` }}
-                    />
+                      role="progressbar"
+                      aria-label={n.nombre}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={n.avance}
+                      className="fnd-progress-bar"
+                    >
+                      <div
+                        className="fnd-progress-fill"
+                        style={{ width: `${Math.min(100, Math.max(0, n.avance))}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="fnd-card__text">Priorizamos prendas de abrigo para clima frío, ropa infantil y calzado cerrado.</p>
+            )}
           </div>
 
           <div className="fnd-card">
             <h2 className="fnd-card__heading">Contacto</h2>
-            <dl className="fnd-contact-dl">
-              {([
+            {(() => {
+              const items = ([
                 ['Dirección', f.contacto?.direccion],
                 ['Horario', f.contacto?.horario],
                 ['Teléfono', f.contacto?.telefono],
                 ['Web', f.contacto?.web],
                 ['Correo', f.contacto?.correo],
-              ] as const)
-                .filter(([, v]) => v)
-                .map(([k, v]) => (
-                  <div key={k} className={`fnd-contact-item ${k === 'Correo' ? 'full-width' : ''}`}>
-                    <dt className="fnd-contact-dt">{k}</dt>
-                    <dd className="fnd-contact-dd">{v}</dd>
-                  </div>
-                ))}
-            </dl>
+              ] as const).filter(([, v]) => Boolean(v))
+              return items.length > 0 ? (
+                <dl className="fnd-contact-dl">
+                  {items.map(([k, v]) => (
+                    <div key={k} className={`fnd-contact-item ${k === 'Correo' ? 'full-width' : ''}`}>
+                      <dt className="fnd-contact-dt">{k}</dt>
+                      <dd className="fnd-contact-dd">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p className="fnd-card__text">Coordina entregas y recogidas directamente desde el módulo de donaciones o mensajes.</p>
+              )
+            })()}
           </div>
         </div>
       </div>
