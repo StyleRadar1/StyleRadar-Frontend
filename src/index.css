@@ -458,11 +458,61 @@ html[data-tema="oscuro"] body::after {
 
 html[data-theme="light"] body::before,
 html[data-theme="claro"] body::before,
-html[data-tema="claro"] body::before,
+html[data-tema="claro"] body::before {
+  top: -12vh;
+  left: 8vw;
+  width: 52vw;
+  height: 52vw;
+  max-width: 720px;
+  max-height: 720px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.14) 0%, rgba(167, 139, 250, 0.08) 45%, transparent 72%);
+}
+
 html[data-theme="light"] body::after,
 html[data-theme="claro"] body::after,
 html[data-tema="claro"] body::after {
-  display: none;
+  bottom: 0vh;
+  right: 4vw;
+  width: 48vw;
+  height: 48vw;
+  max-width: 680px;
+  max-height: 680px;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.13) 0%, rgba(124, 58, 237, 0.06) 45%, transparent 70%);
+}
+
+/* =====================================================================
+   Superficies Glassmorphism globales (modo oscuro y claro)
+   ===================================================================== */
+.sr-glass-card {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.085) 0%,
+    rgba(255, 255, 255, 0.025) 60%,
+    rgba(139, 92, 246, 0.10) 100%
+  );
+  backdrop-filter: blur(20px) saturate(1.45);
+  -webkit-backdrop-filter: blur(20px) saturate(1.45);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 18px 44px -14px rgba(0, 0, 0, 0.62),
+    0 0 32px -12px rgba(139, 92, 246, 0.22);
+}
+
+html[data-theme="light"] .sr-glass-card,
+html[data-theme="claro"] .sr-glass-card,
+html[data-tema="claro"] .sr-glass-card {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.80) 0%,
+    rgba(237, 233, 254, 0.62) 100%
+  );
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  border-color: rgba(76, 29, 149, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 16px 36px rgba(15, 23, 42, 0.08);
 }
 
 #root {

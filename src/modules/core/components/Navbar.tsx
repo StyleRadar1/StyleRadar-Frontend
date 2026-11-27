@@ -23,14 +23,14 @@ export function Navbar() {
   const esAdmin = user?.role === 'STYLERADAR_ADMIN'
   const homePath = user ? ROLE_HOME[user.role] : '/'
   const linkCls = ({ isActive }: { isActive: boolean }) =>
-    `whitespace-nowrap px-3.5 py-1.5 text-sm font-medium transition ${
+    `whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium backdrop-blur-md transition-all duration-200 ${
       isActive
-        ? 'rounded-full bg-violeta text-white shadow-sm'
-        : 'rounded-lg text-[var(--sr-hero-text-muted)] hover:text-[var(--sr-hero-text)] hover:bg-[var(--sr-surface)]/50'
+        ? 'border-white/25 bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] text-white shadow-[0_6px_20px_-4px_rgba(139,92,246,0.55),inset_0_1px_0_rgba(255,255,255,0.28)]'
+        : 'border-transparent text-[var(--sr-hero-text-muted)] hover:border-white/18 hover:bg-white/[0.09] hover:text-[var(--sr-hero-text)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]'
     }`
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/85 backdrop-blur-xl transition-colors duration-300">
+    <header className="sticky top-0 z-50 border-b border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/72 backdrop-blur-xl shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)] transition-colors duration-300">
       {esAdmin && (
         <p className="bg-arena px-4 py-1.5 text-center text-xs font-semibold tracking-wide text-grafito">
           <span aria-hidden="true">● </span><b className="uppercase tracking-[.12em]">Modo administrador</b>

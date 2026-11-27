@@ -15,7 +15,7 @@ export function LegalFooter() {
 
   return (
     <footer
-      className="relative z-10 border-t border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition-colors"
+      className="relative z-10 border-t border-[var(--color-border)] bg-[var(--color-surface)]/75 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-[var(--color-text)] transition-colors"
       aria-labelledby="sr-legal-footer-heading"
     >
       <h2 id="sr-legal-footer-heading" className="sr-only">
