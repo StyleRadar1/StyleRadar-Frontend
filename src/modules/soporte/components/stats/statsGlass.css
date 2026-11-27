@@ -1,4 +1,5 @@
 /* Estilos Glassmorphism centralizados para Estadísticas (Admin y Fundación) */
+@import '../../../../styles/admin-glass.css';
 
 .stats-glass-backdrop {
   position: relative;
@@ -48,72 +49,6 @@
   filter: blur(92px);
 }
 
-.glass-card {
-  position: relative;
-  border-radius: 18px;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03));
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 44px -14px rgba(0, 0, 0, 0.62),
-    0 0 32px -12px rgba(157, 92, 255, 0.2);
-  transition:
-    transform 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.glass-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(192, 132, 252, 0.34);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 22px 50px -14px rgba(0, 0, 0, 0.7),
-    0 0 38px -10px rgba(157, 92, 255, 0.28);
-}
-
-.glass-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  color: var(--sr-text-secondary, #b8b3ce);
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.glass-pill:hover {
-  background: rgba(255, 255, 255, 0.11);
-  border-color: rgba(255, 255, 255, 0.24);
-  color: var(--sr-text-primary, #f8fafc);
-}
-
-.glass-pill.is-active {
-  background: rgba(157, 92, 255, 0.22);
-  border-color: rgba(192, 132, 252, 0.62);
-  color: var(--sr-text-primary, #f8fafc);
-  box-shadow: 0 0 16px -4px rgba(157, 92, 255, 0.48);
-}
-
-.glass-tooltip {
-  background: rgba(20, 16, 33, 0.88);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 12px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 14px 32px -8px rgba(0, 0, 0, 0.72);
-  color: var(--sr-text-primary, #f8fafc);
-}
-
 .glass-subpanel {
   border-radius: 16px;
   background: linear-gradient(155deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.025));
@@ -158,51 +93,6 @@ html[data-theme="light"] .stats-glass-backdrop::after,
 html[data-theme="claro"] .stats-glass-backdrop::after,
 html[data-tema="claro"] .stats-glass-backdrop::after {
   background: radial-gradient(circle, rgba(232, 220, 203, 0.35), transparent 70%);
-}
-
-html[data-theme="light"] .glass-card,
-html[data-theme="claro"] .glass-card,
-html[data-tema="claro"] .glass-card {
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.54));
-  border-color: rgba(255, 255, 255, 0.68);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 14px 36px -12px rgba(72, 17, 154, 0.14);
-}
-
-html[data-theme="light"] .glass-card:hover,
-html[data-theme="claro"] .glass-card:hover,
-html[data-tema="claro"] .glass-card:hover {
-  border-color: rgba(123, 77, 216, 0.42);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 18px 42px -12px rgba(72, 17, 154, 0.2);
-}
-
-html[data-theme="light"] .glass-pill,
-html[data-theme="claro"] .glass-pill,
-html[data-tema="claro"] .glass-pill {
-  background: rgba(255, 255, 255, 0.58);
-  border-color: rgba(72, 17, 154, 0.16);
-  color: var(--sr-text-secondary, #4b475d);
-}
-
-html[data-theme="light"] .glass-pill.is-active,
-html[data-theme="claro"] .glass-pill.is-active,
-html[data-tema="claro"] .glass-pill.is-active {
-  background: rgba(123, 77, 216, 0.14);
-  border-color: rgba(72, 17, 154, 0.55);
-  color: var(--sr-text-primary, #1f1b2e);
-  box-shadow: 0 0 14px -4px rgba(123, 77, 216, 0.28);
-}
-
-html[data-theme="light"] .glass-tooltip,
-html[data-theme="claro"] .glass-tooltip,
-html[data-tema="claro"] .glass-tooltip {
-  background: rgba(255, 255, 255, 0.94);
-  border-color: rgba(72, 17, 154, 0.2);
-  color: var(--sr-text-primary, #1f1b2e);
-  box-shadow: 0 12px 28px -8px rgba(38, 38, 38, 0.2);
 }
 
 html[data-theme="light"] .glass-subpanel,

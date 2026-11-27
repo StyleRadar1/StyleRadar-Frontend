@@ -3,12 +3,12 @@
  * Nunca usa `new Date("YYYY-MM-DD")` ni `toLocaleDateString` para evitar desfases de zona horaria.
  */
 
-const MESES_CORTO = [
+export const MESES_CORTO = [
   'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
 ] as const
 
-const MESES_LARGO = [
+export const MESES_LARGO = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ] as const
@@ -55,6 +55,13 @@ export function formatDayShort(raw?: string | null): string {
   if (!date) return raw ?? ''
   const day = String(date.getDate()).padStart(2, '0')
   return `${day} ${MESES_CORTO[date.getMonth()]}`
+}
+
+/** Formatea YYYY-MM-DD como "26 de Noviembre de 2026" (mes completo capitalizado). */
+export function formatDateLongSpanish(raw?: string | null): string {
+  const date = parseIsoDateLocal(raw)
+  if (!date) return raw?.trim() || '—'
+  return `${date.getDate()} de ${MESES_LARGO[date.getMonth()]} de ${date.getFullYear()}`
 }
 
 /** Formatea YYYY-MM-DD como "Martes 25 de Noviembre de 2026" (día y mes capitalizados). */
