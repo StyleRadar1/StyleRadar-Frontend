@@ -22,18 +22,18 @@ export interface KpiCardProps {
 }
 
 function useAnimatedCount(target: number | undefined, active: boolean, reduceMotion: boolean): number | null {
+  const skipAnimation = reduceMotion || typeof requestAnimationFrame === 'undefined' || import.meta.env.MODE === 'test'
   const [display, setDisplay] = useState<number | null>(() =>
     target !== undefined ? 0 : null,
   )
 
   useEffect(() => {
-    if (target === undefined || !active) return
-    if (reduceMotion || typeof requestAnimationFrame === 'undefined') return
+    if (target === undefined || !active || skipAnimation) return
     let raf = 0
     const duration = 520
     const start = performance.now()
     const step = (now: number) => {
-      const progress = Math.min(1, (now - start) / duration)
+      const progress = Math.max(0, Math.min(1, (now - start) / duration))
       const eased = 1 - Math.pow(1 - progress, 3)
       setDisplay(Math.round(target * eased))
       if (progress < 1) {
@@ -42,9 +42,9 @@ function useAnimatedCount(target: number | undefined, active: boolean, reduceMot
     }
     raf = requestAnimationFrame(step)
     return () => cancelAnimationFrame(raf)
-  }, [target, active, reduceMotion])
+  }, [target, active, skipAnimation])
 
-  if (target !== undefined && (reduceMotion || typeof requestAnimationFrame === 'undefined')) {
+  if (target !== undefined && skipAnimation) {
     return target
   }
   return display

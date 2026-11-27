@@ -65,41 +65,120 @@ export function TableToggle({ on, onChange }: { on: boolean; onChange: (v: boole
   )
 }
 
-export function DataTable({ caption, head, rows }: { caption: string; head: string[]; rows: (string | number)[][] }) {
+export interface DataTableEntry {
+  key?: string
+  cells: (string | number)[]
+  rowAriaLabel?: string
+  tone?: 'default' | 'active' | 'muted'
+}
+
+function renderMiniTable(
+  caption: string,
+  head: string[],
+  entries: DataTableEntry[],
+) {
   return (
-    <div className="max-h-80 w-full overflow-y-auto overflow-x-auto rounded-2xl border border-white/15 bg-white/[.02] [scrollbar-gutter:stable]">
-      <table className="w-full border-collapse text-left text-sm text-[var(--sr-text-primary,var(--color-text))]">
+    <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/[.02]">
+      <table className="w-full border-collapse text-center text-[13px] text-[var(--sr-text-primary,var(--color-text))]">
         <caption className="sr-only">{caption}</caption>
-        <thead className="glass-table-head sticky top-0 z-10 text-[11px] uppercase tracking-[.12em] text-[var(--sr-text-primary,#f8fafc)]">
+        <thead className="glass-table-head text-[11px] uppercase tracking-[.12em] text-[var(--sr-text-primary,#f8fafc)]">
           <tr>
-            {head.map((h, i) => (
-              <th
-                key={h}
-                scope="col"
-                className={`px-4 py-3 font-bold sm:px-5 ${i ? 'text-right' : 'text-left'}`}
-              >
+            {head.map((h) => (
+              <th key={h} scope="col" className="px-3 py-2.5 text-center font-bold">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={String(r[0])} className="border-t border-white/10 transition-colors hover:bg-white/[.04]">
-              {r.map((c, i) => i === 0
-                ? <th key={i} scope="row" className="px-4 py-2.5 text-left font-semibold sm:px-5">{c}</th>
-                : (
-                  <td
-                    key={i}
-                    className="px-4 py-2.5 text-right tabular-nums sm:px-5"
-                  >
-                    {c}
-                  </td>
-                ))}
-            </tr>
-          ))}
+          {entries.map((entry, rowIdx) => {
+            const toneClass =
+              entry.tone === 'active'
+                ? 'bg-[rgba(157,92,255,0.09)] text-[var(--sr-text-primary,#f8fafc)]'
+                : entry.tone === 'muted'
+                  ? 'text-[var(--sr-text-muted,#8b86a4)] opacity-70'
+                  : 'text-[var(--sr-text-primary,var(--color-text))]'
+            return (
+              <tr
+                key={entry.key ?? `${String(entry.cells[0])}-${rowIdx}`}
+                aria-label={entry.rowAriaLabel}
+                className={`h-8 border-t border-white/10 transition-colors hover:bg-white/[.05] ${toneClass}`}
+              >
+                {entry.cells.map((c, i) =>
+                  i === 0 ? (
+                    <th
+                      key={i}
+                      scope="row"
+                      aria-label={entry.rowAriaLabel}
+                      className="px-3 py-1.5 text-center font-medium"
+                    >
+                      {c}
+                    </th>
+                  ) : (
+                    <td
+                      key={i}
+                      className="px-3 py-1.5 text-center font-semibold tabular-nums"
+                    >
+                      {c}
+                    </td>
+                  ),
+                )}
+              </tr>
+            )
+          })}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+export function DataTable({
+  caption,
+  head,
+  rows,
+  split = false,
+  note,
+  maxWidthClass,
+}: {
+  caption: string
+  head: string[]
+  rows: ((string | number)[] | DataTableEntry)[]
+  split?: boolean
+  note?: string
+  maxWidthClass?: string
+}) {
+  const entries: DataTableEntry[] = rows.map((r) =>
+    Array.isArray(r) ? { cells: r } : r,
+  )
+  const containerWidth = maxWidthClass ?? (split ? 'max-w-[700px]' : 'max-w-[600px]')
+
+  if (split && entries.length > 1) {
+    const mid = Math.ceil(entries.length / 2)
+    const left = entries.slice(0, mid)
+    const right = entries.slice(mid)
+    return (
+      <div className={`mx-auto w-full ${containerWidth} space-y-2.5`}>
+        {note && (
+          <p className="text-center text-xs font-medium text-[var(--sr-text-muted,#8b86a4)]">
+            {note}
+          </p>
+        )}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {renderMiniTable(`${caption} (primera mitad)`, head, left)}
+          {renderMiniTable(`${caption} (segunda mitad)`, head, right)}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`mx-auto w-full ${containerWidth} space-y-2.5`}>
+      {note && (
+        <p className="text-center text-xs font-medium text-[var(--sr-text-muted,#8b86a4)]">
+          {note}
+        </p>
+      )}
+      {renderMiniTable(caption, head, entries)}
     </div>
   )
 }

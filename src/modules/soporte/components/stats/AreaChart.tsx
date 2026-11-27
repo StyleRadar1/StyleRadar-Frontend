@@ -6,6 +6,8 @@ export interface SeriesPoint {
   key: string
   axisLabel: string
   fullLabel: string
+  tableLabel?: string
+  tableAriaLabel?: string
   value: number
 }
 
