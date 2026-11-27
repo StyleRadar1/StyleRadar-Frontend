@@ -365,12 +365,11 @@ html[data-cvd='on'] .fnd-donations {
 
 /* ── Hero / Banner superior estilo editorial ── */
 .fnd-hero {
+  --fnd-hero-fade: linear-gradient(to bottom, #000 calc(100% - 160px), transparent);
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: var(--fnd-hero-bg);
   color: var(--fnd-hero-text);
-  border-bottom: 1px solid var(--sr-border-subtle);
   min-height: clamp(520px, 66vh, 680px);
   display: flex;
   flex-direction: column;
@@ -390,11 +389,24 @@ html[data-cvd='on'] .fnd-donations {
   }
 }
 
+/* Fondo del encabezado: se desvanece abajo para no cortarse en línea recta con el fondo de la página */
+.fnd-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background: var(--fnd-hero-bg);
+  -webkit-mask-image: var(--fnd-hero-fade);
+  mask-image: var(--fnd-hero-fade);
+}
+
 .fnd-hero__media {
   position: absolute;
   inset: 0 0 0 auto;
   z-index: -2;
   width: min(68%, 1000px);
+  -webkit-mask-image: var(--fnd-hero-fade);
+  mask-image: var(--fnd-hero-fade);
 }
 
 .fnd-hero__media img {
@@ -409,6 +421,8 @@ html[data-cvd='on'] .fnd-donations {
   inset: 0;
   z-index: -1;
   background: var(--fnd-hero-shade);
+  -webkit-mask-image: var(--fnd-hero-fade);
+  mask-image: var(--fnd-hero-fade);
 }
 
 .fnd-hero__inner {
@@ -590,20 +604,6 @@ html[data-cvd='on'] .fnd-donations {
 
 .fnd-hero-card:hover .fnd-hero-card__media img {
   transform: scale(1.05);
-}
-
-/* Detalle de marca: Cuadrado de acento violeta decorativo detrás de la tarjeta */
-.fnd-hero-card__accent-box {
-  position: absolute;
-  right: -16px;
-  bottom: -16px;
-  width: 100px;
-  height: 100px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, var(--fnd-btn-primary-bg) 0%, var(--fnd-btn-primary-hover) 100%);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--fnd-btn-primary-bg) 42%, transparent);
-  z-index: -1;
-  pointer-events: none;
 }
 
 /* Responsive */

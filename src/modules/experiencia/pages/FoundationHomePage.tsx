@@ -267,9 +267,8 @@ export default function FoundationHomePage() {
             </div>
           </div>
 
-          {/* Tarjeta 2: Donaciones recibidas e impacto con cuadrado de acento decorativo detrás */}
+          {/* Tarjeta 2: Donaciones recibidas e impacto */}
           <div className="fnd-hero-card-wrap">
-            <div className="fnd-hero-card__accent-box" aria-hidden="true" />
             <div className="fnd-hero-card">
               <div className="fnd-hero-card__body">
                 <h2 className="fnd-hero-card__title">Impacto y donaciones</h2>
