@@ -311,6 +311,29 @@ export const itemService = {
     return apiClient.get<Record<string, unknown>>(`/api/v1/garments/${encodeURIComponent(id)}`).then((r) => normalizeBackendItem(r.data))
   },
 
+  /** Consulta las tallas reales registradas en inventario (ms-inventario) o detalle de la prenda. */
+  async getAvailableSizes(prendaId: string): Promise<string[]> {
+    if (env.useMocks) {
+      const it = ITEMS.find((x) => x.id === prendaId) ?? getInventoryItemByIdSync(prendaId)
+      return it?.tallas ?? []
+    }
+    try {
+      const { data } = await apiClient.get<unknown>(`/api/v1/inventory/garments/${encodeURIComponent(prendaId)}`)
+      const fromInv = extractAvailableTallasFromInventory(data)
+      if (fromInv.length > 0) return fromInv
+      const allKeys = Object.keys(extractStockMapFromInventory(data))
+      if (allKeys.length > 0) return allKeys
+    } catch {
+      // Si falla inventario, intenta con el detalle de la prenda
+    }
+    try {
+      const detail = await this.getById(prendaId)
+      return detail.tallas ?? []
+    } catch {
+      return []
+    }
+  },
+
   /** SR-RF-16: Prendas similares (hasta 10 por mismo tipo o estilo). */
   async getSimilar(id: string): Promise<ItemResponseDto[]> {
     if (env.useMocks) {

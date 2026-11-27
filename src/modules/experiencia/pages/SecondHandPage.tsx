@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 import { env } from '@/configs/env'
 import { mockSessionUser } from '@/modules/core/api/mock'
@@ -516,12 +517,12 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
       </div>
 
       {/* Modal de detalle de prenda */}
-      {detailItem && (
+      {detailItem && createPortal(
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="detail-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
           onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null) }}
         >
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl">
@@ -599,16 +600,17 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Modal para confirmar reclamación de donación */}
-      {claimingItem && (
+      {claimingItem && createPortal(
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="claim-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
         >
           <div className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl">
             <h3 id="claim-title" className="text-xl font-bold text-[var(--color-text)]">
@@ -650,7 +652,8 @@ function Explore({ esDonacionTab }: { esDonacionTab: boolean }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

@@ -64,6 +64,15 @@ const LAYER_PATHS: Record<string, string> = {
   guantes: '/prototipo/assets/img/probador-capas/guantes.png',
 }
 
+function getAvailableSizesForItem(item: ItemResponseDto): string[] {
+  if (item.tallas && item.tallas.length > 0) return item.tallas
+  const slot = getSlotForGarment(item)
+  if (slot === 'calzado') return ['36', '37', '38', '39', '40', '41', '42']
+  if (slot === 'inferior') return ['26', '28', '30', '32', '34', '36']
+  if (slot === 'accesorios') return ['Única']
+  return ['XS', 'S', 'M', 'L', 'XL']
+}
+
 /* Orden de renderizado Z (de atrás hacia adelante: capa interior a capa exterior) */
 const LAYER_ORDER = [
   'zapatos',
@@ -171,6 +180,19 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
 
   /* Medidas del usuario */
   const userMeasurements = useMemo<UserMeasurements>(() => getUserMeasurements(), [])
+
+  useEffect(() => {
+    if (!garmentPickerItem || garmentPickerItem.tallas.length > 0 || env.useMocks) return
+    let active = true
+    itemService.getAvailableSizes(garmentPickerItem.id).then((sizes) => {
+      if (!active || sizes.length === 0) return
+      const updated = { ...garmentPickerItem, tallas: sizes }
+      setGarmentPickerItem(updated)
+      setCatalogItems((prev) => prev.map((it) => (it.id === updated.id ? { ...it, tallas: sizes } : it)))
+      setPickerSelectedSize((curr) => (sizes.includes(curr) ? curr : getRecommendedSize(updated, userMeasurements) || sizes[0]))
+    }).catch(() => {})
+    return () => { active = false }
+  }, [garmentPickerItem, userMeasurements])
 
   /* Guarda el look en storage cada vez que cambia */
   useEffect(() => {
@@ -772,7 +794,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                         </div>
 
                         <div className="cz-worn-item-actions">
-                          {worn.item.tallas && worn.item.tallas.length > 1 && (
+                          {getAvailableSizesForItem(worn.item).length > 1 && (
                             <button
                               className="cz-action-link"
                               onClick={() => {
@@ -1309,7 +1331,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             <div className="cz-submodal-section">
               <label className="cz-submodal-label">Selecciona tu talla:</label>
               <div className="cz-sizes-picker-grid">
-                {garmentPickerItem.tallas.map((t) => {
+                {getAvailableSizesForItem(garmentPickerItem).map((t) => {
                   const rec = getRecommendedSize(garmentPickerItem, userMeasurements)
                   const isRec = t === rec
                   return (
