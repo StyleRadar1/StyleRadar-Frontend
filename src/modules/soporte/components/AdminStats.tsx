@@ -29,7 +29,6 @@ import {
   formatDayShort,
   formatFullDateSpanish,
   formatMonthAbbr,
-  formatMonthLong,
   formatMonthOnly,
   formatMonthShort,
   formatWeekdayDay,
@@ -107,18 +106,11 @@ export function AdminStatsView() {
 
   const regPoints = registrations.data?.points ?? []
   const registeredTotal = regPoints.reduce((sum, point) => sum + point.value, 0)
-  const regPeriodLabel =
-    formatMonthShort(registrations.data?.period?.startDate ?? `${selectedMonth}-01`) || selectedMonth
-  const regPeriodLong =
-    formatMonthLong(registrations.data?.period?.startDate ?? `${selectedMonth}-01`) || regPeriodLabel
 
   const buyersTotal = sumEntries(buyers.data)
   const storesTotal = sumEntries(stores.data)
   const buyersRows = toDistributionRows(buyers.data)
   const storesRows = toDistributionRows(stores.data)
-
-  const donationsPeriodLabel =
-    formatMonthShort(donations.data?.period?.startDate) || 'Mes en curso'
 
   const revenueRawPoints = revenue.data?.points ?? []
   const revenueYears = Array.from(
@@ -202,7 +194,7 @@ export function AdminStatsView() {
           </p>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl">Estadísticas</h1>
           <p className="text-sm text-[var(--sr-text-muted,var(--color-text-muted))]">
-            Indicadores reales de StyleRadar · registros de {regPeriodLong}
+            Indicadores reales de StyleRadar
           </p>
         </div>
         {monthSelect}
@@ -217,11 +209,11 @@ export function AdminStatsView() {
           label="Usuarios registrados"
           value={num(registeredTotal)}
           numericValue={registeredTotal}
-          subtitle={regPeriodLabel}
+          subtitle="Nuevas cuentas del mes"
           icon={<Users className="h-4 w-4" />}
           loading={registrations.loading}
           empty={registrations.empty}
-          emptyText={`Sin registros en ${regPeriodLabel}`}
+          emptyText="Sin registros en este mes"
           error={registrations.error}
           status={registrations.status}
           onRetry={registrations.retry}
@@ -282,7 +274,7 @@ export function AdminStatsView() {
           label="Donaciones del mes"
           value={num(donations.data?.total ?? 0)}
           numericValue={donations.data?.total ?? 0}
-          subtitle={donationsPeriodLabel}
+          subtitle="Registradas en el mes"
           icon={<HeartHandshake className="h-4 w-4" />}
           loading={donations.loading}
           empty={donations.empty}
@@ -325,7 +317,7 @@ export function AdminStatsView() {
       {/* Gráfica de tendencia 2: Registros de usuarios por día (un mes calendario) */}
       <TrendChart
         title="Registros de usuarios por día"
-        subtitle={`Nuevas cuentas registradas durante ${regPeriodLong}`}
+        subtitle="Nuevas cuentas registradas por día"
         seriesLabel="Registros"
         tableColumnLabel="Registros"
         tableDateHeader="Día"
@@ -338,7 +330,7 @@ export function AdminStatsView() {
         headerControls={monthSelect}
         note="Serie diaria de nuevos registros del mes calendario seleccionado."
         loading={registrations.loading}
-        emptyText={`Sin registros durante ${regPeriodLong}`}
+        emptyText="Sin registros en este mes"
         error={registrations.error}
         status={registrations.status}
         onRetry={registrations.retry}
