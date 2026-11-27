@@ -71,7 +71,7 @@ describe('suscripción de la tienda (RF-67, RF-68)', () => {
     expect(dialogo).toHaveTextContent('No hay devolución por el tiempo restante')
     await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancelar suscripción' })).not.toBeInTheDocument(), slow)
-    expect(screen.getByText('Activa')).toBeInTheDocument()
+    expect(screen.getAllByText('Activa sin renovación').length).toBeGreaterThanOrEqual(1)
   })
 
   it('"Conservar suscripción" cierra el diálogo sin cambiar nada', async () => {
