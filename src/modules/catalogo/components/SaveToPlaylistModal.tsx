@@ -88,7 +88,8 @@ export function SaveToPlaylistModal({ isOpen, item, onClose, onSaved }: SaveToPl
       setPlaylists((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
       onSaved?.(updated)
     } catch (err) {
-      setError(errorDeAgregar(err, item.nombre).texto)
+      const yaEstaba = pl.prendas.some((p) => p.id === item.id)
+      setError(errorDeAgregar(err, yaEstaba).texto)
     } finally {
       setSavingId(null)
     }
