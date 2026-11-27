@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StoreSubscriptionPage from '../pages/StoreSubscriptionPage'
-import { resetMockStoreSubscription, storeSubscriptionService } from '../services/storeSubscriptionService'
+import { resetMockStoreSubscription, setMockStoreSubscriptionStatus, storeSubscriptionService } from '../services/storeSubscriptionService'
 
 beforeEach(() => {
   vi.restoreAllMocks()
@@ -42,6 +42,22 @@ describe('suscripción de la tienda (RF-67, RF-68)', () => {
     expect(await screen.findByText('Pago simulado (modo demostración)', undefined, slow)).toBeInTheDocument()
     expect(iniciar).toHaveBeenCalledWith({ payerEmail: 'tienda@correo.co', taxId: '900555777' })
     expect(screen.queryByText('Activa')).not.toBeInTheDocument()
+  })
+
+  it('muestra una sola acción de reintento cuando hay pago rechazado y la suscripción está suspendida', async () => {
+    const user = userEvent.setup()
+    await storeSubscriptionService.pay('MOCK_STORE_FAIL')
+    setMockStoreSubscriptionStatus('SUSPENDIDA')
+    render(<StoreSubscriptionPage />)
+
+    expect(await screen.findByText(/El pago no fue aprobado/, undefined, slow)).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Reintentar pago' })).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Volver a pagar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Pagar y reactivar' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Reintentar pago' }))
+    expect(await screen.findByRole('button', { name: 'Pagar con Mercado Pago' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reintentar pago' })).not.toBeInTheDocument()
   })
 
   it('un NIT que no tiene 9 dígitos no se envía', async () => {
