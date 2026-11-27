@@ -34,7 +34,8 @@ const PAYMENT_DATE_FMT = new Intl.DateTimeFormat('es-CO', {
 function formatPaymentDate(raw?: string | null): string {
   if (!raw) return '—'
   const d = new Date(raw)
-  return Number.isNaN(d.getTime()) ? raw : PAYMENT_DATE_FMT.format(d)
+  if (Number.isNaN(d.getTime())) return raw
+  return PAYMENT_DATE_FMT.format(d).replace(/([a-záéíóúñ]+)/i, (m) => `${m[0].toUpperCase()}${m.slice(1)}`)
 }
 
 interface RadarCardItem {

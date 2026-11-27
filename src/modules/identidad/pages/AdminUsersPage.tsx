@@ -11,7 +11,7 @@ import { inputCls } from '../utils/campo'
 import { useAdminUsers } from '../hooks/useAdminUsers'
 import { useCambioEstado } from '../hooks/useCambioEstado'
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_LABEL, ADMIN_Q_MAX, type AccountStatus } from '../types/usuario.dto'
-import { isSameAccount, mesAnio } from '../utils/formato'
+import { isSameAccount, mesAnioCapitalizado } from '../utils/formato'
 
 type FiltroEstado = AccountStatus | 'TODOS'
 type FiltroRol = Role | 'TODOS'
@@ -126,7 +126,7 @@ export default function AdminUsersPage() {
                       <td data-label="Rol" className={tdCls}>{u.roles[0] ? ROLE_LABEL[u.roles[0]] : '—'}</td>
                       <td data-label="Estado" className={tdCls}><EstadoCuentaPill estado={u.accountStatus} /></td>
                       <td data-label="Barrio" className={tdCls}>{u.neighborhood || '—'}</td>
-                      <td data-label="Miembro desde" className={tdCls}>{mesAnio(u.registeredAt)}</td>
+                      <td data-label="Miembro desde" className={tdCls}>{mesAnioCapitalizado(u.registeredAt)}</td>
                       <td className="px-4 py-3 text-right max-md:block max-md:px-0 max-md:pb-0 max-md:pt-3">
                         {esPropia ? (
                           <span
