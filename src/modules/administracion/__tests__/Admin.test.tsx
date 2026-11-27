@@ -2,13 +2,15 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { usuarioService } from '@/modules/identidad/services/usuarioService'
 import AdminFoundationDetailPage from '../pages/AdminFoundationDetailPage'
 import AdminFoundationsPage from '../pages/AdminFoundationsPage'
 import AdminPlaylistsPage from '../pages/AdminPlaylistsPage'
 import AdminStoreDetailPage from '../pages/AdminStoreDetailPage'
 import AdminStoresPage from '../pages/AdminStoresPage'
-import { resetAdminMock } from '../services/adminService'
+import { adminPlaylistService, resetAdminMock } from '../services/adminService'
+import { clearPlaylistCreatorCache } from '../utils/playlistCreators'
 import { erroresFundacion } from '../utils/validation'
 
 const renderAt = (path: string, routes: [string, ReactNode][]) => render(
@@ -16,7 +18,8 @@ const renderAt = (path: string, routes: [string, ReactNode][]) => render(
 )
 const T = { timeout: 3000 }
 
-beforeEach(() => { resetAdminMock(); sessionStorage.clear(); localStorage.setItem('sr_user', JSON.stringify({ id: 'a-1', name: 'Mariana Bernal', role: 'STYLERADAR_ADMIN' })) })
+beforeEach(() => { clearPlaylistCreatorCache(); resetAdminMock(); sessionStorage.clear(); localStorage.setItem('sr_user', JSON.stringify({ id: 'a-1', name: 'Mariana Bernal', role: 'STYLERADAR_ADMIN' })) })
+afterEach(() => { vi.restoreAllMocks() })
 
 describe('Admin › Tiendas', () => {
   it('lista las tiendas, busca, filtra por verificación y ordena', async () => {
@@ -197,5 +200,44 @@ describe('Admin › Playlists destacadas', () => {
 
     await user.click(screen.getAllByRole('button', { name: 'Quitar de destacadas: Oficina con Estilo' })[0])
     expect(await screen.findByText(/2 de 3 en uso/)).toBeInTheDocument()
+  })
+
+  it('resuelve ids numéricos de creador con listAdmin, getAdmin y respaldo Usuario #<id>', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(adminPlaylistService, 'list').mockResolvedValue([
+      { id: '1', nombre: 'Mix Urbano', creador: '20', meGusta: 10, guardados: 2, prendas: 5, destacada: false },
+      { id: '2', nombre: 'Básicos', creador: '15', meGusta: 8, guardados: 1, prendas: 4, destacada: false },
+      { id: '3', nombre: 'Sin Dueño', creador: '99', meGusta: 5, guardados: 0, prendas: 3, destacada: false },
+    ])
+    const listSpy = vi.spyOn(usuarioService, 'listAdmin').mockResolvedValue({
+      content: [
+        { id: '20', name: 'Zara Pérez', email: 'zara@correo.co', roles: ['BUYER'], accountStatus: 'ACTIVE', registeredAt: '' },
+      ],
+      page: 0, size: 100, totalElements: 1, totalPages: 1, first: true, last: true,
+    })
+    const getSpy = vi.spyOn(usuarioService, 'getAdmin').mockImplementation(async (id) => {
+      if (id === '15') return { id: '15', name: 'Ana Gómez', email: 'ana@correo.co', roles: ['BUYER'], accountStatus: 'ACTIVE', registeredAt: '' }
+      throw new Error('Not found')
+    })
+
+    renderAt('/admin/playlists', [['/admin/playlists', <AdminPlaylistsPage key="p" />]])
+    const tabla = await screen.findByRole('table', {}, T)
+
+    expect(await within(tabla).findByText('Zara Pérez', {}, T)).toBeInTheDocument()
+    expect(within(tabla).getByText('zara@correo.co')).toBeInTheDocument()
+    expect(within(tabla).getByText('Ana Gómez')).toBeInTheDocument()
+    expect(within(tabla).getByText('ana@correo.co')).toBeInTheDocument()
+    const fallback = within(tabla).getByText('Usuario #99')
+    expect(fallback).toHaveAttribute('title', 'No se pudo cargar el nombre')
+    expect(listSpy).toHaveBeenCalledTimes(1)
+    expect(getSpy).toHaveBeenCalledTimes(2)
+
+    await user.click(within(tabla).getByRole('button', { name: /Creada por/i }))
+    expect(within(tabla).getAllByRole('row')[1]).toHaveTextContent('Ana Gómez')
+
+    const search = screen.getByPlaceholderText('Buscar playlist o creador')
+    await user.type(search, 'zara@correo.co')
+    expect(within(tabla).getAllByRole('row')).toHaveLength(2)
+    expect(within(tabla).getByText('Mix Urbano')).toBeInTheDocument()
   })
 })
