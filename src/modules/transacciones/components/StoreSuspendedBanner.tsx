@@ -14,12 +14,14 @@ interface StoreSuspendedBannerProps {
   status?: StoreSubscriptionStatus
   /** Acción opcional al pulsar "Pagar y reactivar" cuando ya se está en /tienda/suscripcion. */
   onPayClick?: () => void
+  /** La página puede ocultar la acción si ya muestra otro CTA de reintento. */
+  showAction?: boolean
 }
 
 /**
  * RF-99: Banner fijo en la parte superior de las pantallas de la tienda cuando la suscripción está SUSPENDIDA.
  */
-export function StoreSuspendedBanner({ status: propStatus, onPayClick }: StoreSuspendedBannerProps) {
+export function StoreSuspendedBanner({ status: propStatus, onPayClick, showAction = true }: StoreSuspendedBannerProps) {
   const auth = useContext(AuthContext)
   const user = auth?.user ?? null
   const [subStatus, setSubStatus] = useState<StoreSubscriptionStatus>(
@@ -63,9 +65,11 @@ export function StoreSuspendedBanner({ status: propStatus, onPayClick }: StoreSu
           <Badge tone="arena">SUSPENDIDA</Badge>
           <p className="text-sm font-semibold">{STORE_CATALOG_SUSPENDED_MSG}</p>
         </div>
-        <Button type="button" variant="primario" onClick={handleAction}>
-          Pagar y reactivar
-        </Button>
+        {showAction && (
+          <Button type="button" variant="primario" onClick={handleAction}>
+            Pagar y reactivar
+          </Button>
+        )}
       </div>
     </div>
   )
