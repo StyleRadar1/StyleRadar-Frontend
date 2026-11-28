@@ -14,6 +14,9 @@ export interface WornFitInput {
   color?: string
   veredicto: string
   motivo?: string
+  /** Identificador de la prenda, para llevarla a la prueba con IA */
+  itemId?: string
+  item?: { id: string }
 }
 
 export interface FitClassification {
@@ -364,6 +367,11 @@ export function FitAnalysisPanel({ wornList }: { wornList: WornFitInput[] }) {
   if (!primary) return null
 
   const fit = classifyFitVeredict(primary.veredicto, primary.motivo)
+  // La prueba con IA vive en /probador/avanzado; se lleva la prenda principal y su talla
+  const idPrenda = primary.itemId ?? primary.item?.id
+  const enlaceIa = idPrenda
+    ? `/probador/avanzado?prenda=${encodeURIComponent(idPrenda)}&talla=${encodeURIComponent(primary.talla)}`
+    : '/probador/avanzado'
   const strokeColor =
     fit.level === 'perfecto'
       ? '#34d399'
@@ -374,7 +382,7 @@ export function FitAnalysisPanel({ wornList }: { wornList: WornFitInput[] }) {
   return (
     <aside
       aria-label="Panel de ajuste del look"
-      className="hidden xl:flex w-64 shrink-0 flex-col gap-3 rounded-2xl border border-white/15 bg-[#151121]/85 p-4 text-white backdrop-blur-xl shadow-2xl"
+      className="hidden xl:flex w-64 shrink-0 flex-col gap-3 rounded-2xl border border-white/15 sr-glass-dark p-4 text-white"
     >
       <div className="text-center">
         <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${fit.badgeClass}`}>
@@ -423,7 +431,7 @@ export function FitAnalysisPanel({ wornList }: { wornList: WornFitInput[] }) {
 
       {/* Paso 2: una vez confirmas la talla, probar en foto real con IA */}
       <Link
-        to="/probador"
+        to={enlaceIa}
         className="mt-auto flex items-center justify-center gap-1.5 rounded-xl bg-violeta px-3 py-2 text-xs font-bold text-white shadow-lg shadow-purple-900/30 transition hover:bg-violeta-hover"
       >
         Probar con foto IA →

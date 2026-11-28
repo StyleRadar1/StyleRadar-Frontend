@@ -11,7 +11,7 @@ import {
   validarArchivoPrueba,
 } from '../utils/tryOnRules'
 import { tryOnService } from '../services/tryOnService'
-import { PhotoUploadGuide } from './PhotoUploadGuide'
+import { GuiaFotoButton } from './GuiaFotoDialog'
 
 export interface UploadedPhoto {
   photoId: string
@@ -360,43 +360,74 @@ export function PhotoPicker({ photo, onUploaded, onConsentRequired }: {
   const guideStroke = poseOk ? 'rgba(52,211,153,0.9)' : 'rgba(244,63,94,0.85)'
 
   return (
-    <div>
-      <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
-        <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)]">
-          {shown ? <img src={shown} alt="Vista previa de tu foto" draggable={false} onContextMenu={(e) => e.preventDefault()} className={`h-full w-full select-none object-cover ${uploading ? 'opacity-60' : ''}`} />
-            : <div className="grid h-full place-items-center p-4 text-center text-xs text-[var(--color-text-muted)]">Tu foto aparecerá aquí</div>}
-        </div>
-        <div>
-          <p className="text-sm text-[var(--color-text-muted)]">De cuerpo entero, de frente y con buena luz. JPG o PNG vertical, de hasta {TRYON_MAX_MB} MB y mínimo {TRYON_MIN.width} × {TRYON_MIN.height} px. Solo la usamos para esta prueba y la puedes borrar cuando quieras.</p>
-          <PhotoUploadGuide variant="user-tryon" className="mt-3" />
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" disabled={uploading} onClick={openGuidedCamera} className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-4 py-2.5 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-50 transition-all shadow-sm">Tomar foto</button>
-            <button type="button" disabled={uploading} onClick={() => gallery.current?.click()} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-50 transition-all">{photo ? 'Cambiar foto' : 'Elegir de la galería'}</button>
-            {uploading && <button type="button" onClick={cancel} className="rounded-xl px-4 py-2.5 text-sm text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]">Cancelar subida</button>}
-          </div>
-          <input ref={gallery} type="file" accept={TRYON_ACCEPT} hidden data-testid="photo-input" onChange={(e) => { handle(e.target.files?.[0]); e.target.value = '' }} />
-          <input ref={camera} type="file" accept={TRYON_ACCEPT} capture="user" hidden onChange={(e) => { handle(e.target.files?.[0]); e.target.value = '' }} />
-          {uploading && (
-            <div className="mt-4" role="status" aria-live="polite">
-              <p className="text-sm text-[var(--color-text)]">Subiendo tu foto… {progress}%</p>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-surface-subtle)]" role="progressbar" aria-label="Subida de la foto" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress ?? 0}>
-                <div className="h-full bg-[var(--color-accent)] transition-all" style={{ width: `${progress}%` }} />
-              </div>
-            </div>
-          )}
-          {photo && !uploading && (
-            <p className="mt-4 flex items-center gap-1.5 text-sm text-[var(--color-success-text,#144a27)] font-medium" role="status">
-              <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-[var(--color-success,#1e6b3a)]">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+    <div className="@container">
+      {!shown ? (
+        /* Sin foto: la subida es lo principal de la tarjeta */
+        <div
+          onDragOver={(e) => { e.preventDefault() }}
+          onDrop={(e) => { e.preventDefault(); if (!uploading) handle(e.dataTransfer.files?.[0]) }}
+        >
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => gallery.current?.click()}
+            className="group flex w-full flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-6 py-10 text-center transition hover:bg-[var(--color-accent)]/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-60"
+          >
+            <span aria-hidden="true" className="grid h-16 w-16 place-items-center rounded-full bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] shadow-lg shadow-purple-900/30 transition group-hover:scale-105">
+              <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
               </svg>
-              <span>Foto lista para probar.</span>
-            </p>
-          )}
-          {error && (error.titulo
-            ? <Aviso tono="error" className="mt-4" titulo={error.titulo} acciones={<button type="button" onClick={() => gallery.current?.click()} className={BTN_SECUNDARIO}>Subir otra foto</button>}>{error.texto}</Aviso>
-            : <p role="alert" className="mt-4 text-sm text-[var(--color-danger-text,#ff8a8a)] font-medium">{error.texto}</p>)}
+            </span>
+            <span className="text-lg font-extrabold text-[var(--color-text)]">Sube tu foto frontal</span>
+            <span className="max-w-[30ch] text-xs text-[var(--color-text-muted)]">
+              Arrástrala aquí o toca para elegirla. JPG o PNG vertical, hasta {TRYON_MAX_MB} MB y mínimo {TRYON_MIN.width} × {TRYON_MIN.height} px.
+            </span>
+          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button type="button" disabled={uploading} onClick={openGuidedCamera} className="min-h-11 rounded-xl bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-accent-contrast,#ffffff)] shadow-sm transition-all hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-50">Tomar foto</button>
+            <button type="button" disabled={uploading} onClick={() => gallery.current?.click()} className="min-h-11 rounded-xl border border-[var(--color-border)] px-5 text-sm font-semibold text-[var(--color-text)] transition-all hover:border-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-50">Elegir de la galería</button>
+            <GuiaFotoButton className="ml-auto" />
+          </div>
+          <p className="mt-3 text-xs text-[var(--color-text-muted)]">Solo la usamos para esta prueba y la puedes borrar cuando quieras.</p>
         </div>
-      </div>
+      ) : (
+        <div className="grid gap-4 @md:grid-cols-[200px_1fr]">
+          <div className="mx-auto aspect-[3/4] w-full max-w-[220px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] @md:mx-0 @md:max-w-none">
+            <img src={shown} alt="Vista previa de tu foto" draggable={false} onContextMenu={(e) => e.preventDefault()} className={`h-full w-full select-none object-cover ${uploading ? 'opacity-60' : ''}`} />
+          </div>
+          <div className="flex flex-col">
+            {photo && !uploading && (
+              <p className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-success-text,#144a27)]" role="status">
+                <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-[var(--color-success,#1e6b3a)]">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                </svg>
+                <span>Foto lista para probar.</span>
+              </p>
+            )}
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">Solo la usamos para esta prueba y la puedes borrar cuando quieras.</p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button type="button" disabled={uploading} onClick={() => gallery.current?.click()} className="min-h-11 rounded-xl border border-[var(--color-border)] px-4 text-sm font-semibold text-[var(--color-text)] transition-all hover:border-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-50">Cambiar foto</button>
+              <button type="button" disabled={uploading} onClick={openGuidedCamera} className="min-h-11 rounded-xl border border-[var(--color-border)] px-4 text-sm font-semibold text-[var(--color-text)] transition-all hover:border-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-50">Tomar otra</button>
+              {uploading && <button type="button" onClick={cancel} className="rounded-xl px-4 py-2.5 text-sm text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]">Cancelar subida</button>}
+            </div>
+            <div className="mt-3"><GuiaFotoButton /></div>
+          </div>
+        </div>
+      )}
+
+      <input ref={gallery} type="file" accept={TRYON_ACCEPT} hidden data-testid="photo-input" onChange={(e) => { handle(e.target.files?.[0]); e.target.value = '' }} />
+      <input ref={camera} type="file" accept={TRYON_ACCEPT} capture="user" hidden onChange={(e) => { handle(e.target.files?.[0]); e.target.value = '' }} />
+      {uploading && (
+        <div className="mt-4" role="status" aria-live="polite">
+          <p className="text-sm text-[var(--color-text)]">Subiendo tu foto… {progress}%</p>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-surface-subtle)]" role="progressbar" aria-label="Subida de la foto" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress ?? 0}>
+            <div className="h-full bg-[var(--color-accent)] transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      )}
+      {error && (error.titulo
+        ? <Aviso tono="error" className="mt-4" titulo={error.titulo} acciones={<button type="button" onClick={() => gallery.current?.click()} className={BTN_SECUNDARIO}>Subir otra foto</button>}>{error.texto}</Aviso>
+        : <p role="alert" className="mt-4 text-sm text-[var(--color-danger-text,#ff8a8a)] font-medium">{error.texto}</p>)}
 
       {guidedOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Cámara guiada formato vertical">

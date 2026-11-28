@@ -1941,3 +1941,110 @@ html[data-tema="claro"] .cz-mini-item-pill { background: rgba(0, 0, 0, 0.06); }
 /* Botones de interés en violeta sólido (sin degradé) */
 .cz-btn-try-outfit { background: #48119a; }
 .cz-btn-try-outfit:hover { background: #5b1fb8; }
+
+/* ═══ Mi look compacto: una fila por espacio ═══ */
+.cz-slots-compact { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cz-slot-row { display: flex; align-items: stretch; gap: 4px; }
+.cz-slot-row-main {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border-radius: 12px; cursor: pointer; text-align: left;
+  border: 1px dashed var(--probador-border); background: transparent; color: var(--probador-text);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.cz-slot-row.is-worn .cz-slot-row-main { border-style: solid; background: var(--probador-surface-subtle); }
+.cz-slot-row-main:hover { border-color: var(--probador-accent); background: var(--probador-surface-subtle); }
+.cz-slot-row-main:focus-visible, .cz-slot-row-x:focus-visible { outline: 2px solid #7b4dd8; outline-offset: 2px; }
+.cz-slot-row-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.cz-slot-row-plus {
+  width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0; display: grid; place-items: center;
+  font: 700 20px/1 system-ui, sans-serif; color: var(--probador-accent); background: var(--probador-surface-subtle);
+}
+.cz-slot-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.cz-slot-row-slot { font: 800 10px/1 system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--probador-text-muted); }
+.cz-slot-row-name { font: 600 13px/1.2 system-ui, sans-serif; display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.cz-slot-row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.cz-slot-row-talla { flex-shrink: 0; font-weight: 800; color: var(--probador-accent); }
+.cz-slot-row-talla::before { content: 'Talla '; font-weight: 600; color: var(--probador-text-muted); }
+.cz-slot-row:not(.is-worn) .cz-slot-row-name { color: var(--probador-text-muted); font-weight: 500; }
+.cz-slot-row-main .cz-fit-chip { flex-shrink: 0; max-width: 42%; white-space: normal; text-align: center; }
+.cz-slot-row-x {
+  width: 36px; flex-shrink: 0; border-radius: 12px; cursor: pointer; font-size: 20px; line-height: 1;
+  border: 1px solid var(--probador-border); background: transparent; color: var(--probador-text-muted);
+}
+.cz-slot-row-x:hover { color: #e11d48; border-color: #e11d48; }
+.cz-slot-row-color { margin-left: 8px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.cz-slot-row-chip { align-self: flex-start; }
+.cz-slot-row-slot { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ═══════════════════════════════════════════════════════════════
+   GLASSMORFISMO: «Arma tu look» usa el mismo vidrio de la identidad StyleRadar
+   (tokens --glass-* de index.css): fondo con foto, paneles translúcidos con desenfoque
+   ═══════════════════════════════════════════════════════════════ */
+.cz-fullscreen {
+  background-image: url('/img/backgrounds/probador-estudio-noche.jpg');
+  background-size: cover;
+  background-position: center;
+}
+html[data-theme="light"] .cz-fullscreen,
+html[data-tema="claro"] .cz-fullscreen {
+  background-image: url('/img/backgrounds/probador-estudio-dia.jpg');
+}
+
+.cz-left-panel,
+.cz-embedded .cz-topbar {
+  background: var(--glass-fondo);
+  backdrop-filter: var(--glass-desenfoque);
+  -webkit-backdrop-filter: var(--glass-desenfoque);
+  border-color: var(--glass-borde);
+}
+.cz-left-panel { box-shadow: var(--glass-sombra); }
+
+.sr-medidas,
+.cz-action-card,
+.cz-btn-secondary-glass,
+.cz-slot-row-main {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-color: var(--glass-borde);
+}
+html[data-theme="light"] .sr-medidas,
+html[data-tema="claro"] .sr-medidas,
+html[data-theme="light"] .cz-action-card,
+html[data-tema="claro"] .cz-action-card,
+html[data-theme="light"] .cz-btn-secondary-glass,
+html[data-tema="claro"] .cz-btn-secondary-glass,
+html[data-theme="light"] .cz-slot-row-main,
+html[data-tema="claro"] .cz-slot-row-main {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+.cz-slot-row.is-worn .cz-slot-row-main { background: rgba(255, 255, 255, 0.12); }
+html[data-theme="light"] .cz-slot-row.is-worn .cz-slot-row-main,
+html[data-tema="claro"] .cz-slot-row.is-worn .cz-slot-row-main { background: rgba(255, 255, 255, 0.8); }
+
+/* Panel de ajuste (derecha del maniquí) y pop-up de prendas */
+.sr-glass-dark {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 256px;
+  flex-shrink: 0;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(145deg, rgba(32, 24, 60, 0.62), rgba(20, 16, 38, 0.48));
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+.cz-drawer-content {
+  background: var(--glass-fondo);
+  backdrop-filter: var(--glass-desenfoque);
+  -webkit-backdrop-filter: var(--glass-desenfoque);
+  border-color: var(--glass-borde);
+  box-shadow: var(--glass-sombra);
+}
+.cz-drawer-header { background: transparent; }
+html[data-theme="light"] .cz-drawer-header,
+html[data-tema="claro"] .cz-drawer-header { background: transparent; }
+.cz-drawer-backdrop { background: rgba(8, 5, 16, 0.5); }

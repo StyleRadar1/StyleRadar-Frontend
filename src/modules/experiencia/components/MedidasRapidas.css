@@ -95,3 +95,6 @@
   background: #48119a; color: #fff; font: 800 13px/1 system-ui, sans-serif;
 }
 .sr-medidas__guardar:hover { background: #5b1fb8; }
+
+.sr-medidas__fichas--duo { display: grid; grid-template-columns: 1fr 1fr; }
+.sr-medidas__fichas--duo .sr-medidas__ficha { min-height: 40px; font-size: 13px; }
