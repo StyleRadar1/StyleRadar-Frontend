@@ -1487,6 +1487,7 @@ export default function InventoryPage() {
         title="Agregar prenda al inventario"
         confirmLabel={guardando ? 'Guardando...' : 'Guardar prenda'}
         busy={guardando}
+        wide
         onConfirm={() => { void handleCrearPrenda() }}
         onCancel={handleCerrarAgregar}
       >
