@@ -1099,3 +1099,25 @@ html[data-cvd="on"][data-tema="claro"] .inv-status--out .inv-status__dot { backg
     aspect-ratio: 1 / 1;
   }
 }
+
+
+/* Error visible arriba del formulario de alta, no al final del scroll. */
+.inv-create-error {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #F87171 45%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, #F87171 10%, transparent);
+  color: #FCA5A5;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.inv-create-error strong {
+  color: #FECACA;
+  font-weight: 800;
+}

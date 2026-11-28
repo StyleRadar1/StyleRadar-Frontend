@@ -141,6 +141,7 @@ export default function InventoryPage() {
 
   const isLoadPermError = Boolean(error) && errorKind(error) === 'permiso'
   const isSuspended = isLoadPermError || suspendedByAction
+  const isStoreNotFound = error instanceof ApiError && error.status === 404
 
   const [searchParams] = useSearchParams()
   const mockParam = searchParams.get('mock')
@@ -218,6 +219,12 @@ export default function InventoryPage() {
 
   const showToast = (text: string, tone: 'ok' | 'warn' | 'bad' = 'ok', sub?: string) => {
     setToast({ tone, text, sub })
+  }
+
+  const revealCreateError = () => {
+    window.setTimeout(() => {
+      document.getElementById('crearPrenda-resumen')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }, 0)
   }
 
   const handleActionFailure = (err: unknown): boolean => {
@@ -387,6 +394,7 @@ export default function InventoryPage() {
                 ? 'precioPrenda'
                 : 'fotoPrenda'
       window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
+      revealCreateError()
       return
     }
 
@@ -425,8 +433,10 @@ export default function InventoryPage() {
         setCreateErrors(fields)
         const firstId = fields.nombre ? 'nombrePrenda' : fields.precio ? 'precioPrenda' : fields.fotografias ? 'fotoPrenda' : 'tipoPrenda'
         window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
+        revealCreateError()
       } else if (!handleActionFailure(err)) {
         setCreateErrors({ _global: errorMessage(err, 'Error al registrar prenda.') })
+        revealCreateError()
       }
     } finally {
       setGuardando(false)
@@ -714,6 +724,14 @@ export default function InventoryPage() {
               aria-label="+ Nueva prenda en inventario"
               disabled={isSuspended}
               onClick={() => {
+                if (isStoreNotFound) {
+                  showToast(
+                    'Tu cuenta no tiene un almacén registrado.',
+                    'warn',
+                    'Completa el registro de tienda para poder crear prendas.',
+                  )
+                  return
+                }
                 setCreateErrors({})
                 setNuevaImagenUrlInput('')
                 setNuevasImagenes([])
@@ -975,7 +993,19 @@ export default function InventoryPage() {
 
         {/* Estados de carga y error */}
         {loading && !items.length && <Loading label="Cargando inventario de la tienda..." />}
-        {Boolean(error) && !isLoadPermError && <ErrorState error={error} onRetry={reload} title="No se pudo cargar el inventario" />}
+        {Boolean(error) && !isLoadPermError && (
+          <div className="space-y-3">
+            <ErrorState error={error} onRetry={reload} title="No se pudo cargar el inventario" />
+            {isStoreNotFound && (
+              <Link
+                to="/tienda/registro"
+                className="inline-flex items-center rounded-xl bg-violeta px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Registrar mi tienda
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Estado sin resultados */}
         {(!loading || items.length > 0) && !error && itemsFiltrados.length === 0 && (
@@ -1491,7 +1521,19 @@ export default function InventoryPage() {
         onConfirm={() => { void handleCrearPrenda() }}
         onCancel={handleCerrarAgregar}
       >
-        <form onSubmit={handleCrearPrenda} className="inv-create-form">
+        <form id="formAgregarPrenda" onSubmit={handleCrearPrenda} className="inv-create-form">
+          {Object.keys(createErrors).length > 0 && (
+            <div
+              id="crearPrenda-resumen"
+              role="alert"
+              aria-live="polite"
+              className="inv-create-error"
+            >
+              <strong>No se pudo guardar la prenda.</strong>
+              <span>{createErrors._global || 'Revisa los campos marcados en el formulario.'}</span>
+            </div>
+          )}
+
           <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/70">
             Marca asignada automáticamente según tu tienda: <strong className="text-white">{storeName}</strong>
           </p>
