@@ -14,17 +14,40 @@ export const VERIFICATION_LABEL: Record<VerificationStatus, string> = {
 }
 
 export interface StoreResponseDto {
+  id?: string | null
+  almacenId?: string | null
+  sedeId?: string | null
   nit: string
   tradeName: string
   description?: string | null
   phone?: string | null
   contactEmail?: string | null
+  address?: string | null
+  barrio?: string | null
+  hours?: string | null
+  payoutAccount?: string | null
   latitude?: number | null
   longitude?: number | null
   rating?: number | null
   categories?: string[] | null
   verificationStatus?: VerificationStatus | null
   representative?: string | null
+}
+
+/** PUT /api/v1/stores/{nit}: actualización del perfil comercial del almacén. */
+export interface UpdateStoreRequestDto {
+  tradeName?: string
+  description?: string
+  phone?: string
+  contactEmail?: string
+  representative?: string
+  payoutAccount?: string
+  address?: string
+  barrio?: string
+  hours?: string
+  categories?: StoreCategory[]
+  latitude?: number
+  longitude?: number
 }
 
 /** Página de almacenes (content[] y paginación), igual que las demás búsquedas de los micros. */

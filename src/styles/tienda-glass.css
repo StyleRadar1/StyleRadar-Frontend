@@ -74,6 +74,41 @@ html[data-tema="claro"] .sr-tienda-glass .msd-pill--glass {
   background: rgba(255, 255, 255, 0.55);
 }
 
+html[data-theme="light"] .sr-tienda-glass .msd-pill--verified,
+html[data-tema="claro"] .sr-tienda-glass .msd-pill--verified {
+  border-color: rgba(5, 150, 105, 0.4);
+  color: #065f46;
+  background: rgba(209, 250, 229, 0.85);
+}
+
+html[data-theme="light"] .sr-tienda-glass .msd-pill--review,
+html[data-tema="claro"] .sr-tienda-glass .msd-pill--review {
+  border-color: rgba(180, 83, 9, 0.4);
+  color: #78350f;
+  background: rgba(254, 243, 199, 0.88);
+}
+
+html[data-theme="light"] .sr-tienda-glass .msd-pill--unverified,
+html[data-tema="claro"] .sr-tienda-glass .msd-pill--unverified {
+  border-color: rgba(71, 85, 105, 0.35);
+  color: #1e293b;
+  background: rgba(241, 245, 249, 0.88);
+}
+
+html[data-cvd="on"][data-theme="light"] .sr-tienda-glass .msd-pill--verified,
+html[data-cvd="on"][data-tema="claro"] .sr-tienda-glass .msd-pill--verified {
+  border-color: var(--sr-ok, #0072b2);
+  color: #004c75;
+  background: rgba(224, 242, 254, 0.9);
+}
+
+html[data-cvd="on"][data-theme="light"] .sr-tienda-glass .msd-pill--review,
+html[data-cvd="on"][data-tema="claro"] .sr-tienda-glass .msd-pill--review {
+  border-color: var(--sr-warn, #7a6200);
+  color: #5c4900;
+  background: rgba(254, 249, 195, 0.9);
+}
+
 /* Móvil: la imagen fija pesa en iOS; se deja desplazable */
 @media (max-width: 768px) {
   :root .sr-tienda-glass.sr-tienda-glass:not(.sr-donaciones-page) {

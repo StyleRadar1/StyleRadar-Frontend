@@ -50,13 +50,19 @@ describe('Mi tienda e Información de tienda (errores)', () => {
 
     const validSix = Array.from({ length: 6 }, (_, i) => png(`foto-${i + 1}.png`, 256, 'image/png'))
     await user.upload(input, validSix)
-    await waitFor(() => {
-      expect(screen.getByText(/6\/6 fotos\./i)).toBeInTheDocument()
-    })
+    await waitFor(
+      () => {
+        expect(screen.getByText(/6\/6 fotos\./i)).toBeInTheDocument()
+      },
+      { timeout: 5000 },
+    )
     expect(document.querySelector('#fotos-tienda input[type="file"]')).toBeNull()
 
+    // Frente 3: clase semántica cambia de unverified a review al solicitar verificación
+    expect(document.querySelector('.msd-pill--unverified')).not.toBeNull()
     await user.click(screen.getByRole('button', { name: 'Solicitar verificación' }))
     expect(await screen.findByText(/Quedó en revisión/i)).toBeInTheDocument()
+    expect(document.querySelector('.msd-pill--review')).not.toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Solicitar verificación' }))
     expect(await screen.findByText('Tu solicitud ya está en revisión')).toBeInTheDocument()

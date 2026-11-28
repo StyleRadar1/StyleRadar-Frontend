@@ -7,6 +7,7 @@ import {
   foundationPublicService,
   type FoundationPublicDto,
 } from '../services/foundationPublicService'
+import { formatHeroLocationKicker } from '@/modules/catalogo/utils/heroLocation'
 import '@/modules/catalogo/pages/StorePage.css'
 
 function ShieldCheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -213,14 +214,11 @@ export default function FoundationPublicPage() {
             loading="eager"
           />
           <div className="sr-store-hero__bg-overlay" aria-hidden="true" />
-          <div className="sr-store-hero__watermark" aria-hidden="true">
-            {foundation.nombre}
-          </div>
 
           <div className="sr-store-hero__grid">
             <div className="sr-store-hero__content">
               <span className="sr-store-hero__kicker">
-                FUNDACIÓN ALIADA · BOGOTÁ · {foundation.barrio.toUpperCase()}
+                {formatHeroLocationKicker('FUNDACIÓN ALIADA', 'Bogotá', foundation.barrio)}
               </span>
 
               <h1 className="sr-store-hero__title">{foundation.nombre}</h1>

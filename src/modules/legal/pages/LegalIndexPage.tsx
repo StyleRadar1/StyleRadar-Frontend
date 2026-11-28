@@ -127,6 +127,48 @@ export default function LegalIndexPage() {
           })}
         </div>
 
+        {/* Ficha completa del proveedor (Ley 1480 de 2011 y Ley 1581 de 2012) */}
+        <section
+          id="proveedor"
+          aria-labelledby="sr-provider-info-title"
+          className="rounded-2xl border border-[var(--color-border)]/80 bg-[var(--color-surface-raised)]/30 p-5 text-xs text-[var(--color-text-muted)] space-y-3"
+        >
+          <h4 id="sr-provider-info-title" className="text-sm font-bold text-[var(--color-text)]">
+            Información del Proveedor y Responsable de Datos
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <span className="font-bold text-[var(--color-text)] block">Proveedor / Razón Social:</span>
+              <span>{PROVIDER_INFO.razonSocial}</span>
+            </div>
+            <div>
+              <span className="font-bold text-[var(--color-text)] block">Identificación Tributaria:</span>
+              <span>NIT {PROVIDER_INFO.nit}</span>
+            </div>
+            <div>
+              <span className="font-bold text-[var(--color-text)] block">Domicilio & Dirección:</span>
+              <span>{PROVIDER_INFO.direccion}</span>
+            </div>
+            <div>
+              <span className="font-bold text-[var(--color-text)] block">Contacto & WhatsApp:</span>
+              <span>{PROVIDER_INFO.telefono}</span>
+            </div>
+          </div>
+
+          <div className="border-t border-[var(--color-border)]/60 pt-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 text-[11px]">
+            <p>
+              <strong className="text-[var(--color-text)]">Responsable del Tratamiento de Datos:</strong> {PROVIDER_INFO.razonSocial} ·{' '}
+              <strong className="text-[var(--color-text)]">Canal para ejercer tus derechos (Habeas Data):</strong>{' '}
+              <a href={`mailto:${PROVIDER_INFO.correoDatos}`} className="text-[var(--color-accent)] hover:underline">
+                {PROVIDER_INFO.correoDatos}
+              </a>
+            </p>
+            <p className="shrink-0 text-[10px] text-[var(--color-text-muted)]">
+              Horario: {PROVIDER_INFO.horarioAtencion}
+            </p>
+          </div>
+        </section>
+
         {/* Tarjeta de protección al consumidor y canal SIC */}
         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)]/50 p-6 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-[var(--color-text-muted)]">
           <div className="space-y-1 max-w-xl">

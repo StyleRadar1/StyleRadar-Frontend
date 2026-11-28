@@ -6,7 +6,10 @@ import { formatCOP } from '@/modules/core/utils/format'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
 import { tiendaContacto } from '@/modules/soporte/utils/contacts'
 import { recordRecentLocation } from '@/modules/mapa/utils/recentLocations'
-import { storePublicService, type StorePublicDto } from '../services/storePublicService'
+import { storePublicService, type StoreGalleryItem, type StorePublicDto } from '../services/storePublicService'
+import { formatHeroLocationKicker } from '../utils/heroLocation'
+import { StoreGalleryShowcase } from '../components/StoreGalleryShowcase'
+import { StorePhotoLightbox } from '../components/StorePhotoLightbox'
 import './StorePage.css'
 
 function ShieldCheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -153,6 +156,13 @@ export default function StorePage() {
   const [loading, setLoading] = useState<boolean>(() => !env.useMocks)
   const [error, setError] = useState<unknown>(null)
   const [reloadTick, setReloadTick] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index)
+    setLightboxOpen(true)
+  }
 
   const reload = () => setReloadTick((t) => t + 1)
 
@@ -251,6 +261,17 @@ export default function StorePage() {
     })
   }
 
+  const galleryPhotos: StoreGalleryItem[] =
+    store.fotosGaleria && store.fotosGaleria.length > 0
+      ? store.fotosGaleria
+      : store.foto
+        ? [{ id: 'hero-cover', url: store.foto, tag: 'Portada' }]
+        : []
+  const galleryCount = store.fotosGaleria?.length ?? 0
+  const hasHeroPhoto = Boolean(store.foto && store.foto.trim())
+  const editorialPhotoSrc = (store.fotoEditorial || store.foto || '').trim()
+  const heroKicker = formatHeroLocationKicker('TIENDA LOCAL', 'Bogotá', store.barrio)
+
   return (
     <main className="sr-store-page" role="main">
       {/* ────────────────────────────────────────────────────────── */}
@@ -270,27 +291,28 @@ export default function StorePage() {
       {/* ────────────────────────────────────────────────────────── */}
       <section className="sr-store-hero" aria-label={`Portada de ${store.nombre}`}>
         <div className="sr-store-hero__container">
-          {/* Foto de la tienda abarcando literalmente todo el cuadro */}
-          <img
-            src={store.foto}
-            alt={`Local físico y vitrina de ${store.nombre} en ${store.barrio}`}
-            className="sr-store-hero__bg-photo"
-            loading="eager"
-          />
+          {/* Foto de la tienda o superficie editorial violeta cuando no hay fotos */}
+          {hasHeroPhoto ? (
+            <img
+              src={store.foto}
+              alt={`Local físico y vitrina de ${store.nombre} en ${store.barrio}`}
+              className="sr-store-hero__bg-photo"
+              loading="eager"
+              onClick={galleryPhotos.length > 0 ? () => openLightbox(0) : undefined}
+              style={galleryPhotos.length > 0 ? { cursor: 'pointer' } : undefined}
+            />
+          ) : (
+            <div className="sr-store-hero__bg-placeholder" aria-hidden="true" />
+          )}
 
           {/* Capa de degradado editorial para legibilidad del texto */}
           <div className="sr-store-hero__bg-overlay" aria-hidden="true" />
-
-          {/* Letra de fondo gigante / marca de agua */}
-          <div className="sr-store-hero__watermark" aria-hidden="true">
-            {store.nombre}
-          </div>
 
           <div className="sr-store-hero__grid">
             {/* Columna Izquierda: Kicker, Título, Descripción, Botones y Puntos de Valor */}
             <div className="sr-store-hero__content">
               <span className="sr-store-hero__kicker">
-                TIENDA LOCAL · BOGOTÁ · {store.barrio.toUpperCase()}
+                {heroKicker}
               </span>
 
               <h1 className="sr-store-hero__title">{store.nombre}</h1>
@@ -337,6 +359,28 @@ export default function StorePage() {
               </div>
             </div>
           </div>
+
+          {galleryCount > 2 ? (
+            <button
+              type="button"
+              className="sr-store-hero__gallery-pill"
+              onClick={() => openLightbox(0)}
+              aria-label={`Ver ${galleryCount} fotos de ${store.nombre}`}
+            >
+              <span aria-hidden="true">📷</span>
+              <span>Ver {galleryCount} fotos</span>
+            </button>
+          ) : galleryPhotos.length > 0 ? (
+            <button
+              type="button"
+              className="sr-store-hero__gallery-pill sr-store-hero__gallery-pill--subtle"
+              onClick={() => openLightbox(0)}
+              aria-label={`Ampliar portada de ${store.nombre}`}
+            >
+              <span aria-hidden="true">📷</span>
+              <span>Ver foto</span>
+            </button>
+          ) : null}
         </div>
       </section>
 
@@ -589,12 +633,30 @@ export default function StorePage() {
       <section className="sr-store-editorial" aria-label="Presentación editorial de la tienda">
         <div className="sr-store-editorial__grid">
           <div className="sr-store-editorial__media">
-            <img
-              src={store.fotoEditorial || store.foto}
-              alt={`Espacio y curaduría de ${store.nombre}`}
-              className="sr-store-editorial__img"
-              loading="lazy"
-            />
+            {editorialPhotoSrc ? (
+              <button
+                type="button"
+                className="sr-store-editorial__media-btn"
+                onClick={() => openLightbox(Math.min(1, Math.max(0, galleryPhotos.length - 1)))}
+                aria-label={`Ampliar foto editorial de ${store.nombre}`}
+              >
+                <img
+                  src={editorialPhotoSrc}
+                  alt={`Espacio y curaduría de ${store.nombre}`}
+                  className="sr-store-editorial__img"
+                  loading="lazy"
+                />
+              </button>
+            ) : (
+              <div
+                className="sr-store-editorial__placeholder"
+                role="img"
+                aria-label={`Espacio y curaduría de ${store.nombre}`}
+              >
+                <StoreIcon className="h-12 w-12" />
+                <span>{store.nombre}</span>
+              </div>
+            )}
           </div>
 
           <div className="sr-store-editorial__content">
@@ -686,35 +748,23 @@ export default function StorePage() {
       )}
 
       {/* ────────────────────────────────────────────────────────── */}
-      {/* 5B. FOTOS DE LA TIENDA (Fachada, mostrador e instalaciones)*/}
+      {/* 5B. FOTOS DE LA TIENDA (Solo cuando N > 2: visor panorámico + miniaturas) */}
       {/* ────────────────────────────────────────────────────────── */}
-      {store.fotosGaleria && store.fotosGaleria.length > 0 && (
+      {galleryCount > 2 && (
         <section className="sr-store-gallery-section" aria-label="Fotos del espacio y vitrinas">
           <div className="sr-store-section-header">
             <span className="sr-store-section-kicker">ESPACIO FÍSICO Y VITRINAS</span>
-            <h2 className="sr-store-section-title">Fotos de {store.nombre}</h2>
+            <h2 className="sr-store-section-title">Espacios y ambiente</h2>
             <p className="sr-store-section-sub">
               Fachada, vitrina e interior en {store.barrio}. Fotografías verificadas en el radar local de Bogotá.
             </p>
           </div>
 
-          <div className="sr-store-gallery-grid" role="region" aria-label="Galería fotográfica de la tienda">
-            {store.fotosGaleria.map((photo, pIdx) => (
-              <div key={photo.id || pIdx} className="sr-store-gallery-card">
-                <img
-                  src={photo.url}
-                  alt={`${photo.tag || 'Foto'} de ${store.nombre}`}
-                  className="sr-store-gallery-img"
-                  loading="lazy"
-                />
-                <div className="sr-store-gallery-shade" aria-hidden="true" />
-                <div className="sr-store-gallery-badge">
-                  <span className="sr-store-gallery-tag">{photo.tag || `Foto ${pIdx + 1}`}</span>
-                  <span className="sr-store-gallery-store">{store.nombre}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <StoreGalleryShowcase
+            photos={store.fotosGaleria}
+            storeName={store.nombre}
+            onOpenLightbox={openLightbox}
+          />
         </section>
       )}
 
@@ -849,6 +899,14 @@ export default function StorePage() {
           </Link>
         </div>
       </section>
+      <StorePhotoLightbox
+        open={lightboxOpen}
+        photos={galleryPhotos}
+        index={lightboxIndex}
+        storeName={store.nombre}
+        onClose={() => setLightboxOpen(false)}
+        onIndexChange={setLightboxIndex}
+      />
     </main>
   )
 }

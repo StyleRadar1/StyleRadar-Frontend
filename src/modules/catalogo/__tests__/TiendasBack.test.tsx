@@ -161,4 +161,54 @@ describe('ms-tiendas: perfil público y almacén de la Tienda (F-19 · F-22)', (
     expect(await screen.findByText('DEPORTIVO')).toBeInTheDocument()
     expect(screen.getByText('Daniela Luna')).toBeInTheDocument()
   })
+
+  it('Frente 5: Mi tienda permite editar información en modo real vía PUT /api/v1/stores/{nit} con NIT readOnly y sin localStorage', async () => {
+    porRuta({
+      '/api/v1/users/t-1/store': {
+        ...LUNA,
+        representative: 'Daniela Luna',
+        barrio: 'Chapinero',
+        address: 'Cra 13 #57-22',
+        hours: 'Lun-Sab 10-20',
+      },
+    })
+    const putSpy = vi.spyOn(apiClient, 'put').mockResolvedValue({
+      data: {
+        ...LUNA,
+        tradeName: 'Luna Store Editada',
+        barrio: 'Usaquén',
+        address: 'Cra 7 #119-10',
+        hours: 'Lun-Dom 10-21',
+        representative: 'Daniela Luna',
+      },
+    } as never)
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+
+    const user = userEvent.setup()
+    sesionComo('luna@styleradar.co')
+    renderConSesion('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
+
+    const editBtn = await screen.findByRole('button', { name: 'Editar información' })
+    await user.click(editBtn)
+
+    const nitInput = screen.getByLabelText('NIT') as HTMLInputElement
+    expect(nitInput.readOnly).toBe(true)
+
+    const nameInput = screen.getByLabelText('Razón social')
+    await user.clear(nameInput)
+    await user.type(nameInput, 'Luna Store Editada')
+
+    const barrioInput = screen.getByLabelText('Barrio')
+    await user.clear(barrioInput)
+    await user.type(barrioInput, 'Usaquén')
+
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(await screen.findByText('La información de la tienda se guardó con éxito.')).toBeInTheDocument()
+    expect(putSpy).toHaveBeenCalledWith(
+      '/api/v1/stores/9014823371',
+      expect.objectContaining({ tradeName: 'Luna Store Editada', barrio: 'Usaquén' }),
+    )
+    expect(setItemSpy).not.toHaveBeenCalledWith('styleradar-store-legal-info', expect.anything())
+  })
 })

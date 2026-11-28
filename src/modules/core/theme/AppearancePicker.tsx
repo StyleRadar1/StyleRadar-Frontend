@@ -11,6 +11,8 @@ interface AppearancePickerProps {
   align?: 'left' | 'right'
   /** 'onDark': para encabezados oscuros fijos (landing, administración). 'themed': usa los colores del tema (barra de la app). */
   tone?: 'onDark' | 'themed'
+  /** En desktop del header principal: botón compacto solo ícono para liberar espacio horizontal. */
+  compact?: boolean
 }
 
 const BOTON_BASE =
@@ -28,7 +30,7 @@ const trazo = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLine
  * para que ni el desenfoque ni la posición fija del encabezado lo desplacen; en teléfono sube como una hoja
  * desde abajo. Al elegir Daltonismo se cierra el panel y se abre la ventana emergente de modos de daltonismo.
  */
-export function AppearancePicker({ className = '', align = 'right', tone = 'onDark' }: AppearancePickerProps) {
+export function AppearancePicker({ className = '', align = 'right', tone = 'onDark', compact = false }: AppearancePickerProps) {
   const { mode, resolvedTheme, colorblind } = useTheme()
   const { modo: modoCvd } = useCvdSim()
   const [abierto, setAbierto] = useState(false)
@@ -97,8 +99,9 @@ export function AppearancePicker({ className = '', align = 'right', tone = 'onDa
         aria-expanded={abierto}
         aria-controls={abierto ? idPanel : undefined}
         aria-label={etiqueta}
+        title="Apariencia"
         onClick={() => setAbierto((v) => !v)}
-        className={`${BOTON_BASE} ${BOTON_TONO[tone]}`}
+        className={`${BOTON_BASE} ${compact ? 'justify-center px-2.5' : ''} ${BOTON_TONO[tone]}`}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" className="shrink-0" {...trazo}>
           {claro ? (
@@ -110,7 +113,7 @@ export function AppearancePicker({ className = '', align = 'right', tone = 'onDa
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
           )}
         </svg>
-        <span className="hidden sm:inline-block">Tema</span>
+        {!compact && <span className="hidden sm:inline-block">Tema</span>}
 
         {filtroActivo && (
           <span
