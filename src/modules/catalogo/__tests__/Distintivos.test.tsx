@@ -63,13 +63,11 @@ describe('Distintivos automáticos (SR-RF-59 · SR-RF-60 · F-19)', () => {
     expect(distintivoDe(c, { publishedAt: '2026-11-20T12:00:00Z', withdrawn: true }, ahora).activeBadge).toBe('NONE')
   })
 
-  it('R1: el distintivo «Últimas unidades» usa ícono «!» distinto al triángulo de KPI Stock bajo', async () => {
+  it('R1: el distintivo «Últimas unidades» usa el triángulo de advertencia lineal en la paleta violeta', async () => {
     sesionComo('luna@styleradar.co')
     const { container } = renderConSesion('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
     expect(await screen.findByText('Últimas unidades')).toBeInTheDocument()
     const softPath = container.querySelector('.msd-badge--soft svg path')?.getAttribute('d')
-    const kpiPaths = Array.from(container.querySelectorAll('.msd-kpi__icon svg path')).map((p) => p.getAttribute('d'))
-    expect(softPath).toBeTruthy()
-    expect(kpiPaths).not.toContain(softPath)
+    expect(softPath).toBe('M12 3 2 20h20L12 3Zm0 6v5m0 3v.5')
   })
 })
