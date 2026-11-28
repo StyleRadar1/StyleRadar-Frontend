@@ -222,6 +222,12 @@ export default function InventoryPage() {
     setToast({ tone, text, sub })
   }
 
+  /** Cualquier edición invalida el intento anterior: no mostrar el resumen viejo. */
+  const clearCreateFeedback = () => {
+    setCreateErrors((prev) => (Object.keys(prev).length ? {} : prev))
+    setCreateAttempted(false)
+  }
+
   const revealCreateError = () => {
     window.setTimeout(() => {
       document.getElementById('crearPrenda-resumen')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
@@ -352,6 +358,7 @@ export default function InventoryPage() {
   }
 
   const handleAgregarFotoUrl = () => {
+    clearCreateFeedback()
     const url = nuevaImagenUrlInput.trim()
     if (!url) return
     if (url.length > MAX_PHOTO_URL_LEN) {
@@ -368,14 +375,14 @@ export default function InventoryPage() {
   }
 
   const handleQuitarFoto = (index: number) => {
+    clearCreateFeedback()
     setNuevasImagenes((prev) => prev.filter((_, i) => i !== index))
-    setCreateErrors((prev) => ({ ...prev, fotografias: '' }))
   }
 
   const handleCambiarTipoPrenda = (tipoPrenda: TipoPrendaInventario) => {
+    clearCreateFeedback()
     setNuevoTipoPrenda(tipoPrenda)
     setStockPorTallaForm(defaultStockForTipoPrenda(tipoPrenda))
-    setCreateErrors((prev) => ({ ...prev, tallas: '' }))
   }
 
   // Crear prenda nueva (POST /api/v1/prendas + POST /api/v1/inventario/lote)
@@ -1548,10 +1555,8 @@ export default function InventoryPage() {
           id="formAgregarPrenda"
           onSubmit={handleCrearPrenda}
           className="inv-create-form"
-          onChange={() => {
-            setCreateErrors((prev) => (Object.keys(prev).length ? {} : prev))
-            setCreateAttempted(false)
-          }}
+          onChange={clearCreateFeedback}
+          onInput={clearCreateFeedback}
         >
           {createAttempted && Object.keys(createErrors).length > 0 && (
             <div
