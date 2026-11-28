@@ -33,6 +33,8 @@ const TONE: Record<string, string> = {
   REJECTED: 'bg-[var(--sr-bad-bg)] text-[var(--sr-bad)] border border-[var(--sr-bad)]/35',
 }
 
+const DONATION_IMG_FALLBACK = '/img/fundaciones/abrigo-donaciones.jpg'
+
 const ACCION: Partial<Record<EstadoDonacion, string>> = {
   APROBADA: 'Aceptar',
   RECHAZADA: 'Rechazar',
@@ -271,9 +273,15 @@ export default function FoundationPage() {
                   return (
                   <li key={d.id} className="fnd-donation-card">
                     <img
-                      src={d.fotos[0]}
-                      alt=""
+                      src={d.fotos?.[0] || DONATION_IMG_FALLBACK}
+                      alt={`Prenda donada: ${d.prenda.titulo}`}
                       className="fnd-donation-card__img"
+                      onError={(e) => {
+                        const img = e.currentTarget
+                        if (img.dataset.fallback === '1') return
+                        img.dataset.fallback = '1'
+                        img.src = DONATION_IMG_FALLBACK
+                      }}
                     />
 
                     <div className="fnd-donation-card__main">
