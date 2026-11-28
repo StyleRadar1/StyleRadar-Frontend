@@ -1512,7 +1512,7 @@ export default function InventoryPage() {
             <PhotoUploadGuide variant="garment" darkSurface className="mt-2" />
 
             {/* Cuadrícula de hasta 5 fotos */}
-            <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div className="inv-create-photo-slots mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2">
               {['1. Portada', '2. Detalle', '3. Espalda', '4. Look', '5. Extra'].map((slotLabel, index) => {
                 const fotoUrl = nuevasImagenes[index] ?? null
                 return (

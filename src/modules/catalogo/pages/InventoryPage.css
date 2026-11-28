@@ -997,9 +997,10 @@ html[data-tema="daltonico"] .inv-status--out .inv-status__dot { background: #e69
   }
 
   .inv-pills {
-    overflow-x: auto;
-    padding-bottom: 4px;
-    flex-wrap: nowrap;
+    overflow: visible;
+    padding-bottom: 0;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .inv-pill {
@@ -1084,5 +1085,17 @@ html[data-cvd="on"][data-tema="claro"] .inv-status--out .inv-status__dot { backg
   .inv-create-form {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+}
+
+
+/* Alta de prenda en móvil: fotos compactas en 3 columnas y formulario de una columna. */
+@media (max-width: 640px) {
+  .inv-create-photo-slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .inv-create-photo-slots > div {
+    aspect-ratio: 1 / 1;
   }
 }
