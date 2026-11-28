@@ -4,14 +4,9 @@ import { Footer } from '@/modules/core/components/Footer'
 import { EnvironmentBanner, MockBanner } from '@/modules/core/components/Status'
 import { env } from '@/configs/env'
 
-const COMPACT_FOOTER_PREFIXES = ['/mi-tienda', '/tienda/', '/fundacion', '/mensajes', '/donar', '/perfil']
-
 export function AppLayout() {
   const { pathname } = useLocation()
   const isLanding = pathname === '/'
-  const isCompactFooter = COMPACT_FOOTER_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(prefix),
-  )
   return (
     <div className="flex min-h-screen flex-col">
       <a
@@ -24,7 +19,7 @@ export function AppLayout() {
       {!isLanding && env.appEnvironment === 'qa' && <EnvironmentBanner environment="qa" />}
       {!isLanding && <Navbar />}
       <main id="main-content" className="flex-1"><Outlet /></main>
-      {!isLanding && <Footer compact={isCompactFooter} />}
+      {!isLanding && <Footer />}
     </div>
   )
 }
