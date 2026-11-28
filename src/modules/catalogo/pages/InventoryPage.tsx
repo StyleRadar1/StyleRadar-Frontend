@@ -304,6 +304,17 @@ export default function InventoryPage() {
     const fileList = e.target.files
     if (!fileList || fileList.length === 0) return
 
+    // El contrato de ms-item-catalogo acepta únicamente URLs de hasta 300 caracteres.
+    // Un archivo local se convierte en data: URL (miles de caracteres) y el POST responde 400.
+    if (!env.useMocks) {
+      setCreateErrors((prev) => ({
+        ...prev,
+        fotografias: 'En QA debes pegar una URL pública de imagen (máximo 300 caracteres). La subida de archivos locales no está soportada por el backend actual.',
+      }))
+      e.target.value = ''
+      return
+    }
+
     const validFiles: File[] = []
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i]
@@ -1530,7 +1541,7 @@ export default function InventoryPage() {
               className="inv-create-error"
             >
               <strong>No se pudo guardar la prenda.</strong>
-              <span>{createErrors._global || 'Revisa los campos marcados en el formulario.'}</span>
+              <span>{createErrors._global || Object.values(createErrors).filter(Boolean).join(' · ') || 'Revisa los campos marcados en el formulario.'}</span>
             </div>
           )}
 
@@ -1591,22 +1602,30 @@ export default function InventoryPage() {
 
             {nuevasImagenes.length < MAX_GARMENT_PHOTOS && (
               <div className="mt-3 space-y-2">
-                <label
-                  htmlFor="fotoPrenda"
-                  className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/30 bg-black/30 px-3 text-center transition hover:border-violeta-claro hover:bg-black/50"
-                >
-                  <span className="text-xs font-medium text-white/90">
-                    {nuevasImagenes.length === 0 ? 'Subir fotos de la prenda' : `+ Agregar otra foto (${nuevasImagenes.length}/${MAX_GARMENT_PHOTOS})`}
-                  </span>
-                </label>
-                <input
-                  id="fotoPrenda"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleSubirFoto}
-                  className="sr-only"
-                />
+                {env.useMocks ? (
+                  <>
+                    <label
+                      htmlFor="fotoPrenda"
+                      className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/30 bg-black/30 px-3 text-center transition hover:border-violeta-claro hover:bg-black/50"
+                    >
+                      <span className="text-xs font-medium text-white/90">
+                        {nuevasImagenes.length === 0 ? 'Subir fotos de la prenda' : `+ Agregar otra foto (${nuevasImagenes.length}/${MAX_GARMENT_PHOTOS})`}
+                      </span>
+                    </label>
+                    <input
+                      id="fotoPrenda"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleSubirFoto}
+                      className="sr-only"
+                    />
+                  </>
+                ) : (
+                  <p className="rounded-xl border border-amber-300/30 bg-amber-300/[0.06] px-3 py-2 text-[11px] leading-snug text-amber-100/90">
+                    En QA el backend solo acepta <strong>URLs públicas de imagen</strong> de máximo 300 caracteres. Pega la URL abajo; la subida de archivos locales se rechaza con 400.
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <input
                     type="url"

@@ -75,7 +75,7 @@ describe('InventoryPage (RF-50 a RF-60)', () => {
 
     await user.click(screen.getByRole('button', { name: /\+ Nueva prenda en inventario/i }))
     await user.click(screen.getByRole('button', { name: /^Guardar prenda$/i }))
-    expect(await screen.findByText(/Indica el nombre de la prenda\./i)).toBeInTheDocument()
+    expect((await screen.findAllByText(/Indica el nombre de la prenda\./i)).length).toBeGreaterThan(0)
   })
 
   it('impide quitar una talla con unidades (422), explica acción no disponible (422) y bloquea inventario suspendido (403)', async () => {
