@@ -1148,3 +1148,19 @@ html[data-cvd='on'] .fnd-donations {
     padding-top: 14px;
   }
 }
+
+
+.fnd-donation-card__img--empty {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--sr-text-secondary, #b9b9ca);
+  background: color-mix(in srgb, var(--sr-surface-raised, #262626) 75%, transparent);
+  border-style: dashed;
+}

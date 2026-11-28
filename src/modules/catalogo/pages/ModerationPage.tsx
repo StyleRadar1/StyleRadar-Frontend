@@ -5,6 +5,7 @@ import { Card, Button, Badge } from '@/modules/core/design-system'
 import { Loading, EmptyState, ErrorState } from '@/modules/core/components/Status'
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { ErrorToast, FieldError } from '@/modules/core/components/ErrorFeedback'
+import { ImageWithFallback } from '@/modules/core/components/ImageWithFallback'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useModeration } from '../hooks/useModeration'
 import { REJECTION_REASONS, type ModerationItemDto, type ModerationType } from '../types/moderation.dto'
@@ -293,13 +294,11 @@ export default function ModerationPage() {
           {itemsFiltrados.map((item) => (
             <Card key={item.id} className="flex flex-col justify-between overflow-hidden p-0">
               <div className="relative aspect-video w-full overflow-hidden bg-black/40">
-                <img
+                <ImageWithFallback
                   src={item.imagen}
                   alt={item.titulo}
                   className="h-full w-full object-cover transition duration-300 hover:scale-105"
-                  onError={(e) => {
-                    ;(e.currentTarget as HTMLElement).style.display = 'none'
-                  }}
+                  placeholderClassName="flex h-full w-full flex-col items-center justify-center gap-1 bg-black/40 px-3 text-center text-[11px] font-semibold uppercase tracking-wide text-white/65"
                 />
                 <span className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur">
                   {item.tipo}
