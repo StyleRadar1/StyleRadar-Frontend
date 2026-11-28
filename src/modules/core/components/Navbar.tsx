@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { Logo } from '@/modules/core/design-system'
 import { ROLE_HOME, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { ThemeSelect } from '@/modules/core/theme/ThemeSelect'
+import { AppearancePicker } from '@/modules/core/theme/AppearancePicker'
 import { MessagesLink } from '@/modules/soporte/components/MessagesLink'
 import { NotificationBell } from '@/modules/soporte/components/NotificationBell'
 import { UserMenu } from './UserMenu'
@@ -49,8 +49,8 @@ export function Navbar() {
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls}>{label}</NavLink>)}
         </div>
         <div className="ml-auto flex items-center gap-2 xl:ml-2">
-          {/* Con sesión, el tema está en el menú de cuenta; para tienda y fundación se muestra directo en barra */}
-          {(!user || user.role === 'STORE_ADMIN' || user.role === 'FOUNDATION_REPRESENTATIVE') && <ThemeSelect className="max-xl:hidden" />}
+          {/* Apariencia y accesibilidad (tema, daltonismo y simulador): un solo panel, igual para todos los roles */}
+          <AppearancePicker tone="themed" className="max-xl:hidden" />
           {user ? (
             <>
               {/* RF-73: la tienda (y quien compra o la fundación) responde desde el ícono de mensajes */}
@@ -68,7 +68,7 @@ export function Navbar() {
       {open && (
         <div className="flex flex-col gap-1 border-t border-[var(--sr-border-subtle)] bg-[var(--sr-hero-bar)]/95 px-4 py-3 xl:hidden">
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls} onClick={() => setOpen(false)}>{label}</NavLink>)}
-          {(!user || user.role === 'STORE_ADMIN' || user.role === 'FOUNDATION_REPRESENTATIVE') && <ThemeSelect className="px-3 py-2" />}
+          <AppearancePicker tone="themed" align="left" className="px-3 py-2" />
         </div>
       )}
     </header>
