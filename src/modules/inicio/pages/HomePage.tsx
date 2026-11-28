@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { formatCOP } from '@/modules/core/utils/format'
 import { playlistService, resolvePlaylistCreatorName } from '@/modules/catalogo/services/playlistService'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import { alertService } from '@/modules/soporte/services/alertService'
@@ -30,7 +28,6 @@ const ESTILOS_RAPIDOS = [
 export default function HomePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const reducir = useReducedMotion()
   const [busqueda, setBusqueda] = useState('')
   const [tab, setTab] = useState<PlaylistTab>('mine')
   const [minePlaylists, setMinePlaylists] = useState<PlaylistDto[]>([])
@@ -38,7 +35,6 @@ export default function HomePage() {
   const [explorePlaylists, setExplorePlaylists] = useState<PlaylistDto[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [busyLikeId, setBusyLikeId] = useState<string | null>(null)
-  const [busySaveId, setBusySaveId] = useState<string | null>(null)
   const [alertStats, setAlertStats] = useState<{ alertas: number; busquedas: number } | null>(null)
   const [chats, setChats] = useState<ConversacionDto[]>([])
   const { plan: planActual, details: planDetails } = useUserPlan(Boolean(user))
@@ -165,24 +161,6 @@ export default function HomePage() {
     }
   }
 
-  const handleToggleSave = async (pl: PlaylistDto) => {
-    if (busySaveId === pl.id) return
-    setBusySaveId(pl.id)
-    try {
-      const res = await playlistService.toggleSave(pl.id)
-      const nextSaved = res.saved ?? res.esGuardada ?? !(pl.saved ?? pl.esGuardada)
-      updatePlaylistEnListas(pl.id, {
-        guardados: res.guardados,
-        saved: nextSaved,
-        esGuardada: nextSaved,
-      })
-    } catch {
-      // Silencioso
-    } finally {
-      setBusySaveId(null)
-    }
-  }
-
   const handleBuscar = (e: FormEvent) => {
     e.preventDefault()
     const q = busqueda.trim()
@@ -279,17 +257,22 @@ export default function HomePage() {
 
             {playlistActiva ? (
               <>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`${tab}-${playlistActiva.id}`}
-                    initial={reducir ? false : { opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={reducir ? undefined : { opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }}
-                    className="sr-pl-spotlight"
-                  >
-                    <div className="sr-pl-spotlight__top">
-                      <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-spotlight__cover">
+                <div className="sr-pl-spotlight">
+                  <div className="sr-pl-spotlight__top">
+                    <Link
+                      to={`/playlists/${playlistActiva.id}`}
+                      className="sr-pl-vinyl"
+                      aria-label={`Abrir la colección ${playlistActiva.nombre}`}
+                    >
+                      <span className="sr-pl-vinyl__disc" aria-hidden="true">
+                        <span className="sr-pl-vinyl__spin">
+                          <span className="sr-vinyl-label">
+                            <span className="sr-vinyl-label__ring" />
+                            <span className="sr-vinyl-spindle" />
+                          </span>
+                        </span>
+                      </span>
+                      <span className="sr-pl-vinyl__cover">
                         <img
                           src={
                             playlistActiva.portadaUrl ||
@@ -301,73 +284,45 @@ export default function HomePage() {
                         {playlistActiva.estilo && (
                           <span className="sr-pl-spotlight__estilo">{playlistActiva.estilo}</span>
                         )}
+                      </span>
+                    </Link>
+
+                    <div className="sr-pl-spotlight__info">
+                      <div className="sr-pl-spotlight__meta-row">
+                        <span>{resolvePlaylistCreatorName(playlistActiva, user, tab === 'mine')}</span>
+                        <span>·</span>
+                        <span>{playlistActiva.visibilidad === 'PUBLICA' ? 'Pública' : 'Privada'}</span>
+                        <span>·</span>
+                        <span>{playlistActiva.prendas?.length ?? 0} prendas</span>
+                      </div>
+                      <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-spotlight__name">
+                        {playlistActiva.nombre}
                       </Link>
+                      {playlistActiva.descripcion && (
+                        <p className="sr-pl-spotlight__desc">{playlistActiva.descripcion}</p>
+                      )}
 
-                      <div className="sr-pl-spotlight__info">
-                        <div className="sr-pl-spotlight__meta-row">
-                          <span>{resolvePlaylistCreatorName(playlistActiva, user, tab === 'mine')}</span>
-                          <span>·</span>
-                          <span>{playlistActiva.visibilidad === 'PUBLICA' ? 'Pública' : 'Privada'}</span>
-                          <span>·</span>
-                          <span>{playlistActiva.prendas?.length ?? 0} prendas</span>
-                        </div>
-                        <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-spotlight__name">
-                          {playlistActiva.nombre}
+                      <div className="sr-pl-spotlight__actions">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleLike(playlistActiva)}
+                          disabled={busyLikeId === playlistActiva.id}
+                          aria-pressed={Boolean(playlistActiva.liked)}
+                          className={`sr-pl-react-btn ${playlistActiva.liked ? 'is-liked' : ''}`}
+                        >
+                          <span aria-hidden="true">{playlistActiva.liked ? '♥' : '♡'}</span>
+                          <span>{playlistActiva.likes}</span>
+                        </button>
+                        <Link to={`/probador?playlist=${playlistActiva.id}`} className="sr-pl-action-pill">
+                          Probar look
                         </Link>
-                        {playlistActiva.descripcion && (
-                          <p className="sr-pl-spotlight__desc">{playlistActiva.descripcion}</p>
-                        )}
-
-                        <div className="sr-pl-spotlight__actions">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleLike(playlistActiva)}
-                            disabled={busyLikeId === playlistActiva.id}
-                            aria-pressed={Boolean(playlistActiva.liked)}
-                            className={`sr-pl-react-btn ${playlistActiva.liked ? 'is-liked' : ''}`}
-                          >
-                            <span aria-hidden="true">{playlistActiva.liked ? '♥' : '♡'}</span>
-                            <span>{playlistActiva.likes}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSave(playlistActiva)}
-                            disabled={busySaveId === playlistActiva.id}
-                            aria-pressed={Boolean(playlistActiva.saved ?? playlistActiva.esGuardada)}
-                            className={`sr-pl-react-btn ${(playlistActiva.saved ?? playlistActiva.esGuardada) ? 'is-saved' : ''}`}
-                          >
-                            <span aria-hidden="true">{(playlistActiva.saved ?? playlistActiva.esGuardada) ? '★' : '☆'}</span>
-                            <span>{playlistActiva.guardados}</span>
-                          </button>
-                          <Link to={`/probador?playlist=${playlistActiva.id}`} className="sr-pl-action-pill">
-                            Probar look
-                          </Link>
-                          <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-action-pill sr-pl-action-pill--primary">
-                            Abrir →
-                          </Link>
-                        </div>
+                        <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-action-pill sr-pl-action-pill--primary">
+                          Abrir →
+                        </Link>
                       </div>
                     </div>
-
-                    {playlistActiva.prendas && playlistActiva.prendas.length > 0 && (
-                      <div className="sr-pl-garments" aria-label={`Prendas de ${playlistActiva.nombre}`}>
-                        {playlistActiva.prendas.slice(0, 4).map((prenda) => (
-                          <Link
-                            key={prenda.id}
-                            to={`/catalogo/${prenda.id}`}
-                            className="sr-pl-garment-card"
-                          >
-                            <img src={prenda.imagen || '/img/productos/blazer-oversize.jpg'} alt={prenda.nombre} />
-                            <div className="sr-pl-garment-card__body">
-                              <strong>{prenda.nombre}</strong>
-                              <span>{formatCOP(prenda.precio)}</span>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                  </div>
+                </div>
 
                 <div className="sr-pl-switcher">
                   <div className="sr-pl-switcher__pills">

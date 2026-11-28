@@ -2007,3 +2007,219 @@ html[data-tema='claro'] .sr-inicio-fondo {
 .sr-personal-card--quick .sr-personal-card__title {
   margin-block: auto;
 }
+
+/* =====================================================================
+   Tus colecciones: portada con el vinilo asomando detrás (como en /playlists)
+   y título grande a la derecha
+   ===================================================================== */
+.sr-pl-spotlight__top {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+.sr-pl-vinyl {
+  --v: clamp(10.5rem, 14vw, 13.5rem);
+  position: relative;
+  display: block;
+  width: calc(var(--v) * 1.5);
+  height: var(--v);
+}
+
+.sr-pl-vinyl__cover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  width: var(--v);
+  height: var(--v);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #e8e4ef;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease;
+}
+
+.sr-pl-vinyl__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.sr-pl-vinyl:hover .sr-pl-vinyl__cover {
+  transform: translateX(-4px);
+}
+
+.sr-pl-vinyl__disc {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  z-index: 1;
+  width: calc(var(--v) * 0.94);
+  height: calc(var(--v) * 0.94);
+  margin-top: calc(var(--v) * -0.47);
+  border-radius: 50%;
+  background:
+    conic-gradient(from 32deg, rgba(232, 220, 203, 0.18) 0deg, transparent 36deg, transparent 142deg, rgba(185, 185, 202, 0.16) 180deg, transparent 218deg, transparent 324deg, rgba(232, 220, 203, 0.18) 360deg),
+    repeating-radial-gradient(circle at center, #151419 0px, #151419 2px, #262626 2.6px, #1a1820 4.2px);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.07), inset 0 0 30px rgba(0, 0, 0, 0.88), 0 10px 28px rgba(0, 0, 0, 0.6);
+  transition: transform 0.35s ease;
+}
+
+.sr-pl-vinyl:hover .sr-pl-vinyl__disc {
+  transform: translateX(6px);
+}
+
+.sr-pl-vinyl__spin {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: sr-pl-vinyl-spin 22s linear infinite;
+}
+
+@keyframes sr-pl-vinyl-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sr-pl-vinyl .sr-vinyl-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 38%;
+  height: 38%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #48119a;
+  box-shadow: 0 0 0 4px #121017, inset 0 0 12px rgba(0, 0, 0, 0.5);
+}
+
+.sr-pl-vinyl .sr-vinyl-label__ring {
+  position: absolute;
+  inset: 5%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.sr-pl-vinyl .sr-vinyl-spindle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14%;
+  height: 14%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #0d0b10;
+  border: 2px solid rgba(232, 220, 203, 0.85);
+}
+
+/* Título grande a la derecha del disco */
+.sr-pl-spotlight__info {
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.sr-pl-spotlight__name {
+  font-size: clamp(1.9rem, 3.2vw, 2.9rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+@media (max-width: 560px) {
+  .sr-pl-spotlight__top {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .sr-pl-spotlight__info {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-pl-vinyl__spin { animation: none; }
+}
+
+/* =====================================================================
+   Mis tallas / Seguimiento: un poco más altas
+   ===================================================================== */
+.sr-personal-duo-mini .sr-bento-mini {
+  min-height: 6.5rem;
+  padding-block: 1.15rem;
+}
+
+/* =====================================================================
+   Probador: texto arriba-izquierda, botón abajo, maniquí e iconos grandes
+   ===================================================================== */
+.sr-inicio-duo .sr-inicio-probador__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.sr-inicio-duo .sr-inicio-probador__grid > :first-child {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.sr-inicio-duo .sr-inicio-pasos {
+  gap: 1.1rem;
+  margin-top: 1.5rem;
+}
+
+.sr-inicio-duo .sr-inicio-paso {
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.sr-inicio-duo .sr-inicio-paso__n {
+  width: 3.25rem;
+  height: 3.25rem;
+  font-size: 1rem;
+}
+
+.sr-inicio-duo .sr-inicio-cta {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.sr-inicio-duo .sr-inicio-probador__visual {
+  align-items: flex-end;
+}
+
+.sr-inicio-duo .sr-inicio-probador__maniqui {
+  height: clamp(20rem, 34vw, 31rem);
+  max-height: none;
+}
+
+.sr-inicio-duo .sr-inicio-probador__maniqui--b {
+  height: clamp(18rem, 30.5vw, 28rem);
+}
+
+/* Probador: ajuste de equilibrio (grupo texto+botón centrado, título mayor) */
+.sr-inicio-duo .sr-inicio-probador__grid > :first-child {
+  justify-content: center;
+  padding-block: 1.25rem;
+  padding-top: 1.75rem;
+}
+
+.sr-inicio-duo .sr-inicio-probador .sr-inicio-titulo {
+  font-size: clamp(1.85rem, 3vw, 2.6rem);
+}
+
+.sr-inicio-duo .sr-inicio-cta {
+  margin-top: 2rem;
+}
+
+.sr-inicio-duo .sr-inicio-probador__visual {
+  align-items: center;
+}
+
+.sr-inicio-duo .sr-inicio-probador__maniqui {
+  height: clamp(19rem, 31vw, 28rem);
+}
+
+.sr-inicio-duo .sr-inicio-probador__maniqui--b {
+  height: clamp(17rem, 28vw, 25.5rem);
+}
