@@ -52,12 +52,12 @@ export default function StoreRegisterPage() {
     return () => { active = false }
   }, [userId])
 
-  if (revisando) return <main className="store-info sr-tienda-glass"><Loading label="Revisando si ya tienes un almacén…" /></main>
+  if (revisando) return <main className="store-info sr-tienda-glass sr-store-register"><Loading label="Revisando si ya tienes un almacén…" /></main>
 
   if (registrado) {
     const estado = registrado.verificationStatus ?? 'PENDING'
     return (
-      <main className="store-info sr-tienda-glass">
+      <main className="store-info sr-tienda-glass sr-store-register">
         <div className="store-info__layout">
           <header className="store-info__heading">
             <h2>{registrado.tradeName || 'Tu almacén'}</h2>
@@ -130,7 +130,7 @@ export default function StoreRegisterPage() {
   )
 
   return (
-    <main className="store-info sr-tienda-glass">
+    <main className="store-info sr-tienda-glass sr-store-register">
       <div className="store-info__layout">
         <header className="store-info__heading">
           <h2>Registrar mi tienda</h2>
