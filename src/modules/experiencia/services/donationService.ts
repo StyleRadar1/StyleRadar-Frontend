@@ -314,12 +314,25 @@ export const donationService = {
     if (!fid || fid.toLowerCase() === 'mine') {
       return []
     }
-    // No inferir fotos desde publicationId: una publicación mal asociada
-    // puede hacer que una donación muestre una imagen que no corresponde.
-    // Solo se usa la foto que venga explícitamente en la respuesta de la donación.
-    return apiClient
+    const list = await apiClient
       .get<any[]>(`/api/v1/donations/foundations/${encodeURIComponent(fid)}/requests`)
       .then((r) => (Array.isArray(r.data) ? r.data : []).map(normalizeDonation))
+
+    // La donación no trae fotos; solo publicationId. Se recuperan únicamente
+    // si la publicación es una donación y pertenece al mismo donante.
+    // Así se evita mostrar una imagen de otra publicación (p. ej. un evento).
+    return Promise.all(list.map(async (d) => {
+      if (d.fotos?.length || d.publicationId == null) return d
+      try {
+        const pub = await secondHandService.get(String(d.publicationId))
+        if (!pub.esDonacion) return d
+        if (d.donorId && pub.userId && String(pub.userId) !== String(d.donorId)) return d
+        const fotos = pub.photos?.length ? pub.photos : (pub.fotos ?? [])
+        return fotos.length ? { ...d, fotos } : d
+      } catch {
+        return d
+      }
+    }))
   },
 
   /** RF-47 y RF-49: aprobar, rechazar, iniciar recogida o confirmar recepción. */
