@@ -1054,3 +1054,35 @@ html[data-cvd="on"][data-tema="claro"] .inv-status--low { background: rgba(122, 
 html[data-cvd="on"][data-tema="claro"] .inv-status--low .inv-status__dot { background: #b8960a; }
 html[data-cvd="on"][data-tema="claro"] .inv-status--out { background: rgba(179, 71, 0, 0.12); color: #b34700; }
 html[data-cvd="on"][data-tema="claro"] .inv-status--out .inv-status__dot { background: #d55e00; }
+
+
+/* Formulario de alta: dos columnas para evitar un scroll largo en escritorio. */
+.inv-create-form {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 18px 22px;
+  align-items: start;
+}
+
+.inv-create-form > p:first-child {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.inv-create-form__left,
+.inv-create-form__right {
+  min-width: 0;
+}
+
+.inv-create-form__right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .inv-create-form {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

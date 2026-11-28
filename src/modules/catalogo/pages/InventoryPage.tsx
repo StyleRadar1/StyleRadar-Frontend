@@ -1491,11 +1491,12 @@ export default function InventoryPage() {
         onConfirm={() => { void handleCrearPrenda() }}
         onCancel={handleCerrarAgregar}
       >
-        <form onSubmit={handleCrearPrenda} className="space-y-4">
+        <form onSubmit={handleCrearPrenda} className="inv-create-form">
           <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/70">
             Marca asignada automáticamente según tu tienda: <strong className="text-white">{storeName}</strong>
           </p>
 
+          <div className="inv-create-form__left">
           <div>
             <div className="flex items-center justify-between">
               <label htmlFor="fotoPrenda" className="block text-xs font-semibold text-white/80">
@@ -1587,6 +1588,9 @@ export default function InventoryPage() {
             <FieldError id="fotosPrenda-err" message={createErrors.fotografias} />
           </div>
 
+          </div>
+
+          <div className="inv-create-form__right">
           <GarmentMeasurementsEditor
             sizes={Object.keys(stockPorTallaForm)}
             value={createMeasurements}
@@ -1730,6 +1734,7 @@ export default function InventoryPage() {
           </div>
 
           <FieldError id="crearPrenda-err" message={createErrors._global} />
+          </div>
         </form>
       </ConfirmDialog>
 
