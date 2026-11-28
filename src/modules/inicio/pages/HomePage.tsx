@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { formatCOP } from '@/modules/core/utils/format'
 import { playlistService, resolvePlaylistCreatorName } from '@/modules/catalogo/services/playlistService'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import { alertService } from '@/modules/soporte/services/alertService'
@@ -289,18 +288,32 @@ export default function HomePage() {
                     className="sr-pl-spotlight"
                   >
                     <div className="sr-pl-spotlight__top">
-                      <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-spotlight__cover">
-                        <img
-                          src={
-                            playlistActiva.portadaUrl ||
-                            playlistActiva.prendas?.[0]?.imagen ||
-                            '/img/productos/blazer-oversize.jpg'
-                          }
-                          alt={playlistActiva.nombre}
-                        />
-                        {playlistActiva.estilo && (
-                          <span className="sr-pl-spotlight__estilo">{playlistActiva.estilo}</span>
-                        )}
+                      <Link
+                        to={`/playlists/${playlistActiva.id}`}
+                        className="sr-pl-vinyl"
+                        aria-label={`Abrir la colección ${playlistActiva.nombre}`}
+                      >
+                        <span className="sr-pl-vinyl__disc" aria-hidden="true">
+                          <span className="sr-pl-vinyl__spin">
+                            <span className="sr-vinyl-label">
+                              <span className="sr-vinyl-label__ring" />
+                              <span className="sr-vinyl-spindle" />
+                            </span>
+                          </span>
+                        </span>
+                        <span className="sr-pl-vinyl__cover">
+                          <img
+                            src={
+                              playlistActiva.portadaUrl ||
+                              playlistActiva.prendas?.[0]?.imagen ||
+                              '/img/productos/blazer-oversize.jpg'
+                            }
+                            alt={playlistActiva.nombre}
+                          />
+                          {playlistActiva.estilo && (
+                            <span className="sr-pl-spotlight__estilo">{playlistActiva.estilo}</span>
+                          )}
+                        </span>
                       </Link>
 
                       <div className="sr-pl-spotlight__info">
@@ -329,16 +342,6 @@ export default function HomePage() {
                             <span aria-hidden="true">{playlistActiva.liked ? '♥' : '♡'}</span>
                             <span>{playlistActiva.likes}</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSave(playlistActiva)}
-                            disabled={busySaveId === playlistActiva.id}
-                            aria-pressed={Boolean(playlistActiva.saved ?? playlistActiva.esGuardada)}
-                            className={`sr-pl-react-btn ${(playlistActiva.saved ?? playlistActiva.esGuardada) ? 'is-saved' : ''}`}
-                          >
-                            <span aria-hidden="true">{(playlistActiva.saved ?? playlistActiva.esGuardada) ? '★' : '☆'}</span>
-                            <span>{playlistActiva.guardados}</span>
-                          </button>
                           <Link to={`/probador?playlist=${playlistActiva.id}`} className="sr-pl-action-pill">
                             Probar look
                           </Link>
@@ -349,23 +352,6 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {playlistActiva.prendas && playlistActiva.prendas.length > 0 && (
-                      <div className="sr-pl-garments" aria-label={`Prendas de ${playlistActiva.nombre}`}>
-                        {playlistActiva.prendas.slice(0, 4).map((prenda) => (
-                          <Link
-                            key={prenda.id}
-                            to={`/catalogo/${prenda.id}`}
-                            className="sr-pl-garment-card"
-                          >
-                            <img src={prenda.imagen || '/img/productos/blazer-oversize.jpg'} alt={prenda.nombre} />
-                            <div className="sr-pl-garment-card__body">
-                              <strong>{prenda.nombre}</strong>
-                              <span>{formatCOP(prenda.precio)}</span>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
                   </motion.div>
                 </AnimatePresence>
 
