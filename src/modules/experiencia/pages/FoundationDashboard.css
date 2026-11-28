@@ -191,7 +191,7 @@
   padding: 0.9rem 1rem;
   border-radius: 1.1rem;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.04) 100%);
+  background: rgba(255, 255, 255, 0.07);
   backdrop-filter: blur(16px);
   transition: border-color 0.18s ease, transform 0.18s ease;
 }
@@ -202,7 +202,7 @@
 }
 
 .fnd-bento-mini--accent {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.22) 0%, rgba(255, 255, 255, 0.06) 100%);
+  background: rgba(139, 92, 246, 0.18);
 }
 
 .fnd-bento-mini strong {
