@@ -509,7 +509,7 @@ html[data-tema="daltonico"] {
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.15em;
-  color: var(--sr-store-violet);
+  color: var(--sr-store-accent);
   text-transform: uppercase;
   display: block;
   margin-bottom: 0.35rem;

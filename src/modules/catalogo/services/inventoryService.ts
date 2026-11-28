@@ -47,7 +47,7 @@ export const resetInventoryMock = () => {
   storeContextCache.clear()
 }
 
-function computeStatus(total: number, retired: boolean, lowStockThreshold = 3): InventoryItemDto['estado'] {
+function computeStatus(total: number, retired: boolean, lowStockThreshold = 2): InventoryItemDto['estado'] {
   if (retired) return 'RETIRADO'
   if (total === 0) return 'AGOTADA'
   if (total <= lowStockThreshold) return 'ULTIMAS_UNIDADES'
@@ -282,7 +282,7 @@ export const inventoryService = {
       resolvedSede ? stockCompletoDeSede(resolvedSede) : Promise.resolve(new Map<string, Record<string, number>>()),
       ctx.nit ? storeSettingsService.getCatalogSettings(ctx.nit).catch(() => null) : Promise.resolve(null),
     ])
-    const lowStockThreshold = catalogSettings?.lowStockThreshold ?? 3
+    const lowStockThreshold = catalogSettings?.lowStockThreshold ?? 2
     const catalogo = Array.isArray(catalogoRes.data) ? catalogoRes.data : []
     // Catálogo deja de listar la prenda cuando TODAS sus tallas quedan en 0 (SR-RF-57), pero la tienda debe seguir viéndola
     // para poder reponer. Se trae su detalle por id (ese sí responde) y se conserva su stock en 0 por talla.
