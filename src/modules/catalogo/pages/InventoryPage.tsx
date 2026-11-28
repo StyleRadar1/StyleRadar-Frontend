@@ -99,6 +99,7 @@ export default function InventoryPage() {
   const [stockPorTallaForm, setStockPorTallaForm] = useState<Record<string, number>>(() => defaultStockForTipoPrenda('ROPA'))
   const [guardando, setGuardando] = useState(false)
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
+  const [createAttempted, setCreateAttempted] = useState(false)
 
   // Diálogo para editar prenda (PUT /api/v1/prendas/{id}, SR-RF-55)
   const [itemParaEditar, setItemParaEditar] = useState<InventoryItemDto | null>(null)
@@ -297,6 +298,7 @@ export default function InventoryPage() {
     setNuevaImagenUrlInput('')
     setNuevasImagenes([])
     setCreateErrors({})
+    setCreateAttempted(false)
   }, [])
 
   // Subir fotos para la nueva prenda (1 a 5 fotos, SR-RF-51)
@@ -393,6 +395,7 @@ export default function InventoryPage() {
     }
     if (Object.keys(errs).length) {
       setCreateErrors(errs)
+      setCreateAttempted(true)
       const firstId = errs.nombre
         ? 'nombrePrenda'
         : errs.tipo
@@ -429,6 +432,7 @@ export default function InventoryPage() {
         await inventoryService.saveGarmentMeasurements(created.id, createMeasurements).catch(() => undefined)
       }
       setMostrarAgregar(false)
+      setCreateAttempted(false)
       setNuevoNombre('')
       setNuevaImagenUrlInput('')
       setNuevasImagenes([])
@@ -442,11 +446,13 @@ export default function InventoryPage() {
       }
       if (Object.keys(fields).length) {
         setCreateErrors(fields)
+        setCreateAttempted(true)
         const firstId = fields.nombre ? 'nombrePrenda' : fields.precio ? 'precioPrenda' : fields.fotografias ? 'fotoPrenda' : 'tipoPrenda'
         window.setTimeout(() => document.getElementById(firstId)?.focus(), 0)
         revealCreateError()
       } else if (!handleActionFailure(err)) {
         setCreateErrors({ _global: errorMessage(err, 'Error al registrar prenda.') })
+        setCreateAttempted(true)
         revealCreateError()
       }
     } finally {
@@ -744,6 +750,7 @@ export default function InventoryPage() {
                   return
                 }
                 setCreateErrors({})
+                setCreateAttempted(false)
                 setNuevaImagenUrlInput('')
                 setNuevasImagenes([])
                 setStockPorTallaForm(defaultStockForTipoPrenda(nuevoTipoPrenda))
@@ -787,15 +794,19 @@ export default function InventoryPage() {
           </ErrorBanner>
         )}
 
-        {/* Alerta toast */}
-        <ErrorToast
-          open={Boolean(toast)}
-          tone={toast?.tone ?? 'ok'}
-          icon={toast?.tone === 'warn' ? 'refresh' : toast?.tone === 'bad' ? 'warn' : 'ok'}
-          title={toast?.text ?? ''}
-          subtitle={toast?.sub}
-          onClose={() => setToast(null)}
-        />
+        {/* Alerta toast: fija y visible aunque la página esté desplazada o el modal se cierre. */}
+        <div className="pointer-events-none fixed right-4 top-24 z-[350] w-[min(380px,calc(100vw-2rem))]">
+          <div className="pointer-events-auto">
+            <ErrorToast
+              open={Boolean(toast)}
+              tone={toast?.tone ?? 'ok'}
+              icon={toast?.tone === 'warn' ? 'refresh' : toast?.tone === 'bad' ? 'warn' : 'ok'}
+              title={toast?.text ?? ''}
+              subtitle={toast?.sub}
+              onClose={() => setToast(null)}
+            />
+          </div>
+        </div>
 
         {/* ── Fila de 4 tarjetas de resumen con números calculados del inventario ── */}
         <ul className="inv-kpis" aria-label="Resumen de inventario">
@@ -1533,8 +1544,16 @@ export default function InventoryPage() {
         onConfirm={() => { void handleCrearPrenda() }}
         onCancel={handleCerrarAgregar}
       >
-        <form id="formAgregarPrenda" onSubmit={handleCrearPrenda} className="inv-create-form">
-          {Object.keys(createErrors).length > 0 && (
+        <form
+          id="formAgregarPrenda"
+          onSubmit={handleCrearPrenda}
+          className="inv-create-form"
+          onChange={() => {
+            setCreateErrors((prev) => (Object.keys(prev).length ? {} : prev))
+            setCreateAttempted(false)
+          }}
+        >
+          {createAttempted && Object.keys(createErrors).length > 0 && (
             <div
               id="crearPrenda-resumen"
               role="alert"
@@ -1546,7 +1565,7 @@ export default function InventoryPage() {
             </div>
           )}
 
-          <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/70">
+          <p className="inv-create-form__full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/70">
             Marca asignada automáticamente según tu tienda: <strong className="text-white">{storeName}</strong>
           </p>
 

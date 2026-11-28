@@ -1065,7 +1065,8 @@ html[data-cvd="on"][data-tema="claro"] .inv-status--out .inv-status__dot { backg
   align-items: start;
 }
 
-.inv-create-form > p:first-child {
+.inv-create-form > p:first-child,
+.inv-create-form__full {
   grid-column: 1 / -1;
   margin: 0;
 }
