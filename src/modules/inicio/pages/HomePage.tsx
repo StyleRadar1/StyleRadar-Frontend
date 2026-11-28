@@ -279,82 +279,72 @@ export default function HomePage() {
 
             {playlistActiva ? (
               <>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`${tab}-${playlistActiva.id}`}
-                    initial={reducir ? false : { opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={reducir ? undefined : { opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }}
-                    className="sr-pl-spotlight"
-                  >
-                    <div className="sr-pl-spotlight__top">
-                      <Link
-                        to={`/playlists/${playlistActiva.id}`}
-                        className="sr-pl-vinyl"
-                        aria-label={`Abrir la colección ${playlistActiva.nombre}`}
-                      >
-                        <span className="sr-pl-vinyl__disc" aria-hidden="true">
-                          <span className="sr-pl-vinyl__spin">
-                            <span className="sr-vinyl-label">
-                              <span className="sr-vinyl-label__ring" />
-                              <span className="sr-vinyl-spindle" />
-                            </span>
+                <div className="sr-pl-spotlight">
+                  <div className="sr-pl-spotlight__top">
+                    <Link
+                      to={`/playlists/${playlistActiva.id}`}
+                      className="sr-pl-vinyl"
+                      aria-label={`Abrir la colección ${playlistActiva.nombre}`}
+                    >
+                      <span className="sr-pl-vinyl__disc" aria-hidden="true">
+                        <span className="sr-pl-vinyl__spin">
+                          <span className="sr-vinyl-label">
+                            <span className="sr-vinyl-label__ring" />
+                            <span className="sr-vinyl-spindle" />
                           </span>
                         </span>
-                        <span className="sr-pl-vinyl__cover">
-                          <img
-                            src={
-                              playlistActiva.portadaUrl ||
-                              playlistActiva.prendas?.[0]?.imagen ||
-                              '/img/productos/blazer-oversize.jpg'
-                            }
-                            alt={playlistActiva.nombre}
-                          />
-                          {playlistActiva.estilo && (
-                            <span className="sr-pl-spotlight__estilo">{playlistActiva.estilo}</span>
-                          )}
-                        </span>
-                      </Link>
-
-                      <div className="sr-pl-spotlight__info">
-                        <div className="sr-pl-spotlight__meta-row">
-                          <span>{resolvePlaylistCreatorName(playlistActiva, user, tab === 'mine')}</span>
-                          <span>·</span>
-                          <span>{playlistActiva.visibilidad === 'PUBLICA' ? 'Pública' : 'Privada'}</span>
-                          <span>·</span>
-                          <span>{playlistActiva.prendas?.length ?? 0} prendas</span>
-                        </div>
-                        <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-spotlight__name">
-                          {playlistActiva.nombre}
-                        </Link>
-                        {playlistActiva.descripcion && (
-                          <p className="sr-pl-spotlight__desc">{playlistActiva.descripcion}</p>
+                      </span>
+                      <span className="sr-pl-vinyl__cover">
+                        <img
+                          src={
+                            playlistActiva.portadaUrl ||
+                            playlistActiva.prendas?.[0]?.imagen ||
+                            '/img/productos/blazer-oversize.jpg'
+                          }
+                          alt={playlistActiva.nombre}
+                        />
+                        {playlistActiva.estilo && (
+                          <span className="sr-pl-spotlight__estilo">{playlistActiva.estilo}</span>
                         )}
+                      </span>
+                    </Link>
 
-                        <div className="sr-pl-spotlight__actions">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleLike(playlistActiva)}
-                            disabled={busyLikeId === playlistActiva.id}
-                            aria-pressed={Boolean(playlistActiva.liked)}
-                            className={`sr-pl-react-btn ${playlistActiva.liked ? 'is-liked' : ''}`}
-                          >
-                            <span aria-hidden="true">{playlistActiva.liked ? '♥' : '♡'}</span>
-                            <span>{playlistActiva.likes}</span>
-                          </button>
-                          <Link to={`/probador?playlist=${playlistActiva.id}`} className="sr-pl-action-pill">
-                            Probar look
-                          </Link>
-                          <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-action-pill sr-pl-action-pill--primary">
-                            Abrir →
-                          </Link>
-                        </div>
+                    <div className="sr-pl-spotlight__info">
+                      <div className="sr-pl-spotlight__meta-row">
+                        <span>{resolvePlaylistCreatorName(playlistActiva, user, tab === 'mine')}</span>
+                        <span>·</span>
+                        <span>{playlistActiva.visibilidad === 'PUBLICA' ? 'Pública' : 'Privada'}</span>
+                        <span>·</span>
+                        <span>{playlistActiva.prendas?.length ?? 0} prendas</span>
+                      </div>
+                      <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-spotlight__name">
+                        {playlistActiva.nombre}
+                      </Link>
+                      {playlistActiva.descripcion && (
+                        <p className="sr-pl-spotlight__desc">{playlistActiva.descripcion}</p>
+                      )}
+
+                      <div className="sr-pl-spotlight__actions">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleLike(playlistActiva)}
+                          disabled={busyLikeId === playlistActiva.id}
+                          aria-pressed={Boolean(playlistActiva.liked)}
+                          className={`sr-pl-react-btn ${playlistActiva.liked ? 'is-liked' : ''}`}
+                        >
+                          <span aria-hidden="true">{playlistActiva.liked ? '♥' : '♡'}</span>
+                          <span>{playlistActiva.likes}</span>
+                        </button>
+                        <Link to={`/probador?playlist=${playlistActiva.id}`} className="sr-pl-action-pill">
+                          Probar look
+                        </Link>
+                        <Link to={`/playlists/${playlistActiva.id}`} className="sr-pl-action-pill sr-pl-action-pill--primary">
+                          Abrir →
+                        </Link>
                       </div>
                     </div>
-
-                  </motion.div>
-                </AnimatePresence>
+                  </div>
+                </div>
 
                 <div className="sr-pl-switcher">
                   <div className="sr-pl-switcher__pills">
