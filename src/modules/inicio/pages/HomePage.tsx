@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { formatCOP } from '@/modules/core/utils/format'
 import { playlistService, resolvePlaylistCreatorName } from '@/modules/catalogo/services/playlistService'
 import type { PlaylistDto } from '@/modules/catalogo/types/playlist.dto'
 import { alertService } from '@/modules/soporte/services/alertService'
@@ -30,7 +28,6 @@ const ESTILOS_RAPIDOS = [
 export default function HomePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const reducir = useReducedMotion()
   const [busqueda, setBusqueda] = useState('')
   const [tab, setTab] = useState<PlaylistTab>('mine')
   const [minePlaylists, setMinePlaylists] = useState<PlaylistDto[]>([])
@@ -162,24 +159,6 @@ export default function HomePage() {
       // Silencioso si no hay sesión o falla red
     } finally {
       setBusyLikeId(null)
-    }
-  }
-
-  const handleToggleSave = async (pl: PlaylistDto) => {
-    if (busySaveId === pl.id) return
-    setBusySaveId(pl.id)
-    try {
-      const res = await playlistService.toggleSave(pl.id)
-      const nextSaved = res.saved ?? res.esGuardada ?? !(pl.saved ?? pl.esGuardada)
-      updatePlaylistEnListas(pl.id, {
-        guardados: res.guardados,
-        saved: nextSaved,
-        esGuardada: nextSaved,
-      })
-    } catch {
-      // Silencioso
-    } finally {
-      setBusySaveId(null)
     }
   }
 
