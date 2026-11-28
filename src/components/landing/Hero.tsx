@@ -4,6 +4,10 @@ import { Logo } from '@/modules/core/design-system'
 import { heroSlides } from '@/data/landingData'
 import { CursorHanger } from './CursorHanger'
 
+/** Botón redondo de 44 px del pie del hero (flechas y «seguir bajando»). */
+const CONTROL_HERO =
+  'inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--hero-sub-border)] bg-black/30 text-[var(--hero-fg)] backdrop-blur-md transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]'
+
 export function Hero() {
   const heroRef = useRef<HTMLElement | null>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -28,6 +32,12 @@ export function Hero() {
     }, 5500)
     return () => clearInterval(timer)
   }, [isPaused, prefersReducedMotion])
+
+  /** Cambio manual de foto: quien elige a mano ya no necesita que el carrusel siga solo. */
+  const irA = (delta: number) => {
+    setIsPaused(true)
+    setCurrentSlide((prev) => (prev + delta + heroSlides.length) % heroSlides.length)
+  }
 
   const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
@@ -96,7 +106,7 @@ export function Hero() {
         <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
           <Link
             to="/catalogo"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_32px_rgba(139,92,246,0.55)] border border-white/25 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-violeta hover:bg-violeta-claro text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_6px_18px_rgba(0,0,0,0.35)] border border-white/25 hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
             <span>Entrar a StyleRadar</span>
             <svg
@@ -140,33 +150,38 @@ export function Hero() {
       </div>
 
       {/* Pie del hero con indicador de scroll y contador de diapositivas */}
-      <div className="absolute z-20 bottom-8 inset-x-6 md:inset-x-14 flex items-center justify-between text-xs font-extrabold tracking-widest uppercase text-[var(--hero-fg-muted)]">
+      <div className="absolute z-20 bottom-6 inset-x-6 md:inset-x-14 grid grid-cols-3 items-center text-xs font-extrabold tracking-widest uppercase text-[var(--hero-fg-muted)]">
+        <span aria-live="polite" aria-atomic="true" className="text-sm font-semibold tracking-widest">
+          <span className="text-[var(--hero-fg)] font-black">
+            {String(currentSlide + 1).padStart(2, '0')}
+          </span>{' '}
+          <span className="opacity-60">/</span>{' '}
+          <span>{String(heroSlides.length).padStart(2, '0')}</span>
+        </span>
+
+        {/* Flecha hacia abajo: avisa que la página sigue */}
         <a
-          href="#categorias"
+          href="#pe-que-es"
           onClick={handleScrollTo}
-          className="flex items-center gap-2 text-[var(--hero-fg-muted)] hover:text-[var(--hero-fg)] transition-colors"
+          aria-label="Seguir bajando para ver más"
+          className={`${CONTROL_HERO} justify-self-center motion-safe:animate-bounce`}
         >
-          <span className="w-2 h-2 rounded-full bg-[var(--hero-fg)] animate-ping" />
-          <span className="text-[var(--hero-fg)]">Desliza</span>
-          <span aria-hidden="true" className="text-[var(--hero-fg)]">↓</span>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </a>
 
-        <div className="flex items-center gap-3 text-sm font-semibold tracking-widest text-[var(--hero-fg-muted)]">
-          <span aria-live="polite" aria-atomic="true">
-            <span className="text-[var(--hero-fg)] font-black">
-              {String(currentSlide + 1).padStart(2, '0')}
-            </span>{' '}
-            <span className="text-[var(--hero-fg-muted)] opacity-60">/</span>{' '}
-            <span className="text-[var(--hero-fg-muted)]">{String(heroSlides.length).padStart(2, '0')}</span>
-          </span>
-          <button
-            type="button"
-            className="rounded-full border border-[var(--hero-sub-border)] bg-black/25 px-3 py-2 text-[10px] font-bold tracking-[.12em] text-[var(--hero-fg)] transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
-            aria-label={isPaused ? 'Reanudar carrusel de imágenes' : 'Pausar carrusel de imágenes'}
-            aria-pressed={isPaused}
-            onClick={() => setIsPaused((paused) => !paused)}
-          >
-            {isPaused ? 'Reanudar' : 'Pausar'}
+        {/* Anterior y siguiente */}
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" onClick={() => irA(-1)} aria-label="Foto anterior" className={CONTROL_HERO}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="15 6 9 12 15 18" />
+            </svg>
+          </button>
+          <button type="button" onClick={() => irA(1)} aria-label="Foto siguiente" className={CONTROL_HERO}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="9 6 15 12 9 18" />
+            </svg>
           </button>
         </div>
       </div>
