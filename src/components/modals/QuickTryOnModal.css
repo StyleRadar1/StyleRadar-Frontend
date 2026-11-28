@@ -1941,3 +1941,37 @@ html[data-tema="claro"] .cz-mini-item-pill { background: rgba(0, 0, 0, 0.06); }
 /* Botones de interés en violeta sólido (sin degradé) */
 .cz-btn-try-outfit { background: #48119a; }
 .cz-btn-try-outfit:hover { background: #5b1fb8; }
+
+/* ═══ Mi look compacto: una fila por espacio ═══ */
+.cz-slots-compact { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cz-slot-row { display: flex; align-items: stretch; gap: 4px; }
+.cz-slot-row-main {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border-radius: 12px; cursor: pointer; text-align: left;
+  border: 1px dashed var(--probador-border); background: transparent; color: var(--probador-text);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.cz-slot-row.is-worn .cz-slot-row-main { border-style: solid; background: var(--probador-surface-subtle); }
+.cz-slot-row-main:hover { border-color: var(--probador-accent); background: var(--probador-surface-subtle); }
+.cz-slot-row-main:focus-visible, .cz-slot-row-x:focus-visible { outline: 2px solid #7b4dd8; outline-offset: 2px; }
+.cz-slot-row-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.cz-slot-row-plus {
+  width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0; display: grid; place-items: center;
+  font: 700 20px/1 system-ui, sans-serif; color: var(--probador-accent); background: var(--probador-surface-subtle);
+}
+.cz-slot-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.cz-slot-row-slot { font: 800 10px/1 system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--probador-text-muted); }
+.cz-slot-row-name { font: 600 13px/1.2 system-ui, sans-serif; display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.cz-slot-row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.cz-slot-row-talla { flex-shrink: 0; font-weight: 800; color: var(--probador-accent); }
+.cz-slot-row-talla::before { content: 'Talla '; font-weight: 600; color: var(--probador-text-muted); }
+.cz-slot-row:not(.is-worn) .cz-slot-row-name { color: var(--probador-text-muted); font-weight: 500; }
+.cz-slot-row-main .cz-fit-chip { flex-shrink: 0; max-width: 42%; white-space: normal; text-align: center; }
+.cz-slot-row-x {
+  width: 36px; flex-shrink: 0; border-radius: 12px; cursor: pointer; font-size: 20px; line-height: 1;
+  border: 1px solid var(--probador-border); background: transparent; color: var(--probador-text-muted);
+}
+.cz-slot-row-x:hover { color: #e11d48; border-color: #e11d48; }
+.cz-slot-row-color { margin-left: 8px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.cz-slot-row-chip { align-self: flex-start; }
+.cz-slot-row-slot { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

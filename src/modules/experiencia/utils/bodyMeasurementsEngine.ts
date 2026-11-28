@@ -387,12 +387,16 @@ const MEDIDAS_TALLA: Record<string, { pecho: number; cintura: number; cadera: nu
   XXL: { pecho: 121, cintura: 107, cadera: 123 },
 }
 
-/** Talla de letra cuyo pecho típico está más cerca del pecho dado. */
-export function tallaDesdePecho(pecho: number): string {
+/**
+ * Talla de letra más cercana. En mujer pesa también la cadera (suele ser más ancha que el pecho);
+ * en hombre y neutro manda el pecho.
+ */
+export function tallaDesdePecho(pecho: number, cadera?: number, cuerpo?: BodyType): string {
+  const metrica = cuerpo === 'femenino' && cadera !== undefined ? (pecho + cadera - 4) / 2 : pecho
   let mejor = 'M'
   let dist = Infinity
   for (const t of TALLAS_LETRA) {
-    const d = Math.abs(MEDIDAS_TALLA[t].pecho - pecho)
+    const d = Math.abs(MEDIDAS_TALLA[t].pecho - metrica)
     if (d < dist) {
       dist = d
       mejor = t
@@ -403,26 +407,43 @@ export function tallaDesdePecho(pecho: number): string {
 
 const entre = (n: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(n)))
 
+/* Cuerpo de referencia (talla M, IMC 22) por sexo: la mujer tiene la cadera más ancha que el pecho y la
+   cintura más marcada; el hombre tiene los hombros más anchos y la cadera angosta respecto al pecho. */
+const CUERPO_BASE: Record<BodyType, { pecho: number; cintura: number; cadera: number; hombros: number }> = {
+  femenino: { pecho: 89, cintura: 72, cadera: 98, hombros: 39 },
+  masculino: { pecho: 98, cintura: 84, cadera: 97, hombros: 46 },
+  neutro: { pecho: 94, cintura: 78, cadera: 98, hombros: 42 },
+}
+/* Ajuste de una talla elegida: mismas tallas, distinta distribución del cuerpo */
+const AJUSTE_TALLA: Record<BodyType, { pecho: number; cintura: number; cadera: number; hombros: number }> = {
+  femenino: { pecho: -5, cintura: -7, cadera: 1, hombros: 39 },
+  masculino: { pecho: 3, cintura: 4, cadera: -2, hombros: 46 },
+  neutro: { pecho: 0, cintura: 0, cadera: 0, hombros: 42 },
+}
+
 /**
- * Ajuste rápido del probador: al cambiar estatura, peso o tipo de cuerpo se recalculan pecho, cintura y cadera
- * (más peso para la misma estatura = más contorno), y con ellos la talla. Al elegir una talla se usan sus medidas típicas.
- * Así la ropa se evalúa contra un cuerpo real y no contra un número que nadie movió.
+ * Ajuste rápido del probador: al cambiar estatura, peso o sexo se recalculan pecho, cintura, cadera y hombros
+ * (más peso para la misma estatura = más contorno), y con ellos la talla. Al elegir una talla se usan sus
+ * medidas típicas según el sexo. Así la ropa se evalúa contra un cuerpo real.
  */
 export function aplicarCambioRapido(prev: BodyMeasurements, cambios: Partial<BodyMeasurements>): BodyMeasurements {
   const next: BodyMeasurements = { ...prev, ...cambios }
+  const cuerpo = next.cuerpoBase
   if (cambios.tallaHabitual && MEDIDAS_TALLA[cambios.tallaHabitual]) {
     const t = MEDIDAS_TALLA[cambios.tallaHabitual]
-    return { ...next, pecho: t.pecho, cintura: t.cintura, cadera: t.cadera, esAproximado: true }
+    const aj = AJUSTE_TALLA[cuerpo]
+    return { ...next, pecho: t.pecho + aj.pecho, cintura: t.cintura + aj.cintura, cadera: t.cadera + aj.cadera, hombros: aj.hombros + (t.pecho - 95) * 0.25, esAproximado: true }
   }
   if (cambios.estatura !== undefined || cambios.peso !== undefined || cambios.cuerpoBase !== undefined) {
     const m = next.estatura / 100
     const bmi = (next.peso ?? 65) / (m * m)
     const d = bmi - 22
-    const ajusteCuerpo = next.cuerpoBase === 'femenino' ? { p: -3, c: -5, ca: 1 } : next.cuerpoBase === 'masculino' ? { p: 2, c: 2, ca: -1 } : { p: 0, c: 0, ca: 0 }
-    const pecho = entre(MEDIDAS_TALLA.M.pecho + ajusteCuerpo.p + d * 2.8, 60, 150)
-    const cintura = entre(MEDIDAS_TALLA.M.cintura + ajusteCuerpo.c + d * 3.2, 45, 140)
-    const cadera = entre(MEDIDAS_TALLA.M.cadera + ajusteCuerpo.ca + d * 2.5, 65, 160)
-    return { ...next, pecho, cintura, cadera, tallaHabitual: tallaDesdePecho(pecho), esAproximado: true }
+    const base = CUERPO_BASE[cuerpo]
+    const pecho = entre(base.pecho + d * 2.8, 60, 150)
+    const cintura = entre(base.cintura + d * 3.2, 45, 140)
+    const cadera = entre(base.cadera + d * 2.5, 65, 160)
+    const hombros = entre(base.hombros + d * 0.6, 30, 65)
+    return { ...next, pecho, cintura, cadera, hombros, tallaHabitual: tallaDesdePecho(pecho, cadera, cuerpo), esAproximado: true }
   }
   return next
 }

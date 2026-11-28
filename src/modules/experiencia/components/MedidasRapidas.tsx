@@ -4,9 +4,8 @@ import './MedidasRapidas.css'
 
 const TALLAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
 const CUERPOS: { valor: BodyType; etiqueta: string }[] = [
-  { valor: 'femenino', etiqueta: 'Femenino' },
-  { valor: 'masculino', etiqueta: 'Masculino' },
-  { valor: 'neutro', etiqueta: 'Neutro' },
+  { valor: 'femenino', etiqueta: 'Mujer' },
+  { valor: 'masculino', etiqueta: 'Hombre' },
 ]
 export const ESTATURA_MIN = 140
 export const ESTATURA_MAX = 210
@@ -40,6 +39,23 @@ export function MedidasRapidas({ medidas, onCambio, hayCambios, onGuardar, onMas
         <h3 id={`${id}-t`}>Tus medidas</h3>
         <button type="button" className="sr-medidas__enlace" onClick={onMasMedidas}>Más medidas</button>
       </div>
+
+      <fieldset className="sr-medidas__grupo">
+        <legend>Cuerpo</legend>
+        <div className="sr-medidas__fichas sr-medidas__fichas--duo">
+          {CUERPOS.map((c) => (
+            <button
+              key={c.valor}
+              type="button"
+              aria-pressed={medidas.cuerpoBase === c.valor}
+              className="sr-medidas__ficha"
+              onClick={() => onCambio({ cuerpoBase: c.valor })}
+            >
+              {c.etiqueta}
+            </button>
+          ))}
+        </div>
+      </fieldset>
 
       <div className="sr-medidas__fila">
         <label htmlFor={`${id}-est`}>Estatura</label>
@@ -92,22 +108,6 @@ export function MedidasRapidas({ medidas, onCambio, hayCambios, onGuardar, onMas
         </div>
       </fieldset>
 
-      <fieldset className="sr-medidas__grupo">
-        <legend>Tipo de cuerpo</legend>
-        <div className="sr-medidas__fichas">
-          {CUERPOS.map((c) => (
-            <button
-              key={c.valor}
-              type="button"
-              aria-pressed={medidas.cuerpoBase === c.valor}
-              className="sr-medidas__ficha"
-              onClick={() => onCambio({ cuerpoBase: c.valor })}
-            >
-              {c.etiqueta}
-            </button>
-          ))}
-        </div>
-      </fieldset>
 
       {hayCambios && (
         <button type="button" className="sr-medidas__guardar" onClick={onGuardar}>

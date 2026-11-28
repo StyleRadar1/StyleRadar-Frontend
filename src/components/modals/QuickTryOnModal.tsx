@@ -792,7 +792,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId, modo = 'mod
                   <path d="M12 6a2 2 0 1 0-2-2c0 1.1.9 2 2 2v1l8.5 5.4a1.5 1.5 0 0 1-.8 2.6H4.3a1.5 1.5 0 0 1-.8-2.6L12 7" />
                 </svg>
               </span>
-              <span className="cz-action-card-title">Escoger prenda</span>
+              <span className="cz-action-card-title">Ver prendas</span>
               <span className="cz-action-card-desc">Arma tu look con nuestras prendas</span>
               <span className="cz-action-card-arrow" aria-hidden="true">→</span>
             </button>
@@ -838,83 +838,69 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId, modo = 'mod
             )}
           </div>
 
-          {/* Lista de prendas agrupadas por espacio */}
-          <div className="cz-slots-container" role="region" aria-label="Prendas por espacio">
+          {/* Mi look compacto: una fila por espacio; las prendas disponibles se eligen en el pop-up */}
+          <ul className="cz-slots-container cz-slots-compact" aria-label="Prendas por espacio">
             {LOOK_SLOTS.map((slot) => {
               const worn = wearing[slot]
+              const abrir = () => {
+                if (!worn) {
+                  handleAddSlot(slot)
+                  return
+                }
+                setGarmentPickerItem(worn.item)
+                setPickerSelectedSize(worn.talla)
+                setPickerSelectedColor(worn.color)
+              }
               return (
-                <div key={slot} className={`cz-slot-card ${worn ? 'cz-slot-card-occupied' : 'cz-slot-card-empty'}`}>
-                  <div className="cz-slot-header">
-                    <span className="cz-slot-badge">{SLOT_LABELS[slot]}</span>
-                    {worn && (
-                      <span className={`cz-fit-chip ${worn.veredicto.includes('perfecto') ? 'cz-fit-chip-perfect' : ''}`}>
-                        {worn.veredicto}
-                      </span>
+                <li key={slot} className={`cz-slot-row ${worn ? 'is-worn' : ''}`}>
+                  <button
+                    type="button"
+                    className="cz-slot-row-main"
+                    onClick={abrir}
+                    aria-label={worn ? `${SLOT_LABELS[slot]}: ${worn.item.nombre}, talla ${worn.talla}. Cambiar` : `Elegir ${SLOT_LABELS[slot].toLowerCase()}`}
+                  >
+                    {worn ? (
+                      <img src={worn.item.imagen} alt="" className="cz-slot-row-thumb" loading="lazy" />
+                    ) : (
+                      <span className="cz-slot-row-plus" aria-hidden="true">+</span>
                     )}
-                  </div>
-
-                  {worn ? (
-                    <div className="cz-worn-item-body">
-                      <img
-                        src={worn.item.imagen}
-                        alt={worn.item.nombre}
-                        className="cz-worn-item-thumb"
-                        loading="lazy"
-                      />
-                      <div className="cz-worn-item-details">
-                        <span className="cz-worn-item-store">{worn.item.tienda}</span>
-                        <h2 className="cz-worn-item-name">{worn.item.nombre}</h2>
-                        <div className="cz-worn-item-meta">
-                          <span className="cz-meta-tag">Talla: <strong>{worn.talla}</strong></span>
-                          <span className="cz-meta-tag">Color: {worn.color}</span>
-                          <span className="cz-meta-price">{money(worn.item.precio)}</span>
-                        </div>
-
-                        <div className="cz-worn-item-actions">
-                          {getAvailableSizesForItem(worn.item).length > 1 && (
-                            <button
-                              className="cz-action-link"
-                              onClick={() => {
-                                setGarmentPickerItem(worn.item)
-                                setPickerSelectedSize(worn.talla)
-                                setPickerSelectedColor(worn.color)
-                              }}
-                            >
-                              Cambiar talla
-                            </button>
-                          )}
-                          <button
-                            className="cz-action-link cz-action-remove"
-                            onClick={() => removeGarment(slot)}
-                          >
-                            Quitar
-                          </button>
-                          <Link
-                            to={`/catalogo/${worn.item.id}`}
-                            className="cz-action-link cz-action-store"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Ver en la tienda →
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="cz-empty-slot-placeholder">
-                      <span className="cz-empty-slot-text">Sin prenda en espacio {SLOT_LABELS[slot].toLowerCase()}</span>
-                      <button
-                        className="cz-empty-slot-add-btn"
-                        onClick={() => handleAddSlot(slot)}
-                      >
-                        + Agregar {SLOT_LABELS[slot].toLowerCase()}
-                      </button>
-                    </div>
+                    <span className="cz-slot-row-text">
+                      <span className="cz-slot-row-slot">
+                        {SLOT_LABELS[slot]}
+                        {worn && <span className="cz-slot-row-color">Color: {worn.color}</span>}
+                      </span>
+                      <span className="cz-slot-row-name">
+                        {worn ? (
+                          <>
+                            <span className="cz-slot-row-title">{worn.item.nombre}</span>
+                            <span className="cz-slot-row-talla">{worn.talla}</span>
+                          </>
+                        ) : (
+                          'Elegir prenda'
+                        )}
+                      </span>
+                      {worn && (
+                        <span className={`cz-fit-chip cz-slot-row-chip ${worn.veredicto.includes('perfecto') ? 'cz-fit-chip-perfect' : ''}`}>
+                          {worn.veredicto}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                  {worn && (
+                    <button
+                      type="button"
+                      className="cz-slot-row-x"
+                      onClick={() => removeGarment(slot)}
+                      aria-label={`Quitar ${worn.item.nombre}`}
+                      title="Quitar"
+                    >
+                      ×
+                    </button>
                   )}
-                </div>
+                </li>
               )
             })}
-          </div>
+          </ul>
 
           {/* Acciones de cierre del look */}
           <div className="cz-look-footer">

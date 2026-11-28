@@ -230,7 +230,7 @@ describe('Pruebas adicionales de selección 9B (Flujo UI y probador)', () => {
     })
 
     // Abrir drawer de selección
-    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda/i })
+    const btnEscoger = screen.getByRole('button', { name: /Ver prendas/i })
     fireEvent.click(btnEscoger)
 
     await waitFor(() => {
@@ -280,7 +280,7 @@ describe('Pruebas adicionales de selección 9B (Flujo UI y probador)', () => {
     renderProbador()
 
     // Abrir panel lateral
-    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda/i })
+    const btnEscoger = screen.getByRole('button', { name: /Ver prendas/i })
     fireEvent.click(btnEscoger)
 
     await waitFor(() => {
@@ -366,11 +366,11 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
     expect(screen.getByRole('heading', { name: /Mi look/i })).toBeInTheDocument()
   })
 
-  it('«Escoger prenda» abre directamente el catálogo sin interceptar con medidas', async () => {
+  it('«Ver prendas» abre directamente el catálogo sin interceptar con medidas', async () => {
     loginAs('u-1', 'Valentina Rojas')
     renderProbador('/probador')
 
-    const btnEscoger = screen.getByRole('button', { name: /Escoger prenda/i })
+    const btnEscoger = screen.getByRole('button', { name: /Ver prendas/i })
     fireEvent.click(btnEscoger)
 
     await waitFor(() => {
