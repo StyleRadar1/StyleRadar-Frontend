@@ -1529,6 +1529,7 @@ export default function InventoryPage() {
         confirmLabel={guardando ? 'Guardando...' : 'Guardar prenda'}
         busy={guardando}
         wide
+        panelClassName="inv-create-dialog"
         onConfirm={() => { void handleCrearPrenda() }}
         onCancel={handleCerrarAgregar}
       >
@@ -1621,11 +1622,7 @@ export default function InventoryPage() {
                       className="sr-only"
                     />
                   </>
-                ) : (
-                  <p className="rounded-xl border border-amber-300/30 bg-amber-300/[0.06] px-3 py-2 text-[11px] leading-snug text-amber-100/90">
-                    En QA el backend solo acepta <strong>URLs públicas de imagen</strong> de máximo 300 caracteres. Pega la URL abajo; la subida de archivos locales se rechaza con 400.
-                  </p>
-                )}
+                ) : null}
                 <div className="flex gap-2">
                   <input
                     type="url"

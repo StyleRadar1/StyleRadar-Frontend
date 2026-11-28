@@ -11,12 +11,14 @@ interface Props {
   confirmDisabled?: boolean
   /** Modal ancho para formularios largos (crear/editar prenda). */
   wide?: boolean
+  /** Clases extra para la tarjeta del diálogo. */
+  panelClassName?: string
   onConfirm: () => void
   onCancel: () => void
 }
 
 /** Diálogo de confirmación accesible: atrapa el foco, cierra con Escape y lo devuelve al cerrar. */
-export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel = 'Cancelar', danger, busy, confirmDisabled, wide, onConfirm, onCancel }: Props) {
+export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel = 'Cancelar', danger, busy, confirmDisabled, wide, panelClassName, onConfirm, onCancel }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const dialogId = useId()
@@ -47,7 +49,7 @@ export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel
   if (!open) return null
   return (
     <div className={`fixed inset-0 z-[300] grid place-items-center bg-[var(--overlay,rgba(0,0,0,0.6))] p-4 backdrop-blur-xs ${wide ? 'pt-24 sm:pt-20' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onCancel() }}>
-      <div id={dialogId} ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId} className={`w-full ${wide ? 'max-w-5xl max-h-[calc(100dvh-8rem)] flex flex-col' : 'max-w-md'} rounded-2xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface-raised)] p-6 text-[var(--sr-text-primary)] shadow-2xl`}>
+      <div id={dialogId} ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId} className={`w-full ${wide ? 'max-w-5xl max-h-[calc(100dvh-8rem)] flex flex-col' : 'max-w-md'} rounded-2xl border border-[var(--sr-border-subtle)] bg-[var(--sr-surface-raised)] p-6 text-[var(--sr-text-primary)] shadow-2xl ${panelClassName ?? ''}`}>
         <h2 id={titleId} className="text-xl font-bold text-[var(--sr-text-primary)]">{title}</h2>
         {children && <div className={`mt-2 text-sm text-[var(--sr-text-secondary)] ${wide ? 'min-h-0 flex-1 overflow-y-auto pr-2' : ''}`}>{children}</div>}
         <div className="mt-6 flex shrink-0 justify-end gap-2">
