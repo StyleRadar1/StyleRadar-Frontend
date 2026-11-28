@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { BuyerCurrentPlan } from '../components/BuyerCurrentPlan'
+import { BuyerCurrentPlan, BuyerCurrentPlanSkeleton } from '../components/BuyerCurrentPlan'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { isPlanCompatibleWithRole } from '../constants/plansByRole'
@@ -18,7 +18,7 @@ const REGISTRO: Record<string, [string, string]> = {
 export default function PlansPage() {
   const { user } = useAuth()
   const comprador = user?.role === 'BUYER'
-  const { plan, details } = useUserPlan(comprador)
+  const { plan, details, error: planError } = useUserPlan(comprador)
   const navigate = useNavigate()
   const visiblePlans = user
     ? PLANES.filter((p) => isPlanCompatibleWithRole(p.id, user.role))
@@ -107,8 +107,11 @@ export default function PlansPage() {
         </div>
       )}
 
+      {/* Mientras carga el plan del comprador se muestra su forma, no la lista de planes; la lista queda solo si falla */}
       {comprador && plan ? (
         <BuyerCurrentPlan plan={plan} details={details} />
+      ) : comprador && !planError ? (
+        <BuyerCurrentPlanSkeleton />
       ) : (
       <>
       <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Planes">

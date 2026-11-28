@@ -373,7 +373,7 @@ export default function ModerationPage() {
       {!loading && !error && itemsFiltrados.length > 0 && vista === 'pub' && (
         <div className="mt-8 space-y-8">
           {gruposPorPublicador.map((grupo) => (
-            <div key={grupo.publicador} className="rounded-2xl border border-white/10 bg-white/[.02] p-6">
+            <div key={grupo.publicador} className="sr-glass-card rounded-2xl border p-6">
               <div className="flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -450,7 +450,7 @@ export default function ModerationPage() {
       )}
 
       {/* Historial de Decisiones (Auditoría) */}
-      <details className="mt-12 rounded-2xl border border-white/10 bg-white/[.02] p-6">
+      <details className="sr-glass-card mt-12 rounded-2xl border p-6">
         <summary className="cursor-pointer text-sm font-bold text-white/80 hover:text-white">
           Historial de decisiones recientes ({history.length})
         </summary>

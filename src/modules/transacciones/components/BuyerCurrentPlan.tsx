@@ -208,3 +208,27 @@ export function BuyerCurrentPlan({ plan, details }: { plan: PlanUsuario; details
     </section>
   )
 }
+
+/** Misma forma que BuyerCurrentPlan mientras llega el plan, para que la página no salte. */
+export function BuyerCurrentPlanSkeleton() {
+  const barra = 'animate-pulse rounded-lg bg-white/10'
+  return (
+    <section aria-label="Cargando tu plan" aria-busy="true" className="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="sr-glass-card flex flex-col gap-4 rounded-3xl border p-8">
+        <div className={`${barra} h-6 w-40`} />
+        <div className={`${barra} h-12 w-48`} />
+        <div className={`${barra} h-10 w-56`} />
+        <div className={`${barra} h-4 w-2/3`} />
+        <div className={`${barra} mt-4 h-4 w-1/2`} />
+        <div className={`${barra} h-4 w-3/5`} />
+        <div className={`${barra} h-4 w-2/5`} />
+      </div>
+      <div className="flex flex-col gap-4">
+        <div className="sr-glass-card flex flex-1 items-center rounded-3xl border px-7 py-6"><div className={`${barra} h-10 w-3/4`} /></div>
+        <div className="sr-glass-card flex flex-1 items-center rounded-3xl border px-7 py-6"><div className={`${barra} h-10 w-3/4`} /></div>
+        <div className={`${barra} h-14 w-full rounded-2xl`} />
+      </div>
+      <p className="sr-only" role="status">Cargando tu plan…</p>
+    </section>
+  )
+}
