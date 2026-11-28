@@ -75,7 +75,7 @@ export default function AdminPlaylistsPage() {
   return (
     <>
       <AdminHeader kicker="Moderación · destacados del inicio" title="Playlists" />
-      <div className="mb-4 flex gap-3 rounded-2xl border border-white/10 bg-white/[.04] p-4">
+      <div className="sr-glass-card mb-4 flex gap-3 rounded-2xl border p-4">
         <span aria-hidden="true" className="text-arena">✦</span>
         <p className="text-sm"><b className="block">Destaca hasta {MAX_DESTACADAS} playlists en el inicio <span className="font-normal text-white/60">· {destacadas} de {MAX_DESTACADAS} en uso</span></b>
           <span className="text-white/70">La lista está ordenada por interacción (me gusta + guardados × 2). Las destacadas aparecen con la etiqueta «★ Destacada» en la sección Playlists de estilo.</span></p>

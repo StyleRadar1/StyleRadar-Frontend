@@ -78,7 +78,7 @@ export default function AdminUserDetailPage() {
         )}
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <section aria-label="Cuenta" className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+          <section aria-label="Cuenta" className="sr-glass-card rounded-2xl border p-5">
             <h2 className="text-2xl font-bold">Cuenta</h2>
             <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
               <Dato k="Estado"><EstadoCuentaPill estado={u.accountStatus} /></Dato>
@@ -87,7 +87,7 @@ export default function AdminUserDetailPage() {
               <Dato k="Miembro desde">{mesAnioCapitalizado(u.registeredAt)}</Dato>
             </dl>
           </section>
-          <section aria-label="Último cambio de estado" className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+          <section aria-label="Último cambio de estado" className="sr-glass-card rounded-2xl border p-5">
             <h2 className="text-2xl font-bold">Último cambio de estado</h2>
             {u.statusChangedAt ? (
               <dl className="mt-4 grid grid-cols-1 gap-y-3 text-sm">

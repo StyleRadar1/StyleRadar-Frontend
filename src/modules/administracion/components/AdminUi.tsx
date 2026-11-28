@@ -46,7 +46,7 @@ export function Who({ name, sub }: { name: string; sub?: string }) {
 
 export function AdminCard({ title, children, className = '' }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <section aria-label={title} className={`rounded-2xl border border-white/10 bg-white/[.03] p-5 ${className}`}>
+    <section aria-label={title} className={`sr-glass-card rounded-2xl border p-5 ${className}`}>
       <h2 className="text-2xl font-bold">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -119,7 +119,7 @@ export function AdminTable<T>({ rows, columnas, keyOf, titulo, buscar, filtros =
   const ordenar = (i: number) => { setOrden((o) => (o?.col === i ? { col: i, asc: !o.asc } : { col: i, asc: true })); setPagina(0) }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[.03]">
+    <div className="sr-glass-card rounded-2xl border">
       <div className="flex flex-wrap items-center gap-3 border-b border-white/10 p-4">
         {herramientas}
         {buscar && (

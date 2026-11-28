@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
           ) : (
             <>
               <p className="mb-3 text-sm text-white/60" aria-live="polite">{total} {total === 1 ? 'cuenta' : 'cuentas'}</p>
-              <table className="w-full text-left text-sm max-md:block">
+              <div className="sr-glass-card overflow-hidden rounded-2xl border"><table className="w-full text-left text-sm max-md:block">
                 <caption className="sr-only">Cuentas de StyleRadar</caption>
                 <thead className="border-b border-white/15 text-[11px] uppercase tracking-[.14em] text-white/60 max-md:sr-only">
                   <tr>
@@ -147,7 +147,7 @@ export default function AdminUsersPage() {
                     )
                   })}
                 </tbody>
-              </table>
+              </table></div>
               {page.totalPages > 1 && (
                 <nav aria-label="Páginas de cuentas" className="mt-4 flex items-center justify-between gap-3 text-sm">
                   <button type="button" disabled={page.first} onClick={() => setPagina((p) => Math.max(0, p - 1))}
