@@ -89,6 +89,7 @@ html[data-tema="claro"] .sr-store-register .store-info__layout {
 
 /* Categorías del registro: chips iluminados, no checkbox gris nativo. */
 .store-info__category {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
@@ -122,35 +123,16 @@ html[data-tema="claro"] .sr-store-register .store-info__layout {
 }
 
 .store-info__category input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 16px;
-  height: 16px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
   margin: 0;
-  border: 1.5px solid currentColor;
-  border-radius: 4px;
-  background: transparent;
-  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  clip-path: inset(50%);
 }
 
-.store-info__category input[type="checkbox"]:checked {
-  border-color: var(--color-accent, #8d55e5);
-  background: var(--color-accent, #8d55e5);
-}
-
-.store-info__category input[type="checkbox"]:checked::after {
-  content: "";
-  width: 4px;
-  height: 8px;
-  border: solid #FFFFFF;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg) translate(-1px, -1px);
-}
-
-.store-info__category input[type="checkbox"]:focus-visible {
+.store-info__category:has(input:focus-visible) {
   outline: 2px solid var(--color-focus-ring, #a855f7);
   outline-offset: 2px;
 }
