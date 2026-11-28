@@ -1,15 +1,11 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { formatCOP } from '@/modules/core/utils/format'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
-import { BuyerRenewalStatusCard } from '../components/BuyerRenewalStatusCard'
+import { BuyerCurrentPlan } from '../components/BuyerCurrentPlan'
 import { PlanDegradedBanner } from '../components/PlanDegradedBanner'
 import { useUserPlan } from '../hooks/useUserPlan'
 import { isPlanCompatibleWithRole } from '../constants/plansByRole'
-import { formatSubscriptionDate } from '../mappers/paymentsMappers'
-import { userPlanService } from '../services/userPlanService'
-import { PLAN_COMPARISON_ROWS, PLAN_LABEL, PLANES, REGLAS, type PlanInfo } from '../types/plan.dto'
+import { PLAN_COMPARISON_ROWS, PLANES, REGLAS, type PlanInfo } from '../types/plan.dto'
 
 const REGISTRO: Record<string, [string, string]> = {
   RADAR: ['/registro', 'Crear cuenta gratis'],
@@ -24,40 +20,10 @@ export default function PlansPage() {
   const comprador = user?.role === 'BUYER'
   const { plan, details } = useUserPlan(comprador)
   const navigate = useNavigate()
-  const [cancelling, setCancelling] = useState(false)
-  const [confirmStopRenewalOpen, setConfirmStopRenewalOpen] = useState(false)
-  const [cancelFeedback, setCancelFeedback] = useState<string | null>(null)
-
-  const currentEndDateRaw = details?.fechaFin ?? details?.proximoCobro ?? details?.periodEndsAt ?? null
-  const currentEndDateText = formatSubscriptionDate(currentEndDateRaw, 'el final del periodo pagado')
-
-  const handleConfirmStopRenewal = async () => {
-    setCancelling(true)
-    setCancelFeedback(null)
-    try {
-      const updated = await userPlanService.setRenewal(false)
-      const endText = formatSubscriptionDate(
-        updated.fechaFin ?? updated.periodEndsAt ?? currentEndDateRaw,
-        currentEndDateText,
-      )
-      setConfirmStopRenewalOpen(false)
-      setCancelFeedback(`Activa sin renovación · Tu plan sigue activo hasta ${endText}`)
-    } catch (e) {
-      setCancelFeedback(
-        e instanceof Error && e.message
-          ? e.message.replace(/\.$/, '')
-          : 'No fue posible cancelar la renovación de Radar+',
-      )
-    } finally {
-      setCancelling(false)
-    }
-  }
-
   const visiblePlans = user
     ? PLANES.filter((p) => isPlanCompatibleWithRole(p.id, user.role))
     : PLANES
 
-  const renewalDisabled = plan === 'RADAR_PLUS' && details?.renewalEnabled === false
   const isPending = details?.estado === 'PENDIENTE'
   const isSuspendedOrExpired = details?.estado === 'SUSPENDIDA' || details?.estado === 'VENCIDA'
 
@@ -76,37 +42,8 @@ export default function PlansPage() {
       )
     }
     if (comprador) {
+      // Con su plan cargado, el comprador ve BuyerCurrentPlan; esta lista queda solo si el plan no cargó
       if (p.id === 'RADAR') {
-        if (plan === 'RADAR') {
-          return (
-            <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
-              Tu plan actual
-            </p>
-          )
-        }
-        if (plan === 'RADAR_PLUS') {
-          if (renewalDisabled) {
-            return (
-              <button
-                type="button"
-                disabled
-                className="mt-auto rounded-xl border border-[var(--color-border)] px-5 py-3 text-center text-xs font-semibold text-[var(--color-text-muted)] opacity-70"
-              >
-                Plan actual · no se renovará
-              </button>
-            )
-          }
-          return (
-            <button
-              type="button"
-              disabled={cancelling}
-              onClick={() => setConfirmStopRenewalOpen(true)}
-              className="mt-auto rounded-xl border border-[var(--color-border)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-subtle)] disabled:opacity-60"
-            >
-              {cancelling ? 'Cancelando renovación…' : 'Dejar de renovar'}
-            </button>
-          )
-        }
         return (
           <p className="mt-auto rounded-xl border border-[var(--color-border)] px-5 py-3 text-center text-xs text-[var(--color-text-muted)]">
             Incluido en tu cuenta
@@ -114,13 +51,6 @@ export default function PlansPage() {
         )
       }
       if (p.id === 'RADAR_PLUS') {
-        if (plan === 'RADAR_PLUS') {
-          return (
-            <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
-              {renewalDisabled ? 'Activa sin renovación' : 'Tu plan actual'}
-            </p>
-          )
-        }
         if (isPending) {
           return (
             <p className="mt-auto rounded-xl border border-arena/50 px-5 py-3 text-center text-sm font-semibold text-arena">
@@ -172,25 +102,15 @@ export default function PlansPage() {
       </p>
 
       {user?.role === 'STYLERADAR_ADMIN' && (
-        <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-6 text-center text-sm text-[var(--color-text)] backdrop-blur-md">
+        <div className="sr-glass-card mt-6 rounded-2xl border p-6 text-center text-sm text-[var(--color-text)]">
           Como administrador de StyleRadar no requieres una suscripción comercial. Gestiona la plataforma desde el panel de control
         </div>
       )}
 
-      {comprador && plan && (
-        <p className="mt-4 text-sm text-[var(--sr-hero-text)]">
-          {`Tu plan actual: ${PLAN_LABEL[plan]}`}
-        </p>
-      )}
-
-      <BuyerRenewalStatusCard />
-
-      {cancelFeedback && (
-        <p role="status" className="mt-4 rounded-xl border border-arena/40 bg-white/[.04] px-4 py-3 text-sm text-[var(--sr-hero-text)]">
-          {cancelFeedback}
-        </p>
-      )}
-
+      {comprador && plan ? (
+        <BuyerCurrentPlan plan={plan} details={details} />
+      ) : (
+      <>
       <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Planes">
         {visiblePlans.map((p) => (
           <li
@@ -198,10 +118,8 @@ export default function PlansPage() {
             aria-label={p.nombre}
             data-plan-actual={comprador && plan === p.id}
             tabIndex={-1}
-            className={`relative flex flex-col rounded-2xl border p-6 backdrop-blur-xl ${
-              p.destacado
-                ? 'border-violeta bg-[var(--sr-surface)]/80 shadow-lg shadow-purple-900/20'
-                : 'border-[var(--sr-border-subtle)] bg-[var(--sr-surface)]/60'
+            className={`sr-glass-card relative flex flex-col rounded-2xl border p-6 ${
+              p.destacado ? 'outline outline-1 -outline-offset-1 outline-violeta/70' : ''
             }`}
           >
             {p.destacado && !(comprador && plan === p.id) && (
@@ -236,14 +154,16 @@ export default function PlansPage() {
       <p className="mt-6 text-sm text-[var(--sr-hero-text-muted)]">
         Precios en pesos colombianos. Las tiendas pasan por una verificación antes de aparecer en el radar
       </p>
+      </>
+      )}
 
       {(!user || comprador) && (
         <>
           <h2 className="mt-14 text-2xl font-bold text-[var(--sr-hero-text)]">Radar y Radar+, lado a lado</h2>
-          <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-md">
+          <div className="sr-glass-card mt-4 overflow-x-auto rounded-2xl border">
             <table className="w-full min-w-[520px] text-left text-sm text-[var(--color-text)]">
               <caption className="sr-only">Comparación de los planes Radar y Radar+</caption>
-              <thead className="bg-[var(--color-surface-subtle)] text-[11px] uppercase tracking-[.14em] text-[var(--color-text-muted)]">
+              <thead className="bg-white/[.04] text-[11px] uppercase tracking-[.14em] text-[var(--color-text-muted)]">
                 <tr>
                   <th scope="col" className="p-4 font-bold">Qué incluye</th>
                   <th scope="col" className="p-4 font-bold">Radar</th>
@@ -270,27 +190,13 @@ export default function PlansPage() {
       </p>
       <ol className="mt-5 grid gap-3 md:grid-cols-2" aria-label="Reglas de los planes">
         {REGLAS.map(([titulo, texto], i) => (
-          <li key={titulo} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/75 p-5 backdrop-blur-md">
+          <li key={titulo} className="sr-glass-card rounded-2xl border p-5">
             <p className="font-semibold text-[var(--color-text)]"><span className="mr-2 text-[var(--color-accent)]">{i + 1}.</span>{titulo}</p>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">{texto}</p>
           </li>
         ))}
       </ol>
 
-      <ConfirmDialog
-        open={confirmStopRenewalOpen}
-        title="¿Dejar de renovar Radar+?"
-        confirmLabel="Confirmar cancelación"
-        cancelLabel="Conservar suscripción"
-        danger
-        busy={cancelling}
-        onConfirm={() => { void handleConfirmStopRenewal() }}
-        onCancel={() => setConfirmStopRenewalOpen(false)}
-      >
-        <p className="text-left text-sm text-[var(--sr-text-primary,var(--color-text))]">
-          Tu plan no se renovará. Mantienes los beneficios hasta el <strong>{currentEndDateText}</strong>
-        </p>
-      </ConfirmDialog>
     </section>
   </div>
   )
