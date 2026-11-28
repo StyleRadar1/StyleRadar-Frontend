@@ -15,10 +15,10 @@ const abrir = async (user: ReturnType<typeof userEvent.setup>) => {
 describe('Distintivos automáticos (SR-RF-59 · SR-RF-60 · F-19)', () => {
   beforeEach(() => { localStorage.clear(); sessionStorage.clear(); resetStoreSettingsMock() })
 
-  it('abre con los valores por defecto del documento: 3 unidades y 7 días', async () => {
+  it('abre con los valores por defecto: 2 unidades (< 3) y 7 días', async () => {
     const user = userEvent.setup()
     const dialog = await abrir(user)
-    expect(within(dialog).getByLabelText('Umbral de últimas unidades')).toHaveValue(3)
+    expect(within(dialog).getByLabelText('Umbral de últimas unidades')).toHaveValue(2)
     expect(within(dialog).getByLabelText('Duración de nueva llegada')).toHaveValue('7')
   })
 
@@ -33,7 +33,7 @@ describe('Distintivos automáticos (SR-RF-59 · SR-RF-60 · F-19)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Guardar' }))
     expect(within(dialog).getByText(TEXTOS_DISTINTIVOS.umbralMaximo)).toBeInTheDocument()
     expect(umbral).toHaveAttribute('aria-invalid', 'true')
-    expect((await storeSettingsService.getCatalogSettings('901.482.337-1')).lowStockThreshold).toBe(3)
+    expect((await storeSettingsService.getCatalogSettings('901.482.337-1')).lowStockThreshold).toBe(2)
   })
 
   it('guarda umbral y días y los muestra en la tarjeta de distintivos', async () => {
@@ -63,7 +63,7 @@ describe('Distintivos automáticos (SR-RF-59 · SR-RF-60 · F-19)', () => {
     expect(distintivoDe(c, { publishedAt: '2026-11-20T12:00:00Z', withdrawn: true }, ahora).activeBadge).toBe('NONE')
   })
 
-  it('R1: el distintivo «Últimas unidades» usa ícono reloj de arena distinto al triángulo de KPI Stock bajo', async () => {
+  it('R1: el distintivo «Últimas unidades» usa ícono «!» distinto al triángulo de KPI Stock bajo', async () => {
     sesionComo('luna@styleradar.co')
     const { container } = renderConSesion('/mi-tienda', [{ path: '/mi-tienda', element: <MiTiendaPage /> }])
     expect(await screen.findByText('Últimas unidades')).toBeInTheDocument()
