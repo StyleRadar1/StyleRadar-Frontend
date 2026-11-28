@@ -1,7 +1,8 @@
 .sr-inicio {
-  margin: 0 auto;
-  max-width: 72rem;
-  padding: clamp(1.5rem, 3vw, 2.5rem) 1rem 1rem;
+  margin: 0;
+  max-width: 100%;
+  padding: clamp(1.5rem, 3vw, 2.5rem) 12rem 1rem;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: clamp(2rem, 4.5vw, 3.25rem);
@@ -18,12 +19,12 @@
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(180deg, rgba(8, 5, 14, 0.4) 0%, rgba(8, 5, 14, 0.6) 55%, rgba(8, 5, 14, 0.82) 100%),
+    linear-gradient(180deg, rgba(8, 5, 14, 0.7) 0%, rgba(8, 5, 14, 0.85) 55%, rgba(8, 5, 14, 0.95) 100%),
     url('/img/backgrounds/inicio-ciudad.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: blur(3px);
+  filter: blur(6px);
   transform: scale(1.04);
 }
 
@@ -56,11 +57,12 @@ html[data-tema='claro'] .sr-inicio-fondo {
 
 .sr-inicio-bento__title {
   margin-top: 0.4rem;
-  font-size: clamp(1.9rem, 3.8vw, 3.05rem);
-  font-weight: 800;
-  line-height: 1.03;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  line-height: 1.02;
   letter-spacing: -0.03em;
   color: var(--sr-hero-text);
+  font-family: 'Poppins', sans-serif;
 }
 
 .sr-inicio-bento__aside {
@@ -186,13 +188,13 @@ html[data-tema='claro'] .sr-inicio-fondo {
   align-self: flex-start;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: rgba(157, 92, 255, 0.28);
-  border: 1px solid rgba(192, 132, 252, 0.45);
+  background: rgba(72, 17, 154, 0.28);
+  border: 1px solid rgba(72, 17, 154, 0.45);
   font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #f3e8ff;
+  color: #ffffff;
 }
 
 .sr-bento-card__title {
@@ -276,22 +278,20 @@ html[data-tema='claro'] .sr-inicio-fondo {
   gap: 0.2rem;
   padding: 0.9rem 1rem;
   border-radius: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(157, 92, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 100%);
-  backdrop-filter: blur(22px) saturate(1.45);
-  -webkit-backdrop-filter: blur(22px) saturate(1.45);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 50%, rgba(255, 255, 255, 0.06) 100%);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    0 16px 36px rgba(0, 0, 0, 0.34);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 10px 30px rgba(0, 0, 0, 0.4);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .sr-bento-mini--accent {
   flex: 0 0 auto;
   background:
-    radial-gradient(110% 95% at 15% 15%, rgba(168, 85, 247, 0.32), transparent 60%),
+    radial-gradient(110% 95% at 15% 15%, rgba(72, 17, 154, 0.32), transparent 60%),
     radial-gradient(90% 80% at 90% 85%, rgba(56, 189, 248, 0.18), transparent 60%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
 }
@@ -431,7 +431,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
   z-index: 5;
   transform: translate3d(-50%, -0.45rem, 0) scale(1.12);
   border: 0;
-  box-shadow: 0 24px 52px rgba(139, 92, 246, 0.45), 0 14px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 52px rgba(72, 17, 154, 0.45), 0 14px 30px rgba(0, 0, 0, 0.5);
 }
 
 .sr-inicio-rack-compact .sr-rack-item[data-offset='-1'] {
@@ -474,7 +474,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(38% 65% at 22% 45%, rgba(139, 92, 246, 0.32), transparent 72%),
+    radial-gradient(38% 65% at 22% 45%, rgba(72, 17, 154, 0.32), transparent 72%),
     radial-gradient(36% 60% at 78% 55%, rgba(56, 189, 248, 0.22), transparent 72%);
   filter: blur(28px);
 }
@@ -487,8 +487,6 @@ html[data-tema='claro'] .sr-inicio-fondo {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.24);
   background:
-    radial-gradient(120% 90% at 0% 0%, rgba(168, 85, 247, 0.18), transparent 55%),
-    radial-gradient(100% 80% at 100% 100%, rgba(56, 189, 248, 0.12), transparent 55%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.04) 100%);
   backdrop-filter: blur(24px) saturate(1.5);
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
@@ -549,7 +547,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
   border-radius: 1.35rem;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(139, 92, 246, 0.08) 55%, rgba(255, 255, 255, 0.04) 100%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(72, 17, 154, 0.08) 55%, rgba(255, 255, 255, 0.04) 100%);
   backdrop-filter: blur(22px) saturate(1.4);
   -webkit-backdrop-filter: blur(22px) saturate(1.4);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 14px 32px rgba(0, 0, 0, 0.32);
@@ -585,7 +583,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
 .sr-inicio-legal__pill:hover,
 .sr-inicio-legal__pill:focus-visible {
   border-color: var(--sr-accent);
-  background: rgba(157, 92, 255, 0.22);
+  background: rgba(72, 17, 154, 0.22);
 }
 
 .sr-plan-badge--plus {
@@ -598,12 +596,13 @@ html[data-tema='claro'] .sr-inicio-fondo {
 .sr-inicio-personal-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: stretch;
+  width: 100%;
 }
 
 .sr-inicio-personal-grid--interactive {
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
 }
 
 .sr-personal-stats {
@@ -627,7 +626,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
 .sr-personal-stat-pill:hover,
 .sr-personal-stat-pill:focus-visible {
   border-color: var(--sr-accent);
-  background: rgba(157, 92, 255, 0.22);
+  background: rgba(72, 17, 154, 0.22);
 }
 
 .sr-personal-chips {
@@ -650,7 +649,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
 .sr-personal-chip:hover,
 .sr-personal-chip:focus-visible {
   border-color: var(--sr-accent);
-  background: rgba(157, 92, 255, 0.22);
+  background: rgba(72, 17, 154, 0.22);
   color: var(--sr-hero-text);
 }
 
@@ -722,7 +721,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #f3e8ff;
+  color: #ffffff;
 }
 
 .sr-pl-spotlight__info {
@@ -814,7 +813,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
 
 .sr-pl-action-pill:hover {
   border-color: var(--sr-accent);
-  background: rgba(157, 92, 255, 0.22);
+  background: rgba(72, 17, 154, 0.22);
 }
 
 .sr-pl-action-pill--primary {
@@ -845,7 +844,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
 
 .sr-pl-garment-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(216, 180, 254, 0.6);
+  border-color: rgba(72, 17, 154, 0.6);
 }
 
 .sr-pl-garment-card img {
@@ -903,8 +902,8 @@ html[data-tema='claro'] .sr-inicio-fondo {
 }
 
 .sr-pl-switcher__pill.is-active {
-  border-color: rgba(216, 180, 254, 0.7);
-  background: rgba(157, 92, 255, 0.24);
+  border-color: rgba(72, 17, 154, 0.7);
+  background: rgba(72, 17, 154, 0.24);
   color: #fff;
 }
 
@@ -930,7 +929,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
 
 .sr-pl-arrow-btn:hover {
   border-color: var(--sr-accent);
-  background: rgba(157, 92, 255, 0.25);
+  background: rgba(72, 17, 154, 0.25);
 }
 
 .sr-pl-counter {
@@ -964,7 +963,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
 
 .sr-look-preview-item:hover {
   border-color: var(--sr-accent);
-  background: rgba(157, 92, 255, 0.16);
+  background: rgba(72, 17, 154, 0.16);
 }
 
 .sr-look-preview-item img {
@@ -997,7 +996,13 @@ html[data-tema='claro'] .sr-inicio-fondo {
 .sr-personal-duo-mini {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 1rem;
+}
+
+.sr-personal-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .sr-personal-quick-grid--3 {
@@ -1026,8 +1031,8 @@ html[data-tema='claro'] .sr-inicio-fondo {
 
 .sr-personal-chat-item:hover,
 .sr-personal-chat-item:focus-visible {
-  border-color: rgba(216, 180, 254, 0.6);
-  background: rgba(157, 92, 255, 0.16);
+  border-color: rgba(72, 17, 154, 0.6);
+  background: rgba(72, 17, 154, 0.16);
   transform: translateX(2px);
 }
 
@@ -1038,11 +1043,11 @@ html[data-tema='claro'] .sr-inicio-fondo {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  background: rgba(157, 92, 255, 0.28);
-  border: 1px solid rgba(216, 180, 254, 0.45);
+  background: rgba(72, 17, 154, 0.28);
+  border: 1px solid rgba(72, 17, 154, 0.45);
   font-size: 0.72rem;
   font-weight: 800;
-  color: #f3e8ff;
+  color: #ffffff;
 }
 
 .sr-personal-chat-meta {
@@ -1094,15 +1099,14 @@ html[data-tema='claro'] .sr-inicio-fondo {
   gap: 0.75rem;
   padding: 1.15rem 1.2rem;
   border-radius: 1.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0%, rgba(139, 92, 246, 0.09) 55%, rgba(255, 255, 255, 0.04) 100%);
-  backdrop-filter: blur(22px) saturate(1.45);
-  -webkit-backdrop-filter: blur(22px) saturate(1.45);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 50%, rgba(255, 255, 255, 0.06) 100%);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 40px rgba(0, 0, 0, 0.36);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 10px 30px rgba(0, 0, 0, 0.4);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .sr-personal-card--playlists {
@@ -1132,11 +1136,11 @@ html[data-tema='claro'] .sr-inicio-fondo {
 .sr-personal-badge {
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: rgba(157, 92, 255, 0.24);
-  border: 1px solid rgba(192, 132, 252, 0.42);
+  background: rgba(72, 17, 154, 0.24);
+  border: 1px solid rgba(72, 17, 154, 0.42);
   font-size: 0.68rem;
   font-weight: 700;
-  color: #f3e8ff;
+  color: #ffffff;
   white-space: nowrap;
 }
 
@@ -1162,8 +1166,8 @@ html[data-tema='claro'] .sr-inicio-fondo {
 
 .sr-personal-playlist-item:hover,
 .sr-personal-playlist-item:focus-visible {
-  border-color: rgba(216, 180, 254, 0.6);
-  background: rgba(157, 92, 255, 0.16);
+  border-color: rgba(72, 17, 154, 0.6);
+  background: rgba(72, 17, 154, 0.16);
   transform: translateX(2px);
 }
 
@@ -1234,7 +1238,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
 .sr-personal-quick-btn:hover,
 .sr-personal-quick-btn:focus-visible {
   border-color: var(--sr-accent);
-  background: rgba(157, 92, 255, 0.2);
+  background: rgba(72, 17, 154, 0.2);
 }
 
 @media (max-width: 980px) {
@@ -1284,7 +1288,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--sr-accent);
+  color: var(--sr-accent-text);
 }
 
 .sr-inicio-titulo {
@@ -1327,21 +1331,22 @@ html[data-tema='claro'] .sr-inicio-fondo {
 
 .sr-inicio-probador {
   overflow: hidden;
-  border: 1px solid var(--sr-border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 1.5rem;
-  background:
-    radial-gradient(120% 90% at 100% 0%, rgba(157, 92, 255, 0.18), transparent 60%),
-    color-mix(in srgb, var(--sr-hero-bar) 70%, transparent);
-  box-shadow: var(--sr-shadow);
-  backdrop-filter: blur(14px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 15px 40px rgba(0, 0, 0, 0.5);
 }
 
 .sr-inicio-probador__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
   align-items: center;
-  gap: 2rem;
-  padding: clamp(1.75rem, 4vw, 3rem);
+  gap: 1.5rem;
+  padding: clamp(1.5rem, 3vw, 2rem);
 }
 
 .sr-inicio-pasos {
@@ -1422,7 +1427,7 @@ html[data-tema='claro'] .sr-inicio-fondo {
   position: absolute;
   inset: 12% 10% 0;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(157, 92, 255, 0.35), transparent);
+  background: radial-gradient(closest-side, rgba(72, 17, 154, 0.35), transparent);
   filter: blur(20px);
 }
 
@@ -1512,10 +1517,14 @@ html[data-tema='claro'] .sr-inicio-fondo {
   display: grid;
   grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid var(--sr-border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 1.5rem;
-  background: color-mix(in srgb, var(--sr-hero-bar) 80%, transparent);
-  box-shadow: var(--sr-shadow);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 15px 40px rgba(0, 0, 0, 0.5);
   min-height: 26rem;
 }
 
@@ -1832,4 +1841,169 @@ html[data-tema='claro'] .sr-inicio-fondo {
   justify-content: center;
   padding: 0.6rem 1.2rem;
   font-size: 0.85rem;
+}
+
+/* =====================================================================
+   Unificación de tarjetas del Inicio (con glass)
+   Mis tallas, Seguimiento, tarjetas personales, Probador, Mapa y Legal
+   comparten la misma superficie glass. Solo el panel interno del mapa
+   (el lienzo + lista) va plano, sin glass.
+   ===================================================================== */
+.sr-inicio {
+  --sr-inicio-glass-bg:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.04) 100%);
+  --sr-inicio-glass-border: 1px solid rgba(255, 255, 255, 0.24);
+  --sr-inicio-glass-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 22px 52px rgba(0, 0, 0, 0.42);
+}
+
+.sr-bento-mini,
+.sr-bento-mini--accent,
+.sr-personal-card,
+.sr-inicio-duo > .sr-inicio-bloque,
+.sr-inicio-legal {
+  background: var(--sr-inicio-glass-bg);
+  border: var(--sr-inicio-glass-border);
+  box-shadow: var(--sr-inicio-glass-shadow);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+}
+
+/* Mapa: solo el panel interno va plano, sin glass */
+.sr-inicio-mapa__panel {
+  background: var(--sr-surface-raised);
+  border: 1px solid var(--sr-border-subtle);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* =====================================================================
+   Probador: distribución del contenido
+   El bloque se estira a la altura del mapa; el contenido ahora la ocupa:
+   texto a la izquierda (centrado vertical, CTA abajo) y maniquí grande
+   a la derecha, centrado.
+   ===================================================================== */
+.sr-inicio-duo .sr-inicio-probador {
+  justify-content: stretch;
+}
+
+.sr-inicio-duo .sr-inicio-probador__grid {
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
+.sr-inicio-duo .sr-inicio-probador__grid > :first-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sr-inicio-duo .sr-inicio-pasos {
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.sr-inicio-duo .sr-inicio-cta {
+  align-self: flex-start;
+  margin-top: 1.75rem;
+}
+
+.sr-inicio-duo .sr-inicio-probador__visual {
+  min-height: 0;
+  height: 100%;
+  align-items: center;
+}
+
+.sr-inicio-duo .sr-inicio-probador__halo {
+  inset: 8% 6%;
+}
+
+.sr-inicio-duo .sr-inicio-probador__maniqui {
+  height: clamp(15rem, 26vw, 23rem);
+  max-height: 100%;
+}
+
+.sr-inicio-duo .sr-inicio-probador__maniqui--b {
+  height: clamp(13.5rem, 23vw, 20.5rem);
+}
+
+@media (max-width: 980px) {
+  .sr-inicio-duo .sr-inicio-probador__grid {
+    grid-template-columns: 1fr;
+  }
+  .sr-inicio-duo .sr-inicio-probador__visual {
+    min-height: 16rem;
+  }
+}
+
+/* Probador: más margen izquierdo */
+.sr-inicio-duo > .sr-inicio-probador {
+  padding-left: clamp(2rem, 3.2vw, 2.9rem);
+}
+
+/* Suscripción: ocupa el espacio libre de la columna derecha */
+.sr-personal-col > .sr-personal-card--quick {
+  flex: 1 1 auto;
+}
+
+.sr-personal-card--quick .sr-bento-cta {
+  margin-top: auto;
+}
+
+/* Suscripción: nombre del plan grande y centrado */
+.sr-personal-card--quick {
+  text-align: center;
+}
+
+.sr-personal-card--quick .sr-personal-card__head {
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.sr-personal-card--quick .sr-personal-card__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.sr-personal-card--quick .sr-personal-card__title .sr-inicio-acento {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: clamp(2.75rem, 5vw, 4rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+/* La insignia repite el nombre del plan, ya visible en grande */
+.sr-personal-card--quick .sr-personal-badge {
+  display: none;
+}
+
+/* Suscripción: etiqueta arriba a la izquierda, menos margen superior */
+.sr-personal-card--quick {
+  padding-top: 0.9rem;
+}
+
+.sr-personal-card--quick .sr-personal-card__head {
+  justify-content: flex-start;
+}
+
+.sr-personal-card--quick .sr-personal-card__head > div {
+  display: contents;
+}
+
+.sr-personal-card--quick .sr-bento-mini__tag {
+  align-self: flex-start;
+}
+
+.sr-personal-card--quick .sr-personal-card__title {
+  margin-block: auto;
 }

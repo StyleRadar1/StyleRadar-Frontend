@@ -238,8 +238,9 @@ export default function HomePage() {
         </div>
 
         <div className="sr-inicio-personal-grid sr-inicio-personal-grid--interactive">
-          {/* Columna izquierda: Deck interactivo de Playlists */}
-          <div className="sr-personal-card sr-personal-card--playlists">
+          {/* Columna izquierda: Tus colecciones + tallas y seguimiento */}
+          <div className="sr-personal-col-left">
+            <div className="sr-personal-card sr-personal-card--playlists">
             <div className="sr-personal-card__head">
               <div>
                 <span className="sr-bento-mini__tag">Tus colecciones</span>
@@ -421,9 +422,27 @@ export default function HomePage() {
                 </div>
               </div>
             )}
+
           </div>
 
-          {/* Columna derecha: Últimos chats + Tallas/Alertas + Plan */}
+          {/* Mis tallas y seguimiento (sección independiente debajo de Tus colecciones) */}
+          <div className="sr-personal-duo-mini mt-4">
+            <Link to="/perfil" className="sr-bento-mini">
+              <span className="sr-bento-mini__tag">Mis tallas</span>
+              <strong>{medidas.superior} · {medidas.inferior} · {medidas.calzado} ↗</strong>
+              <span>Editar medidas</span>
+            </Link>
+            <Link to="/alertas" className="sr-bento-mini sr-bento-mini--accent">
+              <span className="sr-bento-mini__tag">Seguimiento</span>
+              <strong>
+                {alertStats ? `${alertStats.alertas} alertas ↗` : 'Mis alertas ↗'}
+              </strong>
+              <span>{alertStats ? `${alertStats.busquedas} búsquedas` : 'Tallas y precios'}</span>
+            </Link>
+          </div>
+        </div>
+
+          {/* Columna derecha: Últimos chats + Plan */}
           <div className="sr-personal-col">
             <div className="sr-personal-card">
               <div className="sr-personal-card__head">
@@ -471,21 +490,6 @@ export default function HomePage() {
                   </Link>
                 </div>
               )}
-            </div>
-
-            <div className="sr-personal-duo-mini">
-              <Link to="/perfil" className="sr-bento-mini">
-                <span className="sr-bento-mini__tag">Mis tallas</span>
-                <strong>{medidas.superior} · {medidas.inferior} · {medidas.calzado} ↗</strong>
-                <span>Editar medidas</span>
-              </Link>
-              <Link to="/alertas" className="sr-bento-mini sr-bento-mini--accent">
-                <span className="sr-bento-mini__tag">Seguimiento</span>
-                <strong>
-                  {alertStats ? `${alertStats.alertas} alertas ↗` : 'Mis alertas ↗'}
-                </strong>
-                <span>{alertStats ? `${alertStats.busquedas} búsquedas` : 'Tallas y precios'}</span>
-              </Link>
             </div>
 
             <div className="sr-personal-card sr-personal-card--quick">

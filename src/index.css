@@ -64,9 +64,9 @@ html[data-tema="oscuro"] {
   --sr-tx-2: #b8b3ce;
 
   /* Marca y foco */
-  --sr-accent: #9d5cff;
-  --sr-accent-text: #c084fc;
-  --sr-acc-tx: #c084fc;
+  --sr-accent: #48119A;
+  --sr-accent-text: #9d5cff;
+  --sr-acc-tx: #9d5cff;
   --sr-focus: #e8dccb;
   --sr-foco: #e8dccb;
 

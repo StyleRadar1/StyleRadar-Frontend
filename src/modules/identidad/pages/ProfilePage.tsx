@@ -25,6 +25,7 @@ import {
 import type { BodyMeasurements } from '@/modules/experiencia/types/bodyMeasurements.dto'
 import { iniciales, mesAnio, telefonoValido } from '../utils/formato'
 import { ORDEN, TEXTOS_PERFIL, erroresDelServidor, type Errores } from '../utils/erroresPerfil'
+import './ProfilePage.css'
 
 /**
  * SR-RF-03 y SR-RF-04 más el anexo D15 de ms-usuarios: datos de la persona (GET y PUT /users/{id}),
@@ -41,7 +42,7 @@ export default function ProfilePage() {
 
   return (
     <div className="sr-perfil-page min-h-screen">
-      <section className="mx-auto max-w-6xl px-4 py-12">
+      <section className="sr-perfil-contenedor mx-auto max-w-6xl px-4 py-12">
         <PlanDegradedBanner />
       <header className="flex flex-wrap items-center justify-between gap-5 border-b border-[var(--color-border)] pb-8">
         <div className="flex flex-wrap items-center gap-5">
@@ -89,7 +90,9 @@ export default function ProfilePage() {
           </Link>
         </div>
       </header>
-      <BuyerRenewalStatusCard />
+      <div className="sr-perfil-glass mt-6">
+        <BuyerRenewalStatusCard />
+      </div>
       {tab === 'pagos' ? (
         <div className="mt-10">
           <h2 className="mb-4 text-3xl font-extrabold tracking-tight">Historial de pagos</h2>
@@ -256,7 +259,7 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
         {/* ═══════════════════════════════════════════════════════════
             SECCIÓN: MEDIDAS CORPORALES PARA EL PROBADOR VIRTUAL
             ═══════════════════════════════════════════════════════════ */}
-        <div className="md:col-span-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-6 backdrop-blur-md">
+        <div className="sr-perfil-medidas md:col-span-3">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--color-border)] pb-4">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">
@@ -290,25 +293,25 @@ function ProfileForm({ profile, onSave, aviso, setAviso }: {
           {bodyMeasurements ? (
             <div className="mt-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                <div className="p-3 rounded-xl bg-[var(--color-surface-subtle)] border border-[var(--color-border)]">
+                <div className="sr-perfil-medida p-3 rounded-xl">
                   <span className="text-[var(--color-text-muted)] block text-[11px]">Estatura:</span>
                   <strong className="text-base text-[var(--color-text)] font-extrabold">
                     {(bodyMeasurements.estatura / 100).toFixed(2).replace('.', ',')} m
                   </strong>
                 </div>
-                <div className="p-3 rounded-xl bg-[var(--color-surface-subtle)] border border-[var(--color-border)]">
+                <div className="sr-perfil-medida p-3 rounded-xl">
                   <span className="text-[var(--color-text-muted)] block text-[11px]">Pecho / Busto:</span>
                   <strong className="text-base text-[var(--color-accent)] font-extrabold">
                     {bodyMeasurements.pecho} cm
                   </strong>
                 </div>
-                <div className="p-3 rounded-xl bg-[var(--color-surface-subtle)] border border-[var(--color-border)]">
+                <div className="sr-perfil-medida p-3 rounded-xl">
                   <span className="text-[var(--color-text-muted)] block text-[11px]">Cintura:</span>
                   <strong className="text-base text-[var(--color-accent)] font-extrabold">
                     {bodyMeasurements.cintura} cm
                   </strong>
                 </div>
-                <div className="p-3 rounded-xl bg-[var(--color-surface-subtle)] border border-[var(--color-border)]">
+                <div className="sr-perfil-medida p-3 rounded-xl">
                   <span className="text-[var(--color-text-muted)] block text-[11px]">Cadera:</span>
                   <strong className="text-base text-[var(--color-accent)] font-extrabold">
                     {bodyMeasurements.cadera} cm
