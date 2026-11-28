@@ -56,7 +56,7 @@ export const normalizeDonation = (raw: any): DonationDto => {
       cantidad: 1,
       descripcion: raw.message || 'Donación benéfica',
     },
-    fotos: raw.fotos || (raw.publication?.photos || []),
+    fotos: raw.fotos || raw.photos || (raw.publication?.photos || []),
     logistica,
     comprobante: raw.receiptCode ? { codigo: raw.receiptCode, emitidoEn: raw.receptionDate || isoDay() } : raw.comprobante,
     creadaEn: raw.requestDate ? raw.requestDate.split('T')[0] : (raw.creadaEn || isoDay()),
@@ -314,9 +314,22 @@ export const donationService = {
     if (!fid || fid.toLowerCase() === 'mine') {
       return []
     }
-    return apiClient
+    const list = await apiClient
       .get<any[]>(`/api/v1/donations/foundations/${encodeURIComponent(fid)}/requests`)
       .then((r) => (Array.isArray(r.data) ? r.data : []).map(normalizeDonation))
+
+    // La respuesta de una solicitud trae publicationId, pero no siempre las fotos.
+    // La publicación de segunda mano sí las expone; se completan solo cuando faltan.
+    return Promise.all(list.map(async (d) => {
+      if (d.fotos?.length || d.publicationId == null) return d
+      try {
+        const pub = await secondHandService.get(String(d.publicationId))
+        const fotos = pub.photos?.length ? pub.photos : (pub.fotos ?? [])
+        return fotos.length ? { ...d, fotos } : d
+      } catch {
+        return d
+      }
+    }))
   },
 
   /** RF-47 y RF-49: aprobar, rechazar, iniciar recogida o confirmar recepción. */
