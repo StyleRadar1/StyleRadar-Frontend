@@ -37,14 +37,11 @@ export function Navbar() {
           <span className="max-sm:hidden"> · Los cambios afectan a todas las cuentas</span>
         </p>
       )}
-      <nav className="mx-auto flex h-[72px] max-w-6xl items-center gap-4 px-4" aria-label="Principal">
-        {/* La tienda no tiene el logo que lleva al landing: su inicio es «Mi tienda» en el menú. */}
-        {user?.role !== 'STORE_ADMIN' && (
-          <Link to={homePath} className="flex shrink-0 items-center gap-2 whitespace-nowrap text-base font-bold text-[var(--sr-hero-text)] sm:text-lg">
-            <Logo className="h-8 w-auto" />StyleRadar
-            {esAdmin && <span className="rounded-full bg-arena px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-grafito">Admin</span>}
-          </Link>
-        )}
+      <nav className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="Principal">
+        <Link to={homePath} className="flex shrink-0 items-center gap-2 whitespace-nowrap text-base font-bold text-[var(--sr-hero-text)] sm:text-lg">
+          <Logo className="h-8 w-auto" />StyleRadar
+          {esAdmin && <span className="rounded-full bg-arena px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-grafito">Admin</span>}
+        </Link>
         <div className="ml-auto hidden items-center gap-1 xl:flex">
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls}>{label}</NavLink>)}
         </div>

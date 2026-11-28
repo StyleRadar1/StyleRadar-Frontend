@@ -90,10 +90,10 @@ describe('menú según el rol', () => {
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/?login')
   })
 
-  it('la tienda no muestra el logo de StyleRadar que lleva al landing; su inicio es «Mi tienda»', () => {
+  it('la tienda muestra el logo de StyleRadar apuntando a su inicio «Mi tienda»', () => {
     loginAs('t-1', 'Luna Store', 'luna@styleradar.co', 'STORE_ADMIN')
     renderNav()
-    expect(screen.queryByRole('link', { name: /^StyleRadar/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/mi-tienda')
     expect(screen.getAllByRole('link', { name: 'Mi tienda' })[0]).toHaveAttribute('href', '/mi-tienda')
   })
 

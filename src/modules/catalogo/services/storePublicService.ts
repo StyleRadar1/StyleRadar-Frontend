@@ -5,6 +5,7 @@ import { seedStores, seedPlaylists } from '@/modules/administracion/mocks/admin'
 import { ITEMS } from '../mocks/items'
 import { getStoreInventoryItemsSync } from './inventoryService'
 import { extractAvailableTallasFromInventory, normalizeBackendItem } from './itemService'
+import { storePhotoService } from './storePhotoService'
 import type { ItemResponseDto } from '../types/item.dto'
 import { VERIFICATION_LABEL, type StorePageDto, type StoreResponseDto } from '../types/store.dto'
 import type { MapPinDto } from '@/modules/mapa/types/map.dto'
@@ -415,6 +416,17 @@ export const storePublicService = {
     const matchedStoreDto: StoreResponseDto | null =
       resolvedStoreDto ??
       (almacenMatch?.nit ? (almacenMatch as StoreResponseDto) : null)
+    const resolvedNitForPhotos = String(matchedStoreDto?.nit ?? nit).trim()
+    const fotosServidor = resolvedNitForPhotos
+      ? await storePhotoService.list(resolvedNitForPhotos).catch(() => [])
+      : []
+    const fotosGaleria: StoreGalleryItem[] = fotosServidor.map((p, idx) => ({
+      id: String(p.id),
+      url: p.url,
+      tag: p.cover ? 'Portada' : `Foto ${p.position || idx + 1}`,
+    }))
+    const coverPhotoUrl = fotosServidor.find((p) => p.cover)?.url || fotosServidor[0]?.url || ''
+    const editorialPhotoUrl = fotosServidor.find((p) => !p.cover)?.url || fotosServidor[1]?.url || coverPhotoUrl
     const prendas = catalogoItems
     const novedades = novedadesItems.length > 0 ? novedadesItems.slice(0, 3) : prendas.slice(0, 3)
     const categorias = buildCategoriasFromItems(prendas)
@@ -432,6 +444,7 @@ export const storePublicService = {
           ? almacenMatch.lat
           : 4.6433
     const matchFoto =
+      coverPhotoUrl ||
       (typeof almacenMatch?.foto === 'string' && almacenMatch.foto) ||
       (typeof almacenMatch?.photo === 'string' && almacenMatch.photo) ||
       ''
@@ -462,8 +475,8 @@ export const storePublicService = {
       reviews: 0,
       descripcion: (typeof almacenMatch?.descripcion === 'string' && almacenMatch.descripcion) || '',
       foto: matchFoto || prendas[0]?.imagen || '',
-      fotoEditorial: matchFoto || prendas[0]?.imagen || '',
-      fotosGaleria: [],
+      fotoEditorial: editorialPhotoUrl || matchFoto || prendas[0]?.imagen || '',
+      fotosGaleria,
       colecciones: [],
       bannerNotice: '',
       prendas,

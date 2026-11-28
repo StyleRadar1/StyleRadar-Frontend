@@ -10,6 +10,7 @@ import { env } from '@/configs/env'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind, errorMessage, fieldErrors } from '@/modules/core/api/errors'
 import { inventoryService } from '../services/inventoryService'
+import { playlistService } from '../services/playlistService'
 import { erroresDeConfiguracion, storeSettingsService } from '../services/storeSettingsService'
 import { errorDeFoto, ordenadas, storePhotoService, TEXTOS_FOTOS } from '../services/storePhotoService'
 import {
@@ -193,7 +194,7 @@ export default function MiTiendaPage() {
         else if (store.verificationStatus === 'PENDING') setVerificationStatus('EN_REVISION')
         else setVerificationStatus('SIN_VERIFICAR')
         if (store.nit) {
-          inventoryService.getStoreInventory(store.nit).then((invList) => {
+          inventoryService.getStoreInventory().then((invList) => {
             if (!active) return
             setItems(invList.map((it) => ({
               id: it.id,
@@ -215,6 +216,20 @@ export default function MiTiendaPage() {
       .catch((e) => {
         if (active) setStoreError(errorKind(e) === 'no-existe' ? SIN_ALMACEN : errorMessage(e, 'No pudimos cargar los datos de tu almacén.'))
       })
+    playlistService.getMine(userId)
+      .then((list) => {
+        if (!active) return
+        setCollections(list.map((pl) => ({
+          id: pl.id,
+          title: pl.nombre,
+          description: pl.descripcion || '',
+          visibility: pl.visibilidad === 'PRIVADA' ? 'Borrador' : 'Pública',
+          items: pl.prendas.length,
+          likes: pl.likes,
+          image: pl.portadaUrl || pl.prendas[0]?.imagen || '/img/productos/blazer-oversize.jpg',
+        })))
+      })
+      .catch(() => {})
     storeSubscriptionService.get()
       .then((res) => {
         if (!active) return
@@ -250,6 +265,8 @@ export default function MiTiendaPage() {
   const [collectionTitle, setCollectionTitle] = useState('')
   const [collectionDescription, setCollectionDescription] = useState('')
   const [collectionVisibility, setCollectionVisibility] = useState<'Pública' | 'Borrador'>('Pública')
+  const [collectionInitialItemId, setCollectionInitialItemId] = useState('')
+  const [collectionSaving, setCollectionSaving] = useState(false)
   const [collectionError, setCollectionError] = useState('')
 
   /* Verificación y distintivos */
@@ -411,11 +428,50 @@ export default function MiTiendaPage() {
   }
 
   /* Colecciones */
-  const createCollection = (event: FormEvent<HTMLFormElement>) => {
+  const createCollection = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (collectionSaving) return
     const title = collectionTitle.trim()
     if (!title) {
       setCollectionError('Escribe un título para la colección.')
+      return
+    }
+    if (!env.useMocks) {
+      const selectedItemId = collectionInitialItemId || activeItems[0]?.id || items[0]?.id || ''
+      if (!selectedItemId) {
+        setCollectionError('Publica al menos una prenda en tu inventario antes de crear una colección.')
+        return
+      }
+      setCollectionSaving(true)
+      setCollectionError('')
+      try {
+        const created = await playlistService.create({
+          nombre: title,
+          descripcion: collectionDescription.trim(),
+          visibilidad: collectionVisibility === 'Pública' ? 'PUBLICA' : 'PRIVADA',
+          prendaIds: [selectedItemId],
+        })
+        const nextCol: StoreCollection = {
+          id: created.id,
+          title: created.nombre || title,
+          description: created.descripcion || collectionDescription.trim(),
+          visibility: created.visibilidad === 'PRIVADA' ? 'Borrador' : 'Pública',
+          items: created.prendas.length || 1,
+          likes: created.likes ?? 0,
+          image: created.portadaUrl || created.prendas[0]?.imagen || items.find((i) => i.id === selectedItemId)?.image || '/img/productos/blazer-oversize.jpg',
+        }
+        setCollections((prev) => [nextCol, ...prev.filter((c) => c.id !== nextCol.id)])
+        setCollectionTitle('')
+        setCollectionDescription('')
+        setCollectionVisibility('Pública')
+        setCollectionInitialItemId('')
+        setCollectionDialogOpen(false)
+        setNotice(`Colección «${title}» creada con éxito.`)
+      } catch (e) {
+        setCollectionError(errorMessage(e, 'No se pudo crear la colección. Intenta de nuevo.'))
+      } finally {
+        setCollectionSaving(false)
+      }
       return
     }
     const nextCol: StoreCollection = {
@@ -708,10 +764,12 @@ export default function MiTiendaPage() {
                 <h2 id="store-info-title">Información de la tienda</h2>
                 <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-1">Datos legales, de contacto y comerciales de tu tienda en Bogotá.</p>
               </div>
-              {!editingInfo ? (
+              {env.useMocks && !editingInfo ? (
                 <button type="button" className="msd-link font-semibold" onClick={() => setEditingInfo(true)}>
                   Editar información
                 </button>
+              ) : !env.useMocks ? (
+                <span className="text-xs text-[var(--msd-text-muted,#727282)]">Datos verificados del registro oficial</span>
               ) : null}
             </header>
 
@@ -928,7 +986,7 @@ export default function MiTiendaPage() {
             </header>
             <ul className="msd-badges">
               <li><span className="msd-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10" /></svg></span>Tienda verificada</li>
-              <li><span className="msd-badge msd-badge--soft" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v10m0 4v1" /></svg></span>Últimas unidades<small>≤ {lastUnitsLimit} uds</small></li>
+              <li><span className="msd-badge msd-badge--soft" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Zm0 6v5m0 3v.5" /></svg></span>Últimas unidades<small>≤ {lastUnitsLimit} uds</small></li>
               <li><span className="msd-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z" /></svg></span>Nueva llegada<small>{newArrivalDays} días</small></li>
             </ul>
           </section>
@@ -966,12 +1024,24 @@ export default function MiTiendaPage() {
           <h2 id="new-collection-title">Nueva colección</h2>
           <label className="my-store__collection-label">TÍTULO<input autoFocus value={collectionTitle} onChange={(event) => setCollectionTitle(event.target.value)} placeholder="Ej. Temporada de lluvias" maxLength={60} required /></label>
           <label className="my-store__collection-label">DESCRIPCIÓN <span>opcional</span><textarea value={collectionDescription} onChange={(event) => setCollectionDescription(event.target.value)} rows={4} maxLength={240} /></label>
+          {!env.useMocks && items.length > 0 ? (
+            <label className="my-store__collection-label">PRENDA INICIAL
+              <select
+                value={collectionInitialItemId || activeItems[0]?.id || items[0]?.id || ''}
+                onChange={(event) => setCollectionInitialItemId(event.target.value)}
+              >
+                {(activeItems.length > 0 ? activeItems : items).map((it) => (
+                  <option key={it.id} value={it.id}>{it.name}</option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <fieldset className="my-store__visibility-field"><legend>VISIBILIDAD</legend><div>
             <button className={collectionVisibility === 'Pública' ? 'is-selected' : ''} type="button" onClick={() => setCollectionVisibility('Pública')}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 10 3 3 7-7" /></svg><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5Z" /><circle cx="10" cy="10" r="2" /></svg>PÚBLICA</button>
             <button className={collectionVisibility === 'Borrador' ? 'is-selected' : ''} type="button" onClick={() => setCollectionVisibility('Borrador')}><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="9" width="12" height="9" rx="1" /><path d="M7 9V6a3 3 0 0 1 6 0v3" /></svg>BORRADOR</button>
           </div></fieldset>
           {collectionError ? <p className="my-store__photo-error" role="alert">{collectionError}</p> : null}
-          <div className="my-store__dialog-actions"><button type="button" onClick={() => setCollectionDialogOpen(false)}>Cancelar</button><button className="my-store__button--primary" type="submit">Crear colección</button></div>
+          <div className="my-store__dialog-actions"><button type="button" onClick={() => setCollectionDialogOpen(false)}>Cancelar</button><button className="my-store__button--primary" type="submit" disabled={collectionSaving}>{collectionSaving ? 'Creando…' : 'Crear colección'}</button></div>
         </form>
       </div> : null}
     </main>
