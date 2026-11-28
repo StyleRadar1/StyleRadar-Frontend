@@ -39,7 +39,7 @@ export default function ErroresDemo() {
 
       <EscenaError escena="etiqueta" codigo="401" etiqueta="Sesión vencida" titulo="Tu sesión venció"
         texto="Vuelve a iniciar sesión y te regresamos a la página donde estabas."
-        acciones={<><a href="/?login" className={btn}>Iniciar sesión</a><a href="/" className={btnSec}>Cancelar</a></>} />
+        acciones={<><a href="/login" className={btn}>Iniciar sesión</a><a href="/" className={btnSec}>Cancelar</a></>} />
 
       <EscenaError escena="radar" etiqueta="Sin resultados" titulo="No encontramos prendas"
         texto="Quita algún filtro o prueba con otra búsqueda. (Estado vacío: no es un error del plan, no lleva código.)"

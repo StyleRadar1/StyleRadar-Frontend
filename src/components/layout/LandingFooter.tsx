@@ -19,7 +19,7 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
       <div className="relative overflow-hidden py-24 px-6 md:px-16 bg-transparent">
       <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-start gap-8">
         <div className="space-y-4 max-w-2xl">
-          <p className="text-xs font-extrabold tracking-widest uppercase text-[var(--sr-accent)]">
+          <p className="text-xs font-extrabold tracking-widest uppercase text-[var(--sr-accent-text)]">
             Explora sin límites · Bogotá
           </p>
           <h2

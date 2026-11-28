@@ -88,7 +88,7 @@ export function ErrorState({
           <p className="mt-1 text-sm text-[var(--sr-text-secondary)]">{errorMessage(error)}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {kind === 'sesion' ? (
-              <Link to="/?login" className="rounded-xl bg-[var(--sr-accent)] px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Iniciar sesión</Link>
+              <Link to="/login" className="rounded-xl bg-[var(--sr-accent)] px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Iniciar sesión</Link>
             ) : onRetry && kind !== 'permiso' ? (
               <button type="button" onClick={onRetry} className="rounded-xl bg-[var(--sr-accent)] px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Reintentar</button>
             ) : null}

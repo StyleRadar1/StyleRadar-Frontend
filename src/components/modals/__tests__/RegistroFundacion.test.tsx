@@ -31,7 +31,6 @@ describe('flujo real de alta de fundaciones (SR-RF-63: solo administrador)', () 
     expect(screen.getByRole('radio', { name: /Tienda/ })).toBeInTheDocument()
     expect(screen.queryByRole('radio', { name: /Fundación/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Registrar mi fundación/i })).not.toBeInTheDocument()
-    expect(screen.getByText(/certificado ESAL/i)).toBeInTheDocument()
   })
 
   it.each(['/registro?tipo=fundacion', '/registro?rol=fundacion'])(
@@ -49,9 +48,8 @@ describe('flujo real de alta de fundaciones (SR-RF-63: solo administrador)', () 
         </AuthProvider>,
       )
 
-      expect(screen.getByRole('heading', { name: 'Crea tu cuenta' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Regístrate' })).toBeInTheDocument()
       expect(screen.queryByRole('heading', { name: /Registra tu fundación/i })).not.toBeInTheDocument()
-      expect(screen.getByRole('status')).toHaveTextContent(/únicamente por el administrador de StyleRadar/i)
 
       const user = userEvent.setup()
       await user.type(screen.getByLabelText('Nombre completo'), 'Camila Representante')
@@ -59,8 +57,11 @@ describe('flujo real de alta de fundaciones (SR-RF-63: solo administrador)', () 
       await user.type(screen.getByLabelText('Contraseña'), 'Secreta1*')
       for (const cb of screen.getAllByRole('checkbox')) await user.click(cb)
       await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+      expect(await screen.findByText('Verifica que eres tú')).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /Rellenar código válido/i }))
+      await user.click(screen.getByRole('button', { name: 'Confirmar y entrar' }))
 
-      await screen.findByRole('heading', { name: 'Siguiente' })
+      expect(await screen.findByRole('heading', { name: /Elige tu silueta base/i })).toBeInTheDocument()
       expect(registrar).toHaveBeenCalledWith(expect.not.objectContaining({ role: 'FOUNDATION_REPRESENTATIVE' }))
     },
   )

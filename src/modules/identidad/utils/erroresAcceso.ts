@@ -153,7 +153,7 @@ export function camposDeRegistro(campos: CamposConError): Partial<Record<'nombre
  */
 export const CLAVE_NUEVA_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,72}$/
 export const TEXTO_REGLA_CLAVE =
-  'Usa de 8 a 72 caracteres, con al menos una minúscula, una mayúscula, un número y un símbolo (el espacio no cuenta).'
+  'De 8 a 72 caracteres, con mayúscula, minúscula, número y símbolo.'
 
 export const TEXTOS_RESTABLECER = {
   correo: 'Ingresa un correo electrónico válido.',

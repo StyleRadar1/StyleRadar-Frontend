@@ -57,7 +57,7 @@ export function Navbar() {
               <UserMenu />
             </>
           ) : (
-            <Link to="/?login" className="rounded-lg bg-violeta px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Iniciar sesión</Link>
+            <Link to="/login" className="rounded-lg bg-violeta px-4 py-2 text-sm font-semibold text-[var(--sr-text-on-accent)]">Iniciar sesión</Link>
           )}
           <button className="rounded-lg border border-[var(--sr-border-control)] text-[var(--sr-hero-text)] px-3 py-2 xl:hidden" aria-expanded={open} aria-label="Abrir menú" onClick={() => setOpen(!open)}>☰</button>
         </div>

@@ -14,7 +14,7 @@ export function RequireRole({ roles, children }: { roles: Role[]; children: Reac
     if (salidaVoluntariaReciente()) return <Navigate to="/" replace />
     // Al volver a entrar, el inicio de sesión lleva de vuelta a esta página.
     guardarRetorno(location.pathname + location.search)
-    return <Navigate to="/?login" replace state={{ from: location.pathname }} />
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
   if (!roles.includes(user.role)) return <Navigate to={ROLE_HOME[user.role]} replace />
   return children

@@ -24,9 +24,9 @@ const renderProtegida = () => render(
 beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
 
 describe('RequireRole sin sesión', () => {
-  it('manda al inicio de sesión del landing (/?login)', () => {
+  it('manda a la página de inicio de sesión (/login)', () => {
     renderProtegida()
-    expect(screen.getByText('destino:/?login')).toBeInTheDocument()
+    expect(screen.getByText('destino:/login')).toBeInTheDocument()
   })
 
   it('si la persona acaba de cerrar sesión, la manda al inicio sin abrir el login', () => {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { flushSync } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAccounts'
@@ -34,7 +34,7 @@ const AUTH_PIC: Record<PicKey, { src: string; alt: string }> = {
 
 const AUTH_CAP: Record<PicKey, [string, string]> = {
   login: ['Iniciar sesión', 'Qué bueno verte otra vez'],
-  sign: ['Crear cuenta', 'Empieza tu radar'],
+  sign: ['Registro', 'Empieza tu radar'],
   user: ['Usuario', 'Tu estilo, cerca de ti'],
   store: ['Tienda', 'Que te encuentren en tu talla'],
   found: ['Fundación', 'La ropa sigue su camino'],
@@ -86,20 +86,6 @@ function cancelAnims(el: Element | null) {
   } catch {
     // Ignorar en entornos de prueba sin Web Animations API
   }
-}
-
-function resetCard(card: HTMLElement | null) {
-  if (!card) return
-  cancelAnims(card)
-  card.style.opacity = ''
-  card.style.transform = ''
-  card.style.filter = ''
-  card.scrollTop = 0
-  const kids = Array.from(card.children) as HTMLElement[]
-  kids.forEach((k) => {
-    k.style.opacity = ''
-    k.style.transform = ''
-  })
 }
 
 /** Mínimo de la contraseña al iniciar sesión: 8 con el back real; 4 en demostración, donde las cuentas usan 1234. */
@@ -444,37 +430,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
     onClose()
   }
 
-  const handleSwapTab = async (targetTab: 'login' | 'register') => {
-    if (swappingRef.current || (targetTab === activeTab && step === 'form')) return
-    swappingRef.current = true
-    try {
-      const card = cardRef.current
-      await animateCardOut(card)
-      resetCard(card)
-      setError('')
-      setCamposErr({})
-      setReintentar(false)
-      setStep('form')
-      setPreviewRole(null)
-      try {
-        flushSync(() => {
-          setActiveTab(targetTab)
-        })
-      } catch {
-        setActiveTab(targetTab)
-      }
-      const nextCard = cardRef.current
-      if (nextCard) {
-        nextCard.scrollTop = 0
-      }
-      await animateCardIn(nextCard)
-      const firstInput = nextCard?.querySelector<HTMLElement>('input')
-      firstInput?.focus({ preventScroll: true })
-    } finally {
-      swappingRef.current = false
-    }
-  }
-
   useEffect(() => {
     if (!isOpen && !rendered) return
     const prevOverflow = document.body.style.overflow
@@ -508,6 +463,28 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   }
   /** Después de entrar vuelve a la página donde estaba (sesión vencida); si no, al inicio de su rol. */
   const entrarCon = (rol: keyof typeof ROLE_HOME) => finishAuthAndNavigate(tomarRetorno() ?? ROLE_HOME[rol])
+
+  /** Cambia entre login y registro dentro del pop-up, con animación de tarjeta. */
+  const cambiarModo = async (target: 'login' | 'register') => {
+    if (swappingRef.current || target === activeTab) return
+    swappingRef.current = true
+    try {
+      await animateCardOut(cardRef.current)
+      flushSync(() => {
+        setActiveTab(target)
+        setStep('form')
+        setError('')
+        setCamposErr({})
+        setReintentar(false)
+        setPreviewRole(null)
+        if (target === 'register') setRole('BUYER')
+      })
+      await animateCardIn(cardRef.current)
+      cardRef.current?.scrollTo({ top: 0 })
+    } finally {
+      swappingRef.current = false
+    }
+  }
 
   /** Pasa a la pantalla del código OTP con los 6 campos vacíos. */
   const irAlCodigo = (vigencia?: number) => {
@@ -548,7 +525,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
         entrarCon(r.user.role)
         return
       }
-      irAlCodigo(r.expiresInSeconds)
+      setError('Tu correo aún no está verificado. Completa el registro para verificar la cuenta.')
     } catch (err) {
       const r = errorDeLogin(err)
       setCamposErr({ email: r.campos.email ?? r.campos.correo, password: r.campos.password })
@@ -563,27 +540,25 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   const handleRegisterSubmit = async (e: FormEvent) => {
     e.preventDefault()
     // SR-RF-01: nombre de 2 a 100, correo válido, contraseña de 8 a 72 con mayúscula, minúscula, número y símbolo, y barrio de máximo 100.
-    setCamposReg({})
     const nombreLimpio = fullName.trim()
-    if (!email || !nombreLimpio) {
-      setError('Por favor completa todos los campos requeridos.')
-      return
+    const campos: ReturnType<typeof camposDeRegistro> = {}
+    if (!nombreLimpio || nombreLimpio.length < NAME_MIN || nombreLimpio.length > NAME_MAX) {
+      campos.nombre = `Entre ${NAME_MIN} y ${NAME_MAX} caracteres.`
     }
-    if (nombreLimpio.length < NAME_MIN || nombreLimpio.length > NAME_MAX) {
-      setError(`El nombre debe tener entre ${NAME_MIN} y ${NAME_MAX} caracteres.`)
-      return
-    }
-    if (!correoValido(email)) {
-      setError('Escribe un correo válido, por ejemplo nombre@correo.com.')
-      return
+    if (!email || !correoValido(email)) {
+      campos.email = 'Escribe un correo válido.'
     }
     if (!CLAVE_NUEVA_RE.test(password)) {
-      setError('')
-      setCamposReg({ password: TEXTO_REGLA_CLAVE })
-      return
+      campos.password = TEXTO_REGLA_CLAVE
     }
     if (barrio.trim().length > NEIGHBORHOOD_MAX) {
-      setError(`El barrio no puede superar ${NEIGHBORHOOD_MAX} caracteres.`)
+      campos.barrio = `Máximo ${NEIGHBORHOOD_MAX} caracteres.`
+    }
+    setCamposReg(campos)
+    if (Object.keys(campos).length > 0) {
+      setError('')
+      const first = campos.nombre ? 'suName' : campos.email ? 'suEmail' : campos.password ? 'suPass' : 'suBarrio'
+      document.getElementById(first)?.focus()
       return
     }
     // Validación estricta de consentimientos legales (Colombia Ley 1581 / Ley 1480)
@@ -594,9 +569,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
     if (!consentState.aceptaDatos) {
       cErr.datos = 'Debes autorizar el tratamiento de datos personales (Habeas Data).'
     }
-    if (!consentState.esMayorDeEdad) {
-      cErr.edad = 'Debes confirmar que eres mayor de 18 años.'
-    }
     if (role === 'STORE_ADMIN' && !consentState.aceptaReglasTienda) {
       cErr.reglasTienda = 'Debes aceptar las Reglas para Tiendas y Marcas Aliadas.'
     }
@@ -605,7 +577,15 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
     const isTestEmail = env.useMocks && email.trim().toLowerCase() === 'valen@correo.com'
     if (!isTestEmail && Object.keys(cErr).length > 0) {
       setConsentErrors(cErr)
-      setError('Por favor acepta las autorizaciones y consentimientos obligatorios.')
+      setError('Acepta los consentimientos obligatorios para continuar.')
+      const firstInvalid = cErr.terminos
+        ? 'consent-terminos'
+        : cErr.datos
+          ? 'consent-datos'
+          : cErr.reglasTienda
+            ? 'consent-reglas-tienda'
+            : 'consent-reglas-fundacion'
+      document.getElementById(firstInvalid)?.focus()
       return
     }
     setConsentErrors({})
@@ -621,7 +601,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
         email: email.trim(),
         aceptaTerminos: consentState.aceptaTerminos,
         aceptaDatos: consentState.aceptaDatos,
-        esMayorDeEdad: consentState.esMayorDeEdad,
+        esMayorDeEdad: consentState.aceptaTerminos,
         aceptaPromociones: consentState.aceptaPromociones,
         aceptaReglasTienda: consentState.aceptaReglasTienda,
         origen: `AUTH_MODAL_REGISTER_${role}`,
@@ -946,35 +926,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
         >
           {step === 'form' ? (
             <>
-              <div className="sr-auth-tabs" role="tablist" aria-label="Cuenta">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'login'}
-                  onClick={() => void handleSwapTab('login')}
-                >
-                  Iniciar sesión
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'register'}
-                  onClick={() => void handleSwapTab('register')}
-                >
-                  Crear cuenta
-                </button>
-              </div>
-
-              <h2 id="authTitle">{activeTab === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}</h2>
-              <p className="sr-sub">
-                {activeTab === 'login'
-                  ? 'Entra con Google o con tu correo.'
-                  : 'Únete a StyleRadar con Google o con tu correo.'}
-              </p>
-
-              <GoogleSignIn onSignedIn={(u) => entrarCon(u.role)} />
-
-              <div className="sr-auth-or">o con tu correo</div>
+              <h2 id="authTitle">{activeTab === 'login' ? 'Inicia sesión' : 'Regístrate'}</h2>
 
               {error && (
                 <div role="alert" className="sr-auth-err flex flex-wrap items-center gap-2">
@@ -1050,6 +1002,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       />
                       <span>Recordarme</span>
                     </label>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/restablecer-contrasena')}
+                      className="sr-forgot"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
                   </div>
 
                   <button
@@ -1061,39 +1020,12 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                     {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Entrando…' : 'Entrar'}
                   </button>
 
-                  <div className="text-right">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose()
-                        navigate('/restablecer-contrasena')
-                      }}
-                      className="text-xs font-semibold text-white/65 hover:text-white underline underline-offset-2"
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  </div>
-
-                  {/* Solo en demostración: con ms-auth el código existe únicamente después de un inicio de sesión con el correo sin verificar. */}
-                  {env.useMocks && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setError('')
-                        if (!email.trim()) setEmail('usuario@styleradar.co')
-                        irAlCodigo()
-                      }}
-                      className="w-full text-center text-xs font-semibold text-white/70 hover:text-white pt-1"
-                    >
-                      ¿Prefieres ingresar con código temporal? <b className="text-arena font-bold underline underline-offset-2">Entrar con OTP →</b>
-                    </button>
-                  )}
                 </form>
               ) : (
-                <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3" noValidate>
+                <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3" noValidate aria-busy={loading}>
                   <div className="sr-field">
                     <span className="sr-lab" id="suRoleL">
-                      ¿Cómo vas a usar StyleRadar?
+                      ¿Cómo usarás StyleRadar?
                     </span>
                     <div className="sr-role-pick" role="radiogroup" aria-labelledby="suRoleL">
                       <button
@@ -1121,9 +1053,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         <span>Publico mi catálogo</span>
                       </button>
                     </div>
-                    <p className="sr-role-note">
-                      ¿Representas una fundación? Crea tu cuenta como Usuario y solicita el registro al administrador de StyleRadar con tu certificado ESAL.
-                    </p>
                   </div>
 
                   <div className="sr-auth-fields-grid">
@@ -1136,6 +1065,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
+                        autoComplete={role === 'STORE_ADMIN' ? 'organization' : 'name'}
+                        aria-required="true"
                         aria-invalid={!!camposReg.nombre}
                         aria-describedby={camposReg.nombre ? 'suName-err' : undefined}
                         placeholder={role === 'STORE_ADMIN' ? 'Ej. Luna Store' : 'Ej. Valentina Rojas'}
@@ -1167,6 +1098,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="tucorreo@ejemplo.com"
+                        autoComplete="email"
+                        inputMode="email"
+                        aria-required="true"
                         aria-invalid={!!camposReg.email}
                         aria-describedby={camposReg.email ? 'suEmail-err' : undefined}
                       />
@@ -1183,11 +1117,15 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="De 8 a 72 caracteres"
                           maxLength={PASSWORD_MAX}
+                          autoComplete="new-password"
+                          aria-required="true"
                           aria-invalid={!!camposReg.password}
                           aria-describedby={camposReg.password ? 'suPass-err' : 'suPass-hint'}
                         />
                         <button
                           type="button"
+                          aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          aria-pressed={showPassword}
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           {showPassword ? 'Ocultar' : 'Mostrar'}
@@ -1195,7 +1133,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       </div>
                       {camposReg.password
                         ? <ErrorCampo id="suPass">{camposReg.password}</ErrorCampo>
-                        : <p id="suPass-hint" className="text-[11px] leading-snug text-white/60">{TEXTO_REGLA_CLAVE}</p>}
+                        : <p id="suPass-hint" className="text-[11px] leading-snug text-[var(--color-text-muted)]">{TEXTO_REGLA_CLAVE}</p>}
                     </div>
                   </div>
 
@@ -1208,7 +1146,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         const copy = { ...prev }
                         if (updates.aceptaTerminos) delete copy.terminos
                         if (updates.aceptaDatos) delete copy.datos
-                        if (updates.esMayorDeEdad) delete copy.edad
                         if (updates.aceptaReglasTienda) delete copy.reglasTienda
                         return copy
                       })
@@ -1241,6 +1178,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                     type="submit"
                     id="suSubmit"
                     disabled={loading}
+                    aria-busy={loading}
                     className="sr-auth-submit"
                   >
                     {loading
@@ -1252,20 +1190,48 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                 </form>
               )}
 
+              {activeTab === 'login' || role === 'BUYER' ? (
+                <>
+                  <div className="sr-auth-or">o continúa con</div>
+                  <GoogleSignIn onSignedIn={(u) => entrarCon(u.role)} />
+                  {activeTab === 'register' && (
+                    <p className="text-[11px] leading-snug text-[var(--color-text-muted)]">
+                      Con Google creamos tu cuenta de comprador con tu nombre y correo. Después puedes completar barrio y medidas en tu perfil.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-[11px] leading-snug text-[var(--color-text-muted)]">
+                  La cuenta de tienda se crea con este formulario; después registras el almacén con NIT y RUT.
+                </p>
+              )}
+
               <p className="sr-auth-foot">
                 {activeTab === 'login' ? (
                   <>
                     ¿No tienes cuenta?{' '}
-                    <button type="button" onClick={() => void handleSwapTab('register')}>
-                      Crear cuenta gratis →
-                    </button>
+                    <Link
+                      to="/registro"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        void cambiarModo('register')
+                      }}
+                    >
+                      Regístrate
+                    </Link>
                   </>
                 ) : (
                   <>
                     ¿Ya tienes cuenta?{' '}
-                    <button type="button" onClick={() => void handleSwapTab('login')}>
-                      Inicia sesión →
-                    </button>
+                    <Link
+                      to="/login"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        void cambiarModo('login')
+                      }}
+                    >
+                      Inicia sesión
+                    </Link>
                   </>
                 )}
               </p>

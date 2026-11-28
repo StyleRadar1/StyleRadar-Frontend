@@ -78,7 +78,7 @@ describe('ResetPasswordPage con mocks', () => {
 
     await llenarYEnviar(user)
     expect(await screen.findByText(MENSAJE_CLAVE_RESTABLECIDA)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ir a iniciar sesión' })).toHaveAttribute('href', '/?login')
+    expect(screen.getByRole('link', { name: 'Ir a iniciar sesión' })).toHaveAttribute('href', '/login')
   })
 
   it('valida en el front la regla de contraseña y que la confirmación coincida, sin llamar al servidor', async () => {

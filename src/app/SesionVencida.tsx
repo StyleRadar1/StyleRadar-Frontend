@@ -16,7 +16,7 @@ export function SesionVencida() {
       if (salidaVoluntariaReciente()) return
       if (new URLSearchParams(window.location.search).has('login')) return
       guardarRetorno()
-      navigate('/?login')
+      navigate('/login')
     }
     window.addEventListener('sr:sesion-expirada', irAlLogin)
     return () => window.removeEventListener('sr:sesion-expirada', irAlLogin)

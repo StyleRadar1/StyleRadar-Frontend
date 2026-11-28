@@ -26,7 +26,7 @@ describe('401 en cualquier pantalla (plan de errores · antes de empezar)', () =
   it('en una pantalla pública lleva al inicio de sesión y guarda la página para volver', () => {
     abrir('/playlists/u-weekend')
     act(() => { window.dispatchEvent(new Event('sr:sesion-expirada')) })
-    expect(screen.getByTestId('ruta')).toHaveTextContent('/?login')
+    expect(screen.getByTestId('ruta')).toHaveTextContent('/login')
     expect(tomarRetorno()).toBe('/playlists/u-weekend')
   })
 

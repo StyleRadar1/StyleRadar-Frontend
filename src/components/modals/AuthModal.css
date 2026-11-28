@@ -214,7 +214,7 @@
   left: clamp(20px, 2.8vw, 30px);
   bottom: clamp(20px, 3vh, 28px);
   z-index: 4;
-  max-width: min(340px, 46%);
+  max-width: min(280px, 32%);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -274,6 +274,18 @@
   gap: 6px;
   margin-top: 20px;
   max-height: calc(100% - 36px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232, 220, 203, 0.45) transparent;
+}
+
+.sr-auth-card.is-register::-webkit-scrollbar {
+  display: block;
+  width: 5px;
+}
+
+.sr-auth-card.is-register::-webkit-scrollbar-thumb {
+  background: rgba(232, 220, 203, 0.45);
+  border-radius: 99px;
 }
 
 .sr-auth-card.is-register h2 {
@@ -403,7 +415,7 @@
   }
 
   .sr-auth .sr-auth-stack > .sr-auth-card {
-    margin-right: clamp(20px, 2.6vw, 28px);
+    margin-right: clamp(16px, 2.2vw, 24px);
     margin-top: 38px;
     max-height: calc(100% - 62px);
   }
@@ -599,8 +611,11 @@
   background: none;
   border: 0;
   padding: 0;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--color-accent, #E8DCCB);
   font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
@@ -775,6 +790,19 @@
   cursor: pointer;
 }
 
+.sr-auth-foot a,
+.sr-auth-foot a:visited {
+  color: #C084FC !important;
+  font-weight: 700;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.sr-auth-foot a:hover {
+  color: #FFFFFF !important;
+}
+
 .sr-auth-err {
   padding: 9px 12px;
   border-radius: 10px;
@@ -810,5 +838,120 @@
 
   .sr-role-pick {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =====================================================================
+   Ajustes de accesibilidad, contraste y glassmorphism del registro
+   - Variables locales: el modal conserva fondo vidrio oscuro en ambos temas,
+     pero los consentimientos usan texto claro y enlaces con contraste AA.
+   - Se reduce la opacidad del panel y se refuerza el blur para un vidrio real.
+   ===================================================================== */
+.sr-auth {
+  --color-text: #F8F6FC;
+  --color-text-muted: rgba(248, 246, 252, 0.74);
+  --color-accent: #E8DCCB;
+  --color-accent-strong: #FFFFFF;
+  --color-border: rgba(255, 255, 255, 0.28);
+  --color-surface: rgba(20, 15, 30, 0.5);
+  --color-danger-text: #FFB4AB;
+  --color-focus-ring: #E8DCCB;
+}
+
+.sr-auth-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.035) 38%, rgba(20, 15, 30, 0.62) 100%),
+    rgba(20, 15, 30, 0.62);
+  border-color: rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(30px) saturate(145%);
+  -webkit-backdrop-filter: blur(30px) saturate(145%);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 40px -10px rgba(72, 17, 154, 0.35);
+  overscroll-behavior: contain;
+}
+
+.sr-auth-card.is-register {
+  gap: 8px;
+  padding: 16px 22px;
+}
+
+.sr-auth-card .sr-field input,
+.sr-auth-card .sr-field select {
+  min-height: 44px;
+  background: rgba(8, 5, 15, 0.46);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sr-auth-card .sr-field input:hover {
+  border-color: rgba(255, 255, 255, 0.46);
+}
+
+.sr-auth-card .sr-field input:focus-visible,
+.sr-auth-card .sr-field select:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-color: var(--color-focus-ring);
+}
+
+.sr-auth-card fieldset {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.sr-auth-card fieldset label {
+  min-height: 32px;
+  padding-block: 2px;
+  border-radius: 6px;
+}
+
+.sr-auth-card fieldset label:focus-within {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.sr-auth-card fieldset a {
+  text-underline-offset: 3px;
+}
+
+.sr-auth-card fieldset a:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.sr-auth-card .sr-role-note {
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+  line-height: 1.35;
+  margin: 2px 0 0;
+}
+
+.sr-auth-card .text-white\/60,
+.sr-auth-card .text-white\/70 {
+  color: var(--color-text-muted) !important;
+}
+
+@media (max-width: 600px) {
+  .sr-auth-card.is-register {
+    padding: 14px 16px;
+    gap: 7px;
+  }
+
+  .sr-auth-card fieldset {
+    font-size: 10.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-auth,
+  .sr-auth *,
+  .sr-auth *::before,
+  .sr-auth *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

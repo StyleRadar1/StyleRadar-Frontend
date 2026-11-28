@@ -87,7 +87,7 @@ describe('menú según el rol', () => {
 
   it('«Iniciar sesión» abre el mismo inicio de sesión del landing', () => {
     renderNav()
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/?login')
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
   })
 
   it('la tienda muestra el logo de StyleRadar apuntando a su inicio «Mi tienda»', () => {

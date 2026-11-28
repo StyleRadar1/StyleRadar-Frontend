@@ -7,6 +7,7 @@ import { env } from '@/configs/env'
 export function AppLayout() {
   const { pathname } = useLocation()
   const isLanding = pathname === '/'
+  const isAuthPage = pathname === '/login' || pathname === '/registro'
   return (
     <div className="flex min-h-screen flex-col">
       <a
@@ -15,11 +16,11 @@ export function AppLayout() {
       >
         Saltar al contenido principal
       </a>
-      {!isLanding && env.useMocks && <MockBanner />}
-      {!isLanding && env.appEnvironment === 'qa' && <EnvironmentBanner environment="qa" />}
-      {!isLanding && <Navbar />}
+      {!isLanding && !isAuthPage && env.useMocks && <MockBanner />}
+      {!isLanding && !isAuthPage && env.appEnvironment === 'qa' && <EnvironmentBanner environment="qa" />}
+      {!isLanding && !isAuthPage && <Navbar />}
       <main id="main-content" className="flex-1"><Outlet /></main>
-      {!isLanding && <Footer />}
+      {!isLanding && !isAuthPage && <Footer />}
     </div>
   )
 }

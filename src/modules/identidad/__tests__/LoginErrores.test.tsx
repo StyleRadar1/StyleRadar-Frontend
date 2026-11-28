@@ -1,5 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthModal } from '@/components/modals/AuthModal'
@@ -91,6 +90,7 @@ describe('Iniciar sesión · errores del plan (Cristian)', () => {
   })
 })
 
+
 describe('Iniciar sesión con el correo sin verificar (SR-RF-02 FA-13)', () => {
   beforeEach(() => { reiniciarDatos() })
   afterEach(() => { localStorage.clear(); sessionStorage.clear() })
@@ -103,67 +103,12 @@ describe('Iniciar sesión con el correo sin verificar (SR-RF-02 FA-13)', () => {
     expect(screen.queryByText('Verifica que eres tú')).not.toBeInTheDocument()
   })
 
-  it('sin verificar pide el código con la vigencia de ms-auth y luego entra', async () => {
+  it('sin verificar no abre OTP en login; pide completar el registro', async () => {
     abrir()
     escribir('sin-verificar@styleradar.co', '1234')
     entrar()
-    expect(await screen.findByText('Verifica que eres tú', {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(screen.getByText(/Vence en 5 minutos/)).toBeInTheDocument()
-    expect(localStorage.getItem('sr_token')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /Rellenar código válido/i }))
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y entrar' }))
-    expect(await screen.findByText('Inicio del comprador', {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(localStorage.getItem('sr_token')).toBe('demo-u-nv')
-  })
-})
-
-describe('Código OTP · errores del plan', () => {
-  beforeEach(() => { reiniciarDatos() })
-  afterEach(() => { vi.useRealTimers() })
-
-  const irAlCodigo = async () => {
-    const user = userEvent.setup()
-    abrir()
-    await user.click(screen.getByRole('tab', { name: /Crear cuenta/ }))
-    fireEvent.change(await screen.findByLabelText(/Nombre/), { target: { value: 'Valentina Rojas' } })
-    fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'valen@correo.com' } })
-    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'Secreta1*' } })
-    fireEvent.submit(screen.getByLabelText('Correo').closest('form') as HTMLFormElement)
-    await screen.findByText('Verifica que eres tú')
-  }
-  const codigo = (c: string) => c.split('').forEach((d, i) => fireEvent.change(screen.getByLabelText(`Dígito ${i + 1}`), { target: { value: d } }))
-  const confirmar = () => fireEvent.click(screen.getByRole('button', { name: 'Confirmar y entrar' }))
-
-  it('OTP_INCORRECT: mensaje debajo del código con los intentos que quedan y opción de pedir otro', async () => {
-    await irAlCodigo()
-    codigo('000000'); confirmar()
-    expect((await screen.findByText('El código no es correcto. Te quedan 2 intentos.')).closest('[role="alert"]')).toHaveAttribute('id', 'authOtp-err')
-    fireEvent.click(screen.getByRole('button', { name: 'Pedir otro código' }))
-    expect(await screen.findByRole('status')).toHaveTextContent('Te enviamos un código nuevo a valen@correo.com.')
-  })
-
-  it('OTP_ATTEMPTS_EXHAUSTED: a los 3 intentos fallidos bloquea con cuenta regresiva', async () => {
-    await irAlCodigo()
-    codigo('000000'); confirmar()
-    await screen.findByText(/Te quedan 2 intentos/)
-    codigo('000000'); confirmar()
-    await screen.findByText(/Te queda 1 intento/)
-    codigo('000000'); confirmar(); await act(async () => {})
-    expect(await screen.findByText(TEXTOS_ACCESO.otpLimite)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Intenta de nuevo en/ })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /Podrás pedir otro código en/ })).toBeDisabled()
-  })
-
-  it('RESENDS_EXHAUSTED: después de 3 reenvíos vuelve al inicio de sesión con el aviso', async () => {
-    await irAlCodigo()
-    for (let i = 0; i < 3; i++) {
-      // Mientras envía, el botón cambia de texto: se espera a que vuelva antes de pedir otro
-      fireEvent.click(await screen.findByRole('button', { name: 'Pedir otro código' }, { timeout: 3000 }))
-      await screen.findByRole('status')
-      await act(async () => {})
-    }
-    fireEvent.click(await screen.findByRole('button', { name: 'Pedir otro código' }, { timeout: 3000 }))
-    expect(await screen.findByText('Ya pediste el código muchas veces. Inicia sesión de nuevo para recibir otro.')).toBeInTheDocument()
+    expect(await screen.findByRole('alert', {}, { timeout: 3000 })).toHaveTextContent(/no está verificado/i)
     expect(screen.queryByText('Verifica que eres tú')).not.toBeInTheDocument()
+    expect(localStorage.getItem('sr_token')).toBeNull()
   })
 })

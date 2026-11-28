@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '@/modules/identidad/states/AuthProvider'
@@ -48,13 +48,12 @@ describe('AuthModal - Cuentas de prueba y cambio de pestaña', () => {
     expect(welcome.querySelector('img')).toHaveAttribute('src', '/img/representantes/R1.png')
   })
 
-  it('tampoco aparecen al cambiar a Crear cuenta y volver', async () => {
+  it('no muestra pestañas y ofrece redirección al registro', () => {
     renderModal(true, 'login')
 
-    fireEvent.click(screen.getByRole('tab', { name: /crear cuenta/i }))
-    sinCuentasDePrueba()
-    fireEvent.click(screen.getByRole('tab', { name: /iniciar sesión/i }))
-    await waitFor(() => expect(screen.getByRole('button', { name: /^entrar$/i })).toBeInTheDocument())
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Regístrate' })).toHaveAttribute('href', '/registro')
     sinCuentasDePrueba()
   })
 })
