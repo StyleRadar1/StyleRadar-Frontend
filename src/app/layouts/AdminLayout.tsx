@@ -117,8 +117,8 @@ function AdminShell() {
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Barra superior */}
           <header className="sticky top-0 z-30 border-b border-white/10 bg-[#181520]/75 backdrop-blur-xl">
-            <div className="flex h-14 items-center gap-3 px-4 md:px-8">
-              <Link to="/admin/estadisticas" className="lg:hidden" aria-label="StyleRadar, administración"><Logo className="h-7 w-auto" /></Link>
+            <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 md:px-8">
+              <Link to="/admin/estadisticas" className="flex shrink-0 items-center gap-2 whitespace-nowrap text-base font-bold text-white lg:hidden" aria-label="StyleRadar, administración"><Logo className="h-7 w-auto" /><span>StyleRadar</span></Link>
               <p className="text-[11px] font-bold uppercase tracking-[.16em] text-white/60">
                 <span className="max-sm:hidden">Administración <span aria-hidden="true">/</span> </span><span className="text-blanco">{actual}</span>
               </p>
@@ -131,7 +131,7 @@ function AdminShell() {
             <nav aria-label="Administración (móvil)" className="flex gap-1 overflow-x-auto px-3 pb-2 lg:hidden [&>*]:shrink-0 [&>*]:py-2">{nav}</nav>
           </header>
 
-          <main id="main-content" className="flex-1 px-4 py-8 md:px-8"><div className="mx-auto max-w-6xl"><Outlet /></div></main>
+          <main id="main-content" className="flex-1 px-4 py-8 md:px-8"><div className="mx-auto max-w-7xl"><Outlet /></div></main>
         </div>
       </div>
 

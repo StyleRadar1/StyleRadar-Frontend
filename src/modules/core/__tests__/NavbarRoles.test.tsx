@@ -23,7 +23,7 @@ describe('menú según el rol', () => {
     expect(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas, Usuario' })).toBeInTheDocument()
     expect(within(nav()).getByRole('link', { name: /^Mensajes/ })).toHaveAttribute('href', '/mensajes')
     expect(screen.queryByText('Modo administrador')).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /apariencia y accesibilidad/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /tema de la aplicación/i }).length).toBeGreaterThan(0)
   })
 
   it('la campana de notificaciones se ve para persona, tienda y fundación, pero no para el administrador', () => {
@@ -60,12 +60,12 @@ describe('menú según el rol', () => {
     expect(within(screen.getByRole('menu')).queryByRole('menuitem', { name: /Mensajes/ })).not.toBeInTheDocument()
   })
 
-  it('el tema se cambia desde el botón «Apariencia» de la barra, con cualquier rol', async () => {
+  it('el tema se cambia desde el botón «Tema» de la barra, con cualquier rol', async () => {
     const user = userEvent.setup()
     loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     renderNav()
-    await user.click(screen.getAllByRole('button', { name: /apariencia y accesibilidad/i })[0])
-    const panel = screen.getByRole('dialog', { name: /apariencia y accesibilidad/i })
+    await user.click(screen.getAllByRole('button', { name: /tema de la aplicación/i })[0])
+    const panel = screen.getByRole('dialog', { name: 'Tema' })
     expect(within(panel).getByRole('radio', { name: 'Oscuro' })).toHaveAttribute('aria-checked', 'true')
     await user.click(within(panel).getByRole('radio', { name: 'Claro' }))
     expect(document.documentElement.dataset.tema).toBe('claro')
@@ -80,9 +80,9 @@ describe('menú según el rol', () => {
     expect(within(screen.getByRole('menu')).queryByRole('group', { name: 'Tema' })).not.toBeInTheDocument()
   })
 
-  it('sin sesión, el botón «Apariencia» está en la barra', () => {
+  it('sin sesión, el botón «Tema» está en la barra', () => {
     renderNav()
-    expect(screen.getAllByRole('button', { name: /apariencia y accesibilidad/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /tema de la aplicación/i }).length).toBeGreaterThan(0)
   })
 
   it('«Iniciar sesión» abre el mismo inicio de sesión del landing', () => {
@@ -113,5 +113,17 @@ describe('menú según el rol', () => {
     const { unmount: u4 } = renderNav()
     expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/fundacion')
     u4()
+  })
+
+  it('usa contenedor unificado max-w-7xl con 3 zonas (grid-cols-[auto_1fr_auto]), logo currentColor y selector de apariencia compacto en desktop', () => {
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
+    renderNav()
+    const navEl = nav()
+    expect(navEl).toHaveClass('max-w-7xl', 'grid', 'grid-cols-[auto_1fr_auto]')
+    const logoSvg = navEl.querySelector('svg')
+    expect(logoSvg?.querySelector('path')?.getAttribute('fill')).toBe('currentColor')
+    const themeBtn = within(navEl).getByRole('button', { name: /tema de la aplicación/i })
+    expect(themeBtn).toHaveAttribute('title', 'Apariencia')
+    expect(themeBtn.textContent?.trim()).toBe('')
   })
 })

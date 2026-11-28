@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useContext, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { ProbadorSecciones } from '@/modules/experiencia/components/ProbadorSecciones'
 import { env } from '@/configs/env'
 import { ApiError } from '@/modules/core/api/apiClient'
 import { useResource } from '@/modules/core/hooks/useResource'
@@ -331,6 +332,7 @@ export default function TryOnPage() {
     <TryOnPrivacyShield>
       <div className="sr-probador-page min-h-screen">
         <section className="mx-auto max-w-6xl px-4 py-12">
+          <ProbadorSecciones className="mb-6" />
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Probador virtual · Bogotá</p>

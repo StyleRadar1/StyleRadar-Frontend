@@ -23,7 +23,7 @@ export type ModoCvd = (typeof MODOS_CVD)[number]
 export type ModoCvdActivo = Exclude<ModoCvd, 'normal'>
 
 export const CVD_INFO: Record<ModoCvd, { etiqueta: string; detalle: string }> = {
-  normal: { etiqueta: 'Visión normal', detalle: 'Sin filtro' },
+  normal: { etiqueta: 'Sin filtro', detalle: 'Colores normales' },
   protanomalia: { etiqueta: 'Protanomalía', detalle: 'Rojo débil (leve)' },
   protanopia: { etiqueta: 'Protanopia', detalle: 'Sin rojo' },
   deuteranomalia: { etiqueta: 'Deuteranomalía', detalle: 'Verde débil (el más común)' },

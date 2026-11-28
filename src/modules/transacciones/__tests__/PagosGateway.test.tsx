@@ -438,7 +438,7 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('PlansPage: «Dejar de renovar» confirma con endDate, llama POST /cancel, refresca GET /subscriptions/{id} y muestra Activa sin renovación', async () => {
+  it('PlansPage: «Cancelar suscripción» confirma con endDate, llama POST /cancel, refresca GET /subscriptions/{id} y muestra Activa sin renovación', async () => {
     setSession('usr-42', 'BUYER', 'buyer@correo.co')
     const user = userEvent.setup()
     const getSpy = vi.spyOn(apiClient, 'get')
@@ -485,13 +485,13 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
       ),
     )
 
-    const dejarBtn = await screen.findByRole('button', { name: 'Dejar de renovar' })
+    const cancelarBtn = await screen.findByRole('button', { name: 'Cancelar suscripción' })
     const getCallsBeforeCancel = getSpy.mock.calls.length
-    await user.click(dejarBtn)
+    await user.click(cancelarBtn)
 
-    const dialogo = await screen.findByRole('dialog', { name: '¿Dejar de renovar Radar+?' })
-    expect(dialogo).toHaveTextContent('Tu plan no se renovará. Mantienes los beneficios hasta el 1 de diciembre de 2026')
-    await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
+    const dialogo = await screen.findByRole('dialog', { name: '¿Cancelar Radar+?' })
+    expect(dialogo).toHaveTextContent('Conservas los beneficios de Radar+ hasta el 1 de diciembre de 2026')
+    await user.click(within(dialogo).getByRole('button', { name: 'Cancelar suscripción' }))
 
     await waitFor(() => {
       expect(postSpy).toHaveBeenCalledWith('/api/v1/subscriptions/usr-42/cancel', { confirmed: true })
@@ -499,8 +499,8 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
     await waitFor(() => {
       expect(getSpy.mock.calls.length).toBeGreaterThan(getCallsBeforeCancel)
     })
-    expect(await screen.findByRole('button', { name: 'Plan actual · no se renovará' })).toBeDisabled()
-    expect(screen.getAllByText(/Tu plan sigue activo hasta 1 de diciembre de 2026/).length).toBeGreaterThan(0)
+    expect(await screen.findByText('Activa sin renovación')).toBeInTheDocument()
+    expect(screen.getByText(/No se renovará: ese día vuelves al plan Radar/)).toBeInTheDocument()
   })
 
   it('oculta botones de nueva suscripción en ACTIVE, ACTIVE sin renovación y PENDING; «Volver a suscribirme» solo en SUSPENDIDA/VENCIDA', async () => {
@@ -529,6 +529,7 @@ describe('botones, /planes, admin CSV y retorno de Mercado Pago', () => {
     )
     expect(await screen.findByText('Suscripción pendiente')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Activar Radar\+|Volver a suscribirme/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Pásate a Radar|Renovar a Radar/i })).not.toBeInTheDocument()
     unmountPlansPending()
 
     // 2) CheckoutPage en ACTIVE sin renovación: muestra estado en vez del formulario de pago

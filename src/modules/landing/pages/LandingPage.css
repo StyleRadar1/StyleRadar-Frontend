@@ -446,45 +446,37 @@ html[data-tema="claro"] .sr-landing .sr-category-tabs button[aria-selected="true
    Toda tarjeta de contenido usa la clase `sr-glass-card` y no define su propio fondo,
    borde ni sombra. Variantes: `sr-glass-interactive` (reacciona al pasar el cursor) y
    `is-featured` / `is-active` (borde violeta de marca para la opción destacada).
-   En oscuro hereda el cristal global de index.css; aquí se ajusta el modo claro para que
-   la ciudad desenfocada del fondo se vea a través de la tarjeta.
+   El fondo, el desenfoque, el borde y la sombra salen de los tokens --glass-* de index.css (opacidades
+   medidas por contraste); aquí solo van las variantes y el velo de la foto.
    ===================================================================== */
 .sr-landing .sr-glass-card { border-width: 1px; border-style: solid; }
 
-/* Modo claro. Para que se lea como cristal y no como papel blanco hacen falta tres cosas:
-   1) poco relleno blanco (la foto de fondo se asoma por debajo), 2) desenfoque fuerte con colores
-   más vivos, y 3) un borde claro nítido con sombra suave, que es lo que "levanta" la tarjeta. */
-html[data-theme="light"] .sr-landing .sr-glass-card,
-html[data-theme="claro"] .sr-landing .sr-glass-card,
-html[data-tema="claro"] .sr-landing .sr-glass-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, .50) 0%, rgba(255, 255, 255, .20) 100%);
-  backdrop-filter: blur(24px) saturate(1.8);
-  -webkit-backdrop-filter: blur(24px) saturate(1.8);
-  border-color: rgba(255, 255, 255, .9);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 0 rgba(72, 17, 154, .08),
-    0 18px 40px -12px rgba(38, 38, 38, .28),
-    0 2px 8px rgba(38, 38, 38, .08);
+/* Velo que cubre la foto de fondo. El texto que va suelto sobre la foto (rótulos, títulos de sección, párrafos)
+   también tiene que leerse: medido contra los píxeles de la foto en el peor caso, hace falta 72 % en claro
+   (párrafo 5,1:1; con el 56 % anterior daba 3,3:1) y 52 % en oscuro y daltonismo (rótulo ≥ 4,5:1).
+   Se dobla la clase para ganarle en especificidad al velo global de index.css. */
+.sr-landing.sr-landing::before {
+  background: rgba(11, 8, 19, .52);
 }
-
-/* El velo claro que cubre la foto de fondo se aligera en la landing: con la foto muy lavada no había
-   nada que atravesar el cristal. Se dobla la clase para ganarle en especificidad al velo global. */
 html[data-theme="light"] .sr-landing.sr-landing::before,
 html[data-theme="claro"] .sr-landing.sr-landing::before,
 html[data-tema="claro"] .sr-landing.sr-landing::before {
-  background: rgba(248, 246, 252, .40);
+  background: rgba(248, 246, 252, .72);
   backdrop-filter: blur(3px) saturate(1.1);
   -webkit-backdrop-filter: blur(3px) saturate(1.1);
 }
 
 .sr-landing .sr-glass-interactive { transition: transform .25s, border-color .25s, background .25s, box-shadow .25s; }
-.sr-landing .sr-glass-interactive:hover { transform: translateY(-3px); border-color: rgba(167, 139, 250, .65); }
+.sr-landing .sr-glass-interactive:hover {
+  transform: translateY(-3px);
+  border-color: rgba(167, 139, 250, .65);
+  background: linear-gradient(145deg, rgba(44, 34, 82, .80) 0%, rgba(26, 20, 48, .64) 100%);
+}
 html[data-theme="light"] .sr-landing .sr-glass-interactive:hover,
 html[data-theme="claro"] .sr-landing .sr-glass-interactive:hover,
 html[data-tema="claro"] .sr-landing .sr-glass-interactive:hover {
   border-color: rgba(72, 17, 154, .55);
-  background: linear-gradient(145deg, rgba(255, 255, 255, .66) 0%, rgba(255, 255, 255, .34) 100%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .94) 0%, rgba(250, 247, 255, .84) 100%);
 }
 
 .sr-landing .sr-glass-card.is-featured,
@@ -495,3 +487,85 @@ html[data-tema="claro"] .sr-landing .sr-glass-card.is-featured,
 html[data-theme="light"] .sr-landing .sr-glass-card.is-active,
 html[data-theme="claro"] .sr-landing .sr-glass-card.is-active,
 html[data-tema="claro"] .sr-landing .sr-glass-card.is-active { border-color: #48119A; }
+
+/* =====================================================================
+   PIE LEGAL: franja de color sólido a todo el ancho (copyright, Marco Legal, Ayuda, Aliados y Proveedor).
+   Color: Grafito #262626, el gris oscuro de la identidad de la marca. Para el violeta, cambiar --pie-fondo a #48119A.
+   Dentro de la franja se redefinen las variables de texto, porque los enlaces del pie usan los tokens del
+   tema (que en modo claro son oscuros) y sobre un fondo sólido oscuro no se verían:
+   blanco 15,9:1 · Lavanda #B9B9CA 7,8:1 · Arena #E8DCCB 11,1:1 sobre #262626 (mínimo AA: 4,5:1).
+   ===================================================================== */
+.sr-pie-legal {
+  --pie-fondo: #262626;
+  --sr-hero-text: #ffffff;
+  --sr-hero-text-muted: #b9b9ca;
+  --sr-accent: #e8dccb;
+  --sr-accent-text: #e8dccb;
+  --sr-border-subtle: rgba(255, 255, 255, 0.2);
+  background: var(--pie-fondo);
+  color: #ffffff;
+}
+.sr-pie-legal a:focus-visible,
+.sr-pie-legal button:focus-visible {
+  outline: 3px solid #e8dccb;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* =====================================================================
+   PISTA DE BAJAR (portada). Una flechita sola no la vio una persona en una prueba de uso, así que ahora es una
+   pastilla de color sólido (violeta de la marca, blanco 11,5:1) con el texto «Desliza para ver más» y dos flechas
+   que caen en cascada. Si nadie mueve la página en 4 s, la pastilla late (anillo que se expande y rebote).
+   Con «reducir movimiento» se quitan las animaciones y se queda el texto, que ya basta para entenderlo.
+   ===================================================================== */
+.sr-landing .sr-pista-bajar {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-height: 58px;
+  padding: 9px 22px 5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  background: #48119a;
+  color: #ffffff;
+  font: 700 0.9375rem/1.2 Poppins, system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: background 0.2s, transform 0.2s;
+}
+.sr-landing .sr-pista-bajar:hover { background: #7b4dd8; transform: translateY(-2px); }
+.sr-landing .sr-pista-bajar:focus-visible { outline: 3px solid #e8dccb; outline-offset: 3px; }
+.sr-landing .sr-pista-bajar__flechas { display: flex; flex-direction: column; align-items: center; line-height: 0; margin-top: -2px; }
+.sr-landing .sr-pista-bajar__flechas svg + svg { margin-top: -7px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sr-landing .sr-pista-bajar__flechas svg { animation: sr-pista-cae 1.5s ease-in-out infinite; }
+  .sr-landing .sr-pista-bajar__flechas svg + svg { animation-delay: 0.22s; }
+  .sr-landing .sr-pista-bajar--insiste { animation: sr-pista-rebote 1.6s ease-in-out infinite; }
+  .sr-landing .sr-pista-bajar--insiste::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 2px solid #b9b9ca;
+    animation: sr-pista-anillo 1.6s ease-out infinite;
+    pointer-events: none;
+  }
+}
+@keyframes sr-pista-cae {
+  0%, 100% { transform: translateY(-2px); opacity: 0.45; }
+  50% { transform: translateY(3px); opacity: 1; }
+}
+@keyframes sr-pista-rebote {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes sr-pista-anillo {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.35, 1.7); opacity: 0; }
+}

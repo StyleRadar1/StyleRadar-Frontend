@@ -8,6 +8,9 @@ import { CursorHanger } from './CursorHanger'
 const CONTROL_HERO =
   'inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--hero-sub-border)] bg-black/30 text-[var(--hero-fg)] backdrop-blur-md transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]'
 
+/** Cuánto esperar sin que la persona mueva la página antes de que la pista de bajar empiece a latir. */
+export const PISTA_INSISTE_MS = 4000
+
 export function Hero() {
   const heroRef = useRef<HTMLElement | null>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -32,6 +35,25 @@ export function Hero() {
     }, 5500)
     return () => clearInterval(timer)
   }, [isPaused, prefersReducedMotion])
+
+  // Si pasan unos segundos y nadie ha movido la página, la pista de «Desliza para ver más» late para llamar la atención.
+  const [insiste, setInsiste] = useState(false)
+  useEffect(() => {
+    const temporizador = window.setTimeout(() => setInsiste(true), PISTA_INSISTE_MS)
+    const alMover = () => {
+      window.clearTimeout(temporizador)
+      setInsiste(false)
+    }
+    window.addEventListener('scroll', alMover, { passive: true })
+    window.addEventListener('wheel', alMover, { passive: true })
+    window.addEventListener('touchmove', alMover, { passive: true })
+    return () => {
+      window.clearTimeout(temporizador)
+      window.removeEventListener('scroll', alMover)
+      window.removeEventListener('wheel', alMover)
+      window.removeEventListener('touchmove', alMover)
+    }
+  }, [])
 
   /** Cambio manual de foto: quien elige a mano ya no necesita que el carrusel siga solo. */
   const irA = (delta: number) => {
@@ -195,7 +217,7 @@ export function Hero() {
       </button>
 
       {/* Puntos indicadores (móvil): dónde estás y salto directo a una foto */}
-      <div role="group" aria-label="Fotos de la portada" className="md:hidden absolute z-20 inset-x-0 bottom-[84px] flex items-center justify-center">
+      <div role="group" aria-label="Fotos de la portada" className="md:hidden absolute z-20 inset-x-0 bottom-[100px] flex items-center justify-center">
         {heroSlides.map((slide, index) => (
           <button
             key={slide.id}
@@ -225,16 +247,22 @@ export function Hero() {
           <span>{String(heroSlides.length).padStart(2, '0')}</span>
         </span>
 
-        {/* Flecha hacia abajo: avisa que la página sigue */}
+        {/* Invitación a bajar: pastilla con texto (una flecha sola pasaba desapercibida) que late si nadie baja */}
         <a
           href="#pe-que-es"
           onClick={handleScrollTo}
           aria-label="Seguir bajando para ver más"
-          className={`${CONTROL_HERO} justify-self-center motion-safe:animate-bounce`}
+          className={`sr-pista-bajar justify-self-center ${insiste ? 'sr-pista-bajar--insiste' : ''}`}
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <span className="sr-pista-bajar__texto">Desliza para ver más</span>
+          <span className="sr-pista-bajar__flechas" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="5 8 12 15 19 8" />
+            </svg>
+            <svg viewBox="0 0 24 24" width="22" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="5 8 12 15 19 8" />
+            </svg>
+          </span>
         </a>
 
         <span aria-hidden="true" />

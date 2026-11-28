@@ -376,6 +376,57 @@ export function validateBodyMeasurements(m: Partial<BodyMeasurements>): {
   }
 }
 
+/* Medidas típicas (centro del rango de la tabla de referencia) por talla de letra */
+const TALLAS_LETRA = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
+const MEDIDAS_TALLA: Record<string, { pecho: number; cintura: number; cadera: number }> = {
+  XS: { pecho: 83, cintura: 67, cadera: 87 },
+  S: { pecho: 89, cintura: 73, cadera: 93 },
+  M: { pecho: 95, cintura: 80, cadera: 99 },
+  L: { pecho: 102, cintura: 88, cadera: 106 },
+  XL: { pecho: 111, cintura: 97, cadera: 114 },
+  XXL: { pecho: 121, cintura: 107, cadera: 123 },
+}
+
+/** Talla de letra cuyo pecho típico está más cerca del pecho dado. */
+export function tallaDesdePecho(pecho: number): string {
+  let mejor = 'M'
+  let dist = Infinity
+  for (const t of TALLAS_LETRA) {
+    const d = Math.abs(MEDIDAS_TALLA[t].pecho - pecho)
+    if (d < dist) {
+      dist = d
+      mejor = t
+    }
+  }
+  return mejor
+}
+
+const entre = (n: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(n)))
+
+/**
+ * Ajuste rápido del probador: al cambiar estatura, peso o tipo de cuerpo se recalculan pecho, cintura y cadera
+ * (más peso para la misma estatura = más contorno), y con ellos la talla. Al elegir una talla se usan sus medidas típicas.
+ * Así la ropa se evalúa contra un cuerpo real y no contra un número que nadie movió.
+ */
+export function aplicarCambioRapido(prev: BodyMeasurements, cambios: Partial<BodyMeasurements>): BodyMeasurements {
+  const next: BodyMeasurements = { ...prev, ...cambios }
+  if (cambios.tallaHabitual && MEDIDAS_TALLA[cambios.tallaHabitual]) {
+    const t = MEDIDAS_TALLA[cambios.tallaHabitual]
+    return { ...next, pecho: t.pecho, cintura: t.cintura, cadera: t.cadera, esAproximado: true }
+  }
+  if (cambios.estatura !== undefined || cambios.peso !== undefined || cambios.cuerpoBase !== undefined) {
+    const m = next.estatura / 100
+    const bmi = (next.peso ?? 65) / (m * m)
+    const d = bmi - 22
+    const ajusteCuerpo = next.cuerpoBase === 'femenino' ? { p: -3, c: -5, ca: 1 } : next.cuerpoBase === 'masculino' ? { p: 2, c: 2, ca: -1 } : { p: 0, c: 0, ca: 0 }
+    const pecho = entre(MEDIDAS_TALLA.M.pecho + ajusteCuerpo.p + d * 2.8, 60, 150)
+    const cintura = entre(MEDIDAS_TALLA.M.cintura + ajusteCuerpo.c + d * 3.2, 45, 140)
+    const cadera = entre(MEDIDAS_TALLA.M.cadera + ajusteCuerpo.ca + d * 2.5, 65, 160)
+    return { ...next, pecho, cintura, cadera, tallaHabitual: tallaDesdePecho(pecho), esAproximado: true }
+  }
+  return next
+}
+
 /**
  * Calcula los factores de deformación visual para adaptar el maniquí.
  */

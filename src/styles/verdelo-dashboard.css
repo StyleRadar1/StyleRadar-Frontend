@@ -301,7 +301,7 @@ html[data-tema="claro"] .sr-verdelo-page::before {
 html[data-theme="colorblind"] .sr-verdelo-shell,
 html[data-theme="daltonico"] .sr-verdelo-shell,
 html[data-tema="daltonico"] .sr-verdelo-shell,
-html[data-cvd="on"] .sr-verdelo-shell {
+html[data-tema="daltonico"] .sr-verdelo-shell {
   background-color: var(--sr-bg, #1d1d1d);
   background-image:
     radial-gradient(760px 540px at 12% 10%, rgba(0, 114, 178, 0.22) 0%, transparent 70%),
@@ -313,7 +313,7 @@ html[data-cvd="on"] .sr-verdelo-shell {
 html[data-theme="colorblind"] .sr-verdelo-panel,
 html[data-theme="daltonico"] .sr-verdelo-panel,
 html[data-tema="daltonico"] .sr-verdelo-panel,
-html[data-cvd="on"] .sr-verdelo-panel {
+html[data-tema="daltonico"] .sr-verdelo-panel {
   border-color: var(--sr-border-subtle, rgba(255, 255, 255, 0.18));
   background: var(--sr-surface, #262626);
   box-shadow: var(--sr-shadow, 0 10px 30px rgba(0, 0, 0, 0.6));
@@ -323,7 +323,7 @@ html[data-cvd="on"] .sr-verdelo-panel {
 html[data-theme="colorblind"] .sr-verdelo-page::before,
 html[data-theme="daltonico"] .sr-verdelo-page::before,
 html[data-tema="daltonico"] .sr-verdelo-page::before,
-html[data-cvd="on"] .sr-verdelo-page::before {
+html[data-tema="daltonico"] .sr-verdelo-page::before {
   background:
     radial-gradient(650px 480px at 18% 16%, rgba(0, 114, 178, 0.16) 0%, transparent 70%),
     radial-gradient(600px 440px at 84% 30%, rgba(230, 159, 0, 0.08) 0%, transparent 70%);

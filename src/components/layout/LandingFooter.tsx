@@ -13,9 +13,10 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
   return (
     <footer
       id="pe-pie"
-      className="relative overflow-hidden py-24 px-6 md:px-16 bg-transparent text-[var(--sr-hero-text)] border-t border-[var(--sr-border-subtle)]"
+      className="relative text-[var(--sr-hero-text)] border-t border-[var(--sr-border-subtle)]"
       aria-labelledby="peFinalTitle"
     >
+      <div className="relative overflow-hidden py-24 px-6 md:px-16 bg-transparent">
       <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-start gap-8">
         <div className="space-y-4 max-w-2xl">
           <p className="text-xs font-extrabold tracking-widest uppercase text-[var(--sr-accent)]">
@@ -75,6 +76,12 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
           )}
         </div>
 
+      </div>
+      </div>
+
+      {/* Pie legal: franja de color sólido (violeta de la marca) a todo el ancho; ver .sr-pie-legal en LandingPage.css */}
+      <div className="sr-pie-legal">
+        <div className="max-w-5xl mx-auto px-6 md:px-16 py-12 flex flex-col gap-8">
         {/* Barra inferior y volver arriba */}
         <div className="w-full pt-12 mt-8 border-t border-[var(--sr-border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--sr-hero-text-muted)]">
           <p className="font-medium text-center sm:text-left">
@@ -123,8 +130,7 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
               </p>
               <ul className="space-y-1.5">
                 <li><Link to="/legal/pqrs" className="font-semibold text-[var(--sr-hero-text)] hover:text-[var(--sr-accent)] transition-colors">Radicar PQRS Oficial</Link></li>
-                <li><Link to="/legal/devoluciones-garantias" className="hover:text-[var(--sr-accent)] transition-colors font-medium">Derecho de Retracto (5 días)</Link></li>
-                <li><Link to="/legal/devoluciones-garantias" className="hover:text-[var(--sr-accent)] transition-colors">Garantías y Cambios</Link></li>
+                <li><Link to="/legal/devoluciones-garantias" className="hover:text-[var(--sr-accent)] transition-colors font-medium">Derecho de Retracto (5 días) y Garantías</Link></li>
                 <li><Link to="/legal/envios-entregas" className="hover:text-[var(--sr-accent)] transition-colors">Envíos y Entregas Bogotá</Link></li>
                 <li><Link to="/legal/centro-ayuda" className="hover:text-[var(--sr-accent)] transition-colors">Centro de Ayuda / FAQ</Link></li>
                 <li>
@@ -178,6 +184,7 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </footer>

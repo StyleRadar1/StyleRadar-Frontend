@@ -54,15 +54,17 @@ describe('planes (P7)', () => {
     loginAs('u-1')
     setMockPlan('u-1', 'RADAR_PLUS')
     renderAt('/planes')
-    expect(await screen.findByText(/Tu plan actual:\s*Radar\+/, {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(within(screen.getByRole('listitem', { name: 'Radar+' })).getByText('Tu plan')).toBeInTheDocument()
+    // Solo se muestra el plan actual, no la lista de todos los planes
+    const tarjeta = await screen.findByRole('article', { name: 'Radar+' }, { timeout: 3000 })
+    expect(within(tarjeta).getByText('Tu plan')).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'Planes' })).not.toBeInTheDocument()
+    expect(screen.getByText('Activa desde')).toBeInTheDocument()
+    expect(screen.getByText('Vigente hasta')).toBeInTheDocument()
 
-    const btn = screen.getAllByRole('button', { name: 'Cancelar suscripción' })[0]
-    await user.click(btn)
-    const dialogo = screen.getByRole('dialog', { name: '¿Cancelar suscripción?' })
-    await user.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelación' }))
-    // El aviso aparece en la tarjeta del plan y junto al botón de cancelación
-    expect((await screen.findAllByText(/No se renovará/, {}, { timeout: 3000 })).length).toBeGreaterThan(0)
+    await user.click(screen.getByRole('button', { name: 'Cancelar suscripción' }))
+    const dialogo = screen.getByRole('dialog', { name: '¿Cancelar Radar+?' })
+    await user.click(within(dialogo).getByRole('button', { name: 'Cancelar suscripción' }))
+    expect(await screen.findByText(/No se renovará/, {}, { timeout: 3000 })).toBeInTheDocument()
   })
 })
 

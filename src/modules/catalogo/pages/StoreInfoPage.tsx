@@ -5,6 +5,7 @@ import { StoreSuspendedBanner } from '@/modules/transacciones/components/StoreSu
 import { hasScenario } from '@/modules/core/api/mockScenario'
 import { ErrorCard } from '@/modules/core/components/ErrorScene'
 import { FieldError } from '@/modules/core/components/ErrorFeedback'
+import { errorMessage } from '@/modules/core/api/errors'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { storeSettingsService } from '../services/storeSettingsService'
 import './StoreInfoPage.css'
@@ -81,7 +82,10 @@ export default function StoreInfoPage() {
   const [draft, setDraft] = useState<LegalStoreInfo>(() => readInfo(user?.name ?? '', user?.email ?? ''))
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({})
   const [notice, setNotice] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const [saving, setSaving] = useState(false)
   const [storePhoto, setStorePhoto] = useState<string>(() => {
+    if (!env.useMocks) return DEFAULT_PHOTO
     try {
       return localStorage.getItem(PHOTO_KEY) || DEFAULT_PHOTO
     } catch {
@@ -95,13 +99,14 @@ export default function StoreInfoPage() {
     storeSettingsService.getMyStore(String(user.id))
       .then((store) => {
         if (!active) return
+        const rep = (store.representative ?? '').trim()
         const loaded: LegalStoreInfo = {
           legalName: store.tradeName || user.name || '',
           nit: store.nit || '',
-          representative: user.name || '',
+          representative: rep && !/^Usuario\s*#\d+$/i.test(rep) ? rep : user.name || '',
           phone: store.phone || '',
           email: store.contactEmail || user.email || '',
-          payoutAccount: '',
+          payoutAccount: store.payoutAccount || '',
         }
         setInfo(loaded)
         setDraft(loaded)
@@ -166,14 +171,16 @@ export default function StoreInfoPage() {
     setNotice('Se restauró la foto predeterminada de la tienda.')
   }
 
-  const save = (event: FormEvent<HTMLFormElement>) => {
+  const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (saving) return
     setNotice('')
+    setSaveError('')
     const next: LegalStoreInfo = {
       ...draft,
       legalName: draft.legalName.trim(),
       representative: draft.representative.trim(),
-      nit: draft.nit.trim(),
+      nit: (!env.useMocks ? info.nit : draft.nit).trim(),
       phone: draft.phone.trim(),
       email: draft.email.trim(),
       payoutAccount: draft.payoutAccount.trim(),
@@ -186,6 +193,34 @@ export default function StoreInfoPage() {
       return
     }
     setErrors({})
+    if (!env.useMocks) {
+      setSaving(true)
+      try {
+        const saved = await storeSettingsService.updateStore(next.nit, {
+          tradeName: next.legalName,
+          representative: next.representative,
+          phone: next.phone,
+          contactEmail: next.email,
+          payoutAccount: next.payoutAccount,
+        })
+        const synced: LegalStoreInfo = {
+          legalName: saved.tradeName || next.legalName,
+          nit: saved.nit || next.nit,
+          representative: saved.representative || next.representative,
+          phone: saved.phone || next.phone,
+          email: saved.contactEmail || next.email,
+          payoutAccount: saved.payoutAccount || next.payoutAccount,
+        }
+        setInfo(synced)
+        setDraft(synced)
+        setNotice('La información legal de la tienda se guardó.')
+      } catch (err) {
+        setSaveError(errorMessage(err, 'No se pudo guardar la información de la tienda.'))
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
     setInfo(next)
     setDraft(next)
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch { /* El formulario sigue usable si el navegador no permite almacenamiento. */ }
@@ -207,27 +242,42 @@ export default function StoreInfoPage() {
         </header>
 
         {notice && <p className="store-info__notice" role="status">{notice}</p>}
-        {/* ── Sección para cambiar la foto de la tienda ── */}
-        <div className="store-info__photo-card">
-          <div className="store-info__photo-preview">
-            <img src={storePhoto} alt="Foto actual de la tienda" />
-          </div>
-          <div className="store-info__photo-info">
-            <h3>Foto de la tienda</h3>
-            <p>Se muestra en el radar de Bogotá, en el hero de tu panel y en tu perfil de tienda.</p>
-            <div className="store-info__photo-actions">
-              <label className="store-info__button store-info__button--primary cursor-pointer inline-flex items-center justify-center gap-2">
-                <span>Cambiar foto</span>
-                <input type="file" accept="image/*" className="sr-only" onChange={handleCambiarFoto} />
-              </label>
-              {storePhoto !== DEFAULT_PHOTO && (
-                <button type="button" className="store-info__button" onClick={handleRestaurarFoto}>
-                  Restaurar original
-                </button>
-              )}
+        {saveError && <p className="my-store__photo-error" role="alert">{saveError}</p>}
+        {env.useMocks ? (
+          /* ── Sección legacy de foto solo en modo demo; en modo real las 6 fotos se gestionan en Mi tienda ── */
+          <div className="store-info__photo-card">
+            <div className="store-info__photo-preview">
+              <img src={storePhoto} alt="Foto actual de la tienda" />
+            </div>
+            <div className="store-info__photo-info">
+              <h3>Foto de la tienda</h3>
+              <p>Se muestra en el radar de Bogotá, en el hero de tu panel y en tu perfil de tienda.</p>
+              <div className="store-info__photo-actions">
+                <label className="store-info__button store-info__button--primary cursor-pointer inline-flex items-center justify-center gap-2">
+                  <span>Cambiar foto</span>
+                  <input type="file" accept="image/*" className="sr-only" onChange={handleCambiarFoto} />
+                </label>
+                {storePhoto !== DEFAULT_PHOTO && (
+                  <button type="button" className="store-info__button" onClick={handleRestaurarFoto}>
+                    Restaurar original
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="store-info__photo-card">
+            <div className="store-info__photo-info">
+              <h3>Fotos de tu tienda</h3>
+              <p>Administra hasta 6 fotos reales de tu fachada, vitrina e interior directamente desde tu panel principal.</p>
+              <div className="store-info__photo-actions">
+                <Link to="/mi-tienda#fotos-tienda" className="store-info__button store-info__button--primary inline-flex items-center justify-center">
+                  Gestionar galería en Mi tienda
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form className="store-info__form" noValidate onSubmit={save}>
           <label className="store-info__field store-info__field--wide" htmlFor={FIELD_IDS.legalName}>
@@ -237,7 +287,7 @@ export default function StoreInfoPage() {
           </label>
           <label className="store-info__field" htmlFor={FIELD_IDS.nit}>
             <span>NIT <button type="button" className="store-info__help" title="Número de identificación tributaria asociado a la tienda." aria-label="Ayuda sobre el NIT">?</button></span>
-            <input id={FIELD_IDS.nit} value={draft.nit} onChange={(event) => update('nit', event.target.value)} inputMode="numeric" aria-invalid={Boolean(errors.nit)} aria-describedby={errors.nit ? `${FIELD_IDS.nit}-err` : undefined} />
+            <input id={FIELD_IDS.nit} value={draft.nit} readOnly={!env.useMocks} onChange={(event) => update('nit', event.target.value)} inputMode="numeric" aria-invalid={Boolean(errors.nit)} aria-describedby={errors.nit ? `${FIELD_IDS.nit}-err` : undefined} />
             <FieldError id={`${FIELD_IDS.nit}-err`} message={errors.nit} />
           </label>
           <label className="store-info__field store-info__field--wide" htmlFor={FIELD_IDS.representative}>
@@ -260,7 +310,7 @@ export default function StoreInfoPage() {
             <input id={FIELD_IDS.payoutAccount} value={draft.payoutAccount} onChange={(event) => update('payoutAccount', event.target.value)} aria-invalid={Boolean(errors.payoutAccount)} aria-describedby={errors.payoutAccount ? `${FIELD_IDS.payoutAccount}-err` : undefined} />
             <FieldError id={`${FIELD_IDS.payoutAccount}-err`} message={errors.payoutAccount} />
           </label>
-          <div className="store-info__actions"><button type="button" className="store-info__button" onClick={discard}>Descartar</button><button type="submit" className="store-info__button store-info__button--primary">Guardar</button></div>
+          <div className="store-info__actions"><button type="button" className="store-info__button" onClick={discard} disabled={saving}>Descartar</button><button type="submit" className="store-info__button store-info__button--primary" disabled={saving}>{saving ? 'Guardando…' : 'Guardar'}</button></div>
         </form>
       </section>
     </div>

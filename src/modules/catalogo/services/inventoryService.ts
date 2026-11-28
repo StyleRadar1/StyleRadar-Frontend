@@ -196,6 +196,24 @@ async function stockCompletoDeSede(sede: string): Promise<Map<string, Record<str
 
 const storeContextCache = new Map<string, StoreContextInfo>()
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function firstNonEmpty(...values: unknown[]): string {
+  for (const v of values) {
+    if (typeof v === 'string' || typeof v === 'number') {
+      const s = String(v).trim()
+      if (s) return s
+    }
+  }
+  return ''
+}
+
+function preferUuidId(primary: string, fallback: string): string {
+  if (UUID_REGEX.test(primary)) return primary
+  if (UUID_REGEX.test(fallback)) return fallback
+  return primary || fallback
+}
+
 export async function resolveStoreContext(tiendaId?: string, sedeId?: string): Promise<StoreContextInfo> {
   const sessionUser = mockSessionUser()
   if (env.useMocks) {
@@ -228,20 +246,11 @@ export async function resolveStoreContext(tiendaId?: string, sedeId?: string): P
   const myStore = await storeSettingsService.getMyStore(userId)
   const raw = myStore as unknown as Record<string, unknown>
   const nit = String(myStore.nit ?? '').trim()
-  const rawAlmacenId = typeof raw.id === 'string' || typeof raw.id === 'number'
-    ? String(raw.id)
-    : typeof raw.almacenId === 'string' || typeof raw.almacenId === 'number'
-      ? String(raw.almacenId)
-      : ''
+  const rawAlmacenId = firstNonEmpty(raw.almacenId, raw.id)
   const storeId = explicitStore || rawAlmacenId || nit
-  const rawSedeId =
-    typeof raw.sedeId === 'string' || typeof raw.sedeId === 'number'
-      ? String(raw.sedeId)
-      : typeof raw.branchId === 'string' || typeof raw.branchId === 'number'
-        ? String(raw.branchId)
-        : Array.isArray(raw.sedes) && raw.sedes[0] && (raw.sedes[0] as { id?: unknown }).id != null
-          ? String((raw.sedes[0] as { id: unknown }).id)
-          : storeId
+  const firstSedeFromList =
+    Array.isArray(raw.sedes) && raw.sedes[0] ? (raw.sedes[0] as { id?: unknown }).id : undefined
+  const rawSedeId = firstNonEmpty(raw.almacenId, raw.sedeId, raw.branchId, firstSedeFromList, raw.id, storeId)
   const ctx: StoreContextInfo = {
     storeId,
     storeName: String(myStore.tradeName || sessionUser?.name || '').trim(),
@@ -313,7 +322,9 @@ export const inventoryService = {
             stock = {}
           }
         }
-        return normalizeBackendInventoryItem(p, stock, resolvedSede, ctx.storeName, lowStockThreshold)
+        const itemAlmacenId = typeof p.almacenId === 'string' ? p.almacenId.trim() : ''
+        const itemSedeId = preferUuidId(itemAlmacenId, resolvedSede)
+        return normalizeBackendInventoryItem(p, stock, itemSedeId, ctx.storeName, lowStockThreshold)
       })
     )
     return items
@@ -460,8 +471,14 @@ export const inventoryService = {
       precio: dto.nuevoPrecio,
       fotografias: Array.isArray(current.fotografias) && current.fotografias.length ? current.fotografias : [],
     }
-    const updatedPrenda = await apiClient.put<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`, body).then((r) => r.data)
-    return normalizeBackendInventoryItem(updatedPrenda, {}, ctx.sedeId, ctx.storeName)
+    const [updatedPrenda, inv, catalogSettings] = await Promise.all([
+      apiClient.put<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`, body).then((r) => r.data),
+      apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => []),
+      ctx.nit ? storeSettingsService.getCatalogSettings(ctx.nit).catch(() => null) : Promise.resolve(null),
+    ])
+    const stockMap = extractStockMapFromInventory(inv)
+    const itemSede = preferUuidId(typeof updatedPrenda.almacenId === 'string' ? updatedPrenda.almacenId.trim() : '', ctx.sedeId)
+    return normalizeBackendInventoryItem(updatedPrenda, stockMap, itemSede, ctx.storeName, catalogSettings?.lowStockThreshold ?? 3)
   },
 
   /** SR-RF-55: Editar prenda del catálogo (PUT /api/v1/garments/{id}). Si estaba RECHAZADA vuelve a PENDIENTE. */
@@ -525,10 +542,14 @@ export const inventoryService = {
       precio: dto.precio,
       fotografias: dto.fotografias.slice(0, MAX_GARMENT_PHOTOS),
     }
-    const updatedPrenda = await apiClient
-      .put<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`, body)
-      .then((r) => r.data)
-    return normalizeBackendInventoryItem(updatedPrenda, {}, ctx.sedeId, ctx.storeName)
+    const [updatedPrenda, inv, catalogSettings] = await Promise.all([
+      apiClient.put<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`, body).then((r) => r.data),
+      apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => []),
+      ctx.nit ? storeSettingsService.getCatalogSettings(ctx.nit).catch(() => null) : Promise.resolve(null),
+    ])
+    const stockMap = extractStockMapFromInventory(inv)
+    const itemSede = preferUuidId(typeof updatedPrenda.almacenId === 'string' ? updatedPrenda.almacenId.trim() : '', ctx.sedeId)
+    return normalizeBackendInventoryItem(updatedPrenda, stockMap, itemSede, ctx.storeName, catalogSettings?.lowStockThreshold ?? 3)
   },
 
   /** SR-RF-58: Retirar prenda del catálogo con DELETE /api/v1/garments/{id}. */
@@ -624,9 +645,11 @@ export const inventoryService = {
     }
     const createdPrenda = await apiClient.post<Record<string, any>>('/api/v1/garments', prendaPayload).then((r) => r.data)
 
+    const createdAlmacenId = typeof createdPrenda.almacenId === 'string' ? createdPrenda.almacenId.trim() : ''
+    const resolvedBatchSedeId = dto.sedeId || preferUuidId(createdAlmacenId, ctx.sedeId || ctx.storeId)
     const lotePayload: InventarioLoteRequestDto = {
       prendaId: String(createdPrenda.id),
-      sedeId: dto.sedeId || ctx.sedeId || ctx.storeId,
+      sedeId: resolvedBatchSedeId,
       tipoPrenda: dto.tipoPrenda ?? 'ROPA',
       tallas: Object.entries(dto.stockPorTalla).map(([talla, cantidad]) => ({ talla, cantidad })),
       // Catálogo la entrega sin zona (LocalDateTime) e Inventario pide un instante con «Z»: sin ella responde 400

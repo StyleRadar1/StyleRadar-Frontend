@@ -632,24 +632,18 @@ html[data-tema="oscuro"] .inv-status--out { background: rgba(239, 68, 68, 0.16);
 html[data-theme="dark"] .inv-status--ret,
 html[data-tema="oscuro"] .inv-status--ret { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
 
-html[data-cvd="on"] .inv-status--ok,
 html[data-theme="colorblind"] .inv-status--ok,
 html[data-tema="daltonico"] .inv-status--ok { background: rgba(86, 180, 233, 0.18); color: #56b4e9; }
-html[data-cvd="on"] .inv-status--ok .inv-status__dot,
 html[data-theme="colorblind"] .inv-status--ok .inv-status__dot,
 html[data-tema="daltonico"] .inv-status--ok .inv-status__dot { background: #56b4e9; }
 
-html[data-cvd="on"] .inv-status--low,
 html[data-theme="colorblind"] .inv-status--low,
 html[data-tema="daltonico"] .inv-status--low { background: rgba(240, 228, 66, 0.16); color: #f0e442; }
-html[data-cvd="on"] .inv-status--low .inv-status__dot,
 html[data-theme="colorblind"] .inv-status--low .inv-status__dot,
 html[data-tema="daltonico"] .inv-status--low .inv-status__dot { background: #f0e442; }
 
-html[data-cvd="on"] .inv-status--out,
 html[data-theme="colorblind"] .inv-status--out,
 html[data-tema="daltonico"] .inv-status--out { background: rgba(230, 159, 0, 0.18); color: #e69f00; }
-html[data-cvd="on"] .inv-status--out .inv-status__dot,
 html[data-theme="colorblind"] .inv-status--out .inv-status__dot,
 html[data-tema="daltonico"] .inv-status--out .inv-status__dot { background: #e69f00; }
 
@@ -1052,3 +1046,11 @@ html[data-tema="daltonico"] .inv-status--out .inv-status__dot { background: #e69
   }
 }
 
+
+/* Daltonismo sobre el modo claro: mismos estados de la paleta Okabe-Ito, en tonos oscuros para fondo claro */
+html[data-cvd="on"][data-tema="claro"] .inv-status--ok { background: rgba(0, 114, 178, 0.12); color: #005f8a; }
+html[data-cvd="on"][data-tema="claro"] .inv-status--ok .inv-status__dot { background: #0072b2; }
+html[data-cvd="on"][data-tema="claro"] .inv-status--low { background: rgba(122, 98, 0, 0.14); color: #7a6200; }
+html[data-cvd="on"][data-tema="claro"] .inv-status--low .inv-status__dot { background: #b8960a; }
+html[data-cvd="on"][data-tema="claro"] .inv-status--out { background: rgba(179, 71, 0, 0.12); color: #b34700; }
+html[data-cvd="on"][data-tema="claro"] .inv-status--out .inv-status__dot { background: #d55e00; }

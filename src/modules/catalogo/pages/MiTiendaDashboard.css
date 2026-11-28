@@ -416,6 +416,7 @@ html[data-tema="claro"] .msd-hero__crumbs {
 .msd-pill {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   padding: 5px 11px;
   border-radius: 999px;
   font-size: 11px;
@@ -423,17 +424,62 @@ html[data-tema="claro"] .msd-hero__crumbs {
   letter-spacing: .04em;
 }
 
+.msd-pill__ico {
+  font-size: 11px;
+  line-height: 1;
+}
+
 .msd-pill--glass {
   border: 1px solid rgba(255, 255, 255, .2);
   color: rgba(255, 255, 255, .86);
   background: rgba(255, 255, 255, .08);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .msd-pill--verified {
-  border: 1px solid rgba(232, 220, 203, .5);
-  color: var(--msd-grafito);
-  background: var(--msd-arena);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.msd-pill--review {
+  border: 1px solid rgba(251, 191, 36, 0.48);
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.msd-pill--unverified {
+  border: 1px solid rgba(226, 232, 240, 0.32);
+  color: #e2e8f0;
+  background: rgba(148, 163, 184, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+html[data-theme="colorblind"] .msd-pill--verified,
+html[data-tema="daltonico"] .msd-pill--verified {
+  border-color: var(--sr-ok, #56b4e9);
+  color: #e0f2fe;
+  background: var(--sr-ok-bg, rgba(86, 180, 233, 0.15));
+}
+
+html[data-theme="colorblind"] .msd-pill--review,
+html[data-tema="daltonico"] .msd-pill--review {
+  border-color: var(--sr-warn, #f0e442);
+  color: #fef9c3;
+  background: var(--sr-warn-bg, rgba(240, 228, 66, 0.15));
+}
+
+html[data-theme="colorblind"] .msd-pill--unverified,
+html[data-tema="daltonico"] .msd-pill--unverified {
+  border-color: rgba(255, 255, 255, 0.38);
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .msd-hero__actions {
@@ -936,13 +982,10 @@ html[data-tema="oscuro"] .msd-status--low { color: #fde047; background: rgba(245
 html[data-theme="dark"] .msd-status--out,
 html[data-tema="oscuro"] .msd-status--out { color: #fca5a5; background: rgba(239, 68, 68, 0.16); }
 
-html[data-cvd="on"] .msd-status--ok,
 html[data-theme="colorblind"] .msd-status--ok,
 html[data-tema="daltonico"] .msd-status--ok { color: #56b4e9; background: rgba(86, 180, 233, 0.18); }
-html[data-cvd="on"] .msd-status--low,
 html[data-theme="colorblind"] .msd-status--low,
 html[data-tema="daltonico"] .msd-status--low { color: #f0e442; background: rgba(240, 228, 66, 0.16); }
-html[data-cvd="on"] .msd-status--out,
 html[data-theme="colorblind"] .msd-status--out,
 html[data-tema="daltonico"] .msd-status--out { color: #e69f00; background: rgba(230, 159, 0, 0.18); }
 
@@ -1190,7 +1233,7 @@ html[data-tema="daltonico"] .msd-status--out { color: #e69f00; background: rgba(
   text-align: center;
 }
 
-.msd-badges small { color: #62626e; font-size: 11px; }
+.msd-badges small { color: var(--msd-text-muted); font-size: 11px; }
 
 .msd-badge {
   display: grid;
@@ -1200,13 +1243,39 @@ html[data-tema="daltonico"] .msd-status--out { color: #e69f00; background: rgba(
   border-radius: 50%;
   color: #fff;
   background: var(--msd-violeta);
+  border: 1px solid rgba(192, 132, 252, 0.35);
   box-shadow: 0 6px 16px rgba(72, 17, 154, .3);
 }
 
 .msd-badge--soft {
-  color: #fef3c7;
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.35);
+  color: #f3e8ff;
+  background: linear-gradient(135deg, rgba(123, 77, 216, 0.34) 0%, rgba(72, 17, 154, 0.48) 100%);
+  border: 1.5px solid rgba(157, 92, 255, 0.65);
+  box-shadow: 0 6px 16px rgba(123, 77, 216, 0.28);
+}
+
+html[data-theme="light"] .msd-badge--soft,
+html[data-tema="claro"] .msd-badge--soft {
+  color: #48119a;
+  background: #ede9fe;
+  border: 1.5px solid #7c3aed;
+  box-shadow: 0 6px 16px rgba(72, 17, 154, 0.14);
+}
+
+html[data-theme="colorblind"] .msd-badge--soft,
+html[data-tema="daltonico"] .msd-badge--soft {
+  color: #e0f2fe;
+  background: var(--sr-info-bg);
+  border: 1.5px solid var(--sr-accent-text);
+  box-shadow: 0 6px 16px rgba(0, 114, 178, 0.28);
+}
+
+html[data-cvd="on"][data-theme="light"] .msd-badge--soft,
+html[data-cvd="on"][data-tema="claro"] .msd-badge--soft {
+  color: var(--sr-accent);
+  background: var(--sr-info-bg);
+  border: 1.5px solid var(--sr-accent);
+  box-shadow: 0 6px 16px rgba(0, 114, 178, 0.14);
 }
 
 .msd-badge svg {
@@ -1305,3 +1374,8 @@ html[data-tema="daltonico"] .msd-status--out { color: #e69f00; background: rgba(
   }
 }
 
+
+/* Daltonismo sobre el modo claro: estados en tonos oscuros de la paleta Okabe-Ito */
+html[data-cvd="on"][data-tema="claro"] .msd-status--ok { color: #005f8a; background: rgba(0, 114, 178, 0.12); }
+html[data-cvd="on"][data-tema="claro"] .msd-status--low { color: #7a6200; background: rgba(122, 98, 0, 0.14); }
+html[data-cvd="on"][data-tema="claro"] .msd-status--out { color: #b34700; background: rgba(179, 71, 0, 0.12); }

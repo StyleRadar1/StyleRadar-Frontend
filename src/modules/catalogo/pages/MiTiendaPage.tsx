@@ -60,6 +60,7 @@ type LegalStoreInfo = {
   email: string
   payoutAccount: string
   address: string
+  barrio: string
   hours: string
 }
 
@@ -71,6 +72,7 @@ const INITIAL_LEGAL_INFO: LegalStoreInfo = {
   email: 'luna@styleradar.co',
   payoutAccount: 'Bancolombia ••• 4410',
   address: 'Cra. 13 #57-22, Chapinero',
+  barrio: 'Chapinero',
   hours: 'Lun a sáb · 10:00 a 20:00',
 }
 
@@ -116,6 +118,10 @@ function legalDesdeServidor(store: StoreResponseDto): Partial<LegalStoreInfo> {
     ...(store.tradeName ? { legalName: store.tradeName } : {}),
     ...(store.phone ? { phone: store.phone } : {}),
     ...(store.contactEmail ? { email: store.contactEmail } : {}),
+    ...(store.payoutAccount ? { payoutAccount: store.payoutAccount } : {}),
+    ...(store.address ? { address: store.address } : {}),
+    ...(store.barrio ? { barrio: store.barrio } : {}),
+    ...(store.hours ? { hours: store.hours } : {}),
   }
 }
 
@@ -132,6 +138,7 @@ function readLegalInfo(fallbackName = '', fallbackEmail = ''): LegalStoreInfo {
       email: fallbackEmail,
       payoutAccount: '',
       address: '',
+      barrio: '',
       hours: '',
     }
   }
@@ -171,6 +178,8 @@ export default function MiTiendaPage() {
   const [legalInfo, setLegalInfo] = useState<LegalStoreInfo>(() => readLegalInfo(user?.name ?? '', user?.email ?? ''))
   const [editingInfo, setEditingInfo] = useState(false)
   const [legalDraft, setLegalDraft] = useState<LegalStoreInfo>(() => readLegalInfo(user?.name ?? '', user?.email ?? ''))
+  const [legalSaving, setLegalSaving] = useState(false)
+  const [legalError, setLegalError] = useState('')
 
   /* F-19: el NIT del almacén sale de ms-tiendas (GET /api/v1/users/{userId}/store). Con datos de prueba se usa el guardado. */
   const [storeError, setStoreError] = useState('')
@@ -324,17 +333,51 @@ export default function MiTiendaPage() {
   const lowStockCount = lowStockItems.length
 
   /* Guardar / descartar información de tienda */
-  const saveLegalInfo = (event: FormEvent<HTMLFormElement>) => {
+  const saveLegalInfo = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (legalSaving) return
+    setLegalError('')
+    const repClean = legalDraft.representative.trim()
     const next: LegalStoreInfo = {
       legalName: legalDraft.legalName.trim() || legalInfo.legalName,
-      nit: legalDraft.nit.trim() || legalInfo.nit,
-      representative: legalDraft.representative.trim() || legalInfo.representative,
-      phone: legalDraft.phone.trim() || legalInfo.phone,
-      email: legalDraft.email.trim() || legalInfo.email,
-      payoutAccount: legalDraft.payoutAccount.trim() || legalInfo.payoutAccount,
-      address: legalDraft.address.trim() || legalInfo.address,
-      hours: legalDraft.hours.trim() || legalInfo.hours,
+      nit: legalInfo.nit || legalDraft.nit.trim(),
+      representative: repClean && repClean !== '—' ? repClean : legalInfo.representative,
+      phone: legalDraft.phone.trim(),
+      email: legalInfo.email || legalDraft.email.trim(),
+      payoutAccount: legalDraft.payoutAccount.trim(),
+      address: legalDraft.address.trim(),
+      barrio: legalDraft.barrio.trim(),
+      hours: legalDraft.hours.trim(),
+    }
+    if (!env.useMocks) {
+      const targetNit = storeNit || next.nit
+      if (!targetNit) {
+        setLegalError(storeError || SIN_ALMACEN)
+        return
+      }
+      setLegalSaving(true)
+      try {
+        const saved = await storeSettingsService.updateStore(targetNit, {
+          tradeName: next.legalName,
+          phone: next.phone || undefined,
+          contactEmail: next.email || undefined,
+          representative: next.representative !== '—' ? next.representative : undefined,
+          payoutAccount: next.payoutAccount || undefined,
+          address: next.address || undefined,
+          barrio: next.barrio || undefined,
+          hours: next.hours || undefined,
+        })
+        const merged: LegalStoreInfo = { ...next, ...legalDesdeServidor(saved) }
+        setLegalInfo(merged)
+        setLegalDraft(merged)
+        setEditingInfo(false)
+        setNotice('La información de la tienda se guardó con éxito.')
+      } catch (e) {
+        setLegalError(errorMessage(e, 'No se pudo guardar la información de la tienda. Intenta de nuevo.'))
+      } finally {
+        setLegalSaving(false)
+      }
+      return
     }
     setLegalInfo(next)
     setLegalDraft(next)
@@ -347,6 +390,7 @@ export default function MiTiendaPage() {
 
   const discardLegalInfo = () => {
     setLegalDraft(legalInfo)
+    setLegalError('')
     setEditingInfo(false)
   }
 
@@ -591,7 +635,20 @@ export default function MiTiendaPage() {
           <div className="msd-hero__pills">
             <span className="msd-pill msd-pill--glass">◉ Así te ven tus clientes · Las herramientas de edición solo las ves tú</span>
             {categoriesLabel ? <span className="msd-pill msd-pill--glass">{categoriesLabel}</span> : null}
-            <span className="msd-pill msd-pill--verified">{verificationStatus === 'VERIFICADA' ? 'Verificada' : verificationStatus === 'EN_REVISION' ? 'En revisión' : 'Sin verificar'}</span>
+            <span
+              className={`msd-pill ${
+                verificationStatus === 'VERIFICADA'
+                  ? 'msd-pill--verified'
+                  : verificationStatus === 'EN_REVISION'
+                    ? 'msd-pill--review'
+                    : 'msd-pill--unverified'
+              }`}
+            >
+              <span aria-hidden="true" className="msd-pill__ico">
+                {verificationStatus === 'VERIFICADA' ? '✓' : verificationStatus === 'EN_REVISION' ? '◔' : '○'}
+              </span>
+              {verificationStatus === 'VERIFICADA' ? 'Verificada' : verificationStatus === 'EN_REVISION' ? 'En revisión' : 'Sin verificar'}
+            </span>
             <span className="msd-pill msd-pill--glass">{subStatusLabel}</span>
           </div>
           <div className="msd-hero__actions">
@@ -764,12 +821,18 @@ export default function MiTiendaPage() {
                 <h2 id="store-info-title">Información de la tienda</h2>
                 <p className="text-xs text-[var(--msd-text-muted,#727282)] mt-1">Datos legales, de contacto y comerciales de tu tienda en Bogotá.</p>
               </div>
-              {env.useMocks && !editingInfo ? (
-                <button type="button" className="msd-link font-semibold" onClick={() => setEditingInfo(true)}>
+              {!editingInfo ? (
+                <button
+                  type="button"
+                  className="msd-link font-semibold"
+                  onClick={() => {
+                    setLegalError('')
+                    setLegalDraft(legalInfo)
+                    setEditingInfo(true)
+                  }}
+                >
                   Editar información
                 </button>
-              ) : !env.useMocks ? (
-                <span className="text-xs text-[var(--msd-text-muted,#727282)]">Datos verificados del registro oficial</span>
               ) : null}
             </header>
 
@@ -804,6 +867,10 @@ export default function MiTiendaPage() {
                   <strong>{legalInfo.address}</strong>
                 </article>
                 <article className="msd-info-tile">
+                  <span>Barrio</span>
+                  <strong>{legalInfo.barrio}</strong>
+                </article>
+                <article className="msd-info-tile">
                   <span>Horario de atención</span>
                   <strong>{legalInfo.hours}</strong>
                 </article>
@@ -822,16 +889,16 @@ export default function MiTiendaPage() {
                   <span>NIT</span>
                   <input
                     value={legalDraft.nit}
-                    onChange={(e) => setLegalDraft({ ...legalDraft, nit: e.target.value })}
-                    required
+                    readOnly
+                    className="opacity-75 cursor-not-allowed"
                   />
                 </label>
                 <label className="msd-info-field">
                   <span>Representante legal</span>
                   <input
-                    value={legalDraft.representative}
+                    value={legalDraft.representative === '—' ? '' : legalDraft.representative}
                     onChange={(e) => setLegalDraft({ ...legalDraft, representative: e.target.value })}
-                    required
+                    placeholder="Nombre del representante"
                   />
                 </label>
                 <label className="msd-info-field">
@@ -839,7 +906,6 @@ export default function MiTiendaPage() {
                   <input
                     value={legalDraft.phone}
                     onChange={(e) => setLegalDraft({ ...legalDraft, phone: e.target.value })}
-                    required
                   />
                 </label>
                 <label className="msd-info-field">
@@ -855,7 +921,6 @@ export default function MiTiendaPage() {
                   <input
                     value={legalDraft.payoutAccount}
                     onChange={(e) => setLegalDraft({ ...legalDraft, payoutAccount: e.target.value })}
-                    required
                   />
                 </label>
                 <label className="msd-info-field">
@@ -863,7 +928,14 @@ export default function MiTiendaPage() {
                   <input
                     value={legalDraft.address}
                     onChange={(e) => setLegalDraft({ ...legalDraft, address: e.target.value })}
-                    required
+                  />
+                </label>
+                <label className="msd-info-field">
+                  <span>Barrio</span>
+                  <input
+                    value={legalDraft.barrio}
+                    onChange={(e) => setLegalDraft({ ...legalDraft, barrio: e.target.value })}
+                    placeholder="Ej. Chapinero"
                   />
                 </label>
                 <label className="msd-info-field">
@@ -871,15 +943,15 @@ export default function MiTiendaPage() {
                   <input
                     value={legalDraft.hours}
                     onChange={(e) => setLegalDraft({ ...legalDraft, hours: e.target.value })}
-                    required
                   />
                 </label>
+                {legalError && <p role="alert" className="my-store__photo-error">{legalError}</p>}
                 <div className="msd-info-actions">
-                  <button type="button" className="msd-btn msd-btn--ghost" onClick={discardLegalInfo}>
+                  <button type="button" className="msd-btn msd-btn--ghost" onClick={discardLegalInfo} disabled={legalSaving}>
                     Descartar
                   </button>
-                  <button type="submit" className="msd-btn msd-btn--primary">
-                    Guardar cambios
+                  <button type="submit" className="msd-btn msd-btn--primary" disabled={legalSaving}>
+                    {legalSaving ? 'Guardando…' : 'Guardar cambios'}
                   </button>
                 </div>
               </form>
@@ -986,7 +1058,7 @@ export default function MiTiendaPage() {
             </header>
             <ul className="msd-badges">
               <li><span className="msd-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10" /></svg></span>Tienda verificada</li>
-              <li><span className="msd-badge msd-badge--soft" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Zm0 6v5m0 3v.5" /></svg></span>Últimas unidades<small>≤ {lastUnitsLimit} uds</small></li>
+              <li><span className="msd-badge msd-badge--soft" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 4.5 5 5.5 5 9s-5 4.5-5 9M17 3c0 4.5-5 5.5-5 9s5 4.5 5 9" /></svg></span>Últimas unidades<small>≤ {lastUnitsLimit} uds</small></li>
               <li><span className="msd-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z" /></svg></span>Nueva llegada<small>{newArrivalDays} días</small></li>
             </ul>
           </section>

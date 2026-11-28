@@ -37,17 +37,17 @@ export function Navbar() {
           <span className="max-sm:hidden"> · Los cambios afectan a todas las cuentas</span>
         </p>
       )}
-      <nav className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="Principal">
+      <nav className="mx-auto grid h-[72px] max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6" aria-label="Principal">
         <Link to={homePath} className="flex shrink-0 items-center gap-2 whitespace-nowrap text-base font-bold text-[var(--sr-hero-text)] sm:text-lg">
           <Logo className="h-8 w-auto" />StyleRadar
           {esAdmin && <span className="rounded-full bg-arena px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.14em] text-grafito">Admin</span>}
         </Link>
-        <div className="ml-auto hidden items-center gap-1 xl:flex">
+        <div className="hidden items-center justify-center gap-1 xl:flex">
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls}>{label}</NavLink>)}
         </div>
-        <div className="ml-auto flex items-center gap-2 xl:ml-2">
-          {/* Apariencia y accesibilidad (tema, daltonismo y simulador): un solo panel, igual para todos los roles */}
-          <AppearancePicker tone="themed" className="max-xl:hidden" />
+        <div className="col-start-3 flex items-center justify-end gap-2">
+          {/* Tema de la aplicación (Claro, Oscuro, Daltonismo): un solo selector, igual para todos los roles */}
+          <AppearancePicker tone="themed" compact className="max-xl:hidden" />
           {user ? (
             <>
               {/* RF-73: la tienda (y quien compra o la fundación) responde desde el ícono de mensajes */}

@@ -6,7 +6,7 @@ import { env } from '@/configs/env'
 import {
   LOW_STOCK_DEFAULT, LOW_STOCK_MAX, LOW_STOCK_MIN, NEW_ARRIVAL_DEFAULT, NEW_ARRIVAL_MAX, NEW_ARRIVAL_MIN,
   type CatalogSettingsDto, type CatalogSettingsRequestDto, type ItemBadgeDto, type LowStockRequestDto,
-  type NewArrivalRequestDto, type StoreResponseDto,
+  type NewArrivalRequestDto, type StoreResponseDto, type UpdateStoreRequestDto,
 } from '../types/store.dto'
 
 /** Mensajes por campo del documento (SR-RF-59 FA-04 a FA-06 · SR-RF-60 FA-04 a FA-06). */
@@ -62,6 +62,33 @@ export const storeSettingsService = {
   async getMyStore(userId: string): Promise<StoreResponseDto> {
     const r = await apiClient.get<StoreResponseDto>(`/api/v1/users/${encodeURIComponent(userId)}/store`)
     return { ...r.data, nit: String(r.data?.nit ?? '') }
+  },
+
+  /** Actualiza la información comercial del almacén (PUT /api/v1/stores/{nit}). */
+  async updateStore(nit: string, payload: UpdateStoreRequestDto): Promise<StoreResponseDto> {
+    if (env.useMocks) {
+      failIfScenario()
+      return mockDelay(
+        {
+          nit,
+          tradeName: payload.tradeName ?? 'Luna Store',
+          description: payload.description ?? null,
+          phone: payload.phone ?? null,
+          contactEmail: payload.contactEmail ?? null,
+          representative: payload.representative ?? null,
+          payoutAccount: payload.payoutAccount ?? null,
+          address: payload.address ?? null,
+          barrio: payload.barrio ?? null,
+          hours: payload.hours ?? null,
+          categories: payload.categories ?? null,
+          latitude: payload.latitude ?? null,
+          longitude: payload.longitude ?? null,
+        },
+        200,
+      )
+    }
+    const r = await apiClient.put<StoreResponseDto>(base(nit), payload)
+    return { ...r.data, nit: String(r.data?.nit ?? nit) }
   },
 
   /** SR-RF-59 · SR-RF-60: umbral de «Últimas unidades» y días de «Nueva llegada» del almacén. */

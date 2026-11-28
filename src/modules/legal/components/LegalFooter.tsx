@@ -4,7 +4,11 @@ import { ROLE_HOME } from '@/modules/core/types/roles'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { PROVIDER_INFO } from '../config/legalConfig'
 
-export function LegalFooter() {
+export interface LegalFooterProps {
+  compact?: boolean
+}
+
+export function LegalFooter({ compact = false }: LegalFooterProps = {}) {
   const user = useContext(AuthContext)?.user ?? null
   const homePath = user ? ROLE_HOME[user.role] : '/'
   const currentYear = new Date().getFullYear()
@@ -13,16 +17,58 @@ export function LegalFooter() {
     window.dispatchEvent(new CustomEvent('sr-open-cookie-settings'))
   }
 
+  if (compact) {
+    return (
+      <footer
+        className="relative z-10 border-t border-[var(--color-border)] bg-[var(--color-surface)]/75 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-[var(--color-text)] transition-colors"
+        aria-labelledby="sr-legal-footer-heading"
+        data-footer-variant="compact"
+      >
+        <h2 id="sr-legal-footer-heading" className="sr-only">
+          Pie de página legal e institucional de Style Radar
+        </h2>
+        <div className="mx-auto flex min-h-[60px] max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 text-xs text-[var(--color-text-muted)] sm:px-6 lg:px-8">
+          <p className="truncate">
+            © {currentYear} StyleRadar · {PROVIDER_INFO.razonSocial} · NIT {PROVIDER_INFO.nit}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <Link to="/legal" className="font-semibold hover:text-[var(--color-text)] transition-colors">
+              Centro Legal
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/legal/pqrs" className="font-semibold hover:text-[var(--color-text)] transition-colors">
+              PQRS
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/legal/devoluciones-garantias" className="font-semibold hover:text-[var(--color-text)] transition-colors">
+              Retracto
+            </Link>
+            <span aria-hidden="true">·</span>
+            <a
+              href={PROVIDER_INFO.sicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold hover:text-[var(--color-text)] transition-colors"
+            >
+              SIC
+            </a>
+          </div>
+        </div>
+      </footer>
+    )
+  }
+
   return (
     <footer
       className="relative z-10 border-t border-[var(--color-border)] bg-[var(--color-surface)]/75 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-[var(--color-text)] transition-colors"
       aria-labelledby="sr-legal-footer-heading"
+      data-footer-variant="full"
     >
       <h2 id="sr-legal-footer-heading" className="sr-only">
         Pie de página legal e institucional de Style Radar
       </h2>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 md:py-12">
         {/* 1. SECCIÓN PRINCIPAL: 3 COLUMNAS LEGALES + BRAND */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
           {/* Bloque Identidad de Marca y Redes */}
@@ -89,11 +135,6 @@ export function LegalFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/legal/aviso-privacidad" className="hover:text-[var(--color-accent)] transition-colors">
-                  Aviso de Privacidad
-                </Link>
-              </li>
-              <li>
                 <Link to="/legal/cookies" className="hover:text-[var(--color-accent)] transition-colors">
                   Política de Cookies
                 </Link>
@@ -101,16 +142,6 @@ export function LegalFooter() {
               <li>
                 <Link to="/legal/pagos-seguridad" className="hover:text-[var(--color-accent)] transition-colors">
                   Medios de Pago y Seguridad
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/propiedad-intelectual" className="hover:text-[var(--color-accent)] transition-colors">
-                  Propiedad Intelectual
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/uso-aceptable" className="hover:text-[var(--color-accent)] transition-colors">
-                  Uso Aceptable y Seguridad
                 </Link>
               </li>
               <li>
@@ -136,24 +167,14 @@ export function LegalFooter() {
               <li>
                 <Link
                   to="/legal/devoluciones-garantias"
-                  className="hover:text-[var(--color-accent)] transition-colors flex items-center gap-1 font-semibold text-[var(--color-text)]"
+                  className="hover:text-[var(--color-accent)] transition-colors font-semibold text-[var(--color-text)]"
                 >
-                  <span>Derecho de Retracto (5 días)</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/devoluciones-garantias" className="hover:text-[var(--color-accent)] transition-colors">
-                  Garantías y Devoluciones
+                  Derecho de Retracto (5 días) y Garantías
                 </Link>
               </li>
               <li>
                 <Link to="/legal/envios-entregas" className="hover:text-[var(--color-accent)] transition-colors">
                   Envíos y Entregas en Bogotá
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/promociones-descuentos" className="hover:text-[var(--color-accent)] transition-colors">
-                  Promociones y Descuentos
                 </Link>
               </li>
               <li>
@@ -213,81 +234,30 @@ export function LegalFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/legal/normas-comunidad" className="hover:text-[var(--color-accent)] transition-colors">
-                  Normas de Comunidad y Playlists
-                </Link>
-              </li>
-              <li>
                 <Link to="/planes" className="hover:text-[var(--color-accent)] transition-colors font-medium text-[var(--color-text)]">
                   Planes para Comercios Locales
-                </Link>
-              </li>
-              <li>
-                <Link to="/donar" className="hover:text-[var(--color-accent)] transition-colors">
-                  Donar Ropa a Causas Locales
                 </Link>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* 2. BLOQUE DE INFORMACIÓN DEL PROVEEDOR (EXIGENCIA LEY 1480 DE 2011 Y LEY 1581 DE 2012) */}
-        <div className="mt-12 rounded-2xl border border-[var(--color-border)]/80 bg-[var(--color-surface-raised)]/30 p-5 text-xs text-[var(--color-text-muted)] space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <span className="font-bold text-[var(--color-text)] block">Proveedor / Razón Social:</span>
-              <span>{PROVIDER_INFO.razonSocial}</span>
-            </div>
-            <div>
-              <span className="font-bold text-[var(--color-text)] block">Identificación Tributaria:</span>
-              <span>NIT {PROVIDER_INFO.nit}</span>
-            </div>
-            <div>
-              <span className="font-bold text-[var(--color-text)] block">Domicilio & Dirección:</span>
-              <span>{PROVIDER_INFO.direccion}</span>
-            </div>
-            <div>
-              <span className="font-bold text-[var(--color-text)] block">Contacto & WhatsApp:</span>
-              <span>{PROVIDER_INFO.telefono}</span>
-            </div>
-          </div>
-
-          <div className="border-t border-[var(--color-border)]/60 pt-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 text-[11px]">
-            <p>
-              <strong className="text-[var(--color-text)]">Responsable del Tratamiento de Datos:</strong> {PROVIDER_INFO.razonSocial} ·{' '}
-              <strong className="text-[var(--color-text)]">Canal para ejercer tus derechos (Habeas Data):</strong>{' '}
-              <a href={`mailto:${PROVIDER_INFO.correoDatos}`} className="text-[var(--color-accent)] hover:underline">
+        {/* 2. BARRA INFERIOR DE 1 LÍNEA: COPYRIGHT, NIT, HABEAS DATA E INFORMACIÓN DEL PROVEEDOR */}
+        <div className="mt-8 pt-5 border-t border-[var(--color-border)]/60 flex flex-col lg:flex-row items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
+          <p className="text-center lg:text-left">
+            © {currentYear} StyleRadar · {PROVIDER_INFO.razonSocial} · NIT {PROVIDER_INFO.nit}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+            <span>
+              Habeas Data:{' '}
+              <a href={`mailto:${PROVIDER_INFO.correoDatos}`} className="font-medium text-[var(--color-accent)] hover:underline">
                 {PROVIDER_INFO.correoDatos}
               </a>
-            </p>
-            <p className="shrink-0 text-[10px] text-[var(--color-text-muted)]">
-              Horario: {PROVIDER_INFO.horarioAtencion}
-            </p>
-          </div>
-        </div>
-
-        {/* 3. LÍNEA INFERIOR: COPYRIGHT, ENLACE SIC Y LEYENDAS */}
-        <div className="mt-8 pt-6 border-t border-[var(--color-border)]/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--color-text-muted)]">
-          <p className="text-center sm:text-left">
-            © {currentYear} Style Radar · {PROVIDER_INFO.razonSocial} · Todos los derechos reservados. Comercio electrónico regulado bajo las leyes de la República de Colombia.
-          </p>
-          <div className="flex items-center gap-4 text-xs">
-            <Link to="/legal/devoluciones-garantias" className="hover:text-[var(--color-text)] transition-colors font-semibold">
-              Retracto legal
-            </Link>
+            </span>
             <span aria-hidden="true">·</span>
-            <Link to="/legal/pqrs" className="hover:text-[var(--color-text)] transition-colors font-semibold">
-              Canal PQRS
+            <Link to="/legal#proveedor" className="font-semibold text-[var(--color-text)] hover:text-[var(--color-accent)] transition-colors">
+              Información del proveedor
             </Link>
-            <span aria-hidden="true">·</span>
-            <a
-              href={PROVIDER_INFO.sicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[var(--color-text)] transition-colors font-semibold"
-            >
-              Superintendencia de Industria y Comercio
-            </a>
           </div>
         </div>
       </div>

@@ -132,6 +132,11 @@ const calificacion = (r?: number | null) => (typeof r === 'number' ? r.toFixed(1
 export function aTiendaPublica(d: StoreResponseDto, base: StorePublicDto | null): Partial<StorePublicDto> {
   const lng = typeof d.longitude === 'number' ? d.longitude : base?.lngLat[0] ?? -74.0628
   const lat = typeof d.latitude === 'number' ? d.latitude : base?.lngLat[1] ?? 4.6433
+  const extra: Partial<StorePublicDto> = {}
+  if (d.barrio?.trim()) extra.barrio = d.barrio.trim()
+  if (d.address?.trim()) extra.direccion = d.address.trim()
+  if (d.hours?.trim()) extra.horario = d.hours.trim()
+  if (d.representative?.trim()) extra.representante = d.representative.trim()
   return {
     id: String(d.nit),
     nit: String(d.nit),
@@ -143,6 +148,7 @@ export function aTiendaPublica(d: StoreResponseDto, base: StorePublicDto | null)
     rating: calificacion(d.rating) ?? base?.rating ?? '',
     verificacion: d.verificationStatus ? VERIFICATION_LABEL[d.verificationStatus] : (base?.verificacion || 'Verificada'),
     lngLat: [lng, lat],
+    ...extra,
   }
 }
 

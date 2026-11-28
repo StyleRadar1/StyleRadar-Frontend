@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { Hero } from '@/components/landing/Hero'
+import { Hero, PISTA_INSISTE_MS } from '@/components/landing/Hero'
 import { heroSlides } from '@/data/landingData'
 
 const pintar = () => render(<MemoryRouter><Hero /></MemoryRouter>)
@@ -72,5 +72,34 @@ describe('portada: móvil (deslizar y puntos)', () => {
     await user.click(puntos[2])
     expect(contador()).toBe(`03/${total}`)
     expect(puntos[2]).toHaveAttribute('aria-current', 'true')
+  })
+})
+
+describe('portada: invitación a bajar', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('es una pastilla con texto, no solo una flecha, y apunta a la sección siguiente', () => {
+    pintar()
+    const pista = screen.getByRole('link', { name: 'Seguir bajando para ver más' })
+    expect(pista).toHaveAttribute('href', '#pe-que-es')
+    expect(pista).toHaveTextContent('Desliza para ver más')
+  })
+
+  it('si nadie mueve la página en unos segundos, la pista empieza a latir', () => {
+    vi.useFakeTimers()
+    pintar()
+    const pista = screen.getByRole('link', { name: 'Seguir bajando para ver más' })
+    expect(pista).not.toHaveClass('sr-pista-bajar--insiste')
+    act(() => { vi.advanceTimersByTime(PISTA_INSISTE_MS + 50) })
+    expect(pista).toHaveClass('sr-pista-bajar--insiste')
+  })
+
+  it('si la persona ya movió la página, no insiste', () => {
+    vi.useFakeTimers()
+    pintar()
+    const pista = screen.getByRole('link', { name: 'Seguir bajando para ver más' })
+    act(() => { window.dispatchEvent(new Event('wheel')) })
+    act(() => { vi.advanceTimersByTime(PISTA_INSISTE_MS * 2) })
+    expect(pista).not.toHaveClass('sr-pista-bajar--insiste')
   })
 })
