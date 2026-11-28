@@ -546,7 +546,7 @@ export default function CatalogPage() {
       } catch (alertErr) {
         if (alertErr instanceof ApiError && alertErr.status === 422) {
           setAvisoBusqueda({
-            tono: 'aviso',
+            tono: 'alerta',
             titulo: `Guardamos «${b.nombre}»`,
             texto: 'Tu búsqueda quedó guardada, pero la alerta automática aún se está sincronizando. Puedes activarla en unos segundos.',
             accion: 'reintentar',
