@@ -329,8 +329,8 @@ describe('Pruebas adicionales de selección 9B (Flujo UI y probador)', () => {
     await waitFor(() => {
       const btnDetalleProbar = screen.getByRole('link', { name: /Probar en el maniquí/i })
       expect(btnDetalleProbar).toHaveAttribute('href', expect.stringContaining('/probador?prenda=p1'))
-      const btnVerTienda = screen.getByRole('link', { name: /Ver tienda/i })
-      expect(btnVerTienda).toBeInTheDocument()
+      const btnVerTienda = screen.getAllByRole('link', { name: /Nómada Studio/i })[0]
+      expect(btnVerTienda).toHaveAttribute('href', expect.stringContaining('/tiendas/'))
     })
   })
 

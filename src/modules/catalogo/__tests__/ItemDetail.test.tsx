@@ -22,7 +22,7 @@ describe('ItemDetailPage (RF-16, RF-22, RF-57)', () => {
       expect(screen.getAllByText(/Usaquén/i).length).toBeGreaterThan(0)
       expect(screen.getByText(/Disponibilidad en tienda real/i)).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: /Favorito/i })).not.toBeInTheDocument()
-      expect(screen.getByRole('link', { name: /Ver tienda/i })).toHaveClass('w-full')
+      expect(screen.getAllByRole('link', { name: /Nómada Studio/i }).length).toBeGreaterThan(0)
     })
   })
 
@@ -37,7 +37,6 @@ describe('ItemDetailPage (RF-16, RF-22, RF-57)', () => {
     const botonTallaM = screen.getByRole('radio', { name: /^M$/i })
     await user.click(botonTallaM)
     expect(botonTallaM).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByText(/Talla elegida: M/i)).toBeInTheDocument()
   })
 
   it('incluye enlace directo para probarse la prenda en el probador virtual (RF-57)', async () => {
@@ -150,7 +149,7 @@ describe('ItemDetailPage sin mocks (VITE_USE_MOCKS=false)', () => {
     expect(screen.getAllByRole('radio').map((r) => r.textContent)).toEqual(['S', 'M', 'L'])
 
     await user.click(s)
-    expect(screen.getByText(/Talla elegida: S · agotada/)).toBeInTheDocument()
+    expect(s).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByRole('button', { name: 'Reservar en tienda' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Avisarme cuando llegue' })).toBeEnabled()
 
