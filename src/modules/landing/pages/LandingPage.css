@@ -511,3 +511,61 @@ html[data-tema="claro"] .sr-landing .sr-glass-card.is-active { border-color: #48
   outline-offset: 3px;
   border-radius: 4px;
 }
+
+/* =====================================================================
+   PISTA DE BAJAR (portada). Una flechita sola no la vio una persona en una prueba de uso, así que ahora es una
+   pastilla de color sólido (violeta de la marca, blanco 11,5:1) con el texto «Desliza para ver más» y dos flechas
+   que caen en cascada. Si nadie mueve la página en 4 s, la pastilla late (anillo que se expande y rebote).
+   Con «reducir movimiento» se quitan las animaciones y se queda el texto, que ya basta para entenderlo.
+   ===================================================================== */
+.sr-landing .sr-pista-bajar {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-height: 58px;
+  padding: 9px 22px 5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  background: #48119a;
+  color: #ffffff;
+  font: 700 0.9375rem/1.2 Poppins, system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: background 0.2s, transform 0.2s;
+}
+.sr-landing .sr-pista-bajar:hover { background: #7b4dd8; transform: translateY(-2px); }
+.sr-landing .sr-pista-bajar:focus-visible { outline: 3px solid #e8dccb; outline-offset: 3px; }
+.sr-landing .sr-pista-bajar__flechas { display: flex; flex-direction: column; align-items: center; line-height: 0; margin-top: -2px; }
+.sr-landing .sr-pista-bajar__flechas svg + svg { margin-top: -7px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sr-landing .sr-pista-bajar__flechas svg { animation: sr-pista-cae 1.5s ease-in-out infinite; }
+  .sr-landing .sr-pista-bajar__flechas svg + svg { animation-delay: 0.22s; }
+  .sr-landing .sr-pista-bajar--insiste { animation: sr-pista-rebote 1.6s ease-in-out infinite; }
+  .sr-landing .sr-pista-bajar--insiste::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 2px solid #b9b9ca;
+    animation: sr-pista-anillo 1.6s ease-out infinite;
+    pointer-events: none;
+  }
+}
+@keyframes sr-pista-cae {
+  0%, 100% { transform: translateY(-2px); opacity: 0.45; }
+  50% { transform: translateY(3px); opacity: 1; }
+}
+@keyframes sr-pista-rebote {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes sr-pista-anillo {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.35, 1.7); opacity: 0; }
+}
