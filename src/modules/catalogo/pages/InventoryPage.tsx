@@ -1159,8 +1159,8 @@ export default function InventoryPage() {
                               setPrecioEditado(item.precio)
                             }}
                           >
-                            <svg viewBox="0 0 20 20">
-                              <path d="m13.8 3.2 3 3M3 17l3.8-.8L16.7 6.3a2.1 2.1 0 0 0-3-3L3.8 13.2 3 17Z" />
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                             </svg>
                           </button>
                           <button
@@ -1327,95 +1327,104 @@ export default function InventoryPage() {
               </div>
             )}
 
-            {/* ── Panel lateral "Actualizar unidades" ── */}
+            {/* ── Modal centrado "Actualizar unidades" ── */}
             {itemParaUnidades && (
-              <aside
-                className="inv-unit-panel"
-                role="region"
-                aria-label="Actualizar unidades de la prenda"
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                role="presentation"
+                onMouseDown={(e) => {
+                  if (e.target === e.currentTarget) setItemParaUnidades(null)
+                }}
               >
-                <div className="inv-unit-panel__head">
-                  <h2>Actualizar unidades</h2>
-                  <button
-                    type="button"
-                    className="inv-unit-panel__close"
-                    onClick={() => setItemParaUnidades(null)}
-                    aria-label="Cerrar panel de unidades"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="inv-unit-panel__preview">
-                  <img src={itemParaUnidades.imagenUrl} alt="" />
-                  <div className="inv-unit-panel__preview-info">
-                    <h3>{itemParaUnidades.nombre}</h3>
-                    <strong>{formatCOP(itemParaUnidades.precio)}</strong>
-                  </div>
-                </div>
-
-                <div className="inv-unit-panel__form">
-                  <div className="inv-unit-panel__field">
-                    <label htmlFor="tallaSelect">Talla</label>
-                    <select
-                      id="tallaSelect"
-                      value={tallaUnidades}
-                      onChange={(e) => handleCambiarTallaUnidades(e.target.value)}
+                <div
+                  className="inv-unit-panel w-full max-w-md"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Actualizar unidades de la prenda"
+                >
+                  <div className="inv-unit-panel__head">
+                    <h2>Actualizar unidades</h2>
+                    <button
+                      type="button"
+                      className="inv-unit-panel__close"
+                      onClick={() => setItemParaUnidades(null)}
+                      aria-label="Cerrar panel de unidades"
                     >
-                      {(itemParaUnidades.tallasDisponibles?.length
-                        ? itemParaUnidades.tallasDisponibles
-                        : Object.keys(itemParaUnidades.stockPorTalla || {})
-                      ).map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
+                      ×
+                    </button>
                   </div>
 
-                  <div className="inv-unit-panel__field">
-                    <label>Unidades</label>
-                    <div className="inv-stepper">
-                      <button
-                        type="button"
-                        className="inv-stepper__btn"
-                        aria-label="Disminuir unidades"
-                        disabled={cantidadUnidades <= 0}
-                        onClick={() => setCantidadUnidades((prev) => Math.max(0, prev - 1))}
-                      >
-                        −
-                      </button>
-                      <span className="inv-stepper__val">{cantidadUnidades}</span>
-                      <button
-                        type="button"
-                        className="inv-stepper__btn"
-                        aria-label="Aumentar unidades"
-                        onClick={() => setCantidadUnidades((prev) => prev + 1)}
-                      >
-                        +
-                      </button>
+                  <div className="inv-unit-panel__preview">
+                    <img src={itemParaUnidades.imagenUrl} alt="" />
+                    <div className="inv-unit-panel__preview-info">
+                      <h3>{itemParaUnidades.nombre}</h3>
+                      <strong>{formatCOP(itemParaUnidades.precio)}</strong>
                     </div>
                   </div>
 
-                  <div className="inv-unit-panel__actions">
-                    <button
-                      type="button"
-                      className="inv-btn inv-btn--outline-cancel"
-                      onClick={() => setItemParaUnidades(null)}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      className="inv-btn inv-btn--primary"
-                      disabled={guardandoUnidades}
-                      onClick={handleGuardarUnidades}
-                    >
-                      {guardandoUnidades ? 'Guardando...' : 'Guardar cambios'}
-                    </button>
+                  <div className="inv-unit-panel__form">
+                    <div className="inv-unit-panel__field">
+                      <label htmlFor="tallaSelect">Talla</label>
+                      <select
+                        id="tallaSelect"
+                        value={tallaUnidades}
+                        onChange={(e) => handleCambiarTallaUnidades(e.target.value)}
+                      >
+                        {(itemParaUnidades.tallasDisponibles?.length
+                          ? itemParaUnidades.tallasDisponibles
+                          : Object.keys(itemParaUnidades.stockPorTalla || {})
+                        ).map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="inv-unit-panel__field">
+                      <label>Unidades</label>
+                      <div className="inv-stepper">
+                        <button
+                          type="button"
+                          className="inv-stepper__btn"
+                          aria-label="Disminuir unidades"
+                          disabled={cantidadUnidades <= 0}
+                          onClick={() => setCantidadUnidades((prev) => Math.max(0, prev - 1))}
+                        >
+                          −
+                        </button>
+                        <span className="inv-stepper__val">{cantidadUnidades}</span>
+                        <button
+                          type="button"
+                          className="inv-stepper__btn"
+                          aria-label="Aumentar unidades"
+                          onClick={() => setCantidadUnidades((prev) => prev + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="inv-unit-panel__actions">
+                      <button
+                        type="button"
+                        className="inv-btn inv-btn--outline-cancel"
+                        onClick={() => setItemParaUnidades(null)}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        className="inv-btn inv-btn--primary"
+                        disabled={guardandoUnidades}
+                        onClick={handleGuardarUnidades}
+                      >
+                        {guardandoUnidades ? 'Guardando...' : 'Guardar cambios'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </aside>
+              </div>
             )}
           </div>
         )}

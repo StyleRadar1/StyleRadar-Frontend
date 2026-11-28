@@ -748,20 +748,22 @@ export default function StorePage() {
       {/* ────────────────────────────────────────────────────────── */}
       {/* 7. REPUTACIÓN Y VALORACIONES DE COMPRADORES               */}
       {/* ────────────────────────────────────────────────────────── */}
-      <section className="sr-store-rating-section" aria-label="Calificación de la tienda">
-        <div className="sr-store-rating-card">
-          <div className="sr-store-rating-score">
-            <span className="sr-store-rating-num">{store.rating}</span>
-            <span className="sr-store-rating-stars">★★★★★</span>
+      {store.reviews > 0 && Boolean(store.rating) && (
+        <section className="sr-store-rating-section" aria-label="Calificación de la tienda">
+          <div className="sr-store-rating-card">
+            <div className="sr-store-rating-score">
+              <span className="sr-store-rating-num">{store.rating}</span>
+              <span className="sr-store-rating-stars">★★★★★</span>
+            </div>
+            <div className="sr-store-rating-text">
+              <h3 className="sr-store-rating-title">Calificación de la comunidad</h3>
+              <p className="sr-store-rating-sub">
+                Basado en {store.reviews} valoraciones de compradores verificados en Bogotá que han visitado la tienda o coordinado prendas a través de StyleRadar.
+              </p>
+            </div>
           </div>
-          <div className="sr-store-rating-text">
-            <h3 className="sr-store-rating-title">Calificación de la comunidad</h3>
-            <p className="sr-store-rating-sub">
-              Basado en {store.reviews} valoraciones de compradores verificados en Bogotá que han visitado la tienda o coordinado prendas a través de StyleRadar.
-            </p>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ────────────────────────────────────────────────────────── */}
       {/* 8. INFORMACIÓN DE CONTACTO Y UBICACIÓN FÍSICA             */}

@@ -47,10 +47,10 @@ export const resetInventoryMock = () => {
   storeContextCache.clear()
 }
 
-function computeStatus(total: number, retired: boolean): InventoryItemDto['estado'] {
+function computeStatus(total: number, retired: boolean, lowStockThreshold = 3): InventoryItemDto['estado'] {
   if (retired) return 'RETIRADO'
   if (total === 0) return 'AGOTADA'
-  if (total <= 3) return 'ULTIMAS_UNIDADES'
+  if (total <= lowStockThreshold) return 'ULTIMAS_UNIDADES'
   return 'DISPONIBLE'
 }
 
@@ -115,7 +115,8 @@ function normalizeBackendInventoryItem(
   prenda: Record<string, any>,
   stockSinOrden: Record<string, number> = {},
   sedeId = '',
-  fallbackStoreName = ''
+  fallbackStoreName = '',
+  lowStockThreshold = 3
 ): InventoryItemDto {
   // El back entrega las tallas en cualquier orden: se fijan en S, M, L, XL… para que no salten al subir o bajar el stock
   const stockPorTalla = ordenarStockPorTalla(stockSinOrden)
@@ -131,7 +132,7 @@ function normalizeBackendInventoryItem(
   const statusFromBack =
     prenda.estadoInventario === 'SUSPENDIDO' || prenda.estado === 'SUSPENDIDO'
       ? 'SUSPENDIDO'
-      : computeStatus(total, retired)
+      : computeStatus(total, retired, lowStockThreshold)
   const resolvedStoreName = String(prenda.marca ?? prenda.tiendaNombre ?? fallbackStoreName)
 
   return {
@@ -264,13 +265,15 @@ export const inventoryService = {
     const ctx = await resolveStoreContext(tiendaId, sedeId)
     if (!ctx.storeId) return []
     const resolvedSede = sedeId || ctx.sedeId || ctx.storeId
-    const [catalogoRes, disponiblesRes, stockSede] = await Promise.all([
+    const [catalogoRes, disponiblesRes, stockSede, catalogSettings] = await Promise.all([
       apiClient.get<Record<string, any>[]>(`/api/v1/stores/${encodeURIComponent(ctx.storeId)}/catalog`),
       resolvedSede
         ? apiClient.get<Record<string, any>[]>(`/api/v1/inventory/branches/${encodeURIComponent(resolvedSede)}/available`).catch(() => ({ data: [] as Record<string, any>[] }))
         : Promise.resolve({ data: [] as Record<string, any>[] }),
       resolvedSede ? stockCompletoDeSede(resolvedSede) : Promise.resolve(new Map<string, Record<string, number>>()),
+      ctx.nit ? storeSettingsService.getCatalogSettings(ctx.nit).catch(() => null) : Promise.resolve(null),
     ])
+    const lowStockThreshold = catalogSettings?.lowStockThreshold ?? 3
     const catalogo = Array.isArray(catalogoRes.data) ? catalogoRes.data : []
     // Catálogo deja de listar la prenda cuando TODAS sus tallas quedan en 0 (SR-RF-57), pero la tienda debe seguir viéndola
     // para poder reponer. Se trae su detalle por id (ese sí responde) y se conserva su stock en 0 por talla.
@@ -310,7 +313,7 @@ export const inventoryService = {
             stock = {}
           }
         }
-        return normalizeBackendInventoryItem(p, stock, resolvedSede, ctx.storeName)
+        return normalizeBackendInventoryItem(p, stock, resolvedSede, ctx.storeName, lowStockThreshold)
       })
     )
     return items
@@ -370,12 +373,15 @@ export const inventoryService = {
       )
       .then((r) => r.data)
     if (res && res.id && res.stockPorTalla) return res as InventoryItemDto
-    const prenda = await apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data)
-    const inv = await apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => [])
+    const [prenda, inv, catalogSettings] = await Promise.all([
+      apiClient.get<Record<string, any>>(`/api/v1/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data),
+      apiClient.get<any>(`/api/v1/inventory/garments/${encodeURIComponent(dto.prendaId)}`).then((r) => r.data).catch(() => []),
+      ctx.nit ? storeSettingsService.getCatalogSettings(ctx.nit).catch(() => null) : Promise.resolve(null),
+    ])
     // El inventario responde { sedes: [{ variantes: [...] }] }: se leen TODAS las tallas (con extractStockMapFromInventory)
     // y solo la talla ajustada toma el valor nuevo. Antes solo quedaba la talla ajustada y las demás desaparecían.
     const stockMap: Record<string, number> = { ...extractStockMapFromInventory(inv), [dto.talla]: dto.nuevoStock }
-    return normalizeBackendInventoryItem(prenda, stockMap, sedeId, ctx.storeName)
+    return normalizeBackendInventoryItem(prenda, stockMap, sedeId, ctx.storeName, catalogSettings?.lowStockThreshold ?? 3)
   },
 
   async removeSize(prendaId: string, talla: string): Promise<InventoryItemDto> {

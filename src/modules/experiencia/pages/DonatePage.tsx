@@ -52,7 +52,25 @@ export default function DonatePage() {
         logistica: { modalidad: form.modalidad as Modalidad, fecha: form.fecha, franja: form.franja,
           ...(form.modalidad === 'ENTREGA_EN_PUNTO' ? { puntoId: form.puntoId } : { direccion: form.direccion.trim() }) },
       }, form.fotos.map((p) => p.file!).filter(Boolean))
-      setDone(res)
+      const nombreFundacion = fd?.nombre || res.fundacion?.nombre || 'La fundación seleccionada'
+      const tituloPrenda = form.titulo.trim() || res.prenda?.titulo || 'tu prenda'
+      setDone({
+        ...res,
+        fundacion: {
+          ...res.fundacion,
+          id: fd?.id || res.fundacion?.id || form.fundacionId,
+          nombre: nombreFundacion,
+        },
+        prenda: {
+          ...res.prenda,
+          titulo: tituloPrenda,
+        },
+        logistica: {
+          ...res.logistica,
+          fecha: form.fecha || res.logistica?.fecha,
+          franja: form.franja || res.logistica?.franja,
+        },
+      })
     } catch (e) {
       const campos = fieldErrors(e)
       if (Object.keys(campos).length) setErrors((prev) => ({ ...prev, ...(campos as DonationErrors) }))
@@ -62,13 +80,24 @@ export default function DonatePage() {
 
   if (done) return (
     <div className={raiz}>
-      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Solicitud enviada</p>
-        <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold text-[var(--color-text)] outline-none">Gracias por donar</h1>
-        <p className="mt-3 text-[var(--color-text-muted)]">{done.fundacion.nombre} revisará «{done.prenda.titulo}». Propusiste {formatDay(done.logistica.fecha)}, de {done.logistica.franja}. Te avisaremos cuando la acepten.</p>
-        <div className="mt-8 flex flex-wrap justify-center gap-2">
-          <Link to="/segunda-mano" className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm">Volver a Segunda vida</Link>
-          <button type="button" onClick={() => { setForm(emptyDonation()); setDone(null); setStep(0) }} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Donar otra prenda</button>
+      <section className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <div className="sr-glass-card rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 md:p-12 shadow-lg">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-400/30" aria-hidden="true">
+            <svg className="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </div>
+          <p className="text-sm font-bold uppercase tracking-[.22em] text-[var(--color-accent)]">¡Donación enviada!</p>
+          <h1 ref={heading} tabIndex={-1} className="mt-3 text-4xl font-extrabold tracking-tight text-[var(--color-text)] outline-none md:text-5xl">Gracias por donar</h1>
+          <p className="mt-4 text-base leading-relaxed text-[var(--color-text-muted)]">
+            <strong className="text-[var(--color-text)]">{done.fundacion.nombre}</strong> revisará «<strong className="text-[var(--color-text)]">{done.prenda.titulo}</strong>». Propusiste {formatDay(done.logistica.fecha)}, de {done.logistica.franja}. Te avisaremos cuando la acepten.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link to={user?.role === 'STORE_ADMIN' ? '/mi-tienda' : '/segunda-mano'} className="rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-6 py-3 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all shadow-sm">
+              {user?.role === 'STORE_ADMIN' ? 'Volver a Mi tienda' : 'Volver a Segunda vida'}
+            </Link>
+            <button type="button" onClick={() => { setForm(emptyDonation()); setDone(null); setStep(0) }} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] px-6 py-3 text-sm font-semibold hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] transition-all">Donar otra prenda</button>
+          </div>
         </div>
       </section>
     </div>
