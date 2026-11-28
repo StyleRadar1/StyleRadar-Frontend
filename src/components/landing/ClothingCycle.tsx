@@ -47,10 +47,10 @@ export function ClothingCycle() {
                 role="tab"
                 aria-selected={isSelected}
                 onClick={() => setActiveTab(index)}
-                className={`flex items-center gap-4 p-5 rounded-2xl text-left backdrop-blur-xl transition-all cursor-pointer ${
+                className={`flex items-center gap-4 p-5 rounded-2xl text-left cursor-pointer ${
                   isSelected
-                    ? 'bg-purple-100/90 dark:bg-gradient-to-r dark:from-purple-900/40 dark:to-violet-950/60 border-2 border-[#48119A] dark:border-purple-400 shadow-md dark:shadow-[0_8px_30px_rgba(139,92,246,0.35)] scale-[1.02]'
-                    : 'bg-white/85 dark:bg-purple-950/20 border border-black/10 dark:border-purple-400/20 hover:bg-purple-50/90 dark:hover:bg-purple-500/10 hover:border-purple-400/40 shadow-sm'
+                    ? 'sr-glass-card is-active scale-[1.02]'
+                    : 'sr-glass-card sr-glass-interactive'
                 }`}
               >
                 <span
@@ -72,7 +72,7 @@ export function ClothingCycle() {
         </div>
 
         {/* Panel del pilar activo */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-[#F8F7FC]/90 dark:bg-[#141021]/70 backdrop-blur-2xl border border-black/10 dark:border-purple-400/25 shadow-md dark:shadow-[0_16px_45px_rgba(0,0,0,0.4),0_0_30px_rgba(139,92,246,0.15)] rounded-3xl p-6 md:p-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center sr-glass-card rounded-3xl p-6 md:p-12">
           {/* Detalles del pilar */}
           <div className="lg:col-span-7 space-y-6">
             <span className="inline-block px-3.5 py-1.5 rounded-full bg-purple-100/90 dark:bg-[var(--sr-accent)]/20 border border-purple-300 dark:border-[var(--sr-accent)]/40 text-[#48119A] dark:text-[var(--sr-accent)] font-bold text-xs uppercase tracking-wider">
@@ -109,7 +109,7 @@ export function ClothingCycle() {
             <div className="pt-2">
               <Link
                 to={currentPillar.to}
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] hover:from-[#B49BFB] hover:to-[#8B5CF6] text-[#ffffff] font-extrabold text-xs uppercase tracking-wider shadow-[0_8px_25px_rgba(139,92,246,0.45)] border border-white/20 hover:translate-x-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-violeta hover:bg-violeta-claro text-[#ffffff] font-extrabold text-xs uppercase tracking-wider shadow-[0_6px_18px_rgba(0,0,0,0.3)] border border-white/20 hover:translate-x-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
                 <span>{currentPillar.action}</span>
                 <span aria-hidden="true">↗</span>

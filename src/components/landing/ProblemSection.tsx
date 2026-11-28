@@ -40,7 +40,7 @@ export function ProblemSection() {
           {urbanProblems.map((problem) => (
             <div
               key={problem.number}
-              className="p-8 rounded-2xl bg-white/85 dark:bg-purple-950/25 backdrop-blur-xl border border-black/10 dark:border-purple-400/25 shadow-md dark:shadow-[0_8px_32px_rgba(0,0,0,0.37),0_0_20px_-4px_rgba(139,92,246,0.15)] hover:border-purple-400/60 hover:bg-purple-50/90 dark:hover:bg-purple-500/15 hover:shadow-[0_12px_40px_rgba(139,92,246,0.22)] transition-all group flex flex-col justify-between"
+              className="p-8 rounded-2xl sr-glass-card sr-glass-interactive group flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <span className="inline-block text-sm font-black tracking-widest text-[var(--sr-accent)] group-hover:text-[var(--sr-hero-text)] transition-colors">
@@ -58,11 +58,11 @@ export function ProblemSection() {
         </div>
 
         {/* Respuesta / Propuesta de valor de StyleRadar */}
-        <div className="p-8 md:p-10 rounded-2xl bg-[#F8F7FC]/90 dark:bg-gradient-to-r dark:from-purple-950/40 dark:via-violet-900/30 dark:to-purple-950/50 backdrop-blur-2xl border border-purple-300/60 dark:border-purple-400/30 shadow-md dark:shadow-[0_12px_40px_rgba(139,92,246,0.25)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="p-8 md:p-10 rounded-2xl sr-glass-card flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <p className="text-lg md:text-xl font-medium text-[var(--sr-hero-text)] leading-relaxed">
             <strong className="text-[var(--sr-hero-text)] font-extrabold font-sans">StyleRadar</strong> junta el
             inventario de las marcas y tiendas independientes en un solo mapa:{' '}
-            <span className="text-[#3b0764] font-bold">lo que hay hoy, en tu talla y cerca de tu barrio.</span>
+            <span className="text-[var(--sr-accent-text)] font-bold">lo que hay hoy, en tu talla y cerca de tu barrio.</span>
           </p>
         </div>
 

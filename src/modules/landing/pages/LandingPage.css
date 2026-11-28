@@ -115,13 +115,13 @@ html[data-tema="claro"] .sr-landing .sr-category-tabs button[aria-selected="true
 .sr-button:hover { transform: translateY(-2px); }
 .sr-button-primary {
   color: #fff;
-  background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 50%, #7C3AED 100%);
+  background: #48119A;
   border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 .sr-button-primary:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 10px 36px rgba(139, 92, 246, 0.7);
+  background: #7B4DD8;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
 }
 .sr-button-glass {
   color: white;
@@ -439,3 +439,42 @@ html[data-tema="claro"] .sr-landing .sr-category-tabs button[aria-selected="true
 @media (prefers-reduced-motion: reduce) {
   .sr-landing *, .sr-landing *::before, .sr-landing *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* =====================================================================
+   ESTÁNDAR DE TARJETAS DE LA LANDING: CRISTAL (glass)
+   Toda tarjeta de contenido usa la clase `sr-glass-card` y no define su propio fondo,
+   borde ni sombra. Variantes: `sr-glass-interactive` (reacciona al pasar el cursor) y
+   `is-featured` / `is-active` (borde violeta de marca para la opción destacada).
+   En oscuro hereda el cristal global de index.css; aquí se ajusta el modo claro para que
+   la ciudad desenfocada del fondo se vea a través de la tarjeta.
+   ===================================================================== */
+.sr-landing .sr-glass-card { border-width: 1px; border-style: solid; }
+
+html[data-theme="light"] .sr-landing .sr-glass-card,
+html[data-theme="claro"] .sr-landing .sr-glass-card,
+html[data-tema="claro"] .sr-landing .sr-glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, .58) 0%, rgba(255, 255, 255, .30) 100%);
+  backdrop-filter: blur(22px) saturate(1.6);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  border-color: rgba(255, 255, 255, .72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 14px 36px rgba(38, 38, 38, .12);
+}
+
+.sr-landing .sr-glass-interactive { transition: transform .25s, border-color .25s, background .25s, box-shadow .25s; }
+.sr-landing .sr-glass-interactive:hover { transform: translateY(-3px); border-color: rgba(167, 139, 250, .65); }
+html[data-theme="light"] .sr-landing .sr-glass-interactive:hover,
+html[data-theme="claro"] .sr-landing .sr-glass-interactive:hover,
+html[data-tema="claro"] .sr-landing .sr-glass-interactive:hover {
+  border-color: rgba(72, 17, 154, .55);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .72) 0%, rgba(255, 255, 255, .42) 100%);
+}
+
+.sr-landing .sr-glass-card.is-featured,
+.sr-landing .sr-glass-card.is-active { border-width: 2px; border-color: rgba(167, 139, 250, .85); }
+html[data-theme="light"] .sr-landing .sr-glass-card.is-featured,
+html[data-theme="claro"] .sr-landing .sr-glass-card.is-featured,
+html[data-tema="claro"] .sr-landing .sr-glass-card.is-featured,
+html[data-theme="light"] .sr-landing .sr-glass-card.is-active,
+html[data-theme="claro"] .sr-landing .sr-glass-card.is-active,
+html[data-tema="claro"] .sr-landing .sr-glass-card.is-active { border-color: #48119A; }

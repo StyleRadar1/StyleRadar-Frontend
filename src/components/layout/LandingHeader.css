@@ -31,37 +31,55 @@
   box-shadow: 0 10px 32px -10px rgba(0, 0, 0, .6), 0 0 25px -5px rgba(139, 92, 246, 0.25);
 }
 
-html[data-theme="light"] .sr-landing .pe-header.is-scrolled,
-html[data-theme="claro"] .sr-landing .pe-header.is-scrolled,
-html[data-tema="claro"] .sr-landing .pe-header.is-scrolled {
+html[data-theme="light"] .sr-landing .pe-header,
+html[data-theme="claro"] .sr-landing .pe-header,
+html[data-tema="claro"] .sr-landing .pe-header {
   --hero-fg: #0f172a;
   --hero-nav-fg: #0f172a;
   --hero-btn-fg: #0f172a;
   color: #0f172a;
-  background: rgba(255, 255, 255, .90);
-  border-bottom: 1px solid rgba(226, 232, 240, .85);
-  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .08);
+  background: rgba(255, 255, 255, .62);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border-bottom: 1px solid rgba(255, 255, 255, .7);
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .10);
 }
 
-html[data-theme="light"] .sr-landing .pe-header.is-scrolled .pe-capsule-btn,
-html[data-theme="claro"] .sr-landing .pe-header.is-scrolled .pe-capsule-btn,
-html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-capsule-btn {
+/* Al bajar, el cristal se vuelve más firme para que el texto de abajo no se cruce */
+html[data-theme="light"] .sr-landing .pe-header.is-scrolled,
+html[data-theme="claro"] .sr-landing .pe-header.is-scrolled,
+html[data-tema="claro"] .sr-landing .pe-header.is-scrolled {
+  background: rgba(255, 255, 255, .88);
+  border-bottom: 1px solid rgba(226, 232, 240, .85);
+}
+
+/* Botón de menú (móvil) legible sobre el cristal blanco */
+html[data-theme="light"] .sr-landing .pe-mobile-menu-btn,
+html[data-theme="claro"] .sr-landing .pe-mobile-menu-btn,
+html[data-tema="claro"] .sr-landing .pe-mobile-menu-btn {
+  border-color: rgba(15, 23, 42, .22);
+  background: rgba(15, 23, 42, .06);
+}
+
+html[data-theme="light"] .sr-landing .pe-header .pe-capsule-btn,
+html[data-theme="claro"] .sr-landing .pe-header .pe-capsule-btn,
+html[data-tema="claro"] .sr-landing .pe-header .pe-capsule-btn {
   border-color: rgba(15, 23, 42, .16);
   background: rgba(15, 23, 42, .04);
   box-shadow: none;
 }
 
-html[data-theme="light"] .sr-landing .pe-header.is-scrolled .pe-login-btn,
-html[data-theme="claro"] .sr-landing .pe-header.is-scrolled .pe-login-btn,
-html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-login-btn {
+html[data-theme="light"] .sr-landing .pe-header .pe-login-btn,
+html[data-theme="claro"] .sr-landing .pe-header .pe-login-btn,
+html[data-tema="claro"] .sr-landing .pe-header .pe-login-btn {
   border-color: rgba(72, 17, 154, .35);
   background: rgba(72, 17, 154, .08);
   color: #48119a;
 }
 
-html[data-theme="light"] .sr-landing .pe-header.is-scrolled .pe-tema > button,
-html[data-theme="claro"] .sr-landing .pe-header.is-scrolled .pe-tema > button,
-html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-tema > button {
+html[data-theme="light"] .sr-landing .pe-header .pe-tema > button,
+html[data-theme="claro"] .sr-landing .pe-header .pe-tema > button,
+html[data-tema="claro"] .sr-landing .pe-header .pe-tema > button {
   border-color: rgba(15, 23, 42, .2);
   background: rgba(15, 23, 42, .06);
   color: #0f172a;
@@ -164,21 +182,21 @@ html[data-tema="claro"] .sr-landing .pe-header.is-scrolled .pe-tema > button {
   border: 1px solid rgba(255, 255, 255, .25);
   border-radius: 100px;
   color: #ffffff;
-  background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 50%, #7C3AED 100%);
+  background: #48119A;
   font-family: Poppins, sans-serif;
   font-size: .75rem;
   font-weight: 700;
   letter-spacing: .12em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 4px 22px -2px rgba(139, 92, 246, .55);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
   transition: transform .25s, box-shadow .25s, filter .25s;
 }
 
 .sr-landing .pe-explore-btn:hover {
-  transform: scale(1.03) translateY(-1px);
-  filter: brightness(1.1);
-  box-shadow: 0 6px 28px -2px rgba(139, 92, 246, .75);
+  transform: translateY(-1px);
+  background: #7B4DD8;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .4);
 }
 
 .sr-landing .pe-explore-btn svg {

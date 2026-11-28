@@ -107,12 +107,6 @@ export const heroSlides: SlideItem[] = [
     alt: 'Representantes de StyleRadar con moda urbana en Bogotá',
     position: '50% 35%',
   },
-  {
-    id: 5,
-    src: '/img/landing/slide-2.jpg',
-    alt: 'Mujer con gabardina beige cruzando la calle',
-    position: '50% 25%',
-  },
 ]
 
 export const urbanProblems: ProblemItem[] = [
