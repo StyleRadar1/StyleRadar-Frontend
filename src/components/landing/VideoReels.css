@@ -20,7 +20,7 @@
   font-weight: 700;
   letter-spacing: .18em;
   text-transform: uppercase;
-  color: var(--sr-accent, #E8DCCB);
+  color: var(--sr-accent-text, var(--sr-accent, #E8DCCB));
 }
 
 .pe-videos .pe-h2 {
