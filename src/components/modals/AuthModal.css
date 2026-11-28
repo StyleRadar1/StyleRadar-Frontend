@@ -860,11 +860,11 @@
 
 .sr-auth-card {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.035) 38%, rgba(20, 15, 30, 0.62) 100%),
-    rgba(20, 15, 30, 0.62);
-  border-color: rgba(255, 255, 255, 0.32);
-  backdrop-filter: blur(30px) saturate(145%);
-  -webkit-backdrop-filter: blur(30px) saturate(145%);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.025) 38%, rgba(18, 13, 27, 0.82) 100%),
+    rgba(14, 10, 22, 0.90);
+  border-color: rgba(255, 255, 255, 0.34);
+  backdrop-filter: blur(34px) saturate(140%);
+  -webkit-backdrop-filter: blur(34px) saturate(140%);
   box-shadow:
     0 30px 80px rgba(0, 0, 0, 0.58),
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
@@ -954,4 +954,25 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+
+/* El botón oficial de Google vive en un iframe: se recorta para respetar el radio del diseño. */
+.sr-google-slot {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  overflow: hidden;
+  border-radius: 12px;
+  clip-path: inset(0 round 12px);
+  background: #FFFFFF;
+  isolation: isolate;
+}
+
+.sr-google-slot > div,
+.sr-google-slot iframe {
+  display: block;
+  width: 100% !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
 }
