@@ -108,8 +108,28 @@ describe('useTheme hook y ThemeProvider (Sistema de 3 modos + daltonismo)', () =
 
     applyThemeToDom('dark', true)
     expect(document.documentElement.getAttribute('data-theme')).toBe('colorblind')
-    expect(document.documentElement.getAttribute('data-tema')).toBe('oscuro')
+    expect(document.documentElement.getAttribute('data-tema')).toBe('daltonico')
     expect(document.documentElement.getAttribute('data-cvd')).toBe('on')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+
+    // el daltonismo se suma al tema: sobre claro la página sigue clara (solo cambian los colores de marca y estado)
+    applyThemeToDom('light', true)
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+    expect(document.documentElement.getAttribute('data-tema')).toBe('claro')
+    expect(document.documentElement.getAttribute('data-cvd')).toBe('on')
+    expect(document.documentElement.style.colorScheme).toBe('light')
+  })
+
+  it('el formato legado «daltonico» conserva el modo claro u oscuro guardado', () => {
+    localStorage.setItem('sr:theme-mode', 'light')
+    applyThemeToDom('daltonico')
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+    expect(document.documentElement.getAttribute('data-cvd')).toBe('on')
+
+    localStorage.setItem('sr:theme-mode', 'dark')
+    applyThemeToDom('daltonico')
+    expect(document.documentElement.getAttribute('data-theme')).toBe('colorblind')
+    expect(document.documentElement.getAttribute('data-tema')).toBe('daltonico')
     expect(document.documentElement.style.colorScheme).toBe('dark')
   })
 

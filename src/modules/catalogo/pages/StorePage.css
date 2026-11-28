@@ -98,8 +98,7 @@ html[data-tema="claro"] {
 /* ── TEMA DALTÓNICO (Okabe-Ito de Alto Contraste) ── */
 html[data-theme="colorblind"],
 html[data-theme="daltonico"],
-html[data-tema="daltonico"],
-html[data-cvd="on"] {
+html[data-tema="daltonico"] {
   --sr-store-bg: transparent;
   --sr-store-surface: var(--sr-surface, #262626);
   --sr-store-surface-solid: var(--sr-surface, #262626);

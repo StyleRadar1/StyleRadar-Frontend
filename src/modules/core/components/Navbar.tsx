@@ -46,7 +46,7 @@ export function Navbar() {
           {links.map(([to, label]) => <NavLink key={to} to={to} end className={linkCls}>{label}</NavLink>)}
         </div>
         <div className="ml-auto flex items-center gap-2 xl:ml-2">
-          {/* Apariencia y accesibilidad (tema, daltonismo y simulador): un solo panel, igual para todos los roles */}
+          {/* Tema de la aplicación (Claro, Oscuro, Daltonismo): un solo selector, igual para todos los roles */}
           <AppearancePicker tone="themed" className="max-xl:hidden" />
           {user ? (
             <>

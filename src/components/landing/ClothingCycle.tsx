@@ -15,7 +15,7 @@ export function ClothingCycle() {
       <div className="max-w-6xl mx-auto space-y-16">
         {/* Cabecera */}
         <div className="max-w-3xl space-y-4">
-          <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--sr-accent)]">
+          <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--sr-accent-text)]">
             Moda circular · Bogotá
           </p>
           <h2
@@ -55,7 +55,7 @@ export function ClothingCycle() {
               >
                 <span
                   className={`text-xl font-black ${
-                    isSelected ? 'text-[var(--sr-accent)]' : 'text-[var(--sr-hero-text-muted)]'
+                    isSelected ? 'text-[var(--sr-accent-text)]' : 'text-[var(--sr-hero-text-muted)]'
                   }`}
                 >
                   0{index + 1}
@@ -75,7 +75,7 @@ export function ClothingCycle() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center sr-glass-card rounded-3xl p-6 md:p-12">
           {/* Detalles del pilar */}
           <div className="lg:col-span-7 space-y-6">
-            <span className="inline-block px-3.5 py-1.5 rounded-full bg-purple-100/90 dark:bg-[var(--sr-accent)]/20 border border-purple-300 dark:border-[var(--sr-accent)]/40 text-[#48119A] dark:text-[var(--sr-accent)] font-bold text-xs uppercase tracking-wider">
+            <span className="inline-block px-3.5 py-1.5 rounded-full bg-purple-100/90 dark:bg-[var(--sr-accent)]/20 border border-purple-300 dark:border-[var(--sr-accent)]/40 text-[#48119A] dark:text-[var(--sr-accent-text)] font-bold text-xs uppercase tracking-wider">
               {currentPillar.eyebrow}
             </span>
 

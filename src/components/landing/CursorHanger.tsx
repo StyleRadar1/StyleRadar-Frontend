@@ -27,7 +27,10 @@ export const HANGER_WIDTH = 60
 export const GARMENT_WIDTH = 100
 export const GARMENT_COLLAR_Y_OFFSET = 12
 
+/** Suéter crema, para el modo claro. */
 export const GARMENT_SRC = '/img/percha-sueter.png'
+/** Mismo suéter en el morado de la marca (#48119A), para el modo oscuro y el de daltonismo. */
+export const GARMENT_SRC_MORADO = '/img/percha-sueter-morado.png'
 
 type Point = {
   x: number
@@ -163,18 +166,21 @@ export function CursorHanger({ containerRef }: CursorHangerProps) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Carga previa de la imagen de la prenda
-    const garmentImage = new Image()
-    garmentImage.src = GARMENT_SRC
-    let garmentLoaded = false
-    garmentImage.onload = () => {
-      garmentLoaded = true
-    }
+    // Carga previa de las dos prendas: crema en modo claro, morada en oscuro y daltonismo
+    const garmentClaro = new Image()
+    garmentClaro.src = GARMENT_SRC
+    const garmentMorado = new Image()
+    garmentMorado.src = GARMENT_SRC_MORADO
+    const elegirPrenda = () =>
+      document.documentElement.getAttribute('data-tema') === 'claro' ? garmentClaro : garmentMorado
+    let garmentImage = elegirPrenda()
+    const prendaLista = () => garmentImage.complete && garmentImage.naturalWidth > 0
 
     // Colores del tema actual
     let themeColors = readThemeColors()
     const themeObserver = new MutationObserver(() => {
       themeColors = readThemeColors()
+      garmentImage = elegirPrenda()
     })
     themeObserver.observe(document.documentElement, {
       attributes: true,
@@ -182,6 +188,7 @@ export function CursorHanger({ containerRef }: CursorHangerProps) {
     })
     const onCustomTheme = () => {
       themeColors = readThemeColors()
+      garmentImage = elegirPrenda()
     }
     window.addEventListener('sr:tema', onCustomTheme)
 
@@ -330,7 +337,7 @@ export function CursorHanger({ containerRef }: CursorHangerProps) {
           ctx.translate(pLast.x, pLast.y)
           ctx.rotate(angle)
 
-          const garmentH = garmentLoaded
+          const garmentH = prendaLista()
             ? GARMENT_WIDTH * (garmentImage.naturalHeight / garmentImage.naturalWidth)
             : GARMENT_WIDTH * 1.33
           const pulseCenterY = GARMENT_COLLAR_Y_OFFSET + garmentH * 0.42
@@ -361,7 +368,7 @@ export function CursorHanger({ containerRef }: CursorHangerProps) {
           }
 
           // 8. Dibujo de la prenda con sombra suave (antes de la percha para que la percha quede encima)
-          if (garmentLoaded && garmentOpacity > 0.005) {
+          if (prendaLista() && garmentOpacity > 0.005) {
             ctx.save()
             const currentGarmentAlpha = garmentOpacity * masterOpacity
 
