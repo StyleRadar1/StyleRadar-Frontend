@@ -511,20 +511,6 @@ export default function ItemDetailPage() {
 
                 {/* Sombra elíptica en el suelo */}
                 <div className="sr-hero-shadow" aria-hidden="true" />
-                <div className="mt-5 w-full max-w-[24.5rem] sm:max-w-[27rem] text-left rounded-2xl border border-white/15 bg-white/[0.05] p-4 text-xs text-[var(--color-text)] shadow-sm">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-success-bg,rgba(16,185,129,0.15))] border border-[var(--color-success-border,rgba(16,185,129,0.3))] px-2.5 py-0.5 text-[0.625rem] font-bold text-[var(--color-success-text,#10b981)]">
-                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        Disponible hoy
-                      </span>
-                      <span className="font-semibold text-[var(--color-text)]">Disponibilidad en tienda real</span>
-                    </div>
-                    <p className="mt-1 text-[var(--color-text-muted)] text-[0.6875rem] leading-relaxed">
-                      Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong>{prenda.barrio ? ` (${prenda.barrio})` : ''}.
-                    </p>
-                  </div>
 
                 {/* Franja de Miniaturas de los 4 Ángulos */}
                 {imagenesDisponibles.length > 1 && (
@@ -571,6 +557,20 @@ export default function ItemDetailPage() {
                   </div>
                 )}
                   {/* Tarjeta de disponibilidad en tienda real (RF-22) */}
+                  <div className="mt-5 w-full max-w-[24.5rem] sm:max-w-[27rem] text-left rounded-2xl border border-white/15 bg-white/[0.05] p-4 text-xs text-[var(--color-text)] shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-success-bg,rgba(16,185,129,0.15))] border border-[var(--color-success-border,rgba(16,185,129,0.3))] px-2.5 py-0.5 text-[0.625rem] font-bold text-[var(--color-success-text,#10b981)]">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Disponible hoy
+                      </span>
+                      <span className="font-semibold text-[var(--color-text)]">Disponibilidad en tienda real</span>
+                    </div>
+                    <p className="mt-1 text-[var(--color-text-muted)] text-[0.6875rem] leading-relaxed">
+                      Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong>{prenda.barrio ? ` (${prenda.barrio})` : ''}.
+                    </p>
+                  </div>
               </div>
 
               {/* ---------------------------------------------------- */}
