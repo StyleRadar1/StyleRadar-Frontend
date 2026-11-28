@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CustomCursor, NoiseGrain } from '@/components/ui'
 import { LandingHeader, LandingMobileMenu, LandingFooter } from '@/components/layout'
@@ -57,14 +57,17 @@ function DeferredMapSection() {
 
 export default function LandingPage() {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   // /?login abre el inicio de sesión (lo usan el botón «Iniciar sesión» del menú de la app y «Cerrar sesión»).
   const [params, setParams] = useSearchParams()
   const loginRequested = params.has('login')
-  const [isAuthOpen, setIsAuthOpen] = useState(() => !user && loginRequested)
-  const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
-  const [authRole] = useState<'BUYER' | 'STORE_ADMIN'>('BUYER')
+  const registerRequested = params.has('registro') || params.has('register')
+  const requestedTab: 'login' | 'register' = registerRequested ? 'register' : 'login'
+  const requestedRole: 'BUYER' | 'STORE_ADMIN' =
+    (params.get('tipo') ?? params.get('rol'))?.toLowerCase() === 'tienda' ? 'STORE_ADMIN' : 'BUYER'
+  const [isAuthOpen, setIsAuthOpen] = useState(() => !user && (loginRequested || registerRequested))
+  const [authTab, setAuthTab] = useState<'login' | 'register'>(requestedTab)
+  const [authRole, setAuthRole] = useState<'BUYER' | 'STORE_ADMIN'>(requestedRole)
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
 
   useEffect(() => {
@@ -73,24 +76,28 @@ export default function LandingPage() {
 
   // Abrir solo cuando se pasa de / a /?login. No reabrir durante el cierre:
   // el cambio de URL y el cierre del modal pueden ocurrir en renders distintos.
-  const previousLoginRequested = useRef(loginRequested)
+  const authRequestKey = loginRequested ? 'login' : registerRequested ? `register:${requestedRole}` : ''
+  const previousAuthRequestKey = useRef(authRequestKey)
   useEffect(() => {
-    if (!user && loginRequested && !previousLoginRequested.current) {
-      setAuthTab('login')
+    if (!user && authRequestKey && authRequestKey !== previousAuthRequestKey.current) {
+      setAuthTab(requestedTab)
+      setAuthRole(requestedRole)
       setIsAuthOpen(true)
     }
     if (user && isAuthOpen) setIsAuthOpen(false)
-    previousLoginRequested.current = loginRequested
-  }, [loginRequested, user, isAuthOpen])
+    previousAuthRequestKey.current = authRequestKey
+  }, [authRequestKey, requestedTab, requestedRole, user, isAuthOpen])
 
   const handleOpenLogin = () => {
     if (user) return
-    navigate('/login')
+    setAuthTab('login')
+    setIsAuthOpen(true)
   }
 
   const handleOpenTryOn = () => {
     if (!user) {
-      navigate('/login')
+      setAuthTab('login')
+      setIsAuthOpen(true)
       return
     }
     setIsTryOnOpen(true)
@@ -98,7 +105,9 @@ export default function LandingPage() {
 
   const handleOpenRegister = (rol: 'BUYER' | 'STORE_ADMIN' = 'BUYER') => {
     if (user) return
-    navigate(rol === 'STORE_ADMIN' ? '/registro?tipo=tienda' : '/registro')
+    setAuthRole(rol)
+    setAuthTab('register')
+    setIsAuthOpen(true)
   }
 
   return (
@@ -155,7 +164,7 @@ export default function LandingPage() {
             isOpen={isAuthOpen}
             onClose={() => {
               setIsAuthOpen(false)
-              if (params.has('login')) setParams({}, { replace: true })
+              setParams({}, { replace: true })
             }}
             initialTab={authTab}
             initialRole={authRole}

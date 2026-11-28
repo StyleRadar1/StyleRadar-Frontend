@@ -17,8 +17,6 @@ import { RouteErrorBoundary } from './RouteErrorBoundary'
 // Cada pantalla se carga solo cuando se visita (code splitting por módulo).
 const LandingPage = lazy(() => import('@/modules/landing/pages/LandingPage'))
 const Home = lazy(() => import('@/modules/inicio/pages/HomePage'))
-const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
-const Login = lazy(() => import('@/modules/identidad/pages/LoginPage'))
 const ResetPassword = lazy(() => import('@/modules/identidad/pages/ResetPasswordPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
 const AdminUsers = lazy(() => import('@/modules/identidad/pages/AdminUsersPage'))
@@ -64,6 +62,12 @@ const Pqrs = lazy(() => import('@/modules/legal/pages/PqrsPage'))
 const HelpCenter = lazy(() => import('@/modules/legal/pages/HelpCenterPage'))
 // Vitrina de las piezas de error: solo en desarrollo, no llega al build de QA ni producción.
 const ErroresDemo = import.meta.env.DEV ? lazy(() => import('@/modules/core/pages/ErroresDemo')) : null
+
+function AuthRedirect({ kind }: { kind: 'login' | 'registro' }) {
+  const location = useLocation()
+  const extra = location.search ? `&${location.search.slice(1)}` : ''
+  return <Navigate to={`/?${kind}${extra}`} replace />
+}
 
 const page = (el: ReactNode) => <Suspense fallback={<p className="p-10 text-white/60">Cargando…</p>}>{el}</Suspense>
 const only = (roles: Role[], el: ReactNode) => page(<RequireRole roles={roles}>{el}</RequireRole>)
@@ -127,8 +131,8 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
     children: [
       // Públicas
       { path: '/', element: <Portada /> },
-      { path: '/login', element: page(<Login />) },
-      { path: '/registro', element: page(<Register />) },
+      { path: '/login', element: <AuthRedirect kind="login" /> },
+      { path: '/registro', element: <AuthRedirect kind="registro" /> },
       { path: '/restablecer-contrasena', element: page(<ResetPassword />) },
       { path: '/catalogo', element: page(<Catalog />) },
       { path: '/catalogo/:id', element: page(<ItemDetail />) },

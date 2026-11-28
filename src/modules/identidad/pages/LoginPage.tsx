@@ -18,7 +18,7 @@ export default function LoginPage() {
     // Si el modal se cierra tras autenticar, AuthModal ya navega al destino de sesión;
     // solo volvemos al catálogo cuando el visitante cierra manualmente sin haber iniciado sesión.
     if (!tokenStorage.get()) {
-      navigate('/catalogo', { replace: true })
+      navigate('/', { replace: true })
     }
   }
 

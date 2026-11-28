@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
@@ -169,6 +170,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   const authRootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(authRootRef, isOpen && rendered && !showMeasurementsWizard)
   const busyRef = useRef(false)
+  const swappingRef = useRef(false)
   const prevSrcRef = useRef<string>('')
 
   const getPicKey = (
@@ -462,11 +464,26 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   /** Después de entrar vuelve a la página donde estaba (sesión vencida); si no, al inicio de su rol. */
   const entrarCon = (rol: keyof typeof ROLE_HOME) => finishAuthAndNavigate(tomarRetorno() ?? ROLE_HOME[rol])
 
-  /** Sale de la tarjeta con la misma animación y cambia de ruta (login <-> registro). */
-  const cambiarRuta = async (ruta: string) => {
-    await animateCardOut(cardRef.current)
-    document.documentElement.classList.remove('lock')
-    navigate(ruta)
+  /** Cambia entre login y registro dentro del pop-up, con animación de tarjeta. */
+  const cambiarModo = async (target: 'login' | 'register') => {
+    if (swappingRef.current || target === activeTab) return
+    swappingRef.current = true
+    try {
+      await animateCardOut(cardRef.current)
+      flushSync(() => {
+        setActiveTab(target)
+        setStep('form')
+        setError('')
+        setCamposErr({})
+        setReintentar(false)
+        setPreviewRole(null)
+        if (target === 'register') setRole('BUYER')
+      })
+      await animateCardIn(cardRef.current)
+      cardRef.current?.scrollTo({ top: 0 })
+    } finally {
+      swappingRef.current = false
+    }
   }
 
   /** Pasa a la pantalla del código OTP con los 6 campos vacíos. */
@@ -1197,7 +1214,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       to="/registro"
                       onClick={(e) => {
                         e.preventDefault()
-                        void cambiarRuta('/registro')
+                        void cambiarModo('register')
                       }}
                     >
                       Regístrate
@@ -1210,7 +1227,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       to="/login"
                       onClick={(e) => {
                         e.preventDefault()
-                        void cambiarRuta('/login')
+                        void cambiarModo('login')
                       }}
                     >
                       Inicia sesión

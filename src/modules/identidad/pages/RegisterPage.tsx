@@ -17,7 +17,7 @@ export default function RegisterPage() {
         isOpen
         initialTab="register"
         initialRole={initialRole}
-        onClose={() => navigate('/catalogo', { replace: true })}
+        onClose={() => navigate('/', { replace: true })}
       />
     </section>
   )

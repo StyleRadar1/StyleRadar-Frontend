@@ -790,6 +790,19 @@
   cursor: pointer;
 }
 
+.sr-auth-foot a,
+.sr-auth-foot a:visited {
+  color: #C084FC !important;
+  font-weight: 700;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.sr-auth-foot a:hover {
+  color: #FFFFFF !important;
+}
+
 .sr-auth-err {
   padding: 9px 12px;
   border-radius: 10px;
