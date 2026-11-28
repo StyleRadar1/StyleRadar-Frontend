@@ -31,7 +31,6 @@ describe('flujo real de alta de fundaciones (SR-RF-63: solo administrador)', () 
     expect(screen.getByRole('radio', { name: /Tienda/ })).toBeInTheDocument()
     expect(screen.queryByRole('radio', { name: /Fundación/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Registrar mi fundación/i })).not.toBeInTheDocument()
-    expect(screen.getByText(/certificado ESAL/i)).toBeInTheDocument()
   })
 
   it.each(['/registro?tipo=fundacion', '/registro?rol=fundacion'])(
@@ -51,7 +50,6 @@ describe('flujo real de alta de fundaciones (SR-RF-63: solo administrador)', () 
 
       expect(screen.getByRole('heading', { name: 'Regístrate' })).toBeInTheDocument()
       expect(screen.queryByRole('heading', { name: /Registra tu fundación/i })).not.toBeInTheDocument()
-      expect(screen.getByText(/certificado ESAL/i)).toBeInTheDocument()
 
       const user = userEvent.setup()
       await user.type(screen.getByLabelText('Nombre completo'), 'Camila Representante')

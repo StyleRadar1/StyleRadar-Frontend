@@ -214,7 +214,7 @@
   left: clamp(20px, 2.8vw, 30px);
   bottom: clamp(20px, 3vh, 28px);
   z-index: 4;
-  max-width: min(340px, 46%);
+  max-width: min(280px, 32%);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -274,6 +274,18 @@
   gap: 6px;
   margin-top: 20px;
   max-height: calc(100% - 36px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232, 220, 203, 0.45) transparent;
+}
+
+.sr-auth-card.is-register::-webkit-scrollbar {
+  display: block;
+  width: 5px;
+}
+
+.sr-auth-card.is-register::-webkit-scrollbar-thumb {
+  background: rgba(232, 220, 203, 0.45);
+  border-radius: 99px;
 }
 
 .sr-auth-card.is-register h2 {
@@ -403,7 +415,7 @@
   }
 
   .sr-auth .sr-auth-stack > .sr-auth-card {
-    margin-right: clamp(20px, 2.6vw, 28px);
+    margin-right: clamp(16px, 2.2vw, 24px);
     margin-top: 38px;
     max-height: calc(100% - 62px);
   }

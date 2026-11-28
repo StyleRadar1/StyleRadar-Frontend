@@ -910,7 +910,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
           {step === 'form' ? (
             <>
               <h2 id="authTitle">{activeTab === 'login' ? 'Inicia sesión' : 'Regístrate'}</h2>
-              {activeTab === 'register' && <p className="sr-sub">Es rápido y gratis.</p>}
 
               {error && (
                 <div role="alert" className="sr-auth-err flex flex-wrap items-center gap-2">
@@ -1037,9 +1036,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         <span>Publico mi catálogo</span>
                       </button>
                     </div>
-                    <p className="sr-role-note">
-                      ¿Representas una fundación? Crea una cuenta de Usuario y solicita acceso con tu certificado ESAL.
-                    </p>
                   </div>
 
                   <div className="sr-auth-fields-grid">
