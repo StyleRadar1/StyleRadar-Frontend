@@ -18,6 +18,7 @@ import { RouteErrorBoundary } from './RouteErrorBoundary'
 const LandingPage = lazy(() => import('@/modules/landing/pages/LandingPage'))
 const Home = lazy(() => import('@/modules/inicio/pages/HomePage'))
 const Register = lazy(() => import('@/modules/identidad/pages/RegisterPage'))
+const Login = lazy(() => import('@/modules/identidad/pages/LoginPage'))
 const ResetPassword = lazy(() => import('@/modules/identidad/pages/ResetPasswordPage'))
 const Profile = lazy(() => import('@/modules/identidad/pages/ProfilePage'))
 const AdminUsers = lazy(() => import('@/modules/identidad/pages/AdminUsersPage'))
@@ -126,8 +127,7 @@ export const router = createBrowserRouter([{ element: <RootLayout />, errorEleme
     children: [
       // Públicas
       { path: '/', element: <Portada /> },
-      // En visitas posteriores a la primera entrada, /?login redirige aquí para iniciar sesión sin reabrir el landing.
-      { path: '/login', element: <Navigate to="/?login" replace /> },
+      { path: '/login', element: page(<Login />) },
       { path: '/registro', element: page(<Register />) },
       { path: '/restablecer-contrasena', element: page(<ResetPassword />) },
       { path: '/catalogo', element: page(<Catalog />) },

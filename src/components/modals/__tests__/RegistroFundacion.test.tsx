@@ -49,7 +49,7 @@ describe('flujo real de alta de fundaciones (SR-RF-63: solo administrador)', () 
         </AuthProvider>,
       )
 
-      expect(screen.getByRole('heading', { name: 'Crea tu cuenta' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Regístrate' })).toBeInTheDocument()
       expect(screen.queryByRole('heading', { name: /Registra tu fundación/i })).not.toBeInTheDocument()
       expect(screen.getByRole('status')).toHaveTextContent(/únicamente por el administrador de StyleRadar/i)
 
@@ -59,6 +59,9 @@ describe('flujo real de alta de fundaciones (SR-RF-63: solo administrador)', () 
       await user.type(screen.getByLabelText('Contraseña'), 'Secreta1*')
       for (const cb of screen.getAllByRole('checkbox')) await user.click(cb)
       await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+      expect(await screen.findByRole('heading', { name: 'Verifica tu correo' })).toBeInTheDocument()
+      await user.type(screen.getByLabelText('Código de verificación'), '123456')
+      await user.click(screen.getByRole('button', { name: 'Confirmar y entrar' }))
 
       await screen.findByRole('heading', { name: 'Siguiente' })
       expect(registrar).toHaveBeenCalledWith(expect.not.objectContaining({ role: 'FOUNDATION_REPRESENTATIVE' }))

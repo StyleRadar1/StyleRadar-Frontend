@@ -72,7 +72,7 @@ export function SessionExpiredOverlay() {
             onClick={() => {
               guardarRetorno()
               setOpen(false)
-              navigate('/?login')
+              navigate('/login')
             }}
             className="cursor-pointer rounded-full bg-[#5b1df0] px-6 py-2.5 text-xs font-semibold text-white shadow-[0_4px_16px_rgba(91,29,240,0.45)] transition hover:bg-[#6b2cf5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:text-sm"
           >

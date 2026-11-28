@@ -7,7 +7,7 @@ import { reiniciarDatos, renderConSesion } from './helpers'
 const routes = [
   { path: '/registro', element: <RegisterPage /> },
   { path: '/catalogo', element: <h1>Catálogo</h1> },
-  { path: '/', element: <h1>Inicio con el modal de inicio de sesión</h1> },
+  { path: '/login', element: <h1>Inicio de sesión</h1> },
 ]
 const abrir = () => renderConSesion('/registro', routes)
 
@@ -25,7 +25,7 @@ describe('RegisterPage (RF-01)', () => {
     expect(screen.getByLabelText('Nombre completo')).toHaveFocus()
   })
 
-  it('crea la cuenta sin verificar y lleva al inicio de sesión para el código OTP (SR-RF-01 paso 6)', async () => {
+  it('crea la cuenta sin verificar y muestra el paso de OTP del registro (SR-RF-01 paso 6)', async () => {
     const user = userEvent.setup()
     abrir()
     await user.type(screen.getByLabelText('Nombre completo'), 'Ana María Gómez')
@@ -36,7 +36,7 @@ describe('RegisterPage (RF-01)', () => {
       await user.click(cb)
     }
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(await screen.findByRole('heading', { name: 'Inicio con el modal de inicio de sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Verifica tu correo' })).toBeInTheDocument()
     // El correo queda sin verificar: todavía no hay sesión.
     expect(localStorage.getItem('sr_token')).toBeNull()
   })

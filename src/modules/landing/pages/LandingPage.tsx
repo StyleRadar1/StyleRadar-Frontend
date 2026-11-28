@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { CustomCursor, NoiseGrain } from '@/components/ui'
 import { LandingHeader, LandingMobileMenu, LandingFooter } from '@/components/layout'
@@ -57,13 +57,14 @@ function DeferredMapSection() {
 
 export default function LandingPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   // /?login abre el inicio de sesión (lo usan el botón «Iniciar sesión» del menú de la app y «Cerrar sesión»).
   const [params, setParams] = useSearchParams()
   const loginRequested = params.has('login')
   const [isAuthOpen, setIsAuthOpen] = useState(() => !user && loginRequested)
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
-  const [authRole, setAuthRole] = useState<'BUYER' | 'STORE_ADMIN'>('BUYER')
+  const [authRole] = useState<'BUYER' | 'STORE_ADMIN'>('BUYER')
   const [isTryOnOpen, setIsTryOnOpen] = useState(false)
 
   useEffect(() => {
@@ -84,14 +85,12 @@ export default function LandingPage() {
 
   const handleOpenLogin = () => {
     if (user) return
-    setAuthTab('login')
-    setIsAuthOpen(true)
+    navigate('/login')
   }
 
   const handleOpenTryOn = () => {
     if (!user) {
-      setAuthTab('login')
-      setIsAuthOpen(true)
+      navigate('/login')
       return
     }
     setIsTryOnOpen(true)
@@ -99,9 +98,7 @@ export default function LandingPage() {
 
   const handleOpenRegister = (rol: 'BUYER' | 'STORE_ADMIN' = 'BUYER') => {
     if (user) return
-    setAuthRole(rol)
-    setAuthTab('register')
-    setIsAuthOpen(true)
+    navigate(rol === 'STORE_ADMIN' ? '/registro?tipo=tienda' : '/registro')
   }
 
   return (

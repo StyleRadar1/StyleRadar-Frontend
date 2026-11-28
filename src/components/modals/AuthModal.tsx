@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react'
-import { flushSync } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { GoogleSignIn } from '@/modules/identidad/components/GoogleSignIn'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/modules/identidad/mocks/demoAccounts'
@@ -34,7 +33,7 @@ const AUTH_PIC: Record<PicKey, { src: string; alt: string }> = {
 
 const AUTH_CAP: Record<PicKey, [string, string]> = {
   login: ['Iniciar sesión', 'Qué bueno verte otra vez'],
-  sign: ['Crear cuenta', 'Empieza tu radar'],
+  sign: ['Registro', 'Empieza tu radar'],
   user: ['Usuario', 'Tu estilo, cerca de ti'],
   store: ['Tienda', 'Que te encuentren en tu talla'],
   found: ['Fundación', 'La ropa sigue su camino'],
@@ -86,20 +85,6 @@ function cancelAnims(el: Element | null) {
   } catch {
     // Ignorar en entornos de prueba sin Web Animations API
   }
-}
-
-function resetCard(card: HTMLElement | null) {
-  if (!card) return
-  cancelAnims(card)
-  card.style.opacity = ''
-  card.style.transform = ''
-  card.style.filter = ''
-  card.scrollTop = 0
-  const kids = Array.from(card.children) as HTMLElement[]
-  kids.forEach((k) => {
-    k.style.opacity = ''
-    k.style.transform = ''
-  })
 }
 
 /** Mínimo de la contraseña al iniciar sesión: 8 con el back real; 4 en demostración, donde las cuentas usan 1234. */
@@ -184,7 +169,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   const authRootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(authRootRef, isOpen && rendered && !showMeasurementsWizard)
   const busyRef = useRef(false)
-  const swappingRef = useRef(false)
   const prevSrcRef = useRef<string>('')
 
   const getPicKey = (
@@ -444,37 +428,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
     onClose()
   }
 
-  const handleSwapTab = async (targetTab: 'login' | 'register') => {
-    if (swappingRef.current || (targetTab === activeTab && step === 'form')) return
-    swappingRef.current = true
-    try {
-      const card = cardRef.current
-      await animateCardOut(card)
-      resetCard(card)
-      setError('')
-      setCamposErr({})
-      setReintentar(false)
-      setStep('form')
-      setPreviewRole(null)
-      try {
-        flushSync(() => {
-          setActiveTab(targetTab)
-        })
-      } catch {
-        setActiveTab(targetTab)
-      }
-      const nextCard = cardRef.current
-      if (nextCard) {
-        nextCard.scrollTop = 0
-      }
-      await animateCardIn(nextCard)
-      const firstInput = nextCard?.querySelector<HTMLElement>('input')
-      firstInput?.focus({ preventScroll: true })
-    } finally {
-      swappingRef.current = false
-    }
-  }
-
   useEffect(() => {
     if (!isOpen && !rendered) return
     const prevOverflow = document.body.style.overflow
@@ -548,7 +501,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
         entrarCon(r.user.role)
         return
       }
-      irAlCodigo(r.expiresInSeconds)
+      setError('Tu correo aún no está verificado. Completa el registro para verificar la cuenta.')
     } catch (err) {
       const r = errorDeLogin(err)
       setCamposErr({ email: r.campos.email ?? r.campos.correo, password: r.campos.password })
@@ -949,35 +902,12 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
         >
           {step === 'form' ? (
             <>
-              <div className="sr-auth-tabs" role="tablist" aria-label="Cuenta">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'login'}
-                  onClick={() => void handleSwapTab('login')}
-                >
-                  Iniciar sesión
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'register'}
-                  onClick={() => void handleSwapTab('register')}
-                >
-                  Crear cuenta
-                </button>
-              </div>
-
-              <h2 id="authTitle">{activeTab === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}</h2>
+              <h2 id="authTitle">{activeTab === 'login' ? 'Inicia sesión' : 'Regístrate'}</h2>
               <p className="sr-sub">
                 {activeTab === 'login'
-                  ? 'Entra con Google o con tu correo.'
-                  : 'Crea tu cuenta en segundos.'}
+                  ? 'Entra con tu correo.'
+                  : 'Es rápido y gratis.'}
               </p>
-
-              <GoogleSignIn onSignedIn={(u) => entrarCon(u.role)} />
-
-              <div className="sr-auth-or">o con tu correo</div>
 
               {error && (
                 <div role="alert" className="sr-auth-err flex flex-wrap items-center gap-2">
@@ -1077,20 +1007,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                     </button>
                   </div>
 
-                  {/* Solo en demostración: con ms-auth el código existe únicamente después de un inicio de sesión con el correo sin verificar. */}
-                  {env.useMocks && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setError('')
-                        if (!email.trim()) setEmail('usuario@styleradar.co')
-                        irAlCodigo()
-                      }}
-                      className="w-full text-center text-xs font-semibold text-white/70 hover:text-white pt-1"
-                    >
-                      ¿Prefieres ingresar con código temporal? <b className="text-arena font-bold underline underline-offset-2">Entrar con OTP →</b>
-                    </button>
-                  )}
                 </form>
               ) : (
                 <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3" noValidate aria-busy={loading}>
@@ -1125,7 +1041,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       </button>
                     </div>
                     <p className="sr-role-note">
-                      ¿Representas una fundación? Regístrate como Usuario y solicita acceso con tu certificado ESAL.
+                      ¿Representas una fundación? Crea una cuenta de Usuario y solicita acceso con tu certificado ESAL.
                     </p>
                   </div>
 
@@ -1264,20 +1180,32 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                 </form>
               )}
 
+              {activeTab === 'login' || role === 'BUYER' ? (
+                <>
+                  <div className="sr-auth-or">o continúa con</div>
+                  <GoogleSignIn onSignedIn={(u) => entrarCon(u.role)} />
+                  {activeTab === 'register' && (
+                    <p className="text-[11px] leading-snug text-[var(--color-text-muted)]">
+                      Con Google creamos tu cuenta de comprador con tu nombre y correo. Después puedes completar barrio y medidas en tu perfil.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-[11px] leading-snug text-[var(--color-text-muted)]">
+                  La cuenta de tienda se crea con este formulario; después registras el almacén con NIT y RUT.
+                </p>
+              )}
+
               <p className="sr-auth-foot">
                 {activeTab === 'login' ? (
                   <>
                     ¿No tienes cuenta?{' '}
-                    <button type="button" onClick={() => void handleSwapTab('register')}>
-                      Crear cuenta gratis →
-                    </button>
+                    <Link to="/registro">Regístrate</Link>
                   </>
                 ) : (
                   <>
                     ¿Ya tienes cuenta?{' '}
-                    <button type="button" onClick={() => void handleSwapTab('login')}>
-                      Inicia sesión →
-                    </button>
+                    <Link to="/login">Inicia sesión</Link>
                   </>
                 )}
               </p>

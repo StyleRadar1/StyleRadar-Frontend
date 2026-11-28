@@ -4,11 +4,12 @@ import { ApiError } from '@/modules/core/api/apiClient'
 import { errorKind, errorMessage, fieldErrors, MENSAJES } from '@/modules/core/api/errors'
 import { Aviso } from '@/modules/core/components/errores'
 import { camposDeRegistro, CLAVE_NUEVA_RE, TEXTO_REGLA_CLAVE, TEXTOS_ACCESO } from '../utils/erroresAcceso'
-import { Badge, Button, Card } from '@/modules/core/design-system'
+import { Button, Card } from '@/modules/core/design-system'
 import { ROLE_HOME } from '@/modules/core/types/roles'
 import { Campo, Opciones } from '../components/Campo'
 import { a11y, inputCls } from '../utils/campo'
 import { useAuth } from '../hooks/useAuth'
+import { GoogleSignIn } from '../components/GoogleSignIn'
 import { NAME_MAX, NAME_MIN, NEIGHBORHOOD_MAX } from '../types/auth.dto'
 import { MANIQUI_LABEL, type Maniqui } from '../types/usuario.dto'
 import { correoValido } from '../utils/formato'
@@ -22,7 +23,7 @@ type Errores = Partial<Record<'nombre' | 'email' | 'barrio' | 'password' | 'term
  * El correo queda sin verificar: al terminar se pasa al inicio de sesión para ingresar el código OTP.
  */
 export default function RegisterPage() {
-  const { register } = useAuth()
+  const { register, verifyOtp } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   // Los enlaces del landing usan ?rol= y los de planes ?tipo=: solo BUYER y STORE_ADMIN son registros públicos.
@@ -50,6 +51,10 @@ export default function RegisterPage() {
   /** 409: texto de ms-usuarios («El correo electrónico … ya se encuentra registrado») o el del plan. */
   const [noSePudo, setNoSePudo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [otpPaso, setOtpPaso] = useState(false)
+  const [otpCodigo, setOtpCodigo] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [otpBusy, setOtpBusy] = useState(false)
   const inFlight = useRef(false)
 
   const validar = (): { formErrors: Errores; legalErrors: LegalConsentErrors } => {
@@ -117,7 +122,12 @@ export default function RegisterPage() {
         ...(registerRole !== 'BUYER' ? { role: registerRole } : {}),
       })
       // Correo sin verificar (SR-RF-01): el código OTP se ingresa en el modal de inicio de sesión.
-      if (r.kind === 'otp') { navigate('/?login', { replace: true }); return }
+      if (r.kind === 'otp') {
+        setOtpPaso(true)
+        setOtpCodigo('')
+        setOtpError('')
+        return
+      }
       // Una tienda recién creada aún no tiene almacén en ms-tiendas: primero lo registra (NIT y RUT) y luego paga.
       const target = r.user.role === 'STORE_ADMIN' ? '/tienda/registro' : ROLE_HOME[r.user.role]
       navigate(target, { replace: true })
@@ -141,25 +151,80 @@ export default function RegisterPage() {
     }
   }
 
+  const verificarCodigo = async (ev: FormEvent) => {
+    ev.preventDefault()
+    const codigo = otpCodigo.replace(/\D/g, '')
+    if (codigo.length !== 6) {
+      setOtpError('Ingresa el código completo de 6 dígitos.')
+      return
+    }
+    setOtpBusy(true)
+    setOtpError('')
+    try {
+      const user = await verifyOtp({ email: email.trim(), otpCode: codigo })
+      const destino = user.role === 'STORE_ADMIN' ? '/tienda/registro' : ROLE_HOME[user.role]
+      navigate(destino, { replace: true })
+    } catch (err) {
+      setOtpError(errorMessage(err, 'No pudimos verificar el código. Intenta de nuevo.'))
+    } finally {
+      setOtpBusy(false)
+    }
+  }
+
+  if (otpPaso) {
+    return (
+      <section className="relative min-h-screen overflow-hidden">
+        <img src="/img/representantes/S2.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-[50%_40%]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg)]/90 via-[var(--color-bg)]/40 to-[var(--color-bg)]/80" />
+        <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-12">
+          <Card className="w-full max-w-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/90 p-6 text-[var(--color-text)] shadow-2xl backdrop-blur-xl sm:p-8">
+            <h1 className="text-3xl font-extrabold text-[var(--color-text)]">Verifica tu correo</h1>
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+              Enviamos un código de 6 dígitos a <b>{email}</b>. Es el último paso para crear tu cuenta.
+            </p>
+            <form onSubmit={verificarCodigo} className="mt-5 flex flex-col gap-3" noValidate aria-busy={otpBusy}>
+              <Campo id="su-otp" label="Código de verificación" error={otpError}>
+                <input
+                  id="su-otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={otpCodigo}
+                  onChange={(e) => setOtpCodigo(e.target.value.replace(/\D/g, ''))}
+                  placeholder="123456"
+                  className={inputCls}
+                  aria-invalid={!!otpError}
+                />
+              </Campo>
+              <Button type="submit" disabled={otpBusy}>
+                {otpBusy ? 'Verificando…' : 'Confirmar y entrar'}
+              </Button>
+            </form>
+          </Card>
+        </div>
+      </section>
+    )
+  }
+
   return (
-    <section className="relative min-h-[calc(100vh-72px)] overflow-hidden">
+    <section className="relative min-h-screen overflow-hidden">
       <img
         src="/img/representantes/S2.png"
         alt="Representantes caminando por calle comercial de Bogotá"
         className="absolute inset-0 h-full w-full object-cover object-[50%_40%]"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg)]/90 via-[var(--color-bg)]/40 to-[var(--color-bg)]/80" />
-      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2">
+      <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-12 md:grid-cols-2">
         <div className="hidden md:block">
-          <Badge>Crear cuenta</Badge>
-          <h1 className="mt-4 text-5xl font-extrabold leading-tight tracking-tight text-[var(--color-text,#ffffff)] drop-shadow-md">
+          <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-[var(--color-text,#ffffff)] drop-shadow-md">
             Tu estilo, a tu medida.
           </h1>
           <p className="mt-4 max-w-md text-[var(--color-text-muted)]">
             Guarda tus tallas y encuentra tu tienda en Bogotá.
           </p>
         </div>
-        <Card className="border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/90 p-7 text-[var(--color-text)] shadow-2xl backdrop-blur-xl">
+        <Card className="border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/90 p-6 text-[var(--color-text)] shadow-2xl backdrop-blur-xl sm:p-8">
           <form
             onSubmit={onSubmit}
             className="flex flex-col gap-4"
@@ -168,7 +233,7 @@ export default function RegisterPage() {
             aria-labelledby="su-titulo"
           >
             <h2 id="su-titulo" className="text-3xl font-extrabold text-[var(--color-text)]">
-              {esTienda ? 'Registra tu tienda' : 'Crea tu cuenta'}
+              {esTienda ? 'Registra tu tienda' : 'Regístrate'}
             </h2>
             <p className="-mt-2 text-sm text-[var(--color-text-muted)]">
               ¿Ya tienes cuenta?{' '}
@@ -337,6 +402,21 @@ export default function RegisterPage() {
               </Link>
               . Las fundaciones aliadas son registradas directamente por el administrador de StyleRadar.
             </p>
+            {esComprador && (
+              <>
+                <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+                  <span className="h-px flex-1 bg-[var(--color-border)]" />
+                  o continúa con Google
+                  <span className="h-px flex-1 bg-[var(--color-border)]" />
+                </div>
+                <GoogleSignIn
+                  onSignedIn={(u) => navigate(ROLE_HOME[u.role], { replace: true })}
+                />
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Google crea tu cuenta de comprador con tu nombre y correo. Después puedes completar barrio y medidas en tu perfil.
+                </p>
+              </>
+            )}
           </form>
         </Card>
       </div>

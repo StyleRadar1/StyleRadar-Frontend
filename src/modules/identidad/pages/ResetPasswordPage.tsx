@@ -199,7 +199,7 @@ export default function ResetPasswordPage() {
               </button>
 
               <div className="pt-2 text-center">
-                <Link to="/?login" className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text)] underline underline-offset-4">← Volver a iniciar sesión</Link>
+                <Link to="/login" className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text)] underline underline-offset-4">← Volver a iniciar sesión</Link>
               </div>
             </form>
           )}
@@ -318,7 +318,7 @@ export default function ResetPasswordPage() {
                 <p className="mt-1 text-xs text-[var(--color-text-muted)]">Por seguridad cerramos tu sesión en todos los dispositivos.</p>
               </div>
               <Link
-                to="/?login"
+                to="/login"
                 className="inline-flex w-full items-center justify-center rounded-xl bg-violeta px-5 py-3 text-sm font-bold text-white shadow-lg shadow-purple-900/30 transition hover:bg-violeta-hover"
               >
                 Ir a iniciar sesión

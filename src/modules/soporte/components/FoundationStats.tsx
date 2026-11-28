@@ -12,7 +12,7 @@ export function FoundationStatsView() {
   useEffect(() => {
     if (status === 401) {
       guardarRetorno()
-      navigate('/?login', { replace: true })
+      navigate('/login', { replace: true })
     }
   }, [status, navigate])
 

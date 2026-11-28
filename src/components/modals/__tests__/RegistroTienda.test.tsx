@@ -57,6 +57,7 @@ describe('alta de una tienda', () => {
         <MemoryRouter initialEntries={[ruta]}>
           <Routes>
             <Route path="/registro" element={<RegisterPage />} />
+            <Route path="/tienda/registro" element={<h1>Registrar almacén</h1>} />
             <Route path="*" element={<h1>Siguiente</h1>} />
           </Routes>
         </MemoryRouter>
@@ -68,7 +69,10 @@ describe('alta de una tienda', () => {
     await user.type(screen.getByLabelText('Contraseña'), 'Secreta1*')
     for (const cb of screen.getAllByRole('checkbox')) await user.click(cb)
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    await screen.findByRole('heading', { name: 'Siguiente' })
+    expect(await screen.findByRole('heading', { name: 'Verifica tu correo' })).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Código de verificación'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Confirmar y entrar' }))
+    expect(await screen.findByRole('heading', { name: 'Registrar almacén' })).toBeInTheDocument()
     expect(registrar).toHaveBeenCalledWith(expect.objectContaining({ role: 'STORE_ADMIN' }))
   })
 })

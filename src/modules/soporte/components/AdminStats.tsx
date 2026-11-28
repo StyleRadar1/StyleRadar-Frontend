@@ -100,7 +100,7 @@ export function AdminStatsView() {
   useEffect(() => {
     if (has401) {
       guardarRetorno()
-      navigate('/?login', { replace: true })
+      navigate('/login', { replace: true })
     }
   }, [has401, navigate])
 

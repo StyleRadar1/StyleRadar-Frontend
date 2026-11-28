@@ -43,7 +43,7 @@ export function MetricError({
             className="px-4 py-2 text-xs"
             onClick={() => {
               guardarRetorno()
-              navigate('/?login', { replace: true })
+              navigate('/login', { replace: true })
             }}
           >
             Iniciar sesión

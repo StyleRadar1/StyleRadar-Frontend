@@ -11,7 +11,7 @@ const actual = () => window.location.pathname + window.location.search + window.
 
 /** Guarda la página actual (o la indicada). No guarda el inicio ni el propio inicio de sesión. */
 export function guardarRetorno(ruta: string = actual()) {
-  if (!esRutaInterna(ruta) || ruta === '/' || ruta.startsWith('/?login') || ruta.startsWith('/login')) return
+  if (!esRutaInterna(ruta) || ruta === '/' || ruta.startsWith('/login')) return
   try { sessionStorage.setItem(KEY, ruta) } catch { /* sin almacenamiento */ }
 }
 
