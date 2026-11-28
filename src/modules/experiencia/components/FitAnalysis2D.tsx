@@ -113,6 +113,35 @@ export function getLayerFitTransform(level: FitLevel, slot: string): CSSProperti
   }
 }
 
+/* Contorno típico (cm) de cada talla, tomado de la tabla de referencia de prendas */
+const CONTORNO_TALLA: Record<string, { pecho: number; cadera: number }> = {
+  XS: { pecho: 83, cadera: 87 },
+  S: { pecho: 89, cadera: 93 },
+  M: { pecho: 95, cadera: 99 },
+  L: { pecho: 102, cadera: 106 },
+  XL: { pecho: 111, cadera: 114 },
+  XXL: { pecho: 121, cadera: 123 },
+  '26': { pecho: 81, cadera: 89 },
+  '28': { pecho: 85, cadera: 93.5 },
+  '30': { pecho: 91, cadera: 98.5 },
+  '32': { pecho: 97, cadera: 103.5 },
+  '34': { pecho: 104, cadera: 109 },
+  '36': { pecho: 112, cadera: 115 },
+}
+
+/**
+ * Ancho real de la prenda respecto al maniquí base. Un cuerpo de la misma talla ocupa exactamente ese ancho
+ * (el cuerpo crece ~0,9 veces lo que crece su contorno); si el cuerpo es mayor, la prenda se queda corta.
+ * Devuelve null si no se conoce la talla (entonces no se toca el dibujo).
+ */
+export function anchoRealPrenda(slot: string, talla: string | undefined, female: boolean): number | null {
+  const t = talla ? CONTORNO_TALLA[talla.toUpperCase()] : undefined
+  if (!t) return null
+  const base = slot === 'inferior' ? (female ? 95 : 98) : female ? 90 : 96
+  const medida = slot === 'inferior' ? t.cadera : t.pecho
+  return 1 + 0.9 * (medida / base - 1)
+}
+
 const GARMENT_COLOR_HEX: Record<string, { fill: string; stroke: string; detail: string }> = {
   negro: { fill: 'rgba(30, 29, 38, 0.72)', stroke: '#9ca3af', detail: '#6b7280' },
   blanco: { fill: 'rgba(236, 234, 228, 0.72)', stroke: '#cbd5e1', detail: '#94a3b8' },
@@ -150,12 +179,15 @@ export function TechnicalCroquisSvg({
   layers,
   primaryFitLevel,
   inferiorFitLevel,
+  bodyScaleX = 1,
 }: {
   view: 'front' | 'back'
   female?: boolean
-  layers: { slot: string; layer: string; color?: string; fitLevel: FitLevel }[]
+  layers: { slot: string; layer: string; color?: string; fitLevel: FitLevel; talla?: string }[]
   primaryFitLevel: FitLevel | null
   inferiorFitLevel?: FitLevel | null
+  /** Escala horizontal que el probador aplica a todo el dibujo; la prenda la compensa para conservar su tamaño real */
+  bodyScaleX?: number
 }) {
   const shL = female ? 58 : 49
   const shR = female ? 142 : 151
@@ -165,6 +197,12 @@ export function TechnicalCroquisSvg({
   const waistR = female ? 124 : 130
   const hipL = female ? 63 : 67
   const hipR = female ? 137 : 133
+
+  const transformPrenda = (l: { slot: string; talla?: string; fitLevel: FitLevel }): CSSProperties => {
+    const ancho = anchoRealPrenda(l.slot, l.talla, female)
+    if (ancho === null) return getLayerFitTransform(l.fitLevel, l.slot)
+    return { transform: `scaleX(${(ancho / bodyScaleX).toFixed(3)})`, transformOrigin: '100px 0px' }
+  }
 
   const inferior = layers.find((l) => l.slot === 'inferior')
   const superior = layers.find((l) => l.slot === 'superior')
@@ -215,7 +253,7 @@ export function TechnicalCroquisSvg({
       {/* 3. Prendas superpuestas con deformación real por ajuste */}
       {inferior && (() => {
         const pal = pickGarmentPalette(inferior.color, 'inferior')
-        const t = getLayerFitTransform(inferior.fitLevel, 'inferior')
+        const t = transformPrenda(inferior)
         return (
           <g style={t}>
             <path
@@ -237,7 +275,7 @@ export function TechnicalCroquisSvg({
 
       {superior && (() => {
         const pal = pickGarmentPalette(superior.color, 'superior')
-        const t = getLayerFitTransform(superior.fitLevel, 'superior')
+        const t = transformPrenda(superior)
         const neckPath = view === 'front' ? 'M86 78 Q100 94 114 78' : 'M86 78 Q100 84 114 78'
         return (
           <g style={t}>
@@ -254,7 +292,7 @@ export function TechnicalCroquisSvg({
 
       {abrigo && (() => {
         const pal = pickGarmentPalette(abrigo.color, 'abrigo')
-        const t = getLayerFitTransform(abrigo.fitLevel, 'abrigo')
+        const t = transformPrenda(abrigo)
         const neckPath = view === 'front' ? 'M84 76 L100 108 L116 76' : 'M84 76 Q100 83 116 76'
         return (
           <g style={t}>

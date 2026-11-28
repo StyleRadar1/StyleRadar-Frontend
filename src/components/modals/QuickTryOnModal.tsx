@@ -1,10 +1,12 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import './QuickTryOnModal.css'
 import { env } from '@/configs/env'
 import { useFocusTrap } from '@/modules/core/hooks/useFocusTrap'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { TryOnPrivacyShield } from '@/modules/experiencia/components/TryOnPrivacyShield'
+import { MedidasRapidas } from '@/modules/experiencia/components/MedidasRapidas'
+import { ProbadorSecciones } from '@/modules/experiencia/components/ProbadorSecciones'
 import {
   classifyFitVeredict,
   FitAnalysisPanel,
@@ -40,6 +42,8 @@ import {
   saveLookToStorage,
 } from '@/modules/experiencia/utils/lookEngine'
 import {
+  DEFAULT_BODY_MEASUREMENTS,
+  aplicarCambioRapido,
   computeBodyDeformation,
   getBodyMeasurements,
   hasSavedBodyMeasurements,
@@ -92,17 +96,46 @@ function money(n: number): string {
   return '$' + n.toLocaleString('es-CO')
 }
 
+/* Regla de alturas. El maniquí de 1,75 m mide FIGURA_PCT % del alto de su caja y sus pies quedan a
+   PIES_PCT % del borde inferior, así que cada metro de la regla ocupa la misma proporción que en el cuerpo. */
+const ESTATURA_BASE_M = 1.75
+const FIGURA_PCT = 93.5
+const PIES_PCT = 5.7
+const MARCAS_ALTURA = [2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4]
+const posAltura = (metros: number) => PIES_PCT + (metros / ESTATURA_BASE_M) * FIGURA_PCT
+
 interface QuickTryOnModalProps {
   isOpen: boolean
   onClose: () => void
   initialGarmentId?: string
+  /**
+   * 'modal' (por defecto): capa a pantalla completa con «Volver» (portada).
+   * 'pagina': dentro de la app, bajo el encabezado, con botones de sección en vez de «Volver».
+   */
+  modo?: 'modal' | 'pagina'
 }
 
-export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryOnModalProps) {
+export function QuickTryOnModal({ isOpen, onClose, initialGarmentId, modo = 'modal' }: QuickTryOnModalProps) {
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const dialogRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(dialogRef, isOpen)
+  const enPagina = modo === 'pagina'
+  useFocusTrap(dialogRef, isOpen && !enPagina)
+
+  /* En modo página ocupa lo que queda de la pantalla bajo el encabezado de la app */
+  const [alto, setAlto] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    if (!enPagina || !isOpen) return
+    const medir = () => {
+      const caja = dialogRef.current
+      if (!caja) return
+      const arriba = caja.getBoundingClientRect().top + window.scrollY
+      setAlto(Math.max(560, window.innerHeight - arriba))
+    }
+    medir()
+    window.addEventListener('resize', medir)
+    return () => window.removeEventListener('resize', medir)
+  }, [enPagina, isOpen])
 
   /* Estado del look puesto */
   const [wearing, setWearing] = useState<LookState>(() => loadLookFromStorage())
@@ -153,7 +186,13 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   useEffect(() => {
     setBodyMeasurements(getBodyMeasurements(user?.id))
   }, [user?.id])
-  const hasMeasures = hasSavedBodyMeasurements(user?.id) && Boolean(bodyMeasurements)
+  /* Ajuste rápido: se ve al instante en el maniquí; solo se guarda si la persona lo pide */
+  const medidasVisibles = bodyMeasurements ?? DEFAULT_BODY_MEASUREMENTS
+  const [medidasCambiadas, setMedidasCambiadas] = useState(false)
+  const cambiarMedidas = useCallback((cambios: Partial<BodyMeasurements>) => {
+    setBodyMeasurements((prev) => aplicarCambioRapido(prev ?? DEFAULT_BODY_MEASUREMENTS, cambios))
+    setMedidasCambiadas(true)
+  }, [])
   const [pendingDeepLinkGarment, setPendingDeepLinkGarment] = useState<{ id: string; talla?: string; color?: string } | null>(null)
   const [catalogItems, setCatalogItems] = useState<ItemResponseDto[]>(() => (env.useMocks ? ITEMS : []))
   const [availablePlaylists, setAvailablePlaylists] = useState<PlaylistDto[]>(() => (env.useMocks ? MOCK_PLAYLISTS : []))
@@ -223,6 +262,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       setToastMessage((prev) => (prev === msg ? null : prev))
     }, 4000)
   }, [])
+
+  const guardarMedidasRapidas = useCallback(() => {
+    const actuales = bodyMeasurements ?? DEFAULT_BODY_MEASUREMENTS
+    const yaGuardadas = hasSavedBodyMeasurements(user?.id) && Boolean(actuales.consentimientoGuardado)
+    saveBodyMeasurements(actuales, yaGuardadas, user?.id)
+    setMedidasCambiadas(false)
+    showToast(yaGuardadas ? 'Medidas guardadas.' : 'Medidas aplicadas solo en esta sesión.')
+  }, [bodyMeasurements, user?.id, showToast])
 
   /* Push a la historia de deshacer */
   const pushState = useCallback((next: LookState) => {
@@ -312,6 +359,32 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       })
     }
   }, [wearing, bodyMeasurements, pushState, showToast])
+
+  /* Si el cuerpo cambia, la ropa puesta se vuelve a evaluar: una prenda no se estira para quedar bien */
+  useEffect(() => {
+    const puestas = Object.values(wearing).filter((w): w is WornItem => Boolean(w))
+    if (puestas.length === 0) return
+    let vivo = true
+    puestas.forEach((w) => {
+      void (async () => {
+        let guia = sizeGuideCacheRef.current[w.item.id]
+        if (!guia) {
+          guia = await itemService.getGarmentSizeGuide(w.item.id, w.item.tallas)
+          if (guia.length) sizeGuideCacheRef.current[w.item.id] = guia
+        }
+        if (!vivo) return
+        const fit = evaluateGarmentFitWithMeasurements(w.item, w.talla, bodyMeasurements, guia)
+        setWearing((prev) => {
+          const actual = prev[w.slot]
+          if (!actual || actual.item.id !== w.item.id || actual.talla !== w.talla || actual.veredicto === fit.veredicto) return prev
+          return { ...prev, [w.slot]: { ...actual, veredicto: fit.veredicto } }
+        })
+      })()
+    })
+    return () => {
+      vivo = false
+    }
+  }, [wearing, bodyMeasurements])
 
   /* Carga de outfit desde Playlist */
   const applyPlaylist = useCallback((playlist: PlaylistDto, mode: 'replace' | 'merge') => {
@@ -440,12 +513,12 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
         else if (showFitMap) setShowFitMap(false)
         else if (garmentPickerItem) setGarmentPickerItem(null)
         else if (isDrawerOpen) setIsDrawerOpen(false)
-        else onClose()
+        else if (!enPagina) onClose()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [isOpen, isDrawerOpen, garmentPickerItem, showFitMap, compareItem, showSaveLookModal, onClose])
+  }, [isOpen, isDrawerOpen, garmentPickerItem, showFitMap, compareItem, showSaveLookModal, onClose, enPagina])
 
   /* Drag rotación con ratón y táctil */
   const handlePointerDownStage = (e: React.PointerEvent) => {
@@ -505,6 +578,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
       layer: w.layer,
       color: (w.color || '').toLowerCase(),
       fitLevel: classifyFitVeredict(w.veredicto).level,
+      talla: w.talla,
       zIndex: LAYER_ORDER.indexOf(w.layer),
     }))
     .filter((l) => l.zIndex >= 0 && LAYER_PATHS[l.layer])
@@ -557,34 +631,44 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
   const tiendasDisponibles = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.tienda).filter(Boolean))), [catalogItems])
   const estilosDisponibles = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.estilo).filter(Boolean))), [catalogItems])
 
+  /* Estatura que dibuja el maniquí (la escala se limita entre 0,75 y 1,25 veces la base) */
+  const estaturaM = ESTATURA_BASE_M * deformation.heightScale
+
   if (!isOpen) return null
 
   return (
     <TryOnPrivacyShield active={isOpen}>
     <div
       ref={dialogRef}
-      className="cz-fullscreen"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Probador Virtual StyleRadar"
+      className={enPagina ? 'cz-fullscreen cz-embedded' : 'cz-fullscreen'}
+      style={enPagina && alto ? { height: alto } : undefined}
+      {...(enPagina
+        ? { role: 'region', 'aria-label': 'Probador Virtual StyleRadar' }
+        : { role: 'dialog', 'aria-modal': true, 'aria-label': 'Probador Virtual StyleRadar' })}
     >
       {/* ═══════════════════════════════════════════════════════════════
-          1. BARRA SUPERIOR DE NAVEGACIÓN
+          1. BARRA SUPERIOR: secciones (página) o «Volver» + miga (modal de la portada)
           ═══════════════════════════════════════════════════════════════ */}
-      <header className="cz-topbar" role="banner">
+      <header className="cz-topbar" role={enPagina ? undefined : 'banner'}>
         <div className="cz-topbar-left">
-          <button className="cz-nav-back" onClick={onClose} aria-label="Volver">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            VOLVER
-          </button>
-          <span className="cz-nav-sep" aria-hidden="true">/</span>
-          <span className="cz-nav-crumb">INICIO</span>
-          <span className="cz-nav-sep" aria-hidden="true">/</span>
-          <span className="cz-nav-crumb cz-nav-active">PROBADOR</span>
-          <span className="cz-nav-sep" aria-hidden="true">/</span>
-          <span className="cz-nav-crumb cz-nav-accent">ARMA TU LOOK</span>
+          {enPagina ? (
+            <ProbadorSecciones />
+          ) : (
+            <>
+              <button className="cz-nav-back" onClick={onClose} aria-label="Volver">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                VOLVER
+              </button>
+              <span className="cz-nav-sep" aria-hidden="true">/</span>
+              <span className="cz-nav-crumb">INICIO</span>
+              <span className="cz-nav-sep" aria-hidden="true">/</span>
+              <span className="cz-nav-crumb cz-nav-active">PROBADOR</span>
+              <span className="cz-nav-sep" aria-hidden="true">/</span>
+              <span className="cz-nav-crumb cz-nav-accent">ARMA TU LOOK</span>
+            </>
+          )}
         </div>
 
         <div className="cz-topbar-right">
@@ -687,42 +771,14 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             </div>
           </div>
 
-          {/* Metodología del probador + acceso rápido a medidas */}
-          <div className="mb-3 rounded-2xl border border-white/12 bg-white/[0.04] p-3 text-xs text-white/85">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-violeta-claro">
-              ¿Cómo funciona?
-            </p>
-            <p className="mt-1 leading-snug text-white/75">
-              Aquí podrás ver y comprobar con las medidas de tu cuerpo y la ropa si una prenda te quedaría o no, para luego probarla en nuestro probador con IA.
-            </p>
-            {!hasMeasures ? (
-              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-2">
-                <span className="text-[11px] font-medium text-amber-200">
-                  Aún no has registrado tus medidas corporales.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowMeasurementsWizard(true)}
-                  className="rounded-lg bg-violeta px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-violeta-hover"
-                >
-                  Configurar mis medidas
-                </button>
-              </div>
-            ) : (
-              <div className="mt-2 flex items-center justify-between gap-2 border-t border-white/10 pt-2">
-                <span className="text-[11px] text-white/65">
-                  Medidas activas: <strong className="text-white">{bodyMeasurements?.estatura} cm</strong> · Talla <strong className="text-white">{bodyMeasurements?.tallaHabitual || 'M'}</strong>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowMeasurementsWizard(true)}
-                  className="text-[11px] font-semibold text-violeta-claro hover:underline"
-                >
-                  Editar medidas
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Medidas siempre a la vista: estatura, peso, talla y tipo de cuerpo */}
+          <MedidasRapidas
+            medidas={medidasVisibles}
+            onCambio={cambiarMedidas}
+            hayCambios={medidasCambiadas}
+            onGuardar={guardarMedidasRapidas}
+            onMasMedidas={() => setShowMeasurementsWizard(true)}
+          />
 
           {/* Tarjetas principales: Escoger prenda / Probar con tu foto IA */}
           <div className="cz-action-cards-grid">
@@ -876,6 +932,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
             STAGE DERECHO: MANIQUÍ + CONTROLES DE CÁMARA
             ========================================================= */}
         <section className="cz-stage-area" aria-label="Escenario del maniquí">
+          <div className="cz-espejo" aria-hidden="true" />
           <div className="cz-ambient-glow" aria-hidden="true" />
 
           {/* Maniquí central interactivo */}
@@ -912,75 +969,16 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
               <span className="cz-morphology-badge">{deformation.complexion || 'Normal (M)'}</span>
             </div>
 
-            {/* Regla métrica de altura vertical con marcas anatómicas por talla según silueta */}
+            {/* Regla de altura real: cada marca queda a la altura que le toca respecto a los maniquíes */}
             <div className="cz-metric-ruler" aria-hidden="true">
-              <div className="cz-ruler-mark" style={{ bottom: '90%' }}>
-                <span>2,10 m</span>
-                <div className="cz-ruler-line" />
-              </div>
-              <div className="cz-ruler-mark" style={{ bottom: '78%' }}>
-                <span>1,90 m</span>
-                {bodyMeasurements?.cuerpoBase !== 'femenino' && <span className="cz-ruler-size-tag">XXL</span>}
-                <div className="cz-ruler-line" />
-              </div>
-              {bodyMeasurements?.cuerpoBase !== 'femenino' && (
-                <div className="cz-ruler-mark" style={{ bottom: '74%' }}>
-                  <span>1,85 m</span>
-                  <span className="cz-ruler-size-tag">XL</span>
+              {MARCAS_ALTURA.filter((m) => Math.abs(m - estaturaM) >= 0.07).map((m) => (
+                <div key={m} className="cz-ruler-mark" style={{ bottom: `${posAltura(m)}%` }}>
+                  <span>{m.toFixed(2).replace('.', ',')} m</span>
                   <div className="cz-ruler-line" />
                 </div>
-              )}
-              <div className="cz-ruler-mark" style={{ bottom: '70%' }}>
-                <span>1,80 m</span>
-                <span className="cz-ruler-size-tag">{bodyMeasurements?.cuerpoBase === 'femenino' ? 'XXL' : 'L'}</span>
-                <div className="cz-ruler-line" />
-              </div>
-              {bodyMeasurements?.cuerpoBase === 'femenino' && (
-                <div className="cz-ruler-mark" style={{ bottom: '68%' }}>
-                  <span>1,75 m</span>
-                  <span className="cz-ruler-size-tag">XL</span>
-                  <div className="cz-ruler-line" />
-                </div>
-              )}
-              <div className="cz-ruler-mark" style={{ bottom: '66%' }}>
-                <span>1,70 m</span>
-                <span className="cz-ruler-size-tag">{bodyMeasurements?.cuerpoBase === 'femenino' ? 'L' : 'S'}</span>
-                <div className="cz-ruler-line" />
-              </div>
-              {bodyMeasurements?.cuerpoBase === 'femenino' ? (
-                <>
-                  <div className="cz-ruler-mark" style={{ bottom: '63%' }}>
-                    <span>1,65 m</span>
-                    <span className="cz-ruler-size-tag">M</span>
-                    <div className="cz-ruler-line" />
-                  </div>
-                  <div className="cz-ruler-mark" style={{ bottom: '60%' }}>
-                    <span>1,58 m</span>
-                    <span className="cz-ruler-size-tag">S</span>
-                    <div className="cz-ruler-line" />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="cz-ruler-mark" style={{ bottom: '68%' }}>
-                    <span>1,75 m</span>
-                    <span className="cz-ruler-size-tag">M</span>
-                    <div className="cz-ruler-line" />
-                  </div>
-                  <div className="cz-ruler-mark" style={{ bottom: '59%' }}>
-                    <span>1,60 m</span>
-                    <span className="cz-ruler-size-tag">XS</span>
-                    <div className="cz-ruler-line" />
-                  </div>
-                </>
-              )}
-              <div className="cz-ruler-mark" style={{ bottom: '54%' }}>
-                <span>1,50 m</span>
-                {bodyMeasurements?.cuerpoBase === 'femenino' && <span className="cz-ruler-size-tag">XS</span>}
-                <div className="cz-ruler-line" />
-              </div>
-              <div className="cz-ruler-mark" style={{ bottom: '46%' }}>
-                <span>1,40 m</span>
+              ))}
+              <div className="cz-ruler-mark cz-ruler-mark--tu" style={{ bottom: `${posAltura(estaturaM)}%` }}>
+                <span>Tú · {estaturaM.toFixed(2).replace('.', ',')} m</span>
                 <div className="cz-ruler-line" />
               </div>
             </div>
@@ -1009,6 +1007,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   <TechnicalCroquisSvg
                     view="front"
                     female={bodyMeasurements?.cuerpoBase === 'femenino'}
+                    bodyScaleX={deformation.chestScale}
                     layers={activeLayers}
                     primaryFitLevel={primaryFitLevel}
                     inferiorFitLevel={inferiorFitLevel}
@@ -1031,6 +1030,7 @@ export function QuickTryOnModal({ isOpen, onClose, initialGarmentId }: QuickTryO
                   <TechnicalCroquisSvg
                     view="back"
                     female={bodyMeasurements?.cuerpoBase === 'femenino'}
+                    bodyScaleX={deformation.chestScale}
                     layers={activeLayers}
                     primaryFitLevel={primaryFitLevel}
                     inferiorFitLevel={inferiorFitLevel}

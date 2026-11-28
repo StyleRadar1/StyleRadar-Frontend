@@ -39,6 +39,23 @@ html[data-tema="claro"] .cz-fullscreen {
   --probador-accent-glow: rgba(124, 58, 237, 0.2);
 }
 
+/* Modo página: vive dentro de la app, debajo del encabezado (la altura la fija el componente) */
+.cz-fullscreen.cz-embedded {
+  position: relative;
+  inset: auto;
+  z-index: 0;
+  width: 100%;
+  height: calc(100vh - 105px);
+  min-height: 560px;
+}
+
+/* La barra de secciones sigue el tema (la barra de la portada es siempre oscura) */
+.cz-embedded .cz-topbar { background: var(--probador-surface); }
+.cz-embedded .cz-nav-pill { color: var(--probador-text); border-color: var(--probador-border); }
+@media (max-width: 640px) {
+  .cz-embedded .cz-topbar { height: auto; flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    1. BARRA SUPERIOR
    ═══════════════════════════════════════════════════════════════ */
@@ -826,6 +843,47 @@ html[data-tema="claro"] .cz-stage-area {
   background-repeat: no-repeat;
 }
 
+/* Espejo de probador al fondo: marco, vidrio con reflejos y piso */
+.cz-espejo {
+  position: absolute;
+  top: 5%;
+  bottom: 9%;
+  left: 50%;
+  width: min(86%, 1000px);
+  transform: translateX(-50%);
+  border-radius: 18px;
+  border: 10px solid #3a3347;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), inset 0 0 60px rgba(0, 0, 0, 0.45), 0 30px 80px rgba(0, 0, 0, 0.5);
+  background:
+    linear-gradient(115deg, transparent 0 14%, rgba(255, 255, 255, 0.10) 14% 22%, transparent 22% 31%, rgba(255, 255, 255, 0.06) 31% 35%, transparent 35%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, 0.25)),
+    rgba(120, 100, 170, 0.18);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  pointer-events: none;
+  z-index: 0;
+}
+.cz-espejo::after {
+  content: '';
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  height: 22%;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent);
+  mask-image: linear-gradient(180deg, #000, transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent);
+}
+html[data-theme="light"] .cz-espejo,
+html[data-tema="claro"] .cz-espejo {
+  border-color: #cfc6e0;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7), inset 0 0 50px rgba(120, 100, 170, 0.18), 0 30px 70px rgba(80, 60, 130, 0.25);
+  background:
+    linear-gradient(115deg, transparent 0 14%, rgba(255, 255, 255, 0.55) 14% 22%, transparent 22% 31%, rgba(255, 255, 255, 0.35) 31% 35%, transparent 35%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1) 45%, rgba(190, 175, 225, 0.35));
+}
+
 .cz-ambient-glow {
   position: absolute;
   top: 50%;
@@ -839,15 +897,17 @@ html[data-tema="claro"] .cz-stage-area {
 }
 
 .cz-mannequin-container {
+  --pad-b: 76px;
+  --fig-h: 0.84;
   position: relative;
   width: 100%;
-  max-width: 620px;
-  height: 74vh;
-  max-height: 700px;
+  max-width: 1080px;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 24px;
+  padding-bottom: var(--pad-b);
   z-index: 2;
   perspective: 1000px;
   user-select: none;
@@ -857,9 +917,9 @@ html[data-tema="claro"] .cz-stage-area {
 /* Regla métrica de altura vertical */
 .cz-metric-ruler {
   position: absolute;
-  left: 16px;
-  top: 10%;
-  bottom: 24px;
+  left: 8px;
+  bottom: var(--pad-b);
+  height: calc((100% - var(--pad-b)) * var(--fig-h));
   width: 95px;
   pointer-events: none;
   z-index: 1;
@@ -868,6 +928,8 @@ html[data-tema="claro"] .cz-stage-area {
 .cz-ruler-mark {
   position: absolute;
   left: 0;
+  transform: translateY(50%);
+  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -884,6 +946,21 @@ html[data-tema="claro"] .cz-stage-area {
   box-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
 }
 
+/* La marca con la estatura de la persona: una guía tenue cruza el escenario para ver la cabeza alineada */
+.cz-ruler-mark--tu {
+  color: #e9d5ff;
+}
+html[data-theme="light"] .cz-ruler-mark,
+html[data-tema="claro"] .cz-ruler-mark { color: #4b4560; }
+html[data-theme="light"] .cz-ruler-line,
+html[data-tema="claro"] .cz-ruler-line { background: rgba(75, 69, 96, 0.45); box-shadow: none; }
+html[data-theme="light"] .cz-ruler-mark--tu,
+html[data-tema="claro"] .cz-ruler-mark--tu { color: #48119a; }
+.cz-ruler-mark--tu .cz-ruler-line {
+  width: clamp(160px, 46vw, 700px);
+  background: repeating-linear-gradient(90deg, rgba(196, 181, 253, 0.55) 0 6px, transparent 6px 12px);
+  box-shadow: none;
+}
 .cz-ruler-size-tag {
   font-size: 9px;
   font-weight: 800;
@@ -945,7 +1022,7 @@ html[data-tema="claro"] .cz-stage-area {
 
 .cz-mannequin-3d-wrapper {
   position: relative;
-  height: 92%;
+  height: calc(var(--fig-h) * 100%);
   transform-style: preserve-3d;
   display: flex;
   align-items: flex-end;
@@ -981,10 +1058,10 @@ html[data-tema="claro"] .cz-stage-area {
 
 .cz-floor-shadow {
   position: absolute;
-  bottom: -15px;
+  bottom: calc(var(--pad-b) - 18px);
   left: 50%;
   transform: translateX(-50%);
-  width: 280px;
+  width: 420px;
   height: 35px;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5) 0%, transparent 70%);
   border-radius: 50%;
@@ -1183,25 +1260,29 @@ html[data-tema="claro"] .cz-stage-area {
 .cz-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
+  background: rgba(8, 5, 16, 0.7);
+  backdrop-filter: blur(6px);
   z-index: 10000;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
   animation: fadeIn 0.2s ease-out;
 }
 
+/* Pop-up centrado para elegir prendas */
 .cz-drawer-content {
-  width: 520px;
-  max-width: 100%;
-  height: 100%;
-  background: #14101e;
-  border-left: 1px solid var(--probador-border);
+  width: min(1040px, 100%);
+  height: min(86vh, 780px);
+  background: var(--probador-bg);
+  color: var(--probador-text);
+  border: 1px solid var(--probador-border);
+  border-radius: 22px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
-  animation: slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+  animation: popUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .cz-drawer-header {
@@ -1282,7 +1363,7 @@ html[data-tema="claro"] .cz-stage-area {
 
 .cz-filter-selects-row {
   display: grid;
-  grid-template-cols: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
@@ -1302,7 +1383,7 @@ html[data-tema="claro"] .cz-stage-area {
 /* Grid de prendas en el drawer */
 .cz-catalog-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 14px;
 }
 
@@ -1746,6 +1827,11 @@ html[data-tema="claro"] .cz-stage-area {
   to { opacity: 1; }
 }
 
+@keyframes popUp {
+  from { transform: translateY(14px) scale(0.97); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
 @keyframes slideLeft {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -1773,11 +1859,10 @@ html[data-tema="claro"] .cz-stage-area {
     padding: 12px;
   }
   .cz-mannequin-container {
-    height: 40vh;
+    --pad-b: 60px;
   }
-  .cz-drawer-content {
-    width: 100%;
-  }
+  .cz-drawer-backdrop { padding: 0; }
+  .cz-drawer-content { width: 100%; height: 100%; border-radius: 0; }
 }
 
 /* Mobile (360px - 480px) */
@@ -1810,3 +1895,49 @@ html[data-tema="claro"] .cz-stage-area {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Pop-up de prendas en tema claro (los colores base son de tema oscuro)
+   ═══════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .cz-drawer-header,
+html[data-tema="claro"] .cz-drawer-header { background: #fff; }
+html[data-theme="light"] .cz-drawer-tab:hover,
+html[data-tema="claro"] .cz-drawer-tab:hover { color: #171322; }
+html[data-theme="light"] .cz-drawer-tab.active,
+html[data-tema="claro"] .cz-drawer-tab.active { background: rgba(124, 58, 237, 0.12); color: #48119a; border-color: rgba(124, 58, 237, 0.4); }
+html[data-theme="light"] .cz-search-input,
+html[data-tema="claro"] .cz-search-input { background: #fff; color: #171322; }
+html[data-theme="light"] .cz-filter-select,
+html[data-tema="claro"] .cz-filter-select { background: #fff; color: #171322; }
+html[data-theme="light"] .cz-catalog-card,
+html[data-tema="claro"] .cz-catalog-card,
+html[data-theme="light"] .cz-playlist-row-card,
+html[data-tema="claro"] .cz-playlist-row-card { background: #fff; }
+html[data-theme="light"] .cz-card-img-wrap,
+html[data-tema="claro"] .cz-card-img-wrap,
+html[data-theme="light"] .cz-playlist-row-thumb,
+html[data-tema="claro"] .cz-playlist-row-thumb { background: #ece8f5; }
+html[data-theme="light"] .cz-card-name,
+html[data-tema="claro"] .cz-card-name,
+html[data-theme="light"] .cz-playlist-row-title,
+html[data-tema="claro"] .cz-playlist-row-title,
+html[data-theme="light"] .cz-empty-state-box h3,
+html[data-tema="claro"] .cz-empty-state-box h3 { color: #171322; }
+html[data-theme="light"] .cz-card-price,
+html[data-tema="claro"] .cz-card-price,
+html[data-theme="light"] .cz-playlist-row-meta,
+html[data-tema="claro"] .cz-playlist-row-meta,
+html[data-theme="light"] .cz-recommended-tag,
+html[data-tema="claro"] .cz-recommended-tag { color: #48119a; }
+html[data-theme="light"] .cz-select-garment-btn,
+html[data-tema="claro"] .cz-select-garment-btn,
+html[data-theme="light"] .cz-clear-filters-btn,
+html[data-tema="claro"] .cz-clear-filters-btn,
+html[data-theme="light"] .cz-retry-btn,
+html[data-tema="claro"] .cz-retry-btn { background: rgba(124, 58, 237, 0.12); color: #48119a; }
+html[data-theme="light"] .cz-mini-item-pill,
+html[data-tema="claro"] .cz-mini-item-pill { background: rgba(0, 0, 0, 0.06); }
+
+/* Botones de interés en violeta sólido (sin degradé) */
+.cz-btn-try-outfit { background: #48119a; }
+.cz-btn-try-outfit:hover { background: #5b1fb8; }

@@ -1,0 +1,45 @@
+/* Botones de sección del probador. Usan los colores del probador cuando están dentro de él
+   y los del tema de la app cuando están en la página de la foto con IA. */
+.sr-prob-secciones {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--probador-border, var(--sr-border-control, rgba(127, 127, 127, 0.35)));
+  background: var(--probador-surface-subtle, var(--sr-surface, transparent));
+}
+
+.sr-prob-seccion {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font: 700 13px/1 system-ui, sans-serif;
+  color: var(--probador-text-muted, var(--sr-text-secondary, inherit));
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.sr-prob-seccion:hover {
+  color: var(--probador-text, var(--sr-text-primary, inherit));
+  background: rgba(127, 127, 127, 0.14);
+}
+
+.sr-prob-seccion[aria-current='page'] {
+  background: #48119a;
+  color: #fff;
+}
+
+.sr-prob-seccion:focus-visible {
+  outline: 2px solid #7b4dd8;
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .sr-prob-seccion {
+    padding: 0 12px;
+    font-size: 12px;
+  }
+}
