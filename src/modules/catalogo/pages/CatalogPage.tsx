@@ -502,23 +502,59 @@ export default function CatalogPage() {
   }
 
   const guardar = async () => {
-    const nombre = texto.trim() || 'Catálogo completo'
+    const nombre = texto.trim() || (filtroTipo !== 'Todos' ? `${filtroTipo}${filtroColor !== 'Todos' ? ` ${filtroColor}` : ''}` : 'Catálogo completo')
     const filtros: Record<string, unknown> = {}
-    if (texto.trim()) filtros.query = texto.trim()
-    if (filtroTipo !== 'Todos') filtros.tipo = filtroTipo
+    const extraTerms: string[] = []
+    if (texto.trim()) extraTerms.push(texto.trim())
+
+    // ms-usuarios (GuardarBusquedaRequestDTO) solo acepta TipoPrenda TOP/BOTTOM/FOOTWEAR
+    if (filtroTipo !== 'Todos') {
+      const tNorm = filtroTipo.toLowerCase()
+      if (['saco', 'chaqueta', 'buzo', 'suéter', 'sueter', 'camisa', 'camiseta', 'top', 'superior'].includes(tNorm)) {
+        filtros.garmentType = 'TOP'
+      } else if (['pantalón', 'pantalon', 'falda', 'bottom', 'inferior'].includes(tNorm)) {
+        filtros.garmentType = 'BOTTOM'
+      } else if (['calzado', 'footwear', 'shoes', 'tenis', 'zapatos'].includes(tNorm)) {
+        filtros.garmentType = 'FOOTWEAR'
+      } else {
+        extraTerms.push(filtroTipo)
+      }
+    }
     if (filtroColor !== 'Todos') filtros.color = filtroColor
-    if (filtroTalla !== 'Todas') filtros.talla = filtroTalla
-    if (filtroMarca !== 'Todas') filtros.marca = filtroMarca
-    if (filtroEstilo !== 'Todos') filtros.estilo = filtroEstilo
-    if (precioMinCustom != null) filtros.precioMin = precioMinCustom
-    if (precioMaxCustom != null) filtros.precioMax = precioMaxCustom
+    // ms-usuarios (Talla enum) solo acepta XS, S, M, L, XL, XXL
+    if (filtroTalla !== 'Todas') {
+      const tallaUpper = filtroTalla.trim().toUpperCase()
+      if (['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(tallaUpper)) {
+        filtros.size = tallaUpper
+      } else {
+        extraTerms.push(`Talla ${filtroTalla}`)
+      }
+    }
+    if (filtroMarca !== 'Todas') filtros.brand = filtroMarca
+    if (extraTerms.length > 0) filtros.query = extraTerms.join(' ')
+    if (precioMinCustom != null) filtros.minPrice = precioMinCustom
+    if (precioMaxCustom != null) filtros.maxPrice = precioMaxCustom
+
     try {
       const b =
         busqueda?.nombre === nombre
           ? busqueda
           : await alertService.saveSearch(nombre, `${filtrosActivosCount} filtros · orden ${orden}`, filtros)
       setBusqueda(b)
-      await activarAlerta(b)
+      try {
+        await activarAlerta(b)
+      } catch (alertErr) {
+        if (alertErr instanceof ApiError && alertErr.status === 422) {
+          setAvisoBusqueda({
+            tono: 'alerta',
+            titulo: `Guardamos «${b.nombre}»`,
+            texto: 'Tu búsqueda quedó guardada, pero la alerta automática aún se está sincronizando. Puedes activarla en unos segundos.',
+            accion: 'reintentar',
+          })
+          return
+        }
+        setAvisoBusqueda(avisoDeError(alertErr))
+      }
     } catch (e) {
       setAvisoBusqueda(avisoDeError(e))
     }

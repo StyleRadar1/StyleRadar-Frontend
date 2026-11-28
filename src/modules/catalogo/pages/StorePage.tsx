@@ -385,7 +385,56 @@ export default function StorePage() {
       </section>
 
       {/* ────────────────────────────────────────────────────────── */}
-      {/* 3. EXPLORA POR CATEGORÍA (Tarjetas en arco romano)        */}
+      {/* 3. NOVEDADES SEMANALES (SR-RF-20 · máx. 3 prendas 7 días) */}
+      {/* ────────────────────────────────────────────────────────── */}
+      {store.novedades && store.novedades.length > 0 && (
+        <section className="sr-store-items-section" aria-label="Novedades de la semana">
+          <div className="sr-store-items-header">
+            <div>
+              <span className="sr-store-section-kicker">ÚLTIMOS 7 DÍAS</span>
+              <h2 className="sr-store-section-title">Novedades de la semana</h2>
+              <p className="sr-store-section-sub">
+                Hasta 3 ingresos recientes en {store.nombre}.
+              </p>
+            </div>
+          </div>
+          <div className="sr-store-items-grid">
+            {store.novedades.slice(0, 3).map((nov) => (
+              <article key={`nov-${nov.id}`} className="sr-store-item-card">
+                <div className="sr-store-item-card__media">
+                  <Link to={`/catalogo/${nov.id}`} className="sr-store-item-card__img-link">
+                    <img
+                      src={nov.imagen}
+                      alt={nov.nombre}
+                      className="sr-store-item-card__img"
+                      loading="lazy"
+                    />
+                  </Link>
+                  <div className="sr-store-item-card__badges">
+                    <span className="sr-store-item-card__badge is-new">NOVEDAD</span>
+                  </div>
+                </div>
+                <div className="sr-store-item-card__body">
+                  <div className="sr-store-item-card__meta">
+                    <span>{nov.tipo}</span>
+                    <span>·</span>
+                    <span>{nov.estilo}</span>
+                  </div>
+                  <h3 className="sr-store-item-card__title">
+                    <Link to={`/catalogo/${nov.id}`}>{nov.nombre}</Link>
+                  </h3>
+                  <div className="sr-store-item-card__footer">
+                    <strong className="sr-store-item-card__price">{formatCOP(nov.precio)}</strong>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ────────────────────────────────────────────────────────── */}
+      {/* 3B. EXPLORA POR CATEGORÍA (Pegado al catálogo que filtra) */}
       {/* ────────────────────────────────────────────────────────── */}
       {store.categorias.length > 0 && (
         <section className="sr-store-cats-section" aria-label="Categorías de la tienda">
@@ -451,55 +500,6 @@ export default function StorePage() {
                 </button>
               )
             })}
-          </div>
-        </section>
-      )}
-
-      {/* ────────────────────────────────────────────────────────── */}
-      {/* 3B. NOVEDADES SEMANALES (SR-RF-20 · máx. 3 prendas 7 días) */}
-      {/* ────────────────────────────────────────────────────────── */}
-      {store.novedades && store.novedades.length > 0 && (
-        <section className="sr-store-items-section" aria-label="Novedades de la semana">
-          <div className="sr-store-items-header">
-            <div>
-              <span className="sr-store-section-kicker">ÚLTIMOS 7 DÍAS</span>
-              <h2 className="sr-store-section-title">Novedades de la semana</h2>
-              <p className="sr-store-section-sub">
-                Hasta 3 ingresos recientes en {store.nombre}.
-              </p>
-            </div>
-          </div>
-          <div className="sr-store-items-grid">
-            {store.novedades.slice(0, 3).map((nov) => (
-              <article key={`nov-${nov.id}`} className="sr-store-item-card">
-                <div className="sr-store-item-card__media">
-                  <Link to={`/catalogo/${nov.id}`} className="sr-store-item-card__img-link">
-                    <img
-                      src={nov.imagen}
-                      alt={nov.nombre}
-                      className="sr-store-item-card__img"
-                      loading="lazy"
-                    />
-                  </Link>
-                  <div className="sr-store-item-card__badges">
-                    <span className="sr-store-item-card__badge is-new">NOVEDAD</span>
-                  </div>
-                </div>
-                <div className="sr-store-item-card__body">
-                  <div className="sr-store-item-card__meta">
-                    <span>{nov.tipo}</span>
-                    <span>·</span>
-                    <span>{nov.estilo}</span>
-                  </div>
-                  <h3 className="sr-store-item-card__title">
-                    <Link to={`/catalogo/${nov.id}`}>{nov.nombre}</Link>
-                  </h3>
-                  <div className="sr-store-item-card__footer">
-                    <strong className="sr-store-item-card__price">{formatCOP(nov.precio)}</strong>
-                  </div>
-                </div>
-              </article>
-            ))}
           </div>
         </section>
       )}
@@ -822,7 +822,7 @@ export default function StorePage() {
         <div className="sr-store-info-card">
           <div className="sr-store-info-header">
             <span className="sr-store-section-kicker">INFORMACIÓN Y CONTACTO</span>
-            <h2 className="sr-store-section-title">Encuéntranos en {store.barrio}</h2>
+            <h2 className="sr-store-section-title">Visítanos</h2>
             <p className="sr-store-section-sub">
               Visítanos para probarte las prendas en tienda física o comunícate directamente con nuestro equipo.
             </p>
@@ -845,7 +845,7 @@ export default function StorePage() {
               </span>
               <div>
                 <strong>Horario de atención</strong>
-                <p>{store.horario}</p>
+                <p>{store.horario || 'Por confirmar'}</p>
               </div>
             </div>
 
@@ -855,7 +855,7 @@ export default function StorePage() {
               </span>
               <div>
                 <strong>Teléfono</strong>
-                <p>{store.telefono}</p>
+                <p>{store.telefono || 'Por confirmar'}</p>
               </div>
             </div>
 
@@ -865,7 +865,7 @@ export default function StorePage() {
               </span>
               <div>
                 <strong>Correo</strong>
-                <p>{store.correo}</p>
+                <p>{store.correo || 'Por confirmar'}</p>
               </div>
             </div>
           </div>
@@ -879,7 +879,6 @@ export default function StorePage() {
               contacto={tiendaContacto(store.nombre)}
               nit={store.nit}
               asunto={`Consulta sobre ${store.nombre}`}
-              className="sr-store-btn sr-store-btn--outline"
             />
           </div>
         </div>

@@ -73,7 +73,7 @@ export type CatalogSettingsRequestDto = Pick<CatalogSettingsDto, 'lowStockThresh
 /** Umbral de «Últimas unidades»: de 0 a 50, por defecto 3 (RN-03). */
 export const LOW_STOCK_MIN = 0
 export const LOW_STOCK_MAX = 50
-export const LOW_STOCK_DEFAULT = 3
+export const LOW_STOCK_DEFAULT = 2
 /** Periodo de «Nueva llegada»: de 1 a 60 días, por defecto 7 (RN-03). La pantalla ofrece 7, 14 o 30. */
 export const NEW_ARRIVAL_MIN = 1
 export const NEW_ARRIVAL_MAX = 60
