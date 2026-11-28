@@ -7,7 +7,7 @@ import type { ModoCvd } from './cvdSim'
  *   - «-opía» (falta el color): la barra va toda rayada.
  *   - «-omalía» (color débil): la barra conserva su color, con rayas encima.
  *   - Acromatopsia: las tres barras en grises, cada una con su claridad.
- *   - Solo la paleta: tres barras con los colores seguros Okabe-Ito, sin rayas.
+ *   - Sin filtro: las tres barras en su color, sin rayas (se distinguen los tres).
  */
 type Canal = 'r' | 'g' | 'b'
 const AFECTA: Partial<Record<ModoCvd, { canal: Canal; leve: boolean }>> = {
@@ -19,7 +19,6 @@ const AFECTA: Partial<Record<ModoCvd, { canal: Canal; leve: boolean }>> = {
   tritanopia: { canal: 'b', leve: false },
 }
 const COLOR: Record<Canal, string> = { r: '#d62839', g: '#1f9d55', b: '#2563eb' }
-const PALETA = ['#0072b2', '#e69f00', '#f0e442']
 const GRISES = ['#5b5b5b', '#b4b4b4', '#2e2e2e']
 const BARRAS: { canal: Canal; x: number }[] = [{ canal: 'r', x: 2 }, { canal: 'g', x: 13 }, { canal: 'b', x: 24 }]
 
@@ -46,7 +45,7 @@ export function IconoModoCvd({ modo, className }: { modo: ModoCvd; className?: s
       </defs>
 
       {BARRAS.map(({ canal, x }, i) => {
-        const base = modo === 'normal' ? PALETA[i] : modo === 'acromatopsia' ? GRISES[i] : COLOR[canal]
+        const base = modo === 'acromatopsia' ? GRISES[i] : COLOR[canal]
         const afectada = afecta?.canal === canal
         return (
           <g key={canal}>

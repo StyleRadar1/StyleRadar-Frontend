@@ -1,22 +1,33 @@
 import { useEffect, useId, useRef, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { CVD_INFO, MODOS_CVD, type ModoCvd } from './cvdSim'
+import { CVD_INFO, MODOS_CVD } from './cvdSim'
 import { useCvdSim } from './useCvdSim'
 import { Opcion, trazo } from './AppearancePanel'
 import { IconoModoCvd } from './IconoModoCvd'
 import './AppearancePanel.css'
 
-/** «Visión normal» aquí significa «no aplicar ningún filtro»: la paleta de daltonismo sigue activa. */
-const etiqueta = (m: ModoCvd) => (m === 'normal' ? 'Solo la paleta' : CVD_INFO[m].etiqueta)
-const detalle = (m: ModoCvd) => (m === 'normal' ? 'Sin filtro de modo' : CVD_INFO[m].detalle)
+/**
+ * Colores de muestra. Son colores fijos y se pintan con el filtro de la página, así que cambian EN VIVO al elegir
+ * un modo: es la forma de que la persona vea qué le pasa a los colores sin tener que adivinarlo. Van en pares que
+ * se confunden entre sí (rojo y verde; azul y violeta) y con su nombre escrito.
+ */
+const MUESTRA = [
+  { nombre: 'Rojo', color: '#d62839' },
+  { nombre: 'Verde', color: '#1f9d55' },
+  { nombre: 'Azul', color: '#2563eb' },
+  { nombre: 'Violeta', color: '#48119a' },
+  { nombre: 'Naranja', color: '#e07b00' },
+  { nombre: 'Amarillo', color: '#f2c230' },
+] as const
 
 interface Props {
   onCerrar: () => void
 }
 
 /**
- * Ventana emergente de los modos de daltonismo. Aparece al elegir «Daltonismo» en el tema. Cada modo aplica a
- * toda la página el filtro de ese tipo (ver cvdSim.ts); «Solo la paleta» los quita y deja la paleta azul y naranja.
+ * Ventana emergente de los modos de daltonismo. Aparece al activar el daltonismo. Arriba hay una muestra de colores
+ * y debajo los modos: al elegir uno, el filtro de ese tipo (ver cvdSim.ts) se aplica a la muestra y a toda la página.
+ * «Sin filtro» deja los colores normales (la paleta azul y naranja del daltonismo sigue activa).
  */
 export function DaltonismoDialog({ onCerrar }: Props) {
   const { modo, setModo } = useCvdSim()
@@ -65,23 +76,32 @@ export function DaltonismoDialog({ onCerrar }: Props) {
           </button>
         </div>
         <p id={idDescripcion} className="sr-apar-sub">
-          La paleta azul y naranja ya está activa. Elige un modo para ver toda la página como la vería una persona con ese tipo de daltonismo.
+          Observa estos colores: cambian cuando eliges un modo, igual que el resto de la página.
         </p>
+
+        <ul className="sr-dalt-muestra" aria-label="Colores de muestra">
+          {MUESTRA.map(({ nombre, color }) => (
+            <li key={nombre}>
+              <span className="sr-dalt-color" style={{ background: color }} aria-hidden="true" />
+              <span className="sr-dalt-color-nombre">{nombre}</span>
+            </li>
+          ))}
+        </ul>
 
         <div role="radiogroup" aria-label="Modos de daltonismo" className="sr-apar-opciones">
           {MODOS_CVD.map((m) => (
-            <Opcion key={m} activa={modo === m} onClick={() => setModo(m)} aria-label={etiqueta(m)}>
+            <Opcion key={m} activa={modo === m} onClick={() => setModo(m)} aria-label={CVD_INFO[m].etiqueta}>
               <IconoModoCvd modo={m} />
               <span>
-                <span className="sr-apar-nombre">{etiqueta(m)}</span>
-                <span className="sr-apar-detalle">{detalle(m)}</span>
+                <span className="sr-apar-nombre">{CVD_INFO[m].etiqueta}</span>
+                <span className="sr-apar-detalle">{CVD_INFO[m].detalle}</span>
               </span>
             </Opcion>
           ))}
         </div>
 
         <p className="sr-dalt-leyenda">
-          Cada símbolo muestra tres colores (rojo, verde y azul). La barra rayada es el color que ese modo no distingue; si solo está rayada por encima, lo distingue con dificultad.
+          Cada símbolo muestra rojo, verde y azul. La barra rayada es el color que ese modo no distingue; si solo está rayada por encima, lo distingue con dificultad.
         </p>
 
         <div className="sr-dalt-pie">

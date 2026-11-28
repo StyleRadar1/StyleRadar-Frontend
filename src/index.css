@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "./modules/core/theme/tokens.css";
-@custom-variant dark (&:where(html[data-theme="dark"] *, html[data-theme="oscuro"] *, html[data-tema="oscuro"] *, html[data-theme="colorblind"] *, html[data-theme="daltonico"] *, html[data-tema="daltonico"] *, html[data-cvd="on"] *));
+@custom-variant dark (&:where(html[data-theme="dark"] *, html[data-theme="oscuro"] *, html[data-tema="oscuro"] *, html[data-theme="colorblind"] *, html[data-theme="daltonico"] *, html[data-tema="daltonico"] *));
 
 /* =====================================================================
    Paleta y tipografía del manual de identidad de StyleRadar.
@@ -264,11 +264,37 @@ html[data-tema="claro"] {
 }
 
 /* =====================================================================
+   DALTONISMO SOBRE EL MODO CLARO. El daltonismo es un filtro que se suma al tema (Claro u Oscuro), no un tercer
+   tema. Sobre claro solo cambian los colores de marca y de estado a la paleta Okabe-Ito, en tonos oscuros para
+   que se lean sobre blanco (azul #0072b2 5,4:1 · bermellón #b34700 8,1:1 · ocre #7a6200 5,9:1 sobre #ffffff).
+   Las superficies y el texto se quedan como en el modo claro. Sobre oscuro se usa el bloque de abajo.
+   ===================================================================== */
+html[data-cvd="on"][data-tema="claro"],
+html[data-cvd="on"][data-theme="light"] {
+  --sr-accent: #0072b2;
+  --sr-accent-text: #0072b2;
+  --sr-focus: #0072b2;
+
+  --sr-ok: #0072b2;
+  --sr-ok-bg: rgba(0, 114, 178, 0.12);
+  --sr-bad: #b34700;
+  --sr-bad-bg: rgba(179, 71, 0, 0.12);
+  --sr-warn: #7a6200;
+  --sr-warn-bg: rgba(122, 98, 0, 0.14);
+  --sr-info: #005f8a;
+  --sr-info-bg: rgba(0, 95, 138, 0.12);
+
+  --sr-rol-usuario: #a1487a;
+  --sr-rol-tienda: #0072b2;
+  --sr-rol-fundacion: #b34700;
+  --sr-rol-admin: #7a6200;
+}
+
+/* =====================================================================
    TEMA DALTÓNICO · Basado en paleta Okabe-Ito accesible
    Nunca usa verde y rojo solos. Estados en azul, naranja y amarillo.
    ===================================================================== */
 html[data-theme="colorblind"],
-html[data-cvd="on"],
 html[data-theme="daltonico"],
 html[data-tema="daltonico"] {
   --sr-bg: #1d1d1d;

@@ -12,11 +12,13 @@ const pintar = () =>
   )
 const boton = () => screen.getByRole('button', { name: /tema de la aplicación/i })
 const abrir = () => fireEvent.click(boton())
+const interruptor = () => screen.getByRole('switch', { name: /daltonismo/i })
+const attr = (a: string) => document.documentElement.getAttribute(a)
 
 describe('selector de tema', () => {
   beforeEach(() => {
     localStorage.clear()
-    for (const a of ['data-theme', 'data-tema', 'data-cvd', 'data-cvd-sim']) document.documentElement.removeAttribute(a)
+    for (const a of ['data-theme', 'data-tema', 'data-cvd', 'data-cvd-sim', 'data-contrast']) document.documentElement.removeAttribute(a)
     window.history.replaceState({}, '', '/')
   })
 
@@ -27,52 +29,96 @@ describe('selector de tema', () => {
     expect(boton()).toHaveAttribute('aria-haspopup', 'dialog')
   })
 
-  it('el panel es solo de tema: Claro, Oscuro y Daltonismo, sin interruptor ni simulador', () => {
+  it('el panel tiene dos temas (Claro y Oscuro) y, aparte, el interruptor de daltonismo', () => {
     pintar()
     abrir()
     const panel = screen.getByRole('dialog', { name: 'Tema' })
-    const grupo = within(panel).getByRole('radiogroup', { name: 'Tema' })
-    expect(grupo.querySelectorAll('[role="radio"]')).toHaveLength(3)
-    for (const nombre of ['Claro', 'Oscuro', 'Daltonismo']) expect(within(panel).getByRole('radio', { name: nombre })).toBeInTheDocument()
-    expect(within(panel).queryByRole('switch')).toBeNull()
-    expect(panel.textContent).not.toMatch(/simulador|accesibilidad|revisar el diseño/i)
+    const temas = within(panel).getByRole('radiogroup', { name: 'Tema' })
+    expect(temas.querySelectorAll('[role="radio"]')).toHaveLength(2)
+    expect(within(panel).getByRole('radio', { name: 'Claro' })).toBeInTheDocument()
+    expect(within(panel).getByRole('radio', { name: 'Oscuro' })).toBeInTheDocument()
+    // daltonismo ya no es un tema: es un interruptor aparte
+    expect(within(panel).queryByRole('radio', { name: 'Daltonismo' })).toBeNull()
+    expect(within(panel).getByRole('switch', { name: /daltonismo/i })).toHaveAttribute('aria-checked', 'false')
+    expect(within(panel).getByText('Desactivado')).toBeInTheDocument()
   })
 
   it('permite cambiar a modo claro y a oscuro', () => {
     pintar()
     abrir()
     fireEvent.click(screen.getByRole('radio', { name: 'Claro' }))
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
-    expect(document.documentElement.getAttribute('data-tema')).toBe('claro')
+    expect(attr('data-theme')).toBe('light')
+    expect(attr('data-tema')).toBe('claro')
     expect(screen.getByRole('radio', { name: 'Claro' })).toHaveAttribute('aria-checked', 'true')
 
     fireEvent.click(screen.getByRole('radio', { name: 'Oscuro' }))
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+    expect(attr('data-theme')).toBe('dark')
     expect(screen.getByRole('radio', { name: 'Oscuro' })).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('elegir Daltonismo activa la paleta segura y abre la ventana de modos', () => {
+  it('el daltonismo se suma al modo CLARO: la página sigue clara y solo cambian los colores', () => {
     pintar()
     abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Claro' }))
+    fireEvent.click(interruptor())
 
-    expect(document.documentElement.getAttribute('data-cvd')).toBe('on')
-    expect(document.documentElement.getAttribute('data-theme')).toBe('colorblind')
+    expect(attr('data-cvd')).toBe('on')
+    // sigue siendo el tema claro: no pasa a la paleta oscura
+    expect(attr('data-theme')).toBe('light')
+    expect(attr('data-tema')).toBe('claro')
+    expect(document.documentElement.style.colorScheme).toBe('light')
+    expect(boton()).toHaveAccessibleName(/tema de la aplicación: claro, con filtro de daltonismo/i)
+  })
+
+  it('el daltonismo sobre el modo OSCURO usa la paleta oscura de daltonismo', () => {
+    pintar()
+    abrir()
+    fireEvent.click(screen.getByRole('radio', { name: 'Oscuro' }))
+    fireEvent.click(interruptor())
+
+    expect(attr('data-cvd')).toBe('on')
+    expect(attr('data-theme')).toBe('colorblind')
     // el atributo legado no puede quedarse en «claro»: mezclaría estilos del modo claro con la paleta oscura
-    expect(document.documentElement.getAttribute('data-tema')).toBe('daltonico')
+    expect(attr('data-tema')).toBe('daltonico')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+  })
+
+  it('al activar el daltonismo se cierra el panel y se abre la ventana de modos', () => {
+    pintar()
+    abrir()
+    fireEvent.click(interruptor())
 
     expect(screen.queryByRole('dialog', { name: 'Tema' })).toBeNull()
     const ventana = screen.getByRole('dialog', { name: /modos de daltonismo/i })
     expect(ventana).toHaveAttribute('aria-modal', 'true')
     expect(within(ventana).getAllByRole('radio')).toHaveLength(MODOS_CVD.length)
-    expect(within(ventana).getByRole('radio', { name: 'Solo la paleta' })).toHaveAttribute('aria-checked', 'true')
-    expect(boton()).toHaveAccessibleName(/tema de la aplicación: daltonismo/i)
+    expect(within(ventana).getByRole('radio', { name: 'Sin filtro' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('cambiar de tema con el daltonismo activado lo conserva', () => {
+    pintar()
+    abrir()
+    fireEvent.click(screen.getByRole('radio', { name: 'Claro' }))
+    fireEvent.click(interruptor())
+    fireEvent.click(screen.getByRole('button', { name: 'Listo' }))
+
+    abrir()
+    expect(interruptor()).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByText('Activado')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('radio', { name: 'Oscuro' }))
+    expect(interruptor()).toHaveAttribute('aria-checked', 'true')
+    expect(attr('data-cvd')).toBe('on')
+    expect(attr('data-theme')).toBe('colorblind')
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Claro' }))
+    expect(attr('data-cvd')).toBe('on')
+    expect(attr('data-theme')).toBe('light')
   })
 
   it('cada modo de la ventana lleva su símbolo, oculto a lectores de pantalla porque el nombre ya lo dice', () => {
     pintar()
     abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    fireEvent.click(interruptor())
     const ventana = screen.getByRole('dialog', { name: /modos de daltonismo/i })
     for (const modo of MODOS_CVD) {
       const icono = ventana.querySelector(`svg[data-modo="${modo}"]`)
@@ -82,82 +128,102 @@ describe('selector de tema', () => {
     expect(within(ventana).getByText(/barra rayada es el color que ese modo no distingue/i)).toBeInTheDocument()
   })
 
+  it('la ventana trae una muestra de colores con su nombre, para ver cómo cambian con cada modo', () => {
+    pintar()
+    abrir()
+    fireEvent.click(interruptor())
+    const ventana = screen.getByRole('dialog', { name: /modos de daltonismo/i })
+    const muestra = within(ventana).getByRole('list', { name: /colores de muestra/i })
+    const nombres = within(muestra).getAllByRole('listitem').map((li) => li.textContent)
+    expect(nombres).toEqual(['Rojo', 'Verde', 'Azul', 'Violeta', 'Naranja', 'Amarillo'])
+    expect(within(ventana).getByText(/Observa estos colores/)).toBeInTheDocument()
+    // ya no existe la opción «Solo la paleta», que no le mostraba nada a la persona
+    expect(within(ventana).queryByText(/Solo la paleta/)).toBeNull()
+    expect(within(ventana).getByRole('radio', { name: 'Sin filtro' })).toBeInTheDocument()
+  })
+
   it('el símbolo marca el color afectado con rayas, también en la versión leve', () => {
     pintar()
     abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    fireEvent.click(interruptor())
     const ventana = screen.getByRole('dialog', { name: /modos de daltonismo/i })
-    const rayadas = (modo: string) =>
-      Array.from(ventana.querySelectorAll(`svg[data-modo="${modo}"] rect[fill^="url(#rayas"]`)).length
+    const rayadas = (modo: string) => Array.from(ventana.querySelectorAll(`svg[data-modo="${modo}"] rect[fill^="url(#rayas"]`)).length
     // -opía: una barra completa rayada; -omalía: la barra conserva su color y lleva rayas encima; paleta y grises: ninguna
     for (const m of ['protanopia', 'deuteranopia', 'tritanopia', 'protanomalia', 'deuteranomalia', 'tritanomalia']) expect(rayadas(m), m).toBe(1)
     expect(rayadas('normal')).toBe(0)
     expect(rayadas('acromatopsia')).toBe(0)
-    // la barra rayada de -opía no tiene color propio; la de -omalía sí
-    const colorBarra = (modo: string, i: number) =>
-      ventana.querySelectorAll(`svg[data-modo="${modo}"] g`)[i].querySelector('rect')!.getAttribute('fill')
+    const colorBarra = (modo: string, i: number) => ventana.querySelectorAll(`svg[data-modo="${modo}"] g`)[i].querySelector('rect')!.getAttribute('fill')
     expect(colorBarra('protanopia', 0)).toMatch(/^url\(#rayas/)
     expect(colorBarra('protanomalia', 0)).toBe('#d62839')
     expect(colorBarra('deuteranopia', 1)).toMatch(/^url\(#rayas/)
     expect(colorBarra('tritanopia', 2)).toMatch(/^url\(#rayas/)
   })
 
-  it('en la ventana, cada modo aplica su filtro y «Solo la paleta» lo quita', () => {
+  it('en la ventana, cada modo aplica su filtro y «Sin filtro» lo quita', () => {
     pintar()
     abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    fireEvent.click(interruptor())
 
     fireEvent.click(screen.getByRole('radio', { name: 'Protanopia' }))
-    expect(document.documentElement.getAttribute('data-cvd-sim')).toBe('protanopia')
+    expect(attr('data-cvd-sim')).toBe('protanopia')
     expect(screen.getByRole('radio', { name: 'Protanopia' })).toHaveAttribute('aria-checked', 'true')
-    expect(boton()).toHaveAccessibleName(/modo de daltonismo: protanopia/i)
+    expect(boton()).toHaveAccessibleName(/filtro de daltonismo: protanopia/i)
 
     fireEvent.click(screen.getByRole('radio', { name: 'Tritanopia' }))
-    expect(document.documentElement.getAttribute('data-cvd-sim')).toBe('tritanopia')
+    expect(attr('data-cvd-sim')).toBe('tritanopia')
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Solo la paleta' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Sin filtro' }))
     expect(document.documentElement.hasAttribute('data-cvd-sim')).toBe(false)
   })
 
   it('«Listo» y Escape cierran la ventana y devuelven el foco al botón', () => {
     pintar()
     abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    fireEvent.click(interruptor())
     fireEvent.click(screen.getByRole('button', { name: 'Listo' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(document.activeElement).toBe(boton())
 
     abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    fireEvent.click(screen.getByRole('button', { name: /cambiar modo/i }))
     expect(screen.getByRole('dialog', { name: /modos de daltonismo/i })).toBeInTheDocument()
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('con Daltonismo ya elegido, volver a pulsarlo reabre la ventana para cambiar de modo', () => {
+  it('con el daltonismo activo, el panel muestra el modo actual y permite cambiarlo', () => {
     pintar()
     abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Listo' }))
-
-    abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
-    expect(screen.getByRole('dialog', { name: /modos de daltonismo/i })).toBeInTheDocument()
-  })
-
-  it('volver a Claro u Oscuro quita el modo de daltonismo y la paleta', () => {
-    pintar()
-    abrir()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    expect(screen.queryByRole('button', { name: /cambiar modo/i })).toBeNull()
+    fireEvent.click(interruptor())
     fireEvent.click(screen.getByRole('radio', { name: 'Deuteranopia' }))
     fireEvent.click(screen.getByRole('button', { name: 'Listo' }))
-    expect(document.documentElement.getAttribute('data-cvd-sim')).toBe('deuteranopia')
 
     abrir()
+    const cambiar = screen.getByRole('button', { name: /cambiar modo/i })
+    expect(cambiar).toHaveTextContent('Deuteranopia')
+    fireEvent.click(cambiar)
+    expect(screen.getByRole('dialog', { name: /modos de daltonismo/i })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Deuteranopia' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('apagar el interruptor quita el daltonismo y el filtro del modo', () => {
+    pintar()
+    abrir()
     fireEvent.click(screen.getByRole('radio', { name: 'Claro' }))
+    fireEvent.click(interruptor())
+    fireEvent.click(screen.getByRole('radio', { name: 'Deuteranopia' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Listo' }))
+    expect(attr('data-cvd-sim')).toBe('deuteranopia')
+
+    abrir()
+    fireEvent.click(interruptor())
+    expect(interruptor()).toHaveAttribute('aria-checked', 'false')
     expect(document.documentElement.hasAttribute('data-cvd-sim')).toBe(false)
-    expect(document.documentElement.getAttribute('data-cvd')).toBe('off')
-    expect(document.documentElement.getAttribute('data-tema')).toBe('claro')
+    expect(attr('data-cvd')).toBe('off')
+    expect(attr('data-tema')).toBe('claro')
+    // al apagarlo no se abre ninguna ventana
+    expect(screen.queryByRole('dialog', { name: /modos de daltonismo/i })).toBeNull()
   })
 
   it('cierra el panel con Escape, con el botón de cerrar y al pulsar fuera', () => {
@@ -188,13 +254,14 @@ describe('selector de tema', () => {
     pintar()
     abrir()
     expect(screen.getByRole('dialog').innerHTML).not.toMatch(/text-\[10|text-xs|text-\[11/)
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    fireEvent.click(interruptor())
     expect(screen.getByRole('dialog').innerHTML).not.toMatch(/text-\[10|text-xs|text-\[11/)
   })
 
-  it('si ya había un modo guardado, el botón lo dice', () => {
+  it('si ya había daltonismo y un modo guardados, el botón lo dice', () => {
+    localStorage.setItem('sr:cvd', 'true')
     aplicarCvdSim('acromatopsia')
     pintar()
-    expect(boton()).toHaveAccessibleName(/modo de daltonismo: acromatopsia/i)
+    expect(boton()).toHaveAccessibleName(/con filtro de daltonismo: acromatopsia/i)
   })
 })

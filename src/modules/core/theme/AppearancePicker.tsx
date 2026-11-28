@@ -29,7 +29,7 @@ const trazo = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLine
  * desde abajo. Al elegir Daltonismo se cierra el panel y se abre la ventana emergente de modos de daltonismo.
  */
 export function AppearancePicker({ className = '', align = 'right', tone = 'onDark' }: AppearancePickerProps) {
-  const { theme } = useTheme()
+  const { mode, resolvedTheme, colorblind } = useTheme()
   const { modo: modoCvd } = useCvdSim()
   const [abierto, setAbierto] = useState(false)
   const [dialogo, setDialogo] = useState(false)
@@ -72,9 +72,12 @@ export function AppearancePicker({ className = '', align = 'right', tone = 'onDa
     }
   }, [abierto, colocar, cerrar])
 
-  const nombreTema = theme === 'daltonico' ? 'Daltonismo' : theme === 'claro' ? 'Claro' : 'Oscuro'
+  const claro = mode === 'light' || (mode === 'system' && resolvedTheme === 'light')
+  // un modo puede venir del enlace (?cvd=) sin que el interruptor esté activado: igual hay que avisarlo
+  const filtroActivo = colorblind || modoCvd !== 'normal'
   const etiqueta =
-    `Tema de la aplicación: ${nombreTema}` + (modoCvd !== 'normal' ? `, modo de daltonismo: ${CVD_INFO[modoCvd].etiqueta}` : '')
+    `Tema de la aplicación: ${claro ? 'Claro' : 'Oscuro'}` +
+    (filtroActivo ? `, con filtro de daltonismo${modoCvd !== 'normal' ? `: ${CVD_INFO[modoCvd].etiqueta}` : ''}` : '')
 
   const abrirModos = () => {
     setAbierto(false)
@@ -98,12 +101,7 @@ export function AppearancePicker({ className = '', align = 'right', tone = 'onDa
         className={`${BOTON_BASE} ${BOTON_TONO[tone]}`}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" className="shrink-0" {...trazo}>
-          {theme === 'daltonico' ? (
-            <>
-              <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
-              <circle cx="12" cy="12" r="3" />
-            </>
-          ) : theme === 'claro' ? (
+          {claro ? (
             <>
               <circle cx="12" cy="12" r="4" />
               <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
@@ -114,10 +112,10 @@ export function AppearancePicker({ className = '', align = 'right', tone = 'onDa
         </svg>
         <span className="hidden sm:inline-block">Tema</span>
 
-        {modoCvd !== 'normal' && (
+        {filtroActivo && (
           <span
             aria-hidden="true"
-            title="Modo de daltonismo activo"
+            title="Filtro de daltonismo activo"
             className="h-2.5 w-2.5 rounded-full bg-[#0072b2] ring-2 ring-[#e69f00]"
           />
         )}

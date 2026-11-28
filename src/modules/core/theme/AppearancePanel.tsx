@@ -2,6 +2,7 @@ import { type ReactNode } from 'react'
 import { useTheme } from './ThemeContext'
 import { executeThemeTransition } from './themeTransition'
 import { useCvdSim } from './useCvdSim'
+import { CVD_INFO } from './cvdSim'
 import './AppearancePanel.css'
 
 export const trazo = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
@@ -30,9 +31,8 @@ export const Marca = () => (
 )
 
 const TEMAS = [
-  { id: 'claro', nombre: 'Claro', detalle: 'Fondo claro', Icono: IconoSol },
-  { id: 'oscuro', nombre: 'Oscuro', detalle: 'Fondo oscuro', Icono: IconoLuna },
-  { id: 'daltonico', nombre: 'Daltonismo', detalle: 'Paleta azul y naranja, y modos para cada tipo', Icono: IconoOjo },
+  { id: 'light', nombre: 'Claro', Icono: IconoSol },
+  { id: 'dark', nombre: 'Oscuro', Icono: IconoLuna },
 ] as const
 
 /** Botón de opción tipo radio, grande y con el estado a la vista. */
@@ -56,27 +56,34 @@ interface Props {
   onCerrar: () => void
   /** Elemento desde el que nace la animación del cambio de tema */
   origen: HTMLElement | null
-  /** Se llama al elegir «Daltonismo»: quien lo usa abre la ventana de modos */
+  /** Abre la ventana de modos de daltonismo (al activar el daltonismo o al pulsar «Cambiar modo») */
   onDaltonismo: () => void
 }
 
 /**
- * Panel del tema de la aplicación: solo Claro, Oscuro o Daltonismo (excluyentes). Daltonismo abre una ventana
- * emergente con los modos por tipo de daltonismo; Claro y Oscuro quitan cualquier modo de daltonismo activo.
+ * Selector de tema. Dos decisiones independientes:
+ *  - Tema: Claro u Oscuro.
+ *  - Daltonismo: un interruptor que se SUMA al tema (no es un tercer tema), así se puede usar con Claro o con Oscuro.
+ *    Al activarlo se abre la ventana con los modos por tipo de daltonismo.
  */
 export function AppearancePanel({ idTitulo, onCerrar, origen, onDaltonismo }: Props) {
-  const { theme, setTheme } = useTheme()
-  const { setModo: setModoCvd } = useCvdSim()
+  const { mode, setMode, resolvedTheme, colorblind, setColorblind } = useTheme()
+  const { modo: modoCvd, setModo: setModoCvd } = useCvdSim()
 
-  const elegir = (id: (typeof TEMAS)[number]['id']) => {
-    if (id === 'daltonico') {
-      if (theme !== 'daltonico') executeThemeTransition(() => setTheme('daltonico'), origen)
-      onDaltonismo()
+  const claro = mode === 'light' || (mode === 'system' && resolvedTheme === 'light')
+  const elegirTema = (id: (typeof TEMAS)[number]['id']) => executeThemeTransition(() => setMode(id), origen)
+
+  const alternarDaltonismo = () => {
+    if (colorblind) {
+      setModoCvd('normal')
+      executeThemeTransition(() => setColorblind(false), origen)
       return
     }
-    setModoCvd('normal')
-    executeThemeTransition(() => setTheme(id), origen)
+    executeThemeTransition(() => setColorblind(true), origen)
+    onDaltonismo()
   }
+
+  const nombreModo = CVD_INFO[modoCvd].etiqueta
 
   return (
     <>
@@ -90,17 +97,47 @@ export function AppearancePanel({ idTitulo, onCerrar, origen, onDaltonismo }: Pr
       </div>
       <p className="sr-apar-sub">Elige cómo se ve la aplicación. Se guarda en este dispositivo.</p>
 
-      <div role="radiogroup" aria-label="Tema" className="sr-apar-opciones sr-apar-opciones--lista">
-        {TEMAS.map(({ id, nombre, detalle, Icono }) => (
-          <Opcion key={id} activa={theme === id} onClick={() => elegir(id)} aria-label={nombre}>
+      <div role="radiogroup" aria-label="Tema" className="sr-apar-opciones">
+        {TEMAS.map(({ id, nombre, Icono }) => (
+          <Opcion key={id} activa={id === 'light' ? claro : !claro} onClick={() => elegirTema(id)} aria-label={nombre}>
             <Icono />
-            <span>
-              <span className="sr-apar-nombre">{nombre}</span>
-              <span className="sr-apar-detalle">{detalle}</span>
-            </span>
+            <span className="sr-apar-nombre">{nombre}</span>
           </Opcion>
         ))}
       </div>
+
+      <section className="sr-apar-extra" aria-labelledby={`${idTitulo}-dalt`}>
+        <h3 id={`${idTitulo}-dalt`} className="sr-apar-etiqueta">Filtro adicional</h3>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={colorblind}
+          onClick={alternarDaltonismo}
+          className="sr-apar-interruptor"
+        >
+          <IconoOjo />
+          <span className="sr-apar-interruptor-texto">
+            <span className="sr-apar-nombre">Daltonismo</span>
+            <span className="sr-apar-detalle">
+              Se suma al tema que elijas. Usa azul y naranja en lugar de rojo y verde.
+            </span>
+          </span>
+          <span className="sr-apar-estado">
+            <span className="sr-apar-pista" aria-hidden="true" />
+            <span className="sr-apar-estado-texto">{colorblind ? 'Activado' : 'Desactivado'}</span>
+          </span>
+        </button>
+
+        {colorblind && (
+          <button type="button" className="sr-apar-cambiar" onClick={onDaltonismo}>
+            <span>
+              <span className="sr-apar-detalle">Modo actual</span>
+              <span className="sr-apar-nombre">{nombreModo}</span>
+            </span>
+            <span className="sr-apar-cambiar-texto">Cambiar modo</span>
+          </button>
+        )}
+      </section>
     </>
   )
 }

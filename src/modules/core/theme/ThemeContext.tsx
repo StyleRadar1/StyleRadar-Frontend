@@ -105,20 +105,25 @@ export function applyThemeToDom(
   } else if (themeOrMode === 'oscuro' || themeOrMode === 'dark') {
     resolved = 'dark'
   } else if (themeOrMode === 'daltonico') {
-    resolved = getSystemTheme()
+    // «daltonico» (formato legado) solo avisa de que hay daltonismo: el fondo claro u oscuro es el modo guardado
+    const guardado = getSavedMode()
+    resolved = guardado === 'system' ? getSystemTheme() : guardado
     cvd = true
   } else if (themeOrMode === 'system') {
     resolved = getSystemTheme()
   }
 
-  // Sincronizar data-theme, data-tema, data-cvd y data-contrast
-  root.setAttribute('data-theme', cvd ? 'colorblind' : resolved)
-  // Con daltonismo activo el atributo legado también dice «daltonico»; si dijera «claro», los estilos del modo
-  // claro (encabezado, tarjetas de cristal) se mezclarían con la paleta oscura de daltonismo.
-  root.setAttribute('data-tema', cvd ? 'daltonico' : resolved === 'light' ? 'claro' : 'oscuro')
+  // El daltonismo se suma al tema (Claro u Oscuro), no lo reemplaza.
+  // - Sobre oscuro se usan los atributos «colorblind» / «daltonico», que ya llevan muchas reglas de la paleta oscura.
+  // - Sobre claro la página sigue clara (data-theme/data-tema claros) y data-cvd="on" cambia solo los colores
+  //   de marca y de estado (ver «DALTONISMO SOBRE EL MODO CLARO» en index.css).
+  // Si el atributo legado dijera «claro» con la paleta oscura, los estilos del modo claro se mezclarían con ella.
+  const cvdOscuro = cvd && resolved === 'dark'
+  root.setAttribute('data-theme', cvdOscuro ? 'colorblind' : resolved)
+  root.setAttribute('data-tema', cvdOscuro ? 'daltonico' : resolved === 'light' ? 'claro' : 'oscuro')
   root.setAttribute('data-cvd', cvd ? 'on' : 'off')
   root.setAttribute('data-contrast', cvd ? 'on' : 'off')
-  root.style.colorScheme = cvd ? 'dark' : resolved
+  root.style.colorScheme = resolved
 }
 
 export interface ThemeContextValue {

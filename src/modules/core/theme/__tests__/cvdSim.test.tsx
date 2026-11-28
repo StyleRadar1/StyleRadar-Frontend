@@ -113,7 +113,7 @@ describe('simulador de daltonismo: filtros y menú', () => {
     expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('el panel de tema ya no trae el simulador: los modos viven en la ventana de Daltonismo', () => {
+  it('el panel de tema ya no trae el simulador: los modos viven en la ventana del interruptor de daltonismo', () => {
     render(
       <ThemeProvider>
         <AppearancePicker />
@@ -121,7 +121,7 @@ describe('simulador de daltonismo: filtros y menú', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: /tema de la aplicación/i }))
     expect(screen.queryByRole('radiogroup', { name: /simulador de daltonismo/i })).toBeNull()
-    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    fireEvent.click(screen.getByRole('switch', { name: /daltonismo/i }))
     const grupo = screen.getByRole('radiogroup', { name: /modos de daltonismo/i })
     expect(grupo.querySelectorAll('[role="radio"]')).toHaveLength(MODOS_CVD.length)
   })
