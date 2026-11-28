@@ -93,8 +93,11 @@ html[data-tema="claro"] {
    ===================================================================== */
 html[data-theme="dark"],
 html[data-theme="oscuro"],
-html[data-tema="oscuro"] {
-  /* Fondos y superficies: Noir cósmico con profundidad */
+html[data-tema="oscuro"],
+html[data-theme="colorblind"],
+html[data-theme="daltonico"],
+html[data-tema="daltonico"] {
+  /* Fondos y superficies: Noir cósmico con profundidad (el filtro de daltonismo sobre oscuro usa estas mismas bases) */
   --bg: #09070f;
   --bg-elevated: #1c162e;
   --surface: #141021;

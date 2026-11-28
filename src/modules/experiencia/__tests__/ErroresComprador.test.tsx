@@ -62,6 +62,7 @@ describe('probador: errores de la prueba', () => {
     renderAt('/probador', [{ path: '/probador', element: <TryOnPage /> }, { path: '/planes', element: <p>Planes</p> }])
     await userEvent.upload(screen.getByTestId('photo-input'), png(), { applyAccept: false })
     await screen.findByText('Foto lista para probar.', {}, { timeout: 3000 })
+await user.click(await screen.findByRole('button', { name: /Elegir ropa disponible/ }))
     await user.click(await screen.findByRole('button', { name: /Blazer oversize/ }))
     await user.click(screen.getByRole('button', { name: /Probarme/ }))
     return user

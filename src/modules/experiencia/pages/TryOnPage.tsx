@@ -8,7 +8,9 @@ import { Aviso, BTN_PRINCIPAL, BTN_SECUNDARIO } from '@/modules/core/components/
 import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { AuthContext } from '@/modules/identidad/states/authContext'
 import { useUserPlan } from '@/modules/transacciones/hooks/useUserPlan'
-import { GarmentSelector } from '../components/GarmentSelector'
+import { GarmentSizePicker } from '../components/GarmentSelector'
+import { EscenarioIA, type PruebaReciente } from '../components/EscenarioIA'
+import { PrendasDisponiblesDialog, type PestanaRopa } from '../components/PrendasDisponiblesDialog'
 import { garmentProblem } from '../utils/garments'
 import { PhotoPicker, type UploadedPhoto } from '../components/PhotoPicker'
 import { ResultViewer } from '../components/ResultViewer'
@@ -77,6 +79,27 @@ export default function TryOnPage() {
   const [consent, setConsent] = useState<null | 'foto' | 'prueba'>(null)
   const [consintiendo, setConsintiendo] = useState(false)
   const [consentMsg, setConsentMsg] = useState('')
+
+  /* Pop-up «Ropa disponible» (prendas y playlists) */
+  const [ropaAbierta, setRopaAbierta] = useState(false)
+  const [ropaTab, setRopaTab] = useState<PestanaRopa>('prendas')
+  const abrirRopa = (tab: PestanaRopa) => {
+    setRopaTab(tab)
+    setRopaAbierta(true)
+  }
+  const elegirPrenda = (id: string) => {
+    if (job.active) return
+    const prev = garments.find((x) => x.id === garmentId)
+    const g = garments.find((x) => x.id === id)
+    if (prev && g && prev.id !== g.id && (prev.zona === g.zona || prev.zona === 'CUERPO_COMPLETO' || g.zona === 'CUERPO_COMPLETO')) {
+      setZoneNotice(`Reemplazaste «${prev.nombre}» por «${g.nombre}» en la misma zona corporal.`)
+    } else {
+      setZoneNotice(null)
+    }
+    setGarmentId(id)
+    setSelectedSize(g?.tallas[0] || 'M')
+    if (job.phase !== 'idle') job.reset()
+  }
 
   const loadQuotas = useCallback(async () => {
     if (!env.useMocks && !userId) return
@@ -212,6 +235,14 @@ export default function TryOnPage() {
     }
   }, [job.phase, loadQuotas, loadHistory])
 
+  /* Pruebas recientes con imagen para el escenario (no se muestran si la foto fue purgada por privacidad) */
+  const recientes: PruebaReciente[] = photoPurged
+    ? []
+    : historyJobs
+        .filter((h) => h.status === 'COMPLETED' && (h.resultUrl || h.resultImageUrl))
+        .slice(0, 6)
+        .map((h) => ({ id: h.jobId, url: (h.resultUrl || h.resultImageUrl) as string, nombre: h.garmentName || 'Prueba virtual' }))
+
   const otherGarment = () => {
     job.reset()
     setGarmentId(null)
@@ -331,16 +362,20 @@ export default function TryOnPage() {
   return (
     <TryOnPrivacyShield>
       <div className="sr-probador-page min-h-screen">
-        <section className="mx-auto max-w-6xl px-4 py-12">
+        <section className="mx-auto max-w-7xl px-4 py-8 md:py-10">
           <ProbadorSecciones className="mb-6" />
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
+
+          <header className="flex flex-wrap items-end justify-between gap-4">
+            <div className="min-w-0 max-w-3xl">
               <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--color-accent)]">Probador virtual · Bogotá</p>
-              <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-[var(--color-text)] md:text-5xl">Pruébate una prenda con IA sobre tu silueta</h1>
+              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-text)] md:text-4xl">Pruébate una prenda con IA sobre tu silueta</h1>
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                Sube tu foto frontal autorizada, elige una prenda y su talla, valida la compatibilidad corporal y genera tu visualización virtual. Tu foto es privada conforme a la Ley 1581 de 2012 y puedes eliminarla o revocar el consentimiento en cualquier momento.
+              </p>
             </div>
 
             {/* Indicador de cuotas mensuales */}
-            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-right shadow-sm">
+            <div className="sr-glass-card rounded-2xl border px-4 py-3 text-right">
               <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-accent)]">Cuota mensual</p>
               <p className="text-sm font-extrabold text-[var(--color-text)]">
                 {quotas
@@ -351,14 +386,10 @@ export default function TryOnPage() {
                 {quotas?.billingPeriod || 'Periodo mensual'} · {userPlan === 'RADAR_PLUS' ? 'Plan Radar+' : 'Plan Radar'}
               </p>
             </div>
-          </div>
-
-          <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-            Sube tu foto frontal autorizada, elige una prenda y su talla, valida la compatibilidad corporal y genera tu visualización virtual. Tu foto es privada conforme a la Ley 1581 de 2012 y puedes eliminarla o revocar el consentimiento en cualquier momento.
-          </p>
+          </header>
 
           {/* Barra de consentimiento y privacidad biométrica (SR-P5-N01 / SR-RF-107) */}
-          <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-3.5 text-xs text-[var(--color-text)] shadow-sm">
+          <div className="sr-glass-card mt-5 rounded-2xl border px-4 py-3 text-xs text-[var(--color-text)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span
@@ -408,7 +439,7 @@ export default function TryOnPage() {
                   type="button"
                   disabled={!consentChecked || consintiendo}
                   onClick={aceptarConsentimiento}
-                  className="rounded-xl bg-[var(--color-accent)] px-4 py-1.5 text-xs font-semibold text-[var(--color-accent-contrast,#ffffff)] disabled:opacity-50"
+                  className="min-h-10 rounded-xl bg-[var(--color-accent)] px-4 text-xs font-semibold text-[var(--color-accent-contrast,#ffffff)] disabled:opacity-50"
                 >
                   {consintiendo ? 'Guardando…' : 'Aceptar y continuar'}
                 </button>
@@ -416,9 +447,10 @@ export default function TryOnPage() {
             )}
           </div>
 
-          <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-            <div className="space-y-8">
-              <section ref={fotoRef} aria-labelledby="t-foto" className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
+            {/* Columna de pasos: foto, prenda e historial */}
+            <div className="space-y-6">
+              <section ref={fotoRef} aria-labelledby="t-foto" className="sr-glass-card rounded-3xl border p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 id="t-foto" className="text-lg font-bold text-[var(--color-text)]">1. Tu foto frontal</h2>
                   {quotas && (
@@ -470,49 +502,197 @@ export default function TryOnPage() {
                 )}
               </section>
 
-              <section ref={selectorRef} aria-labelledby="t-prenda" className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-                <h2 id="t-prenda" className="text-lg font-bold text-[var(--color-text)]">2. Elige una prenda y tu talla</h2>
-                <div className="mt-4">
-                  <GarmentSelector
-                    garments={garments}
-                    loading={gLoading}
-                    error={gError}
-                    onRetry={loadGarments}
-                    selected={garmentId}
-                    selectedSize={selectedSize}
-                    validation={garmentValidation}
-                    validatingSize={validatingSize}
-                    zoneNotice={zoneNotice}
-                    onSelect={(id) => {
-                      if (!job.active) {
-                        const prev = garments.find((x) => x.id === garmentId)
-                        const g = garments.find((x) => x.id === id)
-                        if (prev && g && prev.id !== g.id && (prev.zona === g.zona || prev.zona === 'CUERPO_COMPLETO' || g.zona === 'CUERPO_COMPLETO')) {
-                          setZoneNotice(`Reemplazaste «${prev.nombre}» por «${g.nombre}» en la misma zona corporal.`)
-                        } else {
-                          setZoneNotice(null)
-                        }
-                        setGarmentId(id)
-                        setSelectedSize(g?.tallas[0] || 'M')
-                        if (job.phase !== 'idle') job.reset()
-                      }
-                    }}
-                    onSelectSize={(size) => {
-                      if (!job.active) {
-                        setSelectedSize(size)
-                        if (job.phase !== 'idle') job.reset()
-                      }
+              <section ref={selectorRef} aria-labelledby="t-prenda" className="sr-glass-card rounded-3xl border p-5">
+                <h2 id="t-prenda" className="text-lg font-bold text-[var(--color-text)]">2. Tu prenda y tu talla</h2>
+
+                {!garment ? (
+                  <div className="mt-4 flex flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={() => abrirRopa('prendas')}
+                      className="group flex min-h-32 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-border)] px-4 py-6 text-center transition hover:border-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)]"
+                    >
+                      <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--color-accent)] text-xl font-bold text-[var(--color-accent-contrast,#ffffff)]">+</span>
+                      <span className="text-sm font-bold text-[var(--color-text)]">Elegir ropa disponible</span>
+                      <span className="text-xs text-[var(--color-text-muted)]">Mira todas las prendas que se pueden probar con IA</span>
+                    </button>
+                    <button type="button" onClick={() => abrirRopa('playlists')} className="min-h-11 rounded-xl border border-[var(--color-border)] px-4 text-sm font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)]">
+                      Usar una de mis playlists
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-4">
+                    <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-3">
+                      <img src={garment.imagen} alt="" className="h-20 w-16 shrink-0 rounded-xl object-cover" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-[var(--color-text)]">{garment.nombre}</p>
+                        <p className="truncate text-xs text-[var(--color-text-muted)]">{garment.tienda}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button type="button" onClick={() => abrirRopa('prendas')} className="min-h-11 rounded-xl border border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)]">
+                        Cambiar prenda
+                      </button>
+                      <button type="button" onClick={() => abrirRopa('playlists')} className="min-h-11 rounded-xl border border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-text)] hover:border-[var(--color-accent)]">
+                        Mis playlists
+                      </button>
+                    </div>
+                    <div className="mt-4">
+                      <GarmentSizePicker
+                        garment={garment}
+                        selectedSize={selectedSize}
+                        validation={garmentValidation}
+                        validatingSize={validatingSize}
+                        zoneNotice={zoneNotice}
+                        onSelectSize={(size) => {
+                          if (!job.active) {
+                            setSelectedSize(size)
+                            if (job.phase !== 'idle') job.reset()
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+
+            {/* Columna del resultado: queda a la vista mientras se eligen foto y prenda */}
+            <div>
+              <aside aria-labelledby="t-resultado" className="sr-glass-card h-fit rounded-3xl border p-6">
+                <h2 id="t-resultado" className="text-lg font-bold text-[var(--color-text)]">3. Resultado de la prueba</h2>
+                {job.phase !== 'completed' && (
+                  <EscenarioIA
+                    fotoUrl={photo?.previewUrl}
+                    garment={garment ?? null}
+                    talla={selectedSize}
+                    procesando={job.active}
+                    progreso={job.progress}
+                    recientes={recientes}
+                    onAbrirReciente={(id) => {
+                      const hj = historyJobs.find((x) => x.jobId === id)
+                      if (hj) openPastResult(hj)
                     }}
                   />
-                </div>
-              </section>
+                )}
+                {!photo && <p className="mt-4 text-sm text-[var(--color-text-muted)]">Primero sube tu foto frontal autorizada.</p>}
+                {photo && !garment && <p className="mt-4 text-sm text-[var(--color-text-muted)]">Ahora elige una prenda y tu talla.</p>}
+
+                {photo && garment && job.phase === 'idle' && (
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={startTry}
+                      disabled={!canStart}
+                      className="w-full rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-50 transition-all shadow-sm"
+                    >
+                      Probarme {garment.nombre}
+                    </button>
+                    <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
+                      La imagen generada es una simulación aproximada y orientativa del estilo, no garantiza talla ni caída física exacta.
+                    </p>
+                    {limitReached && (
+                      <p className="mt-2 text-center text-xs text-[var(--color-danger-text,#ff8a8a)]">
+                        Agotaste las pruebas disponibles en tu plan. Pasa a Radar+ para continuar.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {job.active && (
+                  <div className="mt-4" role="status" aria-live="polite">
+                    <p className="font-semibold text-[var(--color-text)]">
+                      {job.phase === 'creating'
+                        ? 'En cola — enviando tu prueba…'
+                        : 'Estamos vistiendo tu foto con IA… tiempo estimado ~25 segundos'}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text-muted)]">Puedes seguir mirando prendas o consultar el historial mientras termina.</p>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-surface-subtle)]">
+                      {job.progress ? (
+                        <div className="h-full bg-[var(--color-accent)] transition-all" style={{ width: `${job.progress}%` }} />
+                      ) : (
+                        <div className="h-full w-1/3 animate-pulse bg-[var(--color-accent)] motion-reduce:animate-none" />
+                      )}
+                    </div>
+                    <button type="button" onClick={job.cancel} className="mt-3 text-sm text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]">
+                      Dejar de esperar
+                    </button>
+                  </div>
+                )}
+
+                {job.phase === 'completed' && job.result && garment && (
+                  <div className="mt-4">
+                    <ResultViewer
+                      result={job.result}
+                      garmentName={garment.nombre}
+                      garmentId={garment.id}
+                      garmentStore={garment.tienda}
+                      garmentPrice={garment.precio}
+                      garmentSizes={garment.tallas}
+                      originalPhotoUrl={photo?.previewUrl}
+                      onRegenerate={startTry}
+                      onRefreshLink={handleRefreshLink}
+                      onOtherGarment={otherGarment}
+                      onDeletePhoto={() => setConfirmDel(true)}
+                    />
+                  </div>
+                )}
+
+                {job.phase === 'expired' && (
+                  <Aviso
+                    tono="error"
+                    className="mt-4"
+                    titulo="La prueba tardó demasiado y se canceló"
+                    acciones={
+                      <button type="button" onClick={() => { job.reset(); startTry() }} className={BTN_PRINCIPAL}>
+                        Intentar de nuevo
+                      </button>
+                    }
+                  >
+                    Puedes intentarlo otra vez; no se cobrará ni se duplicará nada.
+                  </Aviso>
+                )}
+
+                {problema && (
+                  <Aviso
+                    tono={problema.accion === 'consentimiento' || problema.accion === 'planes' ? 'alerta' : 'error'}
+                    className="mt-4"
+                    titulo={problema.titulo}
+                    acciones={accionesDe(problema)}
+                  >
+                    {problema.texto}
+                  </Aviso>
+                )}
+
+                {job.phase === 'offline' && (
+                  <div role="alert" className="mt-4 rounded-2xl border border-[var(--color-warning-border,#d97706)] bg-[var(--color-warning-bg,rgba(217,119,6,0.1))] p-5 text-[var(--color-warning-text,#92400e)]">
+                    <p className="font-semibold">Se perdió la conexión</p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
+                      {job.jobId ? 'Tu prueba sigue en proceso. Cuando vuelva la conexión, seguimos consultando la misma prueba sin crear otra.' : 'Revisa tu internet e inténtalo de nuevo.'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={job.jobId ? job.resume : startTry}
+                      className="mt-4 rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-4 py-2 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] shadow-sm"
+                    >
+                      {job.jobId ? 'Seguir consultando' : 'Reintentar'}
+                    </button>
+                  </div>
+                )}
+
+                {job.phase === 'cancelled' && (
+                  <div className="mt-4 text-sm text-[var(--color-text-muted)]">
+                    Dejaste de esperar la prueba. <button type="button" onClick={() => { job.reset(); startTry() }} className="font-semibold text-[var(--color-text)] underline">Volver a intentar</button>
+                  </div>
+                )}
+              </aside>
 
               {/* Historial de pruebas anteriores (SR-P5-N03 & RF-26) */}
-              <section aria-labelledby="t-historial" className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-                <div className="flex items-center justify-between">
+              <section aria-labelledby="t-historial" className="sr-glass-card mt-6 rounded-3xl border p-5">
+                <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 id="t-historial" className="text-lg font-bold text-[var(--color-text)]">Mis pruebas anteriores</h2>
-                    <p className="text-xs text-[var(--color-text-muted)]">Reabre tus visualizaciones previas sin crear nuevos trabajos ni gastar cuota.</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">Reabre tus visualizaciones previas sin gastar cuota.</p>
                   </div>
                   <button
                     type="button"
@@ -520,7 +700,7 @@ export default function TryOnPage() {
                       setShowHistory((prev) => !prev)
                       if (!showHistory && !historyJobs.length) loadHistory()
                     }}
-                    className="text-xs font-bold text-[var(--color-accent)] hover:underline"
+                    className="shrink-0 text-xs font-bold text-[var(--color-accent)] hover:underline"
                   >
                     {showHistory ? 'Ocultar historial' : `Ver historial (${historyJobs.length})`}
                   </button>
@@ -535,8 +715,8 @@ export default function TryOnPage() {
                     ) : (
                       <ul className="divide-y divide-[var(--color-border)]" aria-label="Lista de pruebas anteriores">
                         {historyJobs.map((hj) => (
-                          <li key={hj.jobId} className="flex items-center justify-between py-3">
-                            <div className="flex items-center gap-3">
+                          <li key={hj.jobId} className="flex items-center justify-between gap-2 py-3">
+                            <div className="flex min-w-0 items-center gap-3">
                               {photoPurged ? (
                                 <div className="flex h-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2 text-[10px] text-[var(--color-text-muted)]">
                                   Imagen eliminada por privacidad
@@ -548,8 +728,8 @@ export default function TryOnPage() {
                                   📸
                                 </div>
                               )}
-                              <div>
-                                <p className="text-xs font-semibold text-[var(--color-text)]">{hj.garmentName || 'Prueba virtual'}</p>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-semibold text-[var(--color-text)]">{hj.garmentName || 'Prueba virtual'}</p>
                                 <p className="text-[10px] text-[var(--color-text-muted)]">
                                   Estado: <span className="font-bold">{HISTORY_STATUS_LABEL[hj.status] || hj.status}</span> · {hj.createdAt ? new Date(hj.createdAt).toLocaleDateString('es-CO') : ''}
                                 </p>
@@ -559,7 +739,7 @@ export default function TryOnPage() {
                               <button
                                 type="button"
                                 onClick={() => openPastResult(hj)}
-                                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--color-accent)] hover:bg-[var(--color-surface-hover)]"
+                                className="shrink-0 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-accent)] hover:bg-[var(--color-surface-hover)]"
                               >
                                 Ver resultado
                               </button>
@@ -572,121 +752,19 @@ export default function TryOnPage() {
                 )}
               </section>
             </div>
-
-            <aside aria-labelledby="t-resultado" className="h-fit rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm lg:sticky lg:top-24">
-              <h2 id="t-resultado" className="text-lg font-bold text-[var(--color-text)]">3. Resultado de la prueba</h2>
-              {!photo && <p className="mt-3 text-sm text-[var(--color-text-muted)]">Primero sube tu foto frontal autorizada.</p>}
-              {photo && !garment && <p className="mt-3 text-sm text-[var(--color-text-muted)]">Ahora elige una prenda y tu talla.</p>}
-
-              {photo && garment && job.phase === 'idle' && (
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={startTry}
-                    disabled={!canStart}
-                    className="w-full rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-5 py-3 font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] disabled:opacity-50 transition-all shadow-sm"
-                  >
-                    Probarme {garment.nombre}
-                  </button>
-                  <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
-                    La imagen generada es una simulación aproximada y orientativa del estilo, no garantiza talla ni caída física exacta.
-                  </p>
-                  {limitReached && (
-                    <p className="mt-2 text-center text-xs text-[var(--color-danger-text,#ff8a8a)]">
-                      Agotaste las pruebas disponibles en tu plan. Pasa a Radar+ para continuar.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {job.active && (
-                <div className="mt-4" role="status" aria-live="polite">
-                  <p className="font-semibold text-[var(--color-text)]">
-                    {job.phase === 'creating'
-                      ? 'En cola — enviando tu prueba…'
-                      : 'Estamos vistiendo tu foto con IA… tiempo estimado ~25 segundos'}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">Puedes seguir mirando prendas o consultar el historial mientras termina.</p>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-surface-subtle)]">
-                    {job.progress ? (
-                      <div className="h-full bg-[var(--color-accent)] transition-all" style={{ width: `${job.progress}%` }} />
-                    ) : (
-                      <div className="h-full w-1/3 animate-pulse bg-[var(--color-accent)] motion-reduce:animate-none" />
-                    )}
-                  </div>
-                  <button type="button" onClick={job.cancel} className="mt-3 text-sm text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]">
-                    Dejar de esperar
-                  </button>
-                </div>
-              )}
-
-              {job.phase === 'completed' && job.result && garment && (
-                <div className="mt-4">
-                  <ResultViewer
-                    result={job.result}
-                    garmentName={garment.nombre}
-                    garmentId={garment.id}
-                    garmentStore={garment.tienda}
-                    garmentPrice={garment.precio}
-                    garmentSizes={garment.tallas}
-                    originalPhotoUrl={photo?.previewUrl}
-                    onRegenerate={startTry}
-                    onRefreshLink={handleRefreshLink}
-                    onOtherGarment={otherGarment}
-                    onDeletePhoto={() => setConfirmDel(true)}
-                  />
-                </div>
-              )}
-
-              {job.phase === 'expired' && (
-                <Aviso
-                  tono="error"
-                  className="mt-4"
-                  titulo="La prueba tardó demasiado y se canceló"
-                  acciones={
-                    <button type="button" onClick={() => { job.reset(); startTry() }} className={BTN_PRINCIPAL}>
-                      Intentar de nuevo
-                    </button>
-                  }
-                >
-                  Puedes intentarlo otra vez; no se cobrará ni se duplicará nada.
-                </Aviso>
-              )}
-
-              {problema && (
-                <Aviso
-                  tono={problema.accion === 'consentimiento' || problema.accion === 'planes' ? 'alerta' : 'error'}
-                  className="mt-4"
-                  titulo={problema.titulo}
-                  acciones={accionesDe(problema)}
-                >
-                  {problema.texto}
-                </Aviso>
-              )}
-
-              {job.phase === 'offline' && (
-                <div role="alert" className="mt-4 rounded-2xl border border-[var(--color-warning-border,#d97706)] bg-[var(--color-warning-bg,rgba(217,119,6,0.1))] p-5 text-[var(--color-warning-text,#92400e)]">
-                  <p className="font-semibold">Se perdió la conexión</p>
-                  <p className="mt-1 text-sm text-[var(--color-text)]">
-                    {job.jobId ? 'Tu prueba sigue en proceso. Cuando vuelva la conexión, seguimos consultando la misma prueba sin crear otra.' : 'Revisa tu internet e inténtalo de nuevo.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={job.jobId ? job.resume : startTry}
-                    className="mt-4 rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-contrast,#ffffff)] px-4 py-2 text-sm font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--color-focus-ring)] shadow-sm"
-                  >
-                    {job.jobId ? 'Seguir consultando' : 'Reintentar'}
-                  </button>
-                </div>
-              )}
-
-              {job.phase === 'cancelled' && (
-                <div className="mt-4 text-sm text-[var(--color-text-muted)]">
-                  Dejaste de esperar la prueba. <button type="button" onClick={() => { job.reset(); startTry() }} className="font-semibold text-[var(--color-text)] underline">Volver a intentar</button>
-                </div>
-              )}
-            </aside>
           </div>
+
+          <PrendasDisponiblesDialog
+            open={ropaAbierta}
+            initialTab={ropaTab}
+            onClose={() => setRopaAbierta(false)}
+            garments={garments}
+            loading={gLoading}
+            error={gError}
+            onRetry={loadGarments}
+            selectedId={garmentId}
+            onSelect={elegirPrenda}
+          />
 
           <ConfirmDialog
             open={!!consent}

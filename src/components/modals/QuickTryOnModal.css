@@ -1975,3 +1975,76 @@ html[data-tema="claro"] .cz-mini-item-pill { background: rgba(0, 0, 0, 0.06); }
 .cz-slot-row-color { margin-left: 8px; font-weight: 600; letter-spacing: 0; text-transform: none; }
 .cz-slot-row-chip { align-self: flex-start; }
 .cz-slot-row-slot { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ═══════════════════════════════════════════════════════════════
+   GLASSMORFISMO: «Arma tu look» usa el mismo vidrio de la identidad StyleRadar
+   (tokens --glass-* de index.css): fondo con foto, paneles translúcidos con desenfoque
+   ═══════════════════════════════════════════════════════════════ */
+.cz-fullscreen {
+  background-image: url('/img/backgrounds/probador-estudio-noche.jpg');
+  background-size: cover;
+  background-position: center;
+}
+html[data-theme="light"] .cz-fullscreen,
+html[data-tema="claro"] .cz-fullscreen {
+  background-image: url('/img/backgrounds/probador-estudio-dia.jpg');
+}
+
+.cz-left-panel,
+.cz-embedded .cz-topbar {
+  background: var(--glass-fondo);
+  backdrop-filter: var(--glass-desenfoque);
+  -webkit-backdrop-filter: var(--glass-desenfoque);
+  border-color: var(--glass-borde);
+}
+.cz-left-panel { box-shadow: var(--glass-sombra); }
+
+.sr-medidas,
+.cz-action-card,
+.cz-btn-secondary-glass,
+.cz-slot-row-main {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-color: var(--glass-borde);
+}
+html[data-theme="light"] .sr-medidas,
+html[data-tema="claro"] .sr-medidas,
+html[data-theme="light"] .cz-action-card,
+html[data-tema="claro"] .cz-action-card,
+html[data-theme="light"] .cz-btn-secondary-glass,
+html[data-tema="claro"] .cz-btn-secondary-glass,
+html[data-theme="light"] .cz-slot-row-main,
+html[data-tema="claro"] .cz-slot-row-main {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+.cz-slot-row.is-worn .cz-slot-row-main { background: rgba(255, 255, 255, 0.12); }
+html[data-theme="light"] .cz-slot-row.is-worn .cz-slot-row-main,
+html[data-tema="claro"] .cz-slot-row.is-worn .cz-slot-row-main { background: rgba(255, 255, 255, 0.8); }
+
+/* Panel de ajuste (derecha del maniquí) y pop-up de prendas */
+.sr-glass-dark {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 256px;
+  flex-shrink: 0;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(145deg, rgba(32, 24, 60, 0.62), rgba(20, 16, 38, 0.48));
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+.cz-drawer-content {
+  background: var(--glass-fondo);
+  backdrop-filter: var(--glass-desenfoque);
+  -webkit-backdrop-filter: var(--glass-desenfoque);
+  border-color: var(--glass-borde);
+  box-shadow: var(--glass-sombra);
+}
+.cz-drawer-header { background: transparent; }
+html[data-theme="light"] .cz-drawer-header,
+html[data-tema="claro"] .cz-drawer-header { background: transparent; }
+.cz-drawer-backdrop { background: rgba(8, 5, 16, 0.5); }
