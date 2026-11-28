@@ -961,11 +961,13 @@
 .sr-google-slot {
   display: flex;
   width: 100%;
+  max-width: 400px;
   min-height: 44px;
+  margin-inline: auto;
   overflow: hidden;
   border-radius: 12px;
   clip-path: inset(0 round 12px);
-  background: #FFFFFF;
+  background: transparent;
   isolation: isolate;
 }
 
