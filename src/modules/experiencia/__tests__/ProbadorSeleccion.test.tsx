@@ -417,18 +417,17 @@ describe('Comportamiento limpio del probador (las medidas ya no interrumpen en e
     })
   })
 
-  it('muestra la regla métrica de altura vertical con marcas de 1,40m a 2,10m y etiquetas de tallas en el escenario', async () => {
+  it('muestra la regla de altura de 1,40 m a 2,00 m con la marca de la estatura de la persona alineada al maniquí', async () => {
     setupMeasurements()
     renderProbador('/probador')
 
     await waitFor(() => {
-      expect(screen.getByText('2,10 m')).toBeInTheDocument()
+      expect(screen.getByText('2,00 m')).toBeInTheDocument()
       expect(screen.getByText('1,90 m')).toBeInTheDocument()
-      expect(screen.getByText('1,70 m')).toBeInTheDocument()
+      expect(screen.getByText('1,60 m')).toBeInTheDocument()
       expect(screen.getByText('1,50 m')).toBeInTheDocument()
-      expect(screen.getByText('1,40 m')).toBeInTheDocument()
-      expect(screen.getByText('XXL')).toBeInTheDocument()
-      expect(screen.getByText('XS')).toBeInTheDocument()
+      expect(screen.getAllByText('1,40 m').length).toBeGreaterThan(0)
+      expect(screen.getByText(/^Tú · \d,\d\d m$/)).toBeInTheDocument()
     })
   })
 

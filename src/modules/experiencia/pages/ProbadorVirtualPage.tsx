@@ -23,6 +23,7 @@ export default function ProbadorVirtualPage() {
     <QuickTryOnModal
       isOpen={true}
       onClose={handleClose}
+      modo="pagina"
     />
   )
 }
