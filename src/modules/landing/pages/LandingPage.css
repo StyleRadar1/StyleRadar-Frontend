@@ -451,14 +451,31 @@ html[data-tema="claro"] .sr-landing .sr-category-tabs button[aria-selected="true
    ===================================================================== */
 .sr-landing .sr-glass-card { border-width: 1px; border-style: solid; }
 
+/* Modo claro. Para que se lea como cristal y no como papel blanco hacen falta tres cosas:
+   1) poco relleno blanco (la foto de fondo se asoma por debajo), 2) desenfoque fuerte con colores
+   más vivos, y 3) un borde claro nítido con sombra suave, que es lo que "levanta" la tarjeta. */
 html[data-theme="light"] .sr-landing .sr-glass-card,
 html[data-theme="claro"] .sr-landing .sr-glass-card,
 html[data-tema="claro"] .sr-landing .sr-glass-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, .58) 0%, rgba(255, 255, 255, .30) 100%);
-  backdrop-filter: blur(22px) saturate(1.6);
-  -webkit-backdrop-filter: blur(22px) saturate(1.6);
-  border-color: rgba(255, 255, 255, .72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 14px 36px rgba(38, 38, 38, .12);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .50) 0%, rgba(255, 255, 255, .20) 100%);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  border-color: rgba(255, 255, 255, .9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(72, 17, 154, .08),
+    0 18px 40px -12px rgba(38, 38, 38, .28),
+    0 2px 8px rgba(38, 38, 38, .08);
+}
+
+/* El velo claro que cubre la foto de fondo se aligera en la landing: con la foto muy lavada no había
+   nada que atravesar el cristal. Se dobla la clase para ganarle en especificidad al velo global. */
+html[data-theme="light"] .sr-landing.sr-landing::before,
+html[data-theme="claro"] .sr-landing.sr-landing::before,
+html[data-tema="claro"] .sr-landing.sr-landing::before {
+  background: rgba(248, 246, 252, .40);
+  backdrop-filter: blur(3px) saturate(1.1);
+  -webkit-backdrop-filter: blur(3px) saturate(1.1);
 }
 
 .sr-landing .sr-glass-interactive { transition: transform .25s, border-color .25s, background .25s, box-shadow .25s; }
@@ -467,7 +484,7 @@ html[data-theme="light"] .sr-landing .sr-glass-interactive:hover,
 html[data-theme="claro"] .sr-landing .sr-glass-interactive:hover,
 html[data-tema="claro"] .sr-landing .sr-glass-interactive:hover {
   border-color: rgba(72, 17, 154, .55);
-  background: linear-gradient(145deg, rgba(255, 255, 255, .72) 0%, rgba(255, 255, 255, .42) 100%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .66) 0%, rgba(255, 255, 255, .34) 100%);
 }
 
 .sr-landing .sr-glass-card.is-featured,
