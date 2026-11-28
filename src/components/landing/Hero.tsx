@@ -39,6 +39,27 @@ export function Hero() {
     setCurrentSlide((prev) => (prev + delta + heroSlides.length) % heroSlides.length)
   }
 
+  const irAFoto = (indice: number) => {
+    setIsPaused(true)
+    setCurrentSlide(indice)
+  }
+
+  /** Deslizar con el dedo (móvil): solo cuenta un gesto claramente horizontal, así no pelea con el scroll vertical. */
+  const toque = useRef<{ x: number; y: number } | null>(null)
+  const alTocar = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    toque.current = { x: t.clientX, y: t.clientY }
+  }
+  const alSoltar = (e: React.TouchEvent) => {
+    const inicio = toque.current
+    toque.current = null
+    if (!inicio) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - inicio.x
+    const dy = t.clientY - inicio.y
+    if (Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.5) irA(dx < 0 ? 1 : -1)
+  }
+
   const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
     const targetId = e.currentTarget.getAttribute('href')?.slice(1)
@@ -52,7 +73,9 @@ export function Hero() {
     <section
       id="inicio"
       ref={heroRef}
-      className="relative min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-transparent text-[var(--hero-fg)]"
+      onTouchStart={alTocar}
+      onTouchEnd={alSoltar}
+      className="relative [touch-action:pan-y] min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-transparent text-[var(--hero-fg)]"
       style={{
         '--color-white': '#ffffff',
         '--color-blanco': '#ffffff',
@@ -149,6 +172,49 @@ export function Hero() {
         </div>
       </div>
 
+      {/* Anterior y siguiente: a media altura, en los extremos izquierdo y derecho */}
+      <button
+        type="button"
+        onClick={() => irA(-1)}
+        aria-label="Foto anterior"
+        className={`${CONTROL_HERO} max-md:hidden absolute z-20 top-1/2 -translate-y-1/2 md:left-8`}
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="15 6 9 12 15 18" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => irA(1)}
+        aria-label="Foto siguiente"
+        className={`${CONTROL_HERO} max-md:hidden absolute z-20 top-1/2 -translate-y-1/2 md:right-8`}
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="9 6 15 12 9 18" />
+        </svg>
+      </button>
+
+      {/* Puntos indicadores (móvil): dónde estás y salto directo a una foto */}
+      <div role="group" aria-label="Fotos de la portada" className="md:hidden absolute z-20 inset-x-0 bottom-[84px] flex items-center justify-center">
+        {heroSlides.map((slide, index) => (
+          <button
+            key={slide.id}
+            type="button"
+            onClick={() => irAFoto(index)}
+            aria-label={`Ir a la foto ${index + 1} de ${heroSlides.length}`}
+            aria-current={index === currentSlide ? 'true' : undefined}
+            className="grid h-11 w-8 place-items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8dccb]"
+          >
+            <span
+              aria-hidden="true"
+              className={`block h-2 rounded-full transition-all duration-300 ${
+                index === currentSlide ? 'w-6 bg-[var(--hero-fg)]' : 'w-2 bg-[var(--hero-fg)] opacity-50'
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+
       {/* Pie del hero con indicador de scroll y contador de diapositivas */}
       <div className="absolute z-20 bottom-6 inset-x-6 md:inset-x-14 grid grid-cols-3 items-center text-xs font-extrabold tracking-widest uppercase text-[var(--hero-fg-muted)]">
         <span aria-live="polite" aria-atomic="true" className="text-sm font-semibold tracking-widest">
@@ -171,19 +237,7 @@ export function Hero() {
           </svg>
         </a>
 
-        {/* Anterior y siguiente */}
-        <div className="flex items-center justify-end gap-2">
-          <button type="button" onClick={() => irA(-1)} aria-label="Foto anterior" className={CONTROL_HERO}>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="15 6 9 12 15 18" />
-            </svg>
-          </button>
-          <button type="button" onClick={() => irA(1)} aria-label="Foto siguiente" className={CONTROL_HERO}>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="9 6 15 12 9 18" />
-            </svg>
-          </button>
-        </div>
+        <span aria-hidden="true" />
       </div>
     </section>
   )
