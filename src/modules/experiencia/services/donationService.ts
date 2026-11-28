@@ -314,22 +314,12 @@ export const donationService = {
     if (!fid || fid.toLowerCase() === 'mine') {
       return []
     }
-    const list = await apiClient
+    // No inferir fotos desde publicationId: una publicación mal asociada
+    // puede hacer que una donación muestre una imagen que no corresponde.
+    // Solo se usa la foto que venga explícitamente en la respuesta de la donación.
+    return apiClient
       .get<any[]>(`/api/v1/donations/foundations/${encodeURIComponent(fid)}/requests`)
       .then((r) => (Array.isArray(r.data) ? r.data : []).map(normalizeDonation))
-
-    // La respuesta de una solicitud trae publicationId, pero no siempre las fotos.
-    // La publicación de segunda mano sí las expone; se completan solo cuando faltan.
-    return Promise.all(list.map(async (d) => {
-      if (d.fotos?.length || d.publicationId == null) return d
-      try {
-        const pub = await secondHandService.get(String(d.publicationId))
-        const fotos = pub.photos?.length ? pub.photos : (pub.fotos ?? [])
-        return fotos.length ? { ...d, fotos } : d
-      } catch {
-        return d
-      }
-    }))
   },
 
   /** RF-47 y RF-49: aprobar, rechazar, iniciar recogida o confirmar recepción. */
