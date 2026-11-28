@@ -113,38 +113,16 @@ describe('simulador de daltonismo: filtros y menú', () => {
     expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('en el menú de apariencia, el simulador está plegado y al abrirlo se elige un modo', () => {
+  it('el panel de tema ya no trae el simulador: los modos viven en la ventana de Daltonismo', () => {
     render(
       <ThemeProvider>
         <AppearancePicker />
       </ThemeProvider>,
     )
-    fireEvent.click(screen.getByRole('button', { name: /apariencia y accesibilidad/i }))
+    fireEvent.click(screen.getByRole('button', { name: /tema de la aplicación/i }))
     expect(screen.queryByRole('radiogroup', { name: /simulador de daltonismo/i })).toBeNull()
-
-    fireEvent.click(screen.getByRole('button', { name: /simulador de daltonismo/i }))
-    const grupo = screen.getByRole('radiogroup', { name: /simulador de daltonismo/i })
+    fireEvent.click(screen.getByRole('radio', { name: 'Daltonismo' }))
+    const grupo = screen.getByRole('radiogroup', { name: /modos de daltonismo/i })
     expect(grupo.querySelectorAll('[role="radio"]')).toHaveLength(MODOS_CVD.length)
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Protanopia' }))
-    expect(document.documentElement.getAttribute('data-cvd-sim')).toBe('protanopia')
-    expect(screen.getByRole('radio', { name: 'Protanopia' })).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByRole('status')).toHaveTextContent(/Simulador activo: Protanopia/)
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Visión normal' }))
-    expect(document.documentElement.hasAttribute('data-cvd-sim')).toBe(false)
-  })
-
-  it('si ya hay un modo activo, el menú abre el simulador y dice cuál es', () => {
-    aplicarCvdSim('tritanopia')
-    render(
-      <ThemeProvider>
-        <AppearancePicker />
-      </ThemeProvider>,
-    )
-    fireEvent.click(screen.getByRole('button', { name: /apariencia y accesibilidad/i }))
-    expect(screen.getByRole('radiogroup', { name: /simulador de daltonismo/i })).toBeInTheDocument()
-    expect(screen.getByText(/Viendo: Tritanopia/)).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'Tritanopia' })).toHaveAttribute('aria-checked', 'true')
   })
 })

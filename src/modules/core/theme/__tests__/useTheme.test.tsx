@@ -108,8 +108,14 @@ describe('useTheme hook y ThemeProvider (Sistema de 3 modos + daltonismo)', () =
 
     applyThemeToDom('dark', true)
     expect(document.documentElement.getAttribute('data-theme')).toBe('colorblind')
-    expect(document.documentElement.getAttribute('data-tema')).toBe('oscuro')
+    expect(document.documentElement.getAttribute('data-tema')).toBe('daltonico')
     expect(document.documentElement.getAttribute('data-cvd')).toBe('on')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+
+    // con daltonismo la paleta es siempre la oscura de daltonismo, aunque el modo guardado sea claro
+    applyThemeToDom('light', true)
+    expect(document.documentElement.getAttribute('data-theme')).toBe('colorblind')
+    expect(document.documentElement.getAttribute('data-tema')).toBe('daltonico')
     expect(document.documentElement.style.colorScheme).toBe('dark')
   })
 

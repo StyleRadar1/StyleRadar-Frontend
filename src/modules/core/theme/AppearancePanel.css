@@ -1,8 +1,27 @@
-/* Panel «Apariencia y accesibilidad».
-   Regla de este panel: nada de texto por debajo de 13 px, opciones de 15-16 px y áreas táctiles de 44 px o más.
-   Los colores salen de los tokens --sr-*, así que cambia solo con el tema (claro, oscuro o daltónico). */
+/* Selector de tema (panel) y ventana de modos de daltonismo.
+   Reglas: nada de texto por debajo de 13 px, opciones de 15-16 px y áreas táctiles de 44 px o más.
+   Los colores salen de los tokens --sr-* y el cristal de los tokens --glass-* (index.css), así que todo cambia
+   solo con el tema (claro, oscuro o daltonismo). Ambas superficies llevan encima un relleno sólido del 90 %
+   porque se dibujan sobre contenido de cualquier color y tienen que leerse siempre. */
 
 .sr-apar-fondo { display: none; }
+
+.sr-apar,
+.sr-dalt {
+  color: var(--sr-text-primary);
+  background: color-mix(in srgb, var(--sr-surface) 90%, transparent);
+  backdrop-filter: var(--glass-desenfoque);
+  -webkit-backdrop-filter: var(--glass-desenfoque);
+  border: 1px solid var(--glass-borde);
+  border-radius: 22px;
+  box-shadow: var(--glass-sombra);
+  font-family: Poppins, sans-serif;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+}
+.sr-apar *, .sr-dalt * { box-sizing: border-box; }
 
 .sr-apar {
   position: fixed;
@@ -12,21 +31,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 18px;
-  border: 1px solid var(--sr-border-subtle);
-  border-radius: 22px;
-  color: var(--sr-text-primary);
-  background: color-mix(in srgb, var(--sr-surface) 94%, transparent);
-  backdrop-filter: blur(22px) saturate(1.5);
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
-  box-shadow: 0 24px 60px -16px rgba(0, 0, 0, .45);
-  font-family: Poppins, sans-serif;
-  text-align: left;
-  text-transform: none;
-  letter-spacing: normal;
-  white-space: normal;
 }
-
-.sr-apar * { box-sizing: border-box; }
 
 .sr-apar-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
 .sr-apar-titulo { margin: 0; font-size: 1.125rem; font-weight: 700; line-height: 1.25; }
@@ -39,17 +44,11 @@
 }
 .sr-apar-cerrar:hover { background: color-mix(in srgb, var(--sr-text-primary) 8%, transparent); }
 
-.sr-apar-seccion { margin: 18px 0 0; padding: 18px 0 0; border-top: 1px solid var(--sr-border-subtle); }
-.sr-apar-seccion:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
-.sr-apar-etiqueta {
-  display: block; padding: 0; margin: 0 0 10px;
-  font-size: .8125rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--sr-text-secondary);
-}
-
-/* Botones de opción (tema y simulador): grandes y con el estado a la vista */
+/* Botones de opción: grandes y con el estado a la vista */
 .sr-apar-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sr-apar-opciones--lista { grid-template-columns: 1fr; }
 .sr-apar-opcion {
-  display: flex; align-items: center; gap: 10px; text-align: left;
+  display: flex; align-items: center; gap: 12px; text-align: left;
   min-height: 56px; padding: 10px 14px;
   border: 1.5px solid var(--sr-border-subtle); border-radius: 14px;
   background: color-mix(in srgb, var(--sr-text-primary) 4%, transparent);
@@ -62,51 +61,31 @@
   background: color-mix(in srgb, var(--sr-accent) 14%, transparent);
 }
 .sr-apar-opcion svg { flex: none; }
+.sr-dalt .sr-apar-opcion svg[data-modo] { color: var(--sr-text-primary); }
 .sr-apar-opcion .sr-apar-nombre { display: block; font-size: 1rem; font-weight: 600; line-height: 1.25; }
 .sr-apar-opcion .sr-apar-detalle { display: block; margin-top: 2px; font-size: .8125rem; line-height: 1.3; color: var(--sr-text-secondary); }
 .sr-apar-opcion .sr-apar-marca { margin-left: auto; flex: none; color: var(--sr-accent-text); }
 
-/* Interruptor del modo para daltonismo */
-.sr-apar-interruptor {
-  display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; text-align: left;
-  min-height: 64px; padding: 12px 14px;
-  border: 1.5px solid var(--sr-border-subtle); border-radius: 14px;
-  background: color-mix(in srgb, var(--sr-text-primary) 4%, transparent);
-  color: inherit; font: inherit; cursor: pointer;
+/* Ventana emergente de los modos de daltonismo: centrada y con fondo que oscurece la página */
+.sr-dalt-fondo { position: fixed; inset: 0; z-index: 89; background: rgba(8, 6, 16, .55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.sr-dalt {
+  position: fixed; z-index: 90; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(36rem, calc(100vw - 1.5rem));
+  max-height: min(90dvh, 44rem); overflow-y: auto; overscroll-behavior: contain;
+  padding: 22px;
 }
-.sr-apar-interruptor[aria-checked="true"] { border-color: var(--sr-accent); background: color-mix(in srgb, var(--sr-accent) 14%, transparent); }
-.sr-apar-interruptor .sr-apar-nombre { display: block; font-size: 1rem; font-weight: 600; }
-.sr-apar-interruptor .sr-apar-detalle { display: block; margin-top: 2px; font-size: .875rem; line-height: 1.4; color: var(--sr-text-secondary); }
-.sr-apar-pista {
-  position: relative; flex: none; width: 52px; height: 30px; border-radius: 999px;
-  background: color-mix(in srgb, var(--sr-text-primary) 28%, transparent); transition: background .2s;
+.sr-dalt:focus { outline: none; }
+.sr-dalt-leyenda { margin: 14px 0 0; font-size: .8125rem; line-height: 1.45; color: var(--sr-text-secondary); }
+.sr-dalt-pie { display: flex; justify-content: flex-end; margin-top: 16px; }
+.sr-dalt-listo {
+  min-height: 48px; padding: 0 28px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--sr-accent); color: var(--sr-text-on-accent); font: inherit; font-size: 1rem; font-weight: 700;
 }
-.sr-apar-pista::after {
-  content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
-  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); transition: transform .2s;
-}
-.sr-apar-interruptor[aria-checked="true"] .sr-apar-pista { background: var(--sr-accent); }
-.sr-apar-interruptor[aria-checked="true"] .sr-apar-pista::after { transform: translateX(22px); }
+.sr-dalt-listo:hover { filter: brightness(1.12); }
 
-/* Desplegable del simulador */
-.sr-apar-despliega {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left;
-  min-height: 56px; padding: 10px 14px;
-  border: 1.5px solid var(--sr-border-subtle); border-radius: 14px; background: transparent;
-  color: inherit; font: inherit; cursor: pointer;
-}
-.sr-apar-despliega:hover { border-color: var(--sr-border-control); }
-.sr-apar-despliega .sr-apar-nombre { display: block; font-size: 1rem; font-weight: 600; }
-.sr-apar-despliega .sr-apar-detalle { display: block; margin-top: 2px; font-size: .8125rem; color: var(--sr-text-secondary); }
-.sr-apar-despliega svg { transition: transform .2s; flex: none; }
-.sr-apar-despliega[aria-expanded="true"] svg { transform: rotate(180deg); }
-.sr-apar-nota { margin: 10px 0 12px; font-size: .875rem; line-height: 1.45; color: var(--sr-text-secondary); }
-.sr-apar-activo { margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; font-size: .875rem; font-weight: 600;
-  background: color-mix(in srgb, var(--sr-accent) 14%, transparent); }
+.sr-apar button:focus-visible, .sr-dalt button:focus-visible { outline: 3px solid var(--sr-focus); outline-offset: 2px; }
 
-.sr-apar button:focus-visible { outline: 3px solid var(--sr-focus); outline-offset: 2px; }
-
-/* Teléfono: hoja que sube desde abajo, con fondo que oscurece la página */
+/* Teléfono: el selector de tema sube como hoja desde abajo; los modos ocupan casi toda la pantalla en una columna */
 @media (max-width: 639px) {
   .sr-apar-fondo { display: block; position: fixed; inset: 0; z-index: 79; background: rgba(0, 0, 0, .5); }
   .sr-apar {
@@ -114,7 +93,9 @@
     width: auto; max-height: 88dvh;
     border-radius: 26px 26px 0 0; padding: 20px 18px calc(22px + env(safe-area-inset-bottom));
   }
+  .sr-dalt { padding: 18px; }
+  .sr-dalt .sr-apar-opciones { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sr-apar *, .sr-apar-pista::after { transition: none !important; }
+  .sr-apar *, .sr-dalt * { transition: none !important; }
 }

@@ -16,7 +16,7 @@ export function ProblemSection() {
       <div className="max-w-6xl mx-auto space-y-16">
         {/* Cabecera de la sección */}
         <div className="max-w-3xl space-y-5">
-          <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--sr-accent)]">
+          <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--sr-accent-text)]">
             Bogotá · el problema
           </p>
           <h2
@@ -43,7 +43,7 @@ export function ProblemSection() {
               className="p-8 rounded-2xl sr-glass-card sr-glass-interactive group flex flex-col justify-between"
             >
               <div className="space-y-4">
-                <span className="inline-block text-sm font-black tracking-widest text-[var(--sr-accent)] group-hover:text-[var(--sr-hero-text)] transition-colors">
+                <span className="inline-block text-sm font-black tracking-widest text-[var(--sr-accent-text)] group-hover:text-[var(--sr-hero-text)] transition-colors">
                   {problem.number}
                 </span>
                 <h3 className="text-xl font-bold text-[var(--sr-hero-text)] tracking-tight">
@@ -68,7 +68,7 @@ export function ProblemSection() {
 
         <div className="space-y-6 pt-4">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--sr-accent)]">StyleRadar conecta</p>
+            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--sr-accent-text)]">StyleRadar conecta</p>
             <h3 className="mt-2 text-2xl md:text-3xl font-extrabold text-[var(--sr-hero-text)]">Personas, tiendas y fundaciones</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">

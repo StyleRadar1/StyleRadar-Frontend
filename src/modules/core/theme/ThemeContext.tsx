@@ -113,10 +113,9 @@ export function applyThemeToDom(
 
   // Sincronizar data-theme, data-tema, data-cvd y data-contrast
   root.setAttribute('data-theme', cvd ? 'colorblind' : resolved)
-  root.setAttribute(
-    'data-tema',
-    themeOrMode === 'daltonico' ? 'daltonico' : (resolved === 'light' ? 'claro' : 'oscuro'),
-  )
+  // Con daltonismo activo el atributo legado también dice «daltonico»; si dijera «claro», los estilos del modo
+  // claro (encabezado, tarjetas de cristal) se mezclarían con la paleta oscura de daltonismo.
+  root.setAttribute('data-tema', cvd ? 'daltonico' : resolved === 'light' ? 'claro' : 'oscuro')
   root.setAttribute('data-cvd', cvd ? 'on' : 'off')
   root.setAttribute('data-contrast', cvd ? 'on' : 'off')
   root.style.colorScheme = cvd ? 'dark' : resolved

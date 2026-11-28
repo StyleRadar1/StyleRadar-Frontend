@@ -52,7 +52,7 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
         {/* Cabecera */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div className="max-w-2xl space-y-4">
-            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--sr-accent)]">
+            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--sr-accent-text)]">
               Planes y membresías
             </p>
             <h2
@@ -108,7 +108,7 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
 
                 <div className="space-y-6">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--sr-accent)]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--sr-accent-text)]">
                       {plan.audience}
                     </span>
                     <h3 className="text-2xl font-black text-[var(--sr-hero-text)] tracking-tight mt-1">
@@ -127,7 +127,7 @@ export function PricingPlans({ onOpenRegister }: PricingPlansProps) {
                       <li key={i} className="flex items-start gap-2.5">
                         <svg
                           className={`w-4 h-4 flex-none mt-0.5 ${
-                            isFeatured ? 'text-[var(--sr-accent)]' : 'text-[var(--sr-hero-text-muted)]'
+                            isFeatured ? 'text-[var(--sr-accent-text)]' : 'text-[var(--sr-hero-text-muted)]'
                           }`}
                           viewBox="0 0 24 24"
                           fill="none"

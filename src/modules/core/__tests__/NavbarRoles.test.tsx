@@ -23,7 +23,7 @@ describe('menú según el rol', () => {
     expect(screen.getByRole('button', { name: 'Mi cuenta: Valentina Rojas, Usuario' })).toBeInTheDocument()
     expect(within(nav()).getByRole('link', { name: /^Mensajes/ })).toHaveAttribute('href', '/mensajes')
     expect(screen.queryByText('Modo administrador')).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /apariencia y accesibilidad/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /tema de la aplicación/i }).length).toBeGreaterThan(0)
   })
 
   it('la campana de notificaciones se ve para persona, tienda y fundación, pero no para el administrador', () => {
@@ -60,12 +60,12 @@ describe('menú según el rol', () => {
     expect(within(screen.getByRole('menu')).queryByRole('menuitem', { name: /Mensajes/ })).not.toBeInTheDocument()
   })
 
-  it('el tema se cambia desde el botón «Apariencia» de la barra, con cualquier rol', async () => {
+  it('el tema se cambia desde el botón «Tema» de la barra, con cualquier rol', async () => {
     const user = userEvent.setup()
     loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
     renderNav()
-    await user.click(screen.getAllByRole('button', { name: /apariencia y accesibilidad/i })[0])
-    const panel = screen.getByRole('dialog', { name: /apariencia y accesibilidad/i })
+    await user.click(screen.getAllByRole('button', { name: /tema de la aplicación/i })[0])
+    const panel = screen.getByRole('dialog', { name: 'Tema' })
     expect(within(panel).getByRole('radio', { name: 'Oscuro' })).toHaveAttribute('aria-checked', 'true')
     await user.click(within(panel).getByRole('radio', { name: 'Claro' }))
     expect(document.documentElement.dataset.tema).toBe('claro')
@@ -80,9 +80,9 @@ describe('menú según el rol', () => {
     expect(within(screen.getByRole('menu')).queryByRole('group', { name: 'Tema' })).not.toBeInTheDocument()
   })
 
-  it('sin sesión, el botón «Apariencia» está en la barra', () => {
+  it('sin sesión, el botón «Tema» está en la barra', () => {
     renderNav()
-    expect(screen.getAllByRole('button', { name: /apariencia y accesibilidad/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /tema de la aplicación/i }).length).toBeGreaterThan(0)
   })
 
   it('«Iniciar sesión» abre el mismo inicio de sesión del landing', () => {

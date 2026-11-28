@@ -526,36 +526,42 @@ html[data-tema="claro"] body::after {
 /* =====================================================================
    Superficies Glassmorphism globales (modo oscuro y claro)
    ===================================================================== */
-.sr-glass-card {
-  background: linear-gradient(
-    155deg,
-    rgba(255, 255, 255, 0.085) 0%,
-    rgba(255, 255, 255, 0.025) 60%,
-    rgba(139, 92, 246, 0.10) 100%
-  );
-  backdrop-filter: blur(20px) saturate(1.45);
-  -webkit-backdrop-filter: blur(20px) saturate(1.45);
-  border-color: rgba(255, 255, 255, 0.16);
-  box-shadow:
+/* TOKENS DE GLASSMORPHISM
+   El tema de la aplicación es cristal, pero el cristal no puede costar legibilidad. Las opacidades salen de medir
+   el contraste real del texto sobre los píxeles de las fotos de fondo (peor caso, escritorio y móvil):
+   - Oscuro / Daltonismo: violeta oscuro 68 % → 54 %. Más opaco que el mínimo medido (48 % → 34 % ya cumplía).
+   - Claro: blanco 84 % → 72 %. Más opaco que el mínimo medido (64 % → 52 % ya cumplía).
+   Se subió una vez que el equipo pidió el vidrio «un poco menos transparente». Mínimo AA: 4,5:1.
+   Si se vuelve a bajar la opacidad, hay que volver a medir. */
+:root {
+  --glass-fondo: linear-gradient(145deg, rgba(32, 24, 60, 0.68) 0%, rgba(20, 16, 38, 0.54) 100%);
+  --glass-borde: rgba(255, 255, 255, 0.18);
+  --glass-desenfoque: blur(22px) saturate(1.5);
+  --glass-sombra:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     0 18px 44px -14px rgba(0, 0, 0, 0.62),
     0 0 32px -12px rgba(139, 92, 246, 0.22);
 }
 
-html[data-theme="light"] .sr-glass-card,
-html[data-theme="claro"] .sr-glass-card,
-html[data-tema="claro"] .sr-glass-card {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.80) 0%,
-    rgba(237, 233, 254, 0.62) 100%
-  );
-  backdrop-filter: blur(18px) saturate(1.35);
-  -webkit-backdrop-filter: blur(18px) saturate(1.35);
-  border-color: rgba(76, 29, 149, 0.16);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 16px 36px rgba(15, 23, 42, 0.08);
+html[data-theme="light"],
+html[data-theme="claro"],
+html[data-tema="claro"] {
+  --glass-fondo: linear-gradient(145deg, rgba(255, 255, 255, 0.84) 0%, rgba(250, 247, 255, 0.72) 100%);
+  --glass-borde: rgba(255, 255, 255, 0.95);
+  --glass-desenfoque: blur(22px) saturate(1.7);
+  --glass-sombra:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(72, 17, 154, 0.08),
+    0 18px 40px -12px rgba(38, 38, 38, 0.26),
+    0 2px 8px rgba(38, 38, 38, 0.08);
+}
+
+.sr-glass-card {
+  background: var(--glass-fondo);
+  backdrop-filter: var(--glass-desenfoque);
+  -webkit-backdrop-filter: var(--glass-desenfoque);
+  border-color: var(--glass-borde);
+  box-shadow: var(--glass-sombra);
 }
 
 #root {
