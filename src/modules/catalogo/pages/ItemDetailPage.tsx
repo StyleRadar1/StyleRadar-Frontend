@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useContext } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, Link } from 'react-router-dom'
 import { Loading } from '@/modules/core/components/Status'
 import { apiClient, ApiError } from '@/modules/core/api/apiClient'
@@ -21,6 +22,17 @@ import { getStoreIdByName } from '../services/storePublicService'
 import type { ItemResponseDto } from '../types/item.dto'
 import { isGarmentTryOnEligible } from '../utils/tryOnEligibility'
 import './ItemDetailPage.css'
+
+function Ico({ children, className = 'h-4 w-4' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <svg className={`${className} shrink-0`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {children}
+    </svg>
+  )
+}
+
+const BTN_DETALLE_PRIMARIO = 'inline-flex items-center justify-center gap-2 rounded-xl bg-[#48119A] px-4 py-3 text-center text-[11px] font-extrabold uppercase leading-tight tracking-wide text-white transition hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,#E8DCCB)]'
+const BTN_DETALLE_SECUNDARIO = 'inline-flex items-center justify-center gap-2 rounded-xl border border-[#B9B9CA]/50 bg-white/5 px-4 py-3 text-center text-[11px] font-extrabold uppercase leading-tight tracking-wide text-[#E8DCCB] transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,#E8DCCB)]'
 
 type Accion = 'reintentar-alerta' | 'reservar' | 'planes' | 'login' | 'ver-alertas'
 interface AvisoPrenda { tono: TonoAviso; titulo: string; texto: string; accion?: Accion }
@@ -67,6 +79,8 @@ export default function ItemDetailPage() {
   const [prevId, setPrevId] = useState(id)
   const [descripcionExpandida, setDescripcionExpandida] = useState(false)
   const [aviso, setAviso] = useState<AvisoPrenda | null>(null)
+  /** Resultado de «Reservar en tienda»: se muestra en un popup, no en una etiqueta. */
+  const [popupReserva, setPopupReserva] = useState<AvisoPrenda | null>(null)
   const [ocupado, setOcupado] = useState<'alerta' | 'reserva' | null>(null)
   /** Tallas que el inventario dijo que se agotaron (409 al reservar). */
   const [agotadas, setAgotadas] = useState<string[]>([])
@@ -130,6 +144,13 @@ export default function ItemDetailPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [zoomActivo])
 
+  useEffect(() => {
+    if (!popupReserva) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPopupReserva(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [popupReserva])
+
   // 403 y 404 se ven igual: la prenda no existe o no está disponible para esta persona
   const noExiste = !!error && (errorKind(error) === 'no-existe' || errorKind(error) === 'permiso')
 
@@ -171,16 +192,16 @@ export default function ItemDetailPage() {
 
   const reservar = async () => {
     if (!prenda || ocupado) return
-    if (!tallaSeleccionada) { setAviso({ tono: 'info', titulo: 'Elige tu talla', texto: 'Así reservamos la unidad correcta en la tienda.' }); return }
-    if (tallaAgotada) { setAviso({ tono: 'info', titulo: `La talla ${tallaSeleccionada} está agotada`, texto: 'No se puede reservar, pero puedes pedir que te avisemos cuando llegue.' }); return }
-    setOcupado('reserva'); setAviso(null)
+    if (!tallaSeleccionada) { setPopupReserva({ tono: 'info', titulo: 'Elige tu talla', texto: 'Así reservamos la unidad correcta en la tienda.' }); return }
+    if (tallaAgotada) { setPopupReserva({ tono: 'info', titulo: `La talla ${tallaSeleccionada} está agotada`, texto: 'No se puede reservar, pero puedes pedir que te avisemos cuando llegue.' }); return }
+    setOcupado('reserva'); setPopupReserva(null)
     try {
       await itemService.reserve(prenda.id, tallaSeleccionada)
-      setAviso({ tono: 'exito', titulo: `Reservamos tu talla ${tallaSeleccionada}`, texto: `Tienes 15 minutos para recogerla en ${prenda.tienda}.` })
+      setPopupReserva({ tono: 'exito', titulo: `Reservamos tu talla ${tallaSeleccionada}`, texto: `Tienes 15 minutos para recogerla en ${prenda.tienda}.` })
     } catch (e) {
       const a = avisoReserva(e)
       if (e instanceof ApiError && e.status === 409) setAgotadas((l) => (l.includes(tallaSeleccionada) ? l : [...l, tallaSeleccionada]))
-      setAviso(a)
+      setPopupReserva(a)
     } finally { setOcupado(null) }
   }
 
@@ -261,7 +282,8 @@ export default function ItemDetailPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-8 text-[var(--color-text)]">
+    <div className="sr-detail-page">
+    <section className="mx-auto max-w-5xl px-4 py-8 text-[var(--color-text)]">
       {/* Barra superior / Migas de pan + botón Cerrar */}
       <nav className="mb-6 flex items-center justify-between text-xs text-[var(--color-text-muted)]" aria-label="Migas de pan">
         <div className="flex items-center gap-2">
@@ -341,28 +363,14 @@ export default function ItemDetailPage() {
           {/* TARJETA HERO DEL PRODUCTO (3 COLUMNAS EN ESCRITORIO)     */}
           {/* ======================================================== */}
           <article className="sr-detail-hero-card p-6 sm:p-8 lg:p-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
               
               {/* ---------------------------------------------------- */}
               {/* COLUMNA CENTRO: Galería Multi-Ángulo (hasta 4 fotos) */}
               {/* Desktop: Col 6 centro | Tablet: Top ancho completo   */}
               {/* Mobile: Primero en el orden visual (order-1)        */}
               {/* ---------------------------------------------------- */}
-              <div className="flex flex-col items-center justify-center md:col-span-2 lg:col-span-6 md:order-1 lg:order-2 order-1">
-                {/* Etiqueta superior editorial con aura de marca */}
-                <div className="mb-3 text-center z-10">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-[var(--sr-border-subtle,var(--color-border))] bg-[var(--sr-surface-raised,var(--color-surface-raised))] px-3.5 py-1 text-[11px] font-bold tracking-wider text-[var(--sr-acento-primario,var(--color-accent))] shadow-sm backdrop-blur-md">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)] animate-ping" />
-                    <span>{prenda.tienda === 'Segunda mano' ? 'MODA CIRCULAR BOGOTÁ' : 'DISEÑO INDEPENDIENTE BOGOTÁ'}</span>
-                    {prenda.barrio && (
-                      <>
-                        <span className="text-[var(--color-text-muted)]">·</span>
-                        <span className="text-[var(--color-text)] uppercase">{prenda.barrio}</span>
-                      </>
-                    )}
-                  </span>
-                </div>
-
+              <div className="flex flex-col items-center justify-center">
                 {/* Contenedor interactivo de la foto con aura y zoom */}
                 <div
                   className={`group/stage relative w-full max-w-[24.5rem] sm:max-w-[27rem] aspect-[3/4] flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 ${
@@ -401,7 +409,7 @@ export default function ItemDetailPage() {
 
                   {/* Contador de vistas / Ángulo actual */}
                   <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md border border-white/15 shadow-sm">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-[11px] font-bold text-white border border-white/15 shadow-sm">
                       <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" />
                       {indiceImagen + 1}/{imagenesDisponibles.length} · {ANGLE_LABELS[indiceImagen] || `Ángulo ${indiceImagen + 1}`}
                     </span>
@@ -418,11 +426,11 @@ export default function ItemDetailPage() {
                         return next
                       })
                     }}
-                    className="absolute top-3 right-3 z-30 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-[11px] font-bold text-white/90 hover:text-white hover:bg-black/90 backdrop-blur-md border border-white/15 transition shadow-sm"
+                    className="absolute top-3 right-3 z-30 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-[11px] font-bold text-white/90 hover:text-white hover:bg-black/90 border border-white/15 transition shadow-sm"
                     title={zoomActivo ? 'Desactivar zoom' : 'Inspeccionar textura / Zoom'}
                     aria-label={zoomActivo ? 'Desactivar zoom' : 'Inspeccionar textura / Zoom'}
                   >
-                    <span>{zoomActivo ? '✕' : ''}</span>
+                    {zoomActivo ? <span>✕</span> : <Ico className="h-3.5 w-3.5"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Ico>}
                     <span className="hidden sm:inline">{zoomActivo ? 'Cerrar zoom' : 'Zoom textura'}</span>
                   </button>
 
@@ -435,7 +443,7 @@ export default function ItemDetailPage() {
                           e.stopPropagation()
                           anteriorFoto()
                         }}
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white hover:bg-black/90 hover:scale-110 active:scale-95 transition backdrop-blur-md border border-white/20 shadow-lg"
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white hover:bg-black/90 hover:scale-110 active:scale-95 transition border border-white/20 shadow-lg"
                         aria-label="Ver ángulo anterior"
                         title="Ángulo anterior"
                       >
@@ -447,7 +455,7 @@ export default function ItemDetailPage() {
                           e.stopPropagation()
                           siguienteFoto()
                         }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white hover:bg-black/90 hover:scale-110 active:scale-95 transition backdrop-blur-md border border-white/20 shadow-lg"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white hover:bg-black/90 hover:scale-110 active:scale-95 transition border border-white/20 shadow-lg"
                         aria-label="Ver ángulo siguiente"
                         title="Ángulo siguiente"
                       >
@@ -480,7 +488,7 @@ export default function ItemDetailPage() {
 
                   {zoomActivo && (
                     <div className="pointer-events-none absolute bottom-3 inset-x-0 z-30 flex justify-center">
-                      <span className="rounded-full bg-black/75 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md border border-white/15 shadow-sm">
+                      <span className="rounded-full bg-black/75 px-3 py-1 text-[11px] font-medium text-white/90 border border-white/15 shadow-sm">
                         Mueve el cursor para inspeccionar · Clic para salir
                       </span>
                     </div>
@@ -510,7 +518,7 @@ export default function ItemDetailPage() {
                     <div className="flex items-center justify-between mb-2 px-1">
                       <span className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--color-text-muted)] flex items-center gap-1.5">
                         <span>ÁNGULOS DE LA PRENDA</span>
-                        <span className="rounded bg-[var(--color-accent)]/20 px-1.5 py-0.5 text-[9px] font-black text-[var(--color-accent)]">
+                        <span className="rounded bg-[var(--color-accent)]/20 px-1.5 py-0.5 text-[9px] font-black text-[var(--sr-acento-primario)]">
                           {imagenesDisponibles.length} VISTAS
                         </span>
                       </span>
@@ -548,13 +556,29 @@ export default function ItemDetailPage() {
                     </div>
                   </div>
                 )}
+                  {/* Tarjeta de disponibilidad en tienda real (RF-22) */}
+                  <div className="mt-5 w-full max-w-[24.5rem] sm:max-w-[27rem] text-left rounded-2xl border border-white/15 bg-white/[0.05] p-4 text-xs text-[var(--color-text)] shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-success-bg,rgba(16,185,129,0.15))] border border-[var(--color-success-border,rgba(16,185,129,0.3))] px-2.5 py-0.5 text-[0.625rem] font-bold text-[var(--color-success-text,#10b981)]">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Disponible hoy
+                      </span>
+                      <span className="font-semibold text-[var(--color-text)]">Disponibilidad en tienda real</span>
+                    </div>
+                    <p className="mt-1 text-[var(--color-text-muted)] text-[0.6875rem] leading-relaxed">
+                      Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong>{prenda.barrio ? ` (${prenda.barrio})` : ''}.
+                    </p>
+                  </div>
               </div>
 
               {/* ---------------------------------------------------- */}
               {/* COLUMNA IZQUIERDA: Información del producto (~28%)   */}
               {/* Desktop: Col 3 izq | Tablet: Col 1 | Mobile: order-2 */}
               {/* ---------------------------------------------------- */}
-              <div className="flex flex-col justify-between md:col-span-1 lg:col-span-3 md:order-2 lg:order-1 order-2 sr-hero-col-left">
+              <div className="flex flex-col gap-7 sr-hero-col-left">
+              <div className="flex flex-col">
                 <div>
                   {/* a) Marca o tienda en pequeño, mayúsculas, letter-spacing y color de acento */}
                   <Link
@@ -567,13 +591,13 @@ export default function ItemDetailPage() {
                   </Link>
 
                   {/* b) Nombre del producto grande, en mayúsculas, en 2 líneas como máximo */}
-                  <h1 className="mt-1.5 text-2xl sm:text-3xl lg:text-[1.75rem] font-black uppercase tracking-tight text-[var(--color-text)] leading-tight line-clamp-2">
+                  <h1 className="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-[var(--color-text)] leading-[1.02] line-clamp-3">
                     {prenda.nombre}
                   </h1>
 
                   {/* Precio final */}
                   <div className="mt-3">
-                    <p className="text-2xl font-black text-[var(--sr-acento-primario,var(--color-accent))]">
+                    <p className="text-4xl sm:text-5xl font-black tracking-tight text-[#9d5cff]">
                       {formatCOP(prenda.precio)}
                     </p>
                     <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-medium">Precio final · IVA incluido (COP)</p>
@@ -595,30 +619,6 @@ export default function ItemDetailPage() {
                     </div>
                   )}
 
-                  {/* Tarjeta de disponibilidad en tienda real (RF-22) */}
-                  <div className="mt-6 rounded-2xl border border-white/15 dark:border-white/10 bg-white/50 dark:bg-white/[0.04] p-4 text-xs text-[var(--color-text)] backdrop-blur-xl shadow-sm">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-success-bg,rgba(16,185,129,0.15))] border border-[var(--color-success-border,rgba(16,185,129,0.3))] px-2.5 py-0.5 text-[0.625rem] font-bold text-[var(--color-success-text,#10b981)]">
-                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        Disponible hoy
-                      </span>
-                      <span className="font-semibold text-[var(--color-text)]">Disponibilidad en tienda real</span>
-                    </div>
-                    <p className="mt-1 text-[var(--color-text-muted)] text-[0.6875rem] leading-relaxed">
-                      Disponible hoy para entrega o retiro inmediato en <strong>{prenda.tienda}</strong>{prenda.barrio ? ` (${prenda.barrio})` : ''}.
-                    </p>
-                    {/* RF-73: Contactar a la tienda */}
-                    <ContactButton
-                      className="mt-3 w-full"
-                      label="Enviar mensaje a la tienda"
-                      contacto={tiendaContacto(prenda.tienda)}
-                      nit={nitDeTienda(prenda)}
-                      asunto={prenda.nombre}
-                      referenciaId={prenda.id}
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -626,27 +626,23 @@ export default function ItemDetailPage() {
               {/* COLUMNA DERECHA: Selectores de Talla y Color (~28%)   */}
               {/* Desktop: Col 3 der | Tablet: Col 2 | Mobile: order-3 */}
               {/* ---------------------------------------------------- */}
-              <div className="flex flex-col justify-between md:col-span-1 lg:col-span-3 md:order-3 lg:order-3 order-3 sr-hero-col-right">
+              <div className="flex flex-col sr-hero-col-right">
                 <div>
+                  <div className="flex items-start justify-between gap-4">
                   {/* a) TALLA como título con letter-spacing y chips redondos */}
                   {prenda.tallas && prenda.tallas.length > 0 && (
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between text-[0.6875rem] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
                         <div className="flex items-center gap-2">
                           <span>TALLA</span>
                           <button
                             type="button"
                             onClick={() => setGuiaTallasAbierta(true)}
-                            className="text-[var(--color-accent)] hover:underline capitalize font-semibold tracking-normal text-[11px]"
+                            className="text-[var(--sr-acento-primario)] hover:underline capitalize font-semibold tracking-normal text-[11px]"
                           >
                             Guía de tallas
                           </button>
                         </div>
-                        {tallaSeleccionada && (
-                          <span className="text-[var(--sr-acento-primario,var(--color-accent))] font-bold text-xs lowercase first-letter:uppercase">
-                            Talla elegida: {tallaSeleccionada}{tallaAgotada ? ' · agotada' : ''}
-                          </span>
-                        )}
                       </div>
                       <div className="mt-2.5 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Tallas disponibles">
                         {prenda.tallas.map((talla) => {
@@ -663,8 +659,8 @@ export default function ItemDetailPage() {
                               onClick={() => setTallaSeleccionada(isSelected ? '' : talla)}
                               className={`h-10 w-10 rounded-full border text-xs font-bold transition flex items-center justify-center ${isAgotada && !isSelected ? 'line-through opacity-50 border-dashed' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                                 isSelected
-                                  ? 'border-purple-400 bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6] text-white shadow-[0_4px_14px_rgba(139,92,246,0.45)] scale-105'
-                                  : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:border-purple-400/50 hover:bg-white/10'
+                                  ? 'border-[#B9B9CA] bg-[#48119A] text-white shadow-[0_4px_14px_rgba(72,17,154,0.55)] scale-105'
+                                  : 'border-white/15 bg-white/5 text-[var(--color-text)] hover:border-[#B9B9CA] hover:bg-white/10'
                               }`}
                             >
                               {talla}
@@ -677,7 +673,7 @@ export default function ItemDetailPage() {
 
                   {/* b) COLOR como título y muestra de color */}
                   {prenda.color && (
-                    <div className="mt-6">
+                    <div className="shrink-0">
                       <span className="block text-[0.6875rem] font-bold uppercase tracking-[.18em] text-[var(--color-text-muted)]">
                         COLOR
                       </span>
@@ -698,28 +694,22 @@ export default function ItemDetailPage() {
                     </div>
                   )}
 
-                  {/* c) Botones de acción principales */}
-                  <div className="mt-8 flex flex-col gap-3">
-                    {/* Botón primario Ver tienda (morado suave con glow) */}
-                    <Link
-                      to={`/tiendas/${encodeURIComponent(prenda.storeNit || prenda.almacenId || getStoreIdByName(prenda.tienda))}`}
-                      className="w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#A78BFA] via-[#8B5CF6] to-[#7C3AED] px-6 py-3 text-xs font-bold text-white shadow-[0_4px_20px_-2px_rgba(139,92,246,0.5)] border border-white/20 transition-all hover:from-[#B49BFB] hover:to-[#8B5CF6] hover:shadow-[0_6px_25px_-2px_rgba(139,92,246,0.65)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
-                    >
-                      Ver tienda
-                    </Link>
+                  </div>
 
+                  {/* c) Botones de acción principales */}
+                  <div className="mt-4 flex flex-col gap-3">
                     {/* Botón secundario Guardar en playlist */}
                     <button
                       type="button"
                       onClick={handleGuardarPlaylist}
                       aria-pressed={guardadoPlaylist}
-                      className={`w-full inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold backdrop-blur-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
+                      className={`w-full inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))] ${
                         guardadoPlaylist
-                          ? 'border-purple-400 bg-purple-500/20 text-purple-300 shadow-[0_2px_12px_rgba(168,85,247,0.25)]'
-                          : 'border-white/15 dark:border-white/15 bg-white/5 dark:bg-white/5 text-[var(--color-text)] hover:bg-white/10 hover:border-purple-400/40'
+                          ? 'border-[#B9B9CA] bg-[#48119A]/40 text-[#E8DCCB]'
+                          : 'border-white/15 bg-white/5 text-[var(--color-text)] hover:bg-white/10 hover:border-[#B9B9CA]'
                       }`}
                     >
-                      <span></span>
+                      <Ico><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></Ico>
                       <span>{guardadoPlaylist ? 'En tu playlist de estilo' : 'Guardar en playlist'}</span>
                     </button>
 
@@ -733,14 +723,16 @@ export default function ItemDetailPage() {
                         <Link
                           to={`/probador?prenda=${prenda.id}&talla=${tallaSeleccionada || prenda.tallas[0] || 'M'}&color=${encodeURIComponent(prenda.color || 'default')}`}
                           aria-label="Probarme esta prenda en el probador - Probar en el maniquí"
-                          className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400/60 px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition backdrop-blur-md shadow-[0_2px_12px_rgba(168,85,247,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 hover:border-[#B9B9CA] px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sr-focus,var(--color-focus-ring))]"
                         >
+                          <Ico><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" /></Ico>
                           <span>Probar en el maniquí</span>
                         </Link>
                         <Link
                           to={`/probador/avanzado?prenda=${prenda.id}&talla=${encodeURIComponent(tallaSeleccionada || prenda.tallas[0] || 'M')}`}
-                          className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-violeta/40 bg-violeta/15 hover:bg-violeta/25 px-4 py-2 text-xs font-semibold text-[var(--color-text)] transition"
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[#48119A] bg-[#48119A]/50 hover:bg-[#48119A] px-4 py-2.5 text-xs font-semibold text-[var(--color-text)] transition"
                         >
+                          <Ico><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></Ico>
                           <span>Probar con tu foto (IA)</span>
                         </Link>
                       </div>
@@ -748,13 +740,25 @@ export default function ItemDetailPage() {
 
                     {/* Reserva en tienda (ms-inventario) y alerta de disponibilidad (ms-notificaciones) */}
                     <div className="flex flex-wrap gap-2 pt-1">
-                      <button type="button" onClick={reservar} disabled={!!ocupado || tallaAgotada} title={tallaAgotada ? 'Esta talla está agotada: pide que te avisemos cuando llegue' : undefined} className={`${BTN_PRINCIPAL} flex-1 disabled:opacity-50 disabled:cursor-not-allowed`}>
-                        {ocupado === 'reserva' ? 'Reservando…' : 'Reservar en tienda'}
+                      <button type="button" onClick={reservar} disabled={!!ocupado || tallaAgotada} title={tallaAgotada ? 'Esta talla está agotada: pide que te avisemos cuando llegue' : undefined} className={`${BTN_DETALLE_PRIMARIO} flex-1 disabled:opacity-50 disabled:cursor-not-allowed`}>
+                        <Ico><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></Ico>
+                        <span>{ocupado === 'reserva' ? 'Reservando…' : 'Reservar en tienda'}</span>
                       </button>
-                      <button type="button" onClick={seguimiento === null ? crearAlerta : cancelarSeguimiento} disabled={!!ocupado} className={`${BTN_SECUNDARIO} flex-1`}>
-                        {ocupado === 'alerta' ? (seguimiento === null ? 'Creando alerta…' : 'Cancelando…') : seguimiento === null ? 'Avisarme cuando llegue' : 'Cancelar seguimiento'}
+                      <button type="button" onClick={seguimiento === null ? crearAlerta : cancelarSeguimiento} disabled={!!ocupado} className={`${BTN_DETALLE_SECUNDARIO} flex-1`}>
+                        <Ico><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></Ico>
+                        <span>{ocupado === 'alerta' ? (seguimiento === null ? 'Creando alerta…' : 'Cancelando…') : seguimiento === null ? 'Avisarme cuando llegue' : 'Cancelar seguimiento'}</span>
                       </button>
                     </div>
+                    {/* RF-73: Contactar a la tienda */}
+                    <ContactButton
+                      className="w-full"
+                      label="Chatear con la tienda"
+                      contacto={tiendaContacto(prenda.tienda)}
+                      nit={nitDeTienda(prenda)}
+                      asunto={prenda.nombre}
+                      referenciaId={prenda.id}
+                    />
+
                     {aviso && (
                       <Aviso tono={aviso.tono} className="mt-1" titulo={aviso.titulo} acciones={accionAviso(aviso)} onCerrar={() => setAviso(null)}>
                         {aviso.texto}
@@ -763,6 +767,7 @@ export default function ItemDetailPage() {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
 
             {/* ---------------------------------------------------- */}
@@ -784,7 +789,7 @@ export default function ItemDetailPage() {
                   </div>
                   <div>
                     <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">TIENDA</p>
-                    <p className="text-xs font-bold text-[var(--color-text)] truncate max-w-[8.125rem] group-hover:text-[var(--color-accent)] group-hover:underline">
+                    <p className="text-xs font-bold text-[var(--color-text)] truncate max-w-[8.125rem] group-hover:text-[var(--sr-acento-primario)] group-hover:underline">
                       {prenda.tienda} →
                     </p>
                   </div>
@@ -881,5 +886,43 @@ export default function ItemDetailPage() {
         </div>
       )}
     </section>
+
+      {popupReserva && createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/65" onClick={() => setPopupReserva(null)} aria-hidden="true" />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="popup-reserva-titulo"
+            className="relative w-full max-w-sm rounded-3xl border border-white/25 bg-[#1d1a24]/95 p-7 text-center text-white shadow-[0_30px_80px_rgba(0,0,0,0.65)]"
+          >
+            <span className={`mx-auto grid h-14 w-14 place-items-center rounded-full ${
+              popupReserva.tono === 'exito' ? 'bg-emerald-500/20 text-emerald-300'
+              : popupReserva.tono === 'error' ? 'bg-red-500/20 text-red-300'
+              : 'bg-[#48119A]/50 text-[#E8DCCB]'
+            }`}>
+              {popupReserva.tono === 'exito' ? (
+                <Ico className="h-7 w-7"><polyline points="20 6 9 17 4 12" /></Ico>
+              ) : popupReserva.tono === 'error' ? (
+                <Ico className="h-7 w-7"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Ico>
+              ) : (
+                <Ico className="h-7 w-7"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></Ico>
+              )}
+            </span>
+            <h2 id="popup-reserva-titulo" className="mt-4 text-xl font-extrabold tracking-tight">{popupReserva.titulo}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#B9B9CA]">{popupReserva.texto}</p>
+            <button
+              type="button"
+              autoFocus
+              onClick={() => setPopupReserva(null)}
+              className={`${BTN_DETALLE_PRIMARIO} mt-6 w-full`}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
   )
 }
