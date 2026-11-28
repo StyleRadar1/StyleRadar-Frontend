@@ -51,7 +51,7 @@ export function GoogleSignIn({ onSignedIn }: { onSignedIn: (user: UserSessionDto
       {useOfficialBtn ? (
         <div
           ref={btnRef}
-          className={`flex min-h-[44px] w-full items-center justify-center overflow-hidden rounded-xl ${busy ? 'pointer-events-none opacity-60' : ''}`}
+          className={`sr-google-slot flex min-h-[44px] w-full items-center justify-center overflow-hidden rounded-xl ${busy ? 'pointer-events-none opacity-60' : ''}`}
         />
       ) : (
         <button

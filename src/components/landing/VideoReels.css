@@ -278,7 +278,7 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: .18em;
-  color: var(--sr-accent, #E8DCCB);
+  color: var(--sr-accent-text, var(--sr-accent, #E8DCCB));
   font-variant-numeric: tabular-nums;
 }
 
@@ -423,7 +423,8 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 1.5px solid var(--sr-border-subtle, rgba(255, 255, 255, .3));
+  border: 1.5px solid currentColor;
+  color: var(--sr-accent-text, var(--sr-accent, #E8DCCB));
   display: grid;
   place-items: center;
   font-size: 12px;
@@ -447,7 +448,8 @@
 }
 
 .vc-steps li.is-done .vc-sn {
-  border-color: var(--sr-accent, #E8DCCB);
+  border-color: var(--sr-accent-text, var(--sr-accent, #E8DCCB));
+  color: var(--sr-accent-text, var(--sr-accent, #E8DCCB));
 }
 
 .vc-steps li.is-on button {
@@ -456,8 +458,9 @@
 }
 
 .vc-steps li.is-on .vc-sn {
-  background: var(--sr-accent, #fff);
-  border-color: var(--sr-accent, #fff);
+  background: var(--sr-accent-text, var(--sr-accent, #fff));
+  border-color: var(--sr-accent-text, var(--sr-accent, #fff));
+  color: #09070F;
   color: #fff;
 }
 
