@@ -1,0 +1,8 @@
+/* Simulador de visión de color: un solo filtro sobre <html> cubre toda la página (ver cvdSim.ts). */
+html[data-cvd-sim="protanomalia"] { filter: url(#sr-cvd-protanomalia); }
+html[data-cvd-sim="protanopia"] { filter: url(#sr-cvd-protanopia); }
+html[data-cvd-sim="deuteranomalia"] { filter: url(#sr-cvd-deuteranomalia); }
+html[data-cvd-sim="deuteranopia"] { filter: url(#sr-cvd-deuteranopia); }
+html[data-cvd-sim="tritanomalia"] { filter: url(#sr-cvd-tritanomalia); }
+html[data-cvd-sim="tritanopia"] { filter: url(#sr-cvd-tritanopia); }
+html[data-cvd-sim="acromatopsia"] { filter: url(#sr-cvd-acromatopsia); }

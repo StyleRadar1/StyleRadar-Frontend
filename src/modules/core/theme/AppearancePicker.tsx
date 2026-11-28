@@ -1,275 +1,131 @@
-import { useState, useRef, useEffect, useId, type KeyboardEvent } from 'react'
-import { useTheme, type ThemeMode } from './ThemeContext'
-import { executeThemeTransition } from './themeTransition'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useTheme } from './ThemeContext'
+import { useCvdSim } from './useCvdSim'
+import { CVD_INFO } from './cvdSim'
+import { AppearancePanel } from './AppearancePanel'
 
 interface AppearancePickerProps {
   className?: string
   align?: 'left' | 'right'
+  /** 'onDark': para encabezados oscuros fijos (landing, administración). 'themed': usa los colores del tema (barra de la app). */
+  tone?: 'onDark' | 'themed'
 }
 
-export function AppearancePicker({ className = '', align = 'right' }: AppearancePickerProps) {
-  const { mode, setMode, colorblind, toggleColorblind, resolvedTheme } = useTheme()
-  const [isOpen, setIsOpen] = useState(false)
-  const buttonRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const menuId = useId()
+const BOTON_BASE =
+  'group relative flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro'
+const BOTON_TONO = {
+  onDark: 'border-white/20 bg-black/25 text-white/90 hover:border-white/35 hover:bg-white/10 hover:text-white',
+  themed:
+    'border-[var(--sr-border-control)] bg-[var(--sr-surface)] text-[var(--sr-text-primary)] hover:bg-[var(--sr-surface-raised)]',
+} as const
 
-  // Cerrar al hacer clic fuera
+const trazo = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
+
+/**
+ * Botón «Apariencia» y su panel. El panel se dibuja en <body> (no dentro del encabezado) para que ni el
+ * desenfoque ni la posición fija del encabezado lo desplacen; en teléfono sube como una hoja desde abajo.
+ */
+export function AppearancePicker({ className = '', align = 'right', tone = 'onDark' }: AppearancePickerProps) {
+  const { colorblind, resolvedTheme } = useTheme()
+  const { modo: modoCvd } = useCvdSim()
+  const [abierto, setAbierto] = useState(false)
+  const [pos, setPos] = useState({ top: 0, lado: 0 })
+  const botonRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const idTitulo = useId()
+  const idPanel = useId()
+
+  const colocar = useCallback(() => {
+    const r = botonRef.current?.getBoundingClientRect()
+    if (!r) return
+    const ancho = document.documentElement.clientWidth
+    setPos({ top: r.bottom + 8, lado: Math.max(12, align === 'right' ? ancho - r.right : r.left) })
+  }, [align])
+
+  const cerrar = useCallback((devolverFoco = true) => {
+    setAbierto(false)
+    if (devolverFoco) botonRef.current?.focus()
+  }, [])
+
   useEffect(() => {
-    if (!isOpen) return
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false)
-      }
+    if (!abierto) return
+    colocar()
+    panelRef.current?.focus()
+    const alTeclear = (e: KeyboardEvent) => { if (e.key === 'Escape') cerrar() }
+    const alPulsar = (e: MouseEvent) => {
+      const t = e.target as Node
+      if (!panelRef.current?.contains(t) && !botonRef.current?.contains(t)) cerrar(false)
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isOpen])
-
-  // Accesibilidad de teclado: Escape y flechas
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      setIsOpen(false)
-      buttonRef.current?.focus()
-      return
+    document.addEventListener('keydown', alTeclear)
+    document.addEventListener('mousedown', alPulsar)
+    window.addEventListener('resize', colocar)
+    window.addEventListener('scroll', colocar, true)
+    return () => {
+      document.removeEventListener('keydown', alTeclear)
+      document.removeEventListener('mousedown', alPulsar)
+      window.removeEventListener('resize', colocar)
+      window.removeEventListener('scroll', colocar, true)
     }
+  }, [abierto, colocar, cerrar])
 
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault()
-      if (!menuRef.current) return
-      const focusable = Array.from(
-        menuRef.current.querySelectorAll<HTMLElement>(
-          'button[role="menuitemradio"], button[role="switch"]',
-        ),
-      )
-      const currentIndex = focusable.indexOf(document.activeElement as HTMLElement)
-      let nextIndex = 0
-      if (e.key === 'ArrowDown') {
-        nextIndex = currentIndex + 1 < focusable.length ? currentIndex + 1 : 0
-      } else {
-        nextIndex = currentIndex - 1 >= 0 ? currentIndex - 1 : focusable.length - 1
-      }
-      focusable[nextIndex]?.focus()
-    }
-  }
-
-  const selectMode = (newMode: ThemeMode) => {
-    executeThemeTransition(() => {
-      setMode(newMode)
-    }, buttonRef.current)
-  }
-
-  const handleToggleColorblind = () => {
-    executeThemeTransition(() => {
-      toggleColorblind()
-    }, buttonRef.current)
-  }
+  const claro = resolvedTheme === 'light'
+  const etiqueta =
+    `Apariencia y accesibilidad. Tema: ${claro ? 'Claro' : 'Oscuro'}` +
+    (colorblind ? ', modo daltónico activo' : '') +
+    (modoCvd !== 'normal' ? `, simulador: ${CVD_INFO[modoCvd].etiqueta}` : '')
 
   return (
     <div className={`relative inline-flex items-center ${className}`}>
       <button
-        ref={buttonRef}
+        ref={botonRef}
         type="button"
-        id={`${menuId}-trigger`}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? menuId : undefined}
-        aria-label={`Apariencia y accesibilidad. Tema: ${resolvedTheme === 'light' ? 'Claro' : 'Oscuro'}${colorblind ? ', modo daltónico activo' : ''}`}
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="group relative flex h-9 items-center gap-2 rounded-xl border border-white/20 bg-black/25 px-2.5 text-xs font-semibold text-white/90 shadow-sm transition hover:border-white/35 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
+        aria-haspopup="dialog"
+        aria-expanded={abierto}
+        aria-controls={abierto ? idPanel : undefined}
+        aria-label={etiqueta}
+        onClick={() => setAbierto((v) => !v)}
+        className={`${BOTON_BASE} ${BOTON_TONO[tone]}`}
       >
-        {resolvedTheme === 'light' ? (
-          /* Icono Sol */
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            className="h-4 w-4 shrink-0 text-amber-300"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-          </svg>
-        ) : (
-          /* Icono Luna */
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            className="h-4 w-4 shrink-0 text-lavanda"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" className="shrink-0" {...trazo}>
+          {claro ? (
+            <>
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            </>
+          ) : (
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-          </svg>
-        )}
-
-        <span className="hidden sm:inline-block">
-          {resolvedTheme === 'light' ? 'Claro' : 'Oscuro'}
-        </span>
-
-        {/* Indicador de daltónico */}
-        {colorblind && (
-          <span
-            title="Paleta para daltonismo activa"
-            className="flex h-2 w-2 items-center justify-center rounded-full bg-[#0072b2] ring-1 ring-[#e69f00]"
-          >
-            <span className="sr-only">Modo daltónico activo</span>
-          </span>
-        )}
-
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className={`h-3.5 w-3.5 shrink-0 text-white/60 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9" />
+          )}
         </svg>
+        <span className="hidden sm:inline-block">Apariencia</span>
+
+        {(colorblind || modoCvd !== 'normal') && (
+          <span
+            aria-hidden="true"
+            title={colorblind ? 'Modo para daltonismo activo' : 'Simulador de daltonismo activo'}
+            className="h-2.5 w-2.5 rounded-full bg-[#0072b2] ring-2 ring-[#e69f00]"
+          />
+        )}
       </button>
 
-      {isOpen && (
-        <div
-          ref={menuRef}
-          id={menuId}
-          role="menu"
-          aria-label="Preferencias de apariencia y accesibilidad"
-          onKeyDown={handleKeyDown}
-          className={`absolute top-full z-50 mt-2 w-64 rounded-2xl border border-white/15 bg-grafito/95 p-2 shadow-2xl backdrop-blur-xl ${
-            align === 'right' ? 'right-0' : 'left-0'
-          }`}
-        >
-          <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-white/50">
-            Modo de color
-          </div>
-
-          <div role="radiogroup" aria-label="Modo de color" className="space-y-1">
-            {/* Opción Claro */}
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={mode === 'light'}
-              onClick={() => selectMode('light')}
-              className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs font-semibold transition ${
-                mode === 'light'
-                  ? 'bg-arena text-grafito shadow-sm'
-                  : 'text-white/80 hover:bg-white/10 hover:text-white'
-              }`}
+      {abierto &&
+        createPortal(
+          <>
+            <div className="sr-apar-fondo" aria-hidden="true" onClick={() => cerrar(false)} />
+            <div
+              ref={panelRef}
+              id={idPanel}
+              role="dialog"
+              aria-labelledby={idTitulo}
+              tabIndex={-1}
+              className="sr-apar"
+              style={{ top: pos.top, [align === 'right' ? 'right' : 'left']: pos.lado }}
             >
-              <span className="flex items-center gap-2">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="4" />
-                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-                </svg>
-                Claro
-              </span>
-              {mode === 'light' && (
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 text-grafito"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-            </button>
-
-            {/* Opción Oscuro */}
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={mode === 'dark'}
-              onClick={() => selectMode('dark')}
-              className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs font-semibold transition ${
-                mode === 'dark'
-                  ? 'bg-violeta text-white shadow-sm'
-                  : 'text-white/80 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-                </svg>
-                Oscuro
-              </span>
-              {(mode === 'dark' || (mode === 'system' && resolvedTheme === 'dark')) && (
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          <div className="my-2 border-t border-white/10" />
-
-          {/* Sección Accesibilidad / Daltonismo */}
-          <div className="px-1 py-1">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={colorblind}
-              onClick={handleToggleColorblind}
-              className="flex w-full items-center justify-between gap-3 rounded-xl px-2 py-2 text-left text-xs font-medium text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta-claro"
-            >
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="font-semibold text-white">Modo daltónico</span>
-                <span className="text-[10.5px] leading-snug text-white/60">Paleta Okabe-Ito (azul/naranja)</span>
-              </div>
-              <span
-                aria-hidden="true"
-                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ${
-                  colorblind ? 'bg-[#0072b2]' : 'bg-white/20'
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200 ${
-                    colorblind ? 'translate-x-4.5' : 'translate-x-1'
-                  }`}
-                />
-              </span>
-            </button>
-          </div>
-        </div>
-      )}
+              <AppearancePanel idTitulo={idTitulo} onCerrar={() => cerrar()} origen={botonRef.current} />
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   )
 }

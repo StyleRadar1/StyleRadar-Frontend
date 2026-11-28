@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Role } from '@/modules/core/types/roles'
 import { AuthProvider } from '@/modules/identidad/states/AuthProvider'
+import { ThemeProvider } from '../theme/ThemeContext'
 import { Navbar } from '../components/Navbar'
 
 const loginAs = (role: Role) => {
@@ -19,7 +20,7 @@ describe('encabezado: el menú completo solo aparece cuando cabe', () => {
 
   it('los enlaces de escritorio se muestran desde xl y el botón hamburguesa se oculta desde xl', () => {
     loginAs('BUYER')
-    render(<AuthProvider><MemoryRouter><Navbar /></MemoryRouter></AuthProvider>)
+    render(<ThemeProvider><AuthProvider><MemoryRouter><Navbar /></MemoryRouter></AuthProvider></ThemeProvider>)
     const nav = screen.getByRole('navigation', { name: 'Principal' })
     const enlaces = nav.querySelector('a[href="/catalogo"]')!.parentElement!
     expect(enlaces).toHaveClass('hidden', 'xl:flex')
@@ -31,7 +32,7 @@ describe('encabezado: el menú completo solo aparece cuando cabe', () => {
 
   it('los íconos de mensajes, campana y cuenta no dependen del punto de corte: siempre están en la barra', () => {
     loginAs('BUYER')
-    render(<AuthProvider><MemoryRouter><Navbar /></MemoryRouter></AuthProvider>)
+    render(<ThemeProvider><AuthProvider><MemoryRouter><Navbar /></MemoryRouter></AuthProvider></ThemeProvider>)
     const nav = screen.getByRole('navigation', { name: 'Principal' })
     expect(nav.querySelector('a[href="/mensajes"]')).not.toBeNull()
     expect(screen.getByRole('button', { name: /Notificaciones/ })).toBeInTheDocument()

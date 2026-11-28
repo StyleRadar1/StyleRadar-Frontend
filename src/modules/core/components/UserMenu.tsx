@@ -5,7 +5,6 @@ import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { ROLE_LABEL, type Role } from '@/modules/core/types/roles'
 import { useAuth } from '@/modules/identidad/hooks/useAuth'
 import { marcarSalidaVoluntaria } from '@/modules/identidad/states/salida'
-import { ThemeSegment } from '@/modules/core/theme/ThemeSegment'
 import { ROLE_DOT, avatarCls } from './roleTone'
 
 /** Accesos del menú de cuenta según el rol (los mismos del prototipo, con las rutas de la app). */
@@ -81,7 +80,6 @@ export function UserMenu() {
               <Link key={to} to={to} role="menuitem" onClick={() => setOpen(false)} className={itemCls}>{label}</Link>
             ))}
           </div>
-          <div className="border-t border-[var(--sr-border-subtle)] pt-1.5"><ThemeSegment /></div>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setAskLogout(true) }} className={`${itemCls} mt-0.5 border-t border-[var(--sr-border-subtle)] pt-3 font-semibold text-[var(--sr-bad)]`}>Cerrar sesión</button>
         </div>
       )}
