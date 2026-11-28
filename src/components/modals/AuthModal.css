@@ -599,8 +599,11 @@
   background: none;
   border: 0;
   padding: 0;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--color-accent, #E8DCCB);
   font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;

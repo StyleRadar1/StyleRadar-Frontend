@@ -462,6 +462,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   /** Después de entrar vuelve a la página donde estaba (sesión vencida); si no, al inicio de su rol. */
   const entrarCon = (rol: keyof typeof ROLE_HOME) => finishAuthAndNavigate(tomarRetorno() ?? ROLE_HOME[rol])
 
+  /** Sale de la tarjeta con la misma animación y cambia de ruta (login <-> registro). */
+  const cambiarRuta = async (ruta: string) => {
+    await animateCardOut(cardRef.current)
+    document.documentElement.classList.remove('lock')
+    navigate(ruta)
+  }
+
   /** Pasa a la pantalla del código OTP con los 6 campos vacíos. */
   const irAlCodigo = (vigencia?: number) => {
     setOtp(['', '', '', '', '', ''])
@@ -903,11 +910,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
           {step === 'form' ? (
             <>
               <h2 id="authTitle">{activeTab === 'login' ? 'Inicia sesión' : 'Regístrate'}</h2>
-              <p className="sr-sub">
-                {activeTab === 'login'
-                  ? 'Entra con tu correo.'
-                  : 'Es rápido y gratis.'}
-              </p>
+              {activeTab === 'register' && <p className="sr-sub">Es rápido y gratis.</p>}
 
               {error && (
                 <div role="alert" className="sr-auth-err flex flex-wrap items-center gap-2">
@@ -983,6 +986,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       />
                       <span>Recordarme</span>
                     </label>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/restablecer-contrasena')}
+                      className="sr-forgot"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
                   </div>
 
                   <button
@@ -993,19 +1003,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                   >
                     {espera > 0 ? `Intenta de nuevo en ${esperaTxt}` : loading ? 'Entrando…' : 'Entrar'}
                   </button>
-
-                  <div className="text-right">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose()
-                        navigate('/restablecer-contrasena')
-                      }}
-                      className="text-xs font-semibold text-white/65 hover:text-white underline underline-offset-2"
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  </div>
 
                 </form>
               ) : (
@@ -1200,12 +1197,28 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                 {activeTab === 'login' ? (
                   <>
                     ¿No tienes cuenta?{' '}
-                    <Link to="/registro">Regístrate</Link>
+                    <Link
+                      to="/registro"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        void cambiarRuta('/registro')
+                      }}
+                    >
+                      Regístrate
+                    </Link>
                   </>
                 ) : (
                   <>
                     ¿Ya tienes cuenta?{' '}
-                    <Link to="/login">Inicia sesión</Link>
+                    <Link
+                      to="/login"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        void cambiarRuta('/login')
+                      }}
+                    >
+                      Inicia sesión
+                    </Link>
                   </>
                 )}
               </p>

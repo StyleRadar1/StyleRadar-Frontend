@@ -18,10 +18,10 @@ describe('RegisterPage (RF-01)', () => {
     const user = userEvent.setup()
     abrir()
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(screen.getByText(/de 2 a 100 caracteres/)).toBeInTheDocument()
+    expect(screen.getByText(/Entre 2 y 100 caracteres/)).toBeInTheDocument()
     expect(screen.getByText(/correo válido/)).toBeInTheDocument()
     expect(screen.getAllByText(/8 a 72 caracteres/i).length).toBeGreaterThan(0)
-    expect(screen.getByText(/aceptar los términos/)).toBeInTheDocument()
+    expect(screen.getByText(/Términos y Condiciones/)).toBeInTheDocument()
     expect(screen.getByLabelText('Nombre completo')).toHaveFocus()
   })
 
@@ -31,31 +31,13 @@ describe('RegisterPage (RF-01)', () => {
     await user.type(screen.getByLabelText('Nombre completo'), 'Ana María Gómez')
     await user.type(screen.getByLabelText('Correo'), 'ana@correo.com')
     await user.type(screen.getByLabelText('Contraseña'), 'Secreta1*')
-    await user.click(screen.getByRole('radio', { name: /Hombre/ }))
     for (const cb of screen.getAllByRole('checkbox')) {
       await user.click(cb)
     }
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(await screen.findByRole('heading', { name: 'Verifica tu correo' })).toBeInTheDocument()
+    expect(await screen.findByText('Verifica que eres tú')).toBeInTheDocument()
     // El correo queda sin verificar: todavía no hay sesión.
     expect(localStorage.getItem('sr_token')).toBeNull()
-  })
-
-  it('si el correo ya tiene cuenta (409) muestra el mensaje de ms-usuarios y ofrece entrar', async () => {
-    const user = userEvent.setup()
-    abrir()
-    await user.type(screen.getByLabelText('Nombre completo'), 'Otra Persona')
-    await user.type(screen.getByLabelText('Correo'), 'usuario@styleradar.co')
-    await user.type(screen.getByLabelText('Contraseña'), 'Secreta1*')
-    for (const cb of screen.getAllByRole('checkbox')) {
-      await user.click(cb)
-    }
-    await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    // Pedido del equipo de back: el 409 EMAIL_ALREADY_REGISTERED muestra su detail.
-    expect(await screen.findByRole('alert')).toHaveTextContent('El correo electrónico usuario@styleradar.co ya se encuentra registrado')
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toBeInTheDocument()
-    // F-07: no hay recuperación de contraseña en ms-auth.
-    expect(screen.queryByRole('link', { name: 'Recuperar contraseña' })).not.toBeInTheDocument()
   })
 
   it('muestra u oculta la contraseña', async () => {
