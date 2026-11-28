@@ -114,4 +114,16 @@ describe('menú según el rol', () => {
     expect(screen.getByRole('link', { name: /^StyleRadar/ })).toHaveAttribute('href', '/fundacion')
     u4()
   })
+
+  it('usa contenedor unificado max-w-7xl con 3 zonas (grid-cols-[auto_1fr_auto]), logo currentColor y selector de apariencia compacto en desktop', () => {
+    loginAs('u-1', 'Valentina Rojas', 'usuario@styleradar.co', 'BUYER')
+    renderNav()
+    const navEl = nav()
+    expect(navEl).toHaveClass('max-w-7xl', 'grid', 'grid-cols-[auto_1fr_auto]')
+    const logoSvg = navEl.querySelector('svg')
+    expect(logoSvg?.querySelector('path')?.getAttribute('fill')).toBe('currentColor')
+    const themeBtn = within(navEl).getByRole('button', { name: /tema de la aplicación/i })
+    expect(themeBtn).toHaveAttribute('title', 'Apariencia')
+    expect(themeBtn.textContent?.trim()).toBe('')
+  })
 })

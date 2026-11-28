@@ -5,6 +5,7 @@ import { consentService } from '../services/consentService'
 import { pqrsService } from '../services/pqrsService'
 import { CookieBanner } from '../components/CookieBanner'
 import { LegalFooter } from '../components/LegalFooter'
+import LegalIndexPage from '../pages/LegalIndexPage'
 import { LEGAL_VERSIONS, PROVIDER_INFO } from '../config/legalConfig'
 
 describe('Cumplimiento Legal y Consentimiento de Cookies (Colombia)', () => {
@@ -142,8 +143,8 @@ describe('Cumplimiento Legal y Consentimiento de Cookies (Colombia)', () => {
     ).rejects.toThrow(/Debes autorizar el tratamiento de datos personales/i)
   })
 
-  it('LegalFooter: renderiza datos del proveedor sin corchetes, enlace a la SIC y canal de datos', () => {
-    render(
+  it('LegalFooter: sin tarjeta gigante de proveedor, sin enlaces duplicados, con enlace a la SIC y canal de datos', () => {
+    const { container } = render(
       <MemoryRouter>
         <LegalFooter />
       </MemoryRouter>
@@ -152,17 +153,40 @@ describe('Cumplimiento Legal y Consentimiento de Cookies (Colombia)', () => {
     // Información del proveedor sin placeholders entre corchetes
     expect(PROVIDER_INFO.razonSocial).not.toMatch(/\[|\]/)
     expect(PROVIDER_INFO.correoDatos).toBe('privacidad@styleradar.co')
-    expect(screen.getByText(PROVIDER_INFO.razonSocial)).toBeInTheDocument()
-    expect(screen.getByText(`NIT ${PROVIDER_INFO.nit}`)).toBeInTheDocument()
-    expect(screen.getByText(PROVIDER_INFO.direccion)).toBeInTheDocument()
+    expect(container.textContent).toContain(PROVIDER_INFO.razonSocial)
+    expect(container.textContent).toContain(`NIT ${PROVIDER_INFO.nit}`)
+    // La ficha completa (dirección / teléfono) vive ahora en /legal (LegalIndexPage), no en el footer
+    expect(screen.queryByText(PROVIDER_INFO.direccion)).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'privacidad@styleradar.co' })).toHaveAttribute('href', 'mailto:privacidad@styleradar.co')
+    expect(screen.getByRole('link', { name: /Información del proveedor/i })).toHaveAttribute('href', '/legal#proveedor')
 
-    // Enlace a la SIC
-    const sicLinks = screen.getAllByRole('link', { name: /Superintendencia de Industria y Comercio|Portal SIC/i })
-    expect(sicLinks.length).toBeGreaterThan(0)
-    expect(sicLinks[0]).toHaveAttribute('href', PROVIDER_INFO.sicUrl)
+    // Enlaces deduplicados: devoluciones-garantias, pqrs y SIC aparecen una sola vez
+    expect(container.querySelectorAll('a[href="/legal/devoluciones-garantias"]')).toHaveLength(1)
+    expect(container.querySelectorAll('a[href="/legal/pqrs"]')).toHaveLength(1)
+    expect(container.querySelectorAll(`a[href="${PROVIDER_INFO.sicUrl}"]`)).toHaveLength(1)
+  })
 
-    // Enlace a derecho de retracto
-    expect(screen.getAllByText(/Retracto legal|Derecho de Retracto/i).length).toBeGreaterThan(0)
+  it('LegalFooter compact: renderiza barra compacta de 1 línea para vistas operativas', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <LegalFooter compact />
+      </MemoryRouter>
+    )
+    expect(container.querySelector('footer')).toHaveAttribute('data-footer-variant', 'compact')
+    expect(screen.getByRole('link', { name: 'Centro Legal' })).toHaveAttribute('href', '/legal')
+    expect(screen.getByRole('link', { name: 'PQRS' })).toHaveAttribute('href', '/legal/pqrs')
+    expect(screen.getByRole('link', { name: 'Retracto' })).toHaveAttribute('href', '/legal/devoluciones-garantias')
+    expect(screen.getByRole('link', { name: 'SIC' })).toHaveAttribute('href', PROVIDER_INFO.sicUrl)
+  })
+
+  it('LegalIndexPage (/legal): contiene la ficha completa de PROVIDER_INFO', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <LegalIndexPage />
+      </MemoryRouter>
+    )
+    expect(screen.getByText(PROVIDER_INFO.direccion)).toBeInTheDocument()
+    expect(screen.getByText(PROVIDER_INFO.telefono)).toBeInTheDocument()
+    expect(container.textContent).toContain(PROVIDER_INFO.razonSocial)
   })
 })

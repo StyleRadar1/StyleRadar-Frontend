@@ -1,9 +1,11 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { computeInventorySummary, inventoryService } from '../services/inventoryService'
 import type { InventoryItemDto, InventorySummaryDto, CreateInventoryItemDto, UpdateInventoryItemDto } from '../types/inventory.dto'
 
 export function useInventory(tiendaId?: string) {
   const [items, setItems] = useState<InventoryItemDto[]>([])
+  const itemsRef = useRef<InventoryItemDto[]>([])
+  itemsRef.current = items
   const [summary, setSummary] = useState<InventorySummaryDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
@@ -27,8 +29,10 @@ export function useInventory(tiendaId?: string) {
   }, [reload])
 
   const updateStock = useCallback(
-    async (prendaId: string, talla: string, nuevoStock: number) => {
-      const updated = await inventoryService.updateStock({ prendaId, talla, nuevoStock })
+    async (prendaId: string, talla: string, nuevoStock: number, sedeId?: string) => {
+      const current = itemsRef.current.find((it) => it.id === prendaId)
+      const resolvedSedeId = sedeId || current?.sedeId || undefined
+      const updated = await inventoryService.updateStock({ prendaId, talla, nuevoStock, sedeId: resolvedSedeId })
       setItems((prev) => {
         const next = prev.map((it) => (it.id === prendaId ? updated : it))
         setSummary(computeInventorySummary(next))

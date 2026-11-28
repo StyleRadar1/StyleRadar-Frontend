@@ -130,8 +130,7 @@ export function LandingFooter({ onOpenLogin }: LandingFooterProps) {
               </p>
               <ul className="space-y-1.5">
                 <li><Link to="/legal/pqrs" className="font-semibold text-[var(--sr-hero-text)] hover:text-[var(--sr-accent)] transition-colors">Radicar PQRS Oficial</Link></li>
-                <li><Link to="/legal/devoluciones-garantias" className="hover:text-[var(--sr-accent)] transition-colors font-medium">Derecho de Retracto (5 días)</Link></li>
-                <li><Link to="/legal/devoluciones-garantias" className="hover:text-[var(--sr-accent)] transition-colors">Garantías y Cambios</Link></li>
+                <li><Link to="/legal/devoluciones-garantias" className="hover:text-[var(--sr-accent)] transition-colors font-medium">Derecho de Retracto (5 días) y Garantías</Link></li>
                 <li><Link to="/legal/envios-entregas" className="hover:text-[var(--sr-accent)] transition-colors">Envíos y Entregas Bogotá</Link></li>
                 <li><Link to="/legal/centro-ayuda" className="hover:text-[var(--sr-accent)] transition-colors">Centro de Ayuda / FAQ</Link></li>
                 <li>

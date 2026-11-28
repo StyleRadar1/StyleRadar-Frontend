@@ -176,4 +176,110 @@ describe('StorePage & storePublicService sin mocks (VITE_USE_MOCKS=false)', () =
     const calledUrls = getSpy.mock.calls.map(([url]) => url)
     expect(calledUrls).not.toContain(`/api/v1/almacenes/${uuid}`)
   })
+
+  it('R2: sin marca de agua y deduplica el kicker cuando barrio es Bogotá o distinto', async () => {
+    vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
+      if (url === '/api/v1/stores/900111222') {
+        return {
+          data: {
+            nit: '900111222',
+            tradeName: 'Almacén Pruebas',
+            barrio: 'Bogotá',
+            verificationStatus: 'APPROVED',
+          },
+        } as never
+      }
+      return { data: [] } as never
+    })
+    const { container, unmount } = renderAt('/tiendas/900111222', routes)
+    expect(await screen.findByRole('heading', { level: 1, name: /Almacén Pruebas/i })).toBeInTheDocument()
+    expect(container.querySelector('.sr-store-hero__watermark')).toBeNull()
+    expect(screen.getByText('TIENDA LOCAL · BOGOTÁ')).toBeInTheDocument()
+    expect(screen.queryByText(/BOGOTÁ · BOGOTÁ/i)).not.toBeInTheDocument()
+    unmount()
+
+    vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
+      if (url === '/api/v1/stores/900111333') {
+        return {
+          data: {
+            nit: '900111333',
+            tradeName: 'Tienda Chapinero',
+            barrio: 'Chapinero',
+            verificationStatus: 'APPROVED',
+          },
+        } as never
+      }
+      return { data: [] } as never
+    })
+    renderAt('/tiendas/900111333', routes)
+    expect(await screen.findByText('TIENDA LOCAL · BOGOTÁ · CHAPINERO')).toBeInTheDocument()
+  })
+
+  it('R3: 0 fotos oculta Sección 5B y evita <img src="">; 2 fotos oculta Sección 5B; 4 fotos muestra píldora, visor panorámico y lightbox accesible', async () => {
+    // Caso N = 0
+    vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
+      if (url === '/api/v1/stores/900000000') {
+        return { data: { nit: '900000000', tradeName: 'Sin Fotos', verificationStatus: 'APPROVED' } } as never
+      }
+      return { data: [] } as never
+    })
+    const r0 = renderAt('/tiendas/900000000', routes)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sin Fotos' })).toBeInTheDocument()
+    expect(r0.container.querySelector('.sr-store-gallery-section')).toBeNull()
+    expect(r0.container.querySelector('img[src=""]')).toBeNull()
+    r0.unmount()
+
+    // Caso N = 2
+    vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
+      if (url === '/api/v1/stores/900000002') {
+        return { data: { nit: '900000002', tradeName: 'Dos Fotos', verificationStatus: 'APPROVED' } } as never
+      }
+      if (url === '/api/v1/stores/900000002/photos') {
+        return {
+          data: [
+            { id: 1, storeNit: '900000002', url: 'https://img.test/1.jpg', position: 1, cover: true },
+            { id: 2, storeNit: '900000002', url: 'https://img.test/2.jpg', position: 2, cover: false },
+          ],
+        } as never
+      }
+      return { data: [] } as never
+    })
+    const r2 = renderAt('/tiendas/900000002', routes)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Dos Fotos' })).toBeInTheDocument()
+    expect(r2.container.querySelector('.sr-store-gallery-section')).toBeNull()
+    r2.unmount()
+
+    // Caso N = 4
+    const user = userEvent.setup()
+    vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
+      if (url === '/api/v1/stores/900000004') {
+        return { data: { nit: '900000004', tradeName: 'Cuatro Fotos', verificationStatus: 'APPROVED' } } as never
+      }
+      if (url === '/api/v1/stores/900000004/photos') {
+        return {
+          data: [
+            { id: 1, storeNit: '900000004', url: 'https://img.test/1.jpg', position: 1, cover: true },
+            { id: 2, storeNit: '900000004', url: 'https://img.test/2.jpg', position: 2, cover: false },
+            { id: 3, storeNit: '900000004', url: 'https://img.test/3.jpg', position: 3, cover: false },
+            { id: 4, storeNit: '900000004', url: 'https://img.test/4.jpg', position: 4, cover: false },
+          ],
+        } as never
+      }
+      return { data: [] } as never
+    })
+    const r4 = renderAt('/tiendas/900000004', routes)
+    const pill = await screen.findByRole('button', { name: /Ver 4 fotos/i })
+    expect(pill).toBeInTheDocument()
+    expect(r4.container.querySelectorAll('.sr-gallery-showcase__thumb')).toHaveLength(4)
+
+    await user.click(pill)
+    expect(screen.getByRole('dialog', { name: /Galería de Cuatro Fotos/i })).toBeInTheDocument()
+    expect(screen.getByText(/Foto 1 de 4/i)).toBeInTheDocument()
+
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByText(/Foto 2 de 4/i)).toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: /Galería de Cuatro Fotos/i })).not.toBeInTheDocument()
+  })
 })
