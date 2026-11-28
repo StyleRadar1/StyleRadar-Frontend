@@ -261,9 +261,9 @@ html[data-cvd='on'] {
   font-size: 0.76rem;
   font-weight: 500;
   line-height: 1;
-  border: 1px solid var(--color-border);
-  background-color: color-mix(in srgb, var(--color-surface-raised, #1f1b2b) 75%, transparent);
-  color: var(--color-text);
+  border: 1px solid var(--color-border, var(--border, #e2e8f0));
+  background-color: color-mix(in srgb, var(--sr-surface-raised, var(--surface-muted, #f1f3f5)) 82%, transparent);
+  color: var(--color-text, var(--text, #0f172a));
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 140ms ease,
@@ -275,6 +275,22 @@ html[data-cvd='on'] {
 .sr-filter-chip:hover {
   background-color: var(--sr-acento-12);
   border-color: var(--sr-acento-primario, var(--color-accent));
+}
+
+/* En modo claro los chips deben leerse como superficies claras, no como fallback oscuro. */
+html[data-theme="light"] .sr-filter-chip:not(.sr-filter-chip--selected),
+html[data-theme="claro"] .sr-filter-chip:not(.sr-filter-chip--selected),
+html[data-tema="claro"] .sr-filter-chip:not(.sr-filter-chip--selected) {
+  background-color: #FFFFFF;
+  border-color: #E2E8F0;
+  color: #0F172A;
+}
+
+html[data-theme="light"] .sr-filter-chip:not(.sr-filter-chip--selected):hover,
+html[data-theme="claro"] .sr-filter-chip:not(.sr-filter-chip--selected):hover,
+html[data-tema="claro"] .sr-filter-chip:not(.sr-filter-chip--selected):hover {
+  background-color: rgba(72, 17, 154, 0.08);
+  border-color: #48119A;
 }
 
 .sr-filter-chip:focus-visible {
