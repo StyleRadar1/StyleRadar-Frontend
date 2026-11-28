@@ -34,3 +34,11 @@
 
 @media(max-width:900px){.store-info__avatar{width:94px;height:94px;font-size:40px}.store-info__status{gap:16px}.store-info__form{grid-template-columns:minmax(0,1.5fr) minmax(210px,1fr)}}
 @media(max-width:680px){.store-info{padding:18px 15px 32px}.store-info__store-head{align-items:flex-start;flex-direction:column}.store-info__identity{gap:13px}.store-info__avatar{width:58px;height:58px;font-size:22px}.store-info__identity h1{font-size:45px}.store-info__identity p{font-size:9px;letter-spacing:.08em;margin-top:8px}.store-info__status{align-self:flex-end}.store-info__heading h2{font-size:40px}.store-info__wide-break{display:none}.store-info__form{grid-template-columns:1fr;row-gap:16px}.store-info__field--wide{grid-column:auto}.store-info__actions{grid-column:auto}.store-info__button{flex:1}}
+
+
+/* El fondo de la foto debe cubrir todo el viewport; el contenido sigue centrado en __layout. */
+.store-info.sr-tienda-glass {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
