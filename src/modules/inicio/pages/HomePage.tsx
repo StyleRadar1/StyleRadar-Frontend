@@ -35,7 +35,6 @@ export default function HomePage() {
   const [explorePlaylists, setExplorePlaylists] = useState<PlaylistDto[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [busyLikeId, setBusyLikeId] = useState<string | null>(null)
-  const [busySaveId, setBusySaveId] = useState<string | null>(null)
   const [alertStats, setAlertStats] = useState<{ alertas: number; busquedas: number } | null>(null)
   const [chats, setChats] = useState<ConversacionDto[]>([])
   const { plan: planActual, details: planDetails } = useUserPlan(Boolean(user))
