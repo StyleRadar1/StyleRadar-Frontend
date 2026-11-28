@@ -5,6 +5,7 @@ import { ConfirmDialog } from '@/modules/core/components/ConfirmDialog'
 import { ErrorBanner, ErrorToast, FieldError } from '@/modules/core/components/ErrorFeedback'
 import { EmptyState, ErrorState, Loading } from '@/modules/core/components/Status'
 import { ContactButton } from '@/modules/soporte/components/ContactButton'
+import { ImageWithFallback } from '@/modules/core/components/ImageWithFallback'
 import { donationService } from '../services/donationService'
 import { foundationProfileService } from '../services/foundationProfileService'
 import {
@@ -32,8 +33,6 @@ const TONE: Record<string, string> = {
   RECHAZADA: 'bg-[var(--sr-bad-bg)] text-[var(--sr-bad)] border border-[var(--sr-bad)]/35',
   REJECTED: 'bg-[var(--sr-bad-bg)] text-[var(--sr-bad)] border border-[var(--sr-bad)]/35',
 }
-
-const DONATION_IMG_FALLBACK = '/img/fundaciones/abrigo-donaciones.jpg'
 
 const ACCION: Partial<Record<EstadoDonacion, string>> = {
   APROBADA: 'Aceptar',
@@ -272,16 +271,11 @@ export default function FoundationPage() {
                   const nextActions = SIGUIENTE[est] ?? []
                   return (
                   <li key={d.id} className="fnd-donation-card">
-                    <img
-                      src={d.fotos?.[0] || DONATION_IMG_FALLBACK}
+                    <ImageWithFallback
+                      src={d.fotos?.[0]}
                       alt={`Prenda donada: ${d.prenda.titulo}`}
                       className="fnd-donation-card__img"
-                      onError={(e) => {
-                        const img = e.currentTarget
-                        if (img.dataset.fallback === '1') return
-                        img.dataset.fallback = '1'
-                        img.src = DONATION_IMG_FALLBACK
-                      }}
+                      placeholderClassName="fnd-donation-card__img fnd-donation-card__img--empty"
                     />
 
                     <div className="fnd-donation-card__main">
