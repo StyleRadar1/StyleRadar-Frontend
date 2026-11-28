@@ -1265,6 +1265,34 @@ html[data-theme='light'] .sr-store-map .lm-pane {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
 }
 
+/* La tarjeta usa utilidades Tailwind con variables de tema; en claro deben resolver a tinta. */
+html[data-theme='light'] .sr-store-map .lm-pane {
+  --color-text: #1C1926;
+  --color-text-muted: #5F5A6B;
+  --color-surface: #FFFFFF;
+  --color-bg-elevated: #FFFFFF;
+  --color-surface-raised: #F1F3F5;
+  --color-border: rgba(15, 23, 42, 0.15);
+  background: #FFFFFF;
+  color: #1C1926;
+}
+
+html[data-theme='light'] .sr-store-map .lm-pane h3,
+html[data-theme='light'] .sr-store-map .lm-pane p,
+html[data-theme='light'] .sr-store-map .lm-pane dd {
+  color: #1C1926;
+}
+
+html[data-theme='light'] .sr-store-map .lm-pane dt,
+html[data-theme='light'] .sr-store-map .lm-pane .lm-sub,
+html[data-theme='light'] .sr-store-map .lm-pane .lm-desc {
+  color: #5F5A6B;
+}
+
+html[data-theme='light'] .sr-store-map .lm-pane .lm-items-item em {
+  color: #48119A;
+}
+
 html[data-theme='light'] .lm-close {
   background: var(--color-surface, rgba(0, 0, 0, 0.08));
   color: var(--color-text, #1c1926);
