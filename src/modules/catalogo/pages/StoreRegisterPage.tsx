@@ -153,7 +153,7 @@ export default function StoreRegisterPage() {
             <legend className="mb-2 text-[12px] font-extrabold uppercase tracking-[.14em] text-[var(--color-text-muted,#b9b9ca)]">Categorías</legend>
             <div className="flex flex-wrap gap-2" id={idDe('categories')} tabIndex={-1}>
               {STORE_CATEGORIES.map((c) => (
-                <label key={c} className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-text)]">
+                <label key={c} className="store-info__category">
                   <input type="checkbox" checked={form.categories.includes(c)} onChange={() => alternarCategoria(c)} />
                   {STORE_CATEGORY_TEXT[c]}
                 </label>
