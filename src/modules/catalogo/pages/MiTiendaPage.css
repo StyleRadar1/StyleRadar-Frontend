@@ -118,7 +118,7 @@
 .my-store__collection-meta { margin-top: 8px; color: var(--store-muted); font-size: 11px; font-weight: 700; letter-spacing: .13em; }
 .my-store__dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(10,9,12,.7); backdrop-filter: blur(8px); }
 .my-store__dialog { position: relative; width: min(100%, 440px); padding: 27px; border: 1px solid rgba(185,185,202,.24); border-radius: 14px; color: #fff; background: #262329; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
-.my-store__dialog h2 { margin: 8px 0; font: 700 30px/1 var(--serif,Georgia,serif); }
+.my-store__dialog h2 { margin: 8px 0; font: 800 28px/1.1 'Poppins', system-ui, sans-serif; letter-spacing: -.02em; }
 .my-store__dialog > p { color: var(--store-muted); font-size: 13px; }
 .my-store__dialog label { display: grid; gap: 7px; margin-top: 17px; color: var(--store-muted); font-size: 11px; }
 .my-store__dialog input,.my-store__dialog select { width: 100%; padding: 11px 12px; border: 1px solid rgba(185,185,202,.24); border-radius: 7px; color: #fff; background: #1c1a20; font: inherit; font-size: 13px; }
@@ -128,7 +128,7 @@
 .my-store__dialog-actions .my-store__button--primary { background: var(--store-accent); border-color: #7040ba; }
 .my-store__dialog--edit { width: min(100%, 1024px); padding: 32px 28px 0; border-radius: 18px; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.13),transparent 58%),#29282a; }
 .my-store__dialog--edit .my-store__eyebrow { font-size: 12px; letter-spacing: .2em; }
-.my-store__dialog--edit h2 { margin: 7px 0 22px; font: 700 clamp(36px,5vw,48px)/.98 var(--serif,Georgia,serif); letter-spacing: -.045em; }
+.my-store__dialog--edit h2 { margin: 7px 0 22px; font: 800 clamp(28px,3.6vw,38px)/1.08 'Poppins', system-ui, sans-serif; letter-spacing: -.025em; }
 .my-store__edit-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 16px; padding-bottom: 22px; }
 .my-store__edit-fields label { display: grid; gap: 7px; margin: 0; color: #c7c5cd; font-size: 11px; font-weight: 700; letter-spacing: .13em; }
 .my-store__edit-fields .my-store__field-full,.my-store__flag-field { grid-column: 1 / -1; }
@@ -146,7 +146,7 @@
 .my-store__dialog--edit .my-store__dialog-actions .my-store__button--primary { min-width: 220px; box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 .my-store__dialog--stock { width: min(100%, 550px); padding: 30px 28px 0; border-radius: 18px; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.13),transparent 58%),#29282a; }
 .my-store__dialog--stock .my-store__eyebrow { font-size: 12px; letter-spacing: .18em; }
-.my-store__dialog--stock h2 { max-width: 330px; margin: 8px 0 22px; font: 700 clamp(38px,6vw,48px)/.94 var(--serif,Georgia,serif); letter-spacing: -.045em; }
+.my-store__dialog--stock h2 { max-width: 330px; margin: 8px 0 22px; font: 800 clamp(28px,4vw,38px)/1.08 'Poppins', system-ui, sans-serif; letter-spacing: -.025em; }
 .my-store__stock-help { max-width: 52ch; margin: 0 0 16px; color: #e3dfe5; font-size: 15px; line-height: 1.45; }
 .my-store__stock-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; padding: 0 0 32px; }
 .my-store__stock-size { display: grid; gap: 6px; min-width: 0; padding: 9px; border: 1px solid rgba(185,185,202,.18); color: #fff; font-size: 13px; font-weight: 700; }
@@ -157,7 +157,7 @@
 .my-store__dialog-actions--stock .my-store__button--primary { min-width: 188px; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 .my-store__dialog--collection { width: min(100%, 550px); padding: 30px 28px 0; border-radius: 18px; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.13),transparent 58%),#29282a; }
 .my-store__dialog--collection .my-store__eyebrow { font-size: 12px; letter-spacing: .18em; }
-.my-store__dialog--collection h2 { margin: 8px 0 24px; font: 700 clamp(38px,6vw,48px)/.98 var(--serif,Georgia,serif); letter-spacing: -.045em; }
+.my-store__dialog--collection h2 { margin: 8px 0 24px; font: 800 clamp(28px,4vw,38px)/1.08 'Poppins', system-ui, sans-serif; letter-spacing: -.025em; }
 .my-store__collection-label { display: grid; gap: 7px; margin: 0 0 17px !important; color: #c7c5cd !important; font-size: 11px !important; font-weight: 700; letter-spacing: .13em; }
 .my-store__collection-label span { display: inline; margin-left: 4px; color: var(--store-muted); font-weight: 400; letter-spacing: normal; }
 .my-store__collection-label input,.my-store__collection-label textarea { width: 100%; border: 1px solid rgba(185,185,202,.36); border-radius: 0 !important; padding: 13px 15px !important; color: #fff !important; background: rgba(28,27,29,.34) !important; font: inherit !important; font-size: 15px !important; font-weight: 400 !important; letter-spacing: normal; }
@@ -174,7 +174,7 @@
 .my-store__dialog--collection .my-store__dialog-actions .my-store__button--primary { min-width: 202px; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 .my-store__dialog--store-info { width: min(100%, 925px); max-height: calc(100svh - 48px); overflow-y: auto; padding: 27px 25px 0; border-radius: 18px; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.11),transparent 58%),#29282a; }
 .my-store__dialog--store-info .my-store__eyebrow { font-size: 12px; letter-spacing: .18em; }
-.my-store__dialog--store-info h2 { margin: 6px 0 18px; font: 700 clamp(36px,5vw,44px)/1 var(--serif,Georgia,serif); letter-spacing: -.045em; }
+.my-store__dialog--store-info h2 { margin: 6px 0 18px; font: 800 clamp(28px,3.6vw,36px)/1.08 'Poppins', system-ui, sans-serif; letter-spacing: -.025em; }
 .my-store__store-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 14px; padding-bottom: 18px; }
 .my-store__store-fields > label { display: grid; gap: 6px; margin: 0; color: #c7c5cd; font-size: 11px; font-weight: 700; letter-spacing: .13em; }
 .my-store__store-fields > .my-store__store-field-full { grid-column: 1 / -1; }
@@ -192,7 +192,7 @@
 .my-store__dialog--store-info .my-store__dialog-actions .my-store__button--primary { min-width: 198px; border-color: #7040ba; background: var(--store-accent); box-shadow: 0 7px 24px rgba(72,17,154,.38); }
 .my-store__dialog--badges { width: min(100%, 495px); padding: 28px 25px 0; border-radius: 18px; background: radial-gradient(ellipse at 28% 45%,rgba(255,255,255,.11),transparent 58%),#29282a; }
 .my-store__dialog--badges .my-store__eyebrow { font-size: 12px; letter-spacing: .18em; }
-.my-store__dialog--badges h2 { max-width: 355px; margin: 7px 0 20px; font: 700 clamp(38px,6vw,44px)/.95 var(--serif,Georgia,serif); letter-spacing: -.045em; }
+.my-store__dialog--badges h2 { max-width: 355px; margin: 7px 0 20px; font: 800 clamp(28px,3.6vw,36px)/1.08 'Poppins', system-ui, sans-serif; letter-spacing: -.025em; }
 .my-store__dialog--badges > p { margin: 0 0 17px; color: #e3dfe5; font-size: 14px; line-height: 1.5; }
 .my-store__badge-rule { display: block; margin: 0 0 14px !important; color: #c7c5cd !important; font-size: 11px !important; font-weight: 700; letter-spacing: .14em; }
 .my-store__badge-threshold { display: flex; align-items: center; gap: 11px; margin-top: 7px; }
