@@ -69,9 +69,6 @@ export default function RegisterPage() {
     if (!consentState.aceptaDatos) {
       cErr.datos = 'Debes autorizar el tratamiento de datos personales (Habeas Data).'
     }
-    if (!consentState.esMayorDeEdad) {
-      cErr.edad = 'Debes confirmar que eres mayor de 18 años.'
-    }
 
     return { formErrors: e, legalErrors: cErr }
   }
@@ -103,7 +100,7 @@ export default function RegisterPage() {
       email: email.trim(),
       aceptaTerminos: consentState.aceptaTerminos,
       aceptaDatos: consentState.aceptaDatos,
-      esMayorDeEdad: consentState.esMayorDeEdad,
+      esMayorDeEdad: consentState.aceptaTerminos,
       aceptaPromociones: consentState.aceptaPromociones,
       origen: esTienda ? 'REGISTER_PAGE_TIENDA' : 'REGISTER_PAGE_COMPRADOR',
     })
@@ -156,11 +153,10 @@ export default function RegisterPage() {
         <div className="hidden md:block">
           <Badge>Crear cuenta</Badge>
           <h1 className="mt-4 text-5xl font-extrabold leading-tight tracking-tight text-[var(--color-text,#ffffff)] drop-shadow-md">
-            Tu estilo, en tu talla y cerca de ti
+            Tu estilo, a tu medida.
           </h1>
           <p className="mt-4 max-w-md text-[var(--color-text-muted)]">
-            Guarda tus tallas, pruébate prendas en el maniquí y encuentra la tienda de Bogotá que la
-            tiene.
+            Guarda tus tallas y encuentra tu tienda en Bogotá.
           </p>
         </div>
         <Card className="border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/90 p-7 text-[var(--color-text)] shadow-2xl backdrop-blur-xl">
@@ -168,6 +164,7 @@ export default function RegisterPage() {
             onSubmit={onSubmit}
             className="flex flex-col gap-4"
             noValidate
+            aria-busy={loading}
             aria-labelledby="su-titulo"
           >
             <h2 id="su-titulo" className="text-3xl font-extrabold text-[var(--color-text)]">
@@ -189,7 +186,7 @@ export default function RegisterPage() {
               >
                 <p className="font-semibold">Alta de fundaciones aliadas</p>
                 <p className="mt-1 text-[var(--color-text-muted)]">
-                  Las fundaciones son registradas únicamente por el administrador de StyleRadar tras verificar el certificado de personería jurídica ESAL. Crea aquí primero tu cuenta personal de usuario para que el administrador pueda asociarte como representante.
+                  Las fundaciones son registradas únicamente por el administrador de StyleRadar tras verificar el ESAL. Crea primero tu cuenta de usuario.
                 </p>
               </div>
             )}
@@ -250,8 +247,9 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setVer(!ver)}
+                  aria-label={ver ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   aria-pressed={ver}
-                  className="absolute inset-y-1 right-1 rounded-lg px-3 text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] transition-colors"
+                  className="absolute inset-y-1 right-1 min-h-10 rounded-lg px-3 text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] transition-colors"
                 >
                   {ver ? 'Ocultar' : 'Mostrar'}
                 </button>
@@ -280,7 +278,6 @@ export default function RegisterPage() {
                   const copy = { ...prev }
                   if (updates.aceptaTerminos) delete copy.terminos
                   if (updates.aceptaDatos) delete copy.datos
-                  if (updates.esMayorDeEdad) delete copy.edad
                   return copy
                 })
               }}

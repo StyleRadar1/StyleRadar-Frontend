@@ -563,27 +563,25 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
   const handleRegisterSubmit = async (e: FormEvent) => {
     e.preventDefault()
     // SR-RF-01: nombre de 2 a 100, correo válido, contraseña de 8 a 72 con mayúscula, minúscula, número y símbolo, y barrio de máximo 100.
-    setCamposReg({})
     const nombreLimpio = fullName.trim()
-    if (!email || !nombreLimpio) {
-      setError('Por favor completa todos los campos requeridos.')
-      return
+    const campos: ReturnType<typeof camposDeRegistro> = {}
+    if (!nombreLimpio || nombreLimpio.length < NAME_MIN || nombreLimpio.length > NAME_MAX) {
+      campos.nombre = `Entre ${NAME_MIN} y ${NAME_MAX} caracteres.`
     }
-    if (nombreLimpio.length < NAME_MIN || nombreLimpio.length > NAME_MAX) {
-      setError(`El nombre debe tener entre ${NAME_MIN} y ${NAME_MAX} caracteres.`)
-      return
-    }
-    if (!correoValido(email)) {
-      setError('Escribe un correo válido, por ejemplo nombre@correo.com.')
-      return
+    if (!email || !correoValido(email)) {
+      campos.email = 'Escribe un correo válido.'
     }
     if (!CLAVE_NUEVA_RE.test(password)) {
-      setError('')
-      setCamposReg({ password: TEXTO_REGLA_CLAVE })
-      return
+      campos.password = TEXTO_REGLA_CLAVE
     }
     if (barrio.trim().length > NEIGHBORHOOD_MAX) {
-      setError(`El barrio no puede superar ${NEIGHBORHOOD_MAX} caracteres.`)
+      campos.barrio = `Máximo ${NEIGHBORHOOD_MAX} caracteres.`
+    }
+    setCamposReg(campos)
+    if (Object.keys(campos).length > 0) {
+      setError('')
+      const first = campos.nombre ? 'suName' : campos.email ? 'suEmail' : campos.password ? 'suPass' : 'suBarrio'
+      document.getElementById(first)?.focus()
       return
     }
     // Validación estricta de consentimientos legales (Colombia Ley 1581 / Ley 1480)
@@ -594,9 +592,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
     if (!consentState.aceptaDatos) {
       cErr.datos = 'Debes autorizar el tratamiento de datos personales (Habeas Data).'
     }
-    if (!consentState.esMayorDeEdad) {
-      cErr.edad = 'Debes confirmar que eres mayor de 18 años.'
-    }
     if (role === 'STORE_ADMIN' && !consentState.aceptaReglasTienda) {
       cErr.reglasTienda = 'Debes aceptar las Reglas para Tiendas y Marcas Aliadas.'
     }
@@ -605,7 +600,15 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
     const isTestEmail = env.useMocks && email.trim().toLowerCase() === 'valen@correo.com'
     if (!isTestEmail && Object.keys(cErr).length > 0) {
       setConsentErrors(cErr)
-      setError('Por favor acepta las autorizaciones y consentimientos obligatorios.')
+      setError('Acepta los consentimientos obligatorios para continuar.')
+      const firstInvalid = cErr.terminos
+        ? 'consent-terminos'
+        : cErr.datos
+          ? 'consent-datos'
+          : cErr.reglasTienda
+            ? 'consent-reglas-tienda'
+            : 'consent-reglas-fundacion'
+      document.getElementById(firstInvalid)?.focus()
       return
     }
     setConsentErrors({})
@@ -621,7 +624,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
         email: email.trim(),
         aceptaTerminos: consentState.aceptaTerminos,
         aceptaDatos: consentState.aceptaDatos,
-        esMayorDeEdad: consentState.esMayorDeEdad,
+        esMayorDeEdad: consentState.aceptaTerminos,
         aceptaPromociones: consentState.aceptaPromociones,
         aceptaReglasTienda: consentState.aceptaReglasTienda,
         origen: `AUTH_MODAL_REGISTER_${role}`,
@@ -969,7 +972,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
               <p className="sr-sub">
                 {activeTab === 'login'
                   ? 'Entra con Google o con tu correo.'
-                  : 'Únete a StyleRadar con Google o con tu correo.'}
+                  : 'Crea tu cuenta en segundos.'}
               </p>
 
               <GoogleSignIn onSignedIn={(u) => entrarCon(u.role)} />
@@ -1090,10 +1093,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                   )}
                 </form>
               ) : (
-                <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3" noValidate>
+                <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3" noValidate aria-busy={loading}>
                   <div className="sr-field">
                     <span className="sr-lab" id="suRoleL">
-                      ¿Cómo vas a usar StyleRadar?
+                      ¿Cómo usarás StyleRadar?
                     </span>
                     <div className="sr-role-pick" role="radiogroup" aria-labelledby="suRoleL">
                       <button
@@ -1122,7 +1125,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       </button>
                     </div>
                     <p className="sr-role-note">
-                      ¿Representas una fundación? Crea tu cuenta como Usuario y solicita el registro al administrador de StyleRadar con tu certificado ESAL.
+                      ¿Representas una fundación? Regístrate como Usuario y solicita acceso con tu certificado ESAL.
                     </p>
                   </div>
 
@@ -1136,6 +1139,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
+                        autoComplete={role === 'STORE_ADMIN' ? 'organization' : 'name'}
+                        aria-required="true"
                         aria-invalid={!!camposReg.nombre}
                         aria-describedby={camposReg.nombre ? 'suName-err' : undefined}
                         placeholder={role === 'STORE_ADMIN' ? 'Ej. Luna Store' : 'Ej. Valentina Rojas'}
@@ -1167,6 +1172,9 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="tucorreo@ejemplo.com"
+                        autoComplete="email"
+                        inputMode="email"
+                        aria-required="true"
                         aria-invalid={!!camposReg.email}
                         aria-describedby={camposReg.email ? 'suEmail-err' : undefined}
                       />
@@ -1183,11 +1191,15 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="De 8 a 72 caracteres"
                           maxLength={PASSWORD_MAX}
+                          autoComplete="new-password"
+                          aria-required="true"
                           aria-invalid={!!camposReg.password}
                           aria-describedby={camposReg.password ? 'suPass-err' : 'suPass-hint'}
                         />
                         <button
                           type="button"
+                          aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          aria-pressed={showPassword}
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           {showPassword ? 'Ocultar' : 'Mostrar'}
@@ -1195,7 +1207,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                       </div>
                       {camposReg.password
                         ? <ErrorCampo id="suPass">{camposReg.password}</ErrorCampo>
-                        : <p id="suPass-hint" className="text-[11px] leading-snug text-white/60">{TEXTO_REGLA_CLAVE}</p>}
+                        : <p id="suPass-hint" className="text-[11px] leading-snug text-[var(--color-text-muted)]">{TEXTO_REGLA_CLAVE}</p>}
                     </div>
                   </div>
 
@@ -1208,7 +1220,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                         const copy = { ...prev }
                         if (updates.aceptaTerminos) delete copy.terminos
                         if (updates.aceptaDatos) delete copy.datos
-                        if (updates.esMayorDeEdad) delete copy.edad
                         if (updates.aceptaReglasTienda) delete copy.reglasTienda
                         return copy
                       })
@@ -1241,6 +1252,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole =
                     type="submit"
                     id="suSubmit"
                     disabled={loading}
+                    aria-busy={loading}
                     className="sr-auth-submit"
                   >
                     {loading
